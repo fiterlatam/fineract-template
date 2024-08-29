@@ -1085,4 +1085,8 @@ public class Charge extends AbstractPersistableCustom {
         }
     }
 
+    public ChargeInsuranceDetail getChargeInsuranceDetail() {
+        return this.chargeInsuranceDetail;
+    }
+
 }

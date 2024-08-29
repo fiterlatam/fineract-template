@@ -25,4 +25,5 @@ public interface InsuranceIncidentRepository extends JpaRepository<InsuranceInci
 
     boolean existsByNameIgnoreCase(String name);
     boolean existsByIncidentType(InsuranceIncidentType incidentType);
+    InsuranceIncident findByIncidentType(InsuranceIncidentType incidentType);
 }

@@ -158,37 +158,16 @@ import org.apache.fineract.portfolio.collectionsheet.command.SingleDisbursalComm
 import org.apache.fineract.portfolio.collectionsheet.command.SingleRepaymentCommand;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
+import org.apache.fineract.portfolio.insurance.domain.*;
+import org.apache.fineract.portfolio.insurance.exception.InsuranceIncidentNotFoundException;
 import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.command.LoanUpdateCommand;
+import org.apache.fineract.portfolio.loanaccount.data.DefaultInsuranceInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
-import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
-import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanIndividualMonitoringAccount;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagement;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetailsRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanEvent;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallmentRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanSubStatus;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanSummaryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelation;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationTypeEnum;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.exception.DateMismatchException;
 import org.apache.fineract.portfolio.loanaccount.exception.ExceedingTrancheCountException;
 import org.apache.fineract.portfolio.loanaccount.exception.InvalidLoanTransactionTypeException;
@@ -298,6 +277,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final GlobalConfigurationRepository globalConfigurationRepository;
     private final LoanBlockWritePlatformService loanBlockWritePlatformService;
     private final BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepository;
+    private final InsuranceIncidentRepository insuranceIncidentRepository;
+    private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
 
     @PostConstruct
     public void registerForNotification() {
@@ -3616,6 +3597,57 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         log.info(successMessage);
                     }
                 }
+            }
+        }
+    }
+
+    @Override
+    public void cancelDefaultInsuranceCharges(List<DefaultInsuranceInstallmentData> defaultInsuranceIds) {
+        final LocalDate currentDate = DateUtils.getBusinessLocalDate();
+        InsuranceIncident incident = this.insuranceIncidentRepository.findByIncidentType(InsuranceIncidentType.DEFINITIVE_CANCELLATION_DEFAULT);
+        if (incident == null) {
+            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_CANCELLATION_DEFAULT.name());
+        }
+        for (DefaultInsuranceInstallmentData data : defaultInsuranceIds) {
+            Optional<Loan> loanOptional = this.loanRepository.findById(data.loanId());
+            if (loanOptional.isPresent()) {
+                BigDecimal cumulative = BigDecimal.ZERO;
+                Loan loan = loanOptional.get();
+
+                List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments().stream()
+                        .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
+                LoanCharge loanCharge = null;
+                Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream().filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
+                if (loanChargeOptional.isPresent()) {
+                    loanCharge = loanChargeOptional.get();
+                }
+
+                for (LoanRepaymentScheduleInstallment installment : installments) {
+                    if (installment.getInstallmentNumber().compareTo(data.installment()) > -1) {
+                        for (LoanInstallmentCharge installmentCharge : installment.getInstallmentCharges()) {
+                            if (Objects.equals(installmentCharge.getLoanCharge().getId(), data.loanChargeId())) {
+                                if (installment.getInstallmentNumber().compareTo(data.installment()) == 0) {
+                                    installmentCharge.getLoanCharge().setDefaultFromInstallment(data.installment());
+                                    if (installmentCharge.getAmountPaid(loan.getCurrency()).isGreaterThanZero()) {
+                                        // First default installment could have partially paid amount
+                                        installmentCharge.getLoanCharge().
+                                                setPartialAmountPaidInFirstDefaultInstallment(installmentCharge.getAmountPaid(loan.getCurrency()).getAmount());
+                                    }
+                                }
+                                cumulative = cumulative.add(installmentCharge.getAmountOutstanding());
+                                installment.adjustFeeChargePortion(Money.of(loan.getCurrency(), installmentCharge.getAmountOutstanding()));
+                                installmentCharge.adjustChargeAmount(Money.of(loan.getCurrency(), installmentCharge.getAmountOutstanding()));
+                            }
+                        }
+                    }
+                }
+
+                InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, data.installment(), incident, currentDate, cumulative);
+
+                this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+                saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+
+                // Add details to a table to create news
             }
         }
     }

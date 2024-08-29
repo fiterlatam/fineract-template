@@ -373,4 +373,10 @@ public class LoanInstallmentCharge extends AbstractPersistableCustom implements 
             this.loancharge.adjustChargeAmount(adjustedAmount);
         }
     }
+
+    public void adjustChargeAmountForDefaultCase() {
+        this.amountOutstanding = BigDecimal.ZERO;
+        this.amount = this.amountPaid;
+        this.paid = true;
+    }
 }

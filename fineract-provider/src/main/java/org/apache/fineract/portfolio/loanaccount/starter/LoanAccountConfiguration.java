@@ -78,6 +78,8 @@ import org.apache.fineract.portfolio.fund.service.FundReadPlatformService;
 import org.apache.fineract.portfolio.group.domain.GroupRepository;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentNoveltyNewsRepository;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainServiceJpa;
@@ -397,7 +399,8 @@ public class LoanAccountConfiguration {
             ClientReadPlatformService clientReadPlatformService, ChannelReadWritePlatformService channelReadWritePlatformService,
             PlatformSecurityContext platformSecurityContext, PaymentDetailRepository paymentDetailRepository,
             GlobalConfigurationRepository globalConfigurationRepository, LoanBlockWritePlatformService loanBlockWritePlatformService,
-            BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepository) {
+            BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepository, InsuranceIncidentRepository insuranceIncidentRepository,
+            InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository) {
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
                 loanTransactionRelationRepository, loanAssembler, journalEntryWritePlatformService, calendarInstanceRepository,
@@ -413,7 +416,7 @@ public class LoanAccountConfiguration {
                 loanAccrualTransactionBusinessEventService, errorHandler, loanDownPaymentHandlerService, loanProductReadPlatformService,
                 jdbcTemplate, commandsSourceWritePlatformService, loanRescheduleRequestReadPlatformService, clientReadPlatformService,
                 channelReadWritePlatformService, platformSecurityContext, globalConfigurationRepository, loanBlockWritePlatformService,
-                loanBlockingReasonRepository);
+                loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository);
     }
 
     @Bean

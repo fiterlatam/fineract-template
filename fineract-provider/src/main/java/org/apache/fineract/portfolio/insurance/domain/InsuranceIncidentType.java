@@ -7,21 +7,23 @@ import java.util.Arrays;
 import java.util.List;
 
 public enum InsuranceIncidentType {
-    INVALID(0, "insurance.incident.invalid"), //
-    DEFINITIVE_CANCELLATION_DEFAULT(1, "labels.inputs.insurance.incident.definitive.default"), //
-    DEFINITIVE_VOLUNTARY_CANCELLATION(2, "labels.inputs.insurance.incident.definitive.voluntary.cancellation"), //
-    FINAL_ADVANCE_PAYMENT_CANCELLATION(3, "labels.inputs.insurance.incident.final.advance.payment.cancellation"), //
-    FINAL_GUARANTEE_CLAIM_CANCELLATION(4, "labels.inputs.insurance.incident.final.guarantee.claim.cancellation"), //
-    FINAL_REFINANCED_CANCELLATION(5, "labels.inputs.insurance.incident.final.refinanced.cancellation"), //
-    BAD_SALE_CANCELLATION(6, "labels.inputs.insurance.incident.bad.sale.cancellation"), //
-    PORTFOLIO_WRITE_OFF_CANCELLATION(7, "labels.inputs.insurance.incident.portfolio.write.off.cancellation"); //
+    INVALID(0, "insurance.incident.invalid", "invalid"), //
+    DEFINITIVE_CANCELLATION_DEFAULT(1, "labels.inputs.insurance.incident.definitive.default", "Cancelación definitiva por mora"), //
+    DEFINITIVE_VOLUNTARY_CANCELLATION(2, "labels.inputs.insurance.incident.definitive.voluntary.cancellation", "Cancelación voluntaria definitiva"), //
+    FINAL_ADVANCE_PAYMENT_CANCELLATION(3, "labels.inputs.insurance.incident.final.advance.payment.cancellation", "Cancelación definitiva por cancelación del crédito"), //
+    FINAL_GUARANTEE_CLAIM_CANCELLATION(4, "labels.inputs.insurance.incident.final.guarantee.claim.cancellation", "Cancelación definitiva por reclamación avaladora"), //
+    FINAL_REFINANCED_CANCELLATION(5, "labels.inputs.insurance.incident.final.refinanced.cancellation", "Cancelación definitiva por rediferido/refinanciado"), //
+    BAD_SALE_CANCELLATION(6, "labels.inputs.insurance.incident.bad.sale.cancellation", "Cancelación por mala venta"), //
+    PORTFOLIO_WRITE_OFF_CANCELLATION(7, "labels.inputs.insurance.incident.portfolio.write.off.cancellation", "Cancelación por castigo de cartera"); //
 
     private final Integer value;
     private final String code;
+    private final String readableName;
 
-    InsuranceIncidentType(final Integer value, final String code) {
+    InsuranceIncidentType(final Integer value, final String code, final String readableName) {
         this.value = value;
         this.code = code;
+        this.readableName = readableName;
     }
 
     public static List<EnumOptionData> getValuesAsEnumOptionDataList() {
