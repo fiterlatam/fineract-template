@@ -31,4 +31,16 @@
             <column name="can_maker_checker" valueBoolean="false"/>
         </insert>
     </changeSet>
+    <changeSet id="2" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan_transaction" columnName="is_special_writeoff"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan_transaction">
+            <column name="is_special_writeoff" type="bool" defaultValue="false">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

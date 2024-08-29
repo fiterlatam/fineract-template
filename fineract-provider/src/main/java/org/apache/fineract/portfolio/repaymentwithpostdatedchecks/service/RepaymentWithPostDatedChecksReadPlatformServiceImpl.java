@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallmentRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.data.PostDatedChecksData;
@@ -39,7 +38,6 @@ public class RepaymentWithPostDatedChecksReadPlatformServiceImpl implements Repa
 
     private final PostDatedChecksRepository postDatedChecksRepository;
     private final LoanRepository loanRepository;
-    private final LoanRepaymentScheduleInstallmentRepository loanRepaymentScheduleInstallmentRepository;
 
     @Override
     public List<PostDatedChecksData> getPostDatedChecks(final Long id) {
