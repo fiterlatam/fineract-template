@@ -242,7 +242,9 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
         Money unProcessed = Money.zero(currency);
         for (final LoanTransaction loanTransaction : transactionsPostDisbursement) {
             if (loanTransaction.isRepaymentLikeType() || loanTransaction.isInterestWaiver() || loanTransaction.isRecoveryRepayment()) {
-                loanTransaction.resetDerivedComponents();
+                if (!loanTransaction.isSpecialWriteOff()) {
+                    loanTransaction.resetDerivedComponents();
+                }
             }
             if (loanTransaction.isInterestWaiver()) {
                 processTransaction(loanTransaction, currency, installments, loanCharges, null);
@@ -560,7 +562,9 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
             final List<LoanRepaymentScheduleInstallment> installments, final Set<LoanCharge> charges, final Money chargeAmountToProcess,
             final boolean isFeeCharge) {
         if (loanTransaction.isRepaymentLikeType() || loanTransaction.isInterestWaiver() || loanTransaction.isRecoveryRepayment()) {
-            loanTransaction.resetDerivedComponents();
+            if (!loanTransaction.isSpecialWriteOff()) {
+                loanTransaction.resetDerivedComponents();
+            }
         }
         Money transactionAmountUnprocessed = processTransaction(loanTransaction, currency, installments, charges, chargeAmountToProcess);
 
@@ -592,17 +596,65 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
         return transactionAmountUnprocessed;
     }
 
+    protected Money processSpecialWriteOff(final LoanTransaction loanTransaction, final MonetaryCurrency currency,
+            final List<LoanRepaymentScheduleInstallment> repaymentInstallments) {
+        final LocalDate transactionDate = loanTransaction.getTransactionDate();
+        Money principalAmountRemaining = loanTransaction.getPrincipalPortion(currency);
+        Money interestAmountRemaining = loanTransaction.getInterestPortion(currency);
+        Money feeChargesAmountRemaining = loanTransaction.getFeeChargesPortion(currency);
+        Money penaltyChargesAmountRemaining = loanTransaction.getPenaltyChargesPortion(currency);
+        final List<LoanTransactionToRepaymentScheduleMapping> transactionMappings = new ArrayList<>();
+        for (final LoanRepaymentScheduleInstallment currentInstallment : repaymentInstallments) {
+            if (currentInstallment.isNotFullyPaidOff()) {
+                Money principalPortionWrittenOff = Money.zero(currency);
+                Money interestPortionWrittenOff = Money.zero(currency);
+                Money feeChargesPortionWrittenOff = Money.zero(currency);
+                Money penaltyChargesPortionWrittenOff = Money.zero(currency);
+                if (principalAmountRemaining.isGreaterThanZero()
+                        && currentInstallment.getPrincipalOutstanding(currency).isGreaterThanZero()) {
+                    principalPortionWrittenOff = currentInstallment.writeOffOutstandingPrincipal(principalAmountRemaining, transactionDate,
+                            currency);
+                    principalAmountRemaining = principalAmountRemaining.minus(principalPortionWrittenOff);
+                }
+                if (interestAmountRemaining.isGreaterThanZero()) {
+                    interestPortionWrittenOff = currentInstallment.writeOffOutstandingInterest(interestAmountRemaining, transactionDate,
+                            currency);
+                    interestAmountRemaining = interestAmountRemaining.minus(interestPortionWrittenOff);
+                }
+                if (feeChargesAmountRemaining.isGreaterThanZero()) {
+                    feeChargesPortionWrittenOff = currentInstallment.writeOffOutstandingFeeCharges(feeChargesAmountRemaining,
+                            transactionDate, currency);
+                    feeChargesAmountRemaining = feeChargesAmountRemaining.minus(feeChargesPortionWrittenOff);
+                }
+                if (penaltyChargesAmountRemaining.isGreaterThanZero()) {
+                    penaltyChargesPortionWrittenOff = currentInstallment.writeOffOutstandingPenaltyCharges(penaltyChargesAmountRemaining,
+                            transactionDate, currency);
+                    penaltyChargesAmountRemaining = penaltyChargesAmountRemaining.minus(penaltyChargesPortionWrittenOff);
+                }
+                if (principalPortionWrittenOff.plus(interestPortionWrittenOff).plus(feeChargesPortionWrittenOff)
+                        .plus(penaltyChargesPortionWrittenOff).isGreaterThanZero()) {
+                    transactionMappings.add(LoanTransactionToRepaymentScheduleMapping.createFrom(loanTransaction, currentInstallment,
+                            principalPortionWrittenOff, interestPortionWrittenOff, feeChargesPortionWrittenOff,
+                            penaltyChargesPortionWrittenOff));
+                }
+            }
+        }
+        loanTransaction.updateLoanTransactionToRepaymentScheduleMappings(transactionMappings);
+        return principalAmountRemaining.plus(interestAmountRemaining).plus(feeChargesAmountRemaining).plus(penaltyChargesAmountRemaining);
+    }
+
     protected Money processTransaction(final LoanTransaction loanTransaction, final MonetaryCurrency currency,
             final List<LoanRepaymentScheduleInstallment> installments, final Set<LoanCharge> charges, Money amountToProcess) {
+        if (loanTransaction.isSpecialWriteOff()) {
+            return processSpecialWriteOff(loanTransaction, currency, installments);
+        }
         int installmentIndex = 0;
-
         final LocalDate transactionDate = loanTransaction.getTransactionDate();
         Money transactionAmountUnprocessed = loanTransaction.getAmount(currency);
         if (amountToProcess != null) {
             transactionAmountUnprocessed = amountToProcess;
         }
         List<LoanTransactionToRepaymentScheduleMapping> transactionMappings = new ArrayList<>();
-
         for (final LoanRepaymentScheduleInstallment currentInstallment : installments) {
             if (transactionAmountUnprocessed.isGreaterThanZero()) {
                 if (currentInstallment.isNotFullyPaidOff()) {
