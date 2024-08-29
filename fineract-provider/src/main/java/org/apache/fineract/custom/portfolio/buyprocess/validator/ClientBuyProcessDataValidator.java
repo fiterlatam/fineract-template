@@ -237,17 +237,20 @@ public class ClientBuyProcessDataValidator {
                                             ? chargeInsuranceDetailData.getInsuranceChargedAs().intValue()
                                             : 0);
                             if (chargeInsuranceType.isCargo() || !productEntity.isPurChaseCharge()) {
-                                baseDataValidator.reset().parameter("loanProductCharge").failWithCode("El tipo de cargo del producto de préstamo es carga.",
+                                baseDataValidator.reset().parameter("loanProductCharge").failWithCode(
+                                        "El tipo de cargo del producto de préstamo es carga.",
                                         "El tipo de cargo del producto de préstamo es carga.");
                             } else if (!productEntity.isPurChaseCharge()) {
-                                baseDataValidator.reset().parameter("loanProduct").failWithCode("El producto de préstamo no es un cargo de compra",
+                                baseDataValidator.reset().parameter("loanProduct").failWithCode(
+                                        "El producto de préstamo no es un cargo de compra",
                                         "El producto de préstamo no es un cargo de compra");
                             } else if (chargeInsuranceType.isCompra() && productEntity.isPurChaseCharge()) {
                                 amount = chargeInsuranceDetailData.getTotalValue();
                             }
                         }
                     } else {
-                        throw new ChargeNotFoundException("error.msg.charge.codigo.invalid", "Cobro con código seguro "+codigoSeguro +" no existe", codigoSeguro);
+                        throw new ChargeNotFoundException("error.msg.charge.codigo.invalid",
+                                "Cobro con código seguro " + codigoSeguro + " no existe", codigoSeguro);
                     }
                 }
             }
