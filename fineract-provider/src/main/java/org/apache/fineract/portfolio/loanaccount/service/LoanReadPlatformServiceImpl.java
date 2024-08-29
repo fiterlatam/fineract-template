@@ -3057,18 +3057,16 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public void exportLoanSchedulePDF(Long loanId, String scheduleType, HttpServletResponse httpServletResponse)
-            throws DocumentException, IOException {
+    public void exportLoanSchedulePDF(LoanAccountData loanBasicDetails, String scheduleType, LoanScheduleData repaymentSchedule,
+            HttpServletResponse httpServletResponse) throws DocumentException, IOException {
 
         boolean isRepaymentSchedule = scheduleType.equalsIgnoreCase("repayment");
-        final LoanAccountData loanBasicDetails = retrieveOne(loanId);
         final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
                 .retrieveClientAdditionalData(loanBasicDetails.getClientId());
         final String nit = loanAdditionalFieldsData.getNit();
         final String cedula = loanAdditionalFieldsData.getCedula();
         String clientFullName = loanBasicDetails.getClientName();
         String clientNit = Objects.toString(nit, cedula);
-        Collection<DisbursementData> disbursementData = retrieveLoanDisbursementDetails(loanId);
         LoanApplicationTimelineData timeline = loanBasicDetails.getTimeline();
         final LocalDate disbursementDate = timeline.getDisbursementDate() != null ? timeline.getActualDisbursementDate()
                 : timeline.getExpectedDisbursementDate();
@@ -3078,13 +3076,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         final String disbursementAmountString = Money.of(loanBasicDetails.getCurrency(), disbursementAmount).toString();
 
-        final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData = timeline.repaymentScheduleRelatedData(
-                loanBasicDetails.getCurrency(), loanBasicDetails.getPrincipal(), loanBasicDetails.getApprovedPrincipal(),
-                loanBasicDetails.getInArrearsTolerance(), loanBasicDetails.getFeeChargesAtDisbursementCharged());
         final Map<String, String> amortizationTypes = Map.of("Equal installments", "Pagos de cuotas iguales - Sistema Frances",
                 "Equal principal payments", "Pagos de capital iguales - Sistema Aleman", "Capital at end",
                 "Capital al final - Sistema Americano");
-        LoanScheduleData repaymentSchedule;
         String templateName;
         String fileType;
         String reportTitle;
@@ -3094,24 +3088,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             // get the second part of the hyphen . e.g Sistema Frances
             settlementSystem = amortizationType.substring(amortizationType.indexOf("-") + 1).trim();
         }
-        String interestRatePerPeriod = loanBasicDetails.getInterestRatePerPeriod().toString();
-        if (interestRatePerPeriod != null) {
-            // remove the decimal
-            interestRatePerPeriod = interestRatePerPeriod.substring(0, interestRatePerPeriod.indexOf("."));
-        }
-        // String loanRate = String.format("%s%% %s", interestRatePerPeriod,
-        // loanBasicDetails.getInterestRateFrequencyType().getValue());
+
         if (isRepaymentSchedule) {
-            repaymentSchedule = retrieveRepaymentSchedule(loanId, repaymentScheduleRelatedData, disbursementData,
-                    loanBasicDetails.isInterestRecalculationEnabled(),
-                    LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
             templateName = "LoanRepaymentScheduleReport";
             fileType = "Reported_calendario_de_pago";
             reportTitle = "Calendario de Pagos";
         } else {
-            repaymentSchedule = this.loanScheduleHistoryReadPlatformService.retrieveRepaymentArchiveSchedule(loanId,
-                    repaymentScheduleRelatedData, disbursementData,
-                    LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
             templateName = "LoanOriginalScheduleReport";
             reportTitle = "Calendario Original";
             fileType = "Reported_calendario_de_original";
