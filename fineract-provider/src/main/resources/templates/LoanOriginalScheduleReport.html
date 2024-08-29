@@ -118,9 +118,8 @@
         </tbody>
         <tfoot>
         <tr>
-            <td><strong>Total</strong></td>
+            <td colspan="2" style="text-align: left;"><strong>Total</strong></td>
             <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalPrincipalExpected, 1, 'POINT', 0, 'POINT')}"></td>
-            <td>&nbsp;</td>
             <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalInterestCharged, 1, 'POINT', 0, 'POINT')}"></td>
             <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalVoluntaryInsuranceCharged, 1, 'POINT', 0, 'POINT')}"></td>
             <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalMandatoryInsuranceCharged, 1, 'POINT', 0, 'POINT')}"></td>
