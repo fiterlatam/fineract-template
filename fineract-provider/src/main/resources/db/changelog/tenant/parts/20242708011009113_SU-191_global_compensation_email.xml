@@ -25,11 +25,11 @@
     <changeSet author="fineract" id="1">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">
-                SELECT COUNT(*) FROM c_configuration WHERE name = 'Compensation Alert Email'
+                SELECT COUNT(*) FROM c_configuration WHERE name = 'Correo Alerta por Compensacion'
             </sqlCheck>
         </preConditions>
         <insert tableName="c_configuration">
-            <column name="name" value="Compensation Alert Email"/>
+            <column name="name" value="Correo Alerta por Compensacion"/>
             <column name="value"/>
             <column name="date_value"/>
             <column name="string_value"/>
