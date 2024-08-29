@@ -2005,29 +2005,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             currentScheduleInstallment.getInterestCharged(currency).getAmount(), tillDays)));
                 }
             }
-            loan.recalculateAllCharges();
             writeOffTransaction = loan.writeOff(loanRepaymentScheduleInstallmentData, transactionDate, externalId);
-            currentScheduleInstallment.updateInterestCharged(interestToBeCharged.getAmount());
-            changedTransactionDetail = loan.processTransactions();
-            loan.updateLoanScheduleDependentDerivedFields();
-
-            for (final LoanRepaymentScheduleInstallment loanRepaymentInstallment : loan.getRepaymentScheduleInstallments()) {
-                Set<LoanInstallmentCharge> installmentCharges = new HashSet<>();
-                final Set<LoanCharge> activeLoanCharges = loan.getActiveCharges();
-                for (final LoanCharge loanCharge : activeLoanCharges) {
-                    if (loanCharge.isInstalmentFee()) {
-                        LoanInstallmentCharge installmentCharge = loanCharge
-                                .getInstallmentLoanCharge(loanRepaymentInstallment.getInstallmentNumber());
-                        if (installmentCharge != null) {
-                            installmentCharges.add(installmentCharge);
-                        }
-                    }
-                }
-                loanRepaymentInstallment.getInstallmentCharges().clear();
-                loanRepaymentInstallment.getInstallmentCharges().addAll(installmentCharges);
-                this.loanRepaymentScheduleInstallmentRepository.saveAndFlush(loanRepaymentInstallment);
+//            currentScheduleInstallment.updateInterestCharged(interestToBeCharged.getAmount());
+            final Money totalOutstandingAmount = specialWriteOffInstallment.getTotalOutstanding(currency);
+            final Money totalPaymentAmount = Money.of(currency, loanRepaymentScheduleInstallmentData.getTotalInstallmentAmount());
+            if(totalPaymentAmount.isEqualTo(totalOutstandingAmount)){
+                loan.updateLoanStatus(LoanStatus.CLOSED_WRITTEN_OFF);
             }
-            loan.recalculateAllCharges();
         }
         loan = writeOffTransaction.getLoan();
         saveRepaymentInstallmentsWithDataIntegrityViolationChecks(loan);
@@ -2056,6 +2040,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         loanAccountDomainService.setLoanDelinquencyTag(loan, DateUtils.getBusinessLocalDate());
         businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
         businessEventNotifierService.notifyPostBusinessEvent(new LoanWrittenOffPostBusinessEvent(writeOffTransaction));
+//        if(!loan.isChargedOff()){
+//            throw new GeneralPlatformDomainRuleException("error.msg.loan.already.charged.off", "Loan is already charged off");
+//        }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(writeOffTransaction.getId())
                 .withEntityExternalId(writeOffTransaction.getExternalId()).withOfficeId(loan.getOfficeId()).withClientId(loan.getClientId())
                 .withGroupId(loan.getGroupId()).withLoanId(loanId).with(changes).build();

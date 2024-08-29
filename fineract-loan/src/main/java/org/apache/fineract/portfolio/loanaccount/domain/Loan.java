@@ -4126,6 +4126,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 .determineProcessor(this.transactionProcessingStrategyCode);
         loanRepaymentScheduleTransactionProcessor.processLatestTransaction(loanTransaction,
                 new TransactionCtx(getCurrency(), repaymentInstallments, activeLoanCharges, overpaymentHolder));
+        updateLoanSummaryDerivedFields();
         return loanTransaction;
     }
 
@@ -7664,5 +7665,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
         this.valorDescuento = valorDescuento;
         this.valorGiro = this.getApprovedPrincipal().subtract(valorDescuento);
+    }
+
+    public void updateLoanStatus(LoanStatus loanStatus) {
+        this.loanStatus = loanStatus.getValue();
     }
 }
