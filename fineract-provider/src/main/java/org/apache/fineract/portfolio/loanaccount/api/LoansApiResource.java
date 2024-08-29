@@ -902,7 +902,25 @@ public class LoansApiResource {
             @PathParam("loanId") @Parameter(description = "loanId") final Long loanId, @QueryParam("scheduleType") String scheduleType)
             throws DocumentException, IOException {
         context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
-        this.loanReadPlatformService.exportLoanSchedulePDF(loanId, scheduleType, response);
+        boolean isRepaymentSchedule = scheduleType.equalsIgnoreCase("repayment");
+        LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(loanId);
+        LoanScheduleData repaymentSchedule = null;
+        Collection<DisbursementData> disbursementData = this.loanReadPlatformService.retrieveLoanDisbursementDetails(loanId);
+        ;
+        final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData = loanBasicDetails.getTimeline().repaymentScheduleRelatedData(
+                loanBasicDetails.getCurrency(), loanBasicDetails.getPrincipal(), loanBasicDetails.getApprovedPrincipal(),
+                loanBasicDetails.getInArrearsTolerance(), loanBasicDetails.getFeeChargesAtDisbursementCharged());
+        if (isRepaymentSchedule) {
+            repaymentSchedule = this.loanReadPlatformService.retrieveRepaymentSchedule(loanId, repaymentScheduleRelatedData,
+                    disbursementData, loanBasicDetails.isInterestRecalculationEnabled(),
+                    LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
+            this.calculationPlatformService.getFeeChargesDetail(repaymentSchedule, loanId);
+        } else {
+            repaymentSchedule = this.loanScheduleHistoryReadPlatformService.retrieveRepaymentArchiveSchedule(loanId,
+                    repaymentScheduleRelatedData, disbursementData,
+                    LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
+        }
+        this.loanReadPlatformService.exportLoanSchedulePDF(loanBasicDetails, scheduleType, repaymentSchedule, response);
     }
 
     @GET
