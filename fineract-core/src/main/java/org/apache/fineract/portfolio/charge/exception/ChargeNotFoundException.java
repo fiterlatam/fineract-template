@@ -30,4 +30,8 @@ public class ChargeNotFoundException extends AbstractPlatformResourceNotFoundExc
     public ChargeNotFoundException(Long id, EmptyResultDataAccessException e) {
         super("error.msg.charge.id.invalid", "Charge with identifier " + id + " does not exist", id, e);
     }
+
+    public ChargeNotFoundException(String errorCode, String errorMessage, Long parameter) {
+        super(errorCode, errorMessage, parameter);
+    }
 }
