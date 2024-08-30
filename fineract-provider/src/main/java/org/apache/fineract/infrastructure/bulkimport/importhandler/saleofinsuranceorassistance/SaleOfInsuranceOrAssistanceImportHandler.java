@@ -1,15 +1,12 @@
 package org.apache.fineract.infrastructure.bulkimport.importhandler.saleofinsuranceorassistance;
 
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import com.google.gson.JsonPrimitive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -112,7 +109,8 @@ public class SaleOfInsuranceOrAssistanceImportHandler implements ImportHandler {
                         .build(); //
                 commandsSourceWritePlatformService.logCommandSource(commandRequest);
                 successCount++;
-                Cell statusCell = saleOfInsuranceSheet.getRow(salesData.getRowIndex()).createCell(SaleOfInsuranceOrAssistanceConstants.STATUS_COL);
+                Cell statusCell = saleOfInsuranceSheet.getRow(salesData.getRowIndex())
+                        .createCell(SaleOfInsuranceOrAssistanceConstants.STATUS_COL);
                 statusCell.setCellValue(TemplatePopulateImportConstants.STATUS_CELL_IMPORTED);
                 statusCell.setCellStyle(ImportHandlerUtils.getCellStyle(workbook, IndexedColors.LIGHT_GREEN));
             } catch (RuntimeException ex) {
