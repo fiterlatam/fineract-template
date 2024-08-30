@@ -2579,7 +2579,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         updateLoanRepaymentPeriodsDerivedFields(actualDisbursementDate);
         handleDisbursementTransaction(actualDisbursementDate, paymentDetail);
         updateLoanSummaryDerivedFields();
-        final Money interestApplied = Money.of(getCurrency(), this.summary.getTotalInterestCharged());
 
         /**
          * Add an interest applied transaction of the interest is accrued upfront (Up front accrual), no accounting or
@@ -2589,9 +2588,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (((isMultiDisburmentLoan() && getDisbursedLoanDisbursementDetails().size() == 1) || !isMultiDisburmentLoan())
                 && isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
 
+            // according to SU-314 , rather than post the whole accrual , apply just the daily accruals
+            // from the disbursed date till cuurent date , apply the daily accruals
             LocalDate currentDate = DateUtils.getLocalDateOfTenant();
-            // according to SU-314 , rather than post the whole accural , apply just the daily accruals
-            applyDailyAccruals(currentDate);
+            for (LocalDate selectedDate = actualDisbursementDate; !selectedDate.isAfter(currentDate); selectedDate = selectedDate
+                    .plusDays(1)) {
+                applyDailyAccruals(selectedDate);
+            }
         }
 
         ChangedTransactionDetail result = reprocessTransactionForDisbursement();
@@ -2605,9 +2608,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public void applyDailyAccruals(LocalDate currentDate) {
         // validate to ensure that accrual has not been done for the date
 
-        ExternalId externalId = ExternalId.empty();
+        ExternalId externalIdentifier = ExternalId.empty();
         if (TemporaryConfigurationServiceContainer.isExternalIdAutoGenerationEnabled()) {
-            externalId = ExternalId.generate();
+            externalIdentifier = ExternalId.generate();
         }
 
         List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
@@ -2619,7 +2622,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             log.info("Applying daily interest for loan with id {} with amount {} converted to {} on date {} ", getId(), dailyInterest,
                     dailyInterestMoney, currentDate);
             LoanTransaction dailyAccrualTransaction = LoanTransaction.accrueInterest(getOffice(), this, dailyInterestMoney, currentDate,
-                    externalId);
+                    externalIdentifier);
             addLoanTransaction(dailyAccrualTransaction);
         }
 
