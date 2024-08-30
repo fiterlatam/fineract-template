@@ -1375,7 +1375,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         updateLoanScheduleDependentDerivedFields();
         updateLoanSummaryDerivedFields();
         applyAccurals();
-
     }
 
     private LoanRepaymentScheduleInstallment findByInstallmentNumber(Collection<LoanRepaymentScheduleInstallment> installments,
@@ -1481,7 +1480,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
-    private void updateLoanSummaryDerivedFields() {
+    public void updateLoanSummaryDerivedFields() {
 
         if (isNotDisbursed()) {
             this.summary.zeroFields();
@@ -1785,17 +1784,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         return actualChanges;
-    }
-
-    public void recalculateVoluntaryInsuranceCharges() {
-        Set<LoanCharge> charges = this.getActiveCharges();
-        int penaltyWaitPeriod = 0;
-        for (final LoanCharge loanCharge : charges) {
-            if (loanCharge.isCustomFlatDistributedCharge()) {
-                recalculateLoanCharge(loanCharge, penaltyWaitPeriod);
-            }
-        }
-        updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
     }
 
     public void recalculateAllCharges() {
@@ -4092,24 +4080,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return changedTransactionDetail;
     }
 
-    public LoanTransaction doLoanSpecialWriteOff(final JsonCommand command, final LocalDate writtenOffOnLocalDate,
-            final ExternalId externalId) {
-        final LoanRepaymentScheduleInstallment specialWriteOffInstallment = fetchLoanSpecialWriteOffDetail(writtenOffOnLocalDate);
-        final Money outstandingAmount = specialWriteOffInstallment.getTotalOutstanding(loanCurrency());
-        final LoanRepaymentScheduleInstallmentData loanRepaymentScheduleInstallmentData = validateSpecialWriteOffConcepts(command,
-                specialWriteOffInstallment);
-        final BigDecimal totalInstallmentAmount = loanRepaymentScheduleInstallmentData.getTotalInstallmentAmount();
-        final LoanStatus loanStatus = totalInstallmentAmount.compareTo(outstandingAmount.getAmount()) == 0 ? LoanStatus.CLOSED_WRITTEN_OFF
-                : LoanStatus.ACTIVE;
-        this.loanStatus = loanStatus.getValue();
-        final LoanTransaction writeOffTransaction = handleSpecialWriteOff(loanRepaymentScheduleInstallmentData, writtenOffOnLocalDate,
-                externalId);
-        addLoanTransaction(writeOffTransaction);
-        updateLoanSummaryDerivedFields();
-        return writeOffTransaction;
-    }
-
-    private LoanRepaymentScheduleInstallmentData validateSpecialWriteOffConcepts(final JsonCommand command,
+    public LoanRepaymentScheduleInstallmentData validateSpecialWriteOffConcepts(final JsonCommand command,
             final LoanRepaymentScheduleInstallment specialWriteOffInstallment) {
         final MonetaryCurrency currency = loanCurrency();
         final Money maximumPrincipalPortion = specialWriteOffInstallment.getPrincipalOutstanding(currency);
@@ -4170,49 +4141,25 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 .feeCharges(feeCharges.stream().toList()).totalInstallmentAmount(totalInstallmentAmount).build();
     }
 
-    private LoanTransaction handleSpecialWriteOff(final LoanRepaymentScheduleInstallmentData loanRepaymentScheduleInstallmentData,
+    public LoanTransaction writeOff(final LoanRepaymentScheduleInstallmentData loanRepaymentScheduleInstallmentData,
             final LocalDate writtenOffOnLocalDate, final ExternalId externalId) {
         final MonetaryCurrency currency = loanCurrency();
-        final List<LoanChargeData> feeChargesToBeWrittenOff = loanRepaymentScheduleInstallmentData.getFeeCharges();
-        final List<LoanChargeData> penaltyChargesToBeWrittenOff = loanRepaymentScheduleInstallmentData.getPenaltyCharges();
         final Money principalPortion = Money.of(currency, loanRepaymentScheduleInstallmentData.getPrincipalPortion());
         final Money interestPortion = Money.of(currency, loanRepaymentScheduleInstallmentData.getInterestPortion());
         final Money feeChargesPortion = Money.of(currency, loanRepaymentScheduleInstallmentData.getFeeChargesPortion());
         final Money penaltychargesPortion = Money.of(currency, loanRepaymentScheduleInstallmentData.getPenaltyChargesPortion());
         final LoanTransaction loanTransaction = LoanTransaction.writeoff(this, getOffice(), writtenOffOnLocalDate, externalId);
-        final List<LoanRepaymentScheduleInstallment> repaymentInstallments = getRepaymentScheduleInstallments();
-        Money remainingPrincipalPortion = principalPortion;
-        Money remainingInterestPortion = interestPortion;
-        for (final LoanRepaymentScheduleInstallment currentInstallment : repaymentInstallments) {
-            if (currentInstallment.isNotFullyPaidOff()) {
-                final Money totalFeeChargesToBeWrittenOff = Money.of(currency, feeChargesToBeWrittenOff.stream()
-                        .map(LoanChargeData::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add));
-                final Money totalPenaltyChargesToBeWrittenOff = Money.of(currency, penaltyChargesToBeWrittenOff.stream()
-                        .map(LoanChargeData::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add));
-                if (remainingPrincipalPortion.isGreaterThanZero()
-                        && currentInstallment.getPrincipalOutstanding(currency).isGreaterThanZero()) {
-                    remainingPrincipalPortion = currentInstallment.speciallyWriteOffOutstandingPrincipal(remainingPrincipalPortion,
-                            writtenOffOnLocalDate, currency);
-                }
-                if (remainingInterestPortion.isGreaterThanZero()
-                        && currentInstallment.getInterestOutstanding(currency).isGreaterThanZero()) {
-                    remainingInterestPortion = currentInstallment.speciallyWriteOffOutstandingInterest(remainingInterestPortion,
-                            writtenOffOnLocalDate, currency);
-                }
-                if (totalFeeChargesToBeWrittenOff.isGreaterThanZero()
-                        && currentInstallment.getFeeChargesOutstanding(currency).isGreaterThanZero()) {
-                    currentInstallment.speciallyWriteOffOutstandingFeeCharges(writtenOffOnLocalDate, currency, feeChargesToBeWrittenOff);
-                }
-                if (totalPenaltyChargesToBeWrittenOff.isGreaterThanZero()
-                        && currentInstallment.getPenaltyChargesOutstanding(currency).isGreaterThanZero()) {
-                    currentInstallment.speciallyWriteOffOutstandingPenaltyCharges(writtenOffOnLocalDate, currency,
-                            penaltyChargesToBeWrittenOff, getLoanCharges());
-                }
-                currentInstallment.reconcileInterestAndFeesCharges(currency, remainingInterestPortion, feeChargesToBeWrittenOff,
-                        writtenOffOnLocalDate);
-            }
-        }
+        loanTransaction.setSpecialWriteOff(true);
         loanTransaction.updateComponentsAndTotal(principalPortion, interestPortion, feeChargesPortion, penaltychargesPortion);
+        loanTransaction.updateLoan(this);
+        addLoanTransaction(loanTransaction);
+        final List<LoanRepaymentScheduleInstallment> repaymentInstallments = getRepaymentScheduleInstallments();
+        final Set<LoanCharge> activeLoanCharges = getActiveCharges();
+        final MoneyHolder overpaymentHolder = new MoneyHolder(getTotalOverpaidAsMoney());
+        final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
+                .determineProcessor(this.transactionProcessingStrategyCode);
+        loanRepaymentScheduleTransactionProcessor.processLatestTransaction(loanTransaction,
+                new TransactionCtx(getCurrency(), repaymentInstallments, activeLoanCharges, overpaymentHolder));
         return loanTransaction;
     }
 

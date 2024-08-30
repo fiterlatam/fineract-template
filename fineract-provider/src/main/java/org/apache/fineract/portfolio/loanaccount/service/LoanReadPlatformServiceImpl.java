@@ -3057,18 +3057,16 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public void exportLoanSchedulePDF(Long loanId, String scheduleType, HttpServletResponse httpServletResponse)
-            throws DocumentException, IOException {
+    public void exportLoanSchedulePDF(LoanAccountData loanBasicDetails, String scheduleType, LoanScheduleData repaymentSchedule,
+            HttpServletResponse httpServletResponse) throws DocumentException, IOException {
 
         boolean isRepaymentSchedule = scheduleType.equalsIgnoreCase("repayment");
-        final LoanAccountData loanBasicDetails = retrieveOne(loanId);
         final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
                 .retrieveClientAdditionalData(loanBasicDetails.getClientId());
         final String nit = loanAdditionalFieldsData.getNit();
         final String cedula = loanAdditionalFieldsData.getCedula();
         String clientFullName = loanBasicDetails.getClientName();
         String clientNit = Objects.toString(nit, cedula);
-        Collection<DisbursementData> disbursementData = retrieveLoanDisbursementDetails(loanId);
         LoanApplicationTimelineData timeline = loanBasicDetails.getTimeline();
         final LocalDate disbursementDate = timeline.getDisbursementDate() != null ? timeline.getActualDisbursementDate()
                 : timeline.getExpectedDisbursementDate();
@@ -3078,13 +3076,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         final String disbursementAmountString = Money.of(loanBasicDetails.getCurrency(), disbursementAmount).toString();
 
-        final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData = timeline.repaymentScheduleRelatedData(
-                loanBasicDetails.getCurrency(), loanBasicDetails.getPrincipal(), loanBasicDetails.getApprovedPrincipal(),
-                loanBasicDetails.getInArrearsTolerance(), loanBasicDetails.getFeeChargesAtDisbursementCharged());
         final Map<String, String> amortizationTypes = Map.of("Equal installments", "Pagos de cuotas iguales - Sistema Frances",
                 "Equal principal payments", "Pagos de capital iguales - Sistema Aleman", "Capital at end",
                 "Capital al final - Sistema Americano");
-        LoanScheduleData repaymentSchedule;
         String templateName;
         String fileType;
         String reportTitle;
@@ -3094,27 +3088,18 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             // get the second part of the hyphen . e.g Sistema Frances
             settlementSystem = amortizationType.substring(amortizationType.indexOf("-") + 1).trim();
         }
-        String interestRatePerPeriod = loanBasicDetails.getInterestRatePerPeriod().toString();
-        if (interestRatePerPeriod != null) {
-            // remove the decimal
-            interestRatePerPeriod = interestRatePerPeriod.substring(0, interestRatePerPeriod.indexOf("."));
-        }
-        String loanRate = String.format("%s%% %s", interestRatePerPeriod, loanBasicDetails.getInterestRateFrequencyType().getValue());
+
         if (isRepaymentSchedule) {
-            repaymentSchedule = retrieveRepaymentSchedule(loanId, repaymentScheduleRelatedData, disbursementData,
-                    loanBasicDetails.isInterestRecalculationEnabled(),
-                    LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
             templateName = "LoanRepaymentScheduleReport";
             fileType = "Reported_calendario_de_pago";
             reportTitle = "Calendario de Pagos";
         } else {
-            repaymentSchedule = this.loanScheduleHistoryReadPlatformService.retrieveRepaymentArchiveSchedule(loanId,
-                    repaymentScheduleRelatedData, disbursementData,
-                    LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
             templateName = "LoanOriginalScheduleReport";
-            reportTitle = "Calendario Original o";
+            reportTitle = "Calendario Original";
             fileType = "Reported_calendario_de_original";
         }
+        String loanRate = convertInterestRateToDailyRateAndMonthlyRate(loanBasicDetails.getInterestRatePerPeriod().doubleValue());
+
         final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy MMMM dd HH:mm:ss")
                 .withLocale(Locale.forLanguageTag("es-ES"));
         final String generatedOnDateTime = DateUtils.getLocalDateTimeOfTenant().format(dateTimeFormatter);
@@ -3175,5 +3160,32 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final LocalDate currentDate = DateUtils.getBusinessLocalDate();
 
         return this.jdbcTemplate.queryForList(query, Long.class, loanProductId, currentDate, currentDate, inactivityPeriod);
+    }
+
+    private String convertInterestRateToDailyRateAndMonthlyRate(double interestRate) {
+        // Convert the annual rate to a decimal form
+        double annualRateDecimal = interestRate / 100.0;
+
+        // Calculate the daily rate
+        double dailyRate = annualRateDecimal / 365 * 100.0; // Assuming 365 days in a year
+
+        // Calculate the monthly nominal rate
+        double monthlyNominalRate = annualRateDecimal / 12 * 100.0; // Corrected calculation
+
+        // Format the rates, removing decimal places for whole numbers
+        String formattedDailyRate = formatRate(dailyRate);
+        String formattedMonthlyRate = formatRate(monthlyNominalRate);
+
+        // Return in the format "Tasa pactada: % diario % mnv"
+        return String.format(" %s%% diario %s%% mnv", formattedDailyRate, formattedMonthlyRate);
+    }
+
+    // Helper method to format rates
+    private String formatRate(double rate) {
+        if (Math.abs(rate - Math.floor(rate)) < 0.000001) {
+            return String.format("%.0f", rate).replace(".", ",");
+        } else {
+            return String.format("%.2f", rate).replace(".", ",");
+        }
     }
 }
