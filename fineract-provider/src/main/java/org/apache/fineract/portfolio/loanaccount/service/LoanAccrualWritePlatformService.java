@@ -30,4 +30,5 @@ public interface LoanAccrualWritePlatformService {
             throws Exception;
 
     void addIncomeAndAccrualTransactions(Long loanId) throws Exception;
+
 }
