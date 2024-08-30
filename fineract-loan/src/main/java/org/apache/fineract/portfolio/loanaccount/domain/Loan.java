@@ -47,6 +47,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Predicate;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
@@ -137,6 +138,7 @@ import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDat
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.util.CollectionUtils;
 
+@Slf4j
 @Entity
 @Table(name = "m_loan", uniqueConstraints = { @UniqueConstraint(columnNames = { "account_no" }, name = "loan_account_no_UNIQUE"),
         @UniqueConstraint(columnNames = { "external_id" }, name = "loan_externalid_UNIQUE") })
@@ -2567,7 +2569,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public ChangedTransactionDetail disburse(final AppUser currentUser, final JsonCommand command, final Map<String, Object> actualChanges,
             final ScheduleGeneratorDTO scheduleGeneratorDTO, final PaymentDetail paymentDetail) {
-
         final LocalDate actualDisbursementDate = command.localDateValueOfParameterNamed(ACTUAL_DISBURSEMENT_DATE);
 
         this.disbursedBy = currentUser;
@@ -2599,14 +2600,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         if (((isMultiDisburmentLoan() && getDisbursedLoanDisbursementDetails().size() == 1) || !isMultiDisburmentLoan())
                 && isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
-            ExternalId externalId = ExternalId.empty();
-            if (TemporaryConfigurationServiceContainer.isExternalIdAutoGenerationEnabled()) {
-                externalId = ExternalId.generate();
-            }
-            // Farooq is  working
-//            final LoanTransaction interestAppliedTransaction = LoanTransaction.accrueInterest(getOffice(), this, interestApplied,
-//                    actualDisbursementDate, externalId);
-//            addLoanTransaction(interestAppliedTransaction);
+
+            LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+            // according to SU-314 , rather than post the whole accural , apply just the daily accruals
+            applyDailyAccruals(currentDate);
         }
 
         ChangedTransactionDetail result = reprocessTransactionForDisbursement();
@@ -2614,6 +2611,42 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         actualChanges.put(PARAM_STATUS, LoanEnumerations.status(this.loanStatus));
         return result;
 
+    }
+
+    // In the Loan class
+    public void applyDailyAccruals(LocalDate currentDate) {
+        // validate to ensure that accrual has not been done for the date
+
+        ExternalId externalId = ExternalId.empty();
+        if (TemporaryConfigurationServiceContainer.isExternalIdAutoGenerationEnabled()) {
+            externalId = ExternalId.generate();
+        }
+
+        List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
+
+        BigDecimal dailyInterest = calculateDailyInterestForDate(currentDate, installments);
+
+        if (dailyInterest.compareTo(BigDecimal.ZERO) > 0) {
+            Money dailyInterestMoney = Money.of(getCurrency(), dailyInterest);
+            log.info("Applying daily interest for loan with id {} with amount {} converted to {} on date {} ", getId(), dailyInterest,
+                    dailyInterestMoney, currentDate);
+            LoanTransaction dailyAccrualTransaction = LoanTransaction.accrueInterest(getOffice(), this, dailyInterestMoney, currentDate,
+                    externalId);
+            addLoanTransaction(dailyAccrualTransaction);
+        }
+
+    }
+
+    private BigDecimal calculateDailyInterestForDate(LocalDate date, List<LoanRepaymentScheduleInstallment> installments) {
+        for (LoanRepaymentScheduleInstallment installment : installments) {
+            if (!date.isBefore(installment.getFromDate()) && !date.isAfter(installment.getDueDate())) {
+                long daysInPeriod = ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()) + 1;
+                Money interestForInstallment = installment.getInterestCharged(getCurrency());
+                return interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2, RoundingMode.HALF_UP);
+
+            }
+        }
+        return BigDecimal.ZERO;
     }
 
     private void regenerateRepaymentScheduleWithInterestRecalculationIfNeeded(boolean interestRecalculationEnabledParam,
