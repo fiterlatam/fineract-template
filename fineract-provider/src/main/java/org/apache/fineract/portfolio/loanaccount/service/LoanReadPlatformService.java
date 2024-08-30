@@ -177,7 +177,8 @@ public interface LoanReadPlatformService {
 
     void exportLoanDisbursementPDF(Long loanId, HttpServletResponse httpServletResponse) throws IOException;
 
-    void exportLoanSchedulePDF(Long loanId, String scheduleType, HttpServletResponse httpServletResponse) throws IOException;
+    void exportLoanSchedulePDF(LoanAccountData loanBasicDetails, String scheduleType, LoanScheduleData repaymentSchedule,
+            HttpServletResponse httpServletResponse) throws IOException;
 
     Collection<Long> retrieveClientsWithLoansInActive(Long loanProductId, Integer inactivityPeriod);
 

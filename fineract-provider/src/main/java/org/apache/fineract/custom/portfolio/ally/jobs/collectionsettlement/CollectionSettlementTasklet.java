@@ -57,16 +57,32 @@ public class CollectionSettlementTasklet implements Tasklet {
                 period = LocalDate.parse(data.getLastJobsRun());
                 switch (freq) {
                     case "WEEKLY":
-                        period = period.plusWeeks(1);
+                        if (period.isBefore(now.minusWeeks(1))) {
+                            period = now;
+                        } else {
+                            period = period.plusWeeks(1);
+                        }
                     break;
                     case "BIWEEKLY":
-                        period = period.plusWeeks(2);
+                        if (period.isBefore(now.minusWeeks(2))) {
+                            period = now;
+                        } else {
+                            period = period.plusWeeks(2);
+                        }
                     break;
                     case "MONTHLY":
-                        period = period.plusMonths(1);
+                        if (period.isBefore(now.minusMonths(1))) {
+                            period = now;
+                        } else {
+                            period = period.plusMonths(1);
+                        }
                     break;
                     case "DAILY":
-                        period = period.plusDays(1);
+                        if (period.isBefore(now.minusDays(1))) {
+                            period = now;
+                        } else {
+                            period = period.plusDays(1);
+                        }
                     break;
                 }
             } else {

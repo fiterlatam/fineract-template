@@ -1111,7 +1111,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         if (lastChargeDate != null) {
             List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments();
             LoanRepaymentScheduleInstallment lastInstallment = loan.fetchRepaymentScheduleInstallment(installments.size());
-            if (DateUtils.isAfter(lastChargeDate, lastInstallment.getDueDate())) {
+            if (lastInstallment != null && DateUtils.isAfter(lastChargeDate, lastInstallment.getDueDate())) {
                 if (lastInstallment.isRecalculatedInterestComponent()) {
                     installments.remove(lastInstallment);
                     lastInstallment = loan.fetchRepaymentScheduleInstallment(installments.size());
