@@ -2451,11 +2451,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         return ObjectUtils.defaultIfNull(this.jdbcTemplate.queryForObject(sql, Integer.class, loanId), 0);
     }
 
-    @Override
-    public List<Loan> retrieveActiveLoans() {
-        return List.of();
-    }
-
     private static final class LoanTransactionDerivedComponentMapper implements RowMapper<LoanTransactionData> {
 
         private final DatabaseSpecificSQLGenerator sqlGenerator;
