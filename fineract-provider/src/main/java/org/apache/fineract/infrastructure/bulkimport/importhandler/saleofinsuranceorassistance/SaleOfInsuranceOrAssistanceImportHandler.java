@@ -22,6 +22,7 @@ import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandlerUtils;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Service;
 
@@ -78,7 +79,7 @@ public class SaleOfInsuranceOrAssistanceImportHandler implements ImportHandler {
         data.setTerm(term);
         data.setCedulaSeguroVoluntario(advisorId);
         data.setCodigoSeguro(insuranceCode);
-        data.setRequestedDate(LocalDate.now());
+        data.setRequestedDate(DateUtils.getLocalDateOfTenant());
         data.setChannelHash(channelHash);
         data.setRowIndex(row.getRowNum());
         data.setSaleOfInsuranceOrAssistance(true);
