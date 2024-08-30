@@ -185,6 +185,4 @@ public interface LoanReadPlatformService {
 
     Integer retrieveRediferidoNumberLast6Months(Long loanId);
 
-    List<Loan> retrieveActiveLoans();
-
 }
