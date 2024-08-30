@@ -3841,4 +3841,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
     }
 
+    @Override
+    public void persistDailyAccrual(LocalDate localDate) {
+        List<Loan> loans = loanRepository.findActiveLoansWithNotYetPostedAccrual(localDate);
+        loans.forEach(loan -> {
+            log.info("Persisting daily accrual for loan: {}", loan.getId());
+            loan.applyDailyAccruals(localDate);
+            loanRepository.saveAndFlush(loan);
+            log.info("Daily accrual persisted for loan: {}", loan.getId());
+
+        });
+    }
+
 }

@@ -268,6 +268,8 @@
     <include file="parts/20242604011009113_SU-190_add_compensation_table.xml" relativeToChangelogFile="true"/>
     <include file="parts/20242608011009111_SU_169_remove-not-null-constraint.xml" relativeToChangelogFile="true"/>
     <include file="parts/20242708011009113_SU-191-add_compensation_email.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20242708011009113_SU-314_daily_accrual_job.xml" relativeToChangelogFile="true"/>
+
     <include file="parts/20242604011009111_SU_118_special_write_off.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU-191_global_compensation_email.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
