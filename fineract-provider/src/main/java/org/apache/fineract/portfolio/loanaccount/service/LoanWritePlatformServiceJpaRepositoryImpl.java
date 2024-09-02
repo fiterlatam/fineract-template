@@ -144,6 +144,8 @@ import org.apache.fineract.portfolio.calendar.domain.CalendarInstanceRepository;
 import org.apache.fineract.portfolio.calendar.domain.CalendarRepository;
 import org.apache.fineract.portfolio.calendar.domain.CalendarType;
 import org.apache.fineract.portfolio.calendar.exception.CalendarParameterUpdateNotSupportedException;
+import org.apache.fineract.portfolio.charge.exception.ChargeNotFoundException;
+import org.apache.fineract.portfolio.charge.exception.LoanChargeNotFoundException;
 import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.domain.Client;
@@ -163,7 +165,7 @@ import org.apache.fineract.portfolio.insurance.exception.InsuranceIncidentNotFou
 import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.command.LoanUpdateCommand;
-import org.apache.fineract.portfolio.loanaccount.data.DefaultInsuranceInstallmentData;
+import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
@@ -3602,54 +3604,102 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     @Override
-    public void cancelDefaultInsuranceCharges(List<DefaultInsuranceInstallmentData> defaultInsuranceIds) {
+    public void cancelDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultInsuranceIds) {
         final LocalDate currentDate = DateUtils.getBusinessLocalDate();
         InsuranceIncident incident = this.insuranceIncidentRepository.findByIncidentType(InsuranceIncidentType.DEFINITIVE_CANCELLATION_DEFAULT);
         if (incident == null) {
             throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_CANCELLATION_DEFAULT.name());
         }
-        for (DefaultInsuranceInstallmentData data : defaultInsuranceIds) {
-            Optional<Loan> loanOptional = this.loanRepository.findById(data.loanId());
-            if (loanOptional.isPresent()) {
-                BigDecimal cumulative = BigDecimal.ZERO;
-                Loan loan = loanOptional.get();
+        for (DefaultOrCancelInsuranceInstallmentData data : defaultInsuranceIds) {
+            Loan loan = this.loanAssembler.assembleFrom(data.loanId());
+            LoanCharge loanCharge = null;
+            Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream().filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
+            if (loanChargeOptional.isPresent()) {
+                loanCharge = loanChargeOptional.get();
+            }
+            BigDecimal cumulative = BigDecimal.ZERO;
+            cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, data);
+            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, data.installment(), incident, currentDate, cumulative);
 
-                List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments().stream()
-                        .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
-                LoanCharge loanCharge = null;
-                Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream().filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
-                if (loanChargeOptional.isPresent()) {
-                    loanCharge = loanChargeOptional.get();
-                }
+            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+            saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+        }
+    }
 
-                for (LoanRepaymentScheduleInstallment installment : installments) {
-                    if (installment.getInstallmentNumber().compareTo(data.installment()) > -1) {
-                        for (LoanInstallmentCharge installmentCharge : installment.getInstallmentCharges()) {
-                            if (Objects.equals(installmentCharge.getLoanCharge().getId(), data.loanChargeId())) {
-                                if (installment.getInstallmentNumber().compareTo(data.installment()) == 0) {
-                                    installmentCharge.getLoanCharge().setDefaultFromInstallment(data.installment());
-                                    if (installmentCharge.getAmountPaid(loan.getCurrency()).isGreaterThanZero()) {
-                                        // First default installment could have partially paid amount
-                                        installmentCharge.getLoanCharge().
-                                                setPartialAmountPaidInFirstDefaultInstallment(installmentCharge.getAmountPaid(loan.getCurrency()).getAmount());
-                                    }
-                                }
-                                cumulative = cumulative.add(installmentCharge.getAmountOutstanding());
-                                installment.adjustFeeChargePortion(Money.of(loan.getCurrency(), installmentCharge.getAmountOutstanding()));
-                                installmentCharge.adjustChargeAmount(Money.of(loan.getCurrency(), installmentCharge.getAmountOutstanding()));
+    @Override
+    public CommandProcessingResult cancelInsurance(JsonCommand command, boolean isVoluntaryInsurance) {
+        this.loanEventApiJsonValidator.validateForInsuranceCancellation(command.json());
+        Long loanId = command.longValueOfParameterNamed("creditId");
+        Long insuranceCode = command.longValueOfParameterNamed("codigoSeguro");
+        LocalDate cancellationDate = command.localDateValueOfParameterNamed("date");
+
+        LoanCharge loanCharge = null;
+
+        Loan loan = this.loanAssembler.assembleFrom(loanId);
+
+        Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream().filter(lc -> lc.getCharge().getChargeInsuranceDetail() != null && Objects.equals(lc.getCharge().getChargeInsuranceDetail().getInsuranceCode(), insuranceCode)).findFirst();
+        if (loanChargeOptional.isPresent()) {
+            loanCharge = loanChargeOptional.get();
+        } else {
+         throw new LoanChargeNotFoundException("No se encontró cargo de préstamo contra identificación de crédito [" +loan.getId() + "]");
+        }
+
+        List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService.getLoanDataWithDefaultOrCancelInsurance(loanId, insuranceCode);
+
+        if (!cancelInsuranceInstallmentIds.isEmpty()) {
+            DefaultOrCancelInsuranceInstallmentData cancelInsuranceInstallmentData = cancelInsuranceInstallmentIds.get(0);
+            final LocalDate currentDate = DateUtils.getBusinessLocalDate();
+            InsuranceIncident incident = null;
+            if (isVoluntaryInsurance) {
+                incident = this.insuranceIncidentRepository.findByIncidentType(InsuranceIncidentType.DEFINITIVE_VOLUNTARY_CANCELLATION);
+            } else {
+                incident = this.insuranceIncidentRepository.findByIncidentType(InsuranceIncidentType.BAD_SALE_CANCELLATION);
+            }
+            if (incident == null) {
+                throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_CANCELLATION_DEFAULT.name());
+            }
+
+           BigDecimal cumulative = BigDecimal.ZERO;
+            cumulative = processInsuranceChargeCancellation(cumulative, loan,loanCharge, cancelInsuranceInstallmentData);
+
+            List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments().stream()
+                    .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
+
+            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, cancelInsuranceInstallmentData.installment(), incident, cancellationDate, cumulative);
+
+            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+            saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+
+        }
+
+        return new CommandProcessingResultBuilder().withEntityId(loan.getId()).build();
+
+    }
+
+    private BigDecimal processInsuranceChargeCancellation(BigDecimal cumulative, Loan loan, LoanCharge loanCharge, DefaultOrCancelInsuranceInstallmentData data) {
+        List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments().stream()
+                .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
+
+        for (LoanRepaymentScheduleInstallment installment : installments) {
+            if (installment.getInstallmentNumber().compareTo(data.installment()) > -1) {
+                for (LoanInstallmentCharge installmentCharge : installment.getInstallmentCharges()) {
+                    if (Objects.equals(installmentCharge.getLoanCharge().getId(), data.loanChargeId())) {
+                        if (installment.getInstallmentNumber().compareTo(data.installment()) == 0) {
+                            installmentCharge.getLoanCharge().setDefaultFromInstallment(data.installment());
+                            if (installmentCharge.getAmountPaid(loan.getCurrency()).isGreaterThanZero()) {
+                                // First default installment could have partially paid amount
+                                installmentCharge.getLoanCharge().
+                                        setPartialAmountPaidInFirstDefaultInstallment(installmentCharge.getAmountPaid(loan.getCurrency()).getAmount());
                             }
                         }
+                        cumulative = cumulative.add(installmentCharge.getAmountOutstanding());
+                        installment.adjustFeeChargePortion(Money.of(loan.getCurrency(), installmentCharge.getAmountOutstanding()));
+                        installmentCharge.adjustChargeAmount(Money.of(loan.getCurrency(), installmentCharge.getAmountOutstanding()));
                     }
                 }
-
-                InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, data.installment(), incident, currentDate, cumulative);
-
-                this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
-                saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
-
-                // Add details to a table to create news
             }
         }
+        return cumulative;
     }
 
 }

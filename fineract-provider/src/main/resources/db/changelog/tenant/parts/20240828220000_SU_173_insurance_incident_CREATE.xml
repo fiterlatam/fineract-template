@@ -46,6 +46,10 @@
                 <constraints nullable="false" />
             </column>
         </createTable>
+    
+	<addColumn tableName="m_insurance_incidents">
+        	<column name="incident_type" type="SMALLINT"/>
+	</addColumn>
     </changeSet>
 
     <changeSet author="fineract" id="2">
@@ -121,5 +125,92 @@
             <column name="is_mismatched_job" valueBoolean="true"/>
         </insert>
     </changeSet>
+
+    <changeSet author="fineract" id="7">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="CANCELINSURANCEBADSALE_LOAN"/>
+            <column name="entity_name" value="LOAN"/>
+            <column name="action_name" value="WRITE"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="CANCELVOLUNTARYINSURANCE_LOAN"/>
+            <column name="entity_name" value="LOAN"/>
+            <column name="action_name" value="WRITE"/>
+        </insert>
+	
+        <insert tableName="m_insurance_incidents">
+            <column name="name" value="Cancelación definitiva por mora"/>
+            <column name="is_mandatory" value="false"/>
+            <column name="is_voluntary" value="true"/>
+            <column name="created_on_utc" value="NOW()"/>
+            <column name="created_by" value="1"/>
+            <column name="last_modified_by" value="1"/>
+            <column name="last_modified_on_utc" value="NOW()"/>
+            <column name="incident_type" value="1"/>
+        </insert>
+        <insert tableName="m_insurance_incidents">
+            <column name="name" value="Cancelación voluntaria definitiva"/>
+            <column name="is_mandatory" value="false"/>
+            <column name="is_voluntary" value="true"/>
+            <column name="created_on_utc" value="NOW()"/>
+            <column name="created_by" value="1"/>
+            <column name="last_modified_by" value="1"/>
+            <column name="last_modified_on_utc" value="NOW()"/>
+            <column name="incident_type" value="2"/>
+        </insert>
+        <insert tableName="m_insurance_incidents">
+            <column name="name" value="Cancelación definitiva por cancelación del crédito"/>
+            <column name="is_mandatory" value="false"/>
+            <column name="is_voluntary" value="true"/>
+            <column name="created_on_utc" value="NOW()"/>
+            <column name="created_by" value="1"/>
+            <column name="last_modified_by" value="1"/>
+            <column name="last_modified_on_utc" value="NOW()"/>
+            <column name="incident_type" value="3"/>
+        </insert>
+        <insert tableName="m_insurance_incidents">
+            <column name="name" value="Cancelación definitiva por reclamación avaladora"/>
+            <column name="is_mandatory" value="false"/>
+            <column name="is_voluntary" value="true"/>
+            <column name="created_on_utc" value="NOW()"/>
+            <column name="created_by" value="1"/>
+            <column name="last_modified_by" value="1"/>
+            <column name="last_modified_on_utc" value="NOW()"/>
+            <column name="incident_type" value="4"/>
+        </insert>
+        <insert tableName="m_insurance_incidents">
+            <column name="name" value="Cancelación definitiva por rediferido/refinanciado"/>
+            <column name="is_mandatory" value="false"/>
+            <column name="is_voluntary" value="true"/>
+            <column name="created_on_utc" value="NOW()"/>
+            <column name="created_by" value="1"/>
+            <column name="last_modified_by" value="1"/>
+            <column name="last_modified_on_utc" value="NOW()"/>
+            <column name="incident_type" value="5"/>
+        </insert>
+        <insert tableName="m_insurance_incidents">
+            <column name="name" value="Cancelación por mala venta"/>
+            <column name="is_mandatory" value="false"/>
+            <column name="is_voluntary" value="true"/>
+            <column name="created_on_utc" value="NOW()"/>
+            <column name="created_by" value="1"/>
+            <column name="last_modified_by" value="1"/>
+            <column name="last_modified_on_utc" value="NOW()"/>
+            <column name="incident_type" value="6"/>
+        </insert>
+        <insert tableName="m_insurance_incidents">
+            <column name="name" value="Cancelación por castigo de cartera"/>
+            <column name="is_mandatory" value="false"/>
+            <column name="is_voluntary" value="true"/>
+            <column name="created_on_utc" value="NOW()"/>
+            <column name="created_by" value="1"/>
+            <column name="last_modified_by" value="1"/>
+            <column name="last_modified_on_utc" value="NOW()"/>
+            <column name="incident_type" value="7"/>
+        </insert>
+    </changeSet>
+
 
 </databaseChangeLog>

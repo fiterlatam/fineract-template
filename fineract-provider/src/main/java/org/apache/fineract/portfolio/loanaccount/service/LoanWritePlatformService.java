@@ -31,7 +31,7 @@ import org.apache.fineract.portfolio.calendar.domain.Calendar;
 import org.apache.fineract.portfolio.calendar.domain.CalendarInstance;
 import org.apache.fineract.portfolio.collectionsheet.command.CollectionSheetBulkDisbursalCommand;
 import org.apache.fineract.portfolio.collectionsheet.command.CollectionSheetBulkRepaymentCommand;
-import org.apache.fineract.portfolio.loanaccount.data.DefaultInsuranceInstallmentData;
+import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
@@ -125,5 +125,7 @@ public interface LoanWritePlatformService {
 
     void recalculateInterestRate(Loan loan);
 
-    void cancelDefaultInsuranceCharges(List<DefaultInsuranceInstallmentData> defaultLoanIds);
+    void cancelDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds);
+
+    CommandProcessingResult cancelInsurance(JsonCommand command, boolean isVoluntaryInsurance);
 }

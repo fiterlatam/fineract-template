@@ -20,8 +20,7 @@ package org.apache.fineract.portfolio.loanaccount.jobs.canceldefaultinsurancecha
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.fineract.portfolio.loanaccount.data.DefaultInsuranceInstallmentData;
-import org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler;
+import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.springframework.batch.core.StepContribution;
@@ -29,7 +28,6 @@ import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 
-import java.util.Collection;
 import java.util.List;
 
 @Slf4j
@@ -41,7 +39,7 @@ public class CancelDefaultInsuranceChargesTasklet implements Tasklet {
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-        List<DefaultInsuranceInstallmentData> defaultLoanIds = this.loanReadPlatformService.getLoanDataWithDefaultVoluntaryInsurance();
+        List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds = this.loanReadPlatformService.getLoanDataWithDefaultOrCancelInsurance(null, null);
         loanWritePlatformService.cancelDefaultInsuranceCharges(defaultLoanIds);
         return RepeatStatus.FINISHED;
     }

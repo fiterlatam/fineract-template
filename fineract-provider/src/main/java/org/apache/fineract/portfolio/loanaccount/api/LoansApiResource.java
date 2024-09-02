@@ -1402,4 +1402,38 @@ public class LoansApiResource {
         return this.toApiJsonSerializer.serialize(loanBlockingReasonData);
     }
 
+    @POST
+    @Path("cancelinsurance/voluntary")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Cancel Voluntary Insurance", description = "Cancel Voluntary Insurance")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
+    public String cancelVoluntaryInsurance(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
+                .cancelVoluntaryInsurance() //
+                .withJson(apiRequestBodyAsJson) //
+                .build(); //
+
+        final CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return toApiJsonSerializer.serialize(result);
+    }
+
+    @POST
+    @Path("cancelinsurance/badsale")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Cancel Insurance Due To Bad Sale", description = "Cancel Insurance Due To Bad Sale")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
+    public String cancelInsuranceBadSale(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
+                .cancelInsuranceDueToBadSale() //
+                .withJson(apiRequestBodyAsJson) //
+                .build(); //
+
+        final CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return toApiJsonSerializer.serialize(result);
+    }
+
 }

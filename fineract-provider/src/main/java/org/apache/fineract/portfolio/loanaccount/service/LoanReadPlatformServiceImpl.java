@@ -86,6 +86,7 @@ import org.apache.fineract.portfolio.calendar.domain.CalendarEntityType;
 import org.apache.fineract.portfolio.calendar.service.CalendarReadPlatformService;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
@@ -3059,7 +3060,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         return this.jdbcTemplate.queryForList(query, Long.class, loanProductId, currentDate, currentDate, inactivityPeriod);
     }
 
-    private static final class DefaultInsuranceMapper implements RowMapper<DefaultInsuranceInstallmentData> {
+    private static final class DefaultInsuranceMapper implements RowMapper<DefaultOrCancelInsuranceInstallmentData> {
 
         public String schema() {
             return """
@@ -3075,31 +3076,38 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         and mlc.amount_outstanding_derived > 0
                         and mlc.default_from_installment is null
                         and mlic.amount_outstanding_derived > 0
-                        and mlrs.duedate < CURRENT_DATE
-                        and mc.days_in_arrears is not null
-                        and mc.days_in_arrears > 0
-                        and CURRENT_DATE - mlrs.duedate > mc.days_in_arrears
-                        group by ml.id, mlc.id
-                        order by ml.id
                 """;
         }
 
         @Override
-        public DefaultInsuranceInstallmentData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
+        public DefaultOrCancelInsuranceInstallmentData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
             final Long loanId = JdbcSupport.getLong(rs, "loanId");
             final Integer installment = JdbcSupport.getInteger(rs,"installment");
             final Long loanChargeId = JdbcSupport.getLong(rs, "loanChargeId");
 
-            return new DefaultInsuranceInstallmentData(loanId, loanChargeId, installment);
+            return new DefaultOrCancelInsuranceInstallmentData(loanId, loanChargeId, installment);
         }
     }
 
     @Override
-    public List<DefaultInsuranceInstallmentData> getLoanDataWithDefaultVoluntaryInsurance() {
+    public List<DefaultOrCancelInsuranceInstallmentData> getLoanDataWithDefaultOrCancelInsurance(Long loanId, Long insuranceCode) {
 
         final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
         String sql = "SELECT " + rowMapper.schema();
-        Object[] params = new Object[] {};
+        Object[] params = null;
+        sql = sql + " and mc.charge_calculation_enum =  " + ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue();
+        if (loanId == null) {
+            sql = sql + " and mlrs.duedate < CURRENT_DATE " +
+                    "                        and mc.days_in_arrears is not null " +
+                    "                        and mc.days_in_arrears > 0 " +
+                    "                        and CURRENT_DATE - mlrs.duedate > mc.days_in_arrears ";
+            params = new Object[] {};
+        } else {
+            sql = sql + " and ml.id = ? and mc.insurance_code = ? ";
+            params = new Object[] {loanId, insuranceCode};
+        }
+        sql = sql + " group by ml.id, mlc.id order by ml.id";
+
 
         return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
     }

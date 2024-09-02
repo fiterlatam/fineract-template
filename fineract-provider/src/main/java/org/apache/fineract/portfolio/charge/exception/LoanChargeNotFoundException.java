@@ -51,4 +51,8 @@ public class LoanChargeNotFoundException extends AbstractPlatformResourceNotFoun
         super("error.msg.loanCharge.external.id.invalid", "Loan Charge with external identifier "
                 + ObjectUtils.defaultIfNull(externalId, ExternalId.empty()).getValue() + " does not exist", externalId);
     }
+
+    public LoanChargeNotFoundException(String errorMessage) {
+        super("error.msg.loanCharge.invalid", errorMessage);
+    }
 }
