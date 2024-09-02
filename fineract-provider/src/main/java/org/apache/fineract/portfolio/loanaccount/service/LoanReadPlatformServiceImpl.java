@@ -226,7 +226,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
             sqlBuilder.append(" where l.id=? and ( o.hierarchy like ? or transferToOffice.hierarchy like ?)");
 
-            return this.jdbcTemplate.queryForObject(sqlBuilder.toString(), rm, loanId, hierarchySearchString, hierarchySearchString);
+            List<LoanAccountData> results = this.jdbcTemplate.query(sqlBuilder.toString(), rm, loanId, hierarchySearchString,
+                    hierarchySearchString);
+            if (results.isEmpty()) {
+                throw new LoanNotFoundException(loanId);
+            }
+            return results.get(0);
         } catch (final EmptyResultDataAccessException e) {
             throw new LoanNotFoundException(loanId, e);
         }
