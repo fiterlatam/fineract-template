@@ -435,10 +435,11 @@ public class LoanAccountConfiguration {
             JdbcTemplate jdbcTemplate, PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             LoanRescheduleRequestReadPlatformService loanRescheduleRequestReadPlatformService,
             ClientReadPlatformService clientReadPlatformService, ChannelReadWritePlatformService channelReadWritePlatformService,
-            PlatformSecurityContext platformSecurityContext,
-            GlobalConfigurationRepository globalConfigurationRepository, LoanBlockWritePlatformService loanBlockWritePlatformService,
+            PlatformSecurityContext platformSecurityContext, GlobalConfigurationRepository globalConfigurationRepository,
+            LoanBlockWritePlatformService loanBlockWritePlatformService,
             BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepository, InsuranceIncidentRepository insuranceIncidentRepository,
-            InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository, LoanScheduleGeneratorFactory loanScheduleFactory) {
+            InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository,
+            LoanScheduleGeneratorFactory loanScheduleFactory) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,

@@ -3192,10 +3192,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             sql = sql + " and mlrs.duedate < CURRENT_DATE " + "                        and mc.days_in_arrears is not null "
                     + "                        and mc.days_in_arrears > 0 "
                     + "                        and CURRENT_DATE - mlrs.duedate > mc.days_in_arrears ";
-            params = new Object[]{};
+            params = new Object[] {};
         } else {
             sql = sql + " and ml.id = ? and mc.insurance_code = ? ";
-            params = new Object[]{loanId, insuranceCode};
+            params = new Object[] { loanId, insuranceCode };
         }
         sql = sql + " group by ml.id, mlc.id order by ml.id";
 
