@@ -62,7 +62,7 @@ public enum JobName {
     LOAN_CUSTOM_CHARGE_HONORARIO_UPDATE("Loans - Custom Charge Honorario Update"), //
     LIQUIDACION_DE_RECAUDOS("Liquidacion de Recaudos"), RECALCULATE_LOAN_INTEREST_AFTER_MAXIMUM_LEGAL_RATE_CHANGE(
             "Recalculate Loan Interest After Maximum Legal Rate Change"), LIQUIDACION_DE_COMPRAS("Liquidacion de Compras"), COMPENSATION(
-                    "Compensation"), COMPENSATION_ALERT_EMAIL("Compensation Alert Email"), DAILY_LOAN_ACCRUAL("Daily Loan Accrual"),;
+                    "Compensation"), COMPENSATION_ALERT_EMAIL("Compensation Alert Email"), DAILY_LOAN_ACCRUAL("Devengo de Interés diario"),;
 
     private final String name;
 
