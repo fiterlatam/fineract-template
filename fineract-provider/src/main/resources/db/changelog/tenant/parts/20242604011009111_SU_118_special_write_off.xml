@@ -43,4 +43,7 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet id="3" author="fineract">
+        <dropNotNullConstraint tableName="m_loan_repayment_schedule" columnName="loan_id" columnDataType="BIGINT"/>
+    </changeSet>
 </databaseChangeLog>
