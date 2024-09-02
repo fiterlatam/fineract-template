@@ -46,10 +46,6 @@
                 <constraints nullable="false" />
             </column>
         </createTable>
-
-    <addColumn tableName="m_insurance_incidents">
-            <column name="incident_type" type="SMALLINT"/>
-    </addColumn>
     </changeSet>
 
     <changeSet author="fineract" id="2">
