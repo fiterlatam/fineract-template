@@ -1019,6 +1019,11 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         checkIfRepaymentPeriodObligationsAreMet(getObligationsMetOnDate(), feeChargesDue.getCurrency());
     }
 
+    public void adjustFeeChargePortion(final Money feeChargesDue) {
+        this.feeChargesCharged = defaultToNullIfZero(this.feeChargesCharged.subtract(feeChargesDue.getAmount()));
+        checkIfRepaymentPeriodObligationsAreMet(getObligationsMetOnDate(), feeChargesDue.getCurrency());
+    }
+
     public void updateAccrualPortion(final Money interest, final Money feeCharges, final Money penalityCharges) {
         this.interestAccrued = defaultToNullIfZero(interest.getAmount());
         this.feeAccrued = defaultToNullIfZero(feeCharges.getAmount());

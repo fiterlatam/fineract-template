@@ -30,6 +30,7 @@ import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRu
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.portfolio.insurance.domain.InsuranceIncident;
 import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentRepository;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentType;
 import org.eclipse.persistence.exceptions.DatabaseException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -44,6 +45,7 @@ public class InsuranceIncidentWriteServiceImpl implements InsuranceIncidentWrite
     private final InsuranceIncidentReadService insuranceIncidentReadService;
     private static final String MANDATORY_FIELD = "isMandatory";
     private static final String VOLUNTARY_FIELD = "isVoluntary";
+    private static final String INCIDENT_TYPE_FIELD = "incidentType";
 
     @Override
     public CommandProcessingResult createInsuranceIncident(JsonCommand command) {
@@ -59,6 +61,14 @@ public class InsuranceIncidentWriteServiceImpl implements InsuranceIncidentWrite
         boolean isMandatory = command.booleanPrimitiveValueOfParameterNamed(MANDATORY_FIELD);
         // get value of is voluntary
         boolean isVoluntary = command.booleanPrimitiveValueOfParameterNamed(VOLUNTARY_FIELD);
+        Integer incidentTypeValue = command.integerValueOfParameterNamed(INCIDENT_TYPE_FIELD);
+
+        if (incidentTypeValue == null || incidentTypeValue.intValue() == 0) {
+            throw new GeneralPlatformDomainRuleException("error.msg.insurance.incident.type.required",
+                    "Insurance incident type is required");
+        }
+
+        InsuranceIncidentType incidentType = InsuranceIncidentType.fromInt(incidentTypeValue);
 
         // validate that at least one of isMandatory or isVoluntary is true
         if (!isMandatory && !isVoluntary) {
@@ -72,7 +82,12 @@ public class InsuranceIncidentWriteServiceImpl implements InsuranceIncidentWrite
                     "Insurance incident with name `" + name + "` already exists", "name", name);
         }
 
-        InsuranceIncident insuranceIncident = InsuranceIncident.instance(name, isMandatory, isVoluntary);
+        if (insuranceIncidentRepository.existsByIncidentType(incidentType)) {
+            throw new PlatformDataIntegrityException("error.msg.insurance.incident.duplicate.type",
+                    "Insurance incident with type `" + incidentType.getCode() + "` already exists", "type", incidentType.getCode());
+        }
+
+        InsuranceIncident insuranceIncident = InsuranceIncident.instance(name, isMandatory, isVoluntary, incidentType);
         try {
             InsuranceIncident savedInsuranceIncident = insuranceIncidentRepository.save(insuranceIncident);
             return CommandProcessingResult.commandOnlyResult(savedInsuranceIncident.getId());
@@ -96,6 +111,7 @@ public class InsuranceIncidentWriteServiceImpl implements InsuranceIncidentWrite
         Boolean isMandatory = command.booleanObjectValueOfParameterNamed("isMandatory");
         // get value of is voluntary if passed
         Boolean isVoluntary = command.booleanObjectValueOfParameterNamed("isVoluntary");
+        Integer incidentTypeValue = command.integerValueOfParameterNamed(INCIDENT_TYPE_FIELD);
 
         if (StringUtils.isNotBlank(name)) {
             if (!insuranceIncident.getName().equalsIgnoreCase(name) && insuranceIncidentRepository.existsByNameIgnoreCase(name)) {
@@ -117,6 +133,19 @@ public class InsuranceIncidentWriteServiceImpl implements InsuranceIncidentWrite
             throw new GeneralPlatformDomainRuleException("error.msg.insurance.incident.mandatory.or.voluntary.required",
                     "At least one of isMandatory or isVoluntary must be true", MANDATORY_FIELD, VOLUNTARY_FIELD);
         }
+
+        if (incidentTypeValue == null || incidentTypeValue.intValue() == 0) {
+            throw new GeneralPlatformDomainRuleException("error.msg.insurance.incident.type.required",
+                    "Insurance incident type is required");
+        }
+
+        InsuranceIncidentType incidentType = InsuranceIncidentType.fromInt(incidentTypeValue);
+        if (!insuranceIncident.getIncidentType().equals(incidentType) && insuranceIncidentRepository.existsByIncidentType(incidentType)) {
+            throw new PlatformDataIntegrityException("error.msg.insurance.incident.duplicate.type",
+                    "Insurance incident with type `" + incidentType.getCode() + "` already exists", "type", incidentType.getCode());
+        }
+
+        insuranceIncident.setIncidentType(incidentType);
 
         InsuranceIncident savedInsuranceIncident = insuranceIncidentRepository.save(insuranceIncident);
 

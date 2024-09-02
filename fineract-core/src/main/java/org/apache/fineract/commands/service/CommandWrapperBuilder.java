@@ -3999,4 +3999,20 @@ public class CommandWrapperBuilder {
         this.entityId = id;
         return this;
     }
+
+    public CommandWrapperBuilder cancelVoluntaryInsurance() {
+        this.actionName = "CANCELVOLUNTARYINSURANCE";
+        this.entityName = "LOAN";
+        this.entityId = null;
+        this.href = "/cancelinsurance/voluntary";
+        return this;
+    }
+
+    public CommandWrapperBuilder cancelInsuranceDueToBadSale() {
+        this.actionName = "CANCELINSURANCEBADSALE";
+        this.entityName = "LOAN";
+        this.entityId = null;
+        this.href = "/cancelinsurance/badsale";
+        return this;
+    }
 }

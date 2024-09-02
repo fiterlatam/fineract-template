@@ -86,6 +86,7 @@ import org.apache.fineract.portfolio.calendar.domain.CalendarEntityType;
 import org.apache.fineract.portfolio.calendar.service.CalendarReadPlatformService;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
@@ -107,23 +108,7 @@ import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.data.GroupRoleData;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
-import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanApplicationTimelineData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanAssignorData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanInterestRecalculationData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanStatusEnumData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanSummaryData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionRelationData;
-import org.apache.fineract.portfolio.loanaccount.data.PaidInAdvanceData;
-import org.apache.fineract.portfolio.loanaccount.data.RepaymentScheduleRelatedLoanData;
-import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
+import org.apache.fineract.portfolio.loanaccount.data.*;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
@@ -3165,6 +3150,56 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final LocalDate currentDate = DateUtils.getBusinessLocalDate();
 
         return this.jdbcTemplate.queryForList(query, Long.class, loanProductId, currentDate, currentDate, inactivityPeriod);
+    }
+
+    private static final class DefaultInsuranceMapper implements RowMapper<DefaultOrCancelInsuranceInstallmentData> {
+
+        public String schema() {
+            return """
+                    ml.id loanId, min(mlrs.installment) installment, mlc.id loanChargeId
+                        from
+                            m_loan ml
+                            join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id and mlrs.completed_derived = false
+                            join m_loan_charge mlc on mlc.loan_id = ml.id and mlc.charge_calculation_enum = 1034
+                             join m_loan_installment_charge mlic on mlic.loan_charge_id = mlc.id and mlic.loan_schedule_id = mlrs.id
+                             join m_charge mc on mc.id = mlc.charge_id
+                        where
+                            ml.loan_status_id = 300
+                            and mlc.amount_outstanding_derived > 0
+                            and mlc.default_from_installment is null
+                            and mlic.amount_outstanding_derived > 0
+                    """;
+        }
+
+        @Override
+        public DefaultOrCancelInsuranceInstallmentData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
+            final Long loanId = JdbcSupport.getLong(rs, "loanId");
+            final Integer installment = JdbcSupport.getInteger(rs, "installment");
+            final Long loanChargeId = JdbcSupport.getLong(rs, "loanChargeId");
+
+            return new DefaultOrCancelInsuranceInstallmentData(loanId, loanChargeId, installment);
+        }
+    }
+
+    @Override
+    public List<DefaultOrCancelInsuranceInstallmentData> getLoanDataWithDefaultOrCancelInsurance(Long loanId, Long insuranceCode) {
+
+        final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
+        String sql = "SELECT " + rowMapper.schema();
+        Object[] params = null;
+        sql = sql + " and mc.charge_calculation_enum =  " + ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue();
+        if (loanId == null) {
+            sql = sql + " and mlrs.duedate < CURRENT_DATE " + "                        and mc.days_in_arrears is not null "
+                    + "                        and mc.days_in_arrears > 0 "
+                    + "                        and CURRENT_DATE - mlrs.duedate > mc.days_in_arrears ";
+            params = new Object[] {};
+        } else {
+            sql = sql + " and ml.id = ? and mc.insurance_code = ? ";
+            params = new Object[] { loanId, insuranceCode };
+        }
+        sql = sql + " group by ml.id, mlc.id order by ml.id";
+
+        return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
     }
 
     private String convertInterestRateToDailyRateAndMonthlyRate(double interestRate) {

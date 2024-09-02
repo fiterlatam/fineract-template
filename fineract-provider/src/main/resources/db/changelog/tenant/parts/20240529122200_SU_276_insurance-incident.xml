@@ -96,6 +96,11 @@
             <column name="can_maker_checker" valueBoolean="false"/>
         </insert>
     </changeSet>
+    <changeSet author="fineract" id="4">
+        <addColumn tableName="m_insurance_incidents">
+            <column name="incident_type" type="SMALLINT"/>
+        </addColumn>
+    </changeSet>
 
 
 </databaseChangeLog>
