@@ -122,4 +122,6 @@ public interface LoanWritePlatformService {
     void recalculateInterestForMaximumLegalRate() throws JobExecutionException;
 
     void recalculateInterestRate(Loan loan);
+
+    void persistDailyAccrual(LocalDate localDate);
 }
