@@ -125,6 +125,8 @@ public interface LoanWritePlatformService {
 
     void recalculateInterestRate(Loan loan);
 
+    void persistDailyAccrual(LocalDate localDate);
+
     void cancelDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds);
 
     CommandProcessingResult cancelInsurance(JsonCommand command, boolean isVoluntaryInsurance);

@@ -48,6 +48,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.data.ChargeInsuranceDetailData;
 import org.apache.fineract.portfolio.charge.domain.ChargeInsuranceType;
+import org.apache.fineract.portfolio.charge.exception.ChargeNotFoundException;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepository;
@@ -105,10 +106,12 @@ public class ClientBuyProcessDataValidator {
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
                 .resource(ClientBuyProcessApiConstants.RESOURCE_NAME);
 
-        boolean isSaleOfInsuranceOrAssistance = false;
+        boolean isSaleOfInsuranceOrAssistance;
         if (this.fromApiJsonHelper.parameterExists(ClientBuyProcessApiConstants.isSaleOfInsruanceOrAssistanceParamName, element)) {
             isSaleOfInsuranceOrAssistance = this.fromApiJsonHelper
                     .extractBooleanNamed(ClientBuyProcessApiConstants.isSaleOfInsruanceOrAssistanceParamName, element);
+        } else {
+            isSaleOfInsuranceOrAssistance = false;
         }
 
         Long clientId = 0L;
@@ -140,7 +143,10 @@ public class ClientBuyProcessDataValidator {
         } else {
             baseDataValidator.reset().parameter(ClientBuyProcessApiConstants.clientDocumentIdParamName).value(null).notNull();
         }
-
+        if (client == null) {
+            baseDataValidator.reset().parameter("Cédula del cliente").failWithCode("Cédula del cliente no válido",
+                    "Cédula del cliente no válido.");
+        }
         Long pointOfSalesId = 0L;
         String pointOfSalesCode;
         if (this.fromApiJsonHelper.parameterExists(ClientBuyProcessApiConstants.pointOfSalesCodeParamName, element)) {
@@ -231,15 +237,20 @@ public class ClientBuyProcessDataValidator {
                                             ? chargeInsuranceDetailData.getInsuranceChargedAs().intValue()
                                             : 0);
                             if (chargeInsuranceType.isCargo() || !productEntity.isPurChaseCharge()) {
-                                baseDataValidator.reset().parameter("loanProductCharge").failWithCode("loan.product.charge.is.cargo",
+                                baseDataValidator.reset().parameter("loanProductCharge").failWithCode(
+                                        "El tipo de cargo del producto de préstamo es carga.",
                                         "El tipo de cargo del producto de préstamo es carga.");
                             } else if (!productEntity.isPurChaseCharge()) {
-                                baseDataValidator.reset().parameter("loanProduct").failWithCode("loan.product.is.not.purchase.charge",
+                                baseDataValidator.reset().parameter("loanProduct").failWithCode(
+                                        "El producto de préstamo no es un cargo de compra",
                                         "El producto de préstamo no es un cargo de compra");
                             } else if (chargeInsuranceType.isCompra() && productEntity.isPurChaseCharge()) {
                                 amount = chargeInsuranceDetailData.getTotalValue();
                             }
                         }
+                    } else {
+                        throw new ChargeNotFoundException("error.msg.charge.codigo.invalid",
+                                "Cobro con código seguro " + codigoSeguro + " no existe", codigoSeguro);
                     }
                 }
             }
@@ -260,7 +271,11 @@ public class ClientBuyProcessDataValidator {
                 // Add validation messages to the API Requester
                 LinkedHashMap<String, String> errorMessageHM = ret.getErrorMessageHM();
                 errorMessageHM.forEach((key, value) -> {
-                    baseDataValidator.reset().parameter(key).failWithCode("second.level.validation", value);
+                    if (!isSaleOfInsuranceOrAssistance) {
+                        baseDataValidator.reset().parameter(key).failWithCode("second.level.validation", value);
+                    } else {
+                        baseDataValidator.reset().parameter(key).failWithCode(value, value);
+                    }
                 });
 
                 // Concatenate errorMessage to persist in the database and set status to 403

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <title>Reporte de Prestamo Desembolso</title>
+    <style>
+        .report-box {
+            width: auto; /* Adjusted to full width */
+            max-width: 2000px; /* Max width for larger screens */
+            margin: auto;
+            padding: 20px; /* Reduced padding */
+            border: 1px solid #eee;
+            box-shadow: 0 0 10px rgba(0, 0, 0, .15);
+            font-size: 16px; /* Adjusted font size */
+            line-height: 24px; /* Adjusted line height */
+            font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+            color: #555;
+        }
+
+        .logo {
+            width: 150px;
+            height: auto;
+            margin: 0 auto; /* Center the logo */
+            display: block;
+        }
+
+        .generation {
+            padding-top: 20px;
+            text-align: right;
+            font-size: 12px;
+        }
+
+        table {
+            width: auto; /* Allow table to auto-fit content */
+            border-collapse: collapse;
+            font-size: 11px; /* Adjusted font size */
+            table-layout: fixed; /* Ensure fixed layout */
+        }
+
+        th, td {
+            padding: 4px; /* Slight reduction in padding */
+            border: 1px solid #ddd;
+            word-wrap: break-word; /* Word wrapping */
+            text-align: right; /* Right-align numeric values */
+        }
+
+        th {
+            background-color: #f2f2f2;
+            border-bottom: 2px solid #000;
+            text-align: center; /* Center-align headers for uniformity */
+        }
+
+        tfoot td {
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+<div class="report-box">
+    <img th:src="@{classpath:templates/images/image-logo-1.png}" alt="Logo" class="logo"/>
+    <div style="text-align: center; font-weight: bold;">
+        <h2>Intercrédito de Colombia S.A.S</h2>
+        <h2>NIT: 800139398-6</h2>
+        <h3 th:text="${reportTitle}"></h3>
+    </div>
+    <hr/>
+    <p>Cliente: <span th:text="${clientFullName}"></span></p>
+    <p>Numero de Identificación: <span th:text="${clientNit}"></span></p>
+    <p>Fecha de Financiación: <span th:text="${disbursementDate}"></span></p>
+    <p>Monto financiado: <span th:text="${disbursementAmount}"></span></p>
+    <p>Tasa pactada: <span th:text="${loanRate}"> </span></p>
+    <p>Sistema de Liquidación: <span th:text="${settlementSystem}"> Frances/Aleman o Americano.</span></p>
+    <p>Perioricidad: <span>Mensual</span></p>
+    <br/>
+    <div class="generation">
+        <p>Generado por <b><span th:text="${generatedByUsername}"></span></b> el <b><span th:text="${generatedOnDateTime}"></span></b></p>
+    </div>
+
+    <div>
+        Detalle del plan de pagos:
+    </div>
+
+
+</div>
+<div style="width:auto; margin: 0 auto;">
+    <table>
+        <thead>
+        <tr>
+            <th colspan="2">Monto y saldo del Crédito</th>
+            <th>Costo total del Crédito</th>
+            <th colspan="7">Totales de cuotas</th>
+        </tr>
+        <tr>
+            <th>Fecha</th>
+            <th>Fecha de pago</th>
+            <th>Saldo del Crédito</th>
+            <th>Principal vencido</th>
+            <th>Interés</th>
+            <th>Seguro Voluntario/Asistencia</th>
+            <th>Seguro Obligatorio</th>
+            <th>Aval</th>
+            <th>Honorarios</th>
+            <th>Penalizaciones</th>
+            <th>Pendiente</th>
+            <th>Pagado</th>
+            <th>Por adelantado</th>
+            <th>Tarde</th>
+            <th>Pendiente</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="ele : ${originalScheduleDetails.periods}">
+            <td th:text="${ele.dueDate != null ? #temporals.format(ele.dueDate, 'dd MMMM yyyy') : ''}"></td>
+            <td th:text="${ele.obligationsMetOnDate != null ? #temporals.format(ele.obligationsMetOnDate, 'dd MMMM yyyy') : ''}"></td>
+            <td th:text="${#numbers.formatDecimal(ele.principalLoanBalanceOutstanding, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(ele.principalDue, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(ele.interestOriginalDue, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(ele.voluntaryInsuranceDue, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(ele.mandatoryInsuranceDue, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(ele.avalDue, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(ele.honorariosDue, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(ele.penaltyChargesDue, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(ele.totalDueForPeriod, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(ele.totalPaidForPeriod, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(ele.totalPaidInAdvanceForPeriod, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(ele.totalPaidLateForPeriod, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(ele.totalOutstandingForPeriod, 1, 'POINT', 0, 'POINT')}"></td>
+        </tr>
+        </tbody>
+        <tfoot>
+        <tr>
+            <td colspan="3"><strong>Total</strong></td>
+            <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalPrincipalExpected, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalInterestCharged, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalVoluntaryInsuranceCharged, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalMandatoryInsuranceCharged, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalAvalCharged, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalHonorariosCharged, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalPenaltyChargesCharged, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalRepaymentExpected, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalPaidInAdvance, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalPaidLate, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalWaived, 1, 'POINT', 0, 'POINT')}"></td>
+            <td colspan="2" th:text="${#numbers.formatDecimal(originalScheduleDetails.totalOutstanding, 1, 'POINT', 0, 'POINT')}"></td>
+        </tr>
+        </tfoot>
+    </table>
+</div>
+
+</body>
+</html>

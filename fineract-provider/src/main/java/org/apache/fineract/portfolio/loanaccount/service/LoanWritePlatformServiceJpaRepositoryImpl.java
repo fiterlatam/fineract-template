@@ -26,11 +26,23 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -166,6 +178,7 @@ import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.command.LoanUpdateCommand;
 import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
+import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.*;
@@ -182,6 +195,9 @@ import org.apache.fineract.portfolio.loanaccount.exception.LoanTransactionNotFou
 import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementDataNotAllowedException;
 import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementDataRequiredException;
 import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorDomainService;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModelPeriod;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
@@ -259,7 +275,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final LoanRepository loanRepository;
     private final RepaymentWithPostDatedChecksAssembler repaymentWithPostDatedChecksAssembler;
     private final PostDatedChecksRepository postDatedChecksRepository;
-    private final LoanDisbursementDetailsRepository loanDisbursementDetailsRepository;
     private final LoanRepaymentScheduleInstallmentRepository loanRepaymentScheduleInstallmentRepository;
     private final LoanLifecycleStateMachine defaultLoanLifecycleStateMachine;
     private final LoanAccountLockService loanAccountLockService;
@@ -280,6 +295,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepository;
     private final InsuranceIncidentRepository insuranceIncidentRepository;
     private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
+    private final LoanScheduleGeneratorFactory loanScheduleFactory;
 
     @PostConstruct
     public void registerForNotification() {
@@ -752,6 +768,23 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         dataValidationErrors, e);
             }
             throw e;
+        }
+    }
+
+    private void saveAndFlushLoanWithIntegrityChecks(final Loan loan) {
+        try {
+            this.loanRepositoryWrapper.saveAndFlush(loan);
+        } catch (final JpaSystemException | DataIntegrityViolationException e) {
+            final Throwable realCause = e.getCause();
+            final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+            final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan.transaction");
+            if (realCause.getMessage().toLowerCase().contains("external_id_unique")) {
+                baseDataValidator.reset().parameter(LoanApiConstants.externalIdParameterName).failWithCode("value.must.be.unique");
+            }
+            if (!dataValidationErrors.isEmpty()) {
+                throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
+                        dataValidationErrors, e);
+            }
         }
     }
 
@@ -1288,6 +1321,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final String defaultUserMessage = "The loan cannot reopened as it is foreclosed.";
             throw new LoanForeclosureException("loan.cannot.be.reopened.as.it.is.foreclosured", defaultUserMessage, loanId);
         }
+
         checkClientOrGroupActive(loan);
 
         checkIfProductAllowsCancelationOrReversal(loan);
@@ -1306,6 +1340,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (transactionToAdjust.hasChargebackLoanTransactionRelations()) {
             throw new PlatformServiceUnavailableException("error.msg.loan.transaction.update.not.allowed",
                     "Loan transaction:" + transactionId + " update not allowed as loan transaction is linked to other transactions",
+                    transactionId);
+        }
+
+        if (transactionToAdjust.isSpecialWriteOff()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.transaction.update.not.allowed",
+                    "Loan transaction:" + transactionId + " update not allowed as loan transaction is a special write off transaction",
                     transactionId);
         }
 
@@ -1814,7 +1854,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             externalId = ExternalId.generate();
         }
         changes.put("externalId", externalId);
-        final ChangedTransactionDetail changedTransactionDetail = loan.validateSpecialWrittenOff(command, changes, existingTransactionIds,
+        ChangedTransactionDetail changedTransactionDetail = loan.validateSpecialWrittenOff(command, changes, existingTransactionIds,
                 existingReversedTransactionIds, scheduleGeneratorDTO);
         final String noteText = command.stringValueOfParameterNamed("note");
         final boolean isImportedTransaction = command.booleanPrimitiveValueOfParameterNamed("isImportedTransaction");
@@ -1826,12 +1866,173 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final String chargeRefundChargeType = null;
             final boolean isAccountTransfer = false;
             final HolidayDetailDTO holidayDetailDto = null;
-            boolean isHolidayValidationDone = false;
+            final boolean isHolidayValidationDone = false;
             writeOffTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.WRITEOFF, loan, transactionDate,
                     totalWriteOffAmount, paymentDetail, noteText, externalId, isRecoveryRepayment, chargeRefundChargeType,
                     isAccountTransfer, holidayDetailDto, isHolidayValidationDone);
         } else {
-            writeOffTransaction = loan.doLoanSpecialWriteOff(command, transactionDate, externalId);
+            final MonetaryCurrency currency = loan.getCurrency();
+            final LoanRepaymentScheduleInstallment specialWriteOffInstallment = loan.fetchLoanSpecialWriteOffDetail(transactionDate);
+            final LoanRepaymentScheduleInstallmentData loanRepaymentScheduleInstallmentData = loan.validateSpecialWriteOffConcepts(command,
+                    specialWriteOffInstallment);
+            final BigDecimal principalToBeWrittenOff = loanRepaymentScheduleInstallmentData.getPrincipalPortion();
+            final Money remainingPrincipalPortion = specialWriteOffInstallment.getPrincipalOutstanding(currency)
+                    .minus(principalToBeWrittenOff);
+            final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
+            final LoanRepaymentScheduleInstallment currentScheduleInstallment = fetchRepaymentInstallmentByWrittenOfDate(transactionDate,
+                    repaymentScheduleInstallments);
+
+            Money interestToBeChargedAndWrittenOff = currentScheduleInstallment.getInterestCharged(currency);
+            if (remainingPrincipalPortion.isGreaterThanZero()
+                    && specialWriteOffInstallment.getPrincipalOutstanding(currency).isGreaterThanZero()) {
+                final Integer currentInstallmentNumber = currentScheduleInstallment.getInstallmentNumber();
+                Money unpaidPrincipalUptoCurrentInstallment = Money.zero(currency);
+                for (final LoanRepaymentScheduleInstallment repaymentScheduleInstallment : loan.getRepaymentScheduleInstallments()) {
+                    if (repaymentScheduleInstallment.getInstallmentNumber() <= currentInstallmentNumber) {
+                        final Money outstandingPrincipalAmount = repaymentScheduleInstallment.getPrincipalOutstanding(currency);
+                        unpaidPrincipalUptoCurrentInstallment = unpaidPrincipalUptoCurrentInstallment.plus(outstandingPrincipalAmount);
+                    }
+                }
+                if (Money.of(currency, principalToBeWrittenOff).isGreaterThan(unpaidPrincipalUptoCurrentInstallment)) {
+                    final LoanApplicationTerms loanApplicationTerms = loan.constructLoanApplicationTerms(scheduleGeneratorDTO);
+                    final LoanScheduleGenerator loanScheduleGenerator = this.loanScheduleFactory
+                            .create(loanApplicationTerms.getLoanScheduleType(), loanApplicationTerms.getInterestMethod());
+                    final Set<LoanCharge> loanCharges = loan.getActiveCharges();
+                    final HolidayDetailDTO holidayDetailDTO = loanApplicationTerms.getHolidayDetailDTO();
+                    final MathContext mc = MoneyHelper.getMathContext();
+                    final Integer numberOfRepayments = loanApplicationTerms.getNumberOfRepayments();
+                    if (currentInstallmentNumber < numberOfRepayments) {
+                        final LoanRepaymentScheduleInstallment nextRescheduleInstallment = repaymentScheduleInstallments
+                                .get(currentInstallmentNumber);
+                        int totalPeriodDays = Math.toIntExact(
+                                ChronoUnit.DAYS.between(currentScheduleInstallment.getFromDate(), currentScheduleInstallment.getDueDate()));
+                        int currentTillDays = Math
+                                .toIntExact(ChronoUnit.DAYS.between(currentScheduleInstallment.getFromDate(), transactionDate));
+                        int futureTillDays = Math
+                                .toIntExact(ChronoUnit.DAYS.between(transactionDate, currentScheduleInstallment.getDueDate()));
+                        final Money interestForCurrentPeriod = Money.of(currency,
+                                BigDecimal.valueOf(loan.calculateInterestForDays(totalPeriodDays,
+                                        currentScheduleInstallment.getInterestCharged(currency).getAmount(), currentTillDays)));
+                        final Money fixedEmiAmount = nextRescheduleInstallment.getInterestCharged(currency)
+                                .plus(nextRescheduleInstallment.getPrincipal(currency));
+                        Integer writeOffNumberOfRepayments = numberOfRepayments - currentInstallmentNumber + 1;
+                        loanApplicationTerms.updateLoanTermVariations(new ArrayList<>());
+                        loanApplicationTerms.updateNumberOfRepayments(writeOffNumberOfRepayments);
+                        loanApplicationTerms.updateLoanTermFrequency(writeOffNumberOfRepayments);
+                        loanApplicationTerms.setPrincipal(remainingPrincipalPortion);
+                        loanApplicationTerms.updateApprovedPrincipal(remainingPrincipalPortion);
+                        loanApplicationTerms.updateInterestChargedFromDate(transactionDate);
+                        loanApplicationTerms.updateExpectedDisbursementDate(transactionDate);
+                        loanApplicationTerms.updateCalculatedRepaymentsStartingFromDate(currentScheduleInstallment.getDueDate());
+                        loanApplicationTerms.updateRepaymentsStartingFromDate(currentScheduleInstallment.getDueDate());
+                        loanApplicationTerms.setFixedEmiAmount(fixedEmiAmount.getAmount());
+
+                        LoanScheduleModel loanScheduleModel = loanScheduleGenerator.generate(mc, loanApplicationTerms, loanCharges,
+                                holidayDetailDTO);
+                        final LoanScheduleModelPeriod midScheduleInstallment = loanScheduleModel.getPeriods().stream()
+                                .filter(period -> period.isRepaymentPeriod() || period.isDownPaymentPeriod()).findFirst()
+                                .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.schedule.period.not.found",
+                                        "Loan schedule period not found"));
+                        final Money midInterestForCurrentPeriod = Money.of(currency, BigDecimal.valueOf(
+                                loan.calculateInterestForDays(totalPeriodDays, midScheduleInstallment.interestDue(), futureTillDays)));
+                        final Money currentInterestToBeCharged = interestForCurrentPeriod.plus(midInterestForCurrentPeriod);
+                        currentScheduleInstallment.setInterestCharged(currentInterestToBeCharged.getAmount());
+                        final LocalDate installmentFromDate = nextRescheduleInstallment.getFromDate();
+                        final LocalDate installmentDueDate = nextRescheduleInstallment.getDueDate();
+                        writeOffNumberOfRepayments = numberOfRepayments - currentInstallmentNumber;
+                        loanApplicationTerms.updateLoanTermVariations(new ArrayList<>());
+                        loanApplicationTerms.updateNumberOfRepayments(writeOffNumberOfRepayments);
+                        loanApplicationTerms.updateLoanTermFrequency(writeOffNumberOfRepayments);
+                        loanApplicationTerms.setPrincipal(remainingPrincipalPortion);
+                        loanApplicationTerms.updateApprovedPrincipal(remainingPrincipalPortion);
+                        loanApplicationTerms.updateInterestChargedFromDate(installmentFromDate);
+                        loanApplicationTerms.updateExpectedDisbursementDate(installmentFromDate);
+                        loanApplicationTerms.updateCalculatedRepaymentsStartingFromDate(installmentDueDate);
+                        loanApplicationTerms.updateRepaymentsStartingFromDate(installmentDueDate);
+                        loanApplicationTerms.setFixedEmiAmount(fixedEmiAmount.getAmount());
+
+                        loanScheduleModel = loanScheduleGenerator.generate(mc, loanApplicationTerms, loanCharges, holidayDetailDTO);
+                        final List<LoanScheduleModelPeriod> loanScheduleModelPeriods = loanScheduleModel.getPeriods();
+                        int numberOfRegeneratedInstallments = 0;
+                        int regeneratedInstallmentNumber = currentInstallmentNumber + 1;
+                        for (final LoanScheduleModelPeriod scheduledLoanInstallment : loanScheduleModelPeriods) {
+                            if (scheduledLoanInstallment.isRepaymentPeriod() || scheduledLoanInstallment.isDownPaymentPeriod()) {
+                                Integer finalRegeneratedInstallmentNumber = regeneratedInstallmentNumber;
+                                LoanRepaymentScheduleInstallment updatedInstallment = repaymentScheduleInstallments.stream()
+                                        .filter(installment -> installment.getInstallmentNumber().equals(finalRegeneratedInstallmentNumber))
+                                        .findFirst().orElseThrow(() -> new GeneralPlatformDomainRuleException(
+                                                "error.msg.loan.schedule.period.not.found", "Loan schedule period not found"));
+                                updatedInstallment.adjustSpecialWriteOff(scheduledLoanInstallment.periodFromDate(),
+                                        scheduledLoanInstallment.periodDueDate(), scheduledLoanInstallment.principalDue(),
+                                        scheduledLoanInstallment.interestDue(), scheduledLoanInstallment.feeChargesDue(),
+                                        scheduledLoanInstallment.penaltyChargesDue(),
+                                        scheduledLoanInstallment.isRecalculatedInterestComponent(),
+                                        scheduledLoanInstallment.getLoanCompoundingDetails(),
+                                        scheduledLoanInstallment.rescheduleInterestPortion(),
+                                        scheduledLoanInstallment.isDownPaymentPeriod());
+                                numberOfRegeneratedInstallments++;
+                                regeneratedInstallmentNumber++;
+                            }
+                        }
+
+                        final List<LoanRepaymentScheduleInstallment> repaymentInstallmentsToRemove = new ArrayList<>();
+                        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+                            if (installment.getInstallmentNumber() > currentInstallmentNumber + numberOfRegeneratedInstallments) {
+                                repaymentInstallmentsToRemove.add(installment);
+                            }
+                        }
+                        for (final LoanRepaymentScheduleInstallment installment : repaymentInstallmentsToRemove) {
+                            loan.removeLoanRepaymentScheduleInstallment(installment.getInstallmentNumber());
+                        }
+                        final BigDecimal adjustedPrincipalAmount = principalToBeWrittenOff
+                                .subtract(unpaidPrincipalUptoCurrentInstallment.getAmount())
+                                .add(currentScheduleInstallment.getPrincipalOutstanding(currency).getAmount());
+                        currentScheduleInstallment.updatePrincipal(adjustedPrincipalAmount);
+                        saveAndFlushLoanWithIntegrityChecks(loan);
+                    }
+                }
+            } else {
+                final Money interestToBeWrittenOff = specialWriteOffInstallment.getInterestOutstanding(currency);
+                final Money feeChargesToBeWrittenOff = specialWriteOffInstallment.getFeeChargesOutstanding(currency);
+                final Money penaltyChargesToBeWrittenOff = specialWriteOffInstallment.getPenaltyChargesOutstanding(currency);
+                final Money interestAmountRemaining = specialWriteOffInstallment.getInterestOutstanding(currency)
+                        .minus(interestToBeWrittenOff);
+                final Money feeChargesAmountRemaining = specialWriteOffInstallment.getFeeChargesOutstanding(currency)
+                        .minus(feeChargesToBeWrittenOff);
+                final Money penaltyChargesAmountRemaining = specialWriteOffInstallment.getPenaltyChargesOutstanding(currency)
+                        .minus(penaltyChargesToBeWrittenOff);
+                Money futureOutstandingPrincipal = Money.zero(currency);
+                final List<LoanRepaymentScheduleInstallment> repaymentInstallmentsToRemove = new ArrayList<>();
+                for (final LoanRepaymentScheduleInstallment scheduleInstallment : repaymentScheduleInstallments) {
+                    if (scheduleInstallment.getInstallmentNumber() > currentScheduleInstallment.getInstallmentNumber()) {
+                        futureOutstandingPrincipal = futureOutstandingPrincipal.plus(scheduleInstallment.getPrincipalOutstanding(currency));
+                        repaymentInstallmentsToRemove.add(scheduleInstallment);
+                    }
+                }
+                for (final LoanRepaymentScheduleInstallment installment : repaymentInstallmentsToRemove) {
+                    loan.removeLoanRepaymentScheduleInstallment(installment.getInstallmentNumber());
+                }
+                final BigDecimal totalPrincipalOutstanding = currentScheduleInstallment.getPrincipalOutstanding(currency)
+                        .plus(futureOutstandingPrincipal).getAmount();
+                currentScheduleInstallment.updatePrincipal(totalPrincipalOutstanding);
+                if (interestAmountRemaining.isZero() && feeChargesAmountRemaining.isZero() && penaltyChargesAmountRemaining.isZero()) {
+                    int totalPeriodDays = Math.toIntExact(
+                            ChronoUnit.DAYS.between(currentScheduleInstallment.getFromDate(), currentScheduleInstallment.getDueDate()));
+                    int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(currentScheduleInstallment.getFromDate(), transactionDate));
+                    interestToBeChargedAndWrittenOff = Money.of(currency, BigDecimal.valueOf(loan.calculateInterestForDays(totalPeriodDays,
+                            currentScheduleInstallment.getInterestCharged(currency).getAmount(), tillDays)));
+                }
+                saveAndFlushLoanWithIntegrityChecks(loan);
+            }
+            writeOffTransaction = loan.writeOff(loanRepaymentScheduleInstallmentData, transactionDate, externalId);
+            currentScheduleInstallment.updateInterestCharged(interestToBeChargedAndWrittenOff.getAmount());
+            loan.updateLoanSummaryDerivedFields();
+            loan.getRepaymentScheduleInstallments().forEach(rp -> rp.checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency));
+            final Money totalOutstandingAmount = specialWriteOffInstallment.getTotalOutstanding(currency);
+            final Money totalPaymentAmount = Money.of(currency, loanRepaymentScheduleInstallmentData.getTotalInstallmentAmount());
+            if (totalPaymentAmount.isEqualTo(totalOutstandingAmount)) {
+                loan.updateLoanStatus(LoanStatus.CLOSED_WRITTEN_OFF);
+            }
         }
         loan = writeOffTransaction.getLoan();
         final LoanStatus loanStatus = loan.getStatus();
@@ -1842,7 +2043,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             throw new GeneralPlatformDomainRuleException("error.msg.loan.write.off.amount.is.greater.than.outstanding.loan.amount",
                     "Condonación supera deuda", writeOffAmount.getAmount(), totalOverpaidBy.getAmount(), totalOutstanding.getAmount());
         }
-        this.loanTransactionRepository.saveAndFlush(writeOffTransaction);
+        this.loanAccountDomainService.saveLoanTransactionWithDataIntegrityViolationChecks(writeOffTransaction);
         for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
             this.loanTransactionRepository.save(mapEntry.getValue());
             this.accountTransfersWritePlatformService.updateLoanTransaction(mapEntry.getKey(), mapEntry.getValue());
@@ -1862,6 +2063,24 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(writeOffTransaction.getId())
                 .withEntityExternalId(writeOffTransaction.getExternalId()).withOfficeId(loan.getOfficeId()).withClientId(loan.getClientId())
                 .withGroupId(loan.getGroupId()).withLoanId(loanId).with(changes).build();
+    }
+
+    private LoanRepaymentScheduleInstallment fetchRepaymentInstallmentByWrittenOfDate(final LocalDate writtenOffOnDate,
+            final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments) {
+        LoanRepaymentScheduleInstallment installment = null;
+        for (LoanRepaymentScheduleInstallment repaymentScheduleInstallment : repaymentScheduleInstallments) {
+            if (DateUtils.isAfter(writtenOffOnDate, repaymentScheduleInstallment.getFromDate())) {
+                if (!DateUtils.isAfter(writtenOffOnDate, repaymentScheduleInstallment.getDueDate())) {
+                    installment = repaymentScheduleInstallment;
+                    break;
+                }
+            }
+        }
+        if (installment == null) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.special.write.off.installment.not.found",
+                    "No repayment installment found for the special write off date", writtenOffOnDate);
+        }
+        return installment;
     }
 
     @Transactional
@@ -3602,7 +3821,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
     }
 
-    @Override
+    public void persistDailyAccrual(LocalDate localDate) {
+        List<Loan> loans = loanRepository.findActiveLoansWithNotYetPostedAccrual(localDate);
+        loans.forEach(loan -> {
+            log.info("Persisting daily accrual for loan: {}", loan.getId());
+            loan.applyDailyAccruals(localDate);
+            loanRepository.saveAndFlush(loan);
+            log.info("Daily accrual persisted for loan: {}", loan.getId());
+
+        });
+    }
+
     public void cancelDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultInsuranceIds) {
         final LocalDate currentDate = DateUtils.getBusinessLocalDate();
         InsuranceIncident incident = this.insuranceIncidentRepository
@@ -3669,9 +3898,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             BigDecimal cumulative = BigDecimal.ZERO;
             cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, cancelInsuranceInstallmentData);
 
-            List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments().stream()
-                    .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
-
             InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
                     cancelInsuranceInstallmentData.installment(), incident, cancellationDate, cumulative);
 
@@ -3710,5 +3936,4 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         return cumulative;
     }
-
 }

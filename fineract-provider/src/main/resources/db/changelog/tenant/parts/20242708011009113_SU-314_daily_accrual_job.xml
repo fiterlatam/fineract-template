@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements. See the NOTICE file
     distributed with this work for additional information
@@ -8,42 +7,40 @@
     to you under the Apache License, Version 2.0 (the
     "License"); you may not use this file except in compliance
     with the License. You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
     Unless required by applicable law or agreed to in writing,
     software distributed under the License is distributed on an
     "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
     KIND, either express or implied. See the License for the
     specific language governing permissions and limitations
     under the License.
-
 -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
     <changeSet author="fineract" id="1">
-        <insert tableName="m_permission">
-            <column name="grouping" value="transaction_loan"/>
-            <column name="code" value="SPECIAL_WRITEOFF_LOAN"/>
-            <column name="entity_name" value="LOAN"/>
-            <column name="action_name" value="SPECIAL_WRITEOFF"/>
-            <column name="can_maker_checker" valueBoolean="false"/>
-        </insert>
-    </changeSet>
-    <changeSet id="2" author="fineract">
         <preConditions onFail="MARK_RAN">
-            <not>
-                <columnExists tableName="m_loan_transaction" columnName="is_special_writeoff"/>
-            </not>
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM job WHERE name ='Daily Loan Accrual';
+            </sqlCheck>
         </preConditions>
-        <addColumn tableName="m_loan_transaction">
-            <column name="is_special_writeoff" type="bool" defaultValue="false">
-                <constraints nullable="true"/>
-            </column>
-        </addColumn>
-    </changeSet>
-    <changeSet id="3" author="fineract">
-        <dropNotNullConstraint tableName="m_loan_repayment_schedule" columnName="loan_id" columnDataType="BIGINT"/>
+        <insert tableName="job">
+            <column name="name" value="Daily Loan Accrual"/>
+            <column name="display_name" value="Daily Loan Accrual Job"/>
+            <column name="cron_expression" value="0 0 23 1/1 * ? *"/>
+            <column name="create_time" valueDate="${current_datetime}"/>
+            <column name="task_priority" valueNumeric="5"/>
+            <column name="group_name"/>
+            <column name="previous_run_start_time"/>
+            <column name="job_key" value="Daily_Loan_Accrual_Job _DEFAULT"/>
+            <column name="initializing_errorlog"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="currently_running" valueBoolean="false"/>
+            <column name="updates_allowed" valueBoolean="true"/>
+            <column name="scheduler_group" valueNumeric="0"/>
+            <column name="is_misfired" valueBoolean="false"/>
+            <column name="node_id" valueNumeric="1"/>
+            <column name="is_mismatched_job" valueBoolean="true"/>
+        </insert>
     </changeSet>
 </databaseChangeLog>

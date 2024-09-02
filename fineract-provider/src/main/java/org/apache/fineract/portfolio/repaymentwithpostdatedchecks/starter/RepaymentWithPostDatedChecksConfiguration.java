@@ -19,7 +19,6 @@
 package org.apache.fineract.portfolio.repaymentwithpostdatedchecks.starter;
 
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallmentRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.service.RepaymentWithPostDatedChecksAssembler;
@@ -43,10 +42,8 @@ public class RepaymentWithPostDatedChecksConfiguration {
     @Bean
     @ConditionalOnMissingBean(RepaymentWithPostDatedChecksReadPlatformService.class)
     public RepaymentWithPostDatedChecksReadPlatformService repaymentWithPostDatedChecksReadPlatformService(
-            PostDatedChecksRepository postDatedChecksRepository, LoanRepository loanRepository,
-            LoanRepaymentScheduleInstallmentRepository loanRepaymentScheduleInstallmentRepository) {
-        return new RepaymentWithPostDatedChecksReadPlatformServiceImpl(postDatedChecksRepository, loanRepository,
-                loanRepaymentScheduleInstallmentRepository);
+            PostDatedChecksRepository postDatedChecksRepository, LoanRepository loanRepository) {
+        return new RepaymentWithPostDatedChecksReadPlatformServiceImpl(postDatedChecksRepository, loanRepository);
     }
 
     @Bean

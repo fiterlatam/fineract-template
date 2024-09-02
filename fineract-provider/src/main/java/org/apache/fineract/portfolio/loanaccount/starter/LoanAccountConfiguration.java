@@ -85,7 +85,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService
 import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainServiceJpa;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanChargeRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetailsRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallmentRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
@@ -99,6 +98,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculat
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleAssembler;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleCalculationPlatformService;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.mapper.LoanTransactionRelationMapper;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanRescheduleRequestReadPlatformService;
@@ -107,13 +107,49 @@ import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationTr
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanChargeApiJsonValidator;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanEventApiJsonValidator;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanUpdateCommandFromApiJsonDeserializer;
-import org.apache.fineract.portfolio.loanaccount.service.*;
+import org.apache.fineract.portfolio.loanaccount.service.BulkLoansReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.BulkLoansReadPlatformServiceImpl;
+import org.apache.fineract.portfolio.loanaccount.service.GLIMAccountInfoReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.GLIMAccountInfoReadPlatformServiceImpl;
+import org.apache.fineract.portfolio.loanaccount.service.GLIMAccountInfoWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.GLIMAccountInfoWritePlatformServiceImpl;
+import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualPlatformServiceImpl;
+import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualTransactionBusinessEventService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualTransactionBusinessEventServiceImpl;
+import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualWritePlatformServiceImpl;
+import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePlatformServiceJpaRepositoryImpl;
+import org.apache.fineract.portfolio.loanaccount.service.LoanArrearsAgingService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanArrearsAgingServiceImpl;
+import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
+import org.apache.fineract.portfolio.loanaccount.service.LoanBlockWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanCalculateRepaymentPastDueService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanChargeAssembler;
+import org.apache.fineract.portfolio.loanaccount.service.LoanChargePaidByReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanChargePaidByReadPlatformServiceImpl;
+import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformServiceImpl;
+import org.apache.fineract.portfolio.loanaccount.service.LoanChargeWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanChargeWritePlatformServiceImpl;
+import org.apache.fineract.portfolio.loanaccount.service.LoanDownPaymentHandlerService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanDownPaymentHandlerServiceImpl;
+import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformServiceImpl;
+import org.apache.fineract.portfolio.loanaccount.service.LoanStatusChangePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanStatusChangePlatformServiceImpl;
+import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformServiceJpaRepositoryImpl;
+import org.apache.fineract.portfolio.loanaccount.service.RecalculateInterestPoster;
+import org.apache.fineract.portfolio.loanaccount.service.ReplayedTransactionBusinessEventService;
+import org.apache.fineract.portfolio.loanaccount.service.ReplayedTransactionBusinessEventServiceImpl;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.serialization.LoanProductDataValidator;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
-import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetailRepository;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
 import org.apache.fineract.portfolio.rate.service.RateAssembler;
@@ -334,7 +370,8 @@ public class LoanAccountConfiguration {
             LoanTransactionRelationRepository loanTransactionRelationRepository,
             LoanTransactionRelationMapper loanTransactionRelationMapper,
             LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService,
-            ChannelReadWritePlatformService channelReadWritePlatformService, GlobalConfigurationRepository globalConfigurationRepository) {
+            ChannelReadWritePlatformService channelReadWritePlatformService, GlobalConfigurationRepository globalConfigurationRepository,
+            LoanScheduleHistoryReadPlatformService loanScheduleHistoryReadPlatformService) {
         return new LoanReadPlatformServiceImpl(jdbcTemplate, context, loanRepositoryWrapper, applicationCurrencyRepository,
                 loanProductReadPlatformService, clientReadPlatformService, groupReadPlatformService, loanDropdownReadPlatformService,
                 fundReadPlatformService, chargeReadPlatformService, codeValueReadPlatformService, calendarReadPlatformService,
@@ -342,7 +379,8 @@ public class LoanAccountConfiguration {
                 loanRepaymentScheduleTransactionProcessorFactory, floatingRatesReadPlatformService, loanUtilService,
                 configurationDomainService, accountDetailsReadPlatformService, columnValidator, sqlGenerator,
                 delinquencyReadPlatformService, loanTransactionRepository, loanTransactionRelationRepository, loanTransactionRelationMapper,
-                loanChargePaidByReadPlatformService, channelReadWritePlatformService, globalConfigurationRepository);
+                loanChargePaidByReadPlatformService, channelReadWritePlatformService, globalConfigurationRepository,
+                loanScheduleHistoryReadPlatformService);
     }
 
     @Bean
@@ -388,7 +426,7 @@ public class LoanAccountConfiguration {
             LoanRepaymentScheduleTransactionProcessorFactory transactionProcessingStrategy, CodeValueRepositoryWrapper codeValueRepository,
             CashierTransactionDataValidator cashierTransactionDataValidator, GLIMAccountInfoRepository glimRepository,
             LoanRepository loanRepository, RepaymentWithPostDatedChecksAssembler repaymentWithPostDatedChecksAssembler,
-            PostDatedChecksRepository postDatedChecksRepository, LoanDisbursementDetailsRepository loanDisbursementDetailsRepository,
+            PostDatedChecksRepository postDatedChecksRepository,
             LoanRepaymentScheduleInstallmentRepository loanRepaymentScheduleInstallmentRepository,
             LoanLifecycleStateMachine defaultLoanLifecycleStateMachine, LoanAccountLockService loanAccountLockService,
             ExternalIdFactory externalIdFactory, ReplayedTransactionBusinessEventService replayedTransactionBusinessEventService,
@@ -397,10 +435,11 @@ public class LoanAccountConfiguration {
             JdbcTemplate jdbcTemplate, PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             LoanRescheduleRequestReadPlatformService loanRescheduleRequestReadPlatformService,
             ClientReadPlatformService clientReadPlatformService, ChannelReadWritePlatformService channelReadWritePlatformService,
-            PlatformSecurityContext platformSecurityContext, PaymentDetailRepository paymentDetailRepository,
+            PlatformSecurityContext platformSecurityContext,
             GlobalConfigurationRepository globalConfigurationRepository, LoanBlockWritePlatformService loanBlockWritePlatformService,
             BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepository, InsuranceIncidentRepository insuranceIncidentRepository,
-            InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository) {
+            InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository, LoanScheduleGeneratorFactory loanScheduleFactory) {
+
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
                 loanTransactionRelationRepository, loanAssembler, journalEntryWritePlatformService, calendarInstanceRepository,
@@ -411,12 +450,12 @@ public class LoanAccountConfiguration {
                 businessEventNotifierService, guarantorDomainService, loanUtilService, loanSummaryWrapper,
                 entityDatatableChecksWritePlatformService, transactionProcessingStrategy, codeValueRepository,
                 cashierTransactionDataValidator, glimRepository, loanRepository, repaymentWithPostDatedChecksAssembler,
-                postDatedChecksRepository, loanDisbursementDetailsRepository, loanRepaymentScheduleInstallmentRepository,
-                defaultLoanLifecycleStateMachine, loanAccountLockService, externalIdFactory, replayedTransactionBusinessEventService,
+                postDatedChecksRepository, loanRepaymentScheduleInstallmentRepository, defaultLoanLifecycleStateMachine,
+                loanAccountLockService, externalIdFactory, replayedTransactionBusinessEventService,
                 loanAccrualTransactionBusinessEventService, errorHandler, loanDownPaymentHandlerService, loanProductReadPlatformService,
                 jdbcTemplate, commandsSourceWritePlatformService, loanRescheduleRequestReadPlatformService, clientReadPlatformService,
                 channelReadWritePlatformService, platformSecurityContext, globalConfigurationRepository, loanBlockWritePlatformService,
-                loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository);
+                loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository, loanScheduleFactory);
     }
 
     @Bean

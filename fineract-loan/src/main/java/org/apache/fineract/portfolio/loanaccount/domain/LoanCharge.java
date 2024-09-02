@@ -896,10 +896,19 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         Money processAmount;
         if (isInstalmentFee()) {
             if (installmentNumber == null) {
-                processAmount = getUnpaidInstallmentLoanCharge().updatePaidAmountBy(incrementBy, feeAmount, isWriteOffTransaction);
+                final LoanInstallmentCharge unpaidInstallmentLoanCharge = getUnpaidInstallmentLoanCharge();
+                if (unpaidInstallmentLoanCharge != null) {
+                    processAmount = unpaidInstallmentLoanCharge.updatePaidAmountBy(incrementBy, feeAmount, isWriteOffTransaction);
+                } else {
+                    processAmount = incrementBy;
+                }
             } else {
-                processAmount = getInstallmentLoanCharge(installmentNumber).updatePaidAmountBy(incrementBy, feeAmount,
-                        isWriteOffTransaction);
+                final LoanInstallmentCharge installmentLoanCharge = getInstallmentLoanCharge(installmentNumber);
+                if (installmentLoanCharge != null) {
+                    processAmount = installmentLoanCharge.updatePaidAmountBy(incrementBy, feeAmount, isWriteOffTransaction);
+                } else {
+                    processAmount = incrementBy;
+                }
             }
         } else {
             processAmount = incrementBy;
@@ -1283,8 +1292,14 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             }
         } else if (this.isCustomFlatDistributedCharge()) {
-            customAmout = customAmout.add(this.installmentCharges().isEmpty() ? this.amountOrPercentage
-                    : this.getInstallmentLoanCharge(installmentNumber).getAmount());
+            BigDecimal amountToAdd = this.amountOrPercentage;
+            if (!this.installmentCharges().isEmpty()) {
+                LoanInstallmentCharge installmentCharge = this.getInstallmentLoanCharge(installmentNumber);
+                if (installmentCharge != null) {
+                    amountToAdd = installmentCharge.getAmount();
+                }
+            }
+            customAmout = customAmout.add(amountToAdd);
         } else if (this.isCustomPercentageBasedDistributedCharge()) {
             BigDecimal chargeAmount = BigDecimal.ZERO;
             if (this.installmentCharges().isEmpty()) {

@@ -21,4 +21,6 @@ public interface AllyCompensationRepository extends JpaRepository<AllyCompensati
     Optional<AllyCompensation> findBynitAndDate(@Param("nit") String nit, @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
 
+    @Query("select allyCompensation from AllyCompensation allyCompensation where allyCompensation.netOutstandingAmount < 0")
+    List<AllyCompensation> findNegativeCompensations();
 }

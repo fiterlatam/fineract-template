@@ -128,6 +128,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleP
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.mapper.LoanTransactionRelationMapper;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
@@ -192,6 +193,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     private final LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService;
     private final ChannelReadWritePlatformService channelReadWritePlatformService;
     private final GlobalConfigurationRepository globalConfigurationRepository;
+    private final LoanScheduleHistoryReadPlatformService loanScheduleHistoryReadPlatformService;
 
     @Override
     public LoanAccountData retrieveOne(final Long loanId) {
@@ -209,7 +211,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
             sqlBuilder.append(" where l.id=? and ( o.hierarchy like ? or transferToOffice.hierarchy like ?)");
 
-            return this.jdbcTemplate.queryForObject(sqlBuilder.toString(), rm, loanId, hierarchySearchString, hierarchySearchString);
+            List<LoanAccountData> results = this.jdbcTemplate.query(sqlBuilder.toString(), rm, loanId, hierarchySearchString,
+                    hierarchySearchString);
+            if (results.isEmpty()) {
+                throw new LoanNotFoundException(loanId);
+            }
+            return results.get(0);
         } catch (final EmptyResultDataAccessException e) {
             throw new LoanNotFoundException(loanId, e);
         }
@@ -3040,6 +3047,91 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
+    public void exportLoanSchedulePDF(LoanAccountData loanBasicDetails, String scheduleType, LoanScheduleData repaymentSchedule,
+            HttpServletResponse httpServletResponse) throws DocumentException, IOException {
+
+        boolean isRepaymentSchedule = scheduleType.equalsIgnoreCase("repayment");
+        final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
+                .retrieveClientAdditionalData(loanBasicDetails.getClientId());
+        final String nit = loanAdditionalFieldsData.getNit();
+        final String cedula = loanAdditionalFieldsData.getCedula();
+        String clientFullName = loanBasicDetails.getClientName();
+        String clientNit = Objects.toString(nit, cedula);
+        LoanApplicationTimelineData timeline = loanBasicDetails.getTimeline();
+        final LocalDate disbursementDate = timeline.getDisbursementDate() != null ? timeline.getActualDisbursementDate()
+                : timeline.getExpectedDisbursementDate();
+        final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy").withLocale(Locale.forLanguageTag("es-ES"));
+        final String disbursementDateString = disbursementDate != null ? disbursementDate.format(dateFormatter) : "N/A";
+        final BigDecimal disbursementAmount = loanBasicDetails.getNetDisbursalAmount();
+
+        final String disbursementAmountString = Money.of(loanBasicDetails.getCurrency(), disbursementAmount).toString();
+
+        final Map<String, String> amortizationTypes = Map.of("Equal installments", "Pagos de cuotas iguales - Sistema Frances",
+                "Equal principal payments", "Pagos de capital iguales - Sistema Aleman", "Capital at end",
+                "Capital al final - Sistema Americano");
+        String templateName;
+        String fileType;
+        String reportTitle;
+        String amortizationType = amortizationTypes.getOrDefault(loanBasicDetails.getAmortizationType().getValue(), "");
+        String settlementSystem = "";
+        if (StringUtils.isNotBlank(amortizationType)) {
+            // get the second part of the hyphen . e.g Sistema Frances
+            settlementSystem = amortizationType.substring(amortizationType.indexOf("-") + 1).trim();
+        }
+
+        if (isRepaymentSchedule) {
+            templateName = "LoanRepaymentScheduleReport";
+            fileType = "Reported_calendario_de_pago";
+            reportTitle = "Calendario de Pagos";
+        } else {
+            templateName = "LoanOriginalScheduleReport";
+            reportTitle = "Calendario Original";
+            fileType = "Reported_calendario_de_original";
+        }
+        String loanRate = convertInterestRateToDailyRateAndMonthlyRate(loanBasicDetails.getInterestRatePerPeriod().doubleValue());
+
+        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy MMMM dd HH:mm:ss")
+                .withLocale(Locale.forLanguageTag("es-ES"));
+        final String generatedOnDateTime = DateUtils.getLocalDateTimeOfTenant().format(dateTimeFormatter);
+        final Map<String, Object> variables = new HashMap<>();
+        variables.put("clientFullName", clientFullName);
+        variables.put("clientNit", clientNit);
+        variables.put("disbursementDate", disbursementDateString);
+        variables.put("reportTitle", reportTitle);
+        variables.put("disbursementAmount", disbursementAmountString);
+        variables.put("generatedOnDateTime", generatedOnDateTime);
+        variables.put("generatedByUsername", this.context.authenticatedUser().getDisplayName());
+        variables.put("originalScheduleDetails", repaymentSchedule);
+        variables.put("loanRate", loanRate);
+        variables.put("settlementSystem", settlementSystem);
+        final org.thymeleaf.context.Context thymeleafContext = new org.thymeleaf.context.Context(Locale.forLanguageTag("es-ES"), variables);
+        ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+        Locale.setDefault(new Locale("es", "ES"));
+        templateResolver.setPrefix("templates/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setCharacterEncoding("UTF-8");
+        templateResolver.setCacheable(false);
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setOrder(0);
+        templateResolver.setCheckExistence(true);
+        final TemplateEngine thymeleafTemplateEngine = new SpringTemplateEngine();
+        thymeleafTemplateEngine.setTemplateResolver(templateResolver);
+
+        final String html = thymeleafTemplateEngine.process(templateName, thymeleafContext);
+        final ITextRenderer renderer = new ITextRenderer();
+        renderer.setDocumentFromString(html);
+        renderer.layout();
+
+        final String filename = fileType + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".pdf";
+        httpServletResponse.setContentType("application/pdf");
+        httpServletResponse.setHeader("Content-Disposition", "inline; filename=" + filename);
+        httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+        final OutputStream outputStream = httpServletResponse.getOutputStream();
+        renderer.createPDF(outputStream);
+        outputStream.close();
+    }
+
+    @Override
     public Collection<Long> retrieveClientsWithLoansInActive(Long loanProductId, Integer inactivityPeriod) {
 
         final String query = """
@@ -3100,13 +3192,40 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             sql = sql + " and mlrs.duedate < CURRENT_DATE " + "                        and mc.days_in_arrears is not null "
                     + "                        and mc.days_in_arrears > 0 "
                     + "                        and CURRENT_DATE - mlrs.duedate > mc.days_in_arrears ";
-            params = new Object[] {};
+            params = new Object[]{};
         } else {
             sql = sql + " and ml.id = ? and mc.insurance_code = ? ";
-            params = new Object[] { loanId, insuranceCode };
+            params = new Object[]{loanId, insuranceCode};
         }
         sql = sql + " group by ml.id, mlc.id order by ml.id";
 
         return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
+    }
+
+    private String convertInterestRateToDailyRateAndMonthlyRate(double interestRate) {
+        // Convert the annual rate to a decimal form
+        double annualRateDecimal = interestRate / 100.0;
+
+        // Calculate the daily rate
+        double dailyRate = annualRateDecimal / 365 * 100.0; // Assuming 365 days in a year
+
+        // Calculate the monthly nominal rate
+        double monthlyNominalRate = annualRateDecimal / 12 * 100.0; // Corrected calculation
+
+        // Format the rates, removing decimal places for whole numbers
+        String formattedDailyRate = formatRate(dailyRate);
+        String formattedMonthlyRate = formatRate(monthlyNominalRate);
+
+        // Return in the format "Tasa pactada: % diario % mnv"
+        return String.format(" %s%% diario %s%% mnv", formattedDailyRate, formattedMonthlyRate);
+    }
+
+    // Helper method to format rates
+    private String formatRate(double rate) {
+        if (Math.abs(rate - Math.floor(rate)) < 0.000001) {
+            return String.format("%.0f", rate).replace(".", ",");
+        } else {
+            return String.format("%.2f", rate).replace(".", ",");
+        }
     }
 }

@@ -895,6 +895,35 @@ public class LoansApiResource {
     }
 
     @GET
+    @ModelAttribute
+    @Path("{loanId}/schedule-report")
+    @Operation(summary = "Download loan Schedule report in PDF format", description = "Download loan Schedule report in PDF format")
+    public void getScheduleReportPDF(@Context HttpServletResponse response,
+            @PathParam("loanId") @Parameter(description = "loanId") final Long loanId, @QueryParam("scheduleType") String scheduleType)
+            throws DocumentException, IOException {
+        context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
+        boolean isRepaymentSchedule = scheduleType.equalsIgnoreCase("repayment");
+        LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(loanId);
+        LoanScheduleData repaymentSchedule = null;
+        Collection<DisbursementData> disbursementData = this.loanReadPlatformService.retrieveLoanDisbursementDetails(loanId);
+        ;
+        final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData = loanBasicDetails.getTimeline().repaymentScheduleRelatedData(
+                loanBasicDetails.getCurrency(), loanBasicDetails.getPrincipal(), loanBasicDetails.getApprovedPrincipal(),
+                loanBasicDetails.getInArrearsTolerance(), loanBasicDetails.getFeeChargesAtDisbursementCharged());
+        if (isRepaymentSchedule) {
+            repaymentSchedule = this.loanReadPlatformService.retrieveRepaymentSchedule(loanId, repaymentScheduleRelatedData,
+                    disbursementData, loanBasicDetails.isInterestRecalculationEnabled(),
+                    LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
+            this.calculationPlatformService.getFeeChargesDetail(repaymentSchedule, loanId);
+        } else {
+            repaymentSchedule = this.loanScheduleHistoryReadPlatformService.retrieveRepaymentArchiveSchedule(loanId,
+                    repaymentScheduleRelatedData, disbursementData,
+                    LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
+        }
+        this.loanReadPlatformService.exportLoanSchedulePDF(loanBasicDetails, scheduleType, repaymentSchedule, response);
+    }
+
+    @GET
     @Path("{loanId}/loanblockingreasons")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })

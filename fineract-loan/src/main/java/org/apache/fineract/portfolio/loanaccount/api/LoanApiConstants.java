@@ -188,4 +188,5 @@ public interface LoanApiConstants {
     String GLOBAL_CONFIG_MAX_RESTRUCTURE = "Dias de mora maximo para reestructurar";
     String GLOBAL_CONFIG_MAX_ARREARS_REDEFER = "Dias de mora maximo para rediferi";
     String GLOBAL_CONFIG_MAX_RESTRUCTURE_WITHIN_6_MONTHS = "Reestructuraciones permitidas dentro de 6 meses";
+    String GLOBAL_CONFIG_COMPENSATION_ALERT_EMAIL = "Correo Alerta por Compensacion";
 }

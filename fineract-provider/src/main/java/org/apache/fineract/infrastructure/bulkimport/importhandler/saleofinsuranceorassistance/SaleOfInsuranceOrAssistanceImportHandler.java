@@ -15,7 +15,6 @@ import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformS
 import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.data.ClientBuyProcessData;
-import org.apache.fineract.infrastructure.bulkimport.constants.GuarantorConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.SaleOfInsuranceOrAssistanceConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.data.Count;
@@ -23,6 +22,7 @@ import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandlerUtils;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Service;
 
@@ -79,11 +79,11 @@ public class SaleOfInsuranceOrAssistanceImportHandler implements ImportHandler {
         data.setTerm(term);
         data.setCedulaSeguroVoluntario(advisorId);
         data.setCodigoSeguro(insuranceCode);
-        data.setRequestedDate(LocalDate.now());
+        data.setRequestedDate(DateUtils.getLocalDateOfTenant());
         data.setChannelHash(channelHash);
         data.setRowIndex(row.getRowNum());
         data.setSaleOfInsuranceOrAssistance(true);
-        data.setDateFormat(dateFormat);
+        data.setDateFormat("dd/MM/yyyy");
         data.setLocale(locale);
 
         return data;
@@ -98,16 +98,20 @@ public class SaleOfInsuranceOrAssistanceImportHandler implements ImportHandler {
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(dateFormat));
         for (ClientBuyProcessData salesData : salesList) {
             try {
-                JsonObject guarantorJsonob = gsonBuilder.create().toJsonTree(salesData).getAsJsonObject();
-                guarantorJsonob.remove("status");
-                String payload = guarantorJsonob.toString();
+                JsonObject saleOfInsuranceJsonob = gsonBuilder.create().toJsonTree(salesData).getAsJsonObject();
+                saleOfInsuranceJsonob.remove("status");
+                saleOfInsuranceJsonob.remove("requestedDate");
+                String updatedDate = LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                saleOfInsuranceJsonob.addProperty("requestedDate", updatedDate);
+                String payload = saleOfInsuranceJsonob.toString();
                 final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                         .createClientBuyProcess() //
                         .withJson(payload) //
                         .build(); //
                 commandsSourceWritePlatformService.logCommandSource(commandRequest);
                 successCount++;
-                Cell statusCell = saleOfInsuranceSheet.getRow(salesData.getRowIndex()).createCell(GuarantorConstants.STATUS_COL);
+                Cell statusCell = saleOfInsuranceSheet.getRow(salesData.getRowIndex())
+                        .createCell(SaleOfInsuranceOrAssistanceConstants.STATUS_COL);
                 statusCell.setCellValue(TemplatePopulateImportConstants.STATUS_CELL_IMPORTED);
                 statusCell.setCellStyle(ImportHandlerUtils.getCellStyle(workbook, IndexedColors.LIGHT_GREEN));
             } catch (RuntimeException ex) {
