@@ -272,4 +272,5 @@
     <include file="parts/20242708011009113_SU-314_daily_accrual_job_name.xml" relativeToChangelogFile="true"/>
     <include file="parts/20242604011009111_SU_118_special_write_off.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU-191_global_compensation_email.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240828220000_SU_173_insurance_incident_CREATE.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

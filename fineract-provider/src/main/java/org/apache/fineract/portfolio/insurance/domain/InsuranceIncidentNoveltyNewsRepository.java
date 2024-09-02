@@ -16,18 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.insurance.exception;
+package org.apache.fineract.portfolio.insurance.domain;
 
-import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public class InsuranceIncidentNotFoundException extends AbstractPlatformResourceNotFoundException {
-
-    public InsuranceIncidentNotFoundException(final Long id) {
-        super("error.msg.insurance.incident.id.invalid", "Insurance Incident with identifier " + id + " does not exist", id);
-    }
-
-    public InsuranceIncidentNotFoundException(String name) {
-        super("error.msg.insurance.incident.not.found", "Insurance Incident with identifier [" + name + "] does not exist", name);
-    }
+public interface InsuranceIncidentNoveltyNewsRepository
+        extends JpaRepository<InsuranceIncidentNoveltyNews, Long>, JpaSpecificationExecutor<InsuranceIncidentNoveltyNews> {
 
 }

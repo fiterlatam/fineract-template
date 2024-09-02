@@ -624,4 +624,32 @@ public final class LoanEventApiJsonValidator {
         validatePaymentDetails(baseDataValidator, element);
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
+
+    public void validateForInsuranceCancellation(final String json) {
+
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+
+        final Set<String> insuranceCancellationParameters = new HashSet<>(
+                Arrays.asList("creditId", "codigoSeguro", "date", "locale", "dateFormat"));
+
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, insuranceCancellationParameters);
+
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("insurance");
+
+        final JsonElement element = this.fromApiJsonHelper.parse(json);
+        final LocalDate transactionDate = this.fromApiJsonHelper.extractLocalDateNamed("date", element);
+        baseDataValidator.reset().parameter("date").value(transactionDate).notNull();
+
+        final Long loanId = this.fromApiJsonHelper.extractLongNamed("creditId", element);
+        baseDataValidator.reset().parameter("creditId").value(loanId).notNull().longGreaterThanZero();
+
+        final Long insuranceCode = this.fromApiJsonHelper.extractLongNamed("codigoSeguro", element);
+        baseDataValidator.reset().parameter("codigoSeguro").value(insuranceCode).notNull().longGreaterThanZero();
+
+        throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
 }
