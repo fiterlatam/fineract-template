@@ -47,6 +47,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Predicate;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
@@ -137,6 +138,7 @@ import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDat
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.util.CollectionUtils;
 
+@Slf4j
 @Entity
 @Table(name = "m_loan", uniqueConstraints = { @UniqueConstraint(columnNames = { "account_no" }, name = "loan_account_no_UNIQUE"),
         @UniqueConstraint(columnNames = { "external_id" }, name = "loan_externalid_UNIQUE") })
@@ -6222,6 +6224,24 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public void addLoanRepaymentScheduleInstallment(final LoanRepaymentScheduleInstallment installment) {
         installment.updateLoan(this);
         this.repaymentScheduleInstallments.add(installment);
+    }
+
+    public void clearAllInstallments() {
+        for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+            installment.getInstallmentCharges().clear();
+            installment.getLoanTransactionToRepaymentScheduleMappings().clear();
+        }
+        this.repaymentScheduleInstallments.clear();
+    }
+
+    public void removeLoanRepaymentScheduleInstallment(final Integer installmentNumber) {
+        final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = fetchRepaymentScheduleInstallment(installmentNumber);
+        if (loanRepaymentScheduleInstallment != null) {
+            loanRepaymentScheduleInstallment.updateLoan(null);
+            loanRepaymentScheduleInstallment.getInstallmentCharges().clear();
+            loanRepaymentScheduleInstallment.getLoanTransactionToRepaymentScheduleMappings().clear();
+            this.repaymentScheduleInstallments.remove(loanRepaymentScheduleInstallment);
+        }
     }
 
     /**
