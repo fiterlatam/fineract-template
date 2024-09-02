@@ -98,7 +98,7 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
     private static final String JOB_STARTER_METHOD_NAME = "run";
 
     @SuppressFBWarnings("SLF4J_SIGN_ONLY_FORMAT")
-    public void executeJob(final ScheduledJobDetail scheduledJobDetail, String triggerType, Set<JobParameterDTO> jobParameterDTOSet) {/*
+    public void executeJob(final ScheduledJobDetail scheduledJobDetail, String triggerType, Set<JobParameterDTO> jobParameterDTOSet) {
         try {
             final JobDataMap jobDataMap = new JobDataMap();
             if (triggerType == null) {
@@ -131,10 +131,10 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
             log.error("{}", msg, e);
             throw new PlatformInternalServerException("error.msg.scheduler.job.execution.failed", msg, scheduledJobDetail.getId(), e);
         }
-*/
+
     }
 
-    public void rescheduleJob(final ScheduledJobDetail scheduledJobDetail) {/*
+    public void rescheduleJob(final ScheduledJobDetail scheduledJobDetail) {
         try {
             final String jobIdentity = scheduledJobDetail.getJobKey();
             final JobKey jobKey = constructJobKey(jobIdentity);
@@ -149,21 +149,21 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
             final String stackTrace = getStackTraceAsString(throwable);
             scheduledJobDetail.setErrorLog(stackTrace);
             this.schedularWritePlatformService.saveOrUpdate(scheduledJobDetail);
-        }*/
+        }
     }
 
     @Override
     public void pauseScheduler() {
-        /*final SchedulerDetail schedulerDetail = this.schedularWritePlatformService.retriveSchedulerDetail();
+        final SchedulerDetail schedulerDetail = this.schedularWritePlatformService.retriveSchedulerDetail();
         if (!schedulerDetail.isSuspended()) {
             schedulerDetail.setSuspended(true);
             this.schedularWritePlatformService.updateSchedulerDetail(schedulerDetail);
-        }*/
+        }
     }
 
     @Override
     public void startScheduler() {
-        /*final SchedulerDetail schedulerDetail = this.schedularWritePlatformService.retriveSchedulerDetail();
+        final SchedulerDetail schedulerDetail = this.schedularWritePlatformService.retriveSchedulerDetail();
         if (schedulerDetail.isSuspended()) {
             schedulerDetail.setSuspended(false);
             this.schedularWritePlatformService.updateSchedulerDetail(schedulerDetail);
@@ -197,7 +197,7 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
                     }
                 }
             }
-        }*/
+        }
     }
 
     @Override
@@ -215,7 +215,7 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
 
     @Override
     public void executeJobWithParameters(final Long jobId, String jobParametersJson) {
-        /*Set<JobParameterDTO> jobParameterDTOSet = dataParser.parseExecution(jobParametersJson);
+        Set<JobParameterDTO> jobParameterDTOSet = dataParser.parseExecution(jobParametersJson);
         final ScheduledJobDetail scheduledJobDetail = this.schedularWritePlatformService.findByJobId(jobId);
         if (scheduledJobDetail == null) {
             throw new JobNotFoundException(String.valueOf(jobId));
@@ -228,7 +228,7 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
             scheduledJobDetail.setMismatchedJob(true);
             this.schedularWritePlatformService.saveOrUpdate(scheduledJobDetail);
             throw new JobNodeIdMismatchingException(nodeIdStored, fineractProperties.getNodeId());
-        }*/
+        }
     }
 
     @Override
@@ -248,7 +248,7 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
 
     @Override
     public void scheduleJob(final ScheduledJobDetail scheduledJobDetails) {
-        /*try {
+        try {
             final JobDetail jobDetail = createJobDetail(scheduledJobDetails, Collections.emptySet());
             scheduledJobDetails.setJobKey(getJobKeyAsString(jobDetail.getKey()));
             if (!scheduledJobDetails.isActiveSchedular()) {
@@ -268,7 +268,7 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
             scheduledJobDetails.setErrorLog(stackTrace);
             log.error("Could not schedule job: {}", scheduledJobDetails.getJobName(), throwable);
         }
-        scheduledJobDetails.setCurrentlyRunning(false);*/
+        scheduledJobDetails.setCurrentlyRunning(false);
     }
 
     @Override
