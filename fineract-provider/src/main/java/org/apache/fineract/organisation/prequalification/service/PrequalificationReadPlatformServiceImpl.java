@@ -107,9 +107,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         }
         List<Object> paramList = new ArrayList<>();
         final StringBuilder sqlBuilder = new StringBuilder(500);
-        if (StringUtils.equals(searchParameters.getGroupingType(),"group") || StringUtils.equals(searchParameters.getType(),"checked")) {
+        if (StringUtils.equals(searchParameters.getGroupingType(), "group") || StringUtils.equals(searchParameters.getType(), "checked")) {
             sqlBuilder.append("select ").append(this.prequalificationsGroupMapper.gpSchema());
-        }else{
+        } else {
             sqlBuilder.append("select ").append(this.prequalificationsGroupMapper.schema());
         }
         sqlBuilder.append(" where g.prequalification_number is not null ");
@@ -289,32 +289,31 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         String extraCriteria = "";
 
-            if (StringUtils.equals(groupingType,"group") || StringUtils.equals(type,"checked")) {
-                extraCriteria += " and g.prequalification_type_enum = ? ";
-                paramList.add(PrequalificationType.GROUP.getValue());
-                extraCriteria += " and (mogrp.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mogrp.hierarchy, '%'))";
-                paramList.add(appUser.getOffice().getHierarchy());
-                paramList.add(appUser.getOffice().getHierarchy());
-            }else{
-                extraCriteria += " and (moind.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(moind.hierarchy, '%'))";
-                paramList.add(appUser.getOffice().getHierarchy());
-                paramList.add(appUser.getOffice().getHierarchy());
-            }
+        if (StringUtils.equals(groupingType, "group") || StringUtils.equals(type, "checked")) {
+            extraCriteria += " and g.prequalification_type_enum = ? ";
+            paramList.add(PrequalificationType.GROUP.getValue());
+            extraCriteria += " and (mogrp.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mogrp.hierarchy, '%'))";
+            paramList.add(appUser.getOffice().getHierarchy());
+            paramList.add(appUser.getOffice().getHierarchy());
+        } else {
+            extraCriteria += " and (moind.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(moind.hierarchy, '%'))";
+            paramList.add(appUser.getOffice().getHierarchy());
+            paramList.add(appUser.getOffice().getHierarchy());
+        }
 
-            if (StringUtils.equals(groupingType, "individual")) {
-                extraCriteria += " and g.prequalification_type_enum = ? ";
-                paramList.add(PrequalificationType.INDIVIDUAL.getValue());
-                if (dpiNumber != null) {
-                    extraCriteria += " and g.dpi = ? ";
-                    paramList.add(dpiNumber);
-                }
+        if (StringUtils.equals(groupingType, "individual")) {
+            extraCriteria += " and g.prequalification_type_enum = ? ";
+            paramList.add(PrequalificationType.INDIVIDUAL.getValue());
+            if (dpiNumber != null) {
+                extraCriteria += " and g.dpi = ? ";
+                paramList.add(dpiNumber);
             }
-
+        }
 
         if (agencyId != null) {
             if (StringUtils.equalsIgnoreCase(groupingType, "individual")) {
                 extraCriteria += " and individualOffice.agency_id = ? ";
-            }else {
+            } else {
                 extraCriteria += " and ma.id = ? ";
             }
             paramList.add(agencyId);
@@ -468,7 +467,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                      				FROM m_prequalification_group_members mpgm
                      				GROUP BY mpgm.group_id
                      		) prequalification_numbers ON prequalification_numbers.prequalification_id = g.id
-                     		
+
                      		LEFT JOIN(
                      				select DISTINCT mc.office_id, ms.agency_id,mag.name as agency_name, mpgm.group_id, ms.linked_office_id as supervision_office
                      				from m_prequalification_group_members mpgm
@@ -480,7 +479,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                      				INNER JOIN m_supervision ms on ms.id = mp.supervision_id
                      				INNER JOIN m_agency mag on mag.id = ms.agency_id
                      		) individualOffice ON individualOffice.group_id = g.id
-                     	
+
                      		LEFT JOIN m_agency ma ON
                      			g.agency_id = ma.id
                      		LEFT JOIN(
@@ -555,13 +554,13 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                          sl.date_created AS statusChangedOn,
                          prequalification_numbers.total_requested_amount AS totalRequestedAmount,
                          prequalification_numbers.total_approved_amount AS totalApprovedAmount,
-                         CASE 
-                             WHEN g.previous_prequalification IS NOT NULL THEN 'Recredito' 
-                             ELSE 'Nuevo' 
+                         CASE
+                             WHEN g.previous_prequalification IS NOT NULL THEN 'Recredito'
+                             ELSE 'Nuevo'
                          END AS processType,
-                         CASE 
-                             WHEN mpsl.reprocess_count > 0 THEN 'Reproceso' 
-                             ELSE 'Nuevo' 
+                         CASE
+                             WHEN mpsl.reprocess_count > 0 THEN 'Reproceso'
+                             ELSE 'Nuevo'
                          END AS processQuality,
                          CONCAT(mu.firstname, ' ', mu.lastname) AS statusChangedBy,
                          ma.name AS agencyName,
@@ -583,74 +582,74 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                          redValidCount AS redValidationCount
                         FROM
                          m_prequalification_group g
-                         INNER JOIN 
+                         INNER JOIN
                              m_appuser au ON au.id = g.added_by
-                         INNER JOIN 
+                         INNER JOIN
                              m_product_loan lp ON g.product_id = lp.id
                          LEFT JOIN (
                              SELECT
                                  mpgm.group_id AS prequalification_id,
                                  SUM(mpgm.requested_amount) AS total_requested_amount,
                                  SUM(mpgm.approved_amount) AS total_approved_amount
-                             FROM 
-                                 m_prequalification_group_members mpgm 
-                             GROUP BY 
+                             FROM
+                                 m_prequalification_group_members mpgm
+                             GROUP BY
                                  mpgm.group_id
                          ) prequalification_numbers ON prequalification_numbers.prequalification_id = g.id
-                         LEFT JOIN 
+                         LEFT JOIN
                              m_agency ma ON g.agency_id = ma.id
-                         LEFT JOIN 
-                             m_office groupOffice ON ma.linked_office_id = groupOffice.parent_id 
-                         LEFT JOIN 
+                         LEFT JOIN
+                             m_office groupOffice ON ma.linked_office_id = groupOffice.parent_id
+                         LEFT JOIN
                              m_office mogrp ON mogrp.id = groupOffice.id
                          LEFT JOIN (
-                             SELECT 
+                             SELECT
                                  mcvr.prequalification_id,
                                  COUNT(CASE WHEN mcvr.validation_color_enum = 1 THEN 1 END) AS greenValidCount,
                                  COUNT(CASE WHEN mcvr.validation_color_enum = 2 THEN 1 END) AS yellowValidCount,
                                  COUNT(CASE WHEN mcvr.validation_color_enum = 3 THEN 1 END) AS orangeValidCount,
                                  COUNT(CASE WHEN mcvr.validation_color_enum = 4 THEN 1 END) AS redValidCount
-                             FROM 
-                                 m_checklist_validation_result mcvr 
-                             GROUP BY 
+                             FROM
+                                 m_checklist_validation_result mcvr
+                             GROUP BY
                                  mcvr.prequalification_id
                          ) validations ON validations.prequalification_id = g.id
-                         LEFT JOIN 
+                         LEFT JOIN
                              m_group cg ON cg.id = g.group_id
-                         LEFT JOIN 
+                         LEFT JOIN
                              m_group linkedGroup ON linkedGroup.prequalification_id = g.id
-                         LEFT JOIN 
+                         LEFT JOIN
                              m_group pc ON pc.id = g.center_id
                          LEFT JOIN (
-                             SELECT 
-                                 prequalification_id, 
-                                 to_status, 
-                                 from_status, 
-                                 sub_status, 
-                                 comments, 
-                                 assigned_to, 
-                                 updatedby_id, 
+                             SELECT
+                                 prequalification_id,
+                                 to_status,
+                                 from_status,
+                                 sub_status,
+                                 comments,
+                                 assigned_to,
+                                 updatedby_id,
                                  MAX(date_created) AS date_created
-                             FROM 
-                                 m_prequalification_status_log 
-                             GROUP BY 
+                             FROM
+                                 m_prequalification_status_log
+                             GROUP BY
                                  prequalification_id
-                         ) sl ON sl.prequalification_id = g.id AND sl.to_status=g.status 
+                         ) sl ON sl.prequalification_id = g.id AND sl.to_status=g.status
                          LEFT JOIN (
-                             SELECT 
-                                 count(*) as reprocess_count, 
-                                 prequalification_id, 
+                             SELECT
+                                 count(*) as reprocess_count,
+                                 prequalification_id,
                                  to_status
-                             FROM 
-                                 m_prequalification_status_log 
-                             GROUP BY 
+                             FROM
+                                 m_prequalification_status_log
+                             GROUP BY
                                  prequalification_id, to_status
                          ) mpsl ON mpsl.prequalification_id = g.id AND mpsl.to_status=g.status
-                         LEFT JOIN 
+                         LEFT JOIN
                              m_appuser assigned ON assigned.id = sl.assigned_to
-                         LEFT JOIN 
+                         LEFT JOIN
                              m_appuser mu ON mu.id = sl.updatedby_id
-                         LEFT JOIN 
+                         LEFT JOIN
                              m_appuser fa ON fa.id = g.facilitator
                     """;
         }
@@ -658,6 +657,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         public String schema() {
             return this.schema;
         }
+
         public String gpSchema() {
             return this.grpSchema;
         }
