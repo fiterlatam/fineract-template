@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.jobs.canceldefaultinsurancecharges;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceInstallmentData;
@@ -28,8 +29,6 @@ import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 
-import java.util.List;
-
 @Slf4j
 @RequiredArgsConstructor
 public class CancelDefaultInsuranceChargesTasklet implements Tasklet {
@@ -39,7 +38,8 @@ public class CancelDefaultInsuranceChargesTasklet implements Tasklet {
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-        List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds = this.loanReadPlatformService.getLoanDataWithDefaultOrCancelInsurance(null, null);
+        List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds = this.loanReadPlatformService
+                .getLoanDataWithDefaultOrCancelInsurance(null, null);
         loanWritePlatformService.cancelDefaultInsuranceCharges(defaultLoanIds);
         return RepeatStatus.FINISHED;
     }

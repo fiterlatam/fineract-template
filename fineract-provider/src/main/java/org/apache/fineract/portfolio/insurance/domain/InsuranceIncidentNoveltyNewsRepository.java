@@ -21,7 +21,7 @@ package org.apache.fineract.portfolio.insurance.domain;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface InsuranceIncidentNoveltyNewsRepository extends JpaRepository<InsuranceIncidentNoveltyNews, Long>, JpaSpecificationExecutor<InsuranceIncidentNoveltyNews> {
-
+public interface InsuranceIncidentNoveltyNewsRepository
+        extends JpaRepository<InsuranceIncidentNoveltyNews, Long>, JpaSpecificationExecutor<InsuranceIncidentNoveltyNews> {
 
 }

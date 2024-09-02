@@ -18,14 +18,12 @@
  */
 package org.apache.fineract.portfolio.insurance.data;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentType;
-
-import java.util.List;
 
 @Getter
 @Setter

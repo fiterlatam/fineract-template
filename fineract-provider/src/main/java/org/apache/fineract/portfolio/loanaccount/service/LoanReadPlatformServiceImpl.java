@@ -3064,25 +3064,25 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         public String schema() {
             return """
-                ml.id loanId, min(mlrs.installment) installment, mlc.id loanChargeId
-                    from
-                        m_loan ml
-                        join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id and mlrs.completed_derived = false
-                        join m_loan_charge mlc on mlc.loan_id = ml.id and mlc.charge_calculation_enum = 1034
-                         join m_loan_installment_charge mlic on mlic.loan_charge_id = mlc.id and mlic.loan_schedule_id = mlrs.id
-                         join m_charge mc on mc.id = mlc.charge_id
-                    where
-                        ml.loan_status_id = 300
-                        and mlc.amount_outstanding_derived > 0
-                        and mlc.default_from_installment is null
-                        and mlic.amount_outstanding_derived > 0
-                """;
+                    ml.id loanId, min(mlrs.installment) installment, mlc.id loanChargeId
+                        from
+                            m_loan ml
+                            join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id and mlrs.completed_derived = false
+                            join m_loan_charge mlc on mlc.loan_id = ml.id and mlc.charge_calculation_enum = 1034
+                             join m_loan_installment_charge mlic on mlic.loan_charge_id = mlc.id and mlic.loan_schedule_id = mlrs.id
+                             join m_charge mc on mc.id = mlc.charge_id
+                        where
+                            ml.loan_status_id = 300
+                            and mlc.amount_outstanding_derived > 0
+                            and mlc.default_from_installment is null
+                            and mlic.amount_outstanding_derived > 0
+                    """;
         }
 
         @Override
         public DefaultOrCancelInsuranceInstallmentData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
             final Long loanId = JdbcSupport.getLong(rs, "loanId");
-            final Integer installment = JdbcSupport.getInteger(rs,"installment");
+            final Integer installment = JdbcSupport.getInteger(rs, "installment");
             final Long loanChargeId = JdbcSupport.getLong(rs, "loanChargeId");
 
             return new DefaultOrCancelInsuranceInstallmentData(loanId, loanChargeId, installment);
@@ -3097,17 +3097,15 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         Object[] params = null;
         sql = sql + " and mc.charge_calculation_enum =  " + ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue();
         if (loanId == null) {
-            sql = sql + " and mlrs.duedate < CURRENT_DATE " +
-                    "                        and mc.days_in_arrears is not null " +
-                    "                        and mc.days_in_arrears > 0 " +
-                    "                        and CURRENT_DATE - mlrs.duedate > mc.days_in_arrears ";
+            sql = sql + " and mlrs.duedate < CURRENT_DATE " + "                        and mc.days_in_arrears is not null "
+                    + "                        and mc.days_in_arrears > 0 "
+                    + "                        and CURRENT_DATE - mlrs.duedate > mc.days_in_arrears ";
             params = new Object[] {};
         } else {
             sql = sql + " and ml.id = ? and mc.insurance_code = ? ";
-            params = new Object[] {loanId, insuranceCode};
+            params = new Object[] { loanId, insuranceCode };
         }
         sql = sql + " group by ml.id, mlc.id order by ml.id";
-
 
         return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
     }

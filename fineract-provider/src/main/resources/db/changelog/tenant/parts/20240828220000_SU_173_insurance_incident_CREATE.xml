@@ -46,10 +46,10 @@
                 <constraints nullable="false" />
             </column>
         </createTable>
-    
-	<addColumn tableName="m_insurance_incidents">
-        	<column name="incident_type" type="SMALLINT"/>
-	</addColumn>
+
+    <addColumn tableName="m_insurance_incidents">
+            <column name="incident_type" type="SMALLINT"/>
+    </addColumn>
     </changeSet>
 
     <changeSet author="fineract" id="2">
@@ -104,7 +104,7 @@
             <column name="amount_paid_in_default_installment" type="DECIMAL(10, 4)"/>
         </addColumn>
     </changeSet>
-   
+
     <changeSet author="fineract" id="6">
         <insert tableName="job">
             <column name="name" value="Cancel Default Insurance Charges"/>
@@ -139,7 +139,7 @@
             <column name="entity_name" value="LOAN"/>
             <column name="action_name" value="WRITE"/>
         </insert>
-	
+
         <insert tableName="m_insurance_incidents">
             <column name="name" value="Cancelación definitiva por mora"/>
             <column name="is_mandatory" value="false"/>

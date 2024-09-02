@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DefaultOrCancelInsuranceInstallmentData {
+
     private Long loanId;
     private Long loanChargeId;
     private Integer installment;

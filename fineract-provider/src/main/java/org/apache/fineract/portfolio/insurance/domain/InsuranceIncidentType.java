@@ -1,20 +1,25 @@
 package org.apache.fineract.portfolio.insurance.domain;
 
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 public enum InsuranceIncidentType {
+
     INVALID(0, "insurance.incident.invalid", "invalid"), //
     DEFINITIVE_CANCELLATION_DEFAULT(1, "labels.inputs.insurance.incident.definitive.default", "Cancelación definitiva por mora"), //
-    DEFINITIVE_VOLUNTARY_CANCELLATION(2, "labels.inputs.insurance.incident.definitive.voluntary.cancellation", "Cancelación voluntaria definitiva"), //
-    FINAL_ADVANCE_PAYMENT_CANCELLATION(3, "labels.inputs.insurance.incident.final.advance.payment.cancellation", "Cancelación definitiva por cancelación del crédito"), //
-    FINAL_GUARANTEE_CLAIM_CANCELLATION(4, "labels.inputs.insurance.incident.final.guarantee.claim.cancellation", "Cancelación definitiva por reclamación avaladora"), //
-    FINAL_REFINANCED_CANCELLATION(5, "labels.inputs.insurance.incident.final.refinanced.cancellation", "Cancelación definitiva por rediferido/refinanciado"), //
+    DEFINITIVE_VOLUNTARY_CANCELLATION(2, "labels.inputs.insurance.incident.definitive.voluntary.cancellation",
+            "Cancelación voluntaria definitiva"), //
+    FINAL_ADVANCE_PAYMENT_CANCELLATION(3, "labels.inputs.insurance.incident.final.advance.payment.cancellation",
+            "Cancelación definitiva por cancelación del crédito"), //
+    FINAL_GUARANTEE_CLAIM_CANCELLATION(4, "labels.inputs.insurance.incident.final.guarantee.claim.cancellation",
+            "Cancelación definitiva por reclamación avaladora"), //
+    FINAL_REFINANCED_CANCELLATION(5, "labels.inputs.insurance.incident.final.refinanced.cancellation",
+            "Cancelación definitiva por rediferido/refinanciado"), //
     BAD_SALE_CANCELLATION(6, "labels.inputs.insurance.incident.bad.sale.cancellation", "Cancelación por mala venta"), //
-    PORTFOLIO_WRITE_OFF_CANCELLATION(7, "labels.inputs.insurance.incident.portfolio.write.off.cancellation", "Cancelación por castigo de cartera"); //
+    PORTFOLIO_WRITE_OFF_CANCELLATION(7, "labels.inputs.insurance.incident.portfolio.write.off.cancellation",
+            "Cancelación por castigo de cartera"); //
 
     private final Integer value;
     private final String code;
@@ -48,25 +53,25 @@ public enum InsuranceIncidentType {
         switch (value) {
             case 1:
                 enumeration = InsuranceIncidentType.DEFINITIVE_CANCELLATION_DEFAULT;
-                break;
+            break;
             case 2:
                 enumeration = InsuranceIncidentType.DEFINITIVE_VOLUNTARY_CANCELLATION;
-                break;
+            break;
             case 3:
                 enumeration = InsuranceIncidentType.FINAL_ADVANCE_PAYMENT_CANCELLATION;
-                break;
+            break;
             case 4:
                 enumeration = InsuranceIncidentType.FINAL_GUARANTEE_CLAIM_CANCELLATION;
-                break;
+            break;
             case 5:
                 enumeration = InsuranceIncidentType.FINAL_REFINANCED_CANCELLATION;
-                break;
+            break;
             case 6:
                 enumeration = InsuranceIncidentType.BAD_SALE_CANCELLATION;
-                break;
+            break;
             case 7:
                 enumeration = InsuranceIncidentType.PORTFOLIO_WRITE_OFF_CANCELLATION;
-                break;
+            break;
         }
         return enumeration;
     }

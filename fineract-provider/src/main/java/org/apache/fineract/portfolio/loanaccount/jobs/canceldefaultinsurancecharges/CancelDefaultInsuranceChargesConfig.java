@@ -19,8 +19,6 @@
 package org.apache.fineract.portfolio.loanaccount.jobs.canceldefaultinsurancecharges;
 
 import org.apache.fineract.infrastructure.jobs.service.JobName;
-import org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler;
-import org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.UpdateLoanArrearsAgeingTasklet;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.springframework.batch.core.Job;
@@ -56,8 +54,8 @@ public class CancelDefaultInsuranceChargesConfig {
 
     @Bean
     public Job cancelDefaultInsuranceChargesJob() {
-        return new JobBuilder(JobName.INSURANCE_CHARGE_CANCELLATION_DUE_TO_DEFAULT.name(), jobRepository).start(cancelDefaultInsuranceChargesStep())
-                .incrementer(new RunIdIncrementer()).build();
+        return new JobBuilder(JobName.INSURANCE_CHARGE_CANCELLATION_DUE_TO_DEFAULT.name(), jobRepository)
+                .start(cancelDefaultInsuranceChargesStep()).incrementer(new RunIdIncrementer()).build();
     }
 
     @Bean
