@@ -41,7 +41,15 @@ import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRu
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
+import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
+import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
@@ -59,10 +67,20 @@ public class LoanWriteOffImportHandler implements ImportHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(LoanWriteOffImportHandler.class);
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final LoanReadPlatformService loanReadPlatformService;
+    private final PlatformSecurityContext context;
+    private final DelinquencyReadPlatformService delinquencyReadPlatformService;
+    private final ClientReadPlatformService clientReadPlatformService;
 
     @Autowired
-    public LoanWriteOffImportHandler(final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+    public LoanWriteOffImportHandler(final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+            LoanReadPlatformService loanReadPlatformService, PlatformSecurityContext context,
+            DelinquencyReadPlatformService delinquencyReadPlatformService, ClientReadPlatformService clientReadPlatformService) {
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+        this.loanReadPlatformService = loanReadPlatformService;
+        this.context = context;
+        this.delinquencyReadPlatformService = delinquencyReadPlatformService;
+        this.clientReadPlatformService = clientReadPlatformService;
     }
 
     @Override
@@ -111,9 +129,24 @@ public class LoanWriteOffImportHandler implements ImportHandler {
                 loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX), "Fecha de la operación");
         ImportHandlerUtils.writeString(LoanWriteOffConstants.OUTSTANDING_AMOUNT_COL,
                 loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX), "Monto de deuda");
+        ImportHandlerUtils.writeString(LoanWriteOffConstants.CLIENT_ID_COL,
+                loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX), "Identificador del cliente");
+        ImportHandlerUtils.writeString(LoanWriteOffConstants.CLIENT_NAME_COL,
+                loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX), "Nombre del cliente");
+        ImportHandlerUtils.writeString(LoanWriteOffConstants.LOAN_PRODUCT_NAME_COL,
+                loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX), "Producto de crédito");
+        ImportHandlerUtils.writeString(LoanWriteOffConstants.DAYS_IN_ARREARS_COL,
+                loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX), "Días de mora");
+        ImportHandlerUtils.writeString(LoanWriteOffConstants.CREATED_BY_USER_NAME_COL,
+                loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX), "Usuario que aplicó la condonación");
 
         loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.WRITE_OFF_DATE_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
         loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.OUTSTANDING_AMOUNT_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.CLIENT_ID_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.CLIENT_NAME_COL, TemplatePopulateImportConstants.LARGE_COL_SIZE);
+        loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.LOAN_PRODUCT_NAME_COL, TemplatePopulateImportConstants.LARGE_COL_SIZE);
+        loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.DAYS_IN_ARREARS_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.CREATED_BY_USER_NAME_COL, TemplatePopulateImportConstants.LARGE_COL_SIZE);
 
         final CellStyle headerStyle = headerStyle(workbook);
         loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX).getCell(LoanWriteOffConstants.STATUS_COL)
@@ -122,29 +155,66 @@ public class LoanWriteOffImportHandler implements ImportHandler {
                 .setCellStyle(headerStyle);
         loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX).getCell(LoanWriteOffConstants.OUTSTANDING_AMOUNT_COL)
                 .setCellStyle(headerStyle);
+        loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX).getCell(LoanWriteOffConstants.CLIENT_ID_COL)
+                .setCellStyle(headerStyle);
+        loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX).getCell(LoanWriteOffConstants.CLIENT_NAME_COL)
+                .setCellStyle(headerStyle);
+        loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX).getCell(LoanWriteOffConstants.LOAN_PRODUCT_NAME_COL)
+                .setCellStyle(headerStyle);
+        loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX).getCell(LoanWriteOffConstants.DAYS_IN_ARREARS_COL)
+                .setCellStyle(headerStyle);
+        loanWriteOffSheet.getRow(TemplatePopulateImportConstants.ROWHEADER_INDEX).getCell(LoanWriteOffConstants.CREATED_BY_USER_NAME_COL)
+                .setCellStyle(headerStyle);
 
         final LocalDate transactionDate = DateUtils.getBusinessLocalDate();
         final CellStyle dateCellStyle = workbook.createCellStyle();
         final short dataFormat = workbook.createDataFormat().getFormat(dateFormat);
         dateCellStyle.setDataFormat(dataFormat);
 
+        final AppUser createdByUser = context.authenticatedUser();
+        final String createdByUsername = createdByUser.getDisplayName();
+
         for (final LoanTransactionData loanWriteOffData : loanWriteOffs) {
-            final Cell writeOffDateCell = loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex())
-                    .createCell(LoanWriteOffConstants.WRITE_OFF_DATE_COL);
-            writeOffDateCell.setCellStyle(dateCellStyle);
-            writeOffDateCell.setCellValue(transactionDate);
             try {
+                loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex()).createCell(LoanWriteOffConstants.CREATED_BY_USER_NAME_COL)
+                        .setCellValue(createdByUsername);
+                final Long loanAccountId = loanWriteOffData.getAccountId();
+                final LoanAccountData loanAccountData = this.loanReadPlatformService.retrieveOne(loanAccountId);
+                final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loanAccountId);
+                final ClientData clientData = clientReadPlatformService.retrieveOne(loanAccountData.getClientId());
+                final String loanClientId = clientData.getIdNumber();
+                final String loanClientName = loanAccountData.getClientName();
+                final String loanProductName = loanAccountData.getLoanProductName();
+                final Long daysInArrears = collectionData.getPastDueDays();
+                final BigDecimal outstandingPrincipalAmount = loanAccountData.getSummary().getPrincipalOutstanding();
+                loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex()).createCell(LoanWriteOffConstants.OUTSTANDING_AMOUNT_COL)
+                        .setCellValue(outstandingPrincipalAmount.doubleValue());
+                loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex()).createCell(LoanWriteOffConstants.CLIENT_ID_COL)
+                        .setCellValue(loanClientId);
+                loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex()).createCell(LoanWriteOffConstants.CLIENT_NAME_COL)
+                        .setCellValue(loanClientName);
+                loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex()).createCell(LoanWriteOffConstants.LOAN_PRODUCT_NAME_COL);
+                loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex()).createCell(LoanWriteOffConstants.LOAN_PRODUCT_NAME_COL)
+                        .setCellValue(loanProductName);
+                loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex()).createCell(LoanWriteOffConstants.DAYS_IN_ARREARS_COL)
+                        .setCellValue(daysInArrears);
+
+                final Cell writeOffDateCell = loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex())
+                        .createCell(LoanWriteOffConstants.WRITE_OFF_DATE_COL);
+                writeOffDateCell.setCellStyle(dateCellStyle);
+                writeOffDateCell.setCellValue(transactionDate);
+
                 final JsonObject loanRepaymentJsonObj = gsonBuilder.create().toJsonTree(loanWriteOffData).getAsJsonObject();
                 loanRepaymentJsonObj.remove("manuallyReversed");
                 loanRepaymentJsonObj.remove("numberOfRepayments");
                 final String payload = loanRepaymentJsonObj.toString();
-                final CommandWrapper commandRequest = new CommandWrapperBuilder()
-                        .specialWriteOffLoanTransaction(loanWriteOffData.getAccountId()).withJson(payload).build();
+                final CommandWrapper commandRequest = new CommandWrapperBuilder().specialWriteOffLoanTransaction(loanAccountId)
+                        .withJson(payload).build();
                 this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
                 successCount++;
                 final Cell statusCell = loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex())
                         .createCell(LoanWriteOffConstants.STATUS_COL);
-                statusCell.setCellValue(TemplatePopulateImportConstants.STATUS_CELL_IMPORTED);
+                statusCell.setCellValue("Crédito condonado");
                 statusCell.setCellStyle(ImportHandlerUtils.getCellStyle(workbook, IndexedColors.LIGHT_GREEN));
                 loanWriteOffSheet.setColumnWidth(LoanWriteOffConstants.STATUS_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
             } catch (RuntimeException ex) {
