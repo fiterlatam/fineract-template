@@ -195,6 +195,26 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.isDownPayment = isDownPayment;
     }
 
+    public void adjustSpecialWriteOff(final LocalDate fromDate, final LocalDate dueDate, final BigDecimal principal,
+            final BigDecimal interest, final BigDecimal feeCharges, final BigDecimal penaltyCharges,
+            final boolean recalculatedInterestComponent, final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails,
+            final BigDecimal rescheduleInterestPortion, final boolean isDownPayment) {
+        this.fromDate = fromDate;
+        this.dueDate = dueDate;
+        this.principal = defaultToNullIfZero(principal);
+        this.interestCharged = defaultToNullIfZero(interest);
+        this.feeChargesCharged = defaultToNullIfZero(feeCharges);
+        this.penaltyCharges = defaultToNullIfZero(penaltyCharges);
+        this.obligationsMet = false;
+        this.recalculatedInterestComponent = recalculatedInterestComponent;
+        if (compoundingDetails != null) {
+            compoundingDetails.forEach(cd -> cd.setLoanRepaymentScheduleInstallment(this));
+        }
+        this.loanCompoundingDetails = compoundingDetails;
+        this.rescheduleInterestPortion = rescheduleInterestPortion;
+        this.isDownPayment = isDownPayment;
+    }
+
     public LoanRepaymentScheduleInstallment(final Loan loan, final Integer installmentNumber, final LocalDate fromDate,
             final LocalDate dueDate, final BigDecimal principal, final BigDecimal interest, final BigDecimal feeCharges,
             final BigDecimal penaltyCharges, final boolean recalculatedInterestComponent,
@@ -1033,7 +1053,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         return DateUtils.isAfter(transactionDate, getDueDate());
     }
 
-    private void checkIfRepaymentPeriodObligationsAreMet(final LocalDate transactionDate, final MonetaryCurrency currency) {
+    public void checkIfRepaymentPeriodObligationsAreMet(final LocalDate transactionDate, final MonetaryCurrency currency) {
         this.obligationsMet = getTotalOutstanding(currency).isZero();
         if (this.obligationsMet) {
             this.obligationsMetOnDate = transactionDate;
@@ -1334,4 +1354,44 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     public List<LoanChargeData> getCurrentOutstandingLoanCharges() {
         return currentOutstandingLoanCharges;
     }
+
+    public void setFromDate(LocalDate fromDate) {
+        this.fromDate = fromDate;
+    }
+
+    public void setDueDate(LocalDate dueDate) {
+        this.dueDate = dueDate;
+    }
+
+    public void setLoan(Loan loan) {
+        this.loan = loan;
+    }
+
+    public void setPrincipal(BigDecimal principal) {
+        this.principal = principal;
+    }
+
+    public void setInterestCharged(BigDecimal interestCharged) {
+        this.interestCharged = interestCharged;
+    }
+
+    public void setFeeChargesCharged(BigDecimal feeChargesCharged) {
+        this.feeChargesCharged = feeChargesCharged;
+    }
+
+    public void setPenaltyCharges(BigDecimal penaltyCharges) {
+        this.penaltyCharges = penaltyCharges;
+    }
+
+    public void setLoanCompoundingDetails(Set<LoanInterestRecalcualtionAdditionalDetails> loanCompoundingDetails) {
+        if (loanCompoundingDetails != null) {
+            loanCompoundingDetails.forEach(cd -> cd.setLoanRepaymentScheduleInstallment(this));
+        }
+        this.loanCompoundingDetails = loanCompoundingDetails;
+    }
+
+    public void setDownPayment(boolean downPayment) {
+        isDownPayment = downPayment;
+    }
+
 }
