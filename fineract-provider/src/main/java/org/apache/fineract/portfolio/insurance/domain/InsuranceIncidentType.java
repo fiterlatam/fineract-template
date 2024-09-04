@@ -11,7 +11,7 @@ public enum InsuranceIncidentType {
     DEFINITIVE_CANCELLATION_DEFAULT(1, "labels.inputs.insurance.incident.definitive.default", "Cancelación definitiva por mora"), //
     DEFINITIVE_VOLUNTARY_CANCELLATION(2, "labels.inputs.insurance.incident.definitive.voluntary.cancellation",
             "Cancelación voluntaria definitiva"), //
-    FINAL_ADVANCE_PAYMENT_CANCELLATION(3, "labels.inputs.insurance.incident.final.advance.payment.cancellation",
+    DEFINITIVE_FINAL_CANCELLATION(3, "labels.inputs.insurance.incident.final.advance.payment.cancellation",
             "Cancelación definitiva por cancelación del crédito"), //
     FINAL_GUARANTEE_CLAIM_CANCELLATION(4, "labels.inputs.insurance.incident.final.guarantee.claim.cancellation",
             "Cancelación definitiva por reclamación avaladora"), //
@@ -58,7 +58,7 @@ public enum InsuranceIncidentType {
                 enumeration = InsuranceIncidentType.DEFINITIVE_VOLUNTARY_CANCELLATION;
             break;
             case 3:
-                enumeration = InsuranceIncidentType.FINAL_ADVANCE_PAYMENT_CANCELLATION;
+                enumeration = InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION;
             break;
             case 4:
                 enumeration = InsuranceIncidentType.FINAL_GUARANTEE_CLAIM_CANCELLATION;

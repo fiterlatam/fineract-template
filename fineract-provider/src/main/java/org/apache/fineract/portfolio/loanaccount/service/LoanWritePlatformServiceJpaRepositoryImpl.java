@@ -1172,6 +1172,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             this.loanAccountDomainService.updateLoanCollateralTransaction(loanCollateralManagements);
         }
 
+        if (loan.getStatus().isClosed()) {
+            InsuranceIncident incident = this.insuranceIncidentRepository
+                    .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
+            if (incident != null) {
+                BigDecimal cumulative = BigDecimal.ZERO;
+                List<LoanCharge> loanCharges = loan.getLoanCharges().stream()
+                        .filter(lc -> lc.getChargeCalculation().isVoluntaryInsurance()).toList();
+                for (LoanCharge loanCharge : loanCharges) {
+                    InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                            0, incident, loan.getClosedOnDate(), cumulative);
+                    this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+                }
+            }
+        }
+
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()) //
                 .withLoanId(loan.getId()) //
                 .withEntityId(loanTransaction.getId()) //
@@ -1292,6 +1307,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         bulkRepaymentCommand.getNote(), externalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer,
                         holidayDetailDTO, isHolidayValidationDone);
                 transactionIds.add(loanTransaction.getId());
+
+                if (loan.getStatus().isClosed()) {
+                    InsuranceIncident incident = this.insuranceIncidentRepository
+                            .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
+                    if (incident != null) {
+                        BigDecimal cumulative = BigDecimal.ZERO;
+                        List<LoanCharge> loanCharges = loan.getLoanCharges().stream()
+                                .filter(lc -> lc.getChargeCalculation().isVoluntaryInsurance()).toList();
+                        for (LoanCharge loanCharge : loanCharges) {
+                            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                                    0, incident, loan.getClosedOnDate(), cumulative);
+                            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+                        }
+                    }
+                }
             }
         }
         changes.put("loanTransactions", transactionIds);
@@ -3343,6 +3373,28 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan,
                 loanRescheduleRequest);
 
+        List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
+                .getLoanDataWithDefaultOrCancelInsurance(loanId, null);
+        InsuranceIncident incident = this.insuranceIncidentRepository
+                .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
+        if (incident == null) {
+            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION.name());
+        }
+        for (DefaultOrCancelInsuranceInstallmentData data : cancelInsuranceInstallmentIds) {
+            LoanCharge loanCharge = null;
+            Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream()
+                    .filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
+            if (loanChargeOptional.isPresent()) {
+                loanCharge = loanChargeOptional.get();
+            }
+            BigDecimal cumulative = BigDecimal.ZERO;
+            cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, true);
+            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                    data.installment(), incident, transactionDate, cumulative);
+
+            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+        }
+
         LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, externalId,
                 changes);
 
@@ -3838,7 +3890,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 loanCharge = loanChargeOptional.get();
             }
             BigDecimal cumulative = BigDecimal.ZERO;
-            cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, data);
+            cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, false);
             InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
                     data.installment(), incident, currentDate, cumulative);
 
@@ -3886,7 +3938,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
 
             BigDecimal cumulative = BigDecimal.ZERO;
-            cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, cancelInsuranceInstallmentData);
+            cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, cancelInsuranceInstallmentData, false);
 
             InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
                     cancelInsuranceInstallmentData.installment(), incident, cancellationDate, cumulative);
@@ -3901,7 +3953,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     private BigDecimal processInsuranceChargeCancellation(BigDecimal cumulative, Loan loan, LoanCharge loanCharge,
-            DefaultOrCancelInsuranceInstallmentData data) {
+            DefaultOrCancelInsuranceInstallmentData data, boolean isForeClosure) {
         List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments().stream()
                 .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
 
@@ -3911,15 +3963,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     if (Objects.equals(installmentCharge.getLoanCharge().getId(), data.loanChargeId())) {
                         if (installment.getInstallmentNumber().compareTo(data.installment()) == 0) {
                             installmentCharge.getLoanCharge().setDefaultFromInstallment(data.installment());
-                            if (installmentCharge.getAmountPaid(loan.getCurrency()).isGreaterThanZero()) {
+                            if (!isForeClosure && installmentCharge.getAmountPaid(loan.getCurrency()).isGreaterThanZero()) {
                                 // First default installment could have partially paid amount
                                 installmentCharge.getLoanCharge().setPartialAmountPaidInFirstDefaultInstallment(
                                         installmentCharge.getAmountPaid(loan.getCurrency()).getAmount());
                             }
                         }
                         cumulative = cumulative.add(installmentCharge.getAmountOutstanding());
-                        installment.adjustFeeChargePortion(Money.of(loan.getCurrency(), installmentCharge.getAmountOutstanding()));
-                        installmentCharge.adjustChargeAmount(Money.of(loan.getCurrency(), installmentCharge.getAmountOutstanding()));
+                        if (!isForeClosure) {
+                            installment.adjustFeeChargePortion(Money.of(loan.getCurrency(), installmentCharge.getAmountOutstanding()));
+                            installmentCharge.adjustChargeAmount(Money.of(loan.getCurrency(), installmentCharge.getAmountOutstanding()));
+                        }
                     }
                 }
             }

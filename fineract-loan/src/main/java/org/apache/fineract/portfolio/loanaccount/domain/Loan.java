@@ -4371,6 +4371,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return getStatus().isClosed() || isCancelled();
     }
 
+    public boolean isClosedAndNotCancelled() {
+        return getStatus().isClosed();
+    }
+
     private boolean isClosedObligationsMet() {
         return getStatus().isClosedObligationsMet();
     }
