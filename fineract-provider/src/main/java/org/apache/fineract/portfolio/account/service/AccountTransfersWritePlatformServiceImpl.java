@@ -29,10 +29,7 @@ import com.google.common.collect.Lists;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -52,11 +49,9 @@ import org.apache.fineract.portfolio.account.domain.AccountTransferRepository;
 import org.apache.fineract.portfolio.account.domain.AccountTransferTransaction;
 import org.apache.fineract.portfolio.account.domain.AccountTransferType;
 import org.apache.fineract.portfolio.account.exception.DifferentCurrenciesException;
+import org.apache.fineract.portfolio.insurance.domain.*;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.exception.InvalidPaidInAdvanceAmountException;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
@@ -88,6 +83,8 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
     private final ConfigurationDomainService configurationDomainService;
     private final ExternalIdFactory externalIdFactory;
     private final FineractProperties fineractProperties;
+    private final InsuranceIncidentRepository insuranceIncidentRepository;
+    private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
 
     @Transactional
     @Override
@@ -491,6 +488,14 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
 
         ExternalId externalIdForRepayment = externalIdFactory.create();
 
+        Integer installmentNumber = 0;
+        Optional<LoanRepaymentScheduleInstallment> firstUnpaidInstallment = toLoanAccount.getRepaymentScheduleInstallments().stream()
+                .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber))
+                .filter(installment -> !installment.isObligationsMet()).findFirst();
+        if (firstUnpaidInstallment.isPresent()) {
+            installmentNumber = firstUnpaidInstallment.get().getInstallmentNumber();
+        }
+
         LoanTransaction repayTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.REPAYMENT, toLoanAccount,
                 accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(), accountTransferDTO.getPaymentDetail(),
                 null, externalIdForRepayment, false, chargeRefundChargeType, isAccountTransfer, null, false, true);
@@ -498,6 +503,19 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
         AccountTransferDetails accountTransferDetails = this.accountTransferAssembler.assembleLoanToLoanTransfer(accountTransferDTO,
                 fromLoanAccount, toLoanAccount, disburseTransaction, repayTransaction);
         this.accountTransferDetailRepository.saveAndFlush(accountTransferDetails);
+
+        InsuranceIncident incident = this.insuranceIncidentRepository
+                .findByIncidentType(InsuranceIncidentType.FINAL_REFINANCED_CANCELLATION);
+        if (incident != null) {
+            BigDecimal cumulative = BigDecimal.ZERO;
+            List<LoanCharge> loanCharges = toLoanAccount.getLoanCharges().stream()
+                    .filter(lc -> lc.getChargeCalculation().isVoluntaryInsurance()).toList();
+            for (LoanCharge loanCharge : loanCharges) {
+                InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(toLoanAccount, loanCharge,
+                        installmentNumber, incident, accountTransferDTO.getTransactionDate(), cumulative);
+                this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+            }
+        }
 
         return accountTransferDetails;
     }

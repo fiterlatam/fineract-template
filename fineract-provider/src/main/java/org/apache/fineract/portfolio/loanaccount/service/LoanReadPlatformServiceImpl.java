@@ -3188,11 +3188,14 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         String sql = "SELECT " + rowMapper.schema();
         Object[] params = null;
         sql = sql + " and mc.charge_calculation_enum =  " + ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue();
-        if (loanId == null) {
+        if (loanId == null && insuranceCode == null) {
             sql = sql + " and mlrs.duedate < CURRENT_DATE " + "                        and mc.days_in_arrears is not null "
                     + "                        and mc.days_in_arrears > 0 "
                     + "                        and CURRENT_DATE - mlrs.duedate > mc.days_in_arrears ";
             params = new Object[] {};
+        } else if (insuranceCode == null) {
+            sql = sql + " and ml.id = ? ";
+            params = new Object[] { loanId };
         } else {
             sql = sql + " and ml.id = ? and mc.insurance_code = ? ";
             params = new Object[] { loanId, insuranceCode };
