@@ -165,4 +165,14 @@
         </sql>
     </changeSet>
 
+    <changeSet id="9" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report
+                SET report_category = 'Loan'
+                WHERE report_name IN ('Condonaciones masivas', 'Condonaciones especiales');
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
