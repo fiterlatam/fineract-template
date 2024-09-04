@@ -1177,11 +1177,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
             if (incident != null) {
                 BigDecimal cumulative = BigDecimal.ZERO;
-                List<LoanCharge> loanCharges = loan.getLoanCharges().stream()
-                        .filter(lc -> lc.getChargeCalculation().isVoluntaryInsurance()).toList();
+                List<LoanCharge> loanCharges = loan.getLoanCharges().stream().filter(lc -> lc.getChargeCalculation().isVoluntaryInsurance())
+                        .toList();
                 for (LoanCharge loanCharge : loanCharges) {
-                    InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
-                            0, incident, loan.getClosedOnDate(), cumulative);
+                    InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, 0,
+                            incident, loan.getClosedOnDate(), cumulative);
                     this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
                 }
             }
@@ -1316,8 +1316,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         List<LoanCharge> loanCharges = loan.getLoanCharges().stream()
                                 .filter(lc -> lc.getChargeCalculation().isVoluntaryInsurance()).toList();
                         for (LoanCharge loanCharge : loanCharges) {
-                            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
-                                    0, incident, loan.getClosedOnDate(), cumulative);
+                            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan,
+                                    loanCharge, 0, incident, loan.getClosedOnDate(), cumulative);
                             this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
                         }
                     }

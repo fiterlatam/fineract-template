@@ -3196,7 +3196,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         } else if (insuranceCode == null) {
             sql = sql + " and ml.id = ? ";
             params = new Object[] { loanId };
-        }else {
+        } else {
             sql = sql + " and ml.id = ? and mc.insurance_code = ? ";
             params = new Object[] { loanId, insuranceCode };
         }

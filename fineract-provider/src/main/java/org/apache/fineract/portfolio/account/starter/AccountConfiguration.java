@@ -95,7 +95,8 @@ public class AccountConfiguration {
         return new AccountTransfersWritePlatformServiceImpl(accountTransfersDataValidator, accountTransferAssembler,
                 accountTransferRepository, savingsAccountAssembler, savingsAccountDomainService, loanAccountAssembler,
                 loanAccountDomainService, savingsAccountWritePlatformService, accountTransferDetailRepository, loanReadPlatformService,
-                gsimRepository, configurationDomainService, externalIdFactory, fineractProperties, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository);
+                gsimRepository, configurationDomainService, externalIdFactory, fineractProperties, insuranceIncidentRepository,
+                insuranceIncidentNoveltyNewsRepository);
     }
 
     @Bean
