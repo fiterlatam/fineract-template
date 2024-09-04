@@ -1925,8 +1925,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                         "Loan schedule period not found"));
                         final Money midInterestForCurrentPeriod = Money.of(currency, BigDecimal.valueOf(
                                 loan.calculateInterestForDays(totalPeriodDays, midScheduleInstallment.interestDue(), futureTillDays)));
-                        final Money currentInterestToBeCharged = interestForCurrentPeriod.plus(midInterestForCurrentPeriod);
-                        currentScheduleInstallment.setInterestCharged(currentInterestToBeCharged.getAmount());
+                        interestToBeChargedAndWrittenOff = interestForCurrentPeriod.plus(midInterestForCurrentPeriod);
                         final LocalDate installmentFromDate = nextRescheduleInstallment.getFromDate();
                         final LocalDate installmentDueDate = nextRescheduleInstallment.getDueDate();
                         writeOffNumberOfRepayments = numberOfRepayments - currentInstallmentNumber;
