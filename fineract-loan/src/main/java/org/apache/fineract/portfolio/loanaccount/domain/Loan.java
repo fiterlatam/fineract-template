@@ -2591,8 +2591,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             // according to SU-314 , rather than post the whole accrual , apply just the daily accruals
             // from the disbursed date till cuurent date , apply the daily accruals
             LocalDate currentDate = DateUtils.getLocalDateOfTenant();
-            for (LocalDate selectedDate = actualDisbursementDate; !selectedDate.isAfter(currentDate); selectedDate = selectedDate
-                    .plusDays(1)) {
+            for (LocalDate selectedDate = actualDisbursementDate; selectedDate
+                    .isBefore(currentDate); selectedDate = selectedDate.plusDays(1)) {
                 applyDailyAccruals(selectedDate);
             }
         }

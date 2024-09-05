@@ -45,7 +45,7 @@ public class DailyAccrualTasklet implements Tasklet {
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
 
         List<Throwable> errors = new ArrayList<>();
-        LocalDate accrualDate = DateUtils.getLocalDateOfTenant();
+        LocalDate accrualDate = DateUtils.getLocalDateOfTenant().minusDays(1);
         try {
 
             log.info("Running Daily Accrual for loans on {}", accrualDate);
