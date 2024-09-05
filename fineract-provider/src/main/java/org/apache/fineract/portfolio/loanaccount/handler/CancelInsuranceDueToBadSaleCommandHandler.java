@@ -38,6 +38,6 @@ public class CancelInsuranceDueToBadSaleCommandHandler implements NewCommandSour
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
 
-        return this.writePlatformService.cancelInsurance(command, true);
+        return this.writePlatformService.cancelInsurance(command, false);
     }
 }
