@@ -19,7 +19,11 @@ public enum InsuranceIncidentType {
             "Cancelación definitiva por rediferido/refinanciado"), //
     BAD_SALE_CANCELLATION(6, "labels.inputs.insurance.incident.bad.sale.cancellation", "Cancelación por mala venta"), //
     PORTFOLIO_WRITE_OFF_CANCELLATION(7, "labels.inputs.insurance.incident.portfolio.write.off.cancellation",
-            "Cancelación por castigo de cartera"); //
+            "Cancelación por castigo de cartera"), //
+    TEMPORARY_SUSPENSION_DUE_TO_DEFAULT(8, "labels.inputs.insurance.incident.temporary.suspension.default", "Suspensión temporal por mora"), //
+    PERMANENT_CANCELLATION_DUE_TO_MAX_AGE(9, "labels.inputs.insurance.incident.permanent.cancellation.max.age",
+            "Cancelación definitiva por edad máxima de permanencia"), //
+    DEATH_CANCELLATION(10, "labels.inputs.insurance.incident.death.cancellation", "Cancelación definitiva por fallecimiento");
 
     private final Integer value;
     private final String code;
