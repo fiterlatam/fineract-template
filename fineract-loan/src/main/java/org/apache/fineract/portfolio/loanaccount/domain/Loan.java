@@ -2633,22 +2633,20 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (!date.isBefore(installment.getFromDate()) && !date.isAfter(installment.getDueDate())) {
                 long daysInPeriod = ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()) + 1;
                 Money interestForInstallment = installment.getInterestCharged(getCurrency());
-                BigDecimal dailyInterest = interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2,
-                        RoundingMode.HALF_UP);
+                BigDecimal dailyInterest;
 
                 // Adjust interest on the last day of the period to make up the difference
                 if (date.equals(installment.getDueDate())) {
                     BigDecimal totalAccruedInterest = installment.getAccruedInterest(getCurrency()).getAmount();
                     // This will ensure no rounding differences remain
-                    return interestForInstallment.getAmount().subtract(totalAccruedInterest);
+                    dailyInterest = interestForInstallment.getAmount().subtract(totalAccruedInterest);
 
+                } else {
+                    dailyInterest = interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2, RoundingMode.HALF_UP);
                 }
 
                 // Accumulate the daily interest to the installment's accrued interest
                 installment.addAccruedInterest(Money.of(getCurrency(), dailyInterest));
-
-                // update the installment with the accrued interest
-                // updateLoanRepaymentScheduleInstallment(installment);
 
                 return dailyInterest;
             }
