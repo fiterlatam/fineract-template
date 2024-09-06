@@ -14,8 +14,8 @@
             <column name="REPORT_NAME" value="Novedades de Seguros o Asistencias Voluntarias"/>
             <column name="REPORT_SQL">
                 <![CDATA[
-        SELECT
-            COALESCE(cce."NIT", '800139398-6') AS "Nit de empresa",
+        SELECT DISTINCT ON (min.novelty_id)
+            COALESCE(cce."NIT" , '800139398-6') AS "Nit de empresa",
             TO_CHAR(min.novelty_date, 'DD/MM/YYYY') AS "Fecha de la novedad",
             mi.name AS "Tipo de novedad",
             min.novelty_id AS "Código de la novedad",
@@ -23,7 +23,7 @@
                 WHEN c.legal_form_enum = 2 THEN 'NIT'
                 ELSE 'Cédula'
             END AS "Tipo de documento del cliente",
-            COALESCE(cce."NIT", ccp."Cedula") AS "Número de documento de identidad del cliente",
+            COALESCE(cce."NIT", ccp."Cedula" ) AS "Número de documento de identidad del cliente",
             c.fullname AS "Nombre del cliente de la novedad",
             COALESCE(c.lastname, '-') AS "Apellidos del cliente de la novedad",
             mc.insurance_code AS "Código del seguro o asistencia",
@@ -41,8 +41,8 @@
         JOIN m_charge mc ON mc.id = mlc.charge_id
         JOIN m_insurance_novelty_news min ON min.loan_id = ml.id AND min.loan_charge_id = mlc.id
         JOIN m_insurance_incidents mi ON mi.id = min.novelty_id
-        JOIN campos_cliente_empresas cce ON cce.client_id = c.id
-        JOIN campos_cliente_persona ccp ON ccp.client_id = c.id
+        LEFT JOIN campos_cliente_empresas cce ON cce.client_id = c.id
+        LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = c.id
         LEFT JOIN (
             SELECT mlc2.id AS loan_charge_id, mlc2.loan_id, mlic.amount
             FROM m_loan_installment_charge mlic
@@ -61,7 +61,7 @@
             AND (mc.insurance_code = '${voluntaryInsuranceCode}' OR '${voluntaryInsuranceCode}' = '-1')
             AND min.novelty_date BETWEEN '${startDate}' AND '${endDate}'
         ORDER BY
-            min.novelty_date, ml.account_no
+            min.novelty_id, min.novelty_date DESC, ml.account_no
         ]]>
             </column>
             <column name="report_type" value="Table"/>

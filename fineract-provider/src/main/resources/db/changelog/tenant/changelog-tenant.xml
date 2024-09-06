@@ -272,6 +272,6 @@
     <include file="parts/20242604011009111_SU_118_special_write_off.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU-191_global_compensation_email.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240828220000_SU_173_insurance_incident_CREATE.xml" relativeToChangelogFile="true"/>
-    <include file="parts/20240409011009260_SU_174_create_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240509011009220_SU_149_add-min-arrear-guarantor-claim.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240609011009240_SU_174_create_report.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
