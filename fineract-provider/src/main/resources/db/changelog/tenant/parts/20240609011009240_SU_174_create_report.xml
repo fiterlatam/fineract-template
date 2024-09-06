@@ -66,7 +66,7 @@
             </column>
             <column name="report_type" value="Table"/>
             <column name="report_category" value="Loan"/>
-            <column name="description" value="Reporte de Novedades de Seguros o Asistencias Voluntarias (Distinct por novedad)"/>
+            <column name="description" value="Reporte de Novedades de Seguros o Asistencias Voluntarias"/>
             <column name="core_report" value="false"/>
             <column name="use_report" value="true"/>
         </insert>
