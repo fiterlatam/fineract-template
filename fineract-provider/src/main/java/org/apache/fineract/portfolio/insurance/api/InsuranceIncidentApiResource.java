@@ -40,6 +40,7 @@ import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSeria
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.insurance.data.InsuranceIncidentData;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentType;
 import org.apache.fineract.portfolio.insurance.service.InsuranceIncidentReadService;
 import org.springframework.stereotype.Component;
 
@@ -54,6 +55,19 @@ public class InsuranceIncidentApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final DefaultToApiJsonSerializer<InsuranceIncidentData> toApiJsonSerializer;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+
+    @GET
+    @Path("/template")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String getTemplate(@Context final UriInfo uriInfo) {
+
+        this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        InsuranceIncidentData incidentData = new InsuranceIncidentData();
+        incidentData.setIncidentTypeOptions(InsuranceIncidentType.getValuesAsEnumOptionDataList());
+        return toApiJsonSerializer.serialize(settings, incidentData);
+    }
 
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
@@ -77,6 +91,7 @@ public class InsuranceIncidentApiResource {
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         InsuranceIncidentData incidentData = this.insuranceIncidentService.retrieveInsuranceIncident(incidentId);
+        incidentData.setIncidentTypeOptions(InsuranceIncidentType.getValuesAsEnumOptionDataList());
         return this.toApiJsonSerializer.serialize(settings, incidentData);
     }
 

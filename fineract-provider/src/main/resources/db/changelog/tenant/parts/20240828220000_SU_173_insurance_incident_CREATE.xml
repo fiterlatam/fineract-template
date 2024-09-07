@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="fineract" id="1">
+        <createTable schemaName="public" tableName="m_insurance_novelty_news">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="loan_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="loan_charge_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="default_from_installment" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="novelty_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="novelty_date" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="default_amount" type="DECIMAL(10, 4)">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="fineract" id="2">
+        <addForeignKeyConstraint baseColumnNames="loan_id"
+                                 baseTableName="m_insurance_novelty_news"
+                                 constraintName="FK_m_insurance_novelty_news_m_loan"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="RESTRICT"
+                                 onUpdate="RESTRICT"
+                                 referencedColumnNames="id"
+                                 referencedTableName="m_loan"
+                                 validate="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="3">
+        <addForeignKeyConstraint baseColumnNames="loan_charge_id"
+                                 baseTableName="m_insurance_novelty_news"
+                                 constraintName="FK_m_insurance_novelty_news_m_loan_charge"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="RESTRICT"
+                                 onUpdate="RESTRICT"
+                                 referencedColumnNames="id"
+                                 referencedTableName="m_loan_charge"
+                                 validate="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="4">
+        <addForeignKeyConstraint baseColumnNames="novelty_id"
+                                 baseTableName="m_insurance_novelty_news"
+                                 constraintName="FK_m_insurance_novelty_news_m_insurance_incidents"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="RESTRICT"
+                                 onUpdate="RESTRICT"
+                                 referencedColumnNames="id"
+                                 referencedTableName="m_insurance_incidents"
+                                 validate="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="5">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan_charge" columnName="default_from_installment"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan_charge">
+            <column name="default_from_installment" type="BIGINT"/>
+        </addColumn>
+        <addColumn tableName="m_loan_charge">
+            <column name="amount_paid_in_default_installment" type="DECIMAL(10, 4)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="6">
+        <insert tableName="job">
+            <column name="name" value="Cancel Default Insurance Charges"/>
+            <column name="display_name" value="Cancel Default Insurance Charges"/>
+            <column name="cron_expression" value="0 1 0 1/1 * ? *"/>
+            <column name="create_time" valueDate="${current_datetime}"/>
+            <column name="task_priority" valueNumeric="5"/>
+            <column name="group_name"/>
+            <column name="previous_run_start_time"/>
+            <column name="job_key" value="Cancel Default Insurance ChargesJobDetail1 _ DEFAULT"/>
+            <column name="initializing_errorlog"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="currently_running" valueBoolean="false"/>
+            <column name="updates_allowed" valueBoolean="true"/>
+            <column name="scheduler_group" valueNumeric="0"/>
+            <column name="is_misfired" valueBoolean="false"/>
+            <column name="node_id" valueNumeric="1"/>
+            <column name="is_mismatched_job" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="7">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="CANCELINSURANCEBADSALE_LOAN"/>
+            <column name="entity_name" value="LOAN"/>
+            <column name="action_name" value="WRITE"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="CANCELVOLUNTARYINSURANCE_LOAN"/>
+            <column name="entity_name" value="LOAN"/>
+            <column name="action_name" value="WRITE"/>
+        </insert>
+
+        <insert tableName="m_insurance_incidents">
+            <column name="name" value="Cancelación definitiva por mora"/>
+            <column name="is_mandatory" value="false"/>
+            <column name="is_voluntary" value="true"/>
+            <column name="created_on_utc" value="NOW()"/>
+            <column name="created_by" value="1"/>
+            <column name="last_modified_by" value="1"/>
+            <column name="last_modified_on_utc" value="NOW()"/>
+            <column name="incident_type" value="1"/>
+        </insert>
+        <insert tableName="m_insurance_incidents">
+            <column name="name" value="Cancelación voluntaria definitiva"/>
+            <column name="is_mandatory" value="false"/>
+            <column name="is_voluntary" value="true"/>
+            <column name="created_on_utc" value="NOW()"/>
+            <column name="created_by" value="1"/>
+            <column name="last_modified_by" value="1"/>
+            <column name="last_modified_on_utc" value="NOW()"/>
+            <column name="incident_type" value="2"/>
+        </insert>
+        <insert tableName="m_insurance_incidents">
+            <column name="name" value="Cancelación definitiva por cancelación del crédito"/>
+            <column name="is_mandatory" value="false"/>
+            <column name="is_voluntary" value="true"/>
+            <column name="created_on_utc" value="NOW()"/>
+            <column name="created_by" value="1"/>
+            <column name="last_modified_by" value="1"/>
+            <column name="last_modified_on_utc" value="NOW()"/>
+            <column name="incident_type" value="3"/>
+        </insert>
+        <insert tableName="m_insurance_incidents">
+            <column name="name" value="Cancelación definitiva por reclamación avaladora"/>
+            <column name="is_mandatory" value="false"/>
+            <column name="is_voluntary" value="true"/>
+            <column name="created_on_utc" value="NOW()"/>
+            <column name="created_by" value="1"/>
+            <column name="last_modified_by" value="1"/>
+            <column name="last_modified_on_utc" value="NOW()"/>
+            <column name="incident_type" value="4"/>
+        </insert>
+        <insert tableName="m_insurance_incidents">
+            <column name="name" value="Cancelación definitiva por rediferido/refinanciado"/>
+            <column name="is_mandatory" value="false"/>
+            <column name="is_voluntary" value="true"/>
+            <column name="created_on_utc" value="NOW()"/>
+            <column name="created_by" value="1"/>
+            <column name="last_modified_by" value="1"/>
+            <column name="last_modified_on_utc" value="NOW()"/>
+            <column name="incident_type" value="5"/>
+        </insert>
+        <insert tableName="m_insurance_incidents">
+            <column name="name" value="Cancelación por mala venta"/>
+            <column name="is_mandatory" value="false"/>
+            <column name="is_voluntary" value="true"/>
+            <column name="created_on_utc" value="NOW()"/>
+            <column name="created_by" value="1"/>
+            <column name="last_modified_by" value="1"/>
+            <column name="last_modified_on_utc" value="NOW()"/>
+            <column name="incident_type" value="6"/>
+        </insert>
+        <insert tableName="m_insurance_incidents">
+            <column name="name" value="Cancelación por castigo de cartera"/>
+            <column name="is_mandatory" value="false"/>
+            <column name="is_voluntary" value="true"/>
+            <column name="created_on_utc" value="NOW()"/>
+            <column name="created_by" value="1"/>
+            <column name="last_modified_by" value="1"/>
+            <column name="last_modified_on_utc" value="NOW()"/>
+            <column name="incident_type" value="7"/>
+        </insert>
+    </changeSet>
+
+
+</databaseChangeLog>

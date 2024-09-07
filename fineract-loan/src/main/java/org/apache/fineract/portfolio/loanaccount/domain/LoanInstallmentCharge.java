@@ -364,4 +364,13 @@ public class LoanInstallmentCharge extends AbstractPersistableCustom implements 
         }
     }
 
+    public void adjustChargeAmount(final Money adjustedAmount) {
+        final Money currentAmount = this.getAmount(adjustedAmount.getCurrency());
+        if (currentAmount.isGreaterThanOrEqualTo(adjustedAmount)) {
+            this.amount = currentAmount.minus(adjustedAmount).getAmount();
+            this.amountOutstanding = calculateOutstanding();
+            this.paid = this.determineIfFullyPaid();
+            this.loancharge.adjustChargeAmount(adjustedAmount);
+        }
+    }
 }

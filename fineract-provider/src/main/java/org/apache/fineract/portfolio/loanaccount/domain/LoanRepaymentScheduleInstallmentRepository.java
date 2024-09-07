@@ -24,8 +24,10 @@ import java.util.List;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleDelinquencyData;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface LoanRepaymentScheduleInstallmentRepository
         extends JpaRepository<LoanRepaymentScheduleInstallment, Long>, JpaSpecificationExecutor<LoanRepaymentScheduleInstallment> {
@@ -63,5 +65,11 @@ public interface LoanRepaymentScheduleInstallmentRepository
     Collection<LoanScheduleDelinquencyData> fetchLoanScheduleDataByDueDateAndObligationsMet(@Param("loanStatus") Integer loanStatus,
             @Param("businessDate") LocalDate businessDate, @Param("obligationsMet") boolean obligationsMet,
             @Param("loanIds") List<Long> loanIds);
+
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM m_loan_repayment_schedule WHERE id = ?1", nativeQuery = true)
+
+    void deleteById(Long id);
 
 }

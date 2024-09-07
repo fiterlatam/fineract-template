@@ -43,4 +43,136 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet id="3" author="fineract">
+        <dropNotNullConstraint tableName="m_loan_repayment_schedule" columnName="loan_id" columnDataType="BIGINT"/>
+    </changeSet>
+
+    <changeSet id="4" author="fineract">
+        <sql>
+            <![CDATA[
+            INSERT INTO stretchy_parameter (parameter_name, parameter_variable, parameter_label, "parameter_displayType", "parameter_FormatType", parameter_default, special, "selectOne", "selectAll", parameter_sql, parent_id)
+            VALUES('userSelect', 'userId', 'Usuario', 'select', 'number', '-1', NULL, NULL, 'Y', 'SELECT ma.id AS id, CONCAT(ma.firstname, '' '', ma.lastname, '' ('', ma.username, '')'') AS name FROM m_appuser ma ORDER BY 2', NULL)
+                ON CONFLICT DO NOTHING;
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="5" author="fineract">
+        <sql>
+            <![CDATA[
+                    INSERT INTO stretchy_report (report_name,
+                                                 report_type, report_subtype,
+                                                 report_category,
+                                                 report_sql,
+                                                 description,
+                                                 core_report,
+                                                 use_report,
+                                                 self_service_user_report)
+                    VALUES('Condonaciones especiales',
+                           'Table',
+                           NULL,
+                           'Audit',
+                           'SELECT
+                               mlt.id AS "ID",
+                               ml.id AS "número de crédito",
+                               mlt.transaction_date AS "la fecha",
+                               mc.display_name AS "nombre del cliente",
+                               mpl."name" AS "producto de crédito",
+                               CONCAT(ma.firstname, '' '', ma.lastname) AS "usuario que aplicó la condonación",
+                               COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE, 0) AS "días de mora",
+                               mlt.amount AS "valor total de la condonación"
+                           FROM m_office mo
+                           INNER JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, ''%'') AND ounder.hierarchy LIKE CONCAT(''${currentUserHierarchy}'', ''%'')
+                           INNER JOIN m_loan_transaction mlt ON mlt.office_id = ounder.id
+                           INNER JOIN m_loan ml ON ml.id = mlt.loan_id
+                           INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                           INNER JOIN m_appuser ma ON ma.id = mlt.created_by
+                           LEFT JOIN m_client mc ON mc.id = ml.client_id
+                           LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = ml.id
+                           WHERE mlt.is_special_writeoff = TRUE
+                           AND mlt.is_reversed = FALSE AND mlt.transaction_type_enum = 6
+                           AND (DATE(mlt.transaction_date) BETWEEN ''${startDate}'' AND ''${endDate}'')
+                           AND (mlt.created_by = ''${userId}'' OR ''-1'' = ''${userId}'')',
+                           'Condonaciones especiales',
+                           true,
+                           true,
+                           false);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="6" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name, mandatory_parameter) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = 'Condonaciones especiales'), (SELECT sp.id FROM stretchy_parameter sp WHERE sp.parameter_name  = 'userSelect'), 'userId', false);
+                INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name, mandatory_parameter) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = 'Condonaciones especiales'), (SELECT sp.id FROM stretchy_parameter sp WHERE sp.parameter_name  = 'startDateSelect'), 'startDate', true);
+                INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name, mandatory_parameter) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = 'Condonaciones especiales'), (SELECT sp.id FROM stretchy_parameter sp WHERE sp.parameter_name  = 'endDateSelect'), 'endDate', true);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="7" author="fineract">
+        <sql>
+            <![CDATA[
+            INSERT INTO stretchy_report (report_name,
+                                         report_type, report_subtype,
+                                         report_category,
+                                         report_sql,
+                                         description,
+                                         core_report,
+                                         use_report,
+                                         self_service_user_report)
+            VALUES('Condonaciones masivas',
+                   'Table',
+                   NULL,
+                   'Audit',
+                   'SELECT
+                       mlt.id AS "ID",
+                       ml.id AS "número de crédito",
+                       mlt.transaction_date AS "la fecha",
+                       mc.display_name AS "nombre del cliente",
+                       mpl."name" AS "producto de crédito",
+                       CONCAT(ma.firstname, '' '', ma.lastname) AS "usuario que aplicó la condonación",
+                       COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE, 0) AS "días de mora",
+                       mlt.amount AS "valor total de la condonación"
+                   FROM m_office mo
+                   INNER JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, ''%'') AND ounder.hierarchy LIKE CONCAT(''${currentUserHierarchy}'', ''%'')
+                   INNER JOIN m_loan_transaction mlt ON mlt.office_id = ounder.id
+                   INNER JOIN m_loan ml ON ml.id = mlt.loan_id
+                   INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                   INNER JOIN m_appuser ma ON ma.id = mlt.created_by
+                   LEFT JOIN m_client mc ON mc.id = ml.client_id
+                   LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = ml.id
+                   WHERE mlt.is_special_writeoff = FALSE
+                   AND mlt.is_reversed = FALSE AND mlt.transaction_type_enum = 6
+                   AND (DATE(mlt.transaction_date) BETWEEN ''${startDate}'' AND ''${endDate}'')
+                   AND (mlt.created_by = ''${userId}'' OR ''-1'' = ''${userId}'')',
+                   'Condonaciones masivas',
+                   true,
+                   true,
+                   false);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="8" author="fineract">
+        <sql>
+            <![CDATA[
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name, mandatory_parameter) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = 'Condonaciones masivas'), (SELECT sp.id FROM stretchy_parameter sp WHERE sp.parameter_name  = 'userSelect'), 'userId', false);
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name, mandatory_parameter) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = 'Condonaciones masivas'), (SELECT sp.id FROM stretchy_parameter sp WHERE sp.parameter_name  = 'startDateSelect'), 'startDate', true);
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name, mandatory_parameter) VALUES((SELECT sr.id FROM stretchy_report sr WHERE sr.report_name = 'Condonaciones masivas'), (SELECT sp.id FROM stretchy_parameter sp WHERE sp.parameter_name  = 'endDateSelect'), 'endDate', true);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="9" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report
+                SET report_category = 'Loan'
+                WHERE report_name IN ('Condonaciones masivas', 'Condonaciones especiales');
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

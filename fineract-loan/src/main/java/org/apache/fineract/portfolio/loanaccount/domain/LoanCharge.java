@@ -142,6 +142,12 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "is_get_percentage_from_table", nullable = false)
     private boolean getPercentageAmountFromTable;
 
+    @Column(name = "default_from_installment", nullable = true)
+    private Integer defaultFromInstallment;
+
+    @Column(name = "amount_paid_in_default_installment", nullable = true)
+    private BigDecimal partialAmountPaidInFirstDefaultInstallment;
+
     // This attribute is used only to hold the current installment charge amount calculated and used
     // when repayment schedule is generated during loan creation. This amount is needed to show individual charge
     // amounts on the loan schedule screen.
@@ -856,6 +862,22 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setApplicableFromInstallment(Integer applicableFromInstallment) {
         this.applicableFromInstallment = applicableFromInstallment;
+    }
+
+    public BigDecimal partialAmountPaidInFirstDefaultInstallment() {
+        return partialAmountPaidInFirstDefaultInstallment;
+    }
+
+    public void setPartialAmountPaidInFirstDefaultInstallment(BigDecimal partialAmountPaidInFirstDefaultInstallment) {
+        this.partialAmountPaidInFirstDefaultInstallment = partialAmountPaidInFirstDefaultInstallment;
+    }
+
+    public Integer defaultFromInstallment() {
+        return defaultFromInstallment;
+    }
+
+    public void setDefaultFromInstallment(Integer defaultFromInstallment) {
+        this.defaultFromInstallment = defaultFromInstallment;
     }
 
     /**
