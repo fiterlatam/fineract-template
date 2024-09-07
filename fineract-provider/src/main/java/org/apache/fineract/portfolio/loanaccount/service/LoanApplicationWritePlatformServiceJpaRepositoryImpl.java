@@ -1031,6 +1031,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 existingLoanApplication.getLoanRepaymentScheduleDetail().updateInterestPeriodFrequencyType(interestRatePeriodFrequencyType);
                 existingLoanApplication.updateLoanSchedule(loanSchedule);
                 existingLoanApplication.recalculateAllCharges();
+                existingLoanApplication.updateLoanDerivedFields();
             }
 
             // Changes to modify loan rates.
