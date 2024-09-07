@@ -4177,6 +4177,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 .determineProcessor(this.transactionProcessingStrategyCode);
         loanRepaymentScheduleTransactionProcessor.processLatestTransaction(loanTransaction,
                 new TransactionCtx(getCurrency(), repaymentInstallments, activeLoanCharges, overpaymentHolder));
+        updateLoanSummaryDerivedFields();
         return loanTransaction;
     }
 
@@ -4382,6 +4383,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isClosed() {
         return getStatus().isClosed() || isCancelled();
+    }
+
+    public boolean isClosedAndNotCancelled() {
+        return getStatus().isClosed();
     }
 
     private boolean isClosedObligationsMet() {
@@ -6274,6 +6279,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         this.repaymentScheduleInstallments.add(installment);
     }
 
+    public void removeLoanRepaymentScheduleInstallment(final Integer installmentNumber) {
+        final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = fetchRepaymentScheduleInstallment(installmentNumber);
+        if (loanRepaymentScheduleInstallment != null) {
+            loanRepaymentScheduleInstallment.updateLoan(null);
+            loanRepaymentScheduleInstallment.getInstallmentCharges().clear();
+            loanRepaymentScheduleInstallment.getLoanTransactionToRepaymentScheduleMappings().clear();
+            this.repaymentScheduleInstallments.remove(loanRepaymentScheduleInstallment);
+        }
+    }
+
     /**
      * @return Loan product minimum repayments schedule related detail
      **/
@@ -7717,4 +7732,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         this.valorGiro = this.getApprovedPrincipal().subtract(valorDescuento);
     }
 
+    public void updateLoanStatus(LoanStatus loanStatus) {
+        this.loanStatus = loanStatus.getValue();
+    }
 }
