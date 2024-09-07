@@ -523,6 +523,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             }
             loan.recalculateAllCharges();
             ChangedTransactionDetail changedTransactionDetail = loan.processTransactions();
+            loan.updateLoanDerivedFields();
 
             if (rediferirPeriods > 0) {
                 final LocalDate transactionDate = DateUtils.getBusinessLocalDate();

@@ -1352,10 +1352,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 addLoanRepaymentScheduleInstallment(installment);
             }
         }
+    }
 
+    public void updateLoanDerivedFields() {
         updateLoanScheduleDependentDerivedFields();
         updateLoanSummaryDerivedFields();
-        applyAccurals();
+        applyAccruals();
     }
 
     public void updateLoanSchedule(final Collection<LoanRepaymentScheduleInstallment> installments) {
@@ -1372,9 +1374,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
             addLoanRepaymentScheduleInstallment(installment);
         }
-        updateLoanScheduleDependentDerivedFields();
-        updateLoanSummaryDerivedFields();
-        applyAccurals();
     }
 
     private LoanRepaymentScheduleInstallment findByInstallmentNumber(Collection<LoanRepaymentScheduleInstallment> installments,
@@ -1390,7 +1389,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     /**
      * method updates accrual derived fields on installments and reverse the unprocessed transactions
      */
-    private void applyAccurals() {
+    private void applyAccruals() {
         Collection<LoanTransaction> accruals = retrieveListOfAccrualTransactions();
         if (!accruals.isEmpty()) {
             if (isPeriodicAccrualAccountingEnabledOnLoanProduct()) {
@@ -2175,6 +2174,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final boolean allowTransactionsOnHoliday, final List<Holiday> holidays, final WorkingDays workingDays,
             final boolean allowTransactionsOnNonWorkingDay) {
         updateLoanSchedule(loanSchedule);
+        updateLoanDerivedFields();
 
         lifecycleStateMachine.transition(LoanEvent.LOAN_CREATED, this);
 
@@ -2946,6 +2946,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 recalculateLoanCharge(loanCharge, scheduleGeneratorDTO.getPenaltyWaitPeriod());
             }
         }
+        updateLoanDerivedFields();
     }
 
     public LoanScheduleModel regenerateScheduleModel(final ScheduleGeneratorDTO scheduleGeneratorDTO) {
@@ -4123,26 +4124,29 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 final JsonObject jsonObject = jsonElement.getAsJsonObject();
                 final Long chargeId = jsonObject.get("chargeId").getAsLong();
                 final BigDecimal writeOffAmount = jsonObject.get("writeOffAmount").getAsBigDecimal();
-                final LoanChargeData loanChargeData = LoanChargeData.builder().chargeId(chargeId).amountOutstanding(writeOffAmount).build();
-                final Optional<LoanChargeData> optionLoanCharge = currentOutstandingLoanCharges.stream()
-                        .filter(c -> chargeId.equals(c.getChargeId())).findFirst();
-                if (optionLoanCharge.isPresent()) {
-                    final LoanChargeData loanCharge = optionLoanCharge.get();
-                    final String chargeName = loanCharge.getName();
-                    final BigDecimal maximumChargeAmount = loanCharge.getAmountOutstanding();
-                    if (loanChargeData.getAmountOutstanding().compareTo(maximumChargeAmount) > 0) {
-                        throw new GeneralPlatformDomainRuleException("charge.amount.must.be.less.than.outstanding.charge.amount",
-                                "The charge amount of the special write off transaction must be less than or equal to the outstanding charge amount of the loan.",
-                                maximumChargeAmount, chargeName);
-                    }
-                    if (loanCharge.getPenalty()) {
-                        penaltyCharges.add(loanCharge);
+                if (writeOffAmount != null && writeOffAmount.compareTo(BigDecimal.ZERO) > 0) {
+                    final LoanChargeData writeOffLoanChargeData = LoanChargeData.builder().chargeId(chargeId)
+                            .amountOutstanding(writeOffAmount).build();
+                    final Optional<LoanChargeData> optionLoanCharge = currentOutstandingLoanCharges.stream()
+                            .filter(c -> chargeId.equals(c.getChargeId())).findFirst();
+                    if (optionLoanCharge.isPresent()) {
+                        final LoanChargeData loanCharge = optionLoanCharge.get();
+                        final String chargeName = loanCharge.getName();
+                        final BigDecimal maximumChargeAmount = loanCharge.getAmountOutstanding();
+                        if (writeOffLoanChargeData.getAmountOutstanding().compareTo(maximumChargeAmount) > 0) {
+                            throw new GeneralPlatformDomainRuleException("charge.amount.must.be.less.than.outstanding.charge.amount",
+                                    "The charge amount of the special write off transaction must be less than or equal to the outstanding charge amount of the loan.",
+                                    maximumChargeAmount, chargeName);
+                        }
+                        if (loanCharge.getPenalty()) {
+                            penaltyCharges.add(writeOffLoanChargeData);
+                        } else {
+                            feeCharges.add(writeOffLoanChargeData);
+                        }
                     } else {
-                        feeCharges.add(loanCharge);
+                        throw new GeneralPlatformDomainRuleException("error.msg.loan.charge.not.found",
+                                "The charge with id " + chargeId + " does not exist.", chargeId);
                     }
-                } else {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.charge.not.found",
-                            "The charge with id " + chargeId + " does not exist.", chargeId);
                 }
             }
         }
@@ -5870,6 +5874,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         processPostDisbursementTransactions();
         processIncomeTransactions();
+        updateLoanDerivedFields();
     }
 
     private void updateLoanChargesPaidBy(LoanTransaction accrual, HashMap<String, Object> feeDetails,
@@ -7332,7 +7337,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         validateAccountStatus(event);
         validateForForeclosure(repaymentTransaction.getTransactionDate());
         this.loanSubStatus = LoanSubStatus.FORECLOSED.getValue();
-        applyAccurals();
+        applyAccruals();
         return handleRepaymentOrRecoveryOrWaiverTransaction(repaymentTransaction, loanLifecycleStateMachine, null, scheduleGeneratorDTO);
     }
 

@@ -69,7 +69,6 @@ public interface LoanRepaymentScheduleInstallmentRepository
     @Modifying
     @Transactional
     @Query(value = "DELETE FROM m_loan_repayment_schedule WHERE id = ?1", nativeQuery = true)
-
     void deleteById(Long id);
 
 }

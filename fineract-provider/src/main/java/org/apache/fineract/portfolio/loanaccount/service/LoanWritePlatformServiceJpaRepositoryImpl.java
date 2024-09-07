@@ -2088,7 +2088,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments) {
         LoanRepaymentScheduleInstallment installment = null;
         for (LoanRepaymentScheduleInstallment repaymentScheduleInstallment : repaymentScheduleInstallments) {
-            if (DateUtils.isAfter(writtenOffOnDate, repaymentScheduleInstallment.getFromDate())) {
+            if (DateUtils.isAfter(writtenOffOnDate, repaymentScheduleInstallment.getFromDate())
+                    || DateUtils.isEqual(writtenOffOnDate, repaymentScheduleInstallment.getFromDate())) {
                 if (!DateUtils.isAfter(writtenOffOnDate, repaymentScheduleInstallment.getDueDate())) {
                     installment = repaymentScheduleInstallment;
                     break;
