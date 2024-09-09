@@ -497,7 +497,7 @@ public class ClientsApiResource {
     }
 
     @GET
-    @Path("availablecupo/{nitId}")
+    @Path("cupo-disponible/{nitId}")
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve client with available cupo", description = "Retrieve client with available cupo using the client NIT/Id")
     @ApiResponses({
@@ -508,7 +508,7 @@ public class ClientsApiResource {
     }
 
     @GET
-    @Path("availablecupo")
+    @Path("cupo-disponible")
     public String retriveClientAvailableCupo(@Context final UriInfo uriInfo) {
         throw new ClientNotFoundException("Cedula/NIT necesario para obtener el cupo disponible");
     }
