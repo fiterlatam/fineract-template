@@ -276,4 +276,5 @@
     <include file="parts/20240609011009240_SU_174_create_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240828220000_SU_166_insurance_incident_addition.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240609011009240_SU_166_create_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240509011009220_SU_143_add-min-arrear-guarantor-claim.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
