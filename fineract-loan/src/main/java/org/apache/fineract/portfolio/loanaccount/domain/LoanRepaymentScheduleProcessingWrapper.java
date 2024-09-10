@@ -228,7 +228,11 @@ public class LoanRepaymentScheduleProcessingWrapper {
                 return amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100));
             }
         } else {
-            return loanCharge.amountOrPercentage();
+            if (loanCharge.defaultFromInstallment() != null && period.getInstallmentNumber() >= loanCharge.defaultFromInstallment()) {
+                return BigDecimal.ZERO;
+            } else {
+                return loanCharge.amountOrPercentage();
+            }
         }
     }
 

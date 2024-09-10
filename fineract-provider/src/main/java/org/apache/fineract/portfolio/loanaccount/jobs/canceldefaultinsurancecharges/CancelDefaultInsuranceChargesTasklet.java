@@ -39,7 +39,7 @@ public class CancelDefaultInsuranceChargesTasklet implements Tasklet {
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
         List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds = this.loanReadPlatformService
-                .getLoanDataWithDefaultOrCancelInsurance(null, null);
+                .getLoanDataWithDefaultOrCancelInsurance(null, null, null);
         loanWritePlatformService.cancelDefaultInsuranceCharges(defaultLoanIds);
         return RepeatStatus.FINISHED;
     }
