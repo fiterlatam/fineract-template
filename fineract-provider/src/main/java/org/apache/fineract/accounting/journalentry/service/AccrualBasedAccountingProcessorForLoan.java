@@ -187,6 +187,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         final BigDecimal feesAmount = loanTransactionDTO.getFees();
         final BigDecimal penaltiesAmount = loanTransactionDTO.getPenalties();
         final BigDecimal overPaymentAmount = loanTransactionDTO.getOverPayment();
+        BigDecimal unrecognizedIncomePortion = loanTransactionDTO.getUnrecognizedIncomePortion();
         final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
         final boolean isReversal = loanTransactionDTO.isReversed();
 
@@ -271,6 +272,26 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                 accountMap.put(account, overPaymentAmount);
             }
         }
+
+        // handle unrecognized income(Waived interest and charges)
+        if (unrecognizedIncomePortion != null && !(unrecognizedIncomePortion.compareTo(BigDecimal.ZERO) == 0)) {
+            totalDebitAmount = totalDebitAmount.add(unrecognizedIncomePortion);
+            Integer accrualAccount = null ;
+            if(loanTransactionDTO.getTransactionType().isWaiveCharges()){
+                accrualAccount = AccrualAccountsForLoan.FEES_RECEIVABLE.getValue();
+            }else if (loanTransactionDTO.getTransactionType().isWaiveInterest()){
+                accrualAccount = AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue();
+            }
+            GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId, accrualAccount,
+                    paymentTypeId);
+            if (accountMap.containsKey(account)) {
+                BigDecimal amount = accountMap.get(account).add(unrecognizedIncomePortion);
+                accountMap.put(account, amount);
+            } else {
+                accountMap.put(account, unrecognizedIncomePortion);
+            }
+        }
+
 
         for (Map.Entry<GLAccount, BigDecimal> entry : accountMap.entrySet()) {
             this.helper.createCreditJournalEntryOrReversalForLoan(office, currencyCode, loanId, transactionId, transactionDate,

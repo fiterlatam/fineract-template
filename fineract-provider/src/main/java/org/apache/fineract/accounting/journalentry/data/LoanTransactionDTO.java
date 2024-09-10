@@ -44,6 +44,7 @@ public class LoanTransactionDTO {
     private final BigDecimal fees;
     private final BigDecimal penalties;
     private final BigDecimal overPayment;
+    private final BigDecimal unrecognizedIncomePortion;
 
     /*** Boolean values determines if the transaction is reversed ***/
     private final boolean reversed;
