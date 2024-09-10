@@ -3182,7 +3182,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public List<DefaultOrCancelInsuranceInstallmentData> getLoanDataWithDefaultOrCancelInsurance(Long loanId, Long insuranceCode, LocalDate date) {
+    public List<DefaultOrCancelInsuranceInstallmentData> getLoanDataWithDefaultOrCancelInsurance(Long loanId, Long insuranceCode,
+            LocalDate date) {
 
         final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
         String sql = "SELECT " + rowMapper.schema();
@@ -3201,7 +3202,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             params = new Object[] { loanId, insuranceCode };
         }
         if (date != null) {
-           sql = sql + " and mlrs.fromdate > ? ";
+            sql = sql + " and mlrs.fromdate > ? ";
             final int N = params.length;
             params = Arrays.copyOf(params, N + 1);
             params[N] = date;

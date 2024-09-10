@@ -5410,10 +5410,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 if (loanCharge.getChargeCalculation().isFlat()) {
                     amount = loanCharge.amountOrPercentage();
 
-                    if (loanCharge.isCustomFlatVoluntaryInsurenceCharge() && loanCharge.defaultFromInstallment() != null && loanCharge.defaultFromInstallment() > 0) {
-                       if (installment.getInstallmentNumber() >= loanCharge.defaultFromInstallment()) {
+                    if (loanCharge.isCustomFlatVoluntaryInsurenceCharge() && loanCharge.defaultFromInstallment() != null
+                            && loanCharge.defaultFromInstallment() > 0) {
+                        if (installment.getInstallmentNumber() >= loanCharge.defaultFromInstallment()) {
                             amount = BigDecimal.ZERO;
-                       }
+                        }
                     }
 
                     if (loanCharge.getChargeCalculation().isFlatHono() && !loanCharge.getCustomChargeHonorarioMaps().isEmpty()) {

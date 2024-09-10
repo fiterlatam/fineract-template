@@ -3923,11 +3923,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds;
         if (isVoluntaryInsurance) {
-            cancelInsuranceInstallmentIds = this.loanReadPlatformService
-                    .getLoanDataWithDefaultOrCancelInsurance(loanId, insuranceCode, cancellationDate);
+            cancelInsuranceInstallmentIds = this.loanReadPlatformService.getLoanDataWithDefaultOrCancelInsurance(loanId, insuranceCode,
+                    cancellationDate);
         } else {
-            cancelInsuranceInstallmentIds = this.loanReadPlatformService
-                    .getLoanDataWithDefaultOrCancelInsurance(loanId, insuranceCode, null);
+            cancelInsuranceInstallmentIds = this.loanReadPlatformService.getLoanDataWithDefaultOrCancelInsurance(loanId, insuranceCode,
+                    null);
         }
 
         if (!cancelInsuranceInstallmentIds.isEmpty()) {
