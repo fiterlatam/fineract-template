@@ -32,8 +32,8 @@ public class ClienAvailableCupoFieldsMapper implements RowMapper<ClienAvailableC
         final String tipo = rs.getString("tipo");
         final String nit = rs.getString("nit");
         final String cedula = rs.getString("cedula");
-        final BigDecimal availableCupo = rs.getBigDecimal("availableCupo").setScale(0);
-        final BigDecimal totalOutstandingPrincipalAmount = rs.getBigDecimal("totalOutstandingPrincipalAmount").setScale(0);
-        return new ClienAvailableCupoFieldsData(clientId, tipo, nit, cedula, availableCupo, totalOutstandingPrincipalAmount);
+        final BigDecimal cupoDisponibleAvance = rs.getBigDecimal("availableCupo").setScale(0);
+        final BigDecimal cupoDisponibleTotal = rs.getBigDecimal("totalOutstandingPrincipalAmount").setScale(0);
+        return new ClienAvailableCupoFieldsData(clientId, tipo, nit, cedula, cupoDisponibleAvance, cupoDisponibleTotal);
     }
 }
