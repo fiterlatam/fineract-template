@@ -99,6 +99,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "is_special_writeoff", nullable = false)
     private boolean specialWriteOff;
 
+    @Column(name = "is_daily_accrual", nullable = false)
+    private boolean dailyAccrual;
+
     @Column(name = "external_id", length = 100, nullable = true, unique = true)
     private ExternalId externalId;
 
@@ -234,6 +237,13 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL.getValue(), interestAppliedDate, interestPortion,
                 principalPortion, interestPortion, feesPortion, penaltiesPortion, overPaymentPortion, reversed, specialWriteOff,
                 paymentDetail, externalId);
+    }
+
+    public static LoanTransaction accrueDailyInterest(final Office office, final Loan loan, final Money amount,
+            final LocalDate interestAppliedDate, final ExternalId externalId) {
+        LoanTransaction loanTransaction = accrueInterest(office, loan, amount, interestAppliedDate, externalId);
+        loanTransaction.setDailyAccrual(true);
+        return loanTransaction;
     }
 
     public static LoanTransaction accrueTransaction(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
@@ -975,6 +985,13 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return loanScheduleProcessingType;
     }
 
+    public boolean isDailyAccrual() {
+        return dailyAccrual;
+    }
+
+    public void setDailyAccrual(boolean dailyAccrual) {
+        this.dailyAccrual = dailyAccrual;
+    }
     // TODO missing hashCode(), equals(Object obj), but probably OK as long as
     // this is never stored in a Collection.
 }

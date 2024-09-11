@@ -2621,8 +2621,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             Money dailyInterestMoney = Money.of(getCurrency(), dailyInterest);
             log.info("Applying daily interest for loan with id {} with amount {} converted to {} on date {} ", getId(), dailyInterest,
                     dailyInterestMoney, currentDate);
-            LoanTransaction dailyAccrualTransaction = LoanTransaction.accrueInterest(getOffice(), this, dailyInterestMoney, currentDate,
-                    externalIdentifier);
+            LoanTransaction dailyAccrualTransaction = LoanTransaction.accrueDailyInterest(getOffice(), this, dailyInterestMoney,
+                    currentDate, externalIdentifier);
             addLoanTransaction(dailyAccrualTransaction);
         }
 
