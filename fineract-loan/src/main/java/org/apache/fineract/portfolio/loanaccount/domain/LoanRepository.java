@@ -153,7 +153,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
 
     @Query("select loan from Loan loan where loan.loanStatus = 300 and "
             + "not exists (select transaction from LoanTransaction transaction "
-            + "where transaction.loan = loan and transaction.typeOf = 10 and transaction.dateOf = :localDate)")
+            + "where transaction.loan = loan and transaction.typeOf = 10 and transaction.dateOf = :localDate and transaction.dailyAccrual= true )")
     List<Loan> findActiveLoansWithNotYetPostedAccrual(@Param("localDate") LocalDate localDate);
 
     @Query("select loan from Loan loan where loan.glim.id = :glimId")
