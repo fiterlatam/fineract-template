@@ -27,6 +27,7 @@ import org.apache.fineract.portfolio.loanproduct.data.CreditAllocationData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductBorrowerCycleVariationData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationHistoryData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 
 public interface LoanProductReadPlatformService {
@@ -62,6 +63,8 @@ public interface LoanProductReadPlatformService {
     LoanProductData retrieveLoanProductFloatingDetails(Long loanProductId);
 
     MaximumCreditRateConfigurationData retrieveMaximumCreditRateConfigurationData();
+
+    Collection<MaximumCreditRateConfigurationHistoryData> retrieveMaximumCreditRateConfigurationHistory();
 
     AdvanceQuotaConfigurationData retrieveAdvanceQuotaConfigurationData();
 

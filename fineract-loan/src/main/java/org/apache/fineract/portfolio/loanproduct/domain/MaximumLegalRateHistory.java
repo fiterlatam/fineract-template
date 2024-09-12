@@ -56,6 +56,12 @@ public class MaximumLegalRateHistory extends AbstractPersistableCustom {
     @JoinColumn(name = "appliedon_userid")
     private AppUser appliedBy;
 
+    @Column(name = "current_interest_rate")
+    private BigDecimal currentInterestRate;
+
+    @Column(name = "overdue_interest_rate")
+    private BigDecimal overdueInterestRate;
+
     @Column(name = AuditableFieldsConstants.CREATED_DATE_DB_FIELD)
     private OffsetDateTime createdDate;
 
@@ -67,6 +73,8 @@ public class MaximumLegalRateHistory extends AbstractPersistableCustom {
         maximumLegalRateHistory.dailyNominalRate = maximumCreditRateConfiguration.getDailyNominalRate();
         maximumLegalRateHistory.appliedOnDate = maximumCreditRateConfiguration.getAppliedOnDate();
         maximumLegalRateHistory.appliedBy = maximumCreditRateConfiguration.getAppliedBy();
+        maximumLegalRateHistory.currentInterestRate = maximumCreditRateConfiguration.getCurrentInterestRate();
+        maximumLegalRateHistory.overdueInterestRate = maximumCreditRateConfiguration.getOverdueInterestRate();
         maximumLegalRateHistory.createdDate = OffsetDateTime.now();
         return maximumLegalRateHistory;
     }
