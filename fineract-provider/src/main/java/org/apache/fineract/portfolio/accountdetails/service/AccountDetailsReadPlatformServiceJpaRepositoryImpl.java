@@ -180,7 +180,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
 
     private List<LoanAccountSummaryData> retrieveLoanAccountDetails(final String loanwhereClause, final Object[] inputs) {
         final LoanAccountSummaryDataMapper rm = new LoanAccountSummaryDataMapper();
-        final String sql = "select " + rm.loanAccountSummarySchema() + loanwhereClause;
+        final String sql = "select " + rm.loanAccountSummarySchema() + loanwhereClause + "  order by l.account_no  ";
         this.columnValidator.validateSqlInjection(rm.loanAccountSummarySchema(), loanwhereClause);
         return this.jdbcTemplate.query(sql, rm, inputs); // NOSONAR
     }
