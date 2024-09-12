@@ -278,4 +278,5 @@
     <include file="parts/20240609011009240_SU_166_create_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240509011009220_SU_143_add-min-arrear-guarantor-claim.xml" relativeToChangelogFile="true"/>
     <include file="parts/20242708011009113_SU-314_include_daily_accrual_column.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009115_SU-324_additional_columns_to_history.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
