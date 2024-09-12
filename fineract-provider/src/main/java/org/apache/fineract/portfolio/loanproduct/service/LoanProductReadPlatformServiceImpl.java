@@ -61,6 +61,7 @@ import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductGuaranteeData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductInterestRecalculationData;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationHistoryData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductConfigurableAttributes;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductParamType;
@@ -1006,6 +1007,13 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
         return this.jdbcTemplate.queryForObject(sql, rm, new Object[] {});
     }
 
+    @Override
+    public Collection<MaximumCreditRateConfigurationHistoryData> retrieveMaximumCreditRateConfigurationHistory() {
+        MaximumRateHistoryMapper rm = new MaximumRateHistoryMapper();
+        final String sql = "SELECT " + rm.schema() + " ORDER BY mcrc.appliedon_date DESC";
+        return this.jdbcTemplate.query(sql, rm, new Object[] {});
+    }
+
     private static final class MaximumRateMapper implements RowMapper<MaximumCreditRateConfigurationData> {
 
         public String schema() {
@@ -1037,6 +1045,42 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final BigDecimal overdueInterestRate = rs.getBigDecimal("overdueInterestRate");
             final LocalDate appliedOnDate = JdbcSupport.getLocalDate(rs, "appliedOnDate");
             return MaximumCreditRateConfigurationData.builder().id(id).appliedByUsername(appliedByUsername).eaRate(eaRate)
+                    .annualNominalRate(annualNominalRate).monthlyNominalRate(monthlyNominalRate).dailyNominalRate(dailyNominalRate)
+                    .currentInterestRate(currentInterestRate).overdueInterestRate(overdueInterestRate).appliedOnDate(appliedOnDate).build();
+        }
+    }
+
+    private static final class MaximumRateHistoryMapper implements RowMapper<MaximumCreditRateConfigurationHistoryData> {
+
+        public String schema() {
+            return """
+                    mcrc.id AS id,
+                    mcrc.ea_rate AS "eaRate",
+                    mcrc.annual_nominal_rate AS "annualNominalRate",
+                    mcrc.monthly_nominal_rate AS "monthlyNominalRate",
+                    mcrc.daily_nominal_rate AS "dailyNominalRate",
+                    mcrc.current_interest_rate AS "currentInterestRate",
+                    mcrc.overdue_interest_rate AS "overdueInterestRate",
+                    mcrc.appliedon_date AS "appliedOnDate",
+                    CONCAT(ma.firstname, ' ', ma.lastname) AS "appliedByUsername"
+                    FROM m_maximum_legal_rate_history mcrc
+                    LEFT OUTER JOIN m_appuser ma ON ma.id = mcrc.appliedon_userid
+                    """;
+        }
+
+        @Override
+        public MaximumCreditRateConfigurationHistoryData mapRow(@NotNull final ResultSet rs, @SuppressWarnings("unused") final int rowNum)
+                throws SQLException {
+            final Long id = JdbcSupport.getLong(rs, "id");
+            final BigDecimal eaRate = rs.getBigDecimal("eaRate");
+            final String appliedByUsername = rs.getString("appliedByUsername");
+            final BigDecimal annualNominalRate = rs.getBigDecimal("annualNominalRate");
+            final BigDecimal monthlyNominalRate = rs.getBigDecimal("monthlyNominalRate");
+            final BigDecimal dailyNominalRate = rs.getBigDecimal("dailyNominalRate");
+            final BigDecimal currentInterestRate = rs.getBigDecimal("currentInterestRate");
+            final BigDecimal overdueInterestRate = rs.getBigDecimal("overdueInterestRate");
+            final LocalDate appliedOnDate = JdbcSupport.getLocalDate(rs, "appliedOnDate");
+            return MaximumCreditRateConfigurationHistoryData.builder().id(id).appliedByUsername(appliedByUsername).eaRate(eaRate)
                     .annualNominalRate(annualNominalRate).monthlyNominalRate(monthlyNominalRate).dailyNominalRate(dailyNominalRate)
                     .currentInterestRate(currentInterestRate).overdueInterestRate(overdueInterestRate).appliedOnDate(appliedOnDate).build();
         }
