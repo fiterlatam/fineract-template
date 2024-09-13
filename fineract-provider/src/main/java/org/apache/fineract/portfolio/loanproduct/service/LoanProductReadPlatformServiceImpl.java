@@ -1010,7 +1010,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
     @Override
     public Collection<MaximumCreditRateConfigurationHistoryData> retrieveMaximumCreditRateConfigurationHistory() {
         MaximumRateHistoryMapper rm = new MaximumRateHistoryMapper();
-        final String sql = "SELECT " + rm.schema() + " ORDER BY mcrc.appliedon_date DESC";
+        final String sql = "SELECT " + rm.schema() + " ORDER BY mcrc.id DESC";
         return this.jdbcTemplate.query(sql, rm, new Object[] {});
     }
 
