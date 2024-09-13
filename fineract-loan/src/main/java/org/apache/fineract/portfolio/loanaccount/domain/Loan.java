@@ -4038,8 +4038,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 final String errorMessage = "The date on which a loan is written off cannot be in the future.";
                 throw new InvalidLoanStateTransitionException("writeoff", "cannot.be.a.future.date", errorMessage, writtenOffOnLocalDate);
             }
-
-            loanTransaction = LoanTransaction.writeoff(this, getOffice(), writtenOffOnLocalDate, externalId);
+            final BigDecimal totalOutstanding = summary.getTotalOutstanding();
+            loanTransaction = LoanTransaction.writeoff(this, getOffice(), writtenOffOnLocalDate, externalId, totalOutstanding);
             LocalDate lastTransactionDate = getLastUserTransactionDate();
             if (DateUtils.isAfter(lastTransactionDate, writtenOffOnLocalDate)) {
                 final String errorMessage = "The date of the writeoff transaction must occur on or before previous transactions.";
@@ -4048,9 +4048,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
 
             addLoanTransaction(loanTransaction);
+
             loanRepaymentScheduleTransactionProcessor.processLatestTransaction(loanTransaction, new TransactionCtx(loanCurrency(),
                     getRepaymentScheduleInstallments(), getActiveCharges(), new MoneyHolder(getTotalOverpaidAsMoney())));
-
             updateLoanSummaryDerivedFields();
         }
         if (changedTransactionDetail == null) {
