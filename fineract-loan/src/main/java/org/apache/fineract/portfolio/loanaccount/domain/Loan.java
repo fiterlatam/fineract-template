@@ -2621,8 +2621,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             Money dailyInterestMoney = Money.of(getCurrency(), dailyInterest);
             log.info("Applying daily interest for loan with id {} with amount {} converted to {} on date {} ", getId(), dailyInterest,
                     dailyInterestMoney, currentDate);
-            LoanTransaction dailyAccrualTransaction = LoanTransaction.accrueInterest(getOffice(), this, dailyInterestMoney, currentDate,
-                    externalIdentifier);
+            LoanTransaction dailyAccrualTransaction = LoanTransaction.accrueDailyInterest(getOffice(), this, dailyInterestMoney,
+                    currentDate, externalIdentifier);
             addLoanTransaction(dailyAccrualTransaction);
         }
 
@@ -5409,6 +5409,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 BigDecimal amount;
                 if (loanCharge.getChargeCalculation().isFlat()) {
                     amount = loanCharge.amountOrPercentage();
+
+                    if (loanCharge.isCustomFlatVoluntaryInsurenceCharge() && loanCharge.defaultFromInstallment() != null
+                            && loanCharge.defaultFromInstallment() > 0) {
+                        if (installment.getInstallmentNumber() >= loanCharge.defaultFromInstallment()) {
+                            amount = BigDecimal.ZERO;
+                        }
+                    }
+
                     if (loanCharge.getChargeCalculation().isFlatHono() && !loanCharge.getCustomChargeHonorarioMaps().isEmpty()) {
                         for (CustomChargeHonorarioMap customCharge : loanCharge.getCustomChargeHonorarioMaps()) {
                             if (customCharge.getLoanInstallmentNr().equals(installment.getInstallmentNumber())) {
