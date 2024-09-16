@@ -221,14 +221,21 @@ public class LoanRepaymentScheduleProcessingWrapper {
         if (loanCharge.getChargeCalculation().isPercentageBased()) {
             BigDecimal amount = BigDecimal.ZERO;
             if (loanCharge.getChargeCalculation().isPercentageOfAnotherCharge()) {
-                amount = amount.add(loanCharge.getInstallmentLoanCharge(period.getInstallmentNumber()).getAmount());
+                LoanInstallmentCharge installmentCharge = loanCharge.getInstallmentLoanCharge(period.getInstallmentNumber());
+                if (installmentCharge != null) {
+                    amount = amount.add(installmentCharge.getAmount());
+                }
                 return amount;
             } else {
                 amount = getBaseAmount(currency, period, loanCharge, amount);
                 return amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100));
             }
         } else {
-            return loanCharge.amountOrPercentage();
+            if (loanCharge.defaultFromInstallment() != null && period.getInstallmentNumber() >= loanCharge.defaultFromInstallment()) {
+                return BigDecimal.ZERO;
+            } else {
+                return loanCharge.amountOrPercentage();
+            }
         }
     }
 

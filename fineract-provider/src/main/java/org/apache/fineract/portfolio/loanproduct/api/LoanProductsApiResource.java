@@ -97,6 +97,7 @@ import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.AdvanceQuotaConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationHistoryData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.AllocationType;
 import org.apache.fineract.portfolio.loanproduct.domain.CreditAllocationTransactionType;
@@ -362,6 +363,18 @@ public class LoanProductsApiResource {
     public String updateMaximumRate(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
         final CommandWrapper commandRequest = new CommandWrapperBuilder().updateMaximumRate().withJson(apiRequestBodyAsJson).build();
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
+    // add a endpoint to fetch maximum credit rate history
+    @GET
+    @Path("maximumCreditRate/history")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getMaximumCreditRateHistory(@Context final UriInfo uriInfo) {
+        this.context.authenticatedUser().validateHasReadPermission("MAXIMUM_CREDIT_RATE");
+        final Collection<MaximumCreditRateConfigurationHistoryData> result = this.loanProductReadPlatformService
+                .retrieveMaximumCreditRateConfigurationHistory();
         return this.toApiJsonSerializer.serialize(result);
     }
 

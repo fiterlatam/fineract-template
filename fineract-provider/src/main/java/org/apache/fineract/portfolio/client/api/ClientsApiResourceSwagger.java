@@ -641,8 +641,8 @@ final class ClientsApiResourceSwagger {
         @Schema(example = "001")
         public String cedula;
         @Schema(example = "1000")
-        public BigDecimal availableCupo;
+        public BigDecimal cupoDisponibleAvance;
         @Schema(example = "1000")
-        public BigDecimal totalOutstandingPrincipalAmount;
+        public BigDecimal cupoDisponibleTotal;
     }
 }

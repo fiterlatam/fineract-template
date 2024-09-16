@@ -296,8 +296,6 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     }
                     updateAmountOrPercentageForDistributedCharge(numberOfRepayments, this.amount);
                 }
-            } else {
-                LOG.error("TODO Implement for other charge calculation types");
             }
         }
 
@@ -419,6 +417,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                             this.amountOrPercentage = amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
                             this.amount = amount;
                         } else {
+                            if (this.defaultFromInstallment != null && this.defaultFromInstallment > 0) {
+                                numberOfRepayments = this.defaultFromInstallment - 1;
+                            }
                             this.amount = amount.multiply(BigDecimal.valueOf(numberOfRepayments));
                         }
                     } else {
@@ -452,7 +453,6 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     this.amountPercentageAppliedTo = loanPrincipal;
                 break;
                 default:
-                    LOG.error("TODO Implement for other charge calculation types");
                 break;
             }
             if (isCustomFlatDistributedCharge()) {
@@ -555,7 +555,6 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     this.amountOutstanding = calculateOutstanding();
                 break;
                 default:
-                    LOG.error("TODO Implement for other charge calculation types");
                 break;
             }
             this.amountOrPercentage = newValue;
@@ -1312,8 +1311,12 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             }
             customAmout = customAmout.add(chargeAmount);
         } else if (this.isCustomPercentageBasedOfAnotherCharge()) {
-            customAmout = customAmout.add(this.installmentCharges().isEmpty() ? this.amountOrPercentage
-                    : this.getInstallmentLoanCharge(installmentNumber).getAmount());
+            if (!this.installmentCharges().isEmpty()) {
+                final LoanInstallmentCharge installmentCharge = this.getInstallmentLoanCharge(installmentNumber);
+                if (installmentCharge != null) {
+                    customAmout = customAmout.add(installmentCharge.getAmount());
+                }
+            }
         } else if (this.isCustomPercentageOfOutstandingPrincipalCharge()) {
             if (this.installmentCharges().isEmpty()) {
                 BigDecimal installmentCount = BigDecimal.valueOf(numberOfInstallments);

@@ -3374,7 +3374,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 loanRescheduleRequest);
 
         List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
-                .getLoanDataWithDefaultOrCancelInsurance(loanId, null);
+                .getLoanDataWithDefaultOrCancelInsurance(loanId, null, null);
         InsuranceIncident incident = this.insuranceIncidentRepository
                 .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
         if (incident == null) {
@@ -3921,8 +3921,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     "No se encontró cargo de préstamo contra identificación de crédito [" + loan.getId() + "]");
         }
 
-        List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
-                .getLoanDataWithDefaultOrCancelInsurance(loanId, insuranceCode);
+        List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds;
+        if (isVoluntaryInsurance) {
+            cancelInsuranceInstallmentIds = this.loanReadPlatformService.getLoanDataWithDefaultOrCancelInsurance(loanId, insuranceCode,
+                    cancellationDate);
+        } else {
+            cancelInsuranceInstallmentIds = this.loanReadPlatformService.getLoanDataWithDefaultOrCancelInsurance(loanId, insuranceCode,
+                    null);
+        }
 
         if (!cancelInsuranceInstallmentIds.isEmpty()) {
             DefaultOrCancelInsuranceInstallmentData cancelInsuranceInstallmentData = cancelInsuranceInstallmentIds.get(0);
