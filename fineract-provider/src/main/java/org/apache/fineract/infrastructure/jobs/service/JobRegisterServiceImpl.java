@@ -32,6 +32,7 @@ import org.apache.fineract.infrastructure.core.config.FineractProperties;
 import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
 import org.apache.fineract.infrastructure.core.exception.JobIsNotFoundOrNotEnabledException;
 import org.apache.fineract.infrastructure.core.exception.PlatformInternalServerException;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.jobs.data.JobParameterDTO;
 import org.apache.fineract.infrastructure.jobs.domain.ScheduledJobDetail;
@@ -184,8 +185,9 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
                             try {
                                 final List<? extends Trigger> triggers = scheduler.getTriggersOfJob(jobKey);
                                 for (final Trigger trigger : triggers) {
-                                    if (trigger.getNextFireTime() != null && trigger.getNextFireTime().after(jobDetail.getNextRunTime())) {
-                                        jobDetail.setNextRunTime(trigger.getNextFireTime());
+                                    if (DateUtils.convertDateToTenantDate(trigger.getNextFireTime()) != null && DateUtils
+                                            .convertDateToTenantDate(trigger.getNextFireTime()).isAfter(jobDetail.getNextRunTime())) {
+                                        jobDetail.setNextRunTime(DateUtils.convertDateToTenantDate(trigger.getNextFireTime()));
                                     }
                                 }
                             } catch (final SchedulerException e) {
@@ -260,7 +262,7 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
             final Trigger trigger = createTrigger(scheduledJobDetails, jobDetail);
             final Scheduler scheduler = getScheduler(scheduledJobDetails);
             scheduler.scheduleJob(jobDetail, trigger);
-            scheduledJobDetails.setNextRunTime(trigger.getNextFireTime());
+            scheduledJobDetails.setNextRunTime(DateUtils.convertDateToTenantDate(trigger.getNextFireTime()));
             scheduledJobDetails.setErrorLog(null);
         } catch (final Exception throwable) {
             scheduledJobDetails.setNextRunTime(null);

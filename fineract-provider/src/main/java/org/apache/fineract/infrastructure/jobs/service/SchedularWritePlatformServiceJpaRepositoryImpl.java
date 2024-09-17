@@ -19,12 +19,12 @@
 package org.apache.fineract.infrastructure.jobs.service;
 
 import io.github.resilience4j.retry.annotation.Retry;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.jobs.data.JobDetailDataValidator;
 import org.apache.fineract.infrastructure.jobs.domain.ScheduledJobDetail;
 import org.apache.fineract.infrastructure.jobs.domain.ScheduledJobDetailRepository;
@@ -139,7 +139,7 @@ public class SchedularWritePlatformServiceJpaRepositoryImpl implements Schedular
         boolean isStopExecution = false;
         final ScheduledJobDetail scheduledJobDetail = this.scheduledJobDetailsRepository.findByJobKeyWithLock(jobKey);
         if (scheduledJobDetail.isCurrentlyRunning() || (triggerType.equals(SchedulerServiceConstants.TRIGGER_TYPE_CRON)
-                && scheduledJobDetail.getNextRunTime().after(new Date()))) {
+                && scheduledJobDetail.getNextRunTime().isAfter(DateUtils.getLocalDateTimeOfTenant()))) {
             isStopExecution = true;
         }
         final SchedulerDetail schedulerDetail = retriveSchedulerDetail();

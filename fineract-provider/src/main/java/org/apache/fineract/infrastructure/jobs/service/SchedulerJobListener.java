@@ -19,12 +19,12 @@
 package org.apache.fineract.infrastructure.jobs.service;
 
 import java.time.LocalDate;
-import java.util.Date;
 import java.util.HashMap;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
 import org.apache.fineract.infrastructure.businessdate.service.BusinessDateReadPlatformService;
 import org.apache.fineract.infrastructure.core.domain.ActionContext;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.jobs.domain.ScheduledJobDetail;
 import org.apache.fineract.infrastructure.jobs.domain.ScheduledJobRunHistory;
@@ -103,16 +103,17 @@ public class SchedulerJobListener implements JobListener {
             triggerType = context.getMergedJobDataMap().getString(SchedulerServiceConstants.TRIGGER_TYPE_REFERENCE);
         }
         if (SchedulerServiceConstants.TRIGGER_TYPE_CRON.equals(triggerType) && trigger.getNextFireTime() != null
-                && trigger.getNextFireTime().after(scheduledJobDetails.getNextRunTime())) {
-            scheduledJobDetails.setNextRunTime(trigger.getNextFireTime());
+                && DateUtils.convertDateToTenantDate(trigger.getNextFireTime()).isAfter(scheduledJobDetails.getNextRunTime())) {
+            scheduledJobDetails.setNextRunTime(DateUtils.convertDateToTenantDate(trigger.getNextFireTime()));
         }
 
-        scheduledJobDetails.setPreviousRunStartTime(context.getFireTime());
+        scheduledJobDetails.setPreviousRunStartTime(DateUtils.convertDateToTenantDate(context.getFireTime()));
         scheduledJobDetails.setCurrentlyRunning(false);
 
         final ScheduledJobRunHistory runHistory = new ScheduledJobRunHistory().setScheduledJobDetail(scheduledJobDetails)
-                .setVersion(version).setStartTime(context.getFireTime()).setEndTime(new Date()).setStatus(status)
-                .setErrorMessage(errorMessage).setTriggerType(triggerType).setErrorLog(errorLog);
+                .setVersion(version).setStartTime(DateUtils.convertDateToTenantDate(trigger.getNextFireTime()))
+                .setEndTime(DateUtils.getLocalDateTimeOfTenant()).setStatus(status).setErrorMessage(errorMessage)
+                .setTriggerType(triggerType).setErrorLog(errorLog);
         // scheduledJobDetails.addRunHistory(runHistory);
 
         this.schedularService.saveOrUpdate(scheduledJobDetails, runHistory);

@@ -21,6 +21,7 @@ package org.apache.fineract.infrastructure.core.service;
 import static java.time.temporal.ChronoUnit.DAYS;
 
 import jakarta.validation.constraints.NotNull;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -77,6 +78,20 @@ public final class DateUtils {
     public static OffsetDateTime getOffsetDateTimeOfTenant(ChronoUnit truncate) {
         OffsetDateTime now = OffsetDateTime.now(getDateTimeZoneOfTenant());
         return truncate == null ? now : now.truncatedTo(truncate);
+    }
+
+    // create a method to convert a date to a date in a tenant's timezone returning java.util.Date
+    public static LocalDateTime convertDateToTenantDate(java.util.Date date) {
+
+        // Convert java.util.Date to Instant
+        // check for null date
+        if (date == null) {
+            return getLocalDateTimeOfTenant();
+        }
+        Instant instant = date.toInstant();
+
+        // Convert Instant to ZonedDateTime with the specified ZoneId
+        return instant.atZone(getDateTimeZoneOfTenant()).toLocalDateTime();
     }
 
     public static LocalDateTime getLocalDateTimeOfSystem() {
