@@ -16,6 +16,7 @@ public class ClienAvailableCupoFieldsMapper implements RowMapper<ClienAvailableC
                 cce."NIT" AS nit,
                 tipo.code_value AS tipo,
                 ccp."Cedula" AS cedula,
+                COALESCE(ccp."Cupo aprobado", cce."Cupo") AS cupo,
                 (COALESCE(ccp."Cupo aprobado", cce."Cupo") - (select COALESCE(SUM(ml.principal_outstanding_derived), 0)  FROM m_loan ml WHERE ml.loan_status_id = 300 and client_id =mc.id)) AS availableCupo,
                 (select COALESCE(SUM(ml.principal_outstanding_derived), 0)  FROM m_loan ml WHERE ml.loan_status_id = 300 and client_id =mc.id) AS totalOutstandingPrincipalAmount
                 FROM m_client mc
