@@ -14,7 +14,9 @@ public class ClienAvailableCupoFieldsData {
     private String tipo;
     private String nit;
     private String cedula;
-    private BigDecimal cupoDisponibleAvance;
-    private BigDecimal cupoDisponibleTotal;
+    private BigDecimal cupo;
+    private BigDecimal availableCupo;
+    private BigDecimal availableCupoAvance;
+    private BigDecimal totalOutstandingPrincipalAmount;
 
 }
