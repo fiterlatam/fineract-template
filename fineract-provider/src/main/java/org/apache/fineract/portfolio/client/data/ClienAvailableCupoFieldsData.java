@@ -19,4 +19,14 @@ public class ClienAvailableCupoFieldsData {
     private BigDecimal availableCupoAvance;
     private BigDecimal totalOutstandingPrincipalAmount;
 
+    public ClienAvailableCupoFieldsData(Long clientId, String tipo, String nit, String cedula, BigDecimal cupo, BigDecimal availableCupo,
+            BigDecimal totalOutstandingPrincipalAmount) {
+        this.clientId = clientId;
+        this.tipo = tipo;
+        this.nit = nit;
+        this.cedula = cedula;
+        this.cupo = cupo;
+        this.availableCupo = availableCupo;
+        this.totalOutstandingPrincipalAmount = totalOutstandingPrincipalAmount;
+    }
 }
