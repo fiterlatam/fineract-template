@@ -136,6 +136,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Enumerated(EnumType.STRING)
     private LoanScheduleProcessingType loanScheduleProcessingType;
 
+    @Column(name = "recalculate_emi", nullable = false)
+    private boolean recalculateEMI;
+
     protected LoanTransaction() {}
 
     public static LoanTransaction incomePosting(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
@@ -171,9 +174,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public static LoanTransaction repaymentType(final LoanTransactionType repaymentType, final Office office, final Money amount,
             final PaymentDetail paymentDetail, final LocalDate paymentDate, final ExternalId externalId,
-            final String chargeRefundChargeType, LoanScheduleProcessingType loanScheduleProcessingType) {
+            final String chargeRefundChargeType, LoanScheduleProcessingType loanScheduleProcessingType, boolean recalculateEMI) {
         return new LoanTransaction(null, office, repaymentType, paymentDetail, amount.getAmount(), paymentDate, externalId,
-                chargeRefundChargeType, loanScheduleProcessingType);
+                chargeRefundChargeType, loanScheduleProcessingType, recalculateEMI);
     }
 
     public static LoanTransaction chargeAdjustment(final Loan loan, final BigDecimal amount, final LocalDate transactionDate,
@@ -415,7 +418,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     private LoanTransaction(final Loan loan, final Office office, final LoanTransactionType type, final PaymentDetail paymentDetail,
             final BigDecimal amount, final LocalDate date, final ExternalId externalId, final String chargeRefundChargeType,
-            LoanScheduleProcessingType loanScheduleProcessingType) {
+            LoanScheduleProcessingType loanScheduleProcessingType, boolean recalculateEMI) {
         this.loan = loan;
         this.typeOf = type.getValue();
         this.paymentDetail = paymentDetail;
@@ -426,6 +429,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         this.submittedOnDate = DateUtils.getBusinessLocalDate();
         this.chargeRefundChargeType = chargeRefundChargeType;
         this.loanScheduleProcessingType = loanScheduleProcessingType;
+        this.recalculateEMI = recalculateEMI;
     }
 
     public void reverse() {
@@ -990,12 +994,25 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return loanScheduleProcessingType;
     }
 
+    public boolean isOnOrBetween(final LocalDate startDate, final LocalDate endDate) {
+        return isOn(startDate) || isOn(endDate)
+                || (DateUtils.isBefore(getTransactionDate(), endDate) && DateUtils.isAfter(getTransactionDate(), startDate));
+    }
+
     public boolean isDailyAccrual() {
         return dailyAccrual;
     }
 
     public void setDailyAccrual(boolean dailyAccrual) {
         this.dailyAccrual = dailyAccrual;
+    }
+
+    public boolean recalculateEMI() {
+        return recalculateEMI;
+    }
+
+    public void setRecalculateEMI(boolean recalculateEMI) {
+        this.recalculateEMI = recalculateEMI;
     }
     // TODO missing hashCode(), equals(Object obj), but probably OK as long as
     // this is never stored in a Collection.

@@ -230,6 +230,8 @@ public final class LoanApplicationTerms {
     private final LoanScheduleType loanScheduleType;
     private final LoanScheduleProcessingType loanScheduleProcessingType;
     private boolean extendTermForMonthlyRepayment;
+    private boolean recalculateEMIForInstallment;
+    private BigDecimal advancePrincipalAmountForInstallment;
 
     public static LoanApplicationTerms assembleFrom(final ApplicationCurrency currency, final Integer loanTermFrequency,
             final PeriodFrequencyType loanTermPeriodFrequencyType, final Integer numberOfRepayments, final Integer repaymentEvery,
@@ -1992,6 +1994,22 @@ public final class LoanApplicationTerms {
 
     public void updateRepaymentsStartingFromDate(final LocalDate repaymentsStartingFromDate) {
         this.repaymentsStartingFromDate = repaymentsStartingFromDate;
+    }
+
+    public boolean recalculateEMIForInstallment() {
+        return recalculateEMIForInstallment;
+    }
+
+    public void setRecalculateEMIForInstallment(boolean recalculateEMIForInstallment) {
+        this.recalculateEMIForInstallment = recalculateEMIForInstallment;
+    }
+
+    public BigDecimal advancePrincipalAmountForInstallment() {
+        return advancePrincipalAmountForInstallment;
+    }
+
+    public void setAdvancePrincipalAmountForInstallment(BigDecimal advancePrincipalAmountForInstallment) {
+        this.advancePrincipalAmountForInstallment = advancePrincipalAmountForInstallment;
     }
 
 }

@@ -40,6 +40,7 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanproduct.domain.AllocationType;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 
@@ -156,6 +157,18 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     @Transient
     private List<LoanChargeData> currentOutstandingLoanCharges;
+
+    @Column(name = "advance_principal_amount", nullable = true)
+    private BigDecimal advancePrincipalAmount;
+
+    @Column(name = "recalculate_emi")
+    private boolean recalculateEMI;
+
+    @Column(name = "interest_recalculatedon_date", nullable = true)
+    private LocalDate interestRecalculatedOnDate;
+
+    @Column(name = "original_interest_charged", nullable = true)
+    private BigDecimal originalInterestChargedAmount;
 
     public LoanRepaymentScheduleInstallment() {
         this.installmentNumber = null;
@@ -512,6 +525,22 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         return getPrincipalOutstanding(currency).isZero();
     }
 
+    public BigDecimal getAdvancePrincipalAmount() {
+        return advancePrincipalAmount == null ? BigDecimal.ZERO : advancePrincipalAmount;
+    }
+
+    public void setAdvancePrincipalAmount(BigDecimal advancePrincipalAmount) {
+        this.advancePrincipalAmount = advancePrincipalAmount;
+    }
+
+    public boolean recalculateEMI() {
+        return recalculateEMI;
+    }
+
+    public void setRecalculateEMI(boolean recalculateEMI) {
+        this.recalculateEMI = recalculateEMI;
+    }
+
     public void resetDerivedComponents() {
         this.principalCompleted = null;
         this.principalWrittenOff = null;
@@ -526,12 +555,20 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.penaltyChargesWrittenOff = null;
         this.totalPaidInAdvance = null;
         this.totalPaidLate = null;
+        this.advancePrincipalAmount = null;
+        this.recalculateEMI = false;
 
         this.obligationsMet = false;
         this.obligationsMetOnDate = null;
         if (this.credits != null) {
             this.principal = this.principal.subtract(this.credits);
             this.credits = null;
+        }
+
+        if (this.originalInterestChargedAmount != null && this.originalInterestChargedAmount.compareTo(BigDecimal.ZERO) > 0) {
+            this.interestCharged = this.originalInterestChargedAmount;
+            this.originalInterestChargedAmount = BigDecimal.ZERO;
+            this.interestRecalculatedOnDate = null;
         }
     }
 
@@ -792,7 +829,49 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         if (transactionAmountRemaining.isZero()) {
             return interestPortionOfTransaction;
         }
-        final Money interestDue = getInterestOutstanding(currency);
+
+        Money interestDue = Money.zero(currency);
+        if (this.getLoan() != null && this.getLoan().getLoanProductRelatedDetail().getLoanScheduleProcessingType()
+                .equals(LoanScheduleProcessingType.HORIZONTAL)) {
+            if (isOnOrBetween(transactionDate) && getInterestOutstanding(currency).isGreaterThanZero()) {
+                final RoundingMode roundingMode = RoundingMode.HALF_UP;
+
+                BigDecimal numberOfDaysForInterestCalculation = BigDecimal.ZERO;
+                if (this.interestRecalculatedOnDate != null) {
+                    if (this.interestRecalculatedOnDate.isAfter(transactionDate)) { // This should only be true if the
+                                                                                    // repayment is reversed
+                        numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
+                    } else {
+                        numberOfDaysForInterestCalculation = BigDecimal
+                                .valueOf(ChronoUnit.DAYS.between(this.interestRecalculatedOnDate, transactionDate));
+                    }
+                } else {
+                    numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
+                }
+                BigDecimal numberOfDaysInPeriod = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, this.dueDate));
+                BigDecimal oneDayOfInterest = this.interestCharged.divide(numberOfDaysInPeriod, RoundingMode.HALF_UP);
+                oneDayOfInterest = oneDayOfInterest.setScale(5, roundingMode);
+                interestDue = Money.of(currency, oneDayOfInterest.multiply(numberOfDaysForInterestCalculation));
+                if (interestDue.isGreaterThan(getInterestOutstanding(currency))) {
+                    interestDue = getInterestOutstanding(currency);
+                }
+
+                //// Update installment interest charged if principal is fully paid during the accrual period
+                // Keep the original interest charged in case the transaction is rollbacked and interest charged needs
+                //// to be moved to original amount.
+                if (this.getPrincipalOutstanding(currency).isZero() && this.interestRecalculatedOnDate == null) {
+                    this.interestRecalculatedOnDate = transactionDate;
+                    this.originalInterestChargedAmount = this.interestCharged;
+                    this.interestCharged = getInterestPaid(currency).plus(getInterestWaived(currency)).plus(getInterestWrittenOff(currency))
+                            .plus(interestDue).getAmount();
+                }
+
+            } else {
+                interestDue = getInterestOutstanding(currency);
+            }
+        } else {
+            interestDue = getInterestOutstanding(currency);
+        }
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(interestDue)) {
             if (isWriteOffTransaction) {
                 this.interestWrittenOff = getInterestWrittenOff(currency).plus(interestDue).getAmount();
@@ -844,6 +923,21 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
 
         this.principalCompleted = defaultToNullIfZero(this.principalCompleted);
+
+        //// Update installment interest charged if principal is fully paid during the accrual period and interest has
+        //// also been recalculated and paid
+        // Keep the original interest charged in case the transaction is rollbacked.
+        if (this.getLoan() != null && this.getLoan().getLoanProductRelatedDetail().getLoanScheduleProcessingType()
+                .equals(LoanScheduleProcessingType.HORIZONTAL)) {
+            if (isOnOrBetween(transactionDate)) {
+                if (this.getPrincipalOutstanding(currency).isZero() && this.interestRecalculatedOnDate != null) {
+                    this.interestRecalculatedOnDate = transactionDate;
+                    this.originalInterestChargedAmount = this.interestCharged;
+                    this.interestCharged = getInterestPaid(currency).plus(getInterestWaived(currency)).plus(getInterestWrittenOff(currency))
+                            .getAmount();
+                }
+            }
+        }
 
         checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
 
@@ -1405,6 +1499,15 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public void setDownPayment(boolean downPayment) {
         isDownPayment = downPayment;
+    }
+
+    public boolean isOn(final LocalDate date, final LocalDate transactionDate) {
+        return DateUtils.isEqual(transactionDate, date);
+    }
+
+    public boolean isOnOrBetween(final LocalDate transactionDate) {
+        return isOn(fromDate, transactionDate) || isOn(dueDate, transactionDate)
+                || (DateUtils.isBefore(transactionDate, dueDate) && DateUtils.isAfter(transactionDate, fromDate));
     }
 
 }

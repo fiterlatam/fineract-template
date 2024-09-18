@@ -211,14 +211,15 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
     }
 
     @Override
-    public void processLatestTransaction(final LoanTransaction loanTransaction, final TransactionCtx ctx) {
+    public Money processLatestTransaction(final LoanTransaction loanTransaction, final TransactionCtx ctx) {
+        Money transactionAmountUnprocessed = Money.zero(ctx.getCurrency());
         switch (loanTransaction.getTypeOf()) {
             case WRITEOFF ->
                 handleWriteOff(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges(), ctx.getOverpaymentHolder());
             case REFUND_FOR_ACTIVE_LOAN -> handleRefund(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges());
             case CHARGEBACK -> handleChargeback(loanTransaction, ctx);
             default -> {
-                Money transactionAmountUnprocessed = handleTransactionAndCharges(loanTransaction, ctx.getCurrency(), ctx.getInstallments(),
+                transactionAmountUnprocessed = handleTransactionAndCharges(loanTransaction, ctx.getCurrency(), ctx.getInstallments(),
                         ctx.getCharges(), null, false);
                 if (transactionAmountUnprocessed.isGreaterThanZero()) {
                     if (loanTransaction.isWaiver()) {
@@ -234,6 +235,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                 }
             }
         }
+        return transactionAmountUnprocessed;
     }
 
     @Override
