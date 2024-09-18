@@ -33,7 +33,6 @@ public class LoanWriteOffWorkbookPopulator extends AbstractWorkbookPopulator {
     public void populate(Workbook workbook, String dateFormat) {
         final Sheet loanWriteOffSheet = workbook.createSheet(TemplatePopulateImportConstants.LOAN_WRITE_OFF_SHEET_NAME);
         setLayout(loanWriteOffSheet, workbook);
-        ;
     }
 
     private void setLayout(final Sheet worksheet, final Workbook workbook) {

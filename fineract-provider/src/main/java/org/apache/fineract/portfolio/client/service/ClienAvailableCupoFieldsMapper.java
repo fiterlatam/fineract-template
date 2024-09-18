@@ -16,6 +16,7 @@ public class ClienAvailableCupoFieldsMapper implements RowMapper<ClienAvailableC
                 cce."NIT" AS nit,
                 tipo.code_value AS tipo,
                 ccp."Cedula" AS cedula,
+                COALESCE(ccp."Cupo aprobado", cce."Cupo") AS cupo,
                 (COALESCE(ccp."Cupo aprobado", cce."Cupo") - (select COALESCE(SUM(ml.principal_outstanding_derived), 0)  FROM m_loan ml WHERE ml.loan_status_id = 300 and client_id =mc.id)) AS availableCupo,
                 (select COALESCE(SUM(ml.principal_outstanding_derived), 0)  FROM m_loan ml WHERE ml.loan_status_id = 300 and client_id =mc.id) AS totalOutstandingPrincipalAmount
                 FROM m_client mc
@@ -32,8 +33,9 @@ public class ClienAvailableCupoFieldsMapper implements RowMapper<ClienAvailableC
         final String tipo = rs.getString("tipo");
         final String nit = rs.getString("nit");
         final String cedula = rs.getString("cedula");
-        final BigDecimal cupoDisponibleAvance = rs.getBigDecimal("availableCupo").setScale(0);
-        final BigDecimal cupoDisponibleTotal = rs.getBigDecimal("totalOutstandingPrincipalAmount").setScale(0);
-        return new ClienAvailableCupoFieldsData(clientId, tipo, nit, cedula, cupoDisponibleAvance, cupoDisponibleTotal);
+        final BigDecimal cupo = rs.getBigDecimal("cupo");
+        final BigDecimal availableCupo = rs.getBigDecimal("availableCupo").setScale(0);
+        final BigDecimal totalOutstandingPrincipalAmount = rs.getBigDecimal("totalOutstandingPrincipalAmount").setScale(0);
+        return new ClienAvailableCupoFieldsData(clientId, tipo, nit, cedula, cupo, availableCupo, totalOutstandingPrincipalAmount);
     }
 }

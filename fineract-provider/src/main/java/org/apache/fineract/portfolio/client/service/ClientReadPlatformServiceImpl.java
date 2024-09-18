@@ -925,6 +925,18 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         final ClienAvailableCupoFieldsMapper rowMapper = new ClienAvailableCupoFieldsMapper();
         final String sql = "SELECT " + rowMapper.schema() + " and ( cce.\"NIT\" = ? or ccp.\"Cedula\" = ? )";
         List<ClienAvailableCupoFieldsData> resultList = this.jdbcTemplate.query(sql, rowMapper, nitId, nitId);
+        AdvanceQuotaConfigurationData advanceQuotaConfigurationData = this.loanProductReadPlatformService
+                .retrieveAdvanceQuotaConfigurationData();
+        if (advanceQuotaConfigurationData.getEnabled()) {
+            BigDecimal advanceCupoBalance;
+            for (ClienAvailableCupoFieldsData list : resultList) {
+                final BigDecimal percentageValue = advanceQuotaConfigurationData.getPercentageValue();
+                final BigDecimal advanceCupo = ObjectUtils.defaultIfNull(percentageValue, BigDecimal.ZERO).multiply(list.getCupo())
+                        .divide(BigDecimal.valueOf(100), MoneyHelper.getRoundingMode());
+                advanceCupoBalance = advanceCupo.subtract(list.getTotalOutstandingPrincipalAmount());
+                list.setAvailableCupoAvance(advanceCupoBalance);
+            }
+        }
         if (resultList.isEmpty()) {
             throw new ClientNotFoundException("No exite cliente con el NIT/Cedula : " + nitId, nitId);
         }

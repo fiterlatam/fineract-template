@@ -563,10 +563,9 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
     protected Money handleTransactionAndCharges(final LoanTransaction loanTransaction, final MonetaryCurrency currency,
             final List<LoanRepaymentScheduleInstallment> installments, final Set<LoanCharge> charges, final Money chargeAmountToProcess,
             final boolean isFeeCharge) {
-        if (loanTransaction.isRepaymentLikeType() || loanTransaction.isInterestWaiver() || loanTransaction.isRecoveryRepayment()) {
-            if (!loanTransaction.isSpecialWriteOff()) {
-                loanTransaction.resetDerivedComponents();
-            }
+        if ((loanTransaction.isRepaymentLikeType() || loanTransaction.isInterestWaiver() || loanTransaction.isRecoveryRepayment())
+                && !loanTransaction.isSpecialWriteOff()) {
+            loanTransaction.resetDerivedComponents();
         }
         Money transactionAmountUnprocessed = processTransaction(loanTransaction, currency, installments, charges, chargeAmountToProcess);
 

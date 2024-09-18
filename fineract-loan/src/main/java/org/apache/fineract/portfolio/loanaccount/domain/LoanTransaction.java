@@ -364,6 +364,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return waiver;
     }
 
+    public static LoanTransaction writeoff(final Loan loan, final Office office, final LocalDate writeOffDate, final ExternalId externalId,
+            final BigDecimal amount) {
+        return new LoanTransaction(loan, office, LoanTransactionType.WRITEOFF, amount, writeOffDate, externalId);
+    }
+
     public static LoanTransaction writeoff(final Loan loan, final Office office, final LocalDate writeOffDate,
             final ExternalId externalId) {
         return new LoanTransaction(loan, office, LoanTransactionType.WRITEOFF, null, writeOffDate, externalId);
