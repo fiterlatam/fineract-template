@@ -1865,6 +1865,18 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
          * if (this.loanInstallmentCharge.isEmpty()) { this.loanInstallmentCharge.addAll(newChargeInstallments);
          */
         Loan loan = loanCharge.getLoan();
+        if (loan.isDisbursed() && this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)
+                && this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.HORIZONTAL)) {
+            if (loanCharge.isInstalmentFee()) {
+                loanCharge.clearLoanInstallmentCharges();
+                for (final LoanRepaymentScheduleInstallment installment : getRepaymentScheduleInstallments()) {
+                    if (installment.isRecalculatedInterestComponent()) {
+                        continue; // JW: does this in generateInstallmentLoanCharges - but don't understand it
+                    }
+                    installment.getInstallmentCharges().clear();
+                }
+            }
+        }
         if (!loan.isSubmittedAndPendingApproval() && !loan.isApproved()) {
             return;
         } // doing for both just in case status is not
