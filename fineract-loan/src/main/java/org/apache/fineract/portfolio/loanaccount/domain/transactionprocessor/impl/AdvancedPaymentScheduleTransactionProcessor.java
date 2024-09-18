@@ -1050,6 +1050,10 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         Money paidPortion;
         boolean exit = false;
         do {
+            if (transactionAmountUnprocessed.isZero()) {
+                exit = true;
+                continue;
+            }
             LoanRepaymentScheduleInstallment oldestPastDueInstallment = installments.stream()
                     .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff).filter(e -> loanTransaction.isAfter(e.getDueDate()))
                     .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
