@@ -38,6 +38,10 @@ public interface LoanScheduleGenerator {
             HolidayDetailDTO holidayDetailDTO, LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor,
             LocalDate rescheduleFrom);
 
+    LoanScheduleDTO rescheduleNextInstallmentsForProgressiveLoans(MathContext mc, LoanApplicationTerms loanApplicationTerms, Loan loan,
+                                                                  HolidayDetailDTO holidayDetailDTO,
+                                                                  LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor, LocalDate rescheduleFrom);
+
     LoanRepaymentScheduleInstallment calculatePrepaymentAmount(MonetaryCurrency currency, LocalDate onDate,
             LoanApplicationTerms loanApplicationTerms, MathContext mc, Loan loan, HolidayDetailDTO holidayDetailDTO,
             LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor);

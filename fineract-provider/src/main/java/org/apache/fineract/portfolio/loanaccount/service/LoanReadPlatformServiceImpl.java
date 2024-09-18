@@ -1354,7 +1354,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     + " ls.fee_charges_amount as feeChargesDue, ls.fee_charges_completed_derived as feeChargesPaid, ls.fee_charges_waived_derived as feeChargesWaived, ls.fee_charges_writtenoff_derived as feeChargesWrittenOff, "
                     + " ls.penalty_charges_amount as penaltyChargesDue, ls.penalty_charges_completed_derived as penaltyChargesPaid, ls.penalty_charges_waived_derived as penaltyChargesWaived, "
                     + " ls.penalty_charges_writtenoff_derived as penaltyChargesWrittenOff, ls.total_paid_in_advance_derived as totalPaidInAdvanceForPeriod, "
-                    + " ls.total_paid_late_derived as totalPaidLateForPeriod, ls.credits_amount as totalCredits, ls.is_down_payment isDownPayment "
+                    + " ls.total_paid_late_derived as totalPaidLateForPeriod, ls.credits_amount as totalCredits, ls.is_down_payment isDownPayment, ls.advance_principal_amount advancePrincipalAmount "
                     + " from m_loan_repayment_schedule ls ";
         }
 
@@ -1518,7 +1518,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 if (isAdditional) {
                     this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(principalDue);
                 }
-
+                BigDecimal advancePrincipalAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,"advancePrincipalAmount");
+                this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.subtract(advancePrincipalAmount);
+                outstandingPrincipalBalanceOfLoan = outstandingPrincipalBalanceOfLoan.subtract(advancePrincipalAmount);
                 final boolean isDownPayment = rs.getBoolean("isDownPayment");
 
                 LoanSchedulePeriodData periodData;

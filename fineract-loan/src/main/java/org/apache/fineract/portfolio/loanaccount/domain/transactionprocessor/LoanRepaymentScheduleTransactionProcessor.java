@@ -58,7 +58,7 @@ public interface LoanRepaymentScheduleTransactionProcessor {
      * Provides support for processing the latest transaction (which should be the latest transaction) against the loan
      * schedule.
      */
-    void processLatestTransaction(LoanTransaction loanTransaction, TransactionCtx ctx);
+    Money processLatestTransaction(LoanTransaction loanTransaction, TransactionCtx ctx);
 
     /**
      * Provides support for passing all {@link LoanTransaction}'s so it will completely re-process the entire loan

@@ -206,6 +206,13 @@ public abstract class AbstractProgressiveLoanScheduleGenerator implements LoanSc
     }
 
     @Override
+    public LoanScheduleDTO rescheduleNextInstallmentsForProgressiveLoans(final MathContext mc, final LoanApplicationTerms loanApplicationTerms, Loan loan,
+                                                                         final HolidayDetailDTO holidayDetailDTO,
+                                                                         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor, final LocalDate rescheduleFrom) {
+        return null;
+    }
+
+    @Override
     public LoanRepaymentScheduleInstallment calculatePrepaymentAmount(MonetaryCurrency currency, LocalDate onDate,
             LoanApplicationTerms loanApplicationTerms, MathContext mc, Loan loan, HolidayDetailDTO holidayDetailDTO,
             LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor) {
