@@ -37,5 +37,19 @@
             ]]>
         </sql>
     </changeSet>
+    <changeSet id="2" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists tableName="m_prequalification_group" indexName="agency_id_index"/>
+            </not>
+        </preConditions>
+        <sql>
+            <![CDATA[
+                ALTER TABLE `m_prequalification_group`
+                ADD INDEX `agency_id_index`(`agency_id`) INVISIBLE,
+                ADD INDEX `status_index`(`status`) INVISIBLE;
+            ]]>
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>
