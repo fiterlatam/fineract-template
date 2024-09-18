@@ -52,6 +52,7 @@ import org.apache.fineract.infrastructure.bulkimport.populator.chartofaccounts.C
 import org.apache.fineract.infrastructure.bulkimport.populator.client.ClientEntityWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.client.ClientPersonWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.clientblock.ClientBlockControlWorkbookPopulator;
+import org.apache.fineract.infrastructure.bulkimport.populator.clientcupoincrement.ClientCupoIncrementWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.clientvip.ClientVipControlWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.commercepointofsale.clientvip.CommercePointOfSaleControlWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.fixeddeposits.FixedDepositTransactionWorkbookPopulator;
@@ -239,6 +240,8 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
                 populator = populateCommercePointOfSaleWorkbook();
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.SALES_OF_INSURANCE_OR_ASSISTANCE.toString())) {
                 populator = populateSaleOfInsuranceOrAssistanceWorkbook();
+            } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.CLIENT_CUPO_INCREMENTS.toString())) {
+                populator = populateClientCupoIncrementsWorkbook();
             } else {
                 throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");
             }
@@ -470,6 +473,10 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
 
     private WorkbookPopulator populateLoanWriteOffWorkbook() {
         return new LoanWriteOffWorkbookPopulator();
+    }
+
+    private WorkbookPopulator populateClientCupoIncrementsWorkbook() {
+        return new ClientCupoIncrementWorkbookPopulator();
     }
 
     private List<LoanAccountData> fetchLoanAccounts(final Long officeId, final LoanStatus loanStatus) {

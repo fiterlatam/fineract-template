@@ -22,8 +22,11 @@ package org.apache.fineract.portfolio.client.service;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
+import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
+import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -32,6 +35,8 @@ public class ClientAdditionalFieldsMapper implements RowMapper<ClientAdditionalF
     public String schema() {
         return """
                 mc.id AS clientId,
+                mc.status_enum AS status,
+                mc.display_name AS clientName,
                 cce."NIT" AS nit,
                 tipo.code_value AS tipo,
                 ccp."Cedula" AS cedula,
@@ -50,6 +55,9 @@ public class ClientAdditionalFieldsMapper implements RowMapper<ClientAdditionalF
         final String nit = rs.getString("nit");
         final String cedula = rs.getString("cedula");
         final BigDecimal cupo = rs.getBigDecimal("cupo");
-        return new ClientAdditionalFieldsData(clientId, tipo, nit, cedula, cupo);
+        final int statusInt = rs.getInt("status");
+        final EnumOptionData statusData = ClientEnumerations.status(ClientStatus.fromInt(statusInt));
+        final String clientName = rs.getString("clientName");
+        return new ClientAdditionalFieldsData(clientId, tipo, nit, cedula, cupo, statusData, clientName);
     }
 }

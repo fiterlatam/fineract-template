@@ -16,27 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.client.data;
+package org.apache.fineract.infrastructure.bulkimport.constants;
 
-import java.math.BigDecimal;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+public final class ClientCupoIncrementConstants {
 
-/**
- * Immutable data object representing a Loan Additional Fields Data
- */
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class ClientAdditionalFieldsData {
-
-    private Long clientId;
-    private String tipo;
-    private String nit;
-    private String cedula;
-    private BigDecimal cupo;
-    private EnumOptionData status;
-    private String clientName;
+    public static final int DOCUMENT_TYPE_COL = 0;
+    public static final int DOCUMENT_NUMBER_COL = 1;
+    public static final int MAXIMUM_CUPO_AMOUNT_COL = 2;
+    public static final int STATUS_COL = 3;
+    public static final int MODIFICATION_DATE = 4;
+    public static final int CREATED_BY_USER_NAME_COL = 5;
+    public static final int CLIENT_NAME_COL = 6;
+    public static final int PREVIOUS_MAXIMUM_CUPO_AMOUNT_COL = 7;
 }
