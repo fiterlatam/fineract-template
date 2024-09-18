@@ -2413,14 +2413,14 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     }
 
     @Override
-    public LoanScheduleDTO rescheduleNextInstallmentsForProgressiveLoans(final MathContext mc, final LoanApplicationTerms loanApplicationTerms, Loan loan,
-                                                                         final HolidayDetailDTO holidayDetailDTO,
-                                                                         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor, final LocalDate rescheduleFrom) {
+    public LoanScheduleDTO rescheduleNextInstallmentsForProgressiveLoans(final MathContext mc,
+            final LoanApplicationTerms loanApplicationTerms, Loan loan, final HolidayDetailDTO holidayDetailDTO,
+            final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor, final LocalDate rescheduleFrom) {
 
         // Fixed schedule End Date for generating schedule
         final LocalDate scheduleTillDate = null;
-        return rescheduleNextInstallmentsForProgressiveLoans(mc, loanApplicationTerms, loan, holidayDetailDTO, loanRepaymentScheduleTransactionProcessor,
-                rescheduleFrom, scheduleTillDate);
+        return rescheduleNextInstallmentsForProgressiveLoans(mc, loanApplicationTerms, loan, holidayDetailDTO,
+                loanRepaymentScheduleTransactionProcessor, rescheduleFrom, scheduleTillDate);
 
     }
 
@@ -2775,10 +2775,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         return LoanScheduleDTO.from(retainedInstallments, loanScheduleModelWithPeriodChanges);
     }
 
-    private LoanScheduleDTO rescheduleNextInstallmentsForProgressiveLoans(final MathContext mc, final LoanApplicationTerms loanApplicationTerms, Loan loan,
-                                                       final HolidayDetailDTO holidayDetailDTO,
-                                                       final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor, LocalDate rescheduleFrom,
-                                                       final LocalDate scheduleTillDate) {
+    private LoanScheduleDTO rescheduleNextInstallmentsForProgressiveLoans(final MathContext mc,
+            final LoanApplicationTerms loanApplicationTerms, Loan loan, final HolidayDetailDTO holidayDetailDTO,
+            final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor, LocalDate rescheduleFrom,
+            final LocalDate scheduleTillDate) {
         // Loan transactions to process and find the variation on payments
         Collection<RecalculationDetail> recalculationDetails = new ArrayList<>();
         List<LoanTransaction> transactions = loan.getLoanTransactions();
@@ -2846,7 +2846,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             }
             LocalDate actualRepaymentDate = RepaymentStartDateType.DISBURSEMENT_DATE
                     .equals(loanApplicationTerms.getRepaymentStartDateType()) ? loanApplicationTerms.getExpectedDisbursementDate()
-                    : loanApplicationTerms.getSubmittedOnDate();
+                            : loanApplicationTerms.getSubmittedOnDate();
             boolean isFirstRepayment = true;
 
             // cumulative fields
@@ -2898,7 +2898,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             // identify retain installments
             List<LoanRepaymentScheduleInstallment> processInstallmentsInstallments = new ArrayList<>();
             if (recalculationDetails.size() > 0) {
-                processInstallmentsInstallments = fetchRetainedInstallmentsForProgressiveLoans(loan.getRepaymentScheduleInstallments(), rescheduleFrom, currency);
+                processInstallmentsInstallments = fetchRetainedInstallmentsForProgressiveLoans(loan.getRepaymentScheduleInstallments(),
+                        rescheduleFrom, currency);
             }
             final List<LoanRepaymentScheduleInstallment> newRepaymentScheduleInstallments = new ArrayList<>();
 
@@ -2913,9 +2914,11 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     newRepaymentScheduleInstallments.add(installment);
                     continue;
                 }
-                // Installment has not been paid but an advance pmt was made so we need to recalculate the schedule from this installment
-                if (installment.getAdvancePrincipalAmount() != null && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0
-                    && installment.getTotalPaid(currency).isZero()) {
+                // Installment has not been paid but an advance pmt was made so we need to recalculate the schedule from
+                // this installment
+                if (installment.getAdvancePrincipalAmount() != null
+                        && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0
+                        && installment.getTotalPaid(currency).isZero()) {
                     // Reduce advance paid amount from outstanding balance and recalculate EMI
                     outstandingBalance = outstandingBalance.minus(installment.getAdvancePrincipalAmount());
                     totalCumulativePrincipal = totalCumulativePrincipal.plus(installment.getAdvancePrincipalAmount());
@@ -2942,9 +2945,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     do {
                         actualRepaymentDate = getScheduledDateGenerator().generateNextRepaymentDate(actualRepaymentDate,
                                 loanApplicationTerms, isFirstRepayment);
-                        /*if (!DateUtils.isBefore(actualRepaymentDate, rescheduleFrom)) {
-                            actualRepaymentDate = lastInstallmentDate;
-                        }*/
+                        /*
+                         * if (!DateUtils.isBefore(actualRepaymentDate, rescheduleFrom)) { actualRepaymentDate =
+                         * lastInstallmentDate; }
+                         */
                         isFirstRepayment = false;
                         LocalDate prevLastInstDate = lastInstallmentDate;
                         lastInstallmentDate = getScheduledDateGenerator()
@@ -3019,7 +3023,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 // calculation of basic fields to start the schedule generation
                 // from the middle
                 periodStartDate = installment.getDueDate();
-                if (installment.getAdvancePrincipalAmount() != null && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
+                if (installment.getAdvancePrincipalAmount() != null
+                        && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
                     // Reduce advance paid amount from outstanding balance and recalculate EMI
                     outstandingBalance = outstandingBalance.minus(installment.getAdvancePrincipalAmount());
                     outstandingBalanceAsPerRest = outstandingBalanceAsPerRest.minus(installment.getAdvancePrincipalAmount());
@@ -3153,8 +3158,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         return LoanScheduleDTO.from(retainedInstallments, loanScheduleModelWithPeriodChanges);
     }
 
-
-
     private List<LoanRepaymentScheduleInstallment> fetchRetainedInstallments(
             final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments, final LocalDate rescheduleFrom,
             MonetaryCurrency currency) {
@@ -3200,7 +3203,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             if (DateUtils.isBefore(installment.getFromDate(), rescheduleFrom)) {
                 newRepaymentScheduleInstallments.add(installment);
             } else {
-                if (installment.getAdvancePrincipalAmount() != null && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
+                if (installment.getAdvancePrincipalAmount() != null
+                        && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
                     newRepaymentScheduleInstallments.add(installment);
                 }
                 break;

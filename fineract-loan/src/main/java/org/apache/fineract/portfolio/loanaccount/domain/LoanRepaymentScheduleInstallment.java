@@ -41,7 +41,6 @@ import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
 import org.apache.fineract.portfolio.loanproduct.domain.AllocationType;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 
@@ -527,7 +526,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public BigDecimal getAdvancePrincipalAmount() {
-        return advancePrincipalAmount == null? BigDecimal.ZERO : advancePrincipalAmount;
+        return advancePrincipalAmount == null ? BigDecimal.ZERO : advancePrincipalAmount;
     }
 
     public void setAdvancePrincipalAmount(BigDecimal advancePrincipalAmount) {
@@ -832,16 +831,19 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
 
         Money interestDue = Money.zero(currency);
-        if (this.getLoan() != null && this.getLoan().getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.HORIZONTAL)) {
+        if (this.getLoan() != null && this.getLoan().getLoanProductRelatedDetail().getLoanScheduleProcessingType()
+                .equals(LoanScheduleProcessingType.HORIZONTAL)) {
             if (isOnOrBetween(transactionDate) && getInterestOutstanding(currency).isGreaterThanZero()) {
                 final RoundingMode roundingMode = RoundingMode.HALF_UP;
 
                 BigDecimal numberOfDaysForInterestCalculation = BigDecimal.ZERO;
                 if (this.interestRecalculatedOnDate != null) {
-                    if (this.interestRecalculatedOnDate.isAfter(transactionDate)) { // This should only be true if the repayment is reversed
+                    if (this.interestRecalculatedOnDate.isAfter(transactionDate)) { // This should only be true if the
+                                                                                    // repayment is reversed
                         numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
                     } else {
-                        numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.interestRecalculatedOnDate, transactionDate));
+                        numberOfDaysForInterestCalculation = BigDecimal
+                                .valueOf(ChronoUnit.DAYS.between(this.interestRecalculatedOnDate, transactionDate));
                     }
                 } else {
                     numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
@@ -855,12 +857,13 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                 }
 
                 //// Update installment interest charged if principal is fully paid during the accrual period
-                // Keep the original interest charged in case the transaction is rollbacked and interest charged needs to be moved to original amount.
+                // Keep the original interest charged in case the transaction is rollbacked and interest charged needs
+                //// to be moved to original amount.
                 if (this.getPrincipalOutstanding(currency).isZero() && this.interestRecalculatedOnDate == null) {
                     this.interestRecalculatedOnDate = transactionDate;
                     this.originalInterestChargedAmount = this.interestCharged;
-                    this.interestCharged = getInterestPaid(currency).plus(getInterestWaived(currency))
-                            .plus(getInterestWrittenOff(currency)).plus(interestDue).getAmount();
+                    this.interestCharged = getInterestPaid(currency).plus(getInterestWaived(currency)).plus(getInterestWrittenOff(currency))
+                            .plus(interestDue).getAmount();
                 }
 
             } else {
@@ -921,15 +924,17 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
         this.principalCompleted = defaultToNullIfZero(this.principalCompleted);
 
-        //// Update installment interest charged if principal is fully paid during the accrual period and interest has also been recalculated and paid
+        //// Update installment interest charged if principal is fully paid during the accrual period and interest has
+        //// also been recalculated and paid
         // Keep the original interest charged in case the transaction is rollbacked.
-        if (this.getLoan() != null && this.getLoan().getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.HORIZONTAL)) {
+        if (this.getLoan() != null && this.getLoan().getLoanProductRelatedDetail().getLoanScheduleProcessingType()
+                .equals(LoanScheduleProcessingType.HORIZONTAL)) {
             if (isOnOrBetween(transactionDate)) {
                 if (this.getPrincipalOutstanding(currency).isZero() && this.interestRecalculatedOnDate != null) {
                     this.interestRecalculatedOnDate = transactionDate;
                     this.originalInterestChargedAmount = this.interestCharged;
-                    this.interestCharged = getInterestPaid(currency).plus(getInterestWaived(currency))
-                            .plus(getInterestWrittenOff(currency)).getAmount();
+                    this.interestCharged = getInterestPaid(currency).plus(getInterestWaived(currency)).plus(getInterestWrittenOff(currency))
+                            .getAmount();
                 }
             }
         }
@@ -1499,8 +1504,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     public boolean isOn(final LocalDate date, final LocalDate transactionDate) {
         return DateUtils.isEqual(transactionDate, date);
     }
+
     public boolean isOnOrBetween(final LocalDate transactionDate) {
-        return  isOn(fromDate, transactionDate) || isOn(dueDate, transactionDate) || (DateUtils.isBefore(transactionDate, dueDate) && DateUtils.isAfter(transactionDate, fromDate));
+        return isOn(fromDate, transactionDate) || isOn(dueDate, transactionDate)
+                || (DateUtils.isBefore(transactionDate, dueDate) && DateUtils.isAfter(transactionDate, fromDate));
     }
 
 }

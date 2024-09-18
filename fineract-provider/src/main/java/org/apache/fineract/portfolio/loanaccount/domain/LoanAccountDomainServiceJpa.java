@@ -205,12 +205,13 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     txnExternalId);
         } else {
             newRepaymentTransaction = LoanTransaction.repaymentType(repaymentTransactionType, loan.getOffice(), repaymentAmount,
-                    paymentDetail, transactionDate, txnExternalId, chargeRefundChargeType, loan.getRepaymentTransactionProcessingType(), loan.recalculateEMI());
+                    paymentDetail, transactionDate, txnExternalId, chargeRefundChargeType, loan.getRepaymentTransactionProcessingType(),
+                    loan.recalculateEMI());
         }
 
         LocalDate recalculateFrom = null;
         if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()
-            || loan.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)) {
+                || loan.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)) {
             recalculateFrom = transactionDate;
         }
         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom,
