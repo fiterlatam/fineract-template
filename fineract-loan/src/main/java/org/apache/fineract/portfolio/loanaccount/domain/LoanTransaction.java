@@ -995,7 +995,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean isOnOrBetween(final LocalDate startDate, final LocalDate endDate) {
-        return  isOn(startDate) || isOn(endDate) || (DateUtils.isBefore(getTransactionDate(), endDate) && DateUtils.isAfter(getTransactionDate(), startDate));
+        return isOn(startDate) || isOn(endDate)
+                || (DateUtils.isBefore(getTransactionDate(), endDate) && DateUtils.isAfter(getTransactionDate(), startDate));
     }
 
     public boolean isDailyAccrual() {
