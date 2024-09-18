@@ -80,4 +80,12 @@ public interface LoanScheduleModelPeriod {
     public BigDecimal getTotalMandatoryInsuranceCharged();
 
     public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged);
+
+    public boolean recalculateEMIForInstallment();
+
+    public void setRecalculateEMIForInstallment(boolean recalculateEMIForInstallment);
+
+    public BigDecimal advancePrincipalAmountForInstallment();
+
+    public void setAdvancePrincipalAmountForInstallment(BigDecimal advancePrincipalAmountForInstallment);
 }
