@@ -48,6 +48,8 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     BigDecimal totalVoluntaryInsuranceCharged = BigDecimal.ZERO;
     BigDecimal totalAvalCharged = BigDecimal.ZERO;
     BigDecimal totalHonorariosCharged = BigDecimal.ZERO;
+    private boolean recalculateEMIForInstallment;
+    private BigDecimal advancePrincipalAmountForInstallment;
 
     public static LoanScheduleModelRepaymentPeriod repayment(final int periodNumber, final LocalDate startDate,
             final LocalDate scheduledDueDate, final Money principalDue, final Money outstandingLoanBalance, final Money interestDue,
@@ -231,5 +233,25 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     @Override
     public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged) {
         this.totalMandatoryInsuranceCharged = totalMandatoryInsuranceCharged;
+    }
+
+    @Override
+    public boolean recalculateEMIForInstallment() {
+        return recalculateEMIForInstallment;
+    }
+
+    @Override
+    public void setRecalculateEMIForInstallment(boolean recalculateEMIForInstallment) {
+        this.recalculateEMIForInstallment = recalculateEMIForInstallment;
+    }
+
+    @Override
+    public BigDecimal advancePrincipalAmountForInstallment() {
+        return advancePrincipalAmountForInstallment;
+    }
+
+    @Override
+    public void setAdvancePrincipalAmountForInstallment(BigDecimal advancePrincipalAmountForInstallment) {
+        this.advancePrincipalAmountForInstallment = advancePrincipalAmountForInstallment;
     }
 }

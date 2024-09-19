@@ -177,4 +177,24 @@ public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleMod
 
     @Override
     public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged) {}
+
+    @Override
+    public boolean recalculateEMIForInstallment() {
+        return false;
+    }
+
+    @Override
+    public void setRecalculateEMIForInstallment(boolean recalculateEMIForInstallment) {
+        return;
+    }
+
+    @Override
+    public BigDecimal advancePrincipalAmountForInstallment() {
+        return null;
+    }
+
+    @Override
+    public void setAdvancePrincipalAmountForInstallment(BigDecimal advancePrincipalAmountForInstallment) {
+        return;
+    }
 }

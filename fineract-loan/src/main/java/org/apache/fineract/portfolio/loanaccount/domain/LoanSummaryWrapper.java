@@ -37,6 +37,7 @@ public final class LoanSummaryWrapper {
         Money total = Money.zero(currency);
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
             total = total.plus(installment.getPrincipalCompleted(currency));
+            total = total.plus(installment.getAdvancePrincipalAmount());
         }
         return total;
     }

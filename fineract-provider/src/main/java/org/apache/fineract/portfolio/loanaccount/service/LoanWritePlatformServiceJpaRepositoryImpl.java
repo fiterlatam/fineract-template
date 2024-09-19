@@ -1140,6 +1140,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             loan.setRepaymentTransactionProcessingType(type);
         }
 
+        boolean recalculateEMI = command.booleanPrimitiveValueOfParameterNamed("reduceInstallmentAmount");
+        loan.setRecalculateEMI(recalculateEMI);
+
         LoanTransaction loanTransaction = this.loanAccountDomainService.makeRepayment(repaymentTransactionType, loan, transactionDate,
                 transactionAmount, paymentDetail, noteText, txnExternalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer,
                 holidayDetailDto, isHolidayValidationDone);
@@ -1440,7 +1443,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         LocalDate recalculateFrom = null;
 
-        if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
+        if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()
+                || (loan.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE) && loan
+                        .getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.HORIZONTAL))) {
             recalculateFrom = DateUtils.isAfter(transactionToAdjust.getTransactionDate(), transactionDate) ? transactionDate
                     : transactionToAdjust.getTransactionDate();
         }

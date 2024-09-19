@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 /**
  * Immutable data object representing a Loan Additional Fields Data
@@ -36,4 +37,6 @@ public class ClientAdditionalFieldsData {
     private String nit;
     private String cedula;
     private BigDecimal cupo;
+    private EnumOptionData status;
+    private String clientName;
 }

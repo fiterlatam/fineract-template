@@ -211,14 +211,15 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
     }
 
     @Override
-    public void processLatestTransaction(final LoanTransaction loanTransaction, final TransactionCtx ctx) {
+    public Money processLatestTransaction(final LoanTransaction loanTransaction, final TransactionCtx ctx) {
+        Money transactionAmountUnprocessed = Money.zero(ctx.getCurrency());
         switch (loanTransaction.getTypeOf()) {
             case WRITEOFF ->
                 handleWriteOff(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges(), ctx.getOverpaymentHolder());
             case REFUND_FOR_ACTIVE_LOAN -> handleRefund(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges());
             case CHARGEBACK -> handleChargeback(loanTransaction, ctx);
             default -> {
-                Money transactionAmountUnprocessed = handleTransactionAndCharges(loanTransaction, ctx.getCurrency(), ctx.getInstallments(),
+                transactionAmountUnprocessed = handleTransactionAndCharges(loanTransaction, ctx.getCurrency(), ctx.getInstallments(),
                         ctx.getCharges(), null, false);
                 if (transactionAmountUnprocessed.isGreaterThanZero()) {
                     if (loanTransaction.isWaiver()) {
@@ -234,6 +235,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                 }
             }
         }
+        return transactionAmountUnprocessed;
     }
 
     @Override
@@ -561,10 +563,9 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
     protected Money handleTransactionAndCharges(final LoanTransaction loanTransaction, final MonetaryCurrency currency,
             final List<LoanRepaymentScheduleInstallment> installments, final Set<LoanCharge> charges, final Money chargeAmountToProcess,
             final boolean isFeeCharge) {
-        if (loanTransaction.isRepaymentLikeType() || loanTransaction.isInterestWaiver() || loanTransaction.isRecoveryRepayment()) {
-            if (!loanTransaction.isSpecialWriteOff()) {
-                loanTransaction.resetDerivedComponents();
-            }
+        if ((loanTransaction.isRepaymentLikeType() || loanTransaction.isInterestWaiver() || loanTransaction.isRecoveryRepayment())
+                && !loanTransaction.isSpecialWriteOff()) {
+            loanTransaction.resetDerivedComponents();
         }
         Money transactionAmountUnprocessed = processTransaction(loanTransaction, currency, installments, charges, chargeAmountToProcess);
 
