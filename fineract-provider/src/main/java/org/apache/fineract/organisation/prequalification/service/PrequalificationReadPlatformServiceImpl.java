@@ -412,7 +412,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         PrequalificationsGroupMapper() {
             this.schema = """
-                    	g.id AS id,
+                    	DISTINCT g.id AS id,
                                  g.prequalification_number AS prequalificationNumber,
                                  g.STATUS,
                                  linkedGroup.id AS linkedGroupId,
