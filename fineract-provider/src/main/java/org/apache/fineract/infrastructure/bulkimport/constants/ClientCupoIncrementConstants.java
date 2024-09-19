@@ -16,35 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.jobs.data;
+package org.apache.fineract.infrastructure.bulkimport.constants;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
+public final class ClientCupoIncrementConstants {
 
-@Data
-@NoArgsConstructor
-@Accessors(chain = true)
-public class JobDetailHistoryData {
-
-    @SuppressWarnings("unused")
-    private Long version;
-
-    @SuppressWarnings("unused")
-    private String jobRunStartTime;
-
-    @SuppressWarnings("unused")
-    private String jobRunEndTime;
-
-    @SuppressWarnings("unused")
-    private String status;
-
-    @SuppressWarnings("unused")
-    private String jobRunErrorMessage;
-
-    @SuppressWarnings("unused")
-    private String triggerType;
-
-    @SuppressWarnings("unused")
-    private String jobRunErrorLog;
+    public static final int DOCUMENT_TYPE_COL = 0;
+    public static final int DOCUMENT_NUMBER_COL = 1;
+    public static final int MAXIMUM_CUPO_AMOUNT_COL = 2;
+    public static final int STATUS_COL = 3;
+    public static final int MODIFICATION_DATE = 4;
+    public static final int CREATED_BY_USER_NAME_COL = 5;
+    public static final int CLIENT_NAME_COL = 6;
+    public static final int PREVIOUS_MAXIMUM_CUPO_AMOUNT_COL = 7;
 }

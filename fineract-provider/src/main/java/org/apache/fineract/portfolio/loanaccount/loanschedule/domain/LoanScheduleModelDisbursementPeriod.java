@@ -192,4 +192,24 @@ public final class LoanScheduleModelDisbursementPeriod implements LoanScheduleMo
     public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged) {
         totalMandatoryInsuranceCharged = BigDecimal.ZERO;
     }
+
+    @Override
+    public boolean recalculateEMIForInstallment() {
+        return false;
+    }
+
+    @Override
+    public void setRecalculateEMIForInstallment(boolean recalculateEMIForInstallment) {
+        return;
+    }
+
+    @Override
+    public BigDecimal advancePrincipalAmountForInstallment() {
+        return null;
+    }
+
+    @Override
+    public void setAdvancePrincipalAmountForInstallment(BigDecimal advancePrincipalAmountForInstallment) {
+        return;
+    }
 }
