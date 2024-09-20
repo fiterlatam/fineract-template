@@ -55,4 +55,6 @@ public interface GroupingTypesWritePlatformService {
     CommandProcessingResult transferGroup(JsonCommand command);
 
     CommandProcessingResult generateCentersByPortfolio(Portfolio portfolio);
+
+    CommandProcessingResult updateCentersByPortfolio(Portfolio portfolio);
 }
