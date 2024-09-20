@@ -1188,6 +1188,71 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
         }
     }
 
+    @Override
+    public CommandProcessingResult updateCentersByPortfolio(Portfolio portfolio) {
+        try {
+            final List<CodeValueData> meetingDayOptions = new ArrayList<>(
+                    this.codeValueReadPlatformService.retrieveCodeValuesByCode(PortfolioCenterConstants.MEETING_DAYS));
+
+            int week = 1;
+
+            LocalTime meetingStartTime = LocalTime.parse(this.configurationDomainServiceJpa.getStartTimeForMeetings());
+            LocalTime meetingEndTime = LocalTime.parse(this.configurationDomainServiceJpa.getEndTimeForMeetings());
+
+            // get the range template and generate the centers for the parent portfolio
+            Collection<RangeTemplateData> rangeTemplateDataCollection = rangeTemplateReadPlatformService.retrieveAll();
+
+            // set values to generate the centers
+            final Office office = portfolio.getParentOffice();
+
+            String portfolioOfficeQuery = "SELECT id from m_office where name=?";
+            List<Long> portfolioIds = jdbcTemplate.queryForList(portfolioOfficeQuery, Long.class, portfolio.getName());
+            if (portfolioIds.size() <= 0) {
+                throw new PortfolioOfficeNotFoundException(portfolio.getName());
+            }
+            Office portfolioOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(portfolioIds.get(0));
+            // Office portfolioOffice = office.getParent();
+            final boolean active = true;
+            final LocalDate activationDate = DateUtils.getLocalDateOfTenant();
+            final LocalDate submittedOnDate = DateUtils.getLocalDateOfTenant();
+            final AppUser currentUser = this.context.authenticatedUser();
+            final GroupLevel groupLevel = this.groupLevelRepository.findById(GroupTypes.CENTER.getId()).orElse(null);
+
+            for (RangeTemplateData rangeTemplateData : rangeTemplateDataCollection) {
+
+                for (CodeValueData meetingDay : meetingDayOptions) {
+                    // complete required fields for entity
+                    final String centerName = generateCenterName(portfolio.getName(), rangeTemplateData, meetingDay);
+                    final Integer meetingDayValue = meetingDay.getId().intValue();
+                    final Integer meetingStart = rangeTemplateData.getStartDay();
+                    final Integer meetingEnd = rangeTemplateData.getEndDay();
+
+                    String existingCenter = "SELECT count(*) from m_group where portfolio_id=? and level_id=? and meeting_start_date=? and meeting_end_date=? and meeting_day=?";
+                    Long existingCount = jdbcTemplate.queryForObject(existingCenter, Long.class, portfolio.getId(),groupLevel.getId(),meetingStart,meetingEnd,meetingDayValue);
+                    if (existingCount <= 0) {
+                        Group newCenter = Group.assembleNewCenterFrom(portfolioOffice, groupLevel, centerName, active, activationDate,
+                                submittedOnDate, currentUser, meetingStartTime, meetingEndTime, portfolio, meetingStart, meetingEnd,
+                                meetingDayValue);
+
+                        this.groupRepository.saveAndFlush(newCenter);
+                    }
+
+                }
+                // increment week
+                week = week + 1;
+            }
+
+            return new CommandProcessingResultBuilder().withEntityId(portfolio.getId()).build();
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            handleCenterDataIntegrityIssues(null, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        } catch (final PersistenceException dve) {
+            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
+            handleCenterDataIntegrityIssues(null, throwable, dve);
+            return CommandProcessingResult.empty();
+        }
+    }
+
     @Transactional
     void checkForActiveJLGLoans(final Long groupId, final Set<Client> clientMembers) {
         for (final Client client : clientMembers) {
