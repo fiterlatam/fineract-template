@@ -1228,7 +1228,8 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                     final Integer meetingEnd = rangeTemplateData.getEndDay();
 
                     String existingCenter = "SELECT count(*) from m_group where portfolio_id=? and level_id=? and meeting_start_date=? and meeting_end_date=? and meeting_day=?";
-                    Long existingCount = jdbcTemplate.queryForObject(existingCenter, Long.class, portfolio.getId(),groupLevel.getId(),meetingStart,meetingEnd,meetingDayValue);
+                    Long existingCount = jdbcTemplate.queryForObject(existingCenter, Long.class, portfolio.getId(), groupLevel.getId(),
+                            meetingStart, meetingEnd, meetingDayValue);
                     if (existingCount <= 0) {
                         Group newCenter = Group.assembleNewCenterFrom(portfolioOffice, groupLevel, centerName, active, activationDate,
                                 submittedOnDate, currentUser, meetingStartTime, meetingEndTime, portfolio, meetingStart, meetingEnd,
