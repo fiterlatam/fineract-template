@@ -72,8 +72,6 @@ import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatform
 import org.apache.fineract.portfolio.savings.data.SavingsProductData;
 import org.apache.fineract.portfolio.savings.service.SavingsProductReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -85,7 +83,6 @@ import org.springframework.util.CollectionUtils;
 @RequiredArgsConstructor
 public class ClientReadPlatformServiceImpl implements ClientReadPlatformService {
 
-    private static final Logger log = LoggerFactory.getLogger(ClientReadPlatformServiceImpl.class);
     private final JdbcTemplate jdbcTemplate;
     private final PlatformSecurityContext context;
     private final OfficeReadPlatformService officeReadPlatformService;
@@ -314,6 +311,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
 
             final ClientAdditionalFieldsData loanAdditionalFieldsData = this.retrieveClientAdditionalData(clientId);
             final BigDecimal cupo = ObjectUtils.defaultIfNull(loanAdditionalFieldsData.getCupo(), BigDecimal.ZERO);
+            clientData.setCupoMaxAmount(cupo);
             final BigDecimal totalOutstandingPrincipalAmount = ObjectUtils.defaultIfNull(this.jdbcTemplate.queryForObject(
                     "SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount FROM m_loan ml WHERE ml.loan_status_id = 300 AND ml.client_id = ?",
                     BigDecimal.class, new Object[] { clientId }), BigDecimal.ZERO);
@@ -914,9 +912,25 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         final ClientAdditionalFieldsMapper rowMapper = new ClientAdditionalFieldsMapper();
         final String sql = "SELECT " + rowMapper.schema() + " WHERE mc.id = ? ";
         final Object[] params = new Object[] { clientId };
-        List<ClientAdditionalFieldsData> resultList = this.jdbcTemplate.query(sql, rowMapper, params);
+        final List<ClientAdditionalFieldsData> resultList = this.jdbcTemplate.query(sql, rowMapper, params);
         if (!CollectionUtils.isEmpty(resultList)) {
-            return resultList.get(0);
+            final ClientAdditionalFieldsData clientAdditionalFieldsData = resultList.get(0);
+            String documentType;
+            if (clientAdditionalFieldsData.isPerson()) {
+                documentType = "CEDULA";
+            } else {
+                documentType = clientAdditionalFieldsData.getTipo() != null ? clientAdditionalFieldsData.getTipo().toUpperCase() : "NIT";
+            }
+            final LocalDate currentDate = DateUtils.getBusinessLocalDate();
+            final ClientTemporaryMapper clientTemporaryMapper = new ClientTemporaryMapper();
+            final String sqlTemporary = "SELECT " + clientTemporaryMapper.schema()
+                    + " WHERE mctm.client_id = ? AND mctm.document_type = ? AND (? BETWEEN mctm.start_date AND mctm.end_date) ";
+            final List<ClientCupoTemporaryData> clientCupoTemporaryData = this.jdbcTemplate.query(sqlTemporary, clientTemporaryMapper,
+                    clientId, documentType, currentDate);
+            if (!CollectionUtils.isEmpty(clientCupoTemporaryData)) {
+                clientAdditionalFieldsData.setCupo(clientCupoTemporaryData.get(0).getCupoMaxAmount());
+            }
+            return clientAdditionalFieldsData;
         }
         return new ClientAdditionalFieldsData();
     }
@@ -1010,6 +1024,38 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final Long numberOfDays = DateUtils.getDifferenceInDays(maximumOverdueSinceDate, DateUtils.getLocalDateOfTenant());
             final Long clientId = rs.getLong("client_id");
             return ClientMaximumLoanArrearsData.instance(clientId, numberOfDays, numberOfLoans);
+        }
+    }
+
+    public static final class ClientTemporaryMapper implements RowMapper<ClientCupoTemporaryData> {
+
+        public String schema() {
+            return """
+                       mctm.id AS id,
+                       mctm.client_id AS "clientId",
+                       mctm.document_type AS "documentType",
+                       mctm.is_increment AS "increment",
+                       mctm.cupo_max_amount AS "cupoMaxAmount",
+                       mctm.original_cupo_max_amount AS "originalCupoMaxAmount",
+                       mctm.start_date AS "startOnDate",
+                       mctm.end_date AS "endOnDate"
+                       FROM m_cupo_temporary_modification mctm
+                    """;
+        }
+
+        @Override
+        public ClientCupoTemporaryData mapRow(ResultSet rs, int rowNum) throws SQLException {
+            final Long id = rs.getLong("id");
+            final Long clientId = rs.getLong("clientId");
+            final String documentType = rs.getString("documentType");
+            final boolean increment = rs.getBoolean("increment");
+            final BigDecimal cupoMaxAmount = rs.getBigDecimal("cupoMaxAmount");
+            final BigDecimal originalCupoMaxAmount = rs.getBigDecimal("originalCupoMaxAmount");
+            final LocalDate startOnDate = JdbcSupport.getLocalDate(rs, "startOnDate");
+            final LocalDate endOnDate = JdbcSupport.getLocalDate(rs, "endOnDate");
+            return ClientCupoTemporaryData.builder().id(id).clientId(clientId).documentType(documentType).increment(increment)
+                    .cupoMaxAmount(cupoMaxAmount).originalCupoMaxAmount(originalCupoMaxAmount).startOnDate(startOnDate).endOnDate(endOnDate)
+                    .build();
         }
     }
 }
