@@ -40,7 +40,8 @@ public class ClientAdditionalFieldsMapper implements RowMapper<ClientAdditionalF
                 cce."NIT" AS nit,
                 tipo.code_value AS tipo,
                 ccp."Cedula" AS cedula,
-                COALESCE(ccp."Cupo aprobado", cce."Cupo") AS cupo
+                COALESCE(ccp."Cupo aprobado", cce."Cupo") AS cupo,
+                mc.legal_form_enum AS legalForm
                 FROM m_client mc
                 LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
                 LEFT JOIN m_code_value tipo ON tipo.id = cce."Tipo ID_cd_Tipo ID"
@@ -58,6 +59,7 @@ public class ClientAdditionalFieldsMapper implements RowMapper<ClientAdditionalF
         final int statusInt = rs.getInt("status");
         final EnumOptionData statusData = ClientEnumerations.status(ClientStatus.fromInt(statusInt));
         final String clientName = rs.getString("clientName");
-        return new ClientAdditionalFieldsData(clientId, tipo, nit, cedula, cupo, statusData, clientName);
+        final Integer legalForm = JdbcSupport.getInteger(rs, "legalForm");
+        return new ClientAdditionalFieldsData(clientId, tipo, nit, cedula, cupo, statusData, clientName, legalForm);
     }
 }

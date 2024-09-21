@@ -280,5 +280,5 @@
     <include file="parts/20242708011009113_SU-314_include_daily_accrual_column.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU-324_additional_columns_to_history.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240409011009115_SU_112_add_columns_for_recalculate_emi.xml" relativeToChangelogFile="true"/>
-    <include file="parts/20241109011009121_SU-349_round_commission_amounts.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009115_SU_86_cupo_increment.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

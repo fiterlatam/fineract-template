@@ -16,18 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.bulkimport.constants;
+package org.apache.fineract.portfolio.client.domain;
 
-public final class ClientCupoIncrementConstants {
+import java.time.LocalDate;
+import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
 
-    public static final int DOCUMENT_TYPE_COL = 0;
-    public static final int DOCUMENT_NUMBER_COL = 1;
-    public static final int MAXIMUM_CUPO_AMOUNT_COL = 2;
-    public static final int START_ON_DATE_COL = 3;
-    public static final int END_ON_DATE_COL = 4;
-    public static final int STATUS_COL = 5;
-    public static final int MODIFICATION_DATE = 6;
-    public static final int CREATED_BY_USER_NAME_COL = 7;
-    public static final int CLIENT_NAME_COL = 8;
-    public static final int PREVIOUS_MAXIMUM_CUPO_AMOUNT_COL = 9;
+@Repository
+public interface ClientCupoTemporaryModificationRateRepository
+        extends JpaRepository<ClientCupoTemporaryModification, Long>, JpaSpecificationExecutor<ClientCupoTemporaryModification> {
+
+    List<ClientCupoTemporaryModification> findByClientIdAndDocumentTypeAndStartOnDateAndEndOnDate(Long clientId, String documentType,
+            LocalDate startOnDate, LocalDate endOnDate);
 }
