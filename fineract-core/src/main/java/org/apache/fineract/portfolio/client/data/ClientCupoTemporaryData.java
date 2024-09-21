@@ -19,31 +19,26 @@
 package org.apache.fineract.portfolio.client.data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.portfolio.client.domain.LegalForm;
 
-/**
- * Immutable data object representing a Loan Additional Fields Data
- */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ClientAdditionalFieldsData {
+@Builder
+public class ClientCupoTemporaryData {
 
+    private Long id;
     private Long clientId;
-    private String tipo;
-    private String nit;
-    private String cedula;
-    private BigDecimal cupo;
+    private String documentType;
+    private boolean increment;
+    private BigDecimal cupoMaxAmount;
+    private BigDecimal originalCupoMaxAmount;
+    private LocalDate startOnDate;
+    private LocalDate endOnDate;
     private EnumOptionData status;
-    private String clientName;
-    private Integer legalForm;
-
-    public boolean isPerson() {
-        LegalForm legalForm = LegalForm.fromInt(this.legalForm);
-        return legalForm != null && legalForm.isPerson();
-    }
 }

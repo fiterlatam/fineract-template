@@ -41,8 +41,12 @@ import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerialize
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
+import org.apache.fineract.portfolio.client.data.ClientCupoTemporaryData;
+import org.apache.fineract.portfolio.client.domain.ClientCupoTemporaryModification;
+import org.apache.fineract.portfolio.client.domain.ClientCupoTemporaryModificationRateRepository;
 import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
+import org.apache.fineract.portfolio.client.service.ClientReadPlatformServiceImpl;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -65,15 +69,18 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
     private final ClientReadPlatformService clientReadPlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final JdbcTemplate jdbcTemplate;
+    private final ClientCupoTemporaryModificationRateRepository clientCupoTemporaryModificationRateRepository;
 
     @Autowired
     public ClientCupoIncrementImportHandler(final PlatformSecurityContext context,
             final ClientReadPlatformService clientReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
-            JdbcTemplate jdbcTemplate) {
+            final JdbcTemplate jdbcTemplate,
+            final ClientCupoTemporaryModificationRateRepository clientCupoTemporaryModificationRateRepository) {
         this.context = context;
         this.clientReadPlatformService = clientReadPlatformService;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.jdbcTemplate = jdbcTemplate;
+        this.clientCupoTemporaryModificationRateRepository = clientCupoTemporaryModificationRateRepository;
     }
 
     @Override
@@ -102,10 +109,15 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
     private ClientCupoIncrementData readClientCupoIncrementData(final Row row, final String locale, final String dateFormat) {
         final String documentType = ImportHandlerUtils.readAsString(ClientCupoIncrementConstants.DOCUMENT_TYPE_COL, row);
         final String documentNumber = ImportHandlerUtils.readAsString(ClientCupoIncrementConstants.DOCUMENT_NUMBER_COL, row);
-        final BigDecimal maximumCupoAmount = BigDecimal
-                .valueOf(ImportHandlerUtils.readAsDouble(ClientCupoIncrementConstants.MAXIMUM_CUPO_AMOUNT_COL, row));
+        final Double maximumCupoAmountDouble = ImportHandlerUtils.readAsDouble(ClientCupoIncrementConstants.MAXIMUM_CUPO_AMOUNT_COL, row);
+        BigDecimal maximumCupoAmount = BigDecimal.valueOf(maximumCupoAmountDouble);
+        String max = maximumCupoAmount.toPlainString();
+        maximumCupoAmount = new BigDecimal(max);
+        final LocalDate startOnDate = ImportHandlerUtils.readAsDate(ClientCupoIncrementConstants.START_ON_DATE_COL, row);
+        final LocalDate endOnDate = ImportHandlerUtils.readAsDate(ClientCupoIncrementConstants.END_ON_DATE_COL, row);
         return ClientCupoIncrementData.builder().documentNumber(documentNumber).documentType(documentType)
-                .maximumCupoAmount(maximumCupoAmount).dateFormat(dateFormat).locale(locale).rowIndex(row.getRowNum()).build();
+                .maximumCupoAmount(maximumCupoAmount).startOnDate(startOnDate).endOnDate(endOnDate).dateFormat(dateFormat).locale(locale)
+                .rowIndex(row.getRowNum()).build();
     }
 
     private Count importEntity(final Workbook workbook, final List<ClientCupoIncrementData> clientCupoIncrements, final String dateFormat,
@@ -162,6 +174,8 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
                 final String documentType = clientCupoIncrementData.getDocumentType();
                 final String documentNumber = clientCupoIncrementData.getDocumentNumber();
                 final BigDecimal maximumCupoAmount = clientCupoIncrementData.getMaximumCupoAmount();
+                final LocalDate startOnDate = clientCupoIncrementData.getStartOnDate();
+                final LocalDate endOnDate = clientCupoIncrementData.getEndOnDate();
 
                 final Cell writeOffDateCell = clientCupoIncrementSheet.getRow(clientCupoIncrementData.getRowIndex())
                         .createCell(ClientCupoIncrementConstants.MODIFICATION_DATE);
@@ -169,13 +183,11 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
                 writeOffDateCell.setCellValue(modificationDate);
                 clientCupoIncrementSheet.getRow(clientCupoIncrementData.getRowIndex())
                         .createCell(ClientCupoIncrementConstants.CREATED_BY_USER_NAME_COL).setCellValue(createdByUsername);
-
                 final Collection<CodeValueData> documentTypes = codeValueReadPlatformService.retrieveCodeValuesByCode("Tipo ID");
                 final CodeValueData codeValueData = documentTypes.stream()
                         .filter(docType -> docType.getName().equalsIgnoreCase(documentType)).findFirst().orElseThrow();
                 final List<ClientAdditionalFieldsData> clients = clientReadPlatformService.retrieveAdditionalFieldsData(codeValueData,
                         documentNumber);
-
                 if (CollectionUtils.isEmpty(clients)) {
                     errorCount++;
                     errorMessage = "La combinación de Documento y tipo son inválidas";
@@ -213,21 +225,70 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
                             TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
                     continue;
                 }
-                String sql;
-                if ("NIT".equalsIgnoreCase(documentType)) {
-                    sql = "UPDATE campos_cliente_empresas SET \"Cupo\" = ? WHERE client_id = ? AND \"NIT\" = ?";
+                if (startOnDate != null && endOnDate != null) {
+                    if (DateUtils.isBeforeBusinessDate(startOnDate) || DateUtils.isBeforeBusinessDate(endOnDate)) {
+                        errorCount++;
+                        errorMessage = "La fecha de inicio o fin no puede ser menor a la fecha actual";
+                        ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(), errorMessage,
+                                ClientCupoIncrementConstants.STATUS_COL);
+                        clientCupoIncrementSheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL,
+                                TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
+                        continue;
+                    }
+                    if (DateUtils.isAfter(startOnDate, endOnDate)) {
+                        errorCount++;
+                        errorMessage = "La fecha de inicio no puede ser mayor a la fecha de fin";
+                        ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(), errorMessage,
+                                ClientCupoIncrementConstants.STATUS_COL);
+                        clientCupoIncrementSheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL,
+                                TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
+                        continue;
+                    }
+                    final List<ClientCupoTemporaryModification> modifications = this.clientCupoTemporaryModificationRateRepository
+                            .findByClientIdAndDocumentTypeAndStartOnDateAndEndOnDate(clientId, documentType, startOnDate, endOnDate);
+                    if (CollectionUtils.isNotEmpty(modifications)) {
+                        modifications.forEach(modification -> {
+                            if (modification.isIncrement()) {
+                                modification.setCupoMaxAmount(maximumCupoAmount);
+                            }
+                        });
+                        this.clientCupoTemporaryModificationRateRepository.saveAll(modifications);
+                    } else {
+                        final ClientReadPlatformServiceImpl.ClientTemporaryMapper clientTemporaryMapper = new ClientReadPlatformServiceImpl.ClientTemporaryMapper();
+                        final String sql = "SELECT " + clientTemporaryMapper.schema()
+                                + " WHERE mctm.client_id = ? AND mctm.document_type = ? AND mctm.is_increment = true AND ((mctm.start_date, mctm.end_date) OVERLAPS (?, ?)) ";
+                        final List<ClientCupoTemporaryData> clientTemporaryDataList = jdbcTemplate.query(sql, clientTemporaryMapper,
+                                clientId, documentType, startOnDate, endOnDate);
+                        if (CollectionUtils.isNotEmpty(clientTemporaryDataList)) {
+                            errorCount++;
+                            errorMessage = "El rango de fecha se esta solapando con otro, Por favor revisar";
+                            ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(),
+                                    errorMessage, ClientCupoIncrementConstants.STATUS_COL);
+                            clientCupoIncrementSheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL,
+                                    TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
+                            continue;
+                        }
+                        final ClientCupoTemporaryModification clientCupoTemporaryModification = ClientCupoTemporaryModification.createNew(
+                                clientId, documentType, true, maximumCupoAmount, previousMaximumCupoAmount, startOnDate, endOnDate);
+                        this.clientCupoTemporaryModificationRateRepository.saveAndFlush(clientCupoTemporaryModification);
+                    }
                 } else {
-                    sql = "UPDATE campos_cliente_persona SET \"Cupo aprobado\" = ? WHERE client_id = ? AND \"Cedula\" = ?";
-                }
-                final int affectedRows = jdbcTemplate.update(sql, maximumCupoAmount, clientId, documentNumber);
-                if (affectedRows == 0) {
-                    errorCount++;
-                    errorMessage = "No se pudo modificar el cupo";
-                    ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(), errorMessage,
-                            ClientCupoIncrementConstants.STATUS_COL);
-                    clientCupoIncrementSheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL,
-                            TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
-                    continue;
+                    String sql;
+                    if (client.isPerson()) {
+                        sql = "UPDATE campos_cliente_persona SET \"Cupo aprobado\" = ? WHERE client_id = ? AND \"Cedula\" = ?";
+                    } else {
+                        sql = "UPDATE campos_cliente_empresas SET \"Cupo\" = ? WHERE client_id = ? AND \"NIT\" = ?";
+                    }
+                    final int affectedRows = jdbcTemplate.update(sql, maximumCupoAmount, clientId, documentNumber);
+                    if (affectedRows == 0) {
+                        errorCount++;
+                        errorMessage = "No se pudo modificar el cupo";
+                        ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(), errorMessage,
+                                ClientCupoIncrementConstants.STATUS_COL);
+                        clientCupoIncrementSheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL,
+                                TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
+                        continue;
+                    }
                 }
                 final Cell statusCell = clientCupoIncrementSheet.getRow(clientCupoIncrementData.getRowIndex())
                         .createCell(ClientCupoIncrementConstants.STATUS_COL);
@@ -257,6 +318,8 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
         private String documentType;
         private String documentNumber;
         private BigDecimal maximumCupoAmount;
+        private LocalDate startOnDate;
+        private LocalDate endOnDate;
         private String locale;
         private String dateFormat;
         private Integer rowIndex;
@@ -270,5 +333,4 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
         headerStyle.setFont(headerFont);
         return headerStyle;
     }
-
 }
