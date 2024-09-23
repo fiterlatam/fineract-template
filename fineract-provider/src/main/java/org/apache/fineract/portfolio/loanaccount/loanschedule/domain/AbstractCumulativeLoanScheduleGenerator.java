@@ -82,7 +82,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
         // setup variables for tracking important facts required for loan
         // schedule generation.
-
         final MonetaryCurrency currency = loanApplicationTerms.getCurrency();
         LoanScheduleParams scheduleParams;
         LocalDate periodStartDate = RepaymentStartDateType.DISBURSEMENT_DATE.equals(loanApplicationTerms.getRepaymentStartDateType())
@@ -334,26 +333,85 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
                         periodNumber, mc, principalVariation, compoundingMap, periodStartDateApplicableForInterest, periodEndDate,
                         interestRates);
+
             } else {
+                Money totalMidPeriodInterestRates = Money.zero(currency);
+                LocalDate nextDates = rescheduleFromDate;
+                if (!loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment().isEmpty()) {
+                    LocalDate startDate = null;
+                    BigDecimal currentInterst = null;
+                    List<LoanTermVariationsData> list = loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment();
+                    ListIterator<LoanTermVariationsData> iterator = list.listIterator();
+                    while (iterator.hasNext()) {
+                        int index = iterator.nextIndex();
+                        LoanTermVariationsData midInterst = iterator.next();
+                        currentInterst = midInterst.getDecimalValue();
+                        LocalDate currentDates = midInterst.getTermVariationApplicableFrom();
+
+                        if (!currentInterst.equals(interestRatePerPeriod) && !currentInterst.equals(annualNominalInterestRate)) {
+                            nextDates = list.get(index + 1).getTermVariationApplicableFrom();
+                            if (startDate == null) {
+                                startDate = currentDates;
+                                rescheduleFromDate = currentDates;
+                            } else {
+                                if (!iterator.hasPrevious()) {
+                                    startDate = currentDates;
+                                } else {
+                                    startDate = list.get(index - 1).getTermVariationApplicableFrom();
+                                }
+                            }
+
+                            loanApplicationTerms.setAnnualNominalInterestRate(currentInterst);
+                            final PrincipalInterest midPrincipalInterestForThisPeriods = calculatePrincipalInterestComponentsForPeriod(
+                                    calculator, interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal,
+                                    totalCumulativeInterest, totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace,
+                                    outstandingBalance, loanApplicationTerms, periodNumber, mc, principalVariation, compoundingMap,
+                                    startDate, nextDates, interestRates);
+                            Money midPeriodInterestRates = midPrincipalInterestForThisPeriods.interest();
+                            totalMidPeriodInterestRates = midPeriodInterestRates;
+
+                        }
+
+                    }
+                }
+
+                /*
+                 * Start mind interest calculation
+                 */
                 loanApplicationTerms.setAnnualNominalInterestRate(interestRatePerPeriod);
                 final PrincipalInterest midPrincipalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
                         interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
                         totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
                         periodNumber, mc, principalVariation, compoundingMap, periodStartDateApplicableForInterest, rescheduleFromDate,
                         interestRates);
-                final Money midPeriodInterestRate = midPrincipalInterestForThisPeriod.interest();
-                final Money interestPrincipal = midPrincipalInterestForThisPeriod.interest()
-                        .add(midPrincipalInterestForThisPeriod.principal());
+
+                Money midPeriodInterestRate = midPrincipalInterestForThisPeriod.interest().add(totalMidPeriodInterestRates);
+
+                Money interestPrincipal = midPeriodInterestRate.add(midPrincipalInterestForThisPeriod.principal());
+
+                /*
+                 * End mind interest calculation Start End interest Calculation
+                 */
+                rescheduleFromDate = nextDates;
                 loanApplicationTerms.setAnnualNominalInterestRate(annualNominalInterestRate);
                 PrincipalInterest endPrincipalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
                         interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
                         totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
                         periodNumber, mc, principalVariation, compoundingMap, rescheduleFromDate, periodEndDate, interestRates);
+
                 final Money periodEndInterestRate = endPrincipalInterestForThisPeriod.interest();
+
                 final Money totalInterestRate = midPeriodInterestRate.add(periodEndInterestRate);
+
                 final Money totalPrincipal = interestPrincipal.minus(totalInterestRate);
+
+                /*
+                 * End Calc for end Insterst
+                 */
+
                 principalInterestForThisPeriod = new PrincipalInterest(totalPrincipal, totalInterestRate,
                         endPrincipalInterestForThisPeriod.interestPaymentDueToGrace());
+
             }
 
             // will check for EMI amount greater than interest calculated
