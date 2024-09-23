@@ -83,6 +83,7 @@ public class BulkImportEventListener implements ApplicationListener<BulkImportEv
             case LOAN_TRANSACTIONS -> this.applicationContext.getBean("loanRepaymentImportHandler", ImportHandler.class);
             case LOAN_WRITE_OFFS -> this.applicationContext.getBean("loanWriteOffImportHandler", ImportHandler.class);
             case CLIENT_CUPO_INCREMENTS -> this.applicationContext.getBean("clientCupoIncrementImportHandler", ImportHandler.class);
+            case CLIENT_CUPO_DECREMENTS -> this.applicationContext.getBean("clientCupoDecrementImportHandler", ImportHandler.class);
             case RECURRING_DEPOSIT_ACCOUNTS -> this.applicationContext.getBean("recurringDepositImportHandler", ImportHandler.class);
             case RECURRING_DEPOSIT_ACCOUNTS_TRANSACTIONS ->
                 this.applicationContext.getBean("recurringDepositTransactionImportHandler", ImportHandler.class);

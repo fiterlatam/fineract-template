@@ -52,6 +52,7 @@ import org.apache.fineract.infrastructure.bulkimport.populator.chartofaccounts.C
 import org.apache.fineract.infrastructure.bulkimport.populator.client.ClientEntityWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.client.ClientPersonWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.clientblock.ClientBlockControlWorkbookPopulator;
+import org.apache.fineract.infrastructure.bulkimport.populator.clientcupodecrement.ClientCupoDecrementWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.clientcupoincrement.ClientCupoIncrementWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.clientvip.ClientVipControlWorkbookPopulator;
 import org.apache.fineract.infrastructure.bulkimport.populator.commercepointofsale.clientvip.CommercePointOfSaleControlWorkbookPopulator;
@@ -242,6 +243,8 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
                 populator = populateSaleOfInsuranceOrAssistanceWorkbook();
             } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.CLIENT_CUPO_INCREMENTS.toString())) {
                 populator = populateClientCupoIncrementsWorkbook();
+            } else if (entityType.trim().equalsIgnoreCase(GlobalEntityType.CLIENT_CUPO_DECREMENTS.toString())) {
+                populator = populateClientCupoDecrementsWorkbook();
             } else {
                 throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");
             }
@@ -477,6 +480,10 @@ public class BulkImportWorkbookPopulatorServiceImpl implements BulkImportWorkboo
 
     private WorkbookPopulator populateClientCupoIncrementsWorkbook() {
         return new ClientCupoIncrementWorkbookPopulator();
+    }
+
+    private WorkbookPopulator populateClientCupoDecrementsWorkbook() {
+        return new ClientCupoDecrementWorkbookPopulator();
     }
 
     private List<LoanAccountData> fetchLoanAccounts(final Long officeId, final LoanStatus loanStatus) {
