@@ -161,6 +161,8 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
                     entityType = GlobalEntityType.SALES_OF_INSURANCE_OR_ASSISTANCE;
                 } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.CLIENT_CUPO_INCREMENTS.toString())) {
                     entityType = GlobalEntityType.CLIENT_CUPO_INCREMENTS;
+                } else if (entity.trim().equalsIgnoreCase(GlobalEntityType.CLIENT_CUPO_DECREMENTS.toString())) {
+                    entityType = GlobalEntityType.CLIENT_CUPO_DECREMENTS;
                 } else {
                     workbook.close();
                     throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");

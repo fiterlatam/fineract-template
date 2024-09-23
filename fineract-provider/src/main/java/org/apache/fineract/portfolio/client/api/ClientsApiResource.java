@@ -339,6 +339,28 @@ public class ClientsApiResource {
     }
 
     @GET
+    @Path("cupodecrements/downloadtemplate")
+    @Produces("application/vnd.ms-excel")
+    public Response getClientCupoDecrementTemplate(@QueryParam("officeId") final Long officeId, @QueryParam("staffId") final Long staffId,
+            @QueryParam("dateFormat") final String dateFormat) {
+        return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.CLIENT_CUPO_DECREMENTS.toString(), officeId, staffId,
+                dateFormat);
+    }
+
+    @POST
+    @Path("cupodecrements/uploadtemplate")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @RequestBody(description = "Upload client template", content = {
+            @Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = @Schema(implementation = UploadRequest.class)) })
+    public String postClientCupoDecrementTemplate(@FormDataParam("file") final InputStream uploadedInputStream,
+            @FormDataParam("file") final FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
+            @FormDataParam("dateFormat") final String dateFormat) {
+        final Long importDocumentId = bulkImportWorkbookService.importWorkbook(GlobalEntityType.CLIENT_CUPO_DECREMENTS.toString(),
+                uploadedInputStream, fileDetail, locale, dateFormat, new HashMap<>(0));
+        return toApiJsonSerializer.serialize(importDocumentId);
+    }
+
+    @GET
     @Path("{clientId}/obligeedetails")
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve client obligee details", description = "Retrieve client obligee details")
