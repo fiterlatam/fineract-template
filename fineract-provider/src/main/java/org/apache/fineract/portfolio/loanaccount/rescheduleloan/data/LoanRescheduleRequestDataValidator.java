@@ -343,7 +343,8 @@ public class LoanRescheduleRequestDataValidator {
         Set<LoanCharge> charges = loan.getActiveCharges();
         final Long maximumValue = globalConfigurationProperty.getValue();
         for (final LoanCharge loanCharge : charges) {
-            if (loanCharge.getChargeCalculation().isInsurance()) {
+
+            if (loanCharge.getChargeCalculation().isMandatoryInsuranceCharge()) {
                 if (globalConfigurationProperty.isEnabled() && rediferirPeriods > maximumValue) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.exceed.max.allowed.in.6.months",
                             "Rediferir exceed max allowed in 6 months", rediferirPeriods);
