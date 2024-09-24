@@ -54,7 +54,7 @@ public class ClientCupoIncrementWorkbookPopulator extends AbstractWorkbookPopula
         final DataValidation documentTypeValidation = validationHelper.createValidation(documentTypeValidator, documentTypeRange);
 
         final DataValidationConstraint dateConstraint = validationHelper
-                .createDateConstraint(DataValidationConstraint.OperatorType.LESS_OR_EQUAL, "=TODAY()", null, dateFormat);
+                .createDateConstraint(DataValidationConstraint.OperatorType.GREATER_OR_EQUAL, "=TODAY()", null, dateFormat);
         final CellRangeAddressList startOnDateRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
                 ClientCupoIncrementConstants.START_ON_DATE_COL, ClientCupoIncrementConstants.START_ON_DATE_COL);
         final DataValidation startOnDateValidation = validationHelper.createValidation(dateConstraint, startOnDateRange);
