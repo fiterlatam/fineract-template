@@ -32,9 +32,11 @@ import java.util.Map;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
@@ -334,6 +336,19 @@ public class LoanRescheduleRequestDataValidator {
 
         if (!dataValidationErrors.isEmpty()) {
             throw new PlatformApiDataValidationException(dataValidationErrors);
+        }
+    }
+
+    public void validateRescheduleLoanCharge(Loan loan, GlobalConfigurationProperty globalConfigurationProperty, int rediferidoNumber) {
+        Set<LoanCharge> charges = loan.getActiveCharges();
+        final Long maximumRediferralValue = globalConfigurationProperty.getValue();
+        for (final LoanCharge loanCharge : charges) {
+            if (loanCharge.getChargeCalculation().isMandatoryInsuranceCharge()) {
+                if (globalConfigurationProperty.isEnabled() && rediferidoNumber > maximumRediferralValue) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.exceed.max.allowed.in.6.months",
+                            "Rediferir exceed max allowed in 6 months", rediferidoNumber);
+                }
+            }
         }
     }
 }
