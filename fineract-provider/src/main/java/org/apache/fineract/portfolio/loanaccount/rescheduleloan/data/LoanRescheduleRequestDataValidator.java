@@ -339,15 +339,14 @@ public class LoanRescheduleRequestDataValidator {
         }
     }
 
-    public void validateRescheduleLoanCharge(Loan loan, GlobalConfigurationProperty globalConfigurationProperty, int rediferirPeriods) {
+    public void validateRescheduleLoanCharge(Loan loan, GlobalConfigurationProperty globalConfigurationProperty, int rediferidoNumber) {
         Set<LoanCharge> charges = loan.getActiveCharges();
-        final Long maximumValue = globalConfigurationProperty.getValue();
+        final Long maximumRediferralValue = globalConfigurationProperty.getValue();
         for (final LoanCharge loanCharge : charges) {
-
             if (loanCharge.getChargeCalculation().isMandatoryInsuranceCharge()) {
-                if (globalConfigurationProperty.isEnabled() && rediferirPeriods > maximumValue) {
+                if (globalConfigurationProperty.isEnabled() && rediferidoNumber > maximumRediferralValue) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.exceed.max.allowed.in.6.months",
-                            "Rediferir exceed max allowed in 6 months", rediferirPeriods);
+                            "Rediferir exceed max allowed in 6 months", rediferidoNumber);
                 }
             }
         }
