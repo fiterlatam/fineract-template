@@ -2318,8 +2318,13 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                                     calculatedAmount = Money.of(monetaryCurrency, loanCharge.getAmountPercentageAppliedTo());
                                     cumulative = cumulative.plus(calculatedAmount);
                                 } else {
-                                    calculatedAmount = Money.of(monetaryCurrency,
-                                            loanCharge.getInstallmentLoanCharge(installmentNumber).getAmount());
+
+                                    LoanInstallmentCharge installmentLoanCharge = loanCharge.getInstallmentLoanCharge(installmentNumber);
+                                    BigDecimal instalmentChargeamount = BigDecimal.ZERO;
+                                    if (installmentLoanCharge != null) {
+                                        instalmentChargeamount = installmentLoanCharge.getAmount();
+                                    }
+                                    calculatedAmount = Money.of(monetaryCurrency, instalmentChargeamount);
                                     cumulative = cumulative.plus(calculatedAmount);
                                 }
                             }

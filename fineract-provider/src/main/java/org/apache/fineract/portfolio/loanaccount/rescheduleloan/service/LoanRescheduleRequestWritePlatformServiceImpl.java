@@ -526,9 +526,10 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
              * Add Validate loan charge
              */
             if (rediferirPeriods > 0) {
+                final Integer rediferidoNumber = this.loanReadPlatformService.retrieveRediferidoNumberLast6Months(loan.getId());
                 final GlobalConfigurationProperty globalConfigurationProperty = this.globalConfigurationRepository
                         .findOneByNameWithNotFoundDetection(RescheduleLoansApiConstants.ALLOWED_REDEFERRALS_WITHIN_SIX_MONTHS);
-                this.loanRescheduleRequestDataValidator.validateRescheduleLoanCharge(loan, globalConfigurationProperty, rediferirPeriods);
+                this.loanRescheduleRequestDataValidator.validateRescheduleLoanCharge(loan, globalConfigurationProperty, rediferidoNumber);
             }
 
             loan.recalculateAllCharges();
