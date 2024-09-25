@@ -349,7 +349,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         LocalDate currentDates = midInterst.getTermVariationApplicableFrom();
 
                         if (!currentInterst.equals(interestRatePerPeriod) && !currentInterst.equals(annualNominalInterestRate)) {
-                            nextDates = list.get(index + 1).getTermVariationApplicableFrom();
+                            if (!iterator.hasNext()) {
+                                nextDates = list.get(index + 1).getTermVariationApplicableFrom();
+                            }
                             if (startDate == null) {
                                 startDate = currentDates;
                                 rescheduleFromDate = currentDates;
