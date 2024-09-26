@@ -3241,7 +3241,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         }
     }
 
-
     private static final class LoanReclaimMapper implements RowMapper<LoanReclaimData> {
 
         public String loanReclaimSchemaForAval() {
@@ -3257,7 +3256,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         	(COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0)) AS outstandingAvalAmount,
                         	(COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0)) AS outstandingOtherChargesAmount,
                         	(COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0)) AS outstandingPenaltyAmount,
-                        	ml.total_outstanding_derived totalOutstandingAmount	
+                        	ml.total_outstanding_derived totalOutstandingAmount
                         	from
                         	m_loan ml
                         	join m_product_loan mpl on mpl.id = ml.product_id
@@ -3339,7 +3338,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         	(COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0)) AS outstandingAvalAmount,
                         	(COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0)) AS outstandingOtherChargesAmount,
                         	(COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0)) AS outstandingPenaltyAmount,
-                        	ml.total_outstanding_derived totalOutstandingAmount	
+                        	ml.total_outstanding_derived totalOutstandingAmount
                         	from
                         	m_loan ml
                         	join m_product_loan mpl on mpl.id = ml.product_id
@@ -3415,17 +3414,20 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final String clientName = rs.getString("clientName");
             final String accountNo = rs.getString("loanAccoutNumber");
             final String loanProductName = rs.getString("productName");
-            final Long daysInArrears = JdbcSupport.getLongDefaultToNullIfZero(rs,"daysInArrears");
+            final Long daysInArrears = JdbcSupport.getLongDefaultToNullIfZero(rs, "daysInArrears");
             final BigDecimal outstandingPrincipal = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "outstandingPrincipal");
             final BigDecimal outstandingInterest = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "outstandingInterest");
-            final BigDecimal outstandingMandatoryInsuranceAmount = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "outstandingMandatoryInsuranceAmount");
+            final BigDecimal outstandingMandatoryInsuranceAmount = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs,
+                    "outstandingMandatoryInsuranceAmount");
             final BigDecimal outstandingAvalAmount = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "outstandingAvalAmount");
-            final BigDecimal outstandingOtherChargesAmount = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "outstandingOtherChargesAmount");
+            final BigDecimal outstandingOtherChargesAmount = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs,
+                    "outstandingOtherChargesAmount");
             final BigDecimal outstandingPenaltyAmount = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "outstandingPenaltyAmount");
             final BigDecimal totalOutstandingAmount = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "totalOutstandingAmount");
 
-            return new LoanReclaimData(id, clientName, accountNo, loanProductName, daysInArrears, outstandingPrincipal, outstandingInterest, outstandingAvalAmount, outstandingMandatoryInsuranceAmount,
-                    outstandingOtherChargesAmount, outstandingPenaltyAmount, totalOutstandingAmount);
+            return new LoanReclaimData(id, clientName, accountNo, loanProductName, daysInArrears, outstandingPrincipal, outstandingInterest,
+                    outstandingAvalAmount, outstandingMandatoryInsuranceAmount, outstandingOtherChargesAmount, outstandingPenaltyAmount,
+                    totalOutstandingAmount);
         }
     }
 
@@ -3444,9 +3446,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         sqlBuilder.append(" and ml.excluded_from_reclaim = false and ml.claim_type is null and ml.loan_schedule_type = 'PROGRESSIVE' ");
 
         Long minimDaysToReclaim = this.configurationDomainService.retriveMinimumDaysOfArrearsToClaim();
-        final Object[] objectArray = {minimDaysToReclaim};
+        final Object[] objectArray = { minimDaysToReclaim };
 
-        return  this.jdbcTemplate.query(sqlBuilder.toString(), objectArray, loanReclaimMapper);
+        return this.jdbcTemplate.query(sqlBuilder.toString(), objectArray, loanReclaimMapper);
     }
 
     @Override
@@ -3463,11 +3465,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         } else {
             sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForInsurance());
         }
-        sqlBuilder.append(" and ml.excluded_from_reclaim = true and ml.excluded_for_claim_type = ? and ml.claim_type is null  and ml.loan_schedule_type = 'PROGRESSIVE'  ");
+        sqlBuilder.append(
+                " and ml.excluded_from_reclaim = true and ml.excluded_for_claim_type = ? and ml.claim_type is null  and ml.loan_schedule_type = 'PROGRESSIVE'  ");
 
         Long minimDaysToReclaim = this.configurationDomainService.retriveMinimumDaysOfArrearsToClaim();
-        final Object[] objectArray = {minimDaysToReclaim, claimType};
+        final Object[] objectArray = { minimDaysToReclaim, claimType };
 
-        return  this.jdbcTemplate.query(sqlBuilder.toString(), objectArray, loanReclaimMapper);
+        return this.jdbcTemplate.query(sqlBuilder.toString(), objectArray, loanReclaimMapper);
     }
 }

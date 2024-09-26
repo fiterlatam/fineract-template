@@ -498,13 +498,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     private LocalDate claimDate;
 
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
-                                                    final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
-                                                    final String transactionProcessingStrategyCode, final LoanProductRelatedDetail loanRepaymentScheduleDetail,
-                                                    final Set<LoanCharge> loanCharges, final Set<LoanCollateralManagement> collateral, final BigDecimal fixedEmiAmount,
-                                                    final List<LoanDisbursementDetails> disbursementDetails, final BigDecimal maxOutstandingLoanBalance,
-                                                    final Boolean createStandingInstructionAtDisbursement, final Boolean isFloatingInterestRate,
-                                                    final BigDecimal interestRateDifferential, final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment,
-                                                    final LoanCustomizationDetail loanAdditionalDetail) {
+            final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
+            final String transactionProcessingStrategyCode, final LoanProductRelatedDetail loanRepaymentScheduleDetail,
+            final Set<LoanCharge> loanCharges, final Set<LoanCollateralManagement> collateral, final BigDecimal fixedEmiAmount,
+            final List<LoanDisbursementDetails> disbursementDetails, final BigDecimal maxOutstandingLoanBalance,
+            final Boolean createStandingInstructionAtDisbursement, final Boolean isFloatingInterestRate,
+            final BigDecimal interestRateDifferential, final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment,
+            final LoanCustomizationDetail loanAdditionalDetail) {
         return new Loan(accountNo, client, null, loanType, fund, officer, loanPurpose, transactionProcessingStrategyCode, loanProduct,
                 loanRepaymentScheduleDetail, null, loanCharges, collateral, null, fixedEmiAmount, disbursementDetails,
                 maxOutstandingLoanBalance, createStandingInstructionAtDisbursement, isFloatingInterestRate, interestRateDifferential, rates,
@@ -1878,8 +1878,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Loan loan = loanCharge.getLoan();
         if (loan.isDisbursed() && this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)
                 && (this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.HORIZONTAL)
-                    || (this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.VERTICAL)
-                        && loan.claimType != null) )) {
+                        || (this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.VERTICAL)
+                                && loan.claimType != null))) {
             if (loanCharge.isInstalmentFee()) {
 
                 loanCharge.clearLoanInstallmentCharges();
@@ -1887,7 +1887,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     if (installment.isRecalculatedInterestComponent()) {
                         continue; // JW: does this in generateInstallmentLoanCharges - but don't understand it
                     }
-                    for (LoanInstallmentCharge installmentCharge: installment.getInstallmentCharges()) {
+                    for (LoanInstallmentCharge installmentCharge : installment.getInstallmentCharges()) {
                         if (Objects.equals(installmentCharge.getLoanCharge().getId(), loanCharge.getId())) {
                             installment.getInstallmentCharges().remove(installmentCharge);
                             break;
@@ -3514,7 +3514,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (reprocess) {
             if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
                 regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
-            } else if (this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE) && !isForeclosure() && !isClaim()) {
+            } else if (this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE) && !isForeclosure()
+                    && !isClaim()) {
                 if (adjustedTransaction == null) {
                     regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
                 }
@@ -7429,7 +7430,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public ChangedTransactionDetail handleClaimTransactions(final LoanTransaction repaymentTransaction,
-                                                                  final LoanLifecycleStateMachine loanLifecycleStateMachine, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
+            final LoanLifecycleStateMachine loanLifecycleStateMachine, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
 
         validateForForeclosure(repaymentTransaction.getTransactionDate());
         applyAccruals();

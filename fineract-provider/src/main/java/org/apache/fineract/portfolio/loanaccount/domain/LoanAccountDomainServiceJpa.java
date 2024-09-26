@@ -940,8 +940,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     }
 
     @Override
-    public LoanTransaction claimLoan(Loan loan, final LocalDate claimDate, final ExternalId externalId,
-                                     Map<String, Object> changes) {
+    public LoanTransaction claimLoan(Loan loan, final LocalDate claimDate, final ExternalId externalId, Map<String, Object> changes) {
         if (loan.isChargedOff() && DateUtils.isBefore(claimDate, loan.getChargedOffOnDate())) {
             throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
                     + loan.getId()
@@ -967,9 +966,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             Money total = interestPortion.plus(feePortion).plus(penaltyPortion);
             if (total.isGreaterThanZero()) {
                 ExternalId accrualExternalId = externalIdFactory.create();
-                LoanTransaction accrualTransaction = LoanTransaction.accrueTransaction(loan, loan.getOffice(), claimDate,
-                        total.getAmount(), interestPortion.getAmount(), feePortion.getAmount(), penaltyPortion.getAmount(),
-                        accrualExternalId);
+                LoanTransaction accrualTransaction = LoanTransaction.accrueTransaction(loan, loan.getOffice(), claimDate, total.getAmount(),
+                        interestPortion.getAmount(), feePortion.getAmount(), penaltyPortion.getAmount(), accrualExternalId);
                 LocalDate fromDate = loan.getDisbursementDate();
                 if (loan.getAccruedTill() != null) {
                     fromDate = loan.getAccruedTill();
@@ -1001,9 +999,11 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             for (final LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
                 if (DateUtils.isAfter(claimDate, installment.getDueDate())) {
                     if (loan.claimType().equals("insurance")) {
-                        outstandingFeeAmount = outstandingFeeAmount.add(installment.getFeeChargesOutstandingByType(currency, "MandatoryInsurance").getAmount());
+                        outstandingFeeAmount = outstandingFeeAmount
+                                .add(installment.getFeeChargesOutstandingByType(currency, "MandatoryInsurance").getAmount());
                     } else if (loan.claimType().equals("guarantor")) {
-                        outstandingFeeAmount = outstandingFeeAmount.add(installment.getFeeChargesOutstandingByType(currency, "Aval").getAmount());
+                        outstandingFeeAmount = outstandingFeeAmount
+                                .add(installment.getFeeChargesOutstandingByType(currency, "Aval").getAmount());
                     }
                 }
             }
@@ -1011,17 +1011,17 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         /////////////
         loan.updateInstallmentsPostDate(claimDate);
 
-
         if (loan.claimType() != null) {
             LoanRepaymentScheduleInstallment lastInstallment = loan.getLastLoanRepaymentScheduleInstallment();
             if (loan.claimType().equals("insurance")) {
-                outstandingFeeAmount = outstandingFeeAmount.add(lastInstallment.getFeeChargesOutstandingByType(currency, "MandatoryInsurance").getAmount());
+                outstandingFeeAmount = outstandingFeeAmount
+                        .add(lastInstallment.getFeeChargesOutstandingByType(currency, "MandatoryInsurance").getAmount());
             } else if (loan.claimType().equals("guarantor")) {
-                outstandingFeeAmount = outstandingFeeAmount.add(lastInstallment.getFeeChargesOutstandingByType(currency, "Aval").getAmount());
+                outstandingFeeAmount = outstandingFeeAmount
+                        .add(lastInstallment.getFeeChargesOutstandingByType(currency, "Aval").getAmount());
             }
             feePayable = feePayable.minus(outstandingFeeAmount);
         }
-
 
         LoanTransaction payment = null;
         if (payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).isGreaterThanZero()) {
@@ -1034,8 +1034,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         }
 
         List<Long> transactionIds = new ArrayList<>();
-        final ChangedTransactionDetail changedTransactionDetail = loan.handleClaimTransactions(payment,
-                defaultLoanLifecycleStateMachine, scheduleGeneratorDTO);
+        final ChangedTransactionDetail changedTransactionDetail = loan.handleClaimTransactions(payment, defaultLoanLifecycleStateMachine,
+                scheduleGeneratorDTO);
 
         /***
          * TODO Vishwas Batch save is giving me a HibernateOptimisticLockingFailureException, looping and saving for the

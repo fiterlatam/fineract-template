@@ -4030,8 +4030,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         loan.setClaimType(claimType);
         loan.setClaimDate(transactionDate);
-        LoanTransaction foreclosureTransaction = this.loanAccountDomainService.claimLoan(loan, transactionDate, externalId,
-                changes);
+        LoanTransaction foreclosureTransaction = this.loanAccountDomainService.claimLoan(loan, transactionDate, externalId, changes);
 
         final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();
         return commandProcessingResultBuilder //

@@ -1031,13 +1031,15 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     public boolean isInsuranceClaim() {
         if (claimType == null) {
             return false;
-        } else return claimType.equalsIgnoreCase("Insurance");
+        } else
+            return claimType.equalsIgnoreCase("Insurance");
     }
 
     public boolean isAvalClaim() {
         if (claimType == null) {
             return false;
-        } else return claimType.equalsIgnoreCase("guarantor");
+        } else
+            return claimType.equalsIgnoreCase("guarantor");
     }
     // TODO missing hashCode(), equals(Object obj), but probably OK as long as
     // this is never stored in a Collection.

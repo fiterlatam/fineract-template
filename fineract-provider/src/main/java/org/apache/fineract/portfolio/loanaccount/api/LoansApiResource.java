@@ -1463,10 +1463,9 @@ public class LoansApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansResponse.class))) })
     public String retrieveAllForAvalReclaim(@Context final UriInfo uriInfo,
-                                            @QueryParam("reclaimType") @Parameter(description = "reclaimType") final String reclaimType) {
+            @QueryParam("reclaimType") @Parameter(description = "reclaimType") final String reclaimType) {
 
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
-
 
         final List<LoanReclaimData> reclaimData = this.loanReadPlatformService.retrieveClaimTemplate(reclaimType);
         final List<LoanReclaimData> excludedData = this.loanReadPlatformService.retrieveExcludedTemplate(reclaimType);
@@ -1483,7 +1482,7 @@ public class LoansApiResource {
     @Operation(summary = "Cancel Insurance Due To Bad Sale", description = "Cancel Insurance Due To Bad Sale")
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
     public String excludeLoanFromReclaim(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
-                                         @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
         final CommandWrapper commandRequest = new CommandWrapperBuilder() //
                 .excludeFromReclaim(loanId) //
                 .withJson(apiRequestBodyAsJson) //

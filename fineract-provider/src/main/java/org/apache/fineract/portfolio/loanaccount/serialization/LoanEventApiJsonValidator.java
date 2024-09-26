@@ -631,8 +631,7 @@ public final class LoanEventApiJsonValidator {
             throw new InvalidJsonException();
         }
 
-        final Set<String> claimParameters = new HashSet<>(
-                Arrays.asList("transactionDate", "locale", "dateFormat", "claimType"));
+        final Set<String> claimParameters = new HashSet<>(Arrays.asList("transactionDate", "locale", "dateFormat", "claimType"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, claimParameters);
