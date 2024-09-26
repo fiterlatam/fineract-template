@@ -1002,6 +1002,15 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder loanClaim(final Long loanId) {
+        this.actionName = "CLAIM";
+        this.entityName = "LOAN";
+        this.entityId = null;
+        this.loanId = loanId;
+        this.href = "/loans/" + loanId + "/transactions?command=claim";
+        return this;
+    }
+
     public CommandWrapperBuilder creditBalanceRefund(final Long loanId) {
         this.actionName = "CREDITBALANCEREFUND";
         this.entityName = "LOAN";
@@ -4013,6 +4022,14 @@ public class CommandWrapperBuilder {
         this.entityName = "LOAN";
         this.entityId = null;
         this.href = "/cancelinsurance/badsale";
+        return this;
+    }
+
+    public CommandWrapperBuilder excludeFromReclaim(final Long loanId) {
+        this.actionName = "RECLAIM_EXCLUDE";
+        this.entityName = "LOAN";
+        this.entityId = loanId;
+        this.href = "reclaim/exclude/" + loanId;
         return this;
     }
 }

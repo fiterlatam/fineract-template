@@ -529,4 +529,10 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         return value;
     }
 
+    @Override
+    public Long retriveMinimumDaysOfArrearsToClaim() {
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData("Dias de mora minimos para reclamar");
+        return property.getValue();
+    }
+
 }

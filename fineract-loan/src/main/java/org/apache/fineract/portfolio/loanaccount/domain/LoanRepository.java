@@ -28,6 +28,7 @@ import org.apache.fineract.cob.data.LoanIdAndLastClosedBusinessDate;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -234,4 +235,8 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
 
     @Query(FIND_ALL_LOAN_IDS_BY_STATUS_ID)
     List<Long> findLoanIdByStatusId(@Param("statusId") Integer statusId);
+
+    @Modifying
+    @Query("update Loan l set l.excludedFromReclaim = false WHERE l.excludedForClaimType = :claimType")
+    void removeLoanExclusion(@Param("claimType") String claimType);
 }

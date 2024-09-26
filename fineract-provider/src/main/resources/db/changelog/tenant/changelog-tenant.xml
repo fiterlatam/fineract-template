@@ -281,4 +281,5 @@
     <include file="parts/20243008011009115_SU-324_additional_columns_to_history.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240409011009115_SU_112_add_columns_for_recalculate_emi.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU_86_cupo_increment.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240923011009115_SU_144_add_columns_for_reclaim.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

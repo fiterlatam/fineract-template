@@ -416,25 +416,31 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             } else if (chargeType.equals("Aval")) {
                 if (installmentCharge.getLoanCharge().isAvalCharge()) {
                     amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                    for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                        if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
+                                vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
+                            amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                        }
+                    }
                 }
             } else if (chargeType.equals("MandatoryInsurance")) {
                 if (installmentCharge.getLoanCharge().getChargeCalculation().isMandatoryInsuranceCharge()) {
                     amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
-                }
-                for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
-                    if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
-                            vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
-                        amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                    for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                        if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
+                                vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
+                            amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                        }
                     }
                 }
             } else if (chargeType.equals("VoluntaryInsurance")) {
                 if (installmentCharge.getLoanCharge().getChargeCalculation().isVoluntaryInsurance()) {
                     amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
-                }
-                for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
-                    if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
-                            vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
-                        amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                    for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                        if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
+                                vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
+                            amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                        }
                     }
                 }
             }
@@ -833,7 +839,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         Money interestDue = Money.zero(currency);
         if (this.getLoan() != null && this.getLoan().getLoanProductRelatedDetail().getLoanScheduleProcessingType()
                 .equals(LoanScheduleProcessingType.HORIZONTAL)) {
-            if (isOnOrBetween(transactionDate) && getInterestOutstanding(currency).isGreaterThanZero()) {
+            if (isOn(transactionDate, this.getDueDate())) {
+                interestDue = getInterestOutstanding(currency);
+            } else if (isOnOrBetween(transactionDate) && getInterestOutstanding(currency).isGreaterThanZero()) {
                 final RoundingMode roundingMode = RoundingMode.HALF_UP;
 
                 BigDecimal numberOfDaysForInterestCalculation = BigDecimal.ZERO;

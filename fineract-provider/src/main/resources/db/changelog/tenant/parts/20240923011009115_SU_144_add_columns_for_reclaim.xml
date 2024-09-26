@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+    <changeSet author="fineract" id="1">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan" columnName="excluded_from_reclaim"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan">
+            <column name="excluded_from_reclaim" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="fineract" id="2">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan" columnName="claim_type"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan">
+            <column name="claim_type" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="fineract" id="3">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan" columnName="claimed_date"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan">
+            <column name="claimed_date" type="DATE"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="fineract" id="4">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan_transaction" columnName="claim_type"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan_transaction">
+            <column name="claim_type" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="fineract" id="5">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan" columnName="excluded_for_claim_type"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan">
+            <column name="excluded_for_claim_type" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="6" author="fineract">
+        <insert tableName="STRETCHY_REPORT">
+            <column name="REPORT_NAME" value="Reporte de reclamación de seguro"/>
+            <column name="REPORT_SQL">
+                <![CDATA[
+                select mcl.display_name AS "Nombre del cliente",
+                ml.account_no AS "número del crédito",
+                            mpl.name AS "producto de crédito",
+                            (CURRENT_DATE - mlaa.overdue_since_date_derived) AS "días de mora",
+                            ml.principal_outstanding_derived AS "saldo de capital",
+                            ml.interest_outstanding_derived AS "saldo de interés corriente",
+                            (COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0)) AS "saldo de aval",
+                            (COALESCE(insurance_chg.outstanding_amount,0) + COALESCE(vat_chg.outstanding_amount,0)) AS "saldo de seguro obligatorio",
+                            (COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0)) AS "saldo de otros cargos fijos",
+                            (COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0)) AS "saldo de interés de mora",
+                            ml.total_outstanding_derived AS "saldo total de deuda"
+                            from
+                            m_loan ml
+                            join m_product_loan mpl on mpl.id = ml.product_id
+                            join m_client mcl on mcl.id = ml.client_id
+                            join m_loan_arrears_aging mlaa on mlaa.loan_id = ml.id
+                            join
+                                (
+                                    select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                        from m_loan_charge mlc
+                                       where mlc.charge_calculation_enum IN (468, 575, 231)
+                                       group by mlc.loan_id
+                                ) insurance_chg ON insurance_chg.loan_id = ml.id
+                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                            JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                            WHERE parent_charge.charge_calculation_enum IN (468, 575, 231)
+                                            group by mlc2.loan_id
+                                        ) vat_chg  ON vat_chg.loan_id = ml.id
+                            left join
+                                (
+                                    select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                        from m_loan_charge mlc
+                                       where mlc.charge_calculation_enum = 41
+                                       group by mlc.loan_id
+                                ) aval_chg ON aval_chg.loan_id = ml.id
+                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                            JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                            WHERE parent_charge.charge_calculation_enum = 41
+                                            group by mlc2.loan_id
+                                        ) aval_vat_chg  ON aval_vat_chg.loan_id = ml.id
+                            left join
+                                (
+                                    select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                        from m_loan_charge mlc
+                                       where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41)
+                                        and mlc.is_penalty = false
+                                       group by mlc.loan_id
+                                ) other_chg ON other_chg.loan_id = ml.id
+                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                            JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                            WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231)
+                                            group by mlc2.loan_id
+                                        ) other_vat_chg  ON other_vat_chg.loan_id = ml.id
+                            left join
+                                (
+                                    select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                        from m_loan_charge mlc
+                                       where mlc.is_penalty = true
+                                       group by mlc.loan_id
+                                ) penalty_chg ON penalty_chg.loan_id = ml.id
+                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                            JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                            WHERE parent_charge.is_penalty = true
+                                            group by mlc2.loan_id
+                                        ) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
+                        WHERE
+                            ml.loan_status_id = 300
+                            and (CURRENT_DATE - mlaa.overdue_since_date_derived) > (select value from c_configuration where name = 'Dias de mora minimos para reclamar')
+                and ml.excluded_from_reclaim = false and ml.claim_type is null  and ml.loan_schedule_type = 'PROGRESSIVE'
+        ]]>
+            </column>
+            <column name="report_type" value="Table"/>
+            <column name="report_category" value="Loan"/>
+            <column name="description" value="Reporte de reclamación de seguro"/>
+
+            <column name="core_report" value="false"/>
+            <column name="use_report" value="true"/>
+        </insert>
+
+        <insert tableName="STRETCHY_REPORT">
+            <column name="REPORT_NAME" value="Reporte de reclamación de Aval"/>
+            <column name="REPORT_SQL">
+                <![CDATA[
+                select mcl.display_name AS "Nombre del cliente",
+                ml.account_no AS "número del crédito",
+                            mpl.name AS "producto de crédito",
+                            (CURRENT_DATE - mlaa.overdue_since_date_derived) AS "días de mora",
+                            ml.principal_outstanding_derived AS "saldo de capital",
+                            ml.interest_outstanding_derived AS "saldo de interés corriente",
+                            (COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0)) AS "saldo de aval",
+                            (COALESCE(insurance_chg.outstanding_amount,0) + COALESCE(vat_chg.outstanding_amount,0)) AS "saldo de seguro obligatorio",
+                            (COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0)) AS "saldo de otros cargos fijos",
+                            (COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0)) AS "saldo de interés de mora",
+                            ml.total_outstanding_derived AS "saldo total de deuda"
+                            from
+                            m_loan ml
+                            join m_product_loan mpl on mpl.id = ml.product_id
+                            join m_client mcl on mcl.id = ml.client_id
+                            join m_loan_arrears_aging mlaa on mlaa.loan_id = ml.id
+                            left join
+                                (
+                                    select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                        from m_loan_charge mlc
+                                       where mlc.charge_calculation_enum IN (468, 575, 231)
+                                       group by mlc.loan_id
+                                ) insurance_chg ON insurance_chg.loan_id = ml.id
+                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                            JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                            WHERE parent_charge.charge_calculation_enum IN (468, 575, 231)
+                                            group by mlc2.loan_id
+                                        ) vat_chg  ON vat_chg.loan_id = ml.id
+                            join
+                                (
+                                    select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                        from m_loan_charge mlc
+                                       where mlc.charge_calculation_enum = 41
+                                       group by mlc.loan_id
+                                ) aval_chg ON aval_chg.loan_id = ml.id
+                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                            JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                            WHERE parent_charge.charge_calculation_enum = 41
+                                            group by mlc2.loan_id
+                                        ) aval_vat_chg  ON aval_vat_chg.loan_id = ml.id
+                            left join
+                                (
+                                    select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                        from m_loan_charge mlc
+                                       where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41)
+                                        and mlc.is_penalty = false
+                                       group by mlc.loan_id
+                                ) other_chg ON other_chg.loan_id = ml.id
+                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                            JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                            WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231)
+                                            group by mlc2.loan_id
+                                        ) other_vat_chg  ON other_vat_chg.loan_id = ml.id
+                            left join
+                                (
+                                    select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                        from m_loan_charge mlc
+                                       where mlc.is_penalty = true
+                                       group by mlc.loan_id
+                                ) penalty_chg ON penalty_chg.loan_id = ml.id
+                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                            JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                            WHERE parent_charge.is_penalty = true
+                                            group by mlc2.loan_id
+                                        ) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
+                        WHERE
+                            ml.loan_status_id = 300
+                            and (CURRENT_DATE - mlaa.overdue_since_date_derived) >  (select value from c_configuration where name = 'Dias de mora minimos para reclamar')
+                and ml.excluded_from_reclaim = false and ml.claim_type is null  and ml.loan_schedule_type = 'PROGRESSIVE'
+        ]]>
+            </column>
+            <column name="report_type" value="Table"/>
+            <column name="report_category" value="Loan"/>
+            <column name="description" value="Reporte de reclamación de Aval"/>
+
+            <column name="core_report" value="false"/>
+            <column name="use_report" value="true"/>
+        </insert>
+    </changeSet>
+    <changeSet id="7" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_parameter WHERE parameter_name = 'loanIds'
+            </sqlCheck>
+        </preConditions>
+        <sql>
+            INSERT INTO stretchy_parameter
+            (parameter_name, parameter_variable, parameter_label, "parameter_displayType", "parameter_FormatType", parameter_default, special, "selectOne", "selectAll", parameter_sql, parent_id)
+            VALUES('loanIds', 'loanIds', 'Loan Ids', 'text', 'String', 'n/a', NULL, NULL, NULL, NULL, NULL);
+        </sql>
+    <insert tableName="STRETCHY_REPORT">
+            <column name="REPORT_NAME" value="Reporte de préstamos reclamados"/>
+            <column name="REPORT_SQL">
+                <![CDATA[
+                select mcl.display_name AS "Nombre del cliente",
+                ml.account_no AS "número del crédito",
+                            mpl.name AS "producto de crédito",
+                            (CURRENT_DATE - mlaa.overdue_since_date_derived) AS "días de mora",
+                            ml.principal_outstanding_derived AS "saldo de capital",
+                            ml.interest_outstanding_derived AS "saldo de interés corriente",
+                            (COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0)) AS "saldo de aval",
+                            (COALESCE(insurance_chg.outstanding_amount,0) + COALESCE(vat_chg.outstanding_amount,0)) AS "saldo de seguro obligatorio",
+                            (COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0)) AS "saldo de otros cargos fijos",
+                            (COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0)) AS "saldo de interés de mora",
+                            ml.total_outstanding_derived AS "saldo total de deuda"
+                            from
+                            m_loan ml
+                            join m_product_loan mpl on mpl.id = ml.product_id
+                            join m_client mcl on mcl.id = ml.client_id
+                            join m_loan_arrears_aging mlaa on mlaa.loan_id = ml.id
+                            left join
+                                (
+                                    select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                        from m_loan_charge mlc
+                                       where mlc.charge_calculation_enum IN (468, 575, 231)
+                                       group by mlc.loan_id
+                                ) insurance_chg ON insurance_chg.loan_id = ml.id
+                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                            JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                            WHERE parent_charge.charge_calculation_enum IN (468, 575, 231)
+                                            group by mlc2.loan_id
+                                        ) vat_chg  ON vat_chg.loan_id = ml.id
+                            left join
+                                (
+                                    select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                        from m_loan_charge mlc
+                                       where mlc.charge_calculation_enum = 41
+                                       group by mlc.loan_id
+                                ) aval_chg ON aval_chg.loan_id = ml.id
+                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                            JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                            WHERE parent_charge.charge_calculation_enum = 41
+                                            group by mlc2.loan_id
+                                        ) aval_vat_chg  ON aval_vat_chg.loan_id = ml.id
+                            left join
+                                (
+                                    select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                        from m_loan_charge mlc
+                                       where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41)
+                                        and mlc.is_penalty = false
+                                       group by mlc.loan_id
+                                ) other_chg ON other_chg.loan_id = ml.id
+                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                            JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                            WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231)
+                                            group by mlc2.loan_id
+                                        ) other_vat_chg  ON other_vat_chg.loan_id = ml.id
+                            left join
+                                (
+                                    select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                        from m_loan_charge mlc
+                                       where mlc.is_penalty = true
+                                       group by mlc.loan_id
+                                ) penalty_chg ON penalty_chg.loan_id = ml.id
+                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                            JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                            WHERE parent_charge.is_penalty = true
+                                            group by mlc2.loan_id
+                                        ) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
+                        WHERE
+                            ml.loan_status_id = 300 and ml.id in ('${loanIds}')
+        ]]>
+            </column>
+            <column name="report_type" value="Table"/>
+            <column name="report_category" value="Loan"/>
+            <column name="description" value="Reporte de préstamos reclamados"/>
+
+            <column name="core_report" value="false"/>
+            <column name="use_report" value="true"/>
+        </insert>
+    <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select id from stretchy_report where report_name = 'Reporte de préstamos reclamados')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable = 'loanIds')"/>
+            <column name="report_parameter_name" value="loanIds"/>
+            <column name="mandatory_parameter" value="true"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>
