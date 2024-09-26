@@ -940,6 +940,135 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     }
 
     @Override
+    public LoanTransaction claimLoan(Loan loan, final LocalDate claimDate, final ExternalId externalId,
+                                     Map<String, Object> changes) {
+        if (loan.isChargedOff() && DateUtils.isBefore(claimDate, loan.getChargedOffOnDate())) {
+            throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
+                    + loan.getId()
+                    + " backdated transaction is not allowed. Transaction date cannot be earlier than the charge-off date of the loan",
+                    loan.getId());
+        }
+        MonetaryCurrency currency = loan.getCurrency();
+        List<LoanTransaction> newTransactions = new ArrayList<>();
+
+        final List<Long> existingTransactionIds = new ArrayList<>();
+        final List<Long> existingReversedTransactionIds = new ArrayList<>();
+        existingTransactionIds.addAll(loan.findExistingTransactionIds());
+        existingReversedTransactionIds.addAll(loan.findExistingReversedTransactionIds());
+        final ScheduleGeneratorDTO scheduleGeneratorDTO = null;
+        final LoanRepaymentScheduleInstallment foreCloseDetail = loan.fetchLoanForeclosureDetail(claimDate);
+        if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()
+                && (loan.getAccruedTill() == null || !DateUtils.isEqual(claimDate, loan.getAccruedTill()))) {
+            loan.reverseAccrualsAfter(claimDate);
+            Money[] accruedReceivables = loan.getReceivableIncome(claimDate);
+            Money interestPortion = foreCloseDetail.getInterestCharged(currency).minus(accruedReceivables[0]);
+            Money feePortion = foreCloseDetail.getFeeChargesCharged(currency).minus(accruedReceivables[1]);
+            Money penaltyPortion = foreCloseDetail.getPenaltyChargesCharged(currency).minus(accruedReceivables[2]);
+            Money total = interestPortion.plus(feePortion).plus(penaltyPortion);
+            if (total.isGreaterThanZero()) {
+                ExternalId accrualExternalId = externalIdFactory.create();
+                LoanTransaction accrualTransaction = LoanTransaction.accrueTransaction(loan, loan.getOffice(), claimDate,
+                        total.getAmount(), interestPortion.getAmount(), feePortion.getAmount(), penaltyPortion.getAmount(),
+                        accrualExternalId);
+                LocalDate fromDate = loan.getDisbursementDate();
+                if (loan.getAccruedTill() != null) {
+                    fromDate = loan.getAccruedTill();
+                }
+                newTransactions.add(accrualTransaction);
+                loan.addLoanTransaction(accrualTransaction);
+                Set<LoanChargePaidBy> accrualCharges = accrualTransaction.getLoanChargesPaid();
+                for (LoanCharge loanCharge : loan.getActiveCharges()) {
+                    boolean isDue = DateUtils.isEqual(fromDate, loan.getDisbursementDate())
+                            ? loanCharge.isDueForCollectionFromIncludingAndUpToAndIncluding(fromDate, claimDate)
+                            : loanCharge.isDueForCollectionFromAndUpToAndIncluding(fromDate, claimDate);
+                    if (loanCharge.isActive() && !loanCharge.isPaid() && (isDue || loanCharge.isInstalmentFee())) {
+                        final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(accrualTransaction, loanCharge,
+                                loanCharge.getAmountOutstanding(currency).getAmount(), null);
+                        accrualCharges.add(loanChargePaidBy);
+                    }
+                }
+            }
+        }
+
+        Money interestPayable = foreCloseDetail.getInterestCharged(currency);
+        Money feePayable = foreCloseDetail.getFeeChargesCharged(currency);
+        Money penaltyPayable = foreCloseDetail.getPenaltyChargesCharged(currency);
+        Money payPrincipal = foreCloseDetail.getPrincipal(currency);
+
+        /////////////
+        BigDecimal outstandingFeeAmount = BigDecimal.ZERO;
+        if (loan.claimType() != null) {
+            for (final LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
+                if (DateUtils.isAfter(claimDate, installment.getDueDate())) {
+                    if (loan.claimType().equals("insurance")) {
+                        outstandingFeeAmount = outstandingFeeAmount.add(installment.getFeeChargesOutstandingByType(currency, "MandatoryInsurance").getAmount());
+                    } else if (loan.claimType().equals("guarantor")) {
+                        outstandingFeeAmount = outstandingFeeAmount.add(installment.getFeeChargesOutstandingByType(currency, "Aval").getAmount());
+                    }
+                }
+            }
+        }
+        /////////////
+        loan.updateInstallmentsPostDate(claimDate);
+
+
+        if (loan.claimType() != null) {
+            LoanRepaymentScheduleInstallment lastInstallment = loan.getLastLoanRepaymentScheduleInstallment();
+            if (loan.claimType().equals("insurance")) {
+                outstandingFeeAmount = outstandingFeeAmount.add(lastInstallment.getFeeChargesOutstandingByType(currency, "MandatoryInsurance").getAmount());
+            } else if (loan.claimType().equals("guarantor")) {
+                outstandingFeeAmount = outstandingFeeAmount.add(lastInstallment.getFeeChargesOutstandingByType(currency, "Aval").getAmount());
+            }
+            feePayable = feePayable.minus(outstandingFeeAmount);
+        }
+
+
+        LoanTransaction payment = null;
+        if (payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).isGreaterThanZero()) {
+            final PaymentDetail paymentDetail = null;
+            payment = LoanTransaction.repayment(loan.getOffice(), payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable),
+                    paymentDetail, claimDate, externalId);
+            payment.setClaimType(loan.claimType());
+            payment.updateLoan(loan);
+            newTransactions.add(payment);
+        }
+
+        List<Long> transactionIds = new ArrayList<>();
+        final ChangedTransactionDetail changedTransactionDetail = loan.handleClaimTransactions(payment,
+                defaultLoanLifecycleStateMachine, scheduleGeneratorDTO);
+
+        /***
+         * TODO Vishwas Batch save is giving me a HibernateOptimisticLockingFailureException, looping and saving for the
+         * time being, not a major issue for now as this loop is entered only in edge cases (when a payment is made
+         * before the latest payment recorded against the loan)
+         ***/
+
+        for (LoanTransaction newTransaction : newTransactions) {
+            saveLoanTransactionWithDataIntegrityViolationChecks(newTransaction);
+            transactionIds.add(newTransaction.getId());
+        }
+        changes.put("transactions", transactionIds);
+        changes.put("eventAmount", payPrincipal.getAmount().negate());
+
+        if (changedTransactionDetail != null) {
+            for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
+                saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.getValue());
+                updateLoanTransaction(mapEntry.getKey(), mapEntry.getValue());
+            }
+            // Trigger transaction replayed event
+            replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
+        }
+        loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+
+        this.loanRepositoryWrapper.removeLoanExclusion(loan.claimType());
+
+        postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds, false);
+        loanAccrualTransactionBusinessEventService.raiseBusinessEventForAccrualTransactions(loan, existingTransactionIds);
+        businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
+        return payment;
+    }
+
+    @Override
     @Transactional
     public void disableStandingInstructionsLinkedToClosedLoan(Loan loan) {
         if ((loan != null) && (loan.getStatus() != null) && loan.getStatus().isClosed()) {

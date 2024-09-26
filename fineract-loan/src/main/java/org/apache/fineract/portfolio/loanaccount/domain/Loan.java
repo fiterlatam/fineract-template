@@ -474,6 +474,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Embedded
     private LoanCustomizationDetail loanCustomizationDetail;
 
+    @Column(name = "excluded_from_reclaim", nullable = false)
+    private boolean excludedFromReclaim = false;
+
+    @Column(name = "excluded_for_claim_type")
+    private String excludedForClaimType;
+
     // This attribute is used only to capture the repayment strategy (VERTICAL/HORIZONTAL). Updating all the related
     // methods to add this attribute as a parameter was creating a mess
     @Transient
@@ -485,14 +491,20 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Transient
     boolean recalculateEMI;
 
+    @Column(name = "claim_type")
+    private String claimType;
+
+    @Column(name = "claimed_date")
+    private LocalDate claimDate;
+
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
-            final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
-            final String transactionProcessingStrategyCode, final LoanProductRelatedDetail loanRepaymentScheduleDetail,
-            final Set<LoanCharge> loanCharges, final Set<LoanCollateralManagement> collateral, final BigDecimal fixedEmiAmount,
-            final List<LoanDisbursementDetails> disbursementDetails, final BigDecimal maxOutstandingLoanBalance,
-            final Boolean createStandingInstructionAtDisbursement, final Boolean isFloatingInterestRate,
-            final BigDecimal interestRateDifferential, final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment,
-            final LoanCustomizationDetail loanAdditionalDetail) {
+                                                    final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
+                                                    final String transactionProcessingStrategyCode, final LoanProductRelatedDetail loanRepaymentScheduleDetail,
+                                                    final Set<LoanCharge> loanCharges, final Set<LoanCollateralManagement> collateral, final BigDecimal fixedEmiAmount,
+                                                    final List<LoanDisbursementDetails> disbursementDetails, final BigDecimal maxOutstandingLoanBalance,
+                                                    final Boolean createStandingInstructionAtDisbursement, final Boolean isFloatingInterestRate,
+                                                    final BigDecimal interestRateDifferential, final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment,
+                                                    final LoanCustomizationDetail loanAdditionalDetail) {
         return new Loan(accountNo, client, null, loanType, fund, officer, loanPurpose, transactionProcessingStrategyCode, loanProduct,
                 loanRepaymentScheduleDetail, null, loanCharges, collateral, null, fixedEmiAmount, disbursementDetails,
                 maxOutstandingLoanBalance, createStandingInstructionAtDisbursement, isFloatingInterestRate, interestRateDifferential, rates,
@@ -1042,11 +1054,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public BigDecimal calculatePerInstallmentChargeAmount(final ChargeCalculationType calculationType, final BigDecimal percentage,
             BigDecimal chargeAmount, Long parentChargeId) {
         Money amount = Money.zero(getCurrency());
-        this.outstandingBalance = Money.zero(this.getCurrency());
+        this.outstandingBalance = this.loanRepaymentScheduleDetail.getPrincipal();
         List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
-        for (final LoanRepaymentScheduleInstallment installment : installments) {
-            this.outstandingBalance = this.outstandingBalance.plus(installment.getPrincipal(this.getCurrency()));
-        }
         for (final LoanRepaymentScheduleInstallment installment : installments) {
             amount = amount.plus(calculateInstallmentChargeAmount(calculationType, percentage, installment, chargeAmount, parentChargeId));
         }
@@ -1109,6 +1118,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             BigDecimal numberOfInstallments = new BigDecimal(this.fetchUnpaidNumberOfInstallments(1));
             BigDecimal computedAmount = LoanCharge.percentageOf(percentOf.getAmount(), percentage);
             this.outstandingBalance = this.outstandingBalance.minus(installment.getPrincipal(this.getCurrency()));
+            this.outstandingBalance = this.outstandingBalance.minus(installment.getAdvancePrincipalAmount());
             BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 0, RoundingMode.HALF_UP);
             amount = amount.plus(finalAmount);
         }
@@ -1867,14 +1877,22 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
          */
         Loan loan = loanCharge.getLoan();
         if (loan.isDisbursed() && this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)
-                && this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.HORIZONTAL)) {
+                && (this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.HORIZONTAL)
+                    || (this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.VERTICAL)
+                        && loan.claimType != null) )) {
             if (loanCharge.isInstalmentFee()) {
+
                 loanCharge.clearLoanInstallmentCharges();
                 for (final LoanRepaymentScheduleInstallment installment : getRepaymentScheduleInstallments()) {
                     if (installment.isRecalculatedInterestComponent()) {
                         continue; // JW: does this in generateInstallmentLoanCharges - but don't understand it
                     }
-                    installment.getInstallmentCharges().clear();
+                    for (LoanInstallmentCharge installmentCharge: installment.getInstallmentCharges()) {
+                        if (Objects.equals(installmentCharge.getLoanCharge().getId(), loanCharge.getId())) {
+                            installment.getInstallmentCharges().remove(installmentCharge);
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -3465,14 +3483,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 loanTransaction.getTransactionDate());
         boolean reprocess = true;
 
-        if (!isForeclosure() && isTransactionChronologicallyLatest && adjustedTransaction == null
+        if (!isClaim() && !isForeclosure() && isTransactionChronologicallyLatest && adjustedTransaction == null
                 && DateUtils.isEqualBusinessDate(loanTransaction.getTransactionDate()) && currentInstallment != null
                 && currentInstallment.getTotalOutstanding(getCurrency()).isEqualTo(loanTransaction.getAmount(getCurrency()))) {
             reprocess = false;
         }
 
         if (isTransactionChronologicallyLatest && adjustedTransaction == null
-                && (!reprocess || !this.repaymentScheduleDetail().isInterestRecalculationEnabled()) && !isForeclosure()) {
+                && (!reprocess || !this.repaymentScheduleDetail().isInterestRecalculationEnabled()) && (!isForeclosure() && !isClaim())) {
             loanRepaymentScheduleTransactionProcessor.processLatestTransaction(loanTransaction, new TransactionCtx(getCurrency(),
                     getRepaymentScheduleInstallments(), getActiveCharges(), new MoneyHolder(getTotalOverpaidAsMoney())));
             reprocess = false;
@@ -3496,7 +3514,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (reprocess) {
             if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
                 regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
-            } else if (this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE) && !isForeclosure()) {
+            } else if (this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE) && !isForeclosure() && !isClaim()) {
                 if (adjustedTransaction == null) {
                     regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
                 }
@@ -3505,7 +3523,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(getDisbursementDate(),
                     allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), getActiveCharges());
             if (this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)) {
-                if (!isForeclosure() && !loanTransaction.isReversed() && loanTransaction.getAmount().equals(BigDecimal.ZERO)
+                if (!isForeclosure() && !isClaim() && !loanTransaction.isReversed() && loanTransaction.getAmount().equals(BigDecimal.ZERO)
                         && adjustedTransaction != null && adjustedTransaction.isReversed()) {
                     regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
                 }
@@ -5449,10 +5467,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (loanCharge.isInstalmentFee()) {
             List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments().stream()
                     .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
-            this.outstandingBalance = Money.zero(getCurrency());
-            for (final LoanRepaymentScheduleInstallment installment : installments) {
-                this.outstandingBalance = this.outstandingBalance.plus(installment.getPrincipal(getCurrency()));
-            }
+            this.outstandingBalance = this.loanRepaymentScheduleDetail.getPrincipal();
+
             for (final LoanRepaymentScheduleInstallment installment : installments) {
                 if (installment.isRecalculatedInterestComponent()) {
                     continue;
@@ -7412,6 +7428,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return handleRepaymentOrRecoveryOrWaiverTransaction(repaymentTransaction, loanLifecycleStateMachine, null, scheduleGeneratorDTO);
     }
 
+    public ChangedTransactionDetail handleClaimTransactions(final LoanTransaction repaymentTransaction,
+                                                                  final LoanLifecycleStateMachine loanLifecycleStateMachine, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
+
+        validateForForeclosure(repaymentTransaction.getTransactionDate());
+        applyAccruals();
+        return handleRepaymentOrRecoveryOrWaiverTransaction(repaymentTransaction, loanLifecycleStateMachine, null, scheduleGeneratorDTO);
+    }
+
     public void validateForForeclosure(final LocalDate transactionDate) {
         if (isInterestRecalculationEnabledForProduct()) {
             final String defaultUserMessage = "The loan with interest recalculation enabled cannot be foreclosed.";
@@ -7514,6 +7538,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         return isForeClosure;
+    }
+
+    private boolean isClaim() {
+        return this.claimType != null;
     }
 
     public Set<LoanTermVariations> getActiveLoanTermVariations() {
@@ -7818,5 +7846,37 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setRecalculateEMI(boolean recalculateEMI) {
         this.recalculateEMI = recalculateEMI;
+    }
+
+    public boolean excludedFromReclaim() {
+        return excludedFromReclaim;
+    }
+
+    public void setExcludedFromReclaim(boolean excludedFromReclaim) {
+        this.excludedFromReclaim = excludedFromReclaim;
+    }
+
+    public String claimType() {
+        return claimType;
+    }
+
+    public void setClaimType(String claimType) {
+        this.claimType = claimType;
+    }
+
+    public LocalDate claimDate() {
+        return claimDate;
+    }
+
+    public void setClaimDate(LocalDate claimDate) {
+        this.claimDate = claimDate;
+    }
+
+    public String excludedForClaimType() {
+        return excludedForClaimType;
+    }
+
+    public void setExcludedForClaimType(String excludedForClaimType) {
+        this.excludedForClaimType = excludedForClaimType;
     }
 }

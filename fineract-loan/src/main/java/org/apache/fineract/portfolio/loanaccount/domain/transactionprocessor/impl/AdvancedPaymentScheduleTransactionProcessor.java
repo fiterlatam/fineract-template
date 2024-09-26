@@ -652,11 +652,21 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         LocalDate transactionDate = loanTransaction.getTransactionDate();
         Money zero = transactionAmountUnprocessed.zero();
         final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
+        Money portion = transactionAmountUnprocessed.zero();
 
-        LoanRepaymentScheduleInstallment.PaymentFunction paymentFunction = currentInstallment
-                .getPaymentFunction(paymentAllocationType.getAllocationType(), action);
+        if (loanTransaction.claimType() != null && loanTransaction.claimType().equals("insurance")
+                && paymentAllocationType.getAllocationType().equals(AllocationType.MANDATORY_INSURANCE)) {
+            portion = transactionAmountUnprocessed.zero();
+        } else if (loanTransaction.claimType() != null && loanTransaction.claimType().equals("guarantor")
+                && paymentAllocationType.getAllocationType().equals(AVAL)) {
+            portion = transactionAmountUnprocessed.zero();
+        } else {
+            LoanRepaymentScheduleInstallment.PaymentFunction paymentFunction = currentInstallment
+                    .getPaymentFunction(paymentAllocationType.getAllocationType(), action);
+            portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction);
+        }
         ChargesPaidByFunction chargesPaidByFunction = getChargesPaymentFunction(action);
-        Money portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction);
+
 
         switch (paymentAllocationType.getAllocationType()) {
             case PENALTY -> {
@@ -1057,11 +1067,67 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             LoanRepaymentScheduleInstallment oldestPastDueInstallment = installments.stream()
                     .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff).filter(e -> loanTransaction.isAfter(e.getDueDate()))
                     .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
+            boolean found = false;
+            if (loanTransaction.claimType() != null) {
+                Money installmentOutStandingFee = Money.zero(currency);
+                if (loanTransaction.claimType().equals("insurance") && oldestPastDueInstallment != null) {
+                    installmentOutStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "MandatoryInsurance");
+                } else if (loanTransaction.claimType().equals("guarantor") && oldestPastDueInstallment != null) {
+                    installmentOutStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "Aval");
+                }
+                if (oldestPastDueInstallment != null && oldestPastDueInstallment.getTotalOutstanding(currency).isGreaterThan(installmentOutStandingFee)) {
+                    found = true;
+                }
+                while (!found && oldestPastDueInstallment != null) {
+                    Money outStandingFee = Money.zero(currency);
+                    if (loanTransaction.claimType().equals("insurance")) {
+                        outStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "MandatoryInsurance");
+                    } else {
+                        outStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "Aval");
+                    }
+                    if (oldestPastDueInstallment.getTotalOutstanding(currency).isEqualTo(outStandingFee)) {
+                        Integer installment = oldestPastDueInstallment.getInstallmentNumber();
+                        oldestPastDueInstallment = installments.stream()
+                                .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff).filter(e -> loanTransaction.isAfter(e.getDueDate()) && e.getInstallmentNumber() > installment)
+                                .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
+                    } else {
+                        found = true;
+                    }
+                }
+            }
             LoanRepaymentScheduleInstallment dueInstallment = installments.stream()
                     .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
                     .filter(e -> loanTransaction.isOnOrBetween(e.getFromDate(), e.getDueDate()))
                     .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
 
+            found = false;
+            if (loanTransaction.claimType() != null) {
+                Money installmentOutStandingFee = Money.zero(currency);
+                if (loanTransaction.claimType().equals("insurance") && oldestPastDueInstallment != null) {
+                    installmentOutStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "MandatoryInsurance");
+                } else if (loanTransaction.claimType().equals("guarantor") && oldestPastDueInstallment != null) {
+                    installmentOutStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "Aval");
+                }
+                if (dueInstallment != null && dueInstallment.getTotalOutstanding(currency).isGreaterThan(installmentOutStandingFee)) {
+                    found = true;
+                }
+                while (!found && dueInstallment != null) {
+                    Money outStandingFee = Money.zero(currency);
+                    if (loanTransaction.claimType().equals("insurance")) {
+                        outStandingFee = dueInstallment.getFeeChargesOutstandingByType(currency, "MandatoryInsurance");
+                    } else {
+                        outStandingFee = dueInstallment.getFeeChargesOutstandingByType(currency, "Aval");
+                    }
+                    if (dueInstallment.getTotalOutstanding(currency).isEqualTo(outStandingFee)) {
+                        Integer installment = dueInstallment.getInstallmentNumber();
+                        dueInstallment = installments.stream()
+                                .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff).filter(e -> loanTransaction.isOnOrBetween(e.getFromDate(), e.getDueDate()) && e.getInstallmentNumber() > installment)
+                                .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
+                    } else {
+                        found = true;
+                    }
+                }
+            }
             // For having similar logic we are populating installment list even when the future installment
             // allocation rule is NEXT_INSTALLMENT or LAST_INSTALLMENT hence the list has only one element.
             List<LoanRepaymentScheduleInstallment> inAdvanceInstallments = new ArrayList<>();
@@ -1181,7 +1247,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             LoanRepaymentScheduleInstallment currentInstallment = null;
             Money paidPortion = Money.zero(currency);
             do {
-                Predicate<LoanRepaymentScheduleInstallment> predicate = getFilterPredicate(paymentAllocationType, currency);
+                Predicate<LoanRepaymentScheduleInstallment> predicate = getFilterPredicate(paymentAllocationType, currency, loanTransaction);
                 switch (paymentAllocationType.getDueType()) {
                     case PAST_DUE -> {
                         currentInstallment = installments.stream().filter(predicate).filter(e -> loanTransaction.isAfter(e.getDueDate()))
@@ -1269,13 +1335,13 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
     }
 
     private Predicate<LoanRepaymentScheduleInstallment> getFilterPredicate(PaymentAllocationType paymentAllocationType,
-            MonetaryCurrency currency) {
+            MonetaryCurrency currency, LoanTransaction loanTransaction) {
         return switch (paymentAllocationType.getAllocationType()) {
             case PENALTY -> (p) -> p.getPenaltyChargesOutstanding(currency).isGreaterThanZero();
             case FEE -> (p) -> p.getFeeChargesOutstanding(currency).isGreaterThanZero();
             case FEES -> (p) -> p.getFeeChargesOutstandingByType(currency, "Honorarios").isGreaterThanZero();
-            case AVAL -> (p) -> p.getFeeChargesOutstandingByType(currency, "Aval").isGreaterThanZero();
-            case MANDATORY_INSURANCE -> (p) -> p.getFeeChargesOutstandingByType(currency, "MandatoryInsurance").isGreaterThanZero();
+            case AVAL -> (p) -> loanTransaction.isAvalClaim() ? false : p.getFeeChargesOutstandingByType(currency, "Aval").isGreaterThanZero();
+            case MANDATORY_INSURANCE -> (p) -> loanTransaction.isInsuranceClaim() ? false : p.getFeeChargesOutstandingByType(currency, "MandatoryInsurance").isGreaterThanZero();
             case VOLUNTARY_INSURANCE -> (p) -> p.getFeeChargesOutstandingByType(currency, "VoluntaryInsurance").isGreaterThanZero();
             case INTEREST -> (p) -> p.getInterestOutstanding(currency).isGreaterThanZero();
             case PRINCIPAL -> (p) -> p.getPrincipalOutstanding(currency).isGreaterThanZero();

@@ -130,4 +130,10 @@ public interface LoanWritePlatformService {
     void cancelDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds);
 
     CommandProcessingResult cancelInsurance(JsonCommand command, boolean isVoluntaryInsurance);
+
+    @Transactional
+    CommandProcessingResult excludeLoanFromReclaim(Long loanId, JsonCommand command);
+
+    @Transactional
+    CommandProcessingResult claimLoan(Long loanId, JsonCommand command);
 }

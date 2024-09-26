@@ -3991,4 +3991,54 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         return cumulative;
     }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult excludeLoanFromReclaim(final Long loanId, final JsonCommand command) {
+        Loan loan = this.loanAssembler.assembleFrom(loanId);
+        String claimType = command.stringValueOfParameterNamed("claimType");
+        loan.setExcludedFromReclaim(true);
+        loan.setExcludedForClaimType(claimType);
+        this.loanRepositoryWrapper.saveAndFlush(loan);
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withEntityId(loan.getId()) //
+                .withEntityExternalId(loan.getExternalId()) //
+                .withOfficeId(loan.getOfficeId()) //
+                .withClientId(loan.getClientId()) //
+                .withGroupId(loan.getGroupId()) //
+                .withLoanId(loanId) //
+                .build();
+
+    }
+
+    @Override
+    @Transactional
+    public CommandProcessingResult claimLoan(final Long loanId, final JsonCommand command) {
+        final String json = command.json();
+        final JsonElement element = fromApiJsonHelper.parse(json);
+        final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        final LocalDate transactionDate = this.fromApiJsonHelper.extractLocalDateNamed(LoanApiConstants.transactionDateParamName, element);
+        final String claimType = this.fromApiJsonHelper.extractStringNamed("claimType", element);
+        final ExternalId externalId = externalIdFactory.createFromCommand(command, LoanApiConstants.externalIdParameterName);
+        this.loanEventApiJsonValidator.validateLoanClaim(command.json());
+        final Map<String, Object> changes = new LinkedHashMap<>();
+        // Got changed to match with the rest of the APIs
+        changes.put("dateFormat", command.dateFormat());
+        changes.put("transactionDate", command.stringValueOfParameterNamed(LoanApiConstants.transactionDateParamName));
+        changes.put("claimType", claimType);
+
+        loan.setClaimType(claimType);
+        loan.setClaimDate(transactionDate);
+        LoanTransaction foreclosureTransaction = this.loanAccountDomainService.claimLoan(loan, transactionDate, externalId,
+                changes);
+
+        final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();
+        return commandProcessingResultBuilder //
+                .withLoanId(loanId) //
+                .withEntityId(foreclosureTransaction.getId()) //
+                .withEntityExternalId(foreclosureTransaction.getExternalId()) //
+                .with(changes) //
+                .build();
+    }
 }
