@@ -342,14 +342,22 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     BigDecimal currentInterst = null;
                     List<LoanTermVariationsData> list = loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment();
                     ListIterator<LoanTermVariationsData> iterator = list.listIterator();
+                    int prevIndex = 0;
                     while (iterator.hasNext()) {
                         int index = iterator.nextIndex();
+                        int nextIndex = prevIndex + 1;
                         LoanTermVariationsData midInterst = iterator.next();
                         currentInterst = midInterst.getDecimalValue();
                         LocalDate currentDates = midInterst.getTermVariationApplicableFrom();
 
+                        if (index == list.size() - 1) {
+                            nextIndex = index;
+                        }
+                        nextDates = list.get(nextIndex).getTermVariationApplicableFrom();
+
                         if (!currentInterst.equals(interestRatePerPeriod) && !currentInterst.equals(annualNominalInterestRate)) {
-                            if (!iterator.hasNext()) {
+
+                            if (iterator.hasNext()) {
                                 nextDates = list.get(index + 1).getTermVariationApplicableFrom();
                             }
                             if (startDate == null) {
@@ -373,6 +381,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                             totalMidPeriodInterestRates = midPeriodInterestRates;
 
                         }
+                        prevIndex = nextIndex;
 
                     }
                 }
