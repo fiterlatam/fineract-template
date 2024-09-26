@@ -139,6 +139,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "recalculate_emi", nullable = false)
     private boolean recalculateEMI;
 
+    @Column(name = "claim_type")
+    private String claimType;
+
     protected LoanTransaction() {}
 
     public static LoanTransaction incomePosting(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
@@ -300,6 +303,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
             newTransaction.getLoanChargesPaid().addAll(loanTransaction.getLoanChargesPaid());
         }
         newTransaction.loanScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();
+        newTransaction.setClaimType(loanTransaction.claimType());
+        newTransaction.setRecalculateEMI(loanTransaction.recalculateEMI());
         return newTransaction;
     }
 
@@ -1013,6 +1018,28 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setRecalculateEMI(boolean recalculateEMI) {
         this.recalculateEMI = recalculateEMI;
+    }
+
+    public String claimType() {
+        return claimType;
+    }
+
+    public void setClaimType(String claimType) {
+        this.claimType = claimType;
+    }
+
+    public boolean isInsuranceClaim() {
+        if (claimType == null) {
+            return false;
+        } else
+            return claimType.equalsIgnoreCase("Insurance");
+    }
+
+    public boolean isAvalClaim() {
+        if (claimType == null) {
+            return false;
+        } else
+            return claimType.equalsIgnoreCase("guarantor");
     }
     // TODO missing hashCode(), equals(Object obj), but probably OK as long as
     // this is never stored in a Collection.

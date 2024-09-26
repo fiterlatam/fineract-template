@@ -177,4 +177,8 @@ public interface LoanReadPlatformService {
     Integer retrieveRediferidoNumberLast6Months(Long loanId);
 
     List<DefaultOrCancelInsuranceInstallmentData> getLoanDataWithDefaultOrCancelInsurance(Long loanId, Long insuranceCode, LocalDate date);
+
+    List<LoanReclaimData> retrieveClaimTemplate(String claimType);
+
+    List<LoanReclaimData> retrieveExcludedTemplate(String claimType);
 }

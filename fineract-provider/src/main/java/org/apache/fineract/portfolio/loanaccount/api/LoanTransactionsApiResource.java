@@ -493,6 +493,8 @@ public class LoanTransactionsApiResource {
             commandRequest = builder.undoChargeOff(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, DOWN_PAYMENT)) {
             commandRequest = builder.downPayment(resolvedLoanId).build();
+        } else if (CommandParameterUtil.is(commandParam, "claim")) {
+            commandRequest = builder.loanClaim(resolvedLoanId).build();
         }
 
         if (commandRequest == null) {

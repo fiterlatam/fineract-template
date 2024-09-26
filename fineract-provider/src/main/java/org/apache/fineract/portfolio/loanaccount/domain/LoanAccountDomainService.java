@@ -90,6 +90,8 @@ public interface LoanAccountDomainService {
     LoanTransaction foreCloseLoan(Loan loan, LocalDate foreClourseDate, String noteText, ExternalId externalId,
             Map<String, Object> changes);
 
+    LoanTransaction claimLoan(Loan loan, LocalDate claimDate, ExternalId externalId, Map<String, Object> changes);
+
     /**
      * Disables all standing instructions linked to a closed loan
      *
