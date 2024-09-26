@@ -175,4 +175,64 @@
         </sql>
     </changeSet>
 
+    <changeSet id="10" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report
+                SET report_sql = 'SELECT
+                                   mlt.id AS "ID",
+                                   ml.id AS "número de crédito",
+                                   mlt.transaction_date AS "fecha de transacción",
+                                   mc.display_name AS "nombre del cliente",
+                                   mpl."name" AS "producto de crédito",
+                                   CONCAT(ma.firstname, '' '', ma.lastname) AS "usuario que aplicó la condonación",
+                                   COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE, 0) AS "días de mora",
+                                   mlt.amount AS "valor total de la condonación"
+                               FROM m_office mo
+                               INNER JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, ''%'') AND ounder.hierarchy LIKE CONCAT(''${currentUserHierarchy}'', ''%'')
+                               INNER JOIN m_loan_transaction mlt ON mlt.office_id = ounder.id
+                               INNER JOIN m_loan ml ON ml.id = mlt.loan_id
+                               INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                               INNER JOIN m_appuser ma ON ma.id = mlt.created_by
+                               LEFT JOIN m_client mc ON mc.id = ml.client_id
+                               LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = ml.id
+                               WHERE mlt.is_special_writeoff = TRUE
+                               AND mlt.is_reversed = FALSE AND mlt.transaction_type_enum = 6
+                               AND (DATE(mlt.transaction_date) BETWEEN ''${startDate}'' AND ''${endDate}'')
+                               AND (mlt.created_by = ''${userId}'' OR ''-1'' = ''${userId}'')'
+                WHERE report_name = 'Condonaciones especiales';
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="11" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report
+                SET report_sql = 'SELECT
+                           mlt.id AS "ID",
+                           ml.id AS "número de crédito",
+                           mlt.transaction_date AS "fecha de transacción",
+                           mc.display_name AS "nombre del cliente",
+                           mpl."name" AS "producto de crédito",
+                           CONCAT(ma.firstname, '' '', ma.lastname) AS "usuario que aplicó la condonación",
+                           COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE, 0) AS "días de mora",
+                           mlt.amount AS "valor total de la condonación"
+                       FROM m_office mo
+                       INNER JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, ''%'') AND ounder.hierarchy LIKE CONCAT(''${currentUserHierarchy}'', ''%'')
+                       INNER JOIN m_loan_transaction mlt ON mlt.office_id = ounder.id
+                       INNER JOIN m_loan ml ON ml.id = mlt.loan_id
+                       INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                       INNER JOIN m_appuser ma ON ma.id = mlt.created_by
+                       LEFT JOIN m_client mc ON mc.id = ml.client_id
+                       LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = ml.id
+                       WHERE mlt.is_special_writeoff = FALSE
+                       AND mlt.is_reversed = FALSE AND mlt.transaction_type_enum = 6
+                       AND (DATE(mlt.transaction_date) BETWEEN ''${startDate}'' AND ''${endDate}'')
+                       AND (mlt.created_by = ''${userId}'' OR ''-1'' = ''${userId}'')'
+                WHERE report_name = 'Condonaciones masivas';
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

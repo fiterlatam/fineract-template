@@ -485,6 +485,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 if (mapping.getLoanTermVariations().getTermType().isRediferir()) {
                     final LoanTermVariations loanTermVariationsValue = mapping.getLoanTermVariations();
                     rediferirPeriods = loanTermVariationsValue.getTermValue().intValue();
+
                 }
                 mapping.getLoanTermVariations().updateIsActive(true);
             }
@@ -521,6 +522,16 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             } else {
                 loan.updateLoanSchedule(loanSchedule.getLoanScheduleModel());
             }
+            /*
+             * Add Validate loan charge
+             */
+            if (rediferirPeriods > 0) {
+                final Integer rediferidoNumber = this.loanReadPlatformService.retrieveRediferidoNumberLast6Months(loan.getId());
+                final GlobalConfigurationProperty globalConfigurationProperty = this.globalConfigurationRepository
+                        .findOneByNameWithNotFoundDetection(RescheduleLoansApiConstants.ALLOWED_REDEFERRALS_WITHIN_SIX_MONTHS);
+                this.loanRescheduleRequestDataValidator.validateRescheduleLoanCharge(loan, globalConfigurationProperty, rediferidoNumber);
+            }
+
             loan.recalculateAllCharges();
             ChangedTransactionDetail changedTransactionDetail = loan.processTransactions();
             loan.updateLoanDerivedFields();

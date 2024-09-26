@@ -64,13 +64,13 @@ public class LoanRepaymentWorkbookPopulator extends AbstractWorkbookPopulator {
         final CellStyle textCellStyle = workbook.createCellStyle();
         final DataFormat fmt = workbook.createDataFormat();
         textCellStyle.setDataFormat(fmt.getFormat("@"));
+        final CellStyle dateCellStyle = workbook.createCellStyle();
+        final short df = workbook.createDataFormat().getFormat(dateFormat);
         for (int rowNo = 1; rowNo < 3000; rowNo++) {
             Row row = worksheet.getRow(rowNo);
             if (row == null) {
                 row = worksheet.createRow(rowNo);
             }
-            final CellStyle dateCellStyle = workbook.createCellStyle();
-            final short df = workbook.createDataFormat().getFormat(dateFormat);
             dateCellStyle.setDataFormat(df);
             row.createCell(LoanRepaymentConstants.REPAID_ON_DATE_COL).setCellStyle(dateCellStyle);
             row.createCell(LoanRepaymentConstants.CLIENT_ID_COL).setCellStyle(textCellStyle);

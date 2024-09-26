@@ -16,9 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.bulkimport.populator.clientcupoincrement;
+package org.apache.fineract.infrastructure.bulkimport.populator.clientcupodecrement;
 
-import org.apache.fineract.infrastructure.bulkimport.constants.ClientCupoIncrementConstants;
+import org.apache.fineract.infrastructure.bulkimport.constants.ClientCupoDecrementConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.populator.AbstractWorkbookPopulator;
 import org.apache.poi.hssf.usermodel.HSSFDataValidationHelper;
@@ -35,19 +35,19 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddressList;
 
-public class ClientCupoIncrementWorkbookPopulator extends AbstractWorkbookPopulator {
+public class ClientCupoDecrementWorkbookPopulator extends AbstractWorkbookPopulator {
 
     @Override
     public void populate(Workbook workbook, String dateFormat) {
-        final Sheet clientCupoIncrementSheet = workbook.createSheet(TemplatePopulateImportConstants.CLIENT_CUPO_INCREMENT_SHEET_NAME);
-        setLayout(clientCupoIncrementSheet, workbook);
-        setRules(clientCupoIncrementSheet, dateFormat);
-        setDefaults(clientCupoIncrementSheet, dateFormat);
+        final Sheet clientCupoDecrementSheet = workbook.createSheet(TemplatePopulateImportConstants.CLIENT_CUPO_DECREMENT_SHEET_NAME);
+        setLayout(clientCupoDecrementSheet, workbook);
+        setRules(clientCupoDecrementSheet, dateFormat);
+        setDefaults(clientCupoDecrementSheet, dateFormat);
     }
 
     private void setRules(final Sheet worksheet, final String dateFormat) {
         final CellRangeAddressList documentTypeRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
-                ClientCupoIncrementConstants.DOCUMENT_TYPE_COL, ClientCupoIncrementConstants.DOCUMENT_TYPE_COL);
+                ClientCupoDecrementConstants.DOCUMENT_TYPE_COL, ClientCupoDecrementConstants.DOCUMENT_TYPE_COL);
         final String[] documentTypes = { "NIT", "CEDULA" };
         final DataValidationHelper validationHelper = new HSSFDataValidationHelper((HSSFSheet) worksheet);
         final DataValidationConstraint documentTypeValidator = validationHelper.createExplicitListConstraint(documentTypes);
@@ -56,11 +56,11 @@ public class ClientCupoIncrementWorkbookPopulator extends AbstractWorkbookPopula
         final DataValidationConstraint dateConstraint = validationHelper
                 .createDateConstraint(DataValidationConstraint.OperatorType.GREATER_OR_EQUAL, "=TODAY()", null, dateFormat);
         final CellRangeAddressList startOnDateRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
-                ClientCupoIncrementConstants.START_ON_DATE_COL, ClientCupoIncrementConstants.START_ON_DATE_COL);
+                ClientCupoDecrementConstants.START_ON_DATE_COL, ClientCupoDecrementConstants.START_ON_DATE_COL);
         final DataValidation startOnDateValidation = validationHelper.createValidation(dateConstraint, startOnDateRange);
 
         final CellRangeAddressList endOnDateRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
-                ClientCupoIncrementConstants.END_ON_DATE_COL, ClientCupoIncrementConstants.END_ON_DATE_COL);
+                ClientCupoDecrementConstants.END_ON_DATE_COL, ClientCupoDecrementConstants.END_ON_DATE_COL);
         final DataValidation endOnDateValidation = validationHelper.createValidation(dateConstraint, endOnDateRange);
         worksheet.addValidationData(documentTypeValidation);
         worksheet.addValidationData(startOnDateValidation);
@@ -70,25 +70,25 @@ public class ClientCupoIncrementWorkbookPopulator extends AbstractWorkbookPopula
     private void setLayout(final Sheet worksheet, final Workbook workbook) {
         final Row rowHeader = worksheet.createRow(TemplatePopulateImportConstants.ROWHEADER_INDEX);
         rowHeader.setHeight(TemplatePopulateImportConstants.ROW_HEADER_HEIGHT);
-        worksheet.setColumnWidth(ClientCupoIncrementConstants.DOCUMENT_TYPE_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
-        worksheet.setColumnWidth(ClientCupoIncrementConstants.DOCUMENT_NUMBER_COL, TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
-        worksheet.setColumnWidth(ClientCupoIncrementConstants.MAXIMUM_CUPO_AMOUNT_COL, TemplatePopulateImportConstants.LARGE_COL_SIZE);
-        worksheet.setColumnWidth(ClientCupoIncrementConstants.START_ON_DATE_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
-        worksheet.setColumnWidth(ClientCupoIncrementConstants.END_ON_DATE_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
-        worksheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(ClientCupoDecrementConstants.DOCUMENT_TYPE_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(ClientCupoDecrementConstants.DOCUMENT_NUMBER_COL, TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
+        worksheet.setColumnWidth(ClientCupoDecrementConstants.MAXIMUM_CUPO_AMOUNT_COL, TemplatePopulateImportConstants.LARGE_COL_SIZE);
+        worksheet.setColumnWidth(ClientCupoDecrementConstants.START_ON_DATE_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(ClientCupoDecrementConstants.END_ON_DATE_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(ClientCupoDecrementConstants.STATUS_COL, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
 
-        writeString(ClientCupoIncrementConstants.DOCUMENT_TYPE_COL, rowHeader, "el tipo de documento");
-        writeString(ClientCupoIncrementConstants.DOCUMENT_NUMBER_COL, rowHeader, "el número de documento del cliente");
-        writeString(ClientCupoIncrementConstants.MAXIMUM_CUPO_AMOUNT_COL, rowHeader, "valor de cupo principal máximo");
-        writeString(ClientCupoIncrementConstants.START_ON_DATE_COL, rowHeader, "fecha desde");
-        writeString(ClientCupoIncrementConstants.END_ON_DATE_COL, rowHeader, "fecha hasta");
+        writeString(ClientCupoDecrementConstants.DOCUMENT_TYPE_COL, rowHeader, "el tipo de documento");
+        writeString(ClientCupoDecrementConstants.DOCUMENT_NUMBER_COL, rowHeader, "el número de documento del cliente");
+        writeString(ClientCupoDecrementConstants.MAXIMUM_CUPO_AMOUNT_COL, rowHeader, "valor de cupo principal máximo");
+        writeString(ClientCupoDecrementConstants.START_ON_DATE_COL, rowHeader, "fecha desde");
+        writeString(ClientCupoDecrementConstants.END_ON_DATE_COL, rowHeader, "fecha hasta");
 
         final CellStyle headerStyle = headerStyle(workbook);
-        rowHeader.getCell(ClientCupoIncrementConstants.DOCUMENT_TYPE_COL).setCellStyle(headerStyle);
-        rowHeader.getCell(ClientCupoIncrementConstants.DOCUMENT_NUMBER_COL).setCellStyle(headerStyle);
-        rowHeader.getCell(ClientCupoIncrementConstants.MAXIMUM_CUPO_AMOUNT_COL).setCellStyle(headerStyle);
-        rowHeader.getCell(ClientCupoIncrementConstants.START_ON_DATE_COL).setCellStyle(headerStyle);
-        rowHeader.getCell(ClientCupoIncrementConstants.END_ON_DATE_COL).setCellStyle(headerStyle);
+        rowHeader.getCell(ClientCupoDecrementConstants.DOCUMENT_TYPE_COL).setCellStyle(headerStyle);
+        rowHeader.getCell(ClientCupoDecrementConstants.DOCUMENT_NUMBER_COL).setCellStyle(headerStyle);
+        rowHeader.getCell(ClientCupoDecrementConstants.MAXIMUM_CUPO_AMOUNT_COL).setCellStyle(headerStyle);
+        rowHeader.getCell(ClientCupoDecrementConstants.START_ON_DATE_COL).setCellStyle(headerStyle);
+        rowHeader.getCell(ClientCupoDecrementConstants.END_ON_DATE_COL).setCellStyle(headerStyle);
     }
 
     private void setDefaults(final Sheet worksheet, final String dateFormat) {
@@ -104,9 +104,9 @@ public class ClientCupoIncrementWorkbookPopulator extends AbstractWorkbookPopula
             if (row == null) {
                 row = worksheet.createRow(rowNo);
             }
-            row.createCell(ClientCupoIncrementConstants.DOCUMENT_NUMBER_COL).setCellStyle(textCellStyle);
-            row.createCell(ClientCupoIncrementConstants.START_ON_DATE_COL).setCellStyle(dateCellStyle);
-            row.createCell(ClientCupoIncrementConstants.END_ON_DATE_COL).setCellStyle(dateCellStyle);
+            row.createCell(ClientCupoDecrementConstants.DOCUMENT_NUMBER_COL).setCellStyle(textCellStyle);
+            row.createCell(ClientCupoDecrementConstants.START_ON_DATE_COL).setCellStyle(dateCellStyle);
+            row.createCell(ClientCupoDecrementConstants.END_ON_DATE_COL).setCellStyle(dateCellStyle);
         }
     }
 
