@@ -192,7 +192,7 @@ public class LoanScheduleAssembler {
         final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepository.findOneWithNotFoundDetection(currency);
 
         // loan terms
-        final Integer loanTermFrequency = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("loanTermFrequency", element);
+         Integer loanTermFrequency = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("loanTermFrequency", element);
         final Integer loanTermFrequencyType = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("loanTermFrequencyType", element);
         final PeriodFrequencyType loanTermPeriodFrequencyType = PeriodFrequencyType.fromInt(loanTermFrequencyType);
 
@@ -378,12 +378,13 @@ public class LoanScheduleAssembler {
         boolean allGracesIncluded = graceOnPrincipalPayment != null && graceOnInterestPayment != null && graceOnChargesPayment != null;
         boolean allGracesMatch = allGracesIncluded
                 && (graceOnPrincipalPayment.equals(graceOnInterestPayment) && graceOnPrincipalPayment.equals(graceOnChargesPayment));
-               if (allGracesMatch) {
+        if (allGracesMatch) {
 
             // Check for potential integer overflow
             if (numberOfRepayments <= Integer.MAX_VALUE - graceOnPrincipalPayment) {
                 numberOfRepayments += graceOnPrincipalPayment;
-                log.info("new number of repayments after adding grace period: {}" , numberOfRepayments);
+                loanTermFrequency= numberOfRepayments;
+                log.info("new number of repayments after adding grace period: {}", numberOfRepayments);
             } else {
                 // Handle overflow scenario - perhaps throw an exception or cap at max value
                 log.info("Potential integer overflow detected when adding grace period to number of repayments");
@@ -548,11 +549,11 @@ public class LoanScheduleAssembler {
             LoanScheduleProcessingType
                     .valueOf(this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE, element));
         }
-        return LoanApplicationTerms.assembleFrom(applicationCurrency, loanTermFrequency, loanTermPeriodFrequencyType, numberOfRepayments,
-                repaymentEvery, repaymentPeriodFrequencyType, nthDay, weekDayType, amortizationMethod, interestMethod,
-                interestRatePerPeriod, interestRatePoints, interestRatePeriodFrequencyType, annualNominalInterestRate,
-                interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, principalMoney, expectedDisbursementDate,
-                repaymentsStartingFromDate, calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment,
+        LoanApplicationTerms loanApplicationTerms = LoanApplicationTerms.assembleFrom(applicationCurrency, loanTermFrequency,
+                loanTermPeriodFrequencyType, numberOfRepayments, repaymentEvery, repaymentPeriodFrequencyType, nthDay, weekDayType,
+                amortizationMethod, interestMethod, interestRatePerPeriod, interestRatePoints, interestRatePeriodFrequencyType,
+                annualNominalInterestRate, interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, principalMoney,
+                expectedDisbursementDate, repaymentsStartingFromDate, calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment,
                 recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnChargesPayment, graceOnInterestCharged,
                 interestChargedFromDate, inArrearsToleranceMoney, loanProduct.isMultiDisburseLoan(), emiAmount, disbursementDatas,
                 maxOutstandingBalance, graceOnArrearsAgeing, daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
@@ -564,6 +565,12 @@ public class LoanScheduleAssembler {
                 isPrincipalCompoundingDisabledForOverdueLoans, isDownPaymentEnabled, disbursedAmountPercentageForDownPayment,
                 isAutoRepaymentForDownPaymentEnabled, repaymentStartDateType, submittedOnDate, loanScheduleType,
                 loanScheduleProcessingType);
+
+        if (allGracesMatch) {
+            loanApplicationTerms.setNumberOfInstallmentsToIgnore(graceOnPrincipalPayment);
+        }
+
+        return loanApplicationTerms;
     }
 
     private CalendarInstance createCalendarForSameAsRepayment(final Integer repaymentEvery,
