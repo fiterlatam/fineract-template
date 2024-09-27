@@ -1875,7 +1875,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final List<Long> existingTransactionIds = new ArrayList<>();
         final List<Long> existingReversedTransactionIds = new ArrayList<>();
         final LocalDate recalculateFrom = null;
-        ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
+        final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
         final LocalDate transactionDate = DateUtils.getBusinessLocalDate();
         final String txnExternalId = command.stringValueOfParameterNamedAllowingNull("externalId");
         ExternalId externalId = ExternalIdFactory.produce(txnExternalId);
@@ -1890,6 +1890,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         LoanTransaction writeOffTransaction;
         if (isImportedTransaction) {
             final BigDecimal totalWriteOffAmount = command.bigDecimalValueOfParameterNamed("totalWriteOffAmount");
+            final BigDecimal totalOutstandingAmount = loan.getLoanSummary().getTotalOutstanding();
+            if (totalWriteOffAmount != null && totalOutstandingAmount != null
+                    && totalWriteOffAmount.compareTo(totalOutstandingAmount) > 0) {
+                final BigDecimal totalOverpaidAmount = totalWriteOffAmount.subtract(totalOutstandingAmount);
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.write.off.amount.is.greater.than.outstanding.loan.amount",
+                        "Condonación supera deuda", totalWriteOffAmount, totalOverpaidAmount, totalOutstandingAmount);
+            }
             final PaymentDetail paymentDetail = null;
             final boolean isRecoveryRepayment = false;
             final String chargeRefundChargeType = null;
@@ -4046,7 +4053,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     "Reclamación avaladora/aseguradora", DateUtils.getLocalDateOfTenant());
         blockingReasonRepository.saveAndFlush(loanBlockingReason);
         this.loanRepository.saveAndFlush(loan);
-
 
         final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();
         return commandProcessingResultBuilder //
