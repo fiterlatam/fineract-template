@@ -201,6 +201,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         }
 
         boolean isLastInstallmentPeriod = false;
+        Integer numberOfInstallmentsToIgnore = loanApplicationTerms.getNumberOfInstallmentsToIgnore();
         while (!scheduleParams.getOutstandingBalance().isZero() || !scheduleParams.getDisburseDetailMap().isEmpty()) {
             LocalDate previousRepaymentDate = scheduleParams.getActualRepaymentDate();
             scheduleParams.setActualRepaymentDate(getScheduledDateGenerator()
@@ -210,6 +211,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             scheduleParams.setActualRepaymentDate(adjustedDateDetailsDTO.getChangedActualRepaymentDate());
             isFirstRepayment = false;
             LocalDate scheduledDueDate = adjustedDateDetailsDTO.getChangedScheduleDate();
+            if (numberOfInstallmentsToIgnore >= scheduleParams.getPeriodNumber()) {
+                scheduleParams.resetInstalmentNumber();
+            }
 
             // calculated interest start date for the period
             LocalDate periodStartDateApplicableForInterest = calculateInterestStartDateForPeriod(loanApplicationTerms,

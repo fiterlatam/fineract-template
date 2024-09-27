@@ -232,6 +232,7 @@ public final class LoanApplicationTerms {
     private boolean extendTermForMonthlyRepayment;
     private boolean recalculateEMIForInstallment;
     private BigDecimal advancePrincipalAmountForInstallment;
+    private Integer numberOfInstallmentsToIgnore;
 
     public static LoanApplicationTerms assembleFrom(final ApplicationCurrency currency, final Integer loanTermFrequency,
             final PeriodFrequencyType loanTermPeriodFrequencyType, final Integer numberOfRepayments, final Integer repaymentEvery,
@@ -2012,4 +2013,14 @@ public final class LoanApplicationTerms {
         this.advancePrincipalAmountForInstallment = advancePrincipalAmountForInstallment;
     }
 
+    public Integer getNumberOfInstallmentsToIgnore() {
+        if (numberOfInstallmentsToIgnore == null) {
+            return 0;
+        }
+        return numberOfInstallmentsToIgnore;
+    }
+
+    public void setNumberOfInstallmentsToIgnore(Integer numberOfInstallmentsToIgnore) {
+        this.numberOfInstallmentsToIgnore = numberOfInstallmentsToIgnore;
+    }
 }
