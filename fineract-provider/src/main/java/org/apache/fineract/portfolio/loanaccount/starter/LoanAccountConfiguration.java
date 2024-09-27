@@ -438,8 +438,8 @@ public class LoanAccountConfiguration {
             PlatformSecurityContext platformSecurityContext, GlobalConfigurationRepository globalConfigurationRepository,
             LoanBlockWritePlatformService loanBlockWritePlatformService,
             BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepository, InsuranceIncidentRepository insuranceIncidentRepository,
-            InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository,
-            LoanScheduleGeneratorFactory loanScheduleFactory, BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper,
+            InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository, LoanScheduleGeneratorFactory loanScheduleFactory,
+            BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper,
             LoanBlockingReasonRepository blockingReasonRepository) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,

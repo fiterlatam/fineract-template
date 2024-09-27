@@ -361,7 +361,7 @@
             <column name="mandatory_parameter" value="true"/>
         </insert>
     </changeSet>
-	<changeSet id="8" author="fineract">
+    <changeSet id="8" author="fineract">
         <sql>
             INSERT INTO m_blocking_reason_setting
 ( priority, description, name_of_reason, "level", createdby_id, created_date, lastmodifiedby_id, lastmodified_date, is_enabled, disabled_on_date, enabled_on_date, disabled_by, enabled_by, affects_client_level, affects_credit_level)
