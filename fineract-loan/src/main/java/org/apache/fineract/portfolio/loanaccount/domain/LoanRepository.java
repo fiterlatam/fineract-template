@@ -237,6 +237,6 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     List<Long> findLoanIdByStatusId(@Param("statusId") Integer statusId);
 
     @Modifying
-    @Query("update Loan l set l.excludedFromReclaim = false WHERE l.excludedForClaimType = :claimType")
+    @Query("update Loan l set l.excludedFromReclaim = false, l.excludedForClaimType = null WHERE l.excludedForClaimType = :claimType")
     void removeLoanExclusion(@Param("claimType") String claimType);
 }
