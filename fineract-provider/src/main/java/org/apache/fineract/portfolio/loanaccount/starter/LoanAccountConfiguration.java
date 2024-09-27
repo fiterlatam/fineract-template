@@ -439,7 +439,8 @@ public class LoanAccountConfiguration {
             LoanBlockWritePlatformService loanBlockWritePlatformService,
             BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepository, InsuranceIncidentRepository insuranceIncidentRepository,
             InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository,
-            LoanScheduleGeneratorFactory loanScheduleFactory) {
+            LoanScheduleGeneratorFactory loanScheduleFactory, BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper,
+            LoanBlockingReasonRepository blockingReasonRepository) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
@@ -456,7 +457,8 @@ public class LoanAccountConfiguration {
                 loanAccrualTransactionBusinessEventService, errorHandler, loanDownPaymentHandlerService, loanProductReadPlatformService,
                 jdbcTemplate, commandsSourceWritePlatformService, loanRescheduleRequestReadPlatformService, clientReadPlatformService,
                 channelReadWritePlatformService, platformSecurityContext, globalConfigurationRepository, loanBlockWritePlatformService,
-                loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository, loanScheduleFactory);
+                loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository, loanScheduleFactory,
+                blockingReasonSettingsRepositoryWrapper, blockingReasonRepository);
     }
 
     @Bean

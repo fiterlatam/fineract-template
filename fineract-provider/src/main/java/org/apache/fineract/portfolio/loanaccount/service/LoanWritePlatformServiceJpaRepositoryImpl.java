@@ -223,6 +223,8 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler.BLOCKING_REASON_NAME;
+
 @Slf4j
 @RequiredArgsConstructor
 @Service
@@ -286,6 +288,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final InsuranceIncidentRepository insuranceIncidentRepository;
     private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
     private final LoanScheduleGeneratorFactory loanScheduleFactory;
+    private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
+    private final LoanBlockingReasonRepository blockingReasonRepository;
 
     @PostConstruct
     public void registerForNotification() {
@@ -4031,6 +4035,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         loan.setClaimType(claimType);
         loan.setClaimDate(transactionDate);
         LoanTransaction foreclosureTransaction = this.loanAccountDomainService.claimLoan(loan, transactionDate, externalId, changes);
+
+        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+                .getSingleBlockingReasonSettingByReason("Reclamación avaladora/aseguradora", BlockLevel.CREDIT.toString());
+
+        final Optional<LoanBlockingReason> existingBlockingReason = this.blockingReasonRepository
+                .findExistingBlockingReason(loan.getId(), blockingReasonSetting.getId());
+        loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
+        final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
+                    "Reclamación avaladora/aseguradora", DateUtils.getLocalDateOfTenant());
+        blockingReasonRepository.saveAndFlush(loanBlockingReason);
+        this.loanRepository.saveAndFlush(loan);
+
 
         final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();
         return commandProcessingResultBuilder //
