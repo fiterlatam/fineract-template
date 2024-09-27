@@ -654,21 +654,20 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
         Money portion = transactionAmountUnprocessed.zero();
 
+        if (loanTransaction.claimType() != null && loanTransaction.claimType().equals("insurance")
+                && paymentAllocationType.getAllocationType().equals(AllocationType.MANDATORY_INSURANCE)) {
+            portion = transactionAmountUnprocessed.zero();
+        } else if (loanTransaction.claimType() != null && loanTransaction.claimType().equals("guarantor")
+                && paymentAllocationType.getAllocationType().equals(AVAL)) {
+            portion = transactionAmountUnprocessed.zero();
+        } else if (loanTransaction.claimType() != null && paymentAllocationType.getAllocationType().equals(FEES)) {
+            portion = transactionAmountUnprocessed.zero();
+        } else {
 
-            if (loanTransaction.claimType() != null && loanTransaction.claimType().equals("insurance")
-                    && paymentAllocationType.getAllocationType().equals(AllocationType.MANDATORY_INSURANCE)) {
-                portion = transactionAmountUnprocessed.zero();
-            } else if (loanTransaction.claimType() != null && loanTransaction.claimType().equals("guarantor")
-                    && paymentAllocationType.getAllocationType().equals(AVAL)) {
-                portion = transactionAmountUnprocessed.zero();
-            } else if (loanTransaction.claimType() != null && paymentAllocationType.getAllocationType().equals(FEES)) {
-                portion = transactionAmountUnprocessed.zero();
-            } else {
-
-                LoanRepaymentScheduleInstallment.PaymentFunction paymentFunction = currentInstallment
-                        .getPaymentFunction(paymentAllocationType.getAllocationType(), action);
-                portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction);
-            }
+            LoanRepaymentScheduleInstallment.PaymentFunction paymentFunction = currentInstallment
+                    .getPaymentFunction(paymentAllocationType.getAllocationType(), action);
+            portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction);
+        }
 
         ChargesPaidByFunction chargesPaidByFunction = getChargesPaymentFunction(action);
 
@@ -1080,7 +1079,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     } else if (loanTransaction.claimType().equals("guarantor")) {
                         installmentOutStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "Aval");
                     }
-                    installmentOutStandingFee = installmentOutStandingFee.plus(oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "Honorarios"));
+                    installmentOutStandingFee = installmentOutStandingFee
+                            .plus(oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "Honorarios"));
                 }
                 if (oldestPastDueInstallment != null
                         && oldestPastDueInstallment.getTotalOutstanding(currency).isGreaterThan(installmentOutStandingFee)) {
@@ -1119,7 +1119,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     } else if (loanTransaction.claimType().equals("guarantor")) {
                         installmentOutStandingFee = dueInstallment.getFeeChargesOutstandingByType(currency, "Aval");
                     }
-                    installmentOutStandingFee = installmentOutStandingFee.plus(dueInstallment.getFeeChargesOutstandingByType(currency, "Honorarios"));
+                    installmentOutStandingFee = installmentOutStandingFee
+                            .plus(dueInstallment.getFeeChargesOutstandingByType(currency, "Honorarios"));
                 }
                 if (dueInstallment != null && dueInstallment.getTotalOutstanding(currency).isGreaterThan(installmentOutStandingFee)) {
                     found = true;
