@@ -196,7 +196,7 @@ public class LoanScheduleAssembler {
         final Integer loanTermFrequencyType = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("loanTermFrequencyType", element);
         final PeriodFrequencyType loanTermPeriodFrequencyType = PeriodFrequencyType.fromInt(loanTermFrequencyType);
 
-        final Integer numberOfRepayments = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("numberOfRepayments", element);
+        Integer numberOfRepayments = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("numberOfRepayments", element);
         final Integer repaymentEvery = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("repaymentEvery", element);
         final Integer repaymentFrequencyType = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("repaymentFrequencyType", element);
         final PeriodFrequencyType repaymentPeriodFrequencyType = PeriodFrequencyType.fromInt(repaymentFrequencyType);
@@ -373,6 +373,23 @@ public class LoanScheduleAssembler {
         if (graceOnChargesPayment == null) {
             graceOnChargesPayment = loanProduct.getLoanProductRelatedDetail().getGraceOnChargesPayment();
         }
+        // If principal, interest, and charges have equal grace periods,
+        // extend the repayment schedule to include these grace period installments
+        boolean allGracesIncluded = graceOnPrincipalPayment != null && graceOnInterestPayment != null && graceOnChargesPayment != null;
+        boolean allGracesMatch = allGracesIncluded
+                && (graceOnPrincipalPayment.equals(graceOnInterestPayment) && graceOnPrincipalPayment.equals(graceOnChargesPayment));
+               if (allGracesMatch) {
+
+            // Check for potential integer overflow
+            if (numberOfRepayments <= Integer.MAX_VALUE - graceOnPrincipalPayment) {
+                numberOfRepayments += graceOnPrincipalPayment;
+                log.info("new number of repayments after adding grace period: {}" , numberOfRepayments);
+            } else {
+                // Handle overflow scenario - perhaps throw an exception or cap at max value
+                log.info("Potential integer overflow detected when adding grace period to number of repayments");
+            }
+        }
+
         final LocalDate interestChargedFromDate = this.fromApiJsonHelper.extractLocalDateNamed("interestChargedFromDate", element);
         final Boolean isInterestChargedFromDateSameAsDisbursalDateEnabled = this.configurationDomainService
                 .isInterestChargedFromDateSameAsDisbursementDate();
