@@ -435,6 +435,10 @@ public final class LoanScheduleParams {
         this.instalmentNumber++;
     }
 
+    public void resetInstalmentNumber() {
+        this.instalmentNumber = 0;
+    }
+
     public void addReducePrincipal(Money reducePrincipal) {
         if (this.reducePrincipal != null) {
             this.reducePrincipal = this.reducePrincipal.plus(reducePrincipal);

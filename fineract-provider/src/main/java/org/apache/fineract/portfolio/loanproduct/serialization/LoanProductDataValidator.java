@@ -1962,7 +1962,7 @@ public final class LoanProductDataValidator {
 
         validatePrincipalMinMaxConstraint(element, loanProduct, baseDataValidator);
 
-        validateNumberOfRepaymentsMinMaxConstraint(element, loanProduct, baseDataValidator);
+     validateNumberOfRepaymentsMinMaxConstraint(element, loanProduct, baseDataValidator);
 
         validateNominalInterestRatePerPeriodMinMaxConstraint(element, loanProduct, baseDataValidator);
     }
@@ -2107,6 +2107,22 @@ public final class LoanProductDataValidator {
         boolean numberOfRepaymentsUpdated = false;
         boolean minNumberOfRepaymentsUpdated = false;
         boolean maxNumberOfRepaymentsUpdated = false;
+
+        final Integer graceOnPrincipalPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnPrincipalPayment", element);
+        final Integer graceOnInterestPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestPayment", element);
+        Integer graceOnChargesPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnChargesPayment", element);
+        if (graceOnChargesPayment == null) {
+            graceOnChargesPayment = loanProduct.getLoanProductRelatedDetail().getGraceOnChargesPayment();
+        }
+        boolean allGracesIncluded = graceOnPrincipalPayment != null && graceOnInterestPayment != null && graceOnChargesPayment != null;
+        boolean allGracesMatch = allGracesIncluded
+                                 && (graceOnPrincipalPayment.equals(graceOnInterestPayment) && graceOnPrincipalPayment.equals(graceOnChargesPayment));
+
+
+        if(allGracesMatch){
+            // no need to validate
+            return;
+        }
 
         final String numberOfRepaymentsParameterName = NUMBER_OF_REPAYMENTS;
         Integer numberOfRepayments;
