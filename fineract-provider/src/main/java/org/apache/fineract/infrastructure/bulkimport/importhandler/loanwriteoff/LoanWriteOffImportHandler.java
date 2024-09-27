@@ -186,9 +186,9 @@ public class LoanWriteOffImportHandler implements ImportHandler {
                 final String loanClientName = loanAccountData.getClientName();
                 final String loanProductName = loanAccountData.getLoanProductName();
                 final Long daysInArrears = collectionData.getPastDueDays();
-                final BigDecimal outstandingPrincipalAmount = loanAccountData.getSummary().getPrincipalOutstanding();
+                final BigDecimal totalOutstandingAmount = loanAccountData.getSummary().getTotalOutstanding();
                 loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex()).createCell(LoanWriteOffConstants.OUTSTANDING_AMOUNT_COL)
-                        .setCellValue(outstandingPrincipalAmount.doubleValue());
+                        .setCellValue(totalOutstandingAmount.doubleValue());
                 loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex()).createCell(LoanWriteOffConstants.CLIENT_ID_COL)
                         .setCellValue(loanClientId);
                 loanWriteOffSheet.getRow(loanWriteOffData.getRowIndex()).createCell(LoanWriteOffConstants.CLIENT_NAME_COL)
