@@ -654,17 +654,22 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
         Money portion = transactionAmountUnprocessed.zero();
 
-        if (loanTransaction.claimType() != null && loanTransaction.claimType().equals("insurance")
-                && paymentAllocationType.getAllocationType().equals(AllocationType.MANDATORY_INSURANCE)) {
-            portion = transactionAmountUnprocessed.zero();
-        } else if (loanTransaction.claimType() != null && loanTransaction.claimType().equals("guarantor")
-                && paymentAllocationType.getAllocationType().equals(AVAL)) {
-            portion = transactionAmountUnprocessed.zero();
-        } else {
-            LoanRepaymentScheduleInstallment.PaymentFunction paymentFunction = currentInstallment
-                    .getPaymentFunction(paymentAllocationType.getAllocationType(), action);
-            portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction);
-        }
+
+            if (loanTransaction.claimType() != null && loanTransaction.claimType().equals("insurance")
+                    && paymentAllocationType.getAllocationType().equals(AllocationType.MANDATORY_INSURANCE)) {
+                portion = transactionAmountUnprocessed.zero();
+            } else if (loanTransaction.claimType() != null && loanTransaction.claimType().equals("guarantor")
+                    && paymentAllocationType.getAllocationType().equals(AVAL)) {
+                portion = transactionAmountUnprocessed.zero();
+            } else if (loanTransaction.claimType() != null && paymentAllocationType.getAllocationType().equals(FEES)) {
+                portion = transactionAmountUnprocessed.zero();
+            } else {
+
+                LoanRepaymentScheduleInstallment.PaymentFunction paymentFunction = currentInstallment
+                        .getPaymentFunction(paymentAllocationType.getAllocationType(), action);
+                portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction);
+            }
+
         ChargesPaidByFunction chargesPaidByFunction = getChargesPaymentFunction(action);
 
         switch (paymentAllocationType.getAllocationType()) {
@@ -1069,10 +1074,13 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             boolean found = false;
             if (loanTransaction.claimType() != null) {
                 Money installmentOutStandingFee = Money.zero(currency);
-                if (loanTransaction.claimType().equals("insurance") && oldestPastDueInstallment != null) {
-                    installmentOutStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "MandatoryInsurance");
-                } else if (loanTransaction.claimType().equals("guarantor") && oldestPastDueInstallment != null) {
-                    installmentOutStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "Aval");
+                if (oldestPastDueInstallment != null) {
+                    if (loanTransaction.claimType().equals("insurance")) {
+                        installmentOutStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "MandatoryInsurance");
+                    } else if (loanTransaction.claimType().equals("guarantor")) {
+                        installmentOutStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "Aval");
+                    }
+                    installmentOutStandingFee = installmentOutStandingFee.plus(oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "Honorarios"));
                 }
                 if (oldestPastDueInstallment != null
                         && oldestPastDueInstallment.getTotalOutstanding(currency).isGreaterThan(installmentOutStandingFee)) {
@@ -1085,6 +1093,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     } else {
                         outStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "Aval");
                     }
+                    outStandingFee = outStandingFee.plus(oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "Honorarios"));
+
                     if (oldestPastDueInstallment.getTotalOutstanding(currency).isEqualTo(outStandingFee)) {
                         Integer installment = oldestPastDueInstallment.getInstallmentNumber();
                         oldestPastDueInstallment = installments.stream().filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
@@ -1103,10 +1113,13 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             found = false;
             if (loanTransaction.claimType() != null) {
                 Money installmentOutStandingFee = Money.zero(currency);
-                if (loanTransaction.claimType().equals("insurance") && oldestPastDueInstallment != null) {
-                    installmentOutStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "MandatoryInsurance");
-                } else if (loanTransaction.claimType().equals("guarantor") && oldestPastDueInstallment != null) {
-                    installmentOutStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency, "Aval");
+                if (dueInstallment != null) {
+                    if (loanTransaction.claimType().equals("insurance")) {
+                        installmentOutStandingFee = dueInstallment.getFeeChargesOutstandingByType(currency, "MandatoryInsurance");
+                    } else if (loanTransaction.claimType().equals("guarantor")) {
+                        installmentOutStandingFee = dueInstallment.getFeeChargesOutstandingByType(currency, "Aval");
+                    }
+                    installmentOutStandingFee = installmentOutStandingFee.plus(dueInstallment.getFeeChargesOutstandingByType(currency, "Honorarios"));
                 }
                 if (dueInstallment != null && dueInstallment.getTotalOutstanding(currency).isGreaterThan(installmentOutStandingFee)) {
                     found = true;
@@ -1118,6 +1131,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     } else {
                         outStandingFee = dueInstallment.getFeeChargesOutstandingByType(currency, "Aval");
                     }
+                    outStandingFee = outStandingFee.plus(dueInstallment.getFeeChargesOutstandingByType(currency, "Honorarios"));
                     if (dueInstallment.getTotalOutstanding(currency).isEqualTo(outStandingFee)) {
                         Integer installment = dueInstallment.getInstallmentNumber();
                         dueInstallment = installments.stream().filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)

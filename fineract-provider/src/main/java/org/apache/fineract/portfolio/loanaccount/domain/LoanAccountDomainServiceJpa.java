@@ -1005,6 +1005,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                         outstandingFeeAmount = outstandingFeeAmount
                                 .add(installment.getFeeChargesOutstandingByType(currency, "Aval").getAmount());
                     }
+                    outstandingFeeAmount = outstandingFeeAmount
+                            .add(installment.getFeeChargesOutstandingByType(currency, "Honorarios").getAmount());
                 }
             }
         }
@@ -1020,6 +1022,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 outstandingFeeAmount = outstandingFeeAmount
                         .add(lastInstallment.getFeeChargesOutstandingByType(currency, "Aval").getAmount());
             }
+            outstandingFeeAmount = outstandingFeeAmount
+                    .add(lastInstallment.getFeeChargesOutstandingByType(currency, "Honorarios").getAmount());
             feePayable = feePayable.minus(outstandingFeeAmount);
         }
 
