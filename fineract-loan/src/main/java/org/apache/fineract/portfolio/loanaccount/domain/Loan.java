@@ -1463,7 +1463,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         for (LoanTransaction loanTransaction : accruals) {
             if (loanTransaction.getInterestPortion(getCurrency()).isGreaterThanZero()) {
-                if (loanTransaction.getInterestPortion(getCurrency()).isNotEqualTo(interestApplied)) {
+                if (loanTransaction.getInterestPortion(getCurrency()).isNotEqualTo(interestApplied) && !loanTransaction.isDailyAccrual()) {
                     loanTransaction.reverse();
                     if (isExternalIdAutoGenerationEnabled) {
                         externalId = ExternalId.generate();
