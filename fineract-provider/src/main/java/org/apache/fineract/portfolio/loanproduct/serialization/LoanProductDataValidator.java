@@ -1962,7 +1962,7 @@ public final class LoanProductDataValidator {
 
         validatePrincipalMinMaxConstraint(element, loanProduct, baseDataValidator);
 
-     validateNumberOfRepaymentsMinMaxConstraint(element, loanProduct, baseDataValidator);
+        validateNumberOfRepaymentsMinMaxConstraint(element, loanProduct, baseDataValidator);
 
         validateNominalInterestRatePerPeriodMinMaxConstraint(element, loanProduct, baseDataValidator);
     }
@@ -2116,10 +2116,9 @@ public final class LoanProductDataValidator {
         }
         boolean allGracesIncluded = graceOnPrincipalPayment != null && graceOnInterestPayment != null && graceOnChargesPayment != null;
         boolean allGracesMatch = allGracesIncluded
-                                 && (graceOnPrincipalPayment.equals(graceOnInterestPayment) && graceOnPrincipalPayment.equals(graceOnChargesPayment));
+                && (graceOnPrincipalPayment.equals(graceOnInterestPayment) && graceOnPrincipalPayment.equals(graceOnChargesPayment));
 
-
-        if(allGracesMatch){
+        if (allGracesMatch) {
             // no need to validate
             return;
         }
