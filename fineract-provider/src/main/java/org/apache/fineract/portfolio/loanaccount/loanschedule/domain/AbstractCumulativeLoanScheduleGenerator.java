@@ -321,9 +321,14 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             final Money totalCumulativePrincipal = scheduleParams.getTotalCumulativePrincipal().minus(scheduleParams.getReducePrincipal());
             final Money totalCumulativeInterest = scheduleParams.getTotalCumulativeInterest();
             final Money totalInterestDueForLoan = loanApplicationTerms.getTotalInterestDue();
-            final Money cumulatingInterestPaymentDueToGrace = scheduleParams.getTotalOutstandingInterestPaymentDueToGrace();
-            final Money outstandingBalance = scheduleParams.getOutstandingBalanceAsPerRest();
+            Money cumulatingInterestPaymentDueToGrace = scheduleParams.getTotalOutstandingInterestPaymentDueToGrace();
+            Money outstandingBalance = scheduleParams.getOutstandingBalanceAsPerRest();
             final int periodNumber = scheduleParams.getPeriodNumber();
+            Integer ignoreInstallment = loanApplicationTerms.getNumberOfInstallmentsToIgnore();
+            if (ignoreInstallment != null && ignoreInstallment < periodNumber) {
+                outstandingBalance = outstandingBalance.plus(cumulatingInterestPaymentDueToGrace);
+                cumulatingInterestPaymentDueToGrace = Money.zero(currency);
+            }
             final TreeMap<LocalDate, Money> principalVariation = mergeVariationsToMap(loanApplicationTerms, scheduleParams);
             final Map<LocalDate, Money> compoundingMap = scheduleParams.getCompoundingMap();
             final LocalDate periodEndDate = scheduledDueDate;
