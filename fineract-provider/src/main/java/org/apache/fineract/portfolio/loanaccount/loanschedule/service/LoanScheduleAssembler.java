@@ -192,7 +192,7 @@ public class LoanScheduleAssembler {
         final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepository.findOneWithNotFoundDetection(currency);
 
         // loan terms
-         Integer loanTermFrequency = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("loanTermFrequency", element);
+        Integer loanTermFrequency = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("loanTermFrequency", element);
         final Integer loanTermFrequencyType = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("loanTermFrequencyType", element);
         final PeriodFrequencyType loanTermPeriodFrequencyType = PeriodFrequencyType.fromInt(loanTermFrequencyType);
 
@@ -383,7 +383,7 @@ public class LoanScheduleAssembler {
             // Check for potential integer overflow
             if (numberOfRepayments <= Integer.MAX_VALUE - graceOnPrincipalPayment) {
                 numberOfRepayments += graceOnPrincipalPayment;
-                loanTermFrequency= numberOfRepayments;
+                loanTermFrequency = numberOfRepayments;
                 log.info("new number of repayments after adding grace period: {}", numberOfRepayments);
             } else {
                 // Handle overflow scenario - perhaps throw an exception or cap at max value
