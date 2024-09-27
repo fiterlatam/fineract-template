@@ -223,8 +223,6 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler.BLOCKING_REASON_NAME;
-
 @Slf4j
 @RequiredArgsConstructor
 @Service
@@ -4046,11 +4044,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
                 .getSingleBlockingReasonSettingByReason("Reclamación avaladora/aseguradora", BlockLevel.CREDIT.toString());
 
-        final Optional<LoanBlockingReason> existingBlockingReason = this.blockingReasonRepository
-                .findExistingBlockingReason(loan.getId(), blockingReasonSetting.getId());
+        final Optional<LoanBlockingReason> existingBlockingReason = this.blockingReasonRepository.findExistingBlockingReason(loan.getId(),
+                blockingReasonSetting.getId());
         loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
         final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
-                    "Reclamación avaladora/aseguradora", DateUtils.getLocalDateOfTenant());
+                "Reclamación avaladora/aseguradora", DateUtils.getLocalDateOfTenant());
         blockingReasonRepository.saveAndFlush(loanBlockingReason);
         this.loanRepository.saveAndFlush(loan);
 
