@@ -89,6 +89,9 @@ public class CodeValue extends AbstractPersistableCustom {
             position = 0;
         }
         if (score != null) {
+            if (score.isEmpty()) {
+                score = "0";
+            }
             isScoreEmpty = score;
         }
 
@@ -126,7 +129,11 @@ public class CodeValue extends AbstractPersistableCustom {
         if (command.isChangeInStringParameterNamed(scoreParamName, this.score)) {
             final String newValue = command.stringValueOfParameterNamed(scoreParamName);
             actualChanges.put(scoreParamName, newValue);
-            this.score = newValue;
+            if (StringUtils.isEmpty(newValue)) {
+                this.score = "0";
+            } else {
+                this.score = newValue;
+            }
         }
 
         final String isActiveParamName = CodevalueJSONinputParams.IS_ACTIVE.getValue();
