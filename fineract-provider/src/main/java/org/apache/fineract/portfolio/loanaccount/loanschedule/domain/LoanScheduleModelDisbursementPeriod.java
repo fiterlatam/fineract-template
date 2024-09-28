@@ -74,6 +74,11 @@ public final class LoanScheduleModelDisbursementPeriod implements LoanScheduleMo
     }
 
     @Override
+    public boolean isTotalGracePeriod() {
+        return false;
+    }
+
+    @Override
     public Integer periodNumber() {
         return null;
     }
