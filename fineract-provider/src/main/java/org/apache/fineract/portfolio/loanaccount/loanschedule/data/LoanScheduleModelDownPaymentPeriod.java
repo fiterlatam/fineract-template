@@ -62,6 +62,11 @@ public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleMod
     }
 
     @Override
+    public boolean isTotalGracePeriod() {
+        return false;
+    }
+
+    @Override
     public Integer periodNumber() {
         return this.periodNumber;
     }

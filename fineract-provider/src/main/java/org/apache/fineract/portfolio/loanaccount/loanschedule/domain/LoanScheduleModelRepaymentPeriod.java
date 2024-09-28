@@ -92,6 +92,11 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     }
 
     @Override
+    public boolean isTotalGracePeriod() {
+        return principalDue.isZero() && interestDue.isZero() && feeChargesDue.isZero() && penaltyChargesDue.isZero();
+    }
+
+    @Override
     public Integer periodNumber() {
         return this.periodNumber;
     }

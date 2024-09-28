@@ -1355,19 +1355,33 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void updateLoanSchedule(final LoanScheduleModel modifiedLoanSchedule) {
         this.repaymentScheduleInstallments.clear();
+        // for some installements , we made them start from number 0 , we want to keep that way
+        int actualPaymentNumber = 1;
+        // int totalPaymentInstallments = countPaymentInstallments(modifiedLoanSchedule);
         for (final LoanScheduleModelPeriod scheduledLoanInstallment : modifiedLoanSchedule.getPeriods()) {
-
+            int periodNumber;
             if (scheduledLoanInstallment.isRepaymentPeriod() || scheduledLoanInstallment.isDownPaymentPeriod()) {
-                final LoanRepaymentScheduleInstallment installment = new LoanRepaymentScheduleInstallment(this,
-                        scheduledLoanInstallment.periodNumber(), scheduledLoanInstallment.periodFromDate(),
-                        scheduledLoanInstallment.periodDueDate(), scheduledLoanInstallment.principalDue(),
-                        scheduledLoanInstallment.interestDue(), scheduledLoanInstallment.feeChargesDue(),
-                        scheduledLoanInstallment.penaltyChargesDue(), scheduledLoanInstallment.isRecalculatedInterestComponent(),
-                        scheduledLoanInstallment.getLoanCompoundingDetails(), scheduledLoanInstallment.rescheduleInterestPortion(),
-                        scheduledLoanInstallment.isDownPaymentPeriod());
+                if (scheduledLoanInstallment.isTotalGracePeriod()) {
+                    periodNumber = 0;
+                } else {
+                    periodNumber = actualPaymentNumber;
+                    actualPaymentNumber++;
+                }
+
+                final LoanRepaymentScheduleInstallment installment = new LoanRepaymentScheduleInstallment(this, periodNumber,
+                        scheduledLoanInstallment.periodFromDate(), scheduledLoanInstallment.periodDueDate(),
+                        scheduledLoanInstallment.principalDue(), scheduledLoanInstallment.interestDue(),
+                        scheduledLoanInstallment.feeChargesDue(), scheduledLoanInstallment.penaltyChargesDue(),
+                        scheduledLoanInstallment.isRecalculatedInterestComponent(), scheduledLoanInstallment.getLoanCompoundingDetails(),
+                        scheduledLoanInstallment.rescheduleInterestPortion(), scheduledLoanInstallment.isDownPaymentPeriod());
                 addLoanRepaymentScheduleInstallment(installment);
             }
         }
+    }
+
+    private int countPaymentInstallments(LoanScheduleModel loanSchedule) {
+        return (int) loanSchedule.getPeriods().stream()
+                .filter(period -> (period.isRepaymentPeriod() || period.isDownPaymentPeriod()) && !period.isTotalGracePeriod()).count();
     }
 
     public void updateLoanDerivedFields() {
