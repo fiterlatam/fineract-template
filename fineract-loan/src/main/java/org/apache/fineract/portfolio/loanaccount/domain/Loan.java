@@ -4077,6 +4077,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return this.loanRepaymentScheduleDetail.getCurrency();
     }
 
+    public void closeAsWrittenOff(final LocalDate writtenOffOnLocalDate, final AppUser currentUser) {
+        this.loanStatus = LoanStatus.CLOSED_WRITTEN_OFF.getValue();
+        this.closedOnDate = writtenOffOnLocalDate;
+        this.writtenOffOnDate = writtenOffOnLocalDate;
+        this.closedBy = currentUser;
+    }
+
     public ChangedTransactionDetail closeAsWrittenOff(final JsonCommand command, final LoanLifecycleStateMachine loanLifecycleStateMachine,
             final Map<String, Object> changes, final List<Long> existingTransactionIds, final List<Long> existingReversedTransactionIds,
             final AppUser currentUser, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
