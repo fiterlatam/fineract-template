@@ -583,7 +583,6 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
                         if (installment.getInstallmentNumber() > rediferirInstallmentNumber) {
                             installmentsToRemove.add(installment);
-                            repaymentScheduleInstallments.remove(installment.getId());
                             this.loanInstalmentChargeRepository.deleteByLoanScheduleId(installment.getId());
                             this.repaymentScheduleInstallmentRepository.deleteById(installment.getId());
                         }
@@ -602,9 +601,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                                     scheduledLoanInstallment.getLoanCompoundingDetails(),
                                     scheduledLoanInstallment.rescheduleInterestPortion(), scheduledLoanInstallment.isDownPaymentPeriod());
                             installment.updateLoan(loan);
-
                             repaymentScheduleInstallments.add(installment);
-
                         }
                     }
                     ExternalId txnExternalId = externalIdFactory.create();
