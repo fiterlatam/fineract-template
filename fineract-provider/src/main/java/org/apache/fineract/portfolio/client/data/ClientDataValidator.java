@@ -303,21 +303,22 @@ public final class ClientDataValidator {
     }
 
     private void validateRequiredIndividualNamePartsExist(final JsonElement element, final DataValidatorBuilder baseDataValidator) {
+        final int maximumNameLength = 60;
         final String firstnameParam = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.firstnameParamName, element);
         baseDataValidator.reset().parameter(ClientApiConstants.firstnameParamName).value(firstnameParam).notBlank()
-                .notExceedingLengthOf(50);
+                .notExceedingLengthOf(maximumNameLength);
 
         final String middlenameParam = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.middlenameParamName, element);
         baseDataValidator.reset().parameter(ClientApiConstants.middlenameParamName).value(middlenameParam).ignoreIfNull()
-                .notExceedingLengthOf(50);
+                .notExceedingLengthOf(maximumNameLength);
 
         final String lastnameParamName = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.lastnameParamName, element);
         baseDataValidator.reset().parameter(ClientApiConstants.lastnameParamName).value(lastnameParamName).notBlank()
-                .notExceedingLengthOf(50);
+                .notExceedingLengthOf(maximumNameLength);
 
         final String secondLastname = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.secondLastnameParamName, element);
         baseDataValidator.reset().parameter(ClientApiConstants.secondLastnameParamName).value(secondLastname).ignoreIfNull()
-                .notExceedingLengthOf(50);
+                .notExceedingLengthOf(maximumNameLength);
     }
 
     private void fullnameCannotBeBlank(final JsonElement element, final DataValidatorBuilder baseDataValidator) {
