@@ -2064,7 +2064,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final Money totalOutstandingAmount = specialWriteOffInstallment.getTotalOutstanding(currency);
             final Money totalPaymentAmount = Money.of(currency, loanRepaymentScheduleInstallmentData.getTotalInstallmentAmount());
             if (totalPaymentAmount.isEqualTo(totalOutstandingAmount)) {
-                loan.updateLoanStatus(LoanStatus.CLOSED_WRITTEN_OFF);
+                final AppUser currentUser = getAppUserIfPresent();
+                loan.closeAsWrittenOff(transactionDate, currentUser);
             }
         }
         loan = writeOffTransaction.getLoan();
