@@ -441,13 +441,13 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             baseDataValidator.reset().parameter(ClientApiConstants.lastnameParamName).value(this.lastname)
                     .mustBeBlankWhenParameterProvided(ClientApiConstants.fullnameParamName, this.fullname);
         } else {
-
+            final int maximumNameLength = 60;
             baseDataValidator.reset().parameter(ClientApiConstants.firstnameParamName).value(this.firstname).notBlank()
-                    .notExceedingLengthOf(50);
+                    .notExceedingLengthOf(maximumNameLength);
             baseDataValidator.reset().parameter(ClientApiConstants.middlenameParamName).value(this.middlename).ignoreIfNull()
-                    .notExceedingLengthOf(50);
+                    .notExceedingLengthOf(maximumNameLength);
             baseDataValidator.reset().parameter(ClientApiConstants.lastnameParamName).value(this.lastname).notBlank()
-                    .notExceedingLengthOf(50);
+                    .notExceedingLengthOf(maximumNameLength);
         }
     }
 
