@@ -468,7 +468,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
             // applies charges for the period
             applyChargesForCurrentPeriod(loanCharges, currency, scheduleParams, scheduledDueDate, currentPeriodParams, mc,
-                    isLastInstallmentPeriod, loanApplicationTerms.getNumberOfRepayments());
+                    isLastInstallmentPeriod, loanApplicationTerms.getActualNumberOfRepayments());
 
             // sum up real totalInstallmentDue from components
             final Money totalInstallmentDue = currentPeriodParams.fetchTotalAmountForPeriod();
