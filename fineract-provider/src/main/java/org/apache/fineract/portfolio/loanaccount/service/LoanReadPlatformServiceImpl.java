@@ -280,7 +280,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
             final LoanScheduleResultSetExtractor fullResultsetExtractor = new LoanScheduleResultSetExtractor(
                     repaymentScheduleRelatedLoanData, disbursementData, isInterestRecalculationEnabled, loanScheduleType);
-            final String sql = "select " + fullResultsetExtractor.schema() + " where ls.loan_id = ? order by ls.loan_id, ls.installment";
+            final String sql = "select " + fullResultsetExtractor.schema()
+                    + " where ls.loan_id = ? order by ls.loan_id, ls.installment, ls.duedate";
 
             return this.jdbcTemplate.query(sql, fullResultsetExtractor, loanId); // NOSONAR
         } catch (final EmptyResultDataAccessException e) {
