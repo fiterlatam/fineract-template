@@ -128,7 +128,18 @@ public class LoanChargeAssembler {
                     BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed("amount", loanChargeElement, locale);
                     // if loan product has grace on charge , apply to the
                     Integer graceOnCharge = loanProduct.getLoanProductRelatedDetail().getGraceOnChargesPayment();
+                    Integer graceOnInterestPayment = this.fromApiJsonHelper
+                            .extractIntegerWithLocaleNamed(LoanApiConstants.graceOnInterestPaymentParameterName, element);
+                    Integer graceOnPrincipalPayment = this.fromApiJsonHelper
+                            .extractIntegerWithLocaleNamed(LoanApiConstants.graceOnPrincipalPaymentParameterName, element);
+
+                    boolean isTotalGrace = (graceOnCharge != null && graceOnInterestPayment != null && graceOnPrincipalPayment != null)
+                            && (graceOnCharge.equals(graceOnInterestPayment) && graceOnInterestPayment.equals(graceOnPrincipalPayment));
+
                     Integer applicableFromInstallment = graceOnCharge != null ? graceOnCharge + 1 : 1;
+                    if (isTotalGrace) {
+                        applicableFromInstallment = 1;
+                    }
                     final Integer chargeTimeType = this.fromApiJsonHelper.extractIntegerNamed("chargeTimeType", loanChargeElement, locale);
                     final Integer chargeCalculationType = this.fromApiJsonHelper.extractIntegerNamed("chargeCalculationType",
                             loanChargeElement, locale);
