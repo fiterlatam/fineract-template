@@ -3520,10 +3520,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             }
 
-//            if (this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)
-//                    && this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.HORIZONTAL)) {
-//                reprocess = true;
-//            }
         }
         if (reprocess) {
             if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
