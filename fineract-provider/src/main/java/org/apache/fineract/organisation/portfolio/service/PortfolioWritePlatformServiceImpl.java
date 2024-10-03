@@ -173,6 +173,8 @@ public class PortfolioWritePlatformServiceImpl implements PortfolioWritePlatform
 
             this.portfolioRepositoryWrapper.saveAndFlush(portfolio);
 
+            this.groupingTypesWritePlatformService.updateCentersByPortfolio(portfolio);
+
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .withEntityId(portfolioId) //
