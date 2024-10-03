@@ -49,6 +49,7 @@ import org.apache.fineract.portfolio.floatingrates.data.FloatingRateData;
 import org.apache.fineract.portfolio.fund.data.FundData;
 import org.apache.fineract.portfolio.interestrates.data.InterestRateData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanInterestRecalculationData;
+import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.impl.AdvancedPaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
 import org.apache.fineract.portfolio.loanproduct.domain.AllocationType;
@@ -576,7 +577,7 @@ public class LoanProductData implements Serializable {
         final Boolean allowPartialPeriodInterestCalcualtion = null;
         final Long fundId = null;
         final String fundName = null;
-        final String transactionProcessingStrategyCode = null;
+        final String transactionProcessingStrategyCode = AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY;
         final String transactionProcessingStrategyName = null;
 
         final Integer graceOnPrincipalPayment = null;
@@ -637,7 +638,7 @@ public class LoanProductData implements Serializable {
         final Collection<CreditAllocationData> creditAllocation = null;
         final EnumOptionData repaymentStartDateType = LoanEnumerations.repaymentStartDateType(RepaymentStartDateType.DISBURSEMENT_DATE);
         final boolean enableInstallmentLevelDelinquency = false;
-        final EnumOptionData loanScheduleType = LoanScheduleType.CUMULATIVE.asEnumOptionData();
+        final EnumOptionData loanScheduleType = LoanScheduleType.PROGRESSIVE.asEnumOptionData();
         final EnumOptionData loanScheduleProcessingType = LoanScheduleProcessingType.HORIZONTAL.asEnumOptionData();
         final EnumOptionData repaymentReschedulingType = null;
 

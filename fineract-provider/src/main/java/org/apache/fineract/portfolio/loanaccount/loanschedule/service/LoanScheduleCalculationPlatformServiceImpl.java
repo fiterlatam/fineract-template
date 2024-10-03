@@ -282,7 +282,8 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
         BigDecimal totalAvalCharged = BigDecimal.ZERO;
         BigDecimal totalHonorariosCharged = BigDecimal.ZERO;
 
-        for (LoanRepaymentScheduleInstallment repaymentScheduleInstallment : loan.getRepaymentScheduleInstallments()) {
+        for (LoanRepaymentScheduleInstallment repaymentScheduleInstallment : loan.getRepaymentScheduleInstallmentsIgnoringTotalGrace()) {
+
             // Calculate individual charge amounts
 
             Collection<LoanCharge> mandatoryInsuranceCharges = loan.getLoanCharges().stream().filter(LoanCharge::isMandatoryInsurance)
@@ -349,9 +350,16 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
             totalHonorariosCharged = totalHonorariosCharged.add(honorariosAmount);
 
             Integer graceOnChargesPayment = loan.getLoanProductRelatedDetail().getGraceOnChargesPayment();
+            boolean hasTotalGracePeriod = loan.getLoanProductRelatedDetail().hasTotalGracePeriod();
             Integer chargeApplicableFromInstallment = graceOnChargesPayment == null ? 1 : graceOnChargesPayment + 1;
+            if (hasTotalGracePeriod) {
+                chargeApplicableFromInstallment = 1;
+            }
 
-            for (LoanSchedulePeriodData periodData : loanScheduleData.getPeriods()) {
+            Collection<LoanSchedulePeriodData> filteredPeriods = loanScheduleData.getPeriods().stream()
+                    .filter(periodData -> periodData.getPeriod() != null && periodData.getPeriod() > 0).toList();
+
+            for (LoanSchedulePeriodData periodData : filteredPeriods) {
                 boolean isChargeApplicable = (periodData.getPeriod() != null)
                         && (periodData.getPeriod() >= chargeApplicableFromInstallment);
                 if (periodData.getPeriod() != null && periodData.getPeriod().equals(repaymentScheduleInstallment.getInstallmentNumber())

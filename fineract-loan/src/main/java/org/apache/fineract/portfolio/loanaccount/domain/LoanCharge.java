@@ -169,6 +169,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 loanCharge, externalId, getPercentageAmountFromTable, numberOfPenaltyDays);
 
         this.setApplicableFromInstallment(applicableFromInstallment);
+
     }
 
     public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
@@ -211,7 +212,6 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         if (amount != null) {
             chargeAmount = amount;
         }
-
         this.chargePaymentMode = chargeDefinition.getChargePaymentMode();
         if (chargePaymentMode != null) {
             this.chargePaymentMode = chargePaymentMode.getValue();
@@ -224,7 +224,6 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     private void populateDerivedFields(final BigDecimal amountPercentageAppliedTo, final BigDecimal chargeAmount,
             Integer numberOfRepayments, BigDecimal loanCharge, Long numberOfPenaltyDays) {
-
         ChargeCalculationType chargeCalculationType = ChargeCalculationType.fromInt(this.chargeCalculation);
 
         if (ChargeCalculationType.INVALID.equals(chargeCalculationType)) {

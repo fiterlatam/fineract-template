@@ -770,7 +770,7 @@ public final class LoanProductDataValidator {
                     .value(enableInstallmentLevelDelinquency).ignoreIfNull().validateForBooleanValue();
         }
 
-        String loanScheduleType = LoanScheduleType.CUMULATIVE.name();
+        String loanScheduleType = LoanScheduleType.PROGRESSIVE.name();
         if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.LOAN_SCHEDULE_TYPE, element)) {
             loanScheduleType = this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.LOAN_SCHEDULE_TYPE, element);
             baseDataValidator.reset().parameter(LoanProductConstants.LOAN_SCHEDULE_TYPE).value(loanScheduleType)

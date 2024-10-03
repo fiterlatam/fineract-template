@@ -1055,7 +1055,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             BigDecimal chargeAmount, Long parentChargeId) {
         Money amount = Money.zero(getCurrency());
         this.outstandingBalance = this.loanRepaymentScheduleDetail.getPrincipal();
-        List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
+        List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallmentsIgnoringTotalGrace();
         for (final LoanRepaymentScheduleInstallment installment : installments) {
             amount = amount.plus(calculateInstallmentChargeAmount(calculationType, percentage, installment, chargeAmount, parentChargeId));
         }
@@ -3520,10 +3520,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             }
 
-            if (this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)
-                    && this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.HORIZONTAL)) {
-                reprocess = true;
-            }
         }
         if (reprocess) {
             if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
@@ -4075,6 +4071,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     private MonetaryCurrency loanCurrency() {
         return this.loanRepaymentScheduleDetail.getCurrency();
+    }
+
+    public void closeAsWrittenOff(final LocalDate writtenOffOnLocalDate, final AppUser currentUser) {
+        this.loanStatus = LoanStatus.CLOSED_WRITTEN_OFF.getValue();
+        this.closedOnDate = writtenOffOnLocalDate;
+        this.writtenOffOnDate = writtenOffOnLocalDate;
+        this.closedBy = currentUser;
     }
 
     public ChangedTransactionDetail closeAsWrittenOff(final JsonCommand command, final LoanLifecycleStateMachine loanLifecycleStateMachine,
@@ -5480,7 +5483,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public List<LoanInstallmentCharge> generateInstallmentLoanCharges(final LoanCharge loanCharge) {
         final List<LoanInstallmentCharge> loanChargePerInstallments = new ArrayList<>();
         if (loanCharge.isInstalmentFee()) {
-            List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments().stream()
+            List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallmentsIgnoringTotalGrace().stream()
                     .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
             this.outstandingBalance = this.loanRepaymentScheduleDetail.getPrincipal();
 
@@ -6272,11 +6275,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             interestChargedFromDate = getDisbursementDate();
         }
 
-        return LoanApplicationTerms.assembleFrom(scheduleGeneratorDTO.getApplicationCurrency(), loanTermFrequency,
-                loanTermPeriodFrequencyType, nthDayType, dayOfWeekType, getDisbursementDate(), getExpectedFirstRepaymentOnDate(),
-                scheduleGeneratorDTO.getCalculatedRepaymentsStartingFromDate(), getInArrearsTolerance(), this.loanRepaymentScheduleDetail,
-                this.loanProduct.isMultiDisburseLoan(), this.fixedEmiAmount, disbursementData, this.maxOutstandingLoanBalance,
-                interestChargedFromDate, this.loanProduct.getPrincipalThresholdForLastInstallment(),
+        LoanApplicationTerms loanApplicationTerms = LoanApplicationTerms.assembleFrom(scheduleGeneratorDTO.getApplicationCurrency(),
+                loanTermFrequency, loanTermPeriodFrequencyType, nthDayType, dayOfWeekType, getDisbursementDate(),
+                getExpectedFirstRepaymentOnDate(), scheduleGeneratorDTO.getCalculatedRepaymentsStartingFromDate(), getInArrearsTolerance(),
+                this.loanRepaymentScheduleDetail, this.loanProduct.isMultiDisburseLoan(), this.fixedEmiAmount, disbursementData,
+                this.maxOutstandingLoanBalance, interestChargedFromDate, this.loanProduct.getPrincipalThresholdForLastInstallment(),
                 this.loanProduct.getInstallmentAmountInMultiplesOf(), recalculationFrequencyType, restCalendarInstance, compoundingMethod,
                 compoundingCalendarInstance, compoundingFrequencyType, this.loanProduct.preCloseInterestCalculationStrategy(),
                 rescheduleStrategyMethod, calendar, getApprovedPrincipal(), annualNominalInterestRate, loanTermVariations,
@@ -6284,6 +6287,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 holidayDetailDTO, allowCompoundingOnEod, scheduleGeneratorDTO.isFirstRepaymentDateAllowedOnHoliday(),
                 scheduleGeneratorDTO.isInterestToBeRecoveredFirstWhenGreaterThanEMI(), this.fixedPrincipalPercentagePerInstallment,
                 scheduleGeneratorDTO.isPrincipalCompoundingDisabledForOverdueLoans(), repaymentStartDateType, getSubmittedOnDate());
+        if (this.getLoanProductRelatedDetail().hasTotalGracePeriod()) {
+            loanApplicationTerms.setNumberOfInstallmentsToIgnore(this.getLoanProductRelatedDetail().getGraceOnPrincipalPayment());
+        }
+        return loanApplicationTerms;
     }
 
     public BigDecimal constructLoanTermVariations(FloatingRateDTO floatingRateDTO, BigDecimal annualNominalInterestRate,
@@ -6375,6 +6382,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
      **/
     public List<LoanRepaymentScheduleInstallment> getRepaymentScheduleInstallments() {
         return this.repaymentScheduleInstallments;
+    }
+
+    public List<LoanRepaymentScheduleInstallment> getRepaymentScheduleInstallmentsIgnoringTotalGrace() {
+        return this.repaymentScheduleInstallments.stream()
+                .filter(installment -> installment.getInstallmentNumber() != null && installment.getInstallmentNumber() > 0).toList();
     }
 
     public Integer getLoanRepaymentScheduleInstallmentsSize() {
@@ -7013,7 +7025,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public int fetchNumberOfInstallmensAfterExceptions() {
         if (!this.repaymentScheduleInstallments.isEmpty()) {
-            List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
+            List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallmentsIgnoringTotalGrace();
             int numberOfInstallments = 0;
             for (final LoanRepaymentScheduleInstallment installment : installments) {
                 if (!installment.isRecalculatedInterestComponent()) {
