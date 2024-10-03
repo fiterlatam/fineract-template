@@ -88,7 +88,7 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
             final LoanScheduleArchiveResultSetExtractor fullResultsetExtractor = new LoanScheduleArchiveResultSetExtractor(
                     repaymentScheduleRelatedLoanData, disbursementData, loanScheduleType);
             final String sql = "select " + fullResultsetExtractor.schema()
-                    + " where ls.loan_id = ? and ls.version = ? order by ls.loan_id, ls.installment";
+                    + " where ls.loan_id = ? and ls.version = ? order by ls.loan_id, ls.installment,ls.duedate";
 
             return this.jdbcTemplate.query(sql, fullResultsetExtractor, loanId, versionNumber); // NOSONAR
         } catch (final EmptyResultDataAccessException e) {

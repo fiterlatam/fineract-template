@@ -2064,7 +2064,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final Money totalOutstandingAmount = specialWriteOffInstallment.getTotalOutstanding(currency);
             final Money totalPaymentAmount = Money.of(currency, loanRepaymentScheduleInstallmentData.getTotalInstallmentAmount());
             if (totalPaymentAmount.isEqualTo(totalOutstandingAmount)) {
-                loan.updateLoanStatus(LoanStatus.CLOSED_WRITTEN_OFF);
+                final AppUser currentUser = getAppUserIfPresent();
+                loan.closeAsWrittenOff(transactionDate, currentUser);
             }
         }
         loan = writeOffTransaction.getLoan();
@@ -2823,20 +2824,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     .retrieveAdvanceQuotaConfigurationData();
             final Money advanceQuotaPercentage = Money.of(currency, advanceQuotaConfigurationData.getPercentageValue());
             final boolean isAdvanceQuotaEnabled = advanceQuotaConfigurationData.getEnabled();
-            if (isAdvanceQuotaEnabled) {
+            if (isAdvanceQuotaEnabled && isAdvanceLoanProduct) {
                 final Money maximumAdvanceQuota = cupo.multipliedBy(advanceQuotaPercentage.getAmount()).dividedBy(BigDecimal.valueOf(100L),
                         MoneyHelper.getRoundingMode());
 
                 if (approvedPrincipal.isGreaterThan(maximumAdvanceQuota)) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.advance.cupo.limit.exceeded",
                             String.format("Límite de cupo adelantado excedido. Límite Total: %s y tu enviaste: %s", maximumAdvanceQuota,
-                                    approvedPrincipal));
+                                    approvedPrincipal),
+                            maximumAdvanceQuota.toString());
                 }
 
                 if (advanceTotalOutstandingPrincipalAmount.isGreaterThan(maximumAdvanceQuota)) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.advance.cupo.limit.exceeded", String.format(
                             "Límite de cupo adelantado excedido. Límite Total: %s y Total del monto principal pendiente de adelanto: %s",
-                            maximumAdvanceQuota, advanceTotalOutstandingPrincipalAmount));
+                            maximumAdvanceQuota, advanceTotalOutstandingPrincipalAmount), maximumAdvanceQuota.toString());
 
                 }
 
@@ -2845,7 +2847,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     final Money availablePurchaseQuota = cupo.minus(purchaseTotalOutstandingPrincipalAmount);
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.purchase.cupo.limit.exceeded", String.format(
                             "Límite de cupo de compra excedido. Límite disponible: %s y Total del monto principal pendiente de compra: %s",
-                            availablePurchaseQuota, purchaseTotalOutstandingPrincipalAmount));
+                            availablePurchaseQuota, purchaseTotalOutstandingPrincipalAmount), availablePurchaseQuota.toString());
                 }
 
             }
@@ -2854,7 +2856,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final Money availableQuota = cupo.minus(totalOutstandingPrincipalAmount);
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.cupo.limit.exceeded",
                         String.format("Límite de cupo total excedido. Límite disponible: %s y Total del monto principal pendiente: %s",
-                                availableQuota, totalOutstandingPrincipalAmount));
+                                availableQuota, totalOutstandingPrincipalAmount),
+                        availableQuota.toString());
             }
 
         }

@@ -783,4 +783,13 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
     public void setInterestRatePoints(Long interestRatePoints) {
         this.interestRatePoints = interestRatePoints;
     }
+
+    public boolean hasTotalGracePeriod() {
+        if (this.graceOnPrincipalPayment == null || this.graceOnInterestPayment == null || this.graceOnChargesPayment == null) {
+            return false;
+        }
+        return this.graceOnPrincipalPayment.equals(this.graceOnInterestPayment)
+                && this.graceOnPrincipalPayment.equals(this.graceOnChargesPayment);
+    }
+
 }

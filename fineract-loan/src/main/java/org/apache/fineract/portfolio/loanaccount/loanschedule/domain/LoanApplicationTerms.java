@@ -1481,6 +1481,13 @@ public final class LoanApplicationTerms {
         return this.numberOfRepayments;
     }
 
+    public Integer getActualNumberOfRepayments() {
+        if (this.numberOfInstallmentsToIgnore != null && this.numberOfInstallmentsToIgnore > 0) {
+            return this.numberOfRepayments - this.numberOfInstallmentsToIgnore;
+        }
+        return this.numberOfRepayments;
+    }
+
     public LocalDate getExpectedDisbursementDate() {
         return this.expectedDisbursementDate;
     }
