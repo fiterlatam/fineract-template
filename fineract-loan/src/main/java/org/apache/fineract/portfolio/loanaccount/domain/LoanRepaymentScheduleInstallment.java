@@ -571,10 +571,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             this.credits = null;
         }
 
+        this.interestRecalculatedOnDate = null;
         if (this.originalInterestChargedAmount != null && this.originalInterestChargedAmount.compareTo(BigDecimal.ZERO) > 0) {
             this.interestCharged = this.originalInterestChargedAmount;
             this.originalInterestChargedAmount = BigDecimal.ZERO;
-            this.interestRecalculatedOnDate = null;
         }
     }
 
@@ -832,7 +832,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money interestPortionOfTransaction = Money.zero(currency);
-        if (transactionAmountRemaining.isZero()) {
+        if (transactionAmountRemaining.isZero() || getInterestOutstanding(currency).isZero()) {
             return interestPortionOfTransaction;
         }
 
@@ -867,8 +867,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                 //// Update installment interest charged if principal is fully paid during the accrual period
                 // Keep the original interest charged in case the transaction is rollbacked and interest charged needs
                 //// to be moved to original amount.
-                if (this.getPrincipalOutstanding(currency).isZero() && this.interestRecalculatedOnDate == null) {
-                    this.interestRecalculatedOnDate = transactionDate;
+                this.interestRecalculatedOnDate = transactionDate;
+                if (this.getPrincipalOutstanding(currency).isZero()) {
                     this.originalInterestChargedAmount = this.interestCharged;
                     this.interestCharged = getInterestPaid(currency).plus(getInterestWaived(currency)).plus(getInterestWrittenOff(currency))
                             .plus(interestDue).getAmount();
@@ -938,7 +938,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         if (this.getLoan() != null && this.getLoan().getLoanProductRelatedDetail().getLoanScheduleProcessingType()
                 .equals(LoanScheduleProcessingType.HORIZONTAL)) {
             if (isOnOrBetween(transactionDate)) {
-                if (this.getPrincipalOutstanding(currency).isZero() && this.interestRecalculatedOnDate != null) {
+                if (this.getPrincipalOutstanding(currency).isZero()
+                        && (this.originalInterestChargedAmount == null || this.originalInterestChargedAmount.equals(BigDecimal.ZERO))
+                        && this.interestRecalculatedOnDate != null && this.interestRecalculatedOnDate.equals(transactionDate)) {
                     this.interestRecalculatedOnDate = transactionDate;
                     this.originalInterestChargedAmount = this.interestCharged;
                     this.interestCharged = getInterestPaid(currency).plus(getInterestWaived(currency)).plus(getInterestWrittenOff(currency))
