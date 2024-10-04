@@ -40,15 +40,13 @@
                                macs.loan_id                                AS "ID del Préstamo",
                                macs.client_id                              AS "ID del Cliente",
                                macs.channel_id                             AS "ID del Canal"
-                    FROM
-                        m_ally_collection_settlement macs
-                    LEFT JOIN
-                        custom.c_client_ally_point_of_sales ccapos ON macs.point_of_sales_id = ccapos.id
-                    WHERE
-                        (macs.channel_id = '${channel_id}' OR '${channel_id}' = '-1')
-                    AND macs.collection_date BETWEEN  '${startDate}' AND '${endDate}'
-                    ORDER BY
-                    macs.collection_date DESC
+                        FROM
+                            m_ally_collection_settlement macs
+                        LEFT JOIN
+                            custom.c_client_ally_point_of_sales ccapos ON macs.point_of_sales_id = ccapos.id
+                        WHERE macs.collection_date BETWEEN  '${startDate}' AND '${endDate}'
+                        ORDER BY
+                        macs.collection_date DESC
                 ]]>
             </column>
             <where> report_name='Informe de Liquidacion de Cobros de Aliados' </where>
