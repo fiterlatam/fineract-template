@@ -1034,6 +1034,18 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             loanTransaction.updateLoanTransactionToRepaymentScheduleMappings(transactionMappings);
         } else {
             transactionAmountUnprocessed = processSpecialWriteOff(loanTransaction, currency, installments);
+            final Set<LoanCharge> loanFees = extractFeeCharges(charges);
+            final Set<LoanCharge> loanPenalties = extractPenaltyCharges(charges);
+            if (loanTransaction.isNotWaiver() && !loanTransaction.isAccrual()) {
+                Money feeCharges = loanTransaction.getFeeChargesPortion(currency);
+                Money penaltyCharges = loanTransaction.getPenaltyChargesPortion(currency);
+                if (feeCharges.isGreaterThanZero()) {
+                    updateChargesPaidAmountBy(loanTransaction, feeCharges, loanFees, null);
+                }
+                if (penaltyCharges.isGreaterThanZero()) {
+                    updateChargesPaidAmountBy(loanTransaction, penaltyCharges, loanPenalties, null);
+                }
+            }
         }
 
         handleOverpayment(transactionAmountUnprocessed, loanTransaction, overpaymentHolder);
