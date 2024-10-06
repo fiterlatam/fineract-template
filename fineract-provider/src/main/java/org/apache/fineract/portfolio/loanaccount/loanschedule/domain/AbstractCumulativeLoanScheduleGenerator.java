@@ -2311,8 +2311,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     numberOfRepayments -= chargeGrace;
                 } else {
                     if (chargeGrace == numberOfRepayments || chargeGrace > numberOfRepayments) {
-                        // Handle the edge case where the grace period is greater than or equal to the number of repayments
-                        // Set numberOfRepayments to 1 to ensure at least one repayment remains (adjust as needed based on
+                        // Handle the edge case where the grace period is greater than or equal to the number of
+                        // repayments
+                        // Set numberOfRepayments to 1 to ensure at least one repayment remains (adjust as needed based
+                        // on
                         // business logic)
                         numberOfRepayments = 1;
                     }
@@ -2328,7 +2330,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         if (!loanCharge.installmentCharges().isEmpty()) {
                             if (isLastInstallmentPeriod) {
                                 calculatedAmount = Money.of(monetaryCurrency,
-                                        loanCharge.getLastInstallmentRoundOffAmountForCustomFlatDistributedCharge(installmentNumber, monetaryCurrency));
+                                        loanCharge.getLastInstallmentRoundOffAmountForCustomFlatDistributedCharge(installmentNumber,
+                                                monetaryCurrency));
                                 cumulative = cumulative.plus(calculatedAmount);
                             } else {
                                 // When loan is rescheduled and installments are extended then for voluntary insurance
@@ -2351,7 +2354,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         } else {
                             if (isLastInstallmentPeriod) {
                                 calculatedAmount = Money.of(monetaryCurrency,
-                                        loanCharge.getLastInstallmentRoundOffAmountForCustomFlatDistributedCharge(installmentNumber, monetaryCurrency));
+                                        loanCharge.getLastInstallmentRoundOffAmountForCustomFlatDistributedCharge(installmentNumber,
+                                                monetaryCurrency));
                                 cumulative = cumulative.plus(calculatedAmount);
                             } else {
                                 cumulative = calculateInstallmentCharge(principalInterestForThisPeriod, cumulative, loanCharge, mc,

@@ -87,7 +87,8 @@ public class LoanRepaymentScheduleProcessingWrapper {
 
     private Money cumulativeFeeChargesDueWithin(final LocalDate periodStart, final LocalDate periodEnd, final Set<LoanCharge> loanCharges,
             final MonetaryCurrency monetaryCurrency, LoanRepaymentScheduleInstallment period, final Money totalPrincipal,
-            final Money totalInterest, boolean isInstallmentChargeApplicable, boolean isFirstPeriod, Money outstandingBalance, Integer totalInstallments) {
+            final Money totalInterest, boolean isInstallmentChargeApplicable, boolean isFirstPeriod, Money outstandingBalance,
+            Integer totalInstallments) {
 
         Money cumulative = Money.zero(monetaryCurrency);
         for (final LoanCharge loanCharge : loanCharges) {
@@ -95,7 +96,8 @@ public class LoanRepaymentScheduleProcessingWrapper {
                 boolean isDue = loanChargeIsDue(periodStart, periodEnd, isFirstPeriod, loanCharge);
                 if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
                     if (loanCharge.isCustomFeeChargeApplicableOnInstallment(period.getInstallmentNumber())) {
-                        cumulative = cumulative.plus(loanCharge.calculateCustomFeeChargeToInstallment(period.getInstallmentNumber(), totalPrincipal, totalInstallments, outstandingBalance));
+                        cumulative = cumulative.plus(loanCharge.calculateCustomFeeChargeToInstallment(period.getInstallmentNumber(),
+                                totalPrincipal, totalInstallments, outstandingBalance));
                     } else {
                         cumulative = cumulative.plus(getInstallmentFee(monetaryCurrency, period, loanCharge));
                     }

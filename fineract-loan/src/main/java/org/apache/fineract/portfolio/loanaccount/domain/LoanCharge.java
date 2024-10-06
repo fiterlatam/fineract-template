@@ -289,7 +289,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 this.amountOutstanding = calculateOutstanding();
                 this.amountWaived = null;
                 this.amountWrittenOff = null;
-                if (isCustomPercentageBasedDistributedCharge()) { //Mandatory Insurance and aval based on disbursement amount
+                if (isCustomPercentageBasedDistributedCharge()) { // Mandatory Insurance and aval based on disbursement
+                                                                  // amount
                     if (numberOfRepayments == null) {
                         numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
                     }
@@ -441,12 +442,12 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     }
                     this.amount = minimumAndMaximumCap(loanCharge);
                     if (isInstalmentFee() && isCustomPercentageBasedDistributedCharge()) {
-                        /* if (numberOfRepayments == null) {
-                            numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
-                        }
-                        if (this.loan != null) {
-                            numberOfRepayments = this.loan.fetchUnpaidNumberOfInstallments(this.getApplicableFromInstallment());
-                        } */
+                        /*
+                         * if (numberOfRepayments == null) { numberOfRepayments =
+                         * this.loan.fetchNumberOfInstallmensAfterExceptions(); } if (this.loan != null) {
+                         * numberOfRepayments =
+                         * this.loan.fetchUnpaidNumberOfInstallments(this.getApplicableFromInstallment()); }
+                         */
                         updateAmountOrPercentageForDistributedCharge(numberOfRepayments, this.amount);
                     }
                 break;
@@ -458,7 +459,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 break;
             }
             if (!isCustomPercentageBasedDistributedCharge() && !isCustomFlatDistributedCharge()) {
-                // isCustomPercentageBasedDistributedCharge and isCustomFlatDistributedCharge amount is already calculated above
+                // isCustomPercentageBasedDistributedCharge and isCustomFlatDistributedCharge amount is already
+                // calculated above
                 this.amountOrPercentage = amount;
             }
             this.amountOutstanding = calculateOutstanding();
@@ -1319,11 +1321,12 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         } else if (this.isCustomPercentageOfOutstandingPrincipalCharge()) {
             BigDecimal installmentCount;
             if (this.installmentCharges().isEmpty() || this.loan == null) {
-			    installmentCount = BigDecimal.valueOf(numberOfInstallments);
-		    } else {
+                installmentCount = BigDecimal.valueOf(numberOfInstallments);
+            } else {
                 Integer numberOfRepayments = this.loan.getLoanProductRelatedDetail().getNumberOfRepayments();
                 List<LoanRepaymentScheduleInstallment> graceInstallments = this.loan.getRepaymentScheduleInstallments().stream()
-                        .filter(installment -> installment.getInstallmentNumber() != null && installment.getInstallmentNumber() == 0).toList();
+                        .filter(installment -> installment.getInstallmentNumber() != null && installment.getInstallmentNumber() == 0)
+                        .toList();
                 if (!graceInstallments.isEmpty()) {
                     numberOfRepayments = numberOfRepayments - graceInstallments.size();
                 }
@@ -1386,7 +1389,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         return getChargeCalculation().isCustomPercentageOfOutstandingPrincipalCharge();
     }
 
-    public BigDecimal getLastInstallmentRoundOffAmountForCustomFlatDistributedCharge(Integer lastInstallmentNumber, MonetaryCurrency currency) {
+    public BigDecimal getLastInstallmentRoundOffAmountForCustomFlatDistributedCharge(Integer lastInstallmentNumber,
+            MonetaryCurrency currency) {
         Integer numberOfRepayments = 1;
         if (lastInstallmentNumber > 1) {
             if (this.applicableFromInstallment == null) {

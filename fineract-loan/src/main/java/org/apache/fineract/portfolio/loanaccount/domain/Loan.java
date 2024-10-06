@@ -1054,7 +1054,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public BigDecimal calculatePerInstallmentChargeAmount(final ChargeCalculationType calculationType, final BigDecimal percentage,
             BigDecimal chargeAmount, Long parentChargeId) {
         Money amount = Money.zero(getCurrency());
-        if (calculationType.isCustomPercentageBasedDistributedCharge()) { // Disbursement based mandatory insurance or aval
+        if (calculationType.isCustomPercentageBasedDistributedCharge()) { // Disbursement based mandatory insurance or
+                                                                          // aval
             Money percentOf = this.getPrincipal();
             Integer numberOfRepayments = this.getLoanProductRelatedDetail().getNumberOfRepayments();
             List<LoanRepaymentScheduleInstallment> graceInstallments = this.getRepaymentScheduleInstallments().stream()
@@ -1123,7 +1124,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             default:
             break;
         }
-        if (calculationType.isCustomPercentageBasedDistributedCharge()) { // Mandatory Insurance and aval based on Disbursement Amount
+        if (calculationType.isCustomPercentageBasedDistributedCharge()) { // Mandatory Insurance and aval based on
+                                                                          // Disbursement Amount
             percentOf = this.getPrincipal();
             Integer numberOfRepayments = this.getLoanProductRelatedDetail().getNumberOfRepayments();
             List<LoanRepaymentScheduleInstallment> graceInstallments = this.getRepaymentScheduleInstallments().stream()
@@ -5556,7 +5558,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     amount = calculateInstallmentChargeAmount(loanCharge.getChargeCalculation(), loanCharge.getPercentage(), installment,
                             loanCharge.amountOrPercentage(), loanCharge.getCharge().getParentChargeId()).getAmount();
                 }
-                if (((loanCharge.isCustomFlatDistributedCharge() || loanCharge.isCustomPercentageBasedDistributedCharge() || loanCharge.isCustomPercentageOfOutstandingPrincipalCharge())
+                if (((loanCharge.isCustomFlatDistributedCharge() || loanCharge.isCustomPercentageBasedDistributedCharge()
+                        || loanCharge.isCustomPercentageOfOutstandingPrincipalCharge())
                         && loanCharge.getApplicableFromInstallment() > installment.getInstallmentNumber())) {
                     amount = BigDecimal.ZERO;
                 }
