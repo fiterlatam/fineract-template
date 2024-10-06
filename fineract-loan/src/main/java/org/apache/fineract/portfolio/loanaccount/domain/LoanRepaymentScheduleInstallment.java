@@ -910,7 +910,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money principalPortionOfTransaction = Money.zero(currency);
-        if (transactionAmountRemaining.isZero()) {
+        if (transactionAmountRemaining.isZero() || getPrincipalOutstanding(currency).isZero()) {
             return principalPortionOfTransaction;
         }
         final Money principalDue = getPrincipalOutstanding(currency);
