@@ -161,6 +161,14 @@ public class CustomBulkImportWorkbookServiceImpl implements BulkImportWorkbookSe
         return this.jdbcTemplate.query(sql, rm, new Object[] { type.getValue() }); // NOSONAR
     }
 
+    @Override
+    public Collection<ImportData> getImports(final GlobalEntityType type, final String fileName) {
+        this.securityContext.authenticatedUser();
+        final ImportMapper rm = new ImportMapper();
+        final String sql = "select " + rm.schema() + " AND d.name = ? order by i.id desc";
+        return this.jdbcTemplate.query(sql, rm, type.getValue(), fileName);
+    }
+
     private static final class ImportMapper implements RowMapper<ImportData> {
 
         public String schema() {
