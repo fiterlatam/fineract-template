@@ -768,6 +768,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
      * @return
      */
     public LoanTransaction handleChargeAppliedTransaction(final LoanCharge loanCharge, final LocalDate suppliedTransactionDate) {
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+        StackTraceElement caller = stackTraceElements[2];
+        String callerClassName = caller.getClassName();
+        String callerMethodName = caller.getMethodName();
+        int callerLineNumber = caller.getLineNumber();
+        System.out.println(" This is called from : " + callerClassName + "." + callerMethodName + " at line " + callerLineNumber);
+
         final Money chargeAmount = loanCharge.getAmount(getCurrency());
         Money feeCharges = chargeAmount;
         Money penaltyCharges = Money.zero(loanCurrency());
