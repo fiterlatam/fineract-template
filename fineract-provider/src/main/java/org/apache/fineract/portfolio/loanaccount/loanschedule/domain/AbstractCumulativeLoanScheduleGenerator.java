@@ -3280,17 +3280,22 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments, final LocalDate rescheduleFrom,
             MonetaryCurrency currency) {
         List<LoanRepaymentScheduleInstallment> newRepaymentScheduleInstallments = new ArrayList<>();
-        int lastInterestAvailablePeriod = 0;
-        int processedPeriod = 0;
         for (LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
             if (DateUtils.isBefore(installment.getFromDate(), rescheduleFrom)) {
                 newRepaymentScheduleInstallments.add(installment);
             } else {
+                // Check if there is any installment having advance payment then add the installment to calculate outstanding principal
+                // for interest and insurance calculation. Ideally there will be only one installment having advance payment but there is an edge case
+                // where last transaction is made on installment start date and makes an advance payment towards the next installment.
+                // In this case there will be 2 installments after the rescheduleFrom Date. In this case first installment will also have some
+                // principal/interest or charges paid and will be retained and schedule will be recalculated from the next installment.
+                // There can never be more than 2 installments.
+                // TODO: This is not a clever implementation and installments should be calculated here by processing the transactions but this is the best implementation
+                // provided the time I was given. It should be improved
                 if (installment.getAdvancePrincipalAmount() != null
                         && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
                     newRepaymentScheduleInstallments.add(installment);
                 }
-                break;
             }
         }
         return newRepaymentScheduleInstallments;

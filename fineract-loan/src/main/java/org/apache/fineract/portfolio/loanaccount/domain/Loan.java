@@ -3468,6 +3468,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             throw new InvalidLoanStateTransitionException("transaction", "cannot.be.a.future.date", errorMessage, loanTransactionDate);
         }
 
+        if (!isTransactionBeforeLastRepaymentTransaction(loanTransaction, getLoanTransactions())) {
+            final String errorMessage = "The transaction date cannot be before last valid transaction: "
+                    + getDisbursementDate().toString();
+            throw new InvalidLoanStateTransitionException("transaction", "cannot.be.before.last.valid.transaction", errorMessage,
+                    loanTransactionDate, getDisbursementDate());
+        }
+
         if (loanTransaction.isInterestWaiver()) {
             Money totalInterestOutstandingOnLoan = getTotalInterestOutstandingOnLoan();
             if (adjustedTransaction != null) {
@@ -3809,12 +3816,27 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final LocalDate currentTransactionDate = loanTransaction.getTransactionDate();
         for (final LoanTransaction previousTransaction : loanTransactions) {
             if (!previousTransaction.isDisbursement() && previousTransaction.isNotReversed() && !previousTransaction.isAccrual()
-                    && !DateUtils.isAfter(currentTransactionDate, previousTransaction.getTransactionDate())) {
+                    && !DateUtils.isOnOrAfter(currentTransactionDate, previousTransaction.getTransactionDate())) {
                 isChronologicallyLatestRepaymentOrWaiver = false;
                 break;
             }
         }
         return isChronologicallyLatestRepaymentOrWaiver;
+    }
+
+    private boolean isTransactionBeforeLastRepaymentTransaction(final LoanTransaction loanTransaction,
+                                                                                final List<LoanTransaction> loanTransactions) {
+        boolean isTransactionNotBeforeLastRepaymentTransaction = true;
+
+        final LocalDate currentTransactionDate = loanTransaction.getTransactionDate();
+        for (final LoanTransaction previousTransaction : loanTransactions) {
+            if (!previousTransaction.isDisbursement() && previousTransaction.isNotReversed() && !previousTransaction.isAccrual()
+                    && !DateUtils.isOnOrAfter(currentTransactionDate, previousTransaction.getTransactionDate())) {
+                isTransactionNotBeforeLastRepaymentTransaction = false;
+                break;
+            }
+        }
+        return isTransactionNotBeforeLastRepaymentTransaction;
     }
 
     private boolean isAfterLatRepayment(final LoanTransaction loanTransaction, final List<LoanTransaction> loanTransactions) {
