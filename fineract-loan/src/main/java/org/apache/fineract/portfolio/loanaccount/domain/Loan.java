@@ -1054,6 +1054,21 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public BigDecimal calculatePerInstallmentChargeAmount(final ChargeCalculationType calculationType, final BigDecimal percentage,
             BigDecimal chargeAmount, Long parentChargeId) {
         Money amount = Money.zero(getCurrency());
+        if (calculationType.isCustomPercentageBasedDistributedCharge()) { // Disbursement based mandatory insurance or
+                                                                          // aval
+            Money percentOf = this.getPrincipal();
+            Integer numberOfRepayments = this.getLoanProductRelatedDetail().getNumberOfRepayments();
+            List<LoanRepaymentScheduleInstallment> graceInstallments = this.getRepaymentScheduleInstallments().stream()
+                    .filter(inst -> inst.getInstallmentNumber() != null && inst.getInstallmentNumber() == 0).toList();
+            if (!graceInstallments.isEmpty()) {
+                numberOfRepayments = numberOfRepayments - graceInstallments.size();
+            }
+            BigDecimal numberOfInstallments = BigDecimal.valueOf(numberOfRepayments);
+            BigDecimal computedAmount = LoanCharge.percentageOf(percentOf.getAmount(), percentage);
+            BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 0, RoundingMode.HALF_UP);
+            amount = amount.plus(finalAmount);
+            return amount.getAmount();
+        }
         this.outstandingBalance = this.loanRepaymentScheduleDetail.getPrincipal();
         List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallmentsIgnoringTotalGrace();
         for (final LoanRepaymentScheduleInstallment installment : installments) {
@@ -1104,21 +1119,38 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             case PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT:
             case OPRIN_SEGO:
                 // Get percentage from the parent Charge and calculate on outstanding balance
+                this.outstandingBalance = this.outstandingBalance.minus(installment.getAdvancePrincipalAmount());
                 percentOf = outstandingBalance;
             default:
             break;
         }
-        if (calculationType.isCustomPercentageBasedDistributedCharge()) {
-            amount = amount.plus(chargeAmount);
+        if (calculationType.isCustomPercentageBasedDistributedCharge()) { // Mandatory Insurance and aval based on
+                                                                          // Disbursement Amount
+            percentOf = this.getPrincipal();
+            Integer numberOfRepayments = this.getLoanProductRelatedDetail().getNumberOfRepayments();
+            List<LoanRepaymentScheduleInstallment> graceInstallments = this.getRepaymentScheduleInstallments().stream()
+                    .filter(inst -> inst.getInstallmentNumber() != null && inst.getInstallmentNumber() == 0).toList();
+            if (!graceInstallments.isEmpty()) {
+                numberOfRepayments = numberOfRepayments - graceInstallments.size();
+            }
+            BigDecimal numberOfInstallments = BigDecimal.valueOf(numberOfRepayments);
+            BigDecimal computedAmount = LoanCharge.percentageOf(percentOf.getAmount(), percentage);
+            BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 0, RoundingMode.HALF_UP);
+            amount = amount.plus(finalAmount);
         } else if (calculationType.isPercentageOfAnotherCharge() && calculationType.equals(ChargeCalculationType.ACHG)) { // Term/VAT
                                                                                                                           // on
                                                                                                                           // insurance
             amount = amount.plus(percentOf.getAmount().multiply(percentage).divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP));
         } else if (calculationType.isCustomPercentageOfOutstandingPrincipalCharge()) {
-            BigDecimal numberOfInstallments = new BigDecimal(this.fetchUnpaidNumberOfInstallments(1));
+            Integer numberOfRepayments = this.getLoanProductRelatedDetail().getNumberOfRepayments();
+            List<LoanRepaymentScheduleInstallment> graceInstallments = this.getRepaymentScheduleInstallments().stream()
+                    .filter(inst -> inst.getInstallmentNumber() != null && inst.getInstallmentNumber() == 0).toList();
+            if (!graceInstallments.isEmpty()) {
+                numberOfRepayments = numberOfRepayments - graceInstallments.size();
+            }
+            BigDecimal numberOfInstallments = BigDecimal.valueOf(numberOfRepayments);
             BigDecimal computedAmount = LoanCharge.percentageOf(percentOf.getAmount(), percentage);
             this.outstandingBalance = this.outstandingBalance.minus(installment.getPrincipal(this.getCurrency()));
-            this.outstandingBalance = this.outstandingBalance.minus(installment.getAdvancePrincipalAmount());
             BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 0, RoundingMode.HALF_UP);
             amount = amount.plus(finalAmount);
         }
@@ -5548,7 +5580,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     amount = calculateInstallmentChargeAmount(loanCharge.getChargeCalculation(), loanCharge.getPercentage(), installment,
                             loanCharge.amountOrPercentage(), loanCharge.getCharge().getParentChargeId()).getAmount();
                 }
-                if (((loanCharge.isCustomFlatDistributedCharge() || loanCharge.isCustomPercentageBasedDistributedCharge())
+                if (((loanCharge.isCustomFlatDistributedCharge() || loanCharge.isCustomPercentageBasedDistributedCharge()
+                        || loanCharge.isCustomPercentageOfOutstandingPrincipalCharge())
                         && loanCharge.getApplicableFromInstallment() > installment.getInstallmentNumber())) {
                     amount = BigDecimal.ZERO;
                 }
@@ -7052,6 +7085,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public int fetchNumberOfInstallmensAfterExceptions() {
         if (!this.repaymentScheduleInstallments.isEmpty()) {
             List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallmentsIgnoringTotalGrace();
+            Integer currentInstallmentCount = installments.size();
             int numberOfInstallments = 0;
             for (final LoanRepaymentScheduleInstallment installment : installments) {
                 if (!installment.isRecalculatedInterestComponent()) {
