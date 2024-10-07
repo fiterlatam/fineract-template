@@ -3501,8 +3501,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         if (!isTransactionBeforeLastRepaymentTransaction(loanTransaction, getLoanTransactions())) {
-            final String errorMessage = "The transaction date cannot be before last valid transaction: "
-                    + getDisbursementDate().toString();
+            final String errorMessage = "The transaction date cannot be before last valid transaction: " + getDisbursementDate().toString();
             throw new InvalidLoanStateTransitionException("transaction", "cannot.be.before.last.valid.transaction", errorMessage,
                     loanTransactionDate, getDisbursementDate());
         }
@@ -3857,7 +3856,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private boolean isTransactionBeforeLastRepaymentTransaction(final LoanTransaction loanTransaction,
-                                                                                final List<LoanTransaction> loanTransactions) {
+            final List<LoanTransaction> loanTransactions) {
         boolean isTransactionNotBeforeLastRepaymentTransaction = true;
 
         final LocalDate currentTransactionDate = loanTransaction.getTransactionDate();
