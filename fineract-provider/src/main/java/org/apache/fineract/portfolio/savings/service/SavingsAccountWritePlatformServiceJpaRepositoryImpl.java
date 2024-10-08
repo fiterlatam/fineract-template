@@ -142,6 +142,9 @@ import org.apache.fineract.useradministration.domain.AppUserRepositoryWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -2246,6 +2249,42 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
                 .withOfficeId(holdTransaction.getSavingsAccount().officeId()).withClientId(holdTransaction.getSavingsAccount().clientId())
                 .withGroupId(holdTransaction.getSavingsAccount().groupId()).withSavingsId(holdTransaction.getSavingsAccount().getId())
                 .build();
+    }
+
+    @Override
+    public CommandProcessingResult recalculateRunningBalances(Long accountId) {
+        final int pageSize = 100;
+        int offset = 0;
+        Sort sort = Sort.by("dateOf", "createdDate", "id");
+        SavingsAccount account = this.savingAccountRepositoryWrapper.findOneWithNotFoundDetection(accountId);
+        this.savingAccountAssembler.setHelpers(account);
+        account.resetBalances();
+        MonetaryCurrency currency = account.getCurrency();
+        Money runningBalance = Money.zero(currency);
+        List<SavingsAccountTransaction> transactions;
+        do {
+            Pageable pageRequest = PageRequest.of(offset, pageSize, sort);
+            transactions = this.savingsAccountTransactionRepository.findAllBySavingsAccount_IdAndReversed(accountId, false, pageRequest)
+                    .getContent();
+
+            for (final SavingsAccountTransaction transaction : transactions) {
+                Money transactionRunningBalance = transaction.getRunningBalance(currency);
+                if (transaction.isCredit()) {
+                    runningBalance = transaction.getAmount(currency).plus(runningBalance);
+                } else if (transaction.isDebit()) {
+                    runningBalance = runningBalance.minus(transaction.getAmount(currency));
+                }
+                if (!runningBalance.isEqualTo(transactionRunningBalance)) {
+                    transaction.updateRunningBalance(runningBalance);
+                    this.savingsAccountTransactionRepository.save(transaction);
+                }
+            }
+            account.updateSummaryCumulative(transactions);
+
+            offset += 1; // next page
+        } while (!transactions.isEmpty());
+        this.savingAccountRepositoryWrapper.save(account);
+        return CommandProcessingResult.resourceResult(accountId, null);
     }
 
 }

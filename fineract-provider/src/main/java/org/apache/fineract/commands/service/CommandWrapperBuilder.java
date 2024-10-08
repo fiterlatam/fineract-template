@@ -4000,4 +4000,13 @@ public class CommandWrapperBuilder {
         this.href = "/prequalification/assign/" + prequalificationId;
         return this;
     }
+
+    public CommandWrapperBuilder recalculateSavingsAccountBalances(Long accountId) {
+        this.actionName = "REBALANCE";
+        this.entityName = "SAVINGSACCOUNT";
+        this.entityId = accountId;
+        this.savingsId = accountId;
+        this.href = "/savingsaccounts/" + accountId + "rebalance";
+        return this;
+    }
 }
