@@ -36,7 +36,7 @@ public final class SavingsAccountTransactionSummaryWrapper {
     public BigDecimal calculateTotalDeposits(final MonetaryCurrency currency, final List<SavingsAccountTransaction> transactions) {
         Money total = Money.zero(currency);
         for (final SavingsAccountTransaction transaction : transactions) {
-            if ((transaction.isDepositAndNotReversed() || transaction.isDividendPayoutAndNotReversed())
+            if ((transaction.isDepositAndNotReversed() || transaction.isDividendPayoutAndNotReversed() || transaction.isAmountRelease())
                     && !transaction.isReversalTransaction()) {
                 total = total.plus(transaction.getAmount(currency));
             }
@@ -57,7 +57,8 @@ public final class SavingsAccountTransactionSummaryWrapper {
     public BigDecimal calculateTotalWithdrawals(final MonetaryCurrency currency, final List<SavingsAccountTransaction> transactions) {
         Money total = Money.zero(currency);
         for (final SavingsAccountTransaction transaction : transactions) {
-            if (transaction.isWithdrawal() && transaction.isNotReversed() && !transaction.isReversalTransaction()) {
+            if ((transaction.isWithdrawal() || transaction.isAmountOnHold()) && transaction.isNotReversed()
+                    && !transaction.isReversalTransaction()) {
                 total = total.plus(transaction.getAmount(currency));
             }
         }
@@ -276,5 +277,153 @@ public final class SavingsAccountTransactionSummaryWrapper {
             }
         }
         return total.getAmountDefaultedToNullIfZero();
+    }
+
+    public void updateTotalDeposits(SavingsAccountSummary summary, MonetaryCurrency currency,
+            List<SavingsAccountTransaction> transactions) {
+        BigDecimal totalDeposits = this.calculateTotalDeposits(currency, transactions);
+        if (totalDeposits != null) {
+            if (summary.getTotalDeposits() != null) {
+                summary.setTotalDeposits(summary.getTotalDeposits().add(totalDeposits));
+            } else {
+                summary.setTotalDeposits(totalDeposits);
+            }
+        }
+    }
+
+    public void updateTotalWithdrawals(SavingsAccountSummary summary, MonetaryCurrency currency,
+            List<SavingsAccountTransaction> transactions) {
+        BigDecimal totalWithdrawals = this.calculateTotalWithdrawals(currency, transactions);
+        if (totalWithdrawals != null) {
+            if (summary.getTotalWithdrawals() != null) {
+                summary.setTotalWithdrawals(summary.getTotalWithdrawals().add(totalWithdrawals));
+            } else {
+                summary.setTotalWithdrawals(totalWithdrawals);
+            }
+        }
+    }
+
+    public void updateTotalInterestPosted(SavingsAccountSummary summary, MonetaryCurrency currency,
+            List<SavingsAccountTransaction> transactions) {
+        BigDecimal totalInterestPosted = this.calculateTotalInterestPosted(currency, transactions, false);
+        if (totalInterestPosted != null) {
+            if (summary.getTotalInterestPosted() != null) {
+                summary.setTotalInterestPosted(summary.getTotalInterestPosted().add(totalInterestPosted));
+            } else {
+                summary.setTotalInterestPosted(totalInterestPosted);
+            }
+        }
+    }
+
+    public BigDecimal calculateTotalInterestPosted(final MonetaryCurrency currency,
+            final List<? extends SavingsAccountTransaction> transactions, boolean ignoreTaxedInterest) {
+        Money total = Money.zero(currency);
+        for (int i = 0; i < transactions.size(); i++) {
+            SavingsAccountTransaction transaction = transactions.get(i);
+            SavingsAccountTransaction nextTransaction = (i + 1) < transactions.size() ? transactions.get(i + 1) : null;
+            if (transaction.isInterestPostingAndNotReversed() && transaction.isNotReversed()) {
+                total = total.plus(transaction.getAmount(currency));
+                if (ignoreTaxedInterest && nextTransaction != null && nextTransaction.isWithHoldTaxAndNotReversed()) {
+                    total = total.minus(transaction.getAmount(currency));
+                }
+            }
+        }
+        return total.getAmountDefaultedToNullIfZero();
+    }
+
+    public void updateTotalWithdrawalFees(SavingsAccountSummary summary, MonetaryCurrency currency,
+            List<SavingsAccountTransaction> transactions) {
+        BigDecimal totalWithdrawalFees = this.calculateTotalWithdrawalFees(currency, transactions);
+        if (totalWithdrawalFees != null) {
+            if (summary.getTotalWithdrawalFees() != null) {
+                summary.setTotalWithdrawalFees(summary.getTotalWithdrawalFees().add(totalWithdrawalFees));
+            } else {
+                summary.setTotalWithdrawalFees(totalWithdrawalFees);
+            }
+        }
+    }
+
+    public void updateTotalAnnualFees(SavingsAccountSummary summary, MonetaryCurrency currency,
+            List<SavingsAccountTransaction> transactions) {
+        BigDecimal totalAnnualFees = this.calculateTotalAnnualFees(currency, transactions);
+        if (totalAnnualFees != null) {
+            if (summary.getTotalAnnualFees() != null) {
+                summary.setTotalAnnualFees(summary.getTotalAnnualFees().add(totalAnnualFees));
+            } else {
+                summary.setTotalAnnualFees(totalAnnualFees);
+            }
+        }
+    }
+
+    public void updateTotalFeesCharge(SavingsAccountSummary summary, MonetaryCurrency currency,
+            List<SavingsAccountTransaction> transactions) {
+        BigDecimal totalFeeCharge = this.calculateTotalFeesCharge(currency, transactions);
+        if (totalFeeCharge != null) {
+            if (summary.getTotalFeeCharge() != null) {
+                summary.setTotalFeeCharge(summary.getTotalFeeCharge().add(totalFeeCharge));
+            } else {
+                summary.setTotalFeeCharge(totalFeeCharge);
+            }
+        }
+    }
+
+    public void updateTotalFeesChargeWaived(SavingsAccountSummary summary, MonetaryCurrency currency,
+            List<SavingsAccountTransaction> transactions) {
+        BigDecimal totalFeeChargeWaived = this.calculateTotalFeesChargeWaived(currency, transactions);
+        if (totalFeeChargeWaived != null) {
+            if (summary.getTotalFeeChargesWaived() != null) {
+                summary.setTotalFeeChargesWaived(summary.getTotalFeeChargesWaived().add(totalFeeChargeWaived));
+            } else {
+                summary.setTotalFeeChargesWaived(totalFeeChargeWaived);
+            }
+        }
+    }
+
+    public void updateTotalPenaltyCharge(SavingsAccountSummary summary, MonetaryCurrency currency,
+            List<SavingsAccountTransaction> transactions) {
+        BigDecimal totalPenaltyCharge = this.calculateTotalPenaltyCharge(currency, transactions);
+        if (totalPenaltyCharge != null) {
+            if (summary.getTotalPenaltyCharge() != null) {
+                summary.setTotalPenaltyCharge(summary.getTotalPenaltyCharge().add(totalPenaltyCharge));
+            } else {
+                summary.setTotalPenaltyCharge(totalPenaltyCharge);
+            }
+        }
+    }
+
+    public void updateTotalPenaltyChargeWaived(SavingsAccountSummary summary, MonetaryCurrency currency,
+            List<SavingsAccountTransaction> transactions) {
+        BigDecimal totalPenaltyChargeWaived = this.calculateTotalPenaltyChargeWaived(currency, transactions);
+        if (totalPenaltyChargeWaived != null) {
+            if (summary.getTotalPenaltyChargesWaived() != null) {
+                summary.setTotalPenaltyChargesWaived(summary.getTotalPenaltyChargesWaived().add(totalPenaltyChargeWaived));
+            } else {
+                summary.setTotalPenaltyChargesWaived(totalPenaltyChargeWaived);
+            }
+        }
+    }
+
+    public void updateTotalOverdraftInterest(SavingsAccountSummary summary, MonetaryCurrency currency,
+            List<SavingsAccountTransaction> transactions) {
+        BigDecimal totalOverdraftInterest = this.calculateTotalOverdraftInterest(currency, transactions);
+        if (totalOverdraftInterest != null) {
+            if (summary.getTotalOverdraftInterestDerived() != null) {
+                summary.setTotalOverdraftInterestDerived(summary.getTotalOverdraftInterestDerived().add(totalOverdraftInterest));
+            } else {
+                summary.setTotalOverdraftInterestDerived(totalOverdraftInterest);
+            }
+        }
+    }
+
+    public void updateTotalWithholdTaxWithdrawal(SavingsAccountSummary summary, MonetaryCurrency currency,
+            List<SavingsAccountTransaction> transactions) {
+        BigDecimal totalWithholdTax = this.calculateTotalWithholdTaxWithdrawal(currency, transactions);
+        if (totalWithholdTax != null) {
+            if (summary.getTotalWithholdTax() != null) {
+                summary.setTotalWithholdTax(summary.getTotalWithholdTax().add(totalWithholdTax));
+            } else {
+                summary.setTotalWithholdTax(totalWithholdTax);
+            }
+        }
     }
 }
