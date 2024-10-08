@@ -161,6 +161,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             for (final LoanCharge loanCharge : charges) {
                 if (!loanCharge.isDueAtDisbursement()) {
                     loanCharge.resetPaidAmount(currency);
+                    loanCharge.resetWrittenOffAmount(currency);
                 }
             }
         }
