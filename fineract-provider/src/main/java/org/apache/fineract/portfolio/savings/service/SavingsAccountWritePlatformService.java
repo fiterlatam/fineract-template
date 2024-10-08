@@ -125,4 +125,6 @@ public interface SavingsAccountWritePlatformService {
 
     CommandProcessingResult releaseLoanGuarantee(Long loanId, JsonCommand command, LocalDate transactionDate,
             SavingsAccountTransaction holdTransaction);
+
+    CommandProcessingResult recalculateRunningBalances(Long savingsId);
 }
