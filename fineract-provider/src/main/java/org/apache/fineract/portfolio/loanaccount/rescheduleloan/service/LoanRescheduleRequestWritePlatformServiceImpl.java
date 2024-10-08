@@ -583,17 +583,14 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
                         if (installment.getInstallmentNumber() > rediferirInstallmentNumber) {
                             installmentsToRemove.add(installment);
-                            this.loanInstalmentChargeRepository.deleteByLoanScheduleId(installment.getId());
-                            this.repaymentScheduleInstallmentRepository.deleteById(installment.getId());
                         }
                     }
 
                     repaymentScheduleInstallments.removeAll(installmentsToRemove);
                     for (final LoanScheduleModelPeriod scheduledLoanInstallment : loanScheduleModelPeriods) {
                         if (scheduledLoanInstallment.isRepaymentPeriod() || scheduledLoanInstallment.isDownPaymentPeriod()) {
-                            rediferirInstallmentNumber = rediferirInstallmentNumber + 1;
                             final LoanRepaymentScheduleInstallment installment = new LoanRepaymentScheduleInstallment(loan,
-                                    rediferirInstallmentNumber, scheduledLoanInstallment.periodFromDate(),
+                                    scheduledLoanInstallment.periodNumber(), scheduledLoanInstallment.periodFromDate(),
                                     scheduledLoanInstallment.periodDueDate(), scheduledLoanInstallment.principalDue(),
                                     scheduledLoanInstallment.interestDue(), scheduledLoanInstallment.feeChargesDue(),
                                     scheduledLoanInstallment.penaltyChargesDue(),
@@ -604,6 +601,11 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                             repaymentScheduleInstallments.add(installment);
                         }
                     }
+                    loan.updateTermFrequency(rediferirPeriods);
+                    loan.updateNumberOfRepayments(rediferirPeriods);
+                    loan.recalculateAllCharges();
+                    loan.updateLoanDerivedFields();
+
                     ExternalId txnExternalId = externalIdFactory.create();
                     final PaymentDetail paymentDetail = null;
                     final String chargeRefundChargeType = null;
@@ -612,7 +614,6 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     final LoanTransaction newRepaymentTransaction = this.loanAccountDomainService.makeRepayment(
                             LoanTransactionType.REPAYMENT, loan, transactionDate, rediferirAmount, paymentDetail, noteText, txnExternalId,
                             false, chargeRefundChargeType, isAccountTransfer, null, false, true);
-                    loan.recalculateAllCharges();
                     changedTransactionDetail = loan.processTransactions();
                     loanAccountDomainService.saveLoanTransactionWithDataIntegrityViolationChecks(newRepaymentTransaction);
                 }
