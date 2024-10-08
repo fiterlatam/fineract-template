@@ -535,4 +535,11 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         return property.getValue();
     }
 
+    @Override
+    public boolean allowPaymentsWithPreviousDateEnabled() {
+        final String allowPaymentsWithPreviousDateProperty = "allow-payments-with-previous-date";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(allowPaymentsWithPreviousDateProperty);
+        return property.isEnabled();
+    }
+
 }
