@@ -340,4 +340,98 @@ public final class SavingsAccountSummary {
     public BigDecimal getTotalWithholdTax() {
         return this.totalWithholdTax;
     }
+
+    public void resetBalances() {
+        this.totalDeposits = BigDecimal.ZERO;
+        this.totalWithdrawals = BigDecimal.ZERO;
+        this.totalInterestPosted = BigDecimal.ZERO;
+        this.totalWithdrawalFees = BigDecimal.ZERO;
+        this.totalAnnualFees = BigDecimal.ZERO;
+        this.totalFeeCharge = BigDecimal.ZERO;
+        this.totalPenaltyCharge = BigDecimal.ZERO;
+        this.totalFeeChargesWaived = BigDecimal.ZERO;
+        this.totalPenaltyChargesWaived = BigDecimal.ZERO;
+        this.totalOverdraftInterestDerived = BigDecimal.ZERO;
+        this.totalWithholdTax = BigDecimal.ZERO;
+    }
+
+    public void updateSummaryCumulative(MonetaryCurrency currency, SavingsAccountTransactionSummaryWrapper wrapper,
+            List<SavingsAccountTransaction> transactions) {
+        wrapper.updateTotalDeposits(this, currency, transactions);
+        wrapper.updateTotalWithdrawals(this, currency, transactions);
+        wrapper.updateTotalInterestPosted(this, currency, transactions);
+        wrapper.updateTotalWithdrawalFees(this, currency, transactions);
+        wrapper.updateTotalAnnualFees(this, currency, transactions);
+        wrapper.updateTotalFeesCharge(this, currency, transactions);
+        wrapper.updateTotalFeesChargeWaived(this, currency, transactions);
+        wrapper.updateTotalPenaltyCharge(this, currency, transactions);
+        wrapper.updateTotalPenaltyChargeWaived(this, currency, transactions);
+        wrapper.updateTotalOverdraftInterest(this, currency, transactions);
+        wrapper.updateTotalWithholdTaxWithdrawal(this, currency, transactions);
+
+        this.updateAccountBalance(currency);
+    }
+
+    public void updateAccountBalance(MonetaryCurrency currency) {
+        this.accountBalance = Money.of(currency, this.totalDeposits).plus(this.totalInterestPosted).minus(this.totalWithdrawals)
+                .minus(this.totalWithdrawalFees).minus(this.totalAnnualFees).minus(this.totalFeeCharge).minus(this.totalPenaltyCharge)
+                .minus(totalOverdraftInterestDerived).minus(totalWithholdTax).getAmount();
+    }
+
+    public void setTotalInterestEarned(BigDecimal totalInterestEarned) {
+        this.totalInterestEarned = totalInterestEarned;
+    }
+
+    public void setTotalDeposits(BigDecimal totalDeposits) {
+        this.totalDeposits = totalDeposits;
+    }
+
+    public void setTotalWithdrawals(BigDecimal totalWithdrawals) {
+        this.totalWithdrawals = totalWithdrawals;
+    }
+
+    public void setTotalInterestPosted(BigDecimal totalInterestPosted) {
+        this.totalInterestPosted = totalInterestPosted;
+    }
+
+    public void setTotalWithdrawalFees(BigDecimal totalWithdrawalFees) {
+        this.totalWithdrawalFees = totalWithdrawalFees;
+    }
+
+    public void setTotalFeeCharge(BigDecimal totalFeeCharge) {
+        this.totalFeeCharge = totalFeeCharge;
+    }
+
+    public void setTotalPenaltyCharge(BigDecimal totalPenaltyCharge) {
+        this.totalPenaltyCharge = totalPenaltyCharge;
+    }
+
+    public void setTotalAnnualFees(BigDecimal totalAnnualFees) {
+        this.totalAnnualFees = totalAnnualFees;
+    }
+
+    public BigDecimal getTotalFeeChargesWaived() {
+        return totalFeeChargesWaived;
+    }
+
+    public void setTotalFeeChargesWaived(BigDecimal totalFeeChargesWaived) {
+        this.totalFeeChargesWaived = totalFeeChargesWaived;
+    }
+
+    public BigDecimal getTotalPenaltyChargesWaived() {
+        return totalPenaltyChargesWaived;
+    }
+
+    public void setTotalPenaltyChargesWaived(BigDecimal totalPenaltyChargesWaived) {
+        this.totalPenaltyChargesWaived = totalPenaltyChargesWaived;
+    }
+
+    public void setTotalOverdraftInterestDerived(BigDecimal totalOverdraftInterestDerived) {
+        this.totalOverdraftInterestDerived = totalOverdraftInterestDerived;
+    }
+
+    public void setTotalWithholdTax(BigDecimal totalWithholdTax) {
+        this.totalWithholdTax = totalWithholdTax;
+    }
+
 }
