@@ -3408,6 +3408,88 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     """;
         }
 
+        public String loanReclaimSchemaForWriteoff() {
+            return """
+                        ml.id loanId,
+                        	ml.account_no loanAccoutNumber,
+                        	mcl.display_name clientName,
+                        	mpl.name productName,
+                        	(CURRENT_DATE - mlaa.overdue_since_date_derived) as daysInArrears,
+                        	ml.principal_outstanding_derived outstandingPrincipal,
+                        	ml.interest_outstanding_derived outstandingInterest,
+                        	(COALESCE(insurance_chg.outstanding_amount,0) + COALESCE(vat_chg.outstanding_amount,0)) outstandingMandatoryInsuranceAmount,
+                        	(COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0)) AS outstandingAvalAmount,
+                        	(COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0)) AS outstandingOtherChargesAmount,
+                        	(COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0)) AS outstandingPenaltyAmount,
+                        	ml.total_outstanding_derived totalOutstandingAmount
+                        	from
+                        	m_loan ml
+                        	join m_product_loan mpl on mpl.id = ml.product_id
+                        	join m_client mcl on mcl.id = ml.client_id
+                        	join m_loan_arrears_aging mlaa on mlaa.loan_id = ml.id
+                        	LEFT JOIN
+                        		(
+                        			select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                    	from m_loan_charge mlc
+                                       where mlc.charge_calculation_enum IN (468, 575, 231)
+                                       group by mlc.loan_id
+                        		) insurance_chg ON insurance_chg.loan_id = ml.id
+                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                        					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                        					WHERE parent_charge.charge_calculation_enum IN (468, 575, 231)
+                        					group by mlc2.loan_id
+                        				) vat_chg  ON vat_chg.loan_id = ml.id
+                        	LEFT JOIN
+                        		(
+                        			select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                    	from m_loan_charge mlc
+                                       where mlc.charge_calculation_enum = 41
+                                       group by mlc.loan_id
+                        		) aval_chg ON aval_chg.loan_id = ml.id
+                        	LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                        					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                        					WHERE parent_charge.charge_calculation_enum = 41
+                        					group by mlc2.loan_id
+                        				) aval_vat_chg  ON aval_vat_chg.loan_id = ml.id
+                        	LEFT JOIN
+                        		(
+                        			select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                    	from m_loan_charge mlc
+                                       where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41)
+                        				and mlc.is_penalty = false
+                                       group by mlc.loan_id
+                        		) other_chg ON other_chg.loan_id = ml.id
+                        	LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                        					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                        					WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231)
+                        					group by mlc2.loan_id
+                        				) other_vat_chg  ON other_vat_chg.loan_id = ml.id
+                        	LEFT JOIN
+                        		(
+                        			select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
+                                    	from m_loan_charge mlc
+                                       where mlc.is_penalty = true
+                                       group by mlc.loan_id
+                        		) penalty_chg ON penalty_chg.loan_id = ml.id
+                        	LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                            FROM m_loan_charge mlc2
+                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                        					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                        					WHERE parent_charge.is_penalty = true
+                        					group by mlc2.loan_id
+                        				) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
+                        WHERE
+                    		ml.loan_status_id = 300
+                    		and (CURRENT_DATE - mlaa.overdue_since_date_derived) > ?
+                    """;
+        }
+
         @Override
         public LoanReclaimData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
 
@@ -3441,12 +3523,19 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final StringBuilder sqlBuilder = new StringBuilder(200);
         if (claimType.equals("guarantor")) {
             sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForAval());
-        } else {
+        } else if (claimType.equals("insurance")) {
             sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForInsurance());
+        } else{
+            sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForWriteoff());
         }
         sqlBuilder.append(" and ml.excluded_from_reclaim = false and ml.claim_type is null and ml.loan_schedule_type = 'PROGRESSIVE' ");
 
-        Long minimDaysToReclaim = this.configurationDomainService.retriveMinimumDaysOfArrearsToClaim();
+        Long minimDaysToReclaim = 0L;
+        if (claimType.equals("guarantor") || claimType.equals("insurance")) {
+            minimDaysToReclaim = this.configurationDomainService.retriveMinimumDaysOfArrearsToClaim();
+        } else {
+            minimDaysToReclaim = this.configurationDomainService.retriveMinimumDaysOfArrearsToWriteOff();
+        }
         final Object[] objectArray = { minimDaysToReclaim };
 
         return this.jdbcTemplate.query(sqlBuilder.toString(), objectArray, loanReclaimMapper);
@@ -3463,13 +3552,20 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final StringBuilder sqlBuilder = new StringBuilder(200);
         if (claimType.equals("guarantor")) {
             sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForAval());
-        } else {
+        } else if (claimType.equals("insurance")) {
             sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForInsurance());
+        } else{
+            sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForWriteoff());
         }
         sqlBuilder.append(
                 " and ml.excluded_from_reclaim = true and ml.excluded_for_claim_type = ? and ml.claim_type is null  and ml.loan_schedule_type = 'PROGRESSIVE'  ");
 
-        Long minimDaysToReclaim = this.configurationDomainService.retriveMinimumDaysOfArrearsToClaim();
+        Long minimDaysToReclaim = 0L;
+        if (claimType.equals("guarantor") || claimType.equals("insurance")) {
+            minimDaysToReclaim = this.configurationDomainService.retriveMinimumDaysOfArrearsToClaim();
+        } else {
+            minimDaysToReclaim = this.configurationDomainService.retriveMinimumDaysOfArrearsToWriteOff();
+        }
         final Object[] objectArray = { minimDaysToReclaim, claimType };
 
         return this.jdbcTemplate.query(sqlBuilder.toString(), objectArray, loanReclaimMapper);

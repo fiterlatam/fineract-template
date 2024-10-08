@@ -286,4 +286,5 @@
     <include file="parts/20243008011009115_SU_349_update-report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU_351_update_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU_356_update_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2024100611009115_SU_154_add_columns_for_reclaim_writeoff.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

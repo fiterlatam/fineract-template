@@ -1,41 +1,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
-    <changeSet id="1" author="fineract">
-        <preConditions onFail="MARK_RAN">
-            <sqlCheck expectedResult="1">
-                SELECT COUNT(*) FROM stretchy_report WHERE report_name = 'Informe de Liquidación de Compras de Aliados'
-            </sqlCheck>
-        </preConditions>
-        <update tableName="stretchy_report">
-            <column name="report_sql">
-                <![CDATA[
-                SELECT id                                   AS "ID",
-           TO_CHAR(purchase_date, 'DD/MM/YYYY') AS "Fecha de Compra",
-           nit                                  AS "NIT",
-           client_ally_id                       AS "ID de Aliado del Cliente",
-           company_name                         AS "Nombre de la Empresa",
-           point_of_sales_id                    AS "ID del Punto de Venta",
-           point_of_sales_name                  AS "Nombre del Punto de Venta",
-           city_id                              AS "ID de la Ciudad",
-           city_name                            AS "Nombre de la Ciudad",
-           buy_amount                           AS "Monto de Compra",
-           settled_comission                    AS "Comisión Liquidada",
-           tax_profile_id                       AS "ID del Perfil Tributario",
-           loan_id                              AS "ID del Préstamo",
-           client_id                            AS "ID del Cliente",
-           channel_id                           AS "ID del Canal",
-           settlement_status                    AS "Estado de Liquidación",
-           amount_comission                     AS "Monto de la Comisión",
-           round(amount_to_pay,${decimalChoice})    AS "Total a pagar"
-    FROM m_ally_purchase_settlement
-    WHERE purchase_date BETWEEN '${startDate}' AND '${endDate}'
-    ORDER BY purchase_date DESC
-                ]]>
-            </column>
-            <column name="description" value="informe de Liquidación de Compras de Aliados"/>
-        </update>
-    </changeSet>
+
     <changeSet id="2" author="fineract">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">

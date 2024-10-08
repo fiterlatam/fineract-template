@@ -144,4 +144,6 @@ public interface ConfigurationDomainService {
     String getNextPaymentDateConfigForLoan();
 
     Long retriveMinimumDaysOfArrearsToClaim();
+
+    Long retriveMinimumDaysOfArrearsToWriteOff();
 }
