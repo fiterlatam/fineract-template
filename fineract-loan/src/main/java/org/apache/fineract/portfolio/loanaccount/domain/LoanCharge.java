@@ -356,6 +356,14 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
+    public void resetWrittenOffAmount(final MonetaryCurrency currency) {
+        this.amountWrittenOff = BigDecimal.ZERO;
+        this.amountOutstanding = calculateAmountOutstanding(currency);
+        for (final LoanInstallmentCharge installmentCharge : this.loanInstallmentCharge) {
+            installmentCharge.resetWrittenOffAmount(currency);
+        }
+    }
+
     public void setOutstandingAmount(final BigDecimal amountOutstanding) {
         this.amountOutstanding = amountOutstanding;
     }
