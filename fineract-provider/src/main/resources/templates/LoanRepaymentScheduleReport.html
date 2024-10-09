@@ -96,12 +96,13 @@
             <th>Saldo del Crédito</th>
             <th>Principal vencido</th>
             <th>Interés</th>
-            <th>Seguro Voluntario/Asistencia</th>
+            <th>Seguro Voluntario</th>
             <th>Seguro Obligatorio</th>
             <th>Aval</th>
             <th>Honorarios</th>
             <th>Penalizaciones</th>
             <th>Pendiente</th>
+            <th>Condonado</th>
             <th>Pagado</th>
             <th>Por adelantado</th>
             <th>Tarde</th>
@@ -121,6 +122,7 @@
             <td th:text="${#numbers.formatDecimal(ele.honorariosDue, 1, 'POINT', 0, 'POINT')}"></td>
             <td th:text="${#numbers.formatDecimal(ele.penaltyChargesDue, 1, 'POINT', 0, 'POINT')}"></td>
             <td th:text="${#numbers.formatDecimal(ele.totalDueForPeriod, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(ele.totalWrittenOffForPeriod, 1, 'POINT', 0, 'POINT')}"></td>
             <td th:text="${#numbers.formatDecimal(ele.totalPaidForPeriod, 1, 'POINT', 0, 'POINT')}"></td>
             <td th:text="${#numbers.formatDecimal(ele.totalPaidInAdvanceForPeriod, 1, 'POINT', 0, 'POINT')}"></td>
             <td th:text="${#numbers.formatDecimal(ele.totalPaidLateForPeriod, 1, 'POINT', 0, 'POINT')}"></td>
@@ -138,6 +140,7 @@
             <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalHonorariosCharged, 1, 'POINT', 0, 'POINT')}"></td>
             <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalPenaltyChargesCharged, 1, 'POINT', 0, 'POINT')}"></td>
             <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalRepaymentExpected, 1, 'POINT', 0, 'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalWrittenOff, 1, 'POINT', 0, 'POINT')}"></td>
             <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalPaidInAdvance, 1, 'POINT', 0, 'POINT')}"></td>
             <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalPaidLate, 1, 'POINT', 0, 'POINT')}"></td>
             <td th:text="${#numbers.formatDecimal(originalScheduleDetails.totalWaived, 1, 'POINT', 0, 'POINT')}"></td>
