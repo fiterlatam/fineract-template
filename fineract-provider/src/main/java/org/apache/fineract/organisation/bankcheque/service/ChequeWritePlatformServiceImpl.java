@@ -19,6 +19,7 @@
 package org.apache.fineract.organisation.bankcheque.service;
 
 import com.google.gson.JsonObject;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,6 +32,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -38,11 +40,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
-import org.apache.fineract.infrastructure.core.data.PaginationParameters;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
-import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.bankAccount.domain.BankAccount;
@@ -57,7 +57,6 @@ import org.apache.fineract.organisation.bankcheque.command.ReassignChequeCommand
 import org.apache.fineract.organisation.bankcheque.command.UpdateChequeCommand;
 import org.apache.fineract.organisation.bankcheque.command.VoidChequeCommand;
 import org.apache.fineract.organisation.bankcheque.data.ChequeData;
-import org.apache.fineract.organisation.bankcheque.data.ChequeSearchParams;
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
 import org.apache.fineract.organisation.bankcheque.domain.Batch;
 import org.apache.fineract.organisation.bankcheque.domain.Cheque;
@@ -136,7 +135,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         BankAccount bankAccount = this.bankAccountRepositoryWrapper.findOneWithNotFoundDetection(bankAccId);
         Agency agency = bankAccount.getAgency();
         String maxBatchNoSql = "SELECT IFNULL(MAX(mpb.batch_no), 0) AS maxBatchNo FROM m_payment_batch mpb WHERE mpb.bank_acc_id = ?";
-        final Long maxBatchNo = this.jdbcTemplate.queryForObject(maxBatchNoSql, Long.class, new Object[] { bankAccId });
+        final Long maxBatchNo = this.jdbcTemplate.queryForObject(maxBatchNoSql, Long.class, new Object[]{bankAccId});
         final Long batchNo = ObjectUtils.defaultIfNull(maxBatchNo, 0L) + 1;
         Batch batch = new Batch().setBatchNo(batchNo).setAgency(agency).setBankAccount(bankAccount)
                 .setBankAccNo(bankAccount.getAccountNumber()).setFrom(from).setTo(to).setDescription(createChequeCommand.getDescription());
@@ -165,7 +164,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                 LEFT JOIN m_bank_account mba ON mba.id = mpb.bank_acc_id
                 WHERE mba.id = ?
                 """;
-        final Long maxChequeNo = this.jdbcTemplate.queryForObject(maxChequeNoSql, Long.class, new Object[] { bankAccId });
+        final Long maxChequeNo = this.jdbcTemplate.queryForObject(maxChequeNoSql, Long.class, new Object[]{bankAccId});
         Long startValue = ObjectUtils.defaultIfNull(maxChequeNo, 0L) + 1;
         if (!startValue.equals(from)) {
             throw new BankChequeException("from", "from value is not equal to the maximum cheque number.");
@@ -221,17 +220,12 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             throw new BankChequeException("status", "invalid.loan.status.for.cheque.reassignment");
         }
 
-        final PaginationParameters parameters = PaginationParameters.instance(null, null, null, null, null);
-        final ChequeSearchParams chequeSearchParams = ChequeSearchParams.builder().chequeId(reassignChequeCommand.getOldChequeId()).build();
-        final Page<ChequeData> cheques = this.chequeReadPlatformService.retrieveAll(chequeSearchParams, parameters);
-        if (!CollectionUtils.isEmpty(cheques.getPageItems())) {
-            final ChequeData chequeData = cheques.getPageItems().get(0);
-            if (chequeData.getId().equals(reassignChequeCommand.getOldChequeId()) && chequeData.getLoanAccId() != null) {
-                final Long loanId = chequeData.getLoanAccId();
-                final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
-                loan.setCheque(newCheque);
-                this.loanRepositoryWrapper.saveAndFlush(loan);
-            }
+        final ChequeData chequeData = this.chequeReadPlatformService.retrieveChequeById(oldCheque.getId());
+        if (chequeData != null && chequeData.getLoanAccId() != null) {
+            final Long loanId = chequeData.getLoanAccId();
+            final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+            loan.setCheque(newCheque);
+            this.loanRepositoryWrapper.saveAndFlush(loan);
         }
         final String newChequeDescription = "Emitido por sustitución de Desembolso cheque " + oldCheque.getChequeNo();
         final String oldChequeDescription = "Cheque anulado por proceso de Reasignación, cheque nuevo " + newCheque.getChequeNo();
