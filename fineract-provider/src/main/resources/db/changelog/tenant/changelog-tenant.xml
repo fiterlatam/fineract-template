@@ -288,4 +288,5 @@
     <include file="parts/20243008011009115_SU_356_update_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU_343_update_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU_385_add_payment-with-previous-date-config.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009116_SU_343_update_report_liquidacion.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
