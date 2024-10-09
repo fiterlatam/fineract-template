@@ -1051,7 +1051,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     ml.is_topup AS isTopup,
                     mpg.id AS prequalificationId,
                     mg.id AS groupId,
-                    mcv.code_description AS loanCycleCompleted,
+                    mcv.code_value AS loanCycleCompleted,
                     ml.principal_amount AS principalAmount
                     FROM m_prequalification_group mpg
                     INNER JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mpg.id
