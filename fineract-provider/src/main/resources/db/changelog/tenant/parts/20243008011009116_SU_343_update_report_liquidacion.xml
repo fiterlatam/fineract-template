@@ -58,7 +58,7 @@ order by
   mps.purchase_date DESC
                 ]]>
             </column>
-            <where> report_name='Informe de Liquidación de Compras de Aliados' </where>
+            <where> report_name='Informe de Liquidacion de Compras de Aliados' </where>
         </update>
     </changeSet>
     <changeSet author="fineract" id="2">
@@ -92,7 +92,7 @@ ORDER BY
   macs.collection_date DESC
                 ]]>
             </column>
-            <where> report_name='Informe de Liquidación de Cobros de Aliados' </where>
+            <where> report_name='Informe de Liquidacion de Cobros de Aliados' </where>
         </update>
     </changeSet>
 </databaseChangeLog>
