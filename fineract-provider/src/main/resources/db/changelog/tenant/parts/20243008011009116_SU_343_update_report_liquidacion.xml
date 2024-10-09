@@ -26,7 +26,7 @@
         <update tableName="stretchy_report">
             <column name="report_sql">
                 <![CDATA[
-select
+  select
   mps.id AS "ID",
   TO_CHAR(mps.purchase_date, 'DD/MM/YYYY') AS "Fecha de Compra",
   mps.nit AS "NIT",
