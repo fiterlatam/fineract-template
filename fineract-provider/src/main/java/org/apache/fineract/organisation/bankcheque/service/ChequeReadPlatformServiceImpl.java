@@ -320,7 +320,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
 
     @Override
     public Page<ChequeData> retrieveAll(final ChequeSearchParams chequeSearchParams, PaginationParameters parameters) {
-        final Set<String> supportedOrderByValues = new HashSet<>(List.of("chequeNo","batchNo","batchNo, chequeNo","chequeNo, batchNo"));
+        final Set<String> supportedOrderByValues = new HashSet<>(List.of("chequeNo", "batchNo", "batchNo, chequeNo", "chequeNo, batchNo"));
         this.paginationParametersDataValidator.validateParameterValues(parameters, supportedOrderByValues, "cheques");
         final StringBuilder sqlBuilder = new StringBuilder(200);
         sqlBuilder.append("SELECT ").append(this.sqlGenerator.calcFoundRows()).append(" ");

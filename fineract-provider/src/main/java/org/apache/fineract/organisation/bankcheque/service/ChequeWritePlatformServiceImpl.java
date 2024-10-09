@@ -19,7 +19,6 @@
 package org.apache.fineract.organisation.bankcheque.service;
 
 import com.google.gson.JsonObject;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,7 +31,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -135,7 +133,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         BankAccount bankAccount = this.bankAccountRepositoryWrapper.findOneWithNotFoundDetection(bankAccId);
         Agency agency = bankAccount.getAgency();
         String maxBatchNoSql = "SELECT IFNULL(MAX(mpb.batch_no), 0) AS maxBatchNo FROM m_payment_batch mpb WHERE mpb.bank_acc_id = ?";
-        final Long maxBatchNo = this.jdbcTemplate.queryForObject(maxBatchNoSql, Long.class, new Object[]{bankAccId});
+        final Long maxBatchNo = this.jdbcTemplate.queryForObject(maxBatchNoSql, Long.class, new Object[] { bankAccId });
         final Long batchNo = ObjectUtils.defaultIfNull(maxBatchNo, 0L) + 1;
         Batch batch = new Batch().setBatchNo(batchNo).setAgency(agency).setBankAccount(bankAccount)
                 .setBankAccNo(bankAccount.getAccountNumber()).setFrom(from).setTo(to).setDescription(createChequeCommand.getDescription());
@@ -164,7 +162,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                 LEFT JOIN m_bank_account mba ON mba.id = mpb.bank_acc_id
                 WHERE mba.id = ?
                 """;
-        final Long maxChequeNo = this.jdbcTemplate.queryForObject(maxChequeNoSql, Long.class, new Object[]{bankAccId});
+        final Long maxChequeNo = this.jdbcTemplate.queryForObject(maxChequeNoSql, Long.class, new Object[] { bankAccId });
         Long startValue = ObjectUtils.defaultIfNull(maxChequeNo, 0L) + 1;
         if (!startValue.equals(from)) {
             throw new BankChequeException("from", "from value is not equal to the maximum cheque number.");
