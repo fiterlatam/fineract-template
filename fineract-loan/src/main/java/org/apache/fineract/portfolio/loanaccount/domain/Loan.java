@@ -3611,10 +3611,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
 
-        // if(this.getId() != 1L){
-        // throw new GeneralPlatformDomainRuleException("error.msg.loan.id.not.1", "Loan id should be 1");
-        // }
-
         return changedTransactionDetail;
     }
 
