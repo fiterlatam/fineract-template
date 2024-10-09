@@ -22,80 +22,98 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
-    <changeSet author="fineract" id="1">
+    <changeSet author="fineract" id="3">
         <update tableName="stretchy_report">
             <column name="report_sql">
                 <![CDATA[
-SELECT '800139398-6'                                                               AS "Nit de empresa",
+SELECT '800139398-6' AS "Nit de empresa",
        CASE
            WHEN ccp."Cedula" IS NOT NULL THEN 'Cédula'
            WHEN cce."NIT" IS NOT NULL THEN 'NIT'
-           ELSE 'NON' END                                                          AS "Tipo de documento de identidad del cliente",
-       COALESCE(ccp."Cedula", cce."NIT")                                           AS "Número de documento de identidad del cliente",
+           ELSE 'NON'
+       END AS "Tipo de documento de identidad del cliente",
+       coalesce(ccp."Cedula", cce."NIT") AS "Número de documento de identidad del cliente",
        CASE
            WHEN c.legal_form_enum = 2 THEN c.fullname
            ELSE c.firstname
-           END                                                                     AS "Nombre del cliente",
-       c.lastname                                                                  AS "Apellidos del cliente",
-       TO_CHAR(c.date_of_birth, 'DD/MM/YYYY')                                      AS "Fecha de Nacimiento del cliente",
-       ml.account_no                                                               AS "Número del crédito",
-       ml.principal_amount                                                         AS "Valor del crédito",
-       ml.term_frequency                                                           AS "Plazo del crédito",
-       COALESCE(installment_count.paid_installments, ml.term_frequency)            AS "Número de seguros pagados",
-       COALESCE(installment_count.unpaid_installments, 0)                          AS "Número de seguros pendientes",
-       (COALESCE(insurance_chg.paid_amount, 0) + COALESCE(vat_chg.paid_amount, 0)) AS "Valor total pagado del seguro",
-       COALESCE(insurance_chg.paid_amount, 0)                                      AS "Valor total de la base del seguro pagado",
-       insurance_chg.charge_amounts                                                AS "Detalles de cargos de seguro",
-       COALESCE(vat_chg.paid_amount, 0)                                            AS "Valor total del iva del seguro pagado",
-       mc.insurance_code                                                           AS "Código del seguro obligatorio",
-       mc.insurance_company                                                        AS "Nit aseguradora"
+       END AS "Nombre del cliente",
+       c.lastname AS "Apellidos del cliente",
+       TO_CHAR(c.date_of_birth, 'DD/MM/YYYY') AS "Fecha de Nacimiento del cliente",
+       ml.account_no AS "Número del crédito",
+       ml.principal_amount AS "Valor del crédito",
+       ml.term_frequency AS "Plazo del crédito",
+       coalesce(installment_count.paid_installments, ml.term_frequency) AS "Número de seguros pagados",
+       coalesce(installment_count.unpaid_installments, 0) AS "Número de seguros pendientes",
+       (coalesce(insurance_chg.paid_amount, 0) + coalesce(vat_chg.paid_amount, 0)) AS "Valor total pagado del seguro",
+       coalesce(insurance_chg.paid_amount, 0) AS "Valor total de la base del seguro pagado",
+       coalesce(vat_chg.paid_amount, 0) AS "Valor total del iva del seguro pagado",
+       mc.insurance_code AS "Código del seguro obligatorio",
+       mc.insurance_company AS "Nit aseguradora"
 FROM m_client c
-         JOIN m_loan ml ON ml.client_id = c.id
-         JOIN m_loan_charge mlc ON mlc.loan_id = ml.id
-         JOIN m_charge mc ON mc.id = mlc.charge_id
-         LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = c.id
-         LEFT JOIN campos_cliente_empresas cce ON cce.client_id = c.id
-         LEFT JOIN (SELECT COUNT(CASE WHEN mlic.is_paid_derived = true THEN mlic.id END)  AS paid_installments,
-                           COUNT(CASE WHEN mlic.is_paid_derived = false THEN mlic.id END) AS unpaid_installments,
-                           mlc2.id                                                        AS loan_charge_id,
-                           mlc2.loan_id
-                    FROM m_loan_charge mlc2
-                             JOIN m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
-                    WHERE mlc2.charge_calculation_enum IN (468, 575, 231)
-                      AND mlc2.id IN (SELECT DISTINCT loan_charge_id
-                                      FROM m_loan_charge_paid_by mlcpb
-                                               JOIN m_loan_transaction mlt ON mlt.id = mlcpb.loan_transaction_id
-                                      WHERE mlcpb.loan_charge_id = mlc2.id
-                                        AND mlt.transaction_date BETWEEN '${startDate}' AND '${endDate}')
-                    GROUP BY mlc2.loan_id, mlc2.id) installment_count
-                   ON installment_count.loan_charge_id = mlc.id AND installment_count.loan_id = ml.id
-         LEFT JOIN (SELECT mlc2.id AS loan_charge_id,
-                      mlc2.loan_id,
-                      SUM(mlcpb.amount) AS paid_amount,
-                      STRING_AGG(CONCAT(TO_CHAR(mlt.transaction_date, 'YYYY-MM-DD'), ': ', mlcpb.amount, ' (Enum ', mlc2.charge_calculation_enum, ')'), ', ' ORDER BY mlt.transaction_date) AS charge_amounts
-               FROM m_loan_transaction mlt
-                        JOIN m_loan_charge_paid_by mlcpb ON mlcpb.loan_transaction_id = mlt.id
-                        JOIN m_loan_charge mlc2 ON mlc2.id = mlcpb.loan_charge_id
-               WHERE mlc2.charge_calculation_enum IN (468, 575, 231)
-                 AND mlt.transaction_date BETWEEN '${startDate}' AND '${endDate}'
-               GROUP BY mlc2.loan_id, mlc2.id) insurance_chg
-              ON insurance_chg.loan_charge_id = mlc.id AND insurance_chg.loan_id = ml.id
-         LEFT JOIN (SELECT SUM(mlcpb.amount) AS paid_amount, mc2.parent_charge_id, mlc2.loan_id
-                    FROM m_loan_transaction mlt
-                             JOIN m_loan_charge_paid_by mlcpb ON mlcpb.loan_transaction_id = mlt.id
-                             JOIN m_loan_charge mlc2 ON mlc2.id = mlcpb.loan_charge_id
-                             JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
-                    WHERE mlt.transaction_date BETWEEN '${startDate}' AND '${endDate}'
-                    GROUP BY mlc2.loan_id, mc2.parent_charge_id) vat_chg
-                   ON vat_chg.parent_charge_id = mc.id AND vat_chg.loan_id = ml.id
-WHERE mc.charge_calculation_enum IN (468, 575, 231)
-  AND (mc.insurance_company = '${insurerNit}' OR '${insurerNit}' = '-1')
-  AND (mc.insurance_code = '${mandatoryInsuranceCode}' OR '${mandatoryInsuranceCode}' = '-1')
-  AND insurance_chg.paid_amount > 0
-  AND coalesce(installment_count.paid_installments, ml.term_frequency,  0) > 0
+JOIN m_loan ml ON ml.client_id = c.id
+JOIN m_loan_charge mlc ON mlc.loan_id = ml.id
+JOIN m_charge mc ON mc.id = mlc.charge_id
+LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = c.id
+LEFT JOIN campos_cliente_empresas cce ON cce.client_id = c.id
+LEFT JOIN
+  (SELECT COUNT(CASE
+                    WHEN mlic.is_paid_derived = TRUE THEN mlic.id
+                END) AS paid_installments,
+          COUNT(CASE
+                    WHEN mlic.is_paid_derived = FALSE THEN mlic.id
+                END) AS unpaid_installments,
+          mlc2.id AS loan_charge_id,
+          mlc2.loan_id
+   FROM m_loan_charge mlc2
+   JOIN m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
+   WHERE mlc2.charge_calculation_enum IN (468, 575,231)
+     AND mlc2.id IN
+       (SELECT DISTINCT loan_charge_id
+        FROM m_loan_charge_paid_by mlcpb
+        JOIN m_loan_transaction mlt ON mlt.id = mlcpb.loan_transaction_id
+        WHERE mlcpb.loan_charge_id = mlc2.id
+          AND mlt.transaction_date BETWEEN '${startDate}' AND '${endDate}')
+   GROUP BY mlc2.loan_id,
+            mlc2.id) installment_count ON installment_count.loan_charge_id = mlc.id
+AND installment_count.loan_id = ml.id
+JOIN
+  (SELECT mlc2.id AS loan_charge_id,
+          mlc2.loan_id,
+          SUM(mlcpb.amount) AS paid_amount
+   FROM m_loan_transaction mlt
+   JOIN m_loan_charge_paid_by mlcpb ON mlcpb.loan_transaction_id = mlt.id
+   JOIN m_loan_charge mlc2 ON mlc2.id = mlcpb.loan_charge_id
+   WHERE mlc2.charge_calculation_enum IN (468,
+                                          575,
+                                          231)
+     AND mlt.transaction_date BETWEEN '${startDate}' AND '${endDate}'
+   GROUP BY mlc2.loan_id,
+            mlc2.id) insurance_chg ON insurance_chg.loan_charge_id = mlc.id
+AND insurance_chg.loan_id = ml.id
+LEFT JOIN
+  (SELECT SUM(mlcpb.amount) AS paid_amount,
+          mc2.parent_charge_id,
+          mlc2.loan_id
+   FROM m_loan_transaction mlt
+   JOIN m_loan_charge_paid_by mlcpb ON mlcpb.loan_transaction_id = mlt.id
+   JOIN m_loan_charge mlc2 ON mlc2.id = mlcpb.loan_charge_id
+   JOIN m_charge mc2 ON mc2.id = mlc2.charge_id
+   AND mc2.charge_calculation_enum = 342
+   WHERE mlt.transaction_date BETWEEN '${startDate}' AND '${endDate}'
+   GROUP BY mlc2.loan_id,
+            mc2.parent_charge_id) vat_chg ON vat_chg.parent_charge_id = mc.id
+AND vat_chg.loan_id = ml.id
+WHERE mc.charge_calculation_enum IN (468,
+                                     575,
+                                     231)
+  AND (mc.insurance_company = '${insurerNit}'
+       OR '${insurerNit}' = '-1')
+  AND (mc.insurance_code = '${mandatoryInsuranceCode}'
+       OR '${mandatoryInsuranceCode}' = '-1')
+  AND coalesce(installment_count.paid_installments, ml.term_frequency, 0) > 0
                 ]]>
             </column>
-            <where> report_name='Novedades de Seguros Obligatorios' </where>
+            <where> report_name='Recaudos de Seguros Obligatorios' </where>
         </update>
     </changeSet>
 </databaseChangeLog>
