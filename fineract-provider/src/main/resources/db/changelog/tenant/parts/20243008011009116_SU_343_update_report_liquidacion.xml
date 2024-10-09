@@ -22,7 +22,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
-    <changeSet author="fineract" id="1">
+    <changeSet author="fineract" id="3">
         <update tableName="stretchy_report">
             <column name="report_sql">
                 <![CDATA[
@@ -61,35 +61,32 @@ order by
             <where> report_name='Informe de Liquidacion de Compras de Aliados' </where>
         </update>
     </changeSet>
-    <changeSet author="fineract" id="2">
+    <changeSet author="fineract" id="4">
         <update tableName="stretchy_report">
             <column name="report_sql">
                 <![CDATA[
-                    SELECT
-  macs.id AS "ID",
-  TO_CHAR(
-    macs.collection_date, 'DD/MM/YYYY'
-  ) AS "Fecha de Cobro",
-  macs.nit AS "NIT",
-  macs.client_ally_id AS "ID de Aliado del Cliente",
-  macs.company_name AS "Nombre de la Empresa",
-  ccapos.code AS "Código del Punto de Venta",
-  macs.point_of_sales_name AS "Nombre del Punto de Venta",
-  macs.city_id AS "ID de la Ciudad",
-  macs.city_name AS "Nombre de la Ciudad",
-  macs.collection_amount AS "Monto de Cobro",
-  macs.tax_profile_id AS "ID del Perfil Tributario",
-  macs.loan_id AS "ID del Préstamo",
-  macs.client_id AS "ID del Cliente",
-  macs.channel_id AS "ID del Canal"
-FROM
-  m_ally_collection_settlement macs
-  LEFT JOIN custom.c_client_ally_point_of_sales ccapos ON macs.point_of_sales_id = ccapos.id
-WHERE
-  macs.collection_date BETWEEN '${startDate}'
-  AND '${endDate}'
-ORDER BY
-  macs.collection_date DESC
+                   SELECT 	   macs.id                                     AS "ID",
+                               TO_CHAR(macs.collection_date, 'DD/MM/YYYY') AS "Fecha de Cobro",
+                               macs.nit                                    AS "NIT",
+                               macs.client_ally_id                         AS "ID de Aliado del Cliente",
+                               macs.company_name                           AS "Nombre de la Empresa",
+                               ccapos.code                    			   AS "ID del Punto de Venta",
+                               macs.point_of_sales_name                    AS "Nombre del Punto de Venta",
+                               macs.city_id                                AS "ID de la Ciudad",
+                               macs.city_name                              AS "Nombre de la Ciudad",
+                               macs.collection_amount                      AS "Monto de Cobro",
+                               macs.tax_profile_id                         AS "ID del Perfil Tributario",
+                               macs.settlement_status                      AS "Estado de Liquidación",
+                               macs.loan_id                                AS "ID del Préstamo",
+                               macs.client_id                              AS "ID del Cliente",
+                               macs.channel_id                             AS "ID del Canal"
+                        FROM
+                            m_ally_collection_settlement macs
+                        LEFT JOIN
+                            custom.c_client_ally_point_of_sales ccapos ON macs.point_of_sales_id = ccapos.id
+                        WHERE macs.collection_date BETWEEN  '${startDate}' AND '${endDate}'
+                        ORDER BY
+                        macs.collection_date DESC
                 ]]>
             </column>
             <where> report_name='Informe de Liquidacion de Cobros de Aliados' </where>
