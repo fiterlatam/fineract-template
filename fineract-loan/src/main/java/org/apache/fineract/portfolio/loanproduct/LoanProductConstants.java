@@ -176,6 +176,7 @@ public interface LoanProductConstants {
     String REQUIRE_POINT_PARAM_NAME = "requirePoints";
     String VOLUNTARY_INSURANCE_ID_PARAM_NAME = "voluntaryInsuranceId";
     String IS_PURCHASE_CHARGE_PARAM_NAME = "isPurchaseCharge";
+    String EXCLUSIVE_VEHICLE_CUPO_PARAM_NAME = "vehicleCupo";
 
     String PRODUCT_TYPES_THAT_BLOCK_CREDIT = LoanProductType.SUMAS_PAY.getCode();
 

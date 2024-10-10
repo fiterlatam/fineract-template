@@ -203,6 +203,7 @@ import org.apache.fineract.portfolio.loanaccount.serialization.LoanUpdateCommand
 import org.apache.fineract.portfolio.loanproduct.data.AdvanceQuotaConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.loanproduct.exception.LinkedAccountRequiredException;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.note.domain.Note;
@@ -2807,19 +2808,27 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final boolean isAdvanceLoanProduct = loan.getLoanProduct().isAdvance();
             final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
                     .retrieveClientAdditionalData(clientId);
-            final Money cupo = Money.of(currency, loanAdditionalFieldsData.getCupo());
-            Money advanceTotalOutstandingPrincipalAmount = Money.of(currency, this.jdbcTemplate.queryForObject(
-                    "SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount FROM m_loan ml INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mpl.is_advance = ?",
-                    BigDecimal.class, new Object[] { clientId, true }));
-            Money purchaseTotalOutstandingPrincipalAmount = Money.of(currency, this.jdbcTemplate.queryForObject(
-                    "SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount FROM m_loan ml INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mpl.is_advance = ?",
-                    BigDecimal.class, new Object[] { clientId, false }));
+            Money cupo = Money.of(currency, loanAdditionalFieldsData.getCupo());
+            final String sql = "SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount FROM m_loan ml INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mpl.is_advance = ? ";
+            Money advanceTotalOutstandingPrincipalAmount = Money.of(currency,
+                    this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, true));
+            Money purchaseTotalOutstandingPrincipalAmount = Money.of(currency,
+                    this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, false));
+            final LoanProduct loanProduct = loan.loanProduct();
+            final CodeValue loanProductType = loanProduct.getProductType();
+            if (loanProductType != null && LoanProductType.SUMAS_VEHICULOS.getCode().equals(loanProductType.getLabel())) {
+                final Long loanProductId = loanProduct.getId();
+                cupo = Money.of(currency, loanProduct.getMaxVehicleCupo());
+                advanceTotalOutstandingPrincipalAmount = Money.of(currency,
+                        this.jdbcTemplate.queryForObject(sql + " AND mpl.id = ? ", BigDecimal.class, clientId, true, loanProductId));
+                purchaseTotalOutstandingPrincipalAmount = Money.of(currency,
+                        this.jdbcTemplate.queryForObject(sql + " AND mpl.id = ? ", BigDecimal.class, clientId, false, loanProductId));
+            }
             if (isAdvanceLoanProduct) {
                 advanceTotalOutstandingPrincipalAmount = advanceTotalOutstandingPrincipalAmount.add(approvedPrincipal);
             } else {
                 purchaseTotalOutstandingPrincipalAmount = purchaseTotalOutstandingPrincipalAmount.add(approvedPrincipal);
             }
-
             final Money totalOutstandingPrincipalAmount = advanceTotalOutstandingPrincipalAmount
                     .add(purchaseTotalOutstandingPrincipalAmount);
             final AdvanceQuotaConfigurationData advanceQuotaConfigurationData = this.loanProductReadPlatformService
@@ -2829,21 +2838,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             if (isAdvanceQuotaEnabled && isAdvanceLoanProduct) {
                 final Money maximumAdvanceQuota = cupo.multipliedBy(advanceQuotaPercentage.getAmount()).dividedBy(BigDecimal.valueOf(100L),
                         MoneyHelper.getRoundingMode());
-
                 if (approvedPrincipal.isGreaterThan(maximumAdvanceQuota)) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.advance.cupo.limit.exceeded",
                             String.format("Límite de cupo adelantado excedido. Límite Total: %s y tu enviaste: %s", maximumAdvanceQuota,
                                     approvedPrincipal),
                             maximumAdvanceQuota.toString());
                 }
-
                 if (advanceTotalOutstandingPrincipalAmount.isGreaterThan(maximumAdvanceQuota)) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.advance.cupo.limit.exceeded", String.format(
                             "Límite de cupo adelantado excedido. Límite Total: %s y Total del monto principal pendiente de adelanto: %s",
                             maximumAdvanceQuota, advanceTotalOutstandingPrincipalAmount), maximumAdvanceQuota.toString());
 
                 }
-
                 if (purchaseTotalOutstandingPrincipalAmount.isGreaterThan(cupo)) {
                     // Calculate available limit
                     final Money availablePurchaseQuota = cupo.minus(purchaseTotalOutstandingPrincipalAmount);
@@ -2851,7 +2857,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             "Límite de cupo de compra excedido. Límite disponible: %s y Total del monto principal pendiente de compra: %s",
                             availablePurchaseQuota, purchaseTotalOutstandingPrincipalAmount), availablePurchaseQuota.toString());
                 }
-
             }
             if (totalOutstandingPrincipalAmount.isGreaterThan(cupo)) {
                 // Calculate available limit
