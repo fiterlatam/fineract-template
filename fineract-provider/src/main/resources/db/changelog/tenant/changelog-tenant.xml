@@ -288,4 +288,7 @@
     <include file="parts/20243008011009115_SU_356_update_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU_385_add_payment-with-previous-date-config.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009116_SU_387_update_report_liquidación_de_cobros_add_estado_filed.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009115_SU_382_add_new_columns-loan.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009115_SU_382_add_new_columns-loan-transactions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009115_SU_382_new-charge-job.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

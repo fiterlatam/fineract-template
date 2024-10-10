@@ -146,6 +146,7 @@ import org.apache.fineract.portfolio.calendar.domain.CalendarInstanceRepository;
 import org.apache.fineract.portfolio.calendar.domain.CalendarRepository;
 import org.apache.fineract.portfolio.calendar.domain.CalendarType;
 import org.apache.fineract.portfolio.calendar.exception.CalendarParameterUpdateNotSupportedException;
+import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeNotFoundException;
 import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientData;
@@ -3891,6 +3892,24 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             log.info("Daily accrual persisted for loan: {}", loan.getId());
 
         });
+    }
+
+    public void persistInstallmentalChargeAccrual(LocalDate localDate) {
+        List<Loan> activeLoans = loanRepository.findActiveLoans();
+        activeLoans.forEach(loan -> {
+            log.info("Persisting Installment charge accrual for loan: {}", loan.getId());
+            List<LoanCharge> charges = filterInstallmentCharges(loan.getActiveCharges());
+            loan.handleChargeAppliedTransactionPerInstallment(charges, localDate);
+            loanRepository.saveAndFlush(loan);
+            log.info("Installment  charge accrual persisted for loan: {}", loan.getId());
+        });
+    }
+
+    private List<LoanCharge> filterInstallmentCharges(Set<LoanCharge> charges) {
+        return charges.stream()
+                .filter(loanCharge -> loanCharge.getCharge().getChargeTimeType().equals(ChargeTimeType.DISBURSEMENT.getValue())
+                        && !loanCharge.isWaived() && !loanCharge.isFullyPaid())
+                .toList();
     }
 
     public void cancelDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultInsuranceIds) {
