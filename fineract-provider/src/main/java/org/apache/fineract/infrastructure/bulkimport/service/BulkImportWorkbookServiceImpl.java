@@ -74,17 +74,20 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
     private final DocumentRepository documentRepository;
     private final ImportDocumentRepository importDocumentRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final BulkImportWorkbookService bulkImportWorkbookService;
 
     @Autowired
     public BulkImportWorkbookServiceImpl(final ApplicationContext applicationContext, final PlatformSecurityContext securityContext,
             final DocumentWritePlatformService documentWritePlatformService, final DocumentRepository documentRepository,
-            final ImportDocumentRepository importDocumentRepository, final JdbcTemplate jdbcTemplate) {
+            final ImportDocumentRepository importDocumentRepository, final JdbcTemplate jdbcTemplate,
+            BulkImportWorkbookService bulkImportWorkbookService) {
         this.applicationContext = applicationContext;
         this.securityContext = securityContext;
         this.documentWritePlatformService = documentWritePlatformService;
         this.documentRepository = documentRepository;
         this.importDocumentRepository = importDocumentRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.bulkImportWorkbookService = bulkImportWorkbookService;
     }
 
     @Override
@@ -183,6 +186,11 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
             final InputStream clonedInputStreamWorkbook, final GlobalEntityType entityType, final Workbook workbook, final String locale,
             final String dateFormat, Map<String, Object> importAttributes) {
         final String fileName = fileDetail.getFileName();
+        final Collection<ImportData> importDataCollection = this.bulkImportWorkbookService.getImports(entityType, fileName);
+        if (importDataCollection != null && !importDataCollection.isEmpty()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.duplicate.file.name", "File with name " + fileName + " already exists",
+                    fileName);
+        }
         final Long documentId = this.documentWritePlatformService.createInternalDocument(
                 DocumentWritePlatformServiceJpaRepositoryImpl.DocumentManagementEntity.IMPORT.name(),
                 this.securityContext.authenticatedUser().getId(), null, clonedInputStreamWorkbook,
@@ -207,6 +215,14 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
         final String sql = "select " + rm.schema() + " order by i.id desc";
 
         return this.jdbcTemplate.query(sql, rm, new Object[] { type.getValue() }); // NOSONAR
+    }
+
+    @Override
+    public Collection<ImportData> getImports(final GlobalEntityType type, final String fileName) {
+        this.securityContext.authenticatedUser();
+        final ImportMapper rm = new ImportMapper();
+        final String sql = "select " + rm.schema() + " AND d.name = ? order by i.id desc";
+        return this.jdbcTemplate.query(sql, rm, type.getValue(), fileName);
     }
 
     private static final class ImportMapper implements RowMapper<ImportData> {

@@ -1073,6 +1073,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed("transactionAmount");
         final ExternalId txnExternalId = externalIdFactory.createFromCommand(command, LoanApiConstants.externalIdParameterName);
 
+        validateRepaymentDate(transactionDate);
+
         final Map<String, Object> changes = new LinkedHashMap<>();
         changes.put("transactionDate", command.stringValueOfParameterNamed("transactionDate"));
         changes.put("transactionAmount", command.stringValueOfParameterNamed("transactionAmount"));
@@ -4063,4 +4065,22 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .with(changes) //
                 .build();
     }
+
+    private void validateRepaymentDate(LocalDate transactionDate) {
+        // check the configuration if backdated transactions are allowed , if yes , do nothing , else , validate that
+        // transaction date is not before current date
+
+        if (this.configurationDomainService.allowPaymentsWithPreviousDateEnabled()) {
+            return;
+        }
+
+        LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+
+        if (DateUtils.isBefore(transactionDate, currentDate)) {
+            final String errorMessage = "The transaction date cannot be in the past.";
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.transaction.cannot.be.a.past.date", errorMessage, transactionDate);
+        }
+
+    }
+
 }

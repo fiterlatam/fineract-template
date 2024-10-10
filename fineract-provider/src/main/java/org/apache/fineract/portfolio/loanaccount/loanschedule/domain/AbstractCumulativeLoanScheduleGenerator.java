@@ -650,10 +650,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             final MathContext mc, boolean isLastInstallmentPeriod, Integer numberOfRepayments) {
         PrincipalInterest principalInterest = new PrincipalInterest(currentPeriodParams.getPrincipalForThisPeriod(),
                 currentPeriodParams.getInterestForThisPeriod(), null);
-        Money outstandingBalance = scheduleParams.getPrincipalToBeScheduled();
-        for (LoanRepaymentScheduleInstallment inst : scheduleParams.getInstallments()) {
-            outstandingBalance = outstandingBalance.minus(inst.getPrincipal(currency));
-        }
+        Money outstandingBalance = scheduleParams.getOutstandingBalance().plus(currentPeriodParams.getPrincipalForThisPeriod());
+
         currentPeriodParams.setFeeChargesForInstallment(cumulativeFeeChargesDueWithin(scheduleParams.getPeriodStartDate(), scheduledDueDate,
                 loanCharges, currency, principalInterest, scheduleParams.getPrincipalToBeScheduled(),
                 scheduleParams.getTotalCumulativeInterest(), true, scheduleParams.isFirstPeriod(), mc, scheduleParams.getInstalmentNumber(),
@@ -2312,10 +2310,14 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 if (chargeGrace < numberOfRepayments && chargeGrace > 0) {
                     numberOfRepayments -= chargeGrace;
                 } else {
-                    // Handle the edge case where the grace period is greater than or equal to the number of repayments
-                    // Set numberOfRepayments to 1 to ensure at least one repayment remains (adjust as needed based on
-                    // business logic)
-                    numberOfRepayments = 1;
+                    if (chargeGrace == numberOfRepayments || chargeGrace > numberOfRepayments) {
+                        // Handle the edge case where the grace period is greater than or equal to the number of
+                        // repayments
+                        // Set numberOfRepayments to 1 to ensure at least one repayment remains (adjust as needed based
+                        // on
+                        // business logic)
+                        numberOfRepayments = 1;
+                    }
                 }
             }
 
@@ -2328,7 +2330,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         if (!loanCharge.installmentCharges().isEmpty()) {
                             if (isLastInstallmentPeriod) {
                                 calculatedAmount = Money.of(monetaryCurrency,
-                                        loanCharge.getLastInstallmentRoundOffAmountForVoluntaryInsurance(installmentNumber));
+                                        loanCharge.getLastInstallmentRoundOffAmountForCustomFlatDistributedCharge(installmentNumber,
+                                                monetaryCurrency));
                                 cumulative = cumulative.plus(calculatedAmount);
                             } else {
                                 // When loan is rescheduled and installments are extended then for voluntary insurance
@@ -2351,7 +2354,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         } else {
                             if (isLastInstallmentPeriod) {
                                 calculatedAmount = Money.of(monetaryCurrency,
-                                        loanCharge.getLastInstallmentRoundOffAmountForVoluntaryInsurance(installmentNumber));
+                                        loanCharge.getLastInstallmentRoundOffAmountForCustomFlatDistributedCharge(installmentNumber,
+                                                monetaryCurrency));
                                 cumulative = cumulative.plus(calculatedAmount);
                             } else {
                                 cumulative = calculateInstallmentCharge(principalInterestForThisPeriod, cumulative, loanCharge, mc,
@@ -3280,17 +3284,28 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments, final LocalDate rescheduleFrom,
             MonetaryCurrency currency) {
         List<LoanRepaymentScheduleInstallment> newRepaymentScheduleInstallments = new ArrayList<>();
-        int lastInterestAvailablePeriod = 0;
-        int processedPeriod = 0;
         for (LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
             if (DateUtils.isBefore(installment.getFromDate(), rescheduleFrom)) {
                 newRepaymentScheduleInstallments.add(installment);
             } else {
+                // Check if there is any installment having advance payment then add the installment to calculate
+                // outstanding principal
+                // for interest and insurance calculation. Ideally there will be only one installment having advance
+                // payment but there is an edge case
+                // where last transaction is made on installment start date and makes an advance payment towards the
+                // next installment.
+                // In this case there will be 2 installments after the rescheduleFrom Date. In this case first
+                // installment will also have some
+                // principal/interest or charges paid and will be retained and schedule will be recalculated from the
+                // next installment.
+                // There can never be more than 2 installments.
+                // TODO: This is not a clever implementation and installments should be calculated here by processing
+                // the transactions but this is the best implementation
+                // provided the time I was given. It should be improved
                 if (installment.getAdvancePrincipalAmount() != null
                         && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
                     newRepaymentScheduleInstallments.add(installment);
                 }
-                break;
             }
         }
         return newRepaymentScheduleInstallments;

@@ -240,6 +240,12 @@ public class LoanInstallmentCharge extends AbstractPersistableCustom implements 
         this.paid = false;
     }
 
+    public void resetWrittenOffAmount(final MonetaryCurrency currency) {
+        this.amountWrittenOff = BigDecimal.ZERO;
+        this.amountOutstanding = calculateAmountOutstanding(currency);
+        this.paid = false;
+    }
+
     public void setAmountWaived(final BigDecimal amountWaived) {
         this.amountWaived = amountWaived;
     }
