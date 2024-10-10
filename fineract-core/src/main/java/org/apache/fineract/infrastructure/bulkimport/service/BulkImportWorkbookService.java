@@ -34,6 +34,8 @@ public interface BulkImportWorkbookService {
 
     Collection<ImportData> getImports(GlobalEntityType type);
 
+    Collection<ImportData> getImports(GlobalEntityType type, String fileName);
+
     DocumentData getOutputTemplateLocation(String importDocumentId);
 
     Response getOutputTemplate(String importDocumentId);
