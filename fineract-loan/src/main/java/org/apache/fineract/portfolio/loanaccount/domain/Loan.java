@@ -500,6 +500,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "last_installment_charge_calculated_on")
     private Integer lastInstallmentChargeCalculatedOn;
 
+    @Column(name = "interest_accrued_till")
+    private LocalDate  interestAccruedTill;
+
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
             final String transactionProcessingStrategyCode, final LoanProductRelatedDetail loanRepaymentScheduleDetail,
@@ -2750,6 +2753,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             LoanTransaction dailyAccrualTransaction = LoanTransaction.accrueDailyInterest(getOffice(), this, dailyInterestMoney,
                     currentDate, externalIdentifier);
             addLoanTransaction(dailyAccrualTransaction);
+            setInterestAccruedTill(currentDate);
         }
 
     }
@@ -7998,5 +8002,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setLastInstallmentChargeCalculatedOn(Integer lastInstallmentChargeCalculatedOn) {
         this.lastInstallmentChargeCalculatedOn = lastInstallmentChargeCalculatedOn;
+    }
+
+    public LocalDate getInterestAccruedTill() {
+        return interestAccruedTill;
+    }
+
+    public void setInterestAccruedTill(LocalDate interestAccruedTill) {
+        this.interestAccruedTill = interestAccruedTill;
     }
 }
