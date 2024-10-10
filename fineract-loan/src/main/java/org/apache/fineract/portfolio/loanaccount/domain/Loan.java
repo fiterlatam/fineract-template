@@ -501,7 +501,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     private Integer lastInstallmentChargeCalculatedOn;
 
     @Column(name = "interest_accrued_till")
-    private LocalDate  interestAccruedTill;
+    private LocalDate interestAccruedTill;
 
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
