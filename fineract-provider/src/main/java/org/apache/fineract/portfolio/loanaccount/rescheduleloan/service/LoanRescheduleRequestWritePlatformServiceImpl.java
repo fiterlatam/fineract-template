@@ -492,7 +492,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     loanApplicationTerms.getInterestMethod());
             final LoanLifecycleStateMachine loanLifecycleStateMachine = null;
             loan.setHelpers(loanLifecycleStateMachine, this.loanSummaryWrapper, this.loanRepaymentScheduleTransactionProcessorFactory);
-            final LoanScheduleDTO loanSchedule = loanScheduleGenerator.rescheduleNextInstallments(mathContext, loanApplicationTerms, loan,
+            LoanScheduleDTO loanSchedule = loanScheduleGenerator.rescheduleNextInstallments(mathContext, loanApplicationTerms, loan,
                     loanApplicationTerms.getHolidayDetailDTO(), loanRepaymentScheduleTransactionProcessor, rescheduleFromDate);
 
             // Either the installments got recalculated or the model
@@ -552,10 +552,11 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                                 final LoanRepaymentScheduleInstallment secondRediferirUnpaidInstallment = rediferirUnpaidInstallments
                                         .get(1);
                                 installmentFromDate = transactionDate;
-                                installmentDueDate = secondRediferirUnpaidInstallment.getDueDate();
+                                // installmentDueDate = secondRediferirUnpaidInstallment.getDueDate();
                             }
                         }
                     }
+
                     if (rediferirPeriods <= minimumRequiredInstallmentNumber) {
                         throw new GeneralPlatformDomainRuleException(
                                 "error.msg.loan.reschedule.rediferir.periods.less.than.unpaid.installments",
@@ -566,6 +567,12 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     for (final LoanRepaymentScheduleInstallment unpaidInstallment : unpaidRepaymentInstallments) {
                         unpaidInstallment.resetPrincipalComponents();
                     }
+                    loanApplicationTerms.updateCalculatedRepaymentsStartingFromDate(installmentFromDate);
+                    final LoanScheduleModel loanScheduleModel = loanScheduleGenerator.generate(mc, loanApplicationTerms, loanCharges,
+                            holidayDetailDTO);
+                    loanScheduleModel.setLoanApplicationTerms(loanApplicationTerms);
+                    installmentDueDate = loanScheduleModel.getPeriods().get(2).periodDueDate();
+
                     final Money newPrincipal = Money.of(currency, newPrincipalAmount);
                     loanApplicationTerms.updateLoanTermVariations(new ArrayList<>());
                     loanApplicationTerms.updateNumberOfRepayments(rediferirPeriods);
@@ -576,36 +583,16 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     loanApplicationTerms.updateExpectedDisbursementDate(installmentFromDate);
                     loanApplicationTerms.updateCalculatedRepaymentsStartingFromDate(installmentDueDate);
                     loanApplicationTerms.updateRepaymentsStartingFromDate(installmentDueDate);
-                    final LoanScheduleModel loanScheduleModel = loanScheduleGenerator.generate(mc, loanApplicationTerms, loanCharges,
-                            holidayDetailDTO);
-                    final List<LoanScheduleModelPeriod> loanScheduleModelPeriods = loanScheduleModel.getPeriods();
+
                     ArrayList<LoanRepaymentScheduleInstallment> installmentsToRemove = new ArrayList<>();
                     for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
                         if (installment.getInstallmentNumber() > rediferirInstallmentNumber) {
                             installmentsToRemove.add(installment);
                         }
                     }
-
                     repaymentScheduleInstallments.removeAll(installmentsToRemove);
-                    for (final LoanScheduleModelPeriod scheduledLoanInstallment : loanScheduleModelPeriods) {
-                        if (scheduledLoanInstallment.isRepaymentPeriod() || scheduledLoanInstallment.isDownPaymentPeriod()) {
-                            final LoanRepaymentScheduleInstallment installment = new LoanRepaymentScheduleInstallment(loan,
-                                    scheduledLoanInstallment.periodNumber(), scheduledLoanInstallment.periodFromDate(),
-                                    scheduledLoanInstallment.periodDueDate(), scheduledLoanInstallment.principalDue(),
-                                    scheduledLoanInstallment.interestDue(), scheduledLoanInstallment.feeChargesDue(),
-                                    scheduledLoanInstallment.penaltyChargesDue(),
-                                    scheduledLoanInstallment.isRecalculatedInterestComponent(),
-                                    scheduledLoanInstallment.getLoanCompoundingDetails(),
-                                    scheduledLoanInstallment.rescheduleInterestPortion(), scheduledLoanInstallment.isDownPaymentPeriod());
-                            installment.updateLoan(loan);
-                            repaymentScheduleInstallments.add(installment);
-                        }
-                    }
-                    loan.updateTermFrequency(rediferirPeriods);
-                    loan.updateNumberOfRepayments(rediferirPeriods);
-                    loan.recalculateAllCharges();
-                    loan.updateLoanDerivedFields();
 
+                    // Make Repayment UnPaid
                     ExternalId txnExternalId = externalIdFactory.create();
                     final PaymentDetail paymentDetail = null;
                     final String chargeRefundChargeType = null;
@@ -614,8 +601,56 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     final LoanTransaction newRepaymentTransaction = this.loanAccountDomainService.makeRepayment(
                             LoanTransactionType.REPAYMENT, loan, transactionDate, rediferirAmount, paymentDetail, noteText, txnExternalId,
                             false, chargeRefundChargeType, isAccountTransfer, null, false, true);
+                    loan.recalculateAllCharges();
                     changedTransactionDetail = loan.processTransactions();
                     loanAccountDomainService.saveLoanTransactionWithDataIntegrityViolationChecks(newRepaymentTransaction);
+                    /*
+                     * Add GenereateSchedule Add generated New Scheduler for redefirer
+                     */
+                    loanSchedule = loanScheduleGenerator.rescheduleNextInstallments(mathContext, loanApplicationTerms, loan,
+                            loanApplicationTerms.getHolidayDetailDTO(), loanRepaymentScheduleTransactionProcessor, rescheduleFromDate);
+                    loan.updateNumberOfRepayments(rediferirPeriods);
+                    loan.updateTermFrequency(rediferirPeriods);
+                    loan.setActualDisbursementDate(transactionDate);
+
+                    if (loanSchedule.getInstallments() != null) {
+                        List<LoanTransactionToRepaymentScheduleMapping> oldScheduleMaping = newRepaymentTransaction
+                                .getLoanTransactionToRepaymentScheduleMappings().stream().toList();
+
+                        if (newRepaymentTransaction.getLoanTransactionToRepaymentScheduleMappings().size() < 2) {
+                            Money newfee = Money.of(currency, oldScheduleMaping.get(0).getFeeChargesPortion());
+                            repaymentScheduleInstallments.get(0).payFeeChargesComponent(transactionDate, newfee, false);
+                            loanSchedule.getInstallments().add(repaymentScheduleInstallments.get(0));
+                        } else {
+                            /*
+                             * remove mapping
+                             */
+                            for (LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping : oldScheduleMaping) {
+                                if (!repaymentScheduleInstallments.get(0).getLoanTransactionToRepaymentScheduleMappings()
+                                        .equals(loanTransactionToRepaymentScheduleMapping)) {
+                                    newRepaymentTransaction.getLoanTransactionToRepaymentScheduleMappings()
+                                            .remove(loanTransactionToRepaymentScheduleMapping);
+                                }
+                            }
+
+                            for (LoanRepaymentScheduleInstallment newinstalment : loanSchedule.getInstallments()) {
+                                if (newinstalment.getInstallmentNumber() > 1) {
+                                    newinstalment.updateInstallmentNumber(newinstalment.getInstallmentNumber() - 1);
+                                } else {
+                                    for (LoanTransactionToRepaymentScheduleMapping newMaping : oldScheduleMaping) {
+                                        Money newInterst = Money.of(currency, newMaping.getInterestPortion());
+                                        Money newfee = Money.of(currency, newMaping.getFeeChargesPortion());
+                                        newinstalment.payInterestComponent(transactionDate, newInterst, false);
+                                        newinstalment.payFeeChargesComponent(transactionDate, newfee, false);
+                                    }
+                                }
+                            }
+                        }
+
+                        loan.updateLoanSchedule(loanSchedule.getInstallments());
+                    }
+
+                    loan.recalculateAllCharges();
                 }
             }
 
