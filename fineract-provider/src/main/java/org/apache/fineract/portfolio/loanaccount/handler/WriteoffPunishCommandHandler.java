@@ -24,18 +24,19 @@ import org.apache.fineract.commands.handler.NewCommandSourceHandler;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanWriteoffPunishService;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-@CommandType(entity = "LOAN", action = "WRITEOFF-PUNISH")
+@CommandType(entity = "LOAN", action = "WRITEOFF_PUNISH")
 public class WriteoffPunishCommandHandler implements NewCommandSourceHandler {
 
-    private final LoanWritePlatformService writePlatformService;
+    private final LoanWriteoffPunishService writeoffPunishService;
 
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
-        return writePlatformService.claimLoan(command.getLoanId(), command);
+        return writeoffPunishService.writeOffPunishLoan(command.getLoanId(), command);
     }
 
 }
