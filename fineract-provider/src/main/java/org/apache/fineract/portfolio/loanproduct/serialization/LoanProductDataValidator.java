@@ -191,7 +191,7 @@ public final class LoanProductDataValidator {
             LoanProductConstants.CUSTOM_COLLECTION_SUBCHANNEL_LOAN_PRODUC_MAPPER_PARAM_NAME, LoanProductConstants.REQUIRE_POINT_PARAM_NAME,
             LoanProductConstants.INTEREST_RATE_ID_PARAM_NAME, LoanProductConstants.REPAYMENT_CHANNELS_PARAM_NAME,
             LoanProductConstants.VOLUNTARY_INSURANCE_ID_PARAM_NAME, LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME,
-            LoanProductConstants.INTEREST_STARTS_AFTER_GRACE_PERIOD));
+            LoanProductConstants.INTEREST_STARTS_AFTER_GRACE_PERIOD, LoanProductConstants.EXCLUSIVE_VEHICLE_CUPO_PARAM_NAME));
 
     private static final Set<String> MAXIMUM_RATE_SUPPORTED_PARAMETERS = new HashSet<>(
             Arrays.asList("locale", "dateFormat", "eaRate", "annualNominalRate", "appliedBy", "appliedOnDate", "dailyNominalRate",

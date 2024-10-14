@@ -248,6 +248,8 @@ public class LoanProductData implements Serializable {
     private CodeValueData productType;
     private final Collection<CodeValueData> productTypeOptions;
 
+    private BigDecimal vehicleCupo;
+
     @lombok.Setter
     private boolean advance;
     @Setter
@@ -1001,7 +1003,7 @@ public class LoanProductData implements Serializable {
         this.description = productData.description;
         this.fundId = productData.fundId;
         this.fundName = productData.fundName;
-
+        this.vehicleCupo = productData.vehicleCupo;
         this.principal = productData.principal;
         this.minPrincipal = productData.minPrincipal;
         this.maxPrincipal = productData.maxPrincipal;
