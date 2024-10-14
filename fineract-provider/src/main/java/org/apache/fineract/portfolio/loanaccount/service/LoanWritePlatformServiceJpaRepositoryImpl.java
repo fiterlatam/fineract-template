@@ -2809,22 +2809,35 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final boolean isAdvanceLoanProduct = loan.getLoanProduct().isAdvance();
             final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
                     .retrieveClientAdditionalData(clientId);
-            Money cupo = Money.of(currency, loanAdditionalFieldsData.getCupo());
-            final String sql = "SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount FROM m_loan ml INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mpl.is_advance = ? ";
-            Money advanceTotalOutstandingPrincipalAmount = Money.of(currency,
-                    this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, true));
-            Money purchaseTotalOutstandingPrincipalAmount = Money.of(currency,
-                    this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, false));
+            Money cupo;
+            String sql = """
+                        SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount
+                        FROM m_loan ml
+                        INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                        INNER JOIN m_code_value mcv ON mcv.id = mpl.product_type
+                        WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mpl.is_advance = ?
+                    """;
+            Money advanceTotalOutstandingPrincipalAmount;
+            Money purchaseTotalOutstandingPrincipalAmount;
             final LoanProduct loanProduct = loan.loanProduct();
             final CodeValue loanProductType = loanProduct.getProductType();
             if (loanProductType != null && LoanProductType.SUMAS_VEHICULOS.getCode().equals(loanProductType.getLabel())) {
+                sql = sql + " AND mpl.id = ? ";
                 final Long loanProductId = loanProduct.getId();
                 cupo = Money.of(currency, loanProduct.getMaxVehicleCupo());
                 advanceTotalOutstandingPrincipalAmount = Money.of(currency,
-                        this.jdbcTemplate.queryForObject(sql + " AND mpl.id = ? ", BigDecimal.class, clientId, true, loanProductId));
+                        this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, true, loanProductId));
                 purchaseTotalOutstandingPrincipalAmount = Money.of(currency,
-                        this.jdbcTemplate.queryForObject(sql + " AND mpl.id = ? ", BigDecimal.class, clientId, false, loanProductId));
+                        this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, false, loanProductId));
+            } else {
+                cupo = Money.of(currency, loanAdditionalFieldsData.getCupo());
+                sql = sql + " AND mcv.code_value != ? ";
+                advanceTotalOutstandingPrincipalAmount = Money.of(currency,
+                        this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, true, LoanProductType.SUMAS_VEHICULOS.getCode()));
+                purchaseTotalOutstandingPrincipalAmount = Money.of(currency, this.jdbcTemplate.queryForObject(sql, BigDecimal.class,
+                        clientId, false, LoanProductType.SUMAS_VEHICULOS.getCode()));
             }
+
             if (isAdvanceLoanProduct) {
                 advanceTotalOutstandingPrincipalAmount = advanceTotalOutstandingPrincipalAmount.add(approvedPrincipal);
             } else {
