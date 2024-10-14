@@ -4,5 +4,6 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
 public interface LoanWriteoffPunishService {
-    public CommandProcessingResult writeOffPunishLoan(final Long loanId,JsonCommand command);
+
+    public CommandProcessingResult writeOffPunishLoan(final Long loanId, JsonCommand command);
 }

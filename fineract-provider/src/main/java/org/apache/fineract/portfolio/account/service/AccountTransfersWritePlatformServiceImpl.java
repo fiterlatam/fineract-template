@@ -497,11 +497,13 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
         }
         LoanTransaction repayTransaction;
         if (toLoanAccount.claimType() != null) {
-            repayTransaction = this.loanAccountDomainService.writeoffPunishLoan(toLoanAccount, accountTransferDTO.getTransactionDate(), null, externalIdForRepayment, null);
+            repayTransaction = this.loanAccountDomainService.writeoffPunishLoan(toLoanAccount, accountTransferDTO.getTransactionDate(),
+                    null, externalIdForRepayment, null);
         } else {
             repayTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.REPAYMENT, toLoanAccount,
-                    accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(), accountTransferDTO.getPaymentDetail(),
-                    null, externalIdForRepayment, false, chargeRefundChargeType, isAccountTransfer, null, false, true);
+                    accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(),
+                    accountTransferDTO.getPaymentDetail(), null, externalIdForRepayment, false, chargeRefundChargeType, isAccountTransfer,
+                    null, false, true);
         }
         AccountTransferDetails accountTransferDetails = this.accountTransferAssembler.assembleLoanToLoanTransfer(accountTransferDTO,
                 fromLoanAccount, toLoanAccount, disburseTransaction, repayTransaction);

@@ -2,17 +2,16 @@ package org.apache.fineract.portfolio.loanaccount.service;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.fineract.custom.infrastructure.core.service.CustomDateUtils;
-import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.data.ApproveLoanPayloadData;
 import org.apache.fineract.custom.portfolio.buyprocess.data.CreateLoanPayloadData;
 import org.apache.fineract.custom.portfolio.buyprocess.data.DisburseLoanPayloadData;
-import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
-import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcessRepository;
-import org.apache.fineract.custom.portfolio.buyprocess.validator.ClientBuyProcessDataValidator;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
@@ -26,9 +25,7 @@ import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerialize
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.charge.domain.Charge;
-import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
@@ -40,16 +37,10 @@ import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundEx
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffPunishService{
+public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffPunishService {
 
     private final JdbcTemplate jdbcTemplate;
     private final PlatformSecurityContext context;
@@ -67,7 +58,7 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
     private final LoanBlockingReasonRepository blockingReasonRepository;
 
     @Override
-    public CommandProcessingResult writeOffPunishLoan(final Long loanId,JsonCommand command) {
+    public CommandProcessingResult writeOffPunishLoan(final Long loanId, JsonCommand command) {
         // Create new Loan and disburse as topup
         final String json = command.json();
         final JsonElement element = fromApiJsonHelper.parse(json);
@@ -84,10 +75,12 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
 
         List<LoanProduct> castigadoProducts = this.loanProductRepository.findByProductType("SU+ Castigado");
         if (castigadoProducts.isEmpty()) {
-            throw new LoanProductNotFoundException("error.msg.loanproduct.type.invalid", "Loan product with type SU+ Castigado does not exist", "SU+ Castigado");
+            throw new LoanProductNotFoundException("error.msg.loanproduct.type.invalid",
+                    "Loan product with type SU+ Castigado does not exist", "SU+ Castigado");
         }
         if (castigadoProducts.size() > 1) {
-            throw new LoanProductNotFoundException("error.msg.loanproduct.type.invalid", "Multiple Loan products with type SU+ Castigado exist", "SU+ Castigado");
+            throw new LoanProductNotFoundException("error.msg.loanproduct.type.invalid",
+                    "Multiple Loan products with type SU+ Castigado exist", "SU+ Castigado");
         }
 
         LoanProduct castigadoProduct = castigadoProducts.get(0);
@@ -108,7 +101,7 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
         // disburse loan
         disburseLoanApplication(newLoan, outstandingAmount, transactionDate);
 
-        //Get updated existingLoan
+        // Get updated existingLoan
         existingLoanApplication = this.loanAssembler.assembleFrom(loanId);
 
         existingLoanApplication.setClaimType(claimType);
@@ -121,8 +114,8 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
                 .getSingleBlockingReasonSettingByReason("Castigado", BlockLevel.CREDIT.toString());
 
         newLoan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
-        final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(newLoan, blockingReasonSetting,
-                "Castigado", DateUtils.getLocalDateOfTenant());
+        final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(newLoan, blockingReasonSetting, "Castigado",
+                DateUtils.getLocalDateOfTenant());
         blockingReasonRepository.saveAndFlush(loanBlockingReason);
         this.loanRepository.saveAndFlush(newLoan);
 
@@ -154,34 +147,23 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
             clientIdNumber = clientData.getIdNumber();
         }
 
-        final CreateLoanPayloadData payloadData = CreateLoanPayloadData.builder()
-                .productId(loanProduct.getId())
+        final CreateLoanPayloadData payloadData = CreateLoanPayloadData.builder().productId(loanProduct.getId())
                 .submittedOnDate(DateUtils.format(transactionDate, CustomDateUtils.ENGLISH_DATE_FORMAT))
-                .expectedDisbursementDate(DateUtils.format(transactionDate, CustomDateUtils.ENGLISH_DATE_FORMAT))
-                .loanTermFrequency(1L)
+                .expectedDisbursementDate(DateUtils.format(transactionDate, CustomDateUtils.ENGLISH_DATE_FORMAT)).loanTermFrequency(1L)
                 .loanTermFrequencyType(loanProduct.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue())
-                .numberOfRepayments(1L)
-                .repaymentEvery(loanProduct.getLoanProductRelatedDetail().getRepayEvery())
+                .numberOfRepayments(1L).repaymentEvery(loanProduct.getLoanProductRelatedDetail().getRepayEvery())
                 .repaymentFrequencyType(loanProduct.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue())
                 .interestRatePerPeriod(interestRatePerPeriod)
                 .interestType(loanProduct.getLoanProductRelatedDetail().getInterestMethod().getValue())
                 .amortizationType(loanProduct.getLoanProductRelatedDetail().getAmortizationMethod().getValue())
                 .interestCalculationPeriodType(loanProduct.getLoanProductRelatedDetail().getInterestCalculationPeriodMethod().getValue())
-                .transactionProcessingStrategyCode(loanProduct.getTransactionProcessingStrategyCode())
-                .charges(loanCharges)
-                .collateral(Collections.emptyList())
-                .dateFormat(CustomDateUtils.ENGLISH_DATE_FORMAT)
-                .locale("en")
-                .clientId(existingLoan.getClientId())
-                .clientIdNumber(clientIdNumber)
-                .loanType("individual").principal(principalAmount)
+                .transactionProcessingStrategyCode(loanProduct.getTransactionProcessingStrategyCode()).charges(loanCharges)
+                .collateral(Collections.emptyList()).dateFormat(CustomDateUtils.ENGLISH_DATE_FORMAT).locale("en")
+                .clientId(existingLoan.getClientId()).clientIdNumber(clientIdNumber).loanType("individual").principal(principalAmount)
                 .graceOnPrincipalPayment(loanProduct.getLoanProductRelatedDetail().getGraceOnPrincipalPayment())
                 .graceOnInterestPayment(loanProduct.getLoanProductRelatedDetail().getGraceOnInterestPayment())
-                .graceOnInterestCharged(loanProduct.getLoanProductRelatedDetail().graceOnInterestCharged())
-                .isTopup("true")
-                .loanIdToClose(existingLoan.getId().toString())
-                .isWriteoffPunish(true)
-                .build();
+                .graceOnInterestCharged(loanProduct.getLoanProductRelatedDetail().graceOnInterestCharged()).isTopup("true")
+                .loanIdToClose(existingLoan.getId().toString()).isWriteoffPunish(true).build();
         final GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.SPANISH_DATE_FORMAT));
         final String payload = gsonBuilder.create().toJson(payloadData);
@@ -193,15 +175,12 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
 
     }
 
-    private void approveLoanApplication(Loan loan, BigDecimal principalAmount,  LocalDate transactionDate) {
+    private void approveLoanApplication(Loan loan, BigDecimal principalAmount, LocalDate transactionDate) {
 
         ApproveLoanPayloadData payloadData = ApproveLoanPayloadData.builder()
                 .approvedOnDate(DateUtils.format(transactionDate, CustomDateUtils.ENGLISH_DATE_FORMAT))
                 .expectedDisbursementDate(DateUtils.format(transactionDate, CustomDateUtils.ENGLISH_DATE_FORMAT))
-                .approvedLoanAmount(principalAmount)
-                .locale("en")
-                .dateFormat(CustomDateUtils.ENGLISH_DATE_FORMAT)
-                .build();
+                .approvedLoanAmount(principalAmount).locale("en").dateFormat(CustomDateUtils.ENGLISH_DATE_FORMAT).build();
 
         // Execute qpprove loan command
         GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
@@ -217,10 +196,7 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
 
         DisburseLoanPayloadData payloadData = DisburseLoanPayloadData.builder()
                 .actualDisbursementDate(DateUtils.format(transactionDate, CustomDateUtils.ENGLISH_DATE_FORMAT))
-                .transactionAmount(principalAmount)
-                .locale("en")
-                .dateFormat(CustomDateUtils.ENGLISH_DATE_FORMAT)
-                .isWriteoffPunish(true)
+                .transactionAmount(principalAmount).locale("en").dateFormat(CustomDateUtils.ENGLISH_DATE_FORMAT).isWriteoffPunish(true)
                 .build();
 
         // Execute disburse loan command

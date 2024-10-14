@@ -285,7 +285,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             if (isWriteoffPunish == null) {
                 isWriteoffPunish = false;
             }
-            if ((loanProduct.canUseForTopup() || isWriteoffPunish)  && clientId != null) {
+            if ((loanProduct.canUseForTopup() || isWriteoffPunish) && clientId != null) {
                 final Boolean isTopup = command.booleanObjectValueOfParameterNamed(LoanApiConstants.isTopup);
                 if (null == isTopup) {
                     newLoanApplication.setIsTopup(false);

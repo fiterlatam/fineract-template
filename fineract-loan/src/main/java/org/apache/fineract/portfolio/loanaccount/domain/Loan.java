@@ -7621,7 +7621,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public ChangedTransactionDetail handleWriteoffPunishTransactions(final LoanTransaction repaymentTransaction,
-                                                            final LoanLifecycleStateMachine loanLifecycleStateMachine, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
+            final LoanLifecycleStateMachine loanLifecycleStateMachine, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
 
         validateForForeclosure(repaymentTransaction.getTransactionDate());
         applyAccruals();

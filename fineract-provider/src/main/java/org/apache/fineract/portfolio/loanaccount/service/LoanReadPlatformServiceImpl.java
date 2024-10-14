@@ -3525,7 +3525,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForAval());
         } else if (claimType.equals("insurance")) {
             sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForInsurance());
-        } else{
+        } else {
             sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForWriteoff());
         }
         sqlBuilder.append(" and ml.excluded_from_reclaim = false and ml.claim_type is null and ml.loan_schedule_type = 'PROGRESSIVE' ");
@@ -3554,7 +3554,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForAval());
         } else if (claimType.equals("insurance")) {
             sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForInsurance());
-        } else{
+        } else {
             sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForWriteoff());
         }
         sqlBuilder.append(

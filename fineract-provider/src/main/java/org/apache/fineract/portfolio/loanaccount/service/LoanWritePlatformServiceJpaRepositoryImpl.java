@@ -516,8 +516,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                 final LoanRepaymentScheduleInstallment foreCloseDetail = loanToClose.fetchLoanForeclosureDetail(actualDisbursementDate);
                 BigDecimal loanOutstanding = foreCloseDetail.getTotalOutstanding(loanToClose.getCurrency()).getAmount();
-                        /*BigDecimal loanOutstanding = this.loanReadPlatformService
-                        .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose, actualDisbursementDate).getAmount();*/
+                /*
+                 * BigDecimal loanOutstanding = this.loanReadPlatformService
+                 * .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose,
+                 * actualDisbursementDate).getAmount();
+                 */
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
                 if (loanToClose.claimType() == null || !loanToClose.claimType().equals("castigado")) {
                     if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
@@ -526,7 +529,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     }
                 }
                 if (loanToClose.claimType() == null || !loanToClose.claimType().equals("castigado")) {
-                    // in case of castigado claim new loan will be of 1 installment and equal to outstanding amount of the existing loan
+                    // in case of castigado claim new loan will be of 1 installment and equal to outstanding amount of
+                    // the existing loan
                     amountToDisburse = disburseAmount.minus(loanOutstanding);
                 }
 

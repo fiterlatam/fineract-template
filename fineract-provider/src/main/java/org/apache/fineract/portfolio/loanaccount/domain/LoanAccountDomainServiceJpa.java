@@ -1193,7 +1193,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
     @Override
     public LoanTransaction writeoffPunishLoan(Loan loan, final LocalDate writeOffDate, final String noteText, final ExternalId externalId,
-                                              Map<String, Object> changes) {
+            Map<String, Object> changes) {
         if (loan.isChargedOff() && DateUtils.isBefore(writeOffDate, loan.getChargedOffOnDate())) {
             throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
                     + loan.getId()
@@ -1260,8 +1260,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         }
 
         List<Long> transactionIds = new ArrayList<>();
-        final ChangedTransactionDetail changedTransactionDetail = loan.handleClaimTransactions(payment,
-                defaultLoanLifecycleStateMachine, scheduleGeneratorDTO);
+        final ChangedTransactionDetail changedTransactionDetail = loan.handleClaimTransactions(payment, defaultLoanLifecycleStateMachine,
+                scheduleGeneratorDTO);
 
         /***
          * TODO Vishwas Batch save is giving me a HibernateOptimisticLockingFailureException, looping and saving for the

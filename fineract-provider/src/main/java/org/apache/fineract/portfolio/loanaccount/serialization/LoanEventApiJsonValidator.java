@@ -101,7 +101,6 @@ public final class LoanEventApiJsonValidator {
         final LocalDate actualDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed("actualDisbursementDate", element);
         baseDataValidator.reset().parameter("actualDisbursementDate").value(actualDisbursementDate).notNull();
 
-
         Boolean isWriteoffPunish = this.fromApiJsonHelper.extractBooleanNamed("isWriteoffPunish", element);
         if (isWriteoffPunish == null) {
             isWriteoffPunish = false;
