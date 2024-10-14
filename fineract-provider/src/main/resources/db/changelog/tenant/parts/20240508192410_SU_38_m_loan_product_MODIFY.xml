@@ -45,4 +45,15 @@
                                  referencedTableName="m_code_value"
                                  referencedColumnNames="id"/>
     </changeSet>
+
+    <changeSet author="fineract" id="3">
+        <preConditions>
+            <not>
+                <columnExists tableName="m_product_loan" columnName="max_vehicle_cupo" />
+            </not>
+        </preConditions>
+        <addColumn tableName="m_product_loan">
+            <column name="max_vehicle_cupo" type="DECIMAL(19, 4)" />
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
