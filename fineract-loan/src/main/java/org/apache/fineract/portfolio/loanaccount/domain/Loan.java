@@ -2771,6 +2771,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     .isBefore(currentDate); selectedDate = selectedDate.plusDays(1)) {
                 applyDailyAccruals(selectedDate);
             }
+
         }
 
         ChangedTransactionDetail result = reprocessTransactionForDisbursement();
@@ -2793,7 +2794,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         BigDecimal dailyInterest = calculateDailyInterestForDate(currentDate, installments);
 
-        if (dailyInterest.compareTo(BigDecimal.ZERO) > 0) {
+        // if (dailyInterest.compareTo(BigDecimal.ZERO) > 0) {
+        if (dailyInterest != null) {
             Money dailyInterestMoney = Money.of(getCurrency(), dailyInterest);
             log.info("Applying daily interest for loan with id {} with amount {} converted to {} on date {} ", getId(), dailyInterest,
                     dailyInterestMoney, currentDate);
@@ -2814,9 +2816,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
                 // Adjust interest on the last day of the period to make up the difference
                 if (date.equals(installment.getDueDate())) {
-                    BigDecimal totalAccruedInterest = installment.getAccruedInterest(getCurrency()).getAmount();
-                    // This will ensure no rounding differences remain
-                    dailyInterest = interestForInstallment.getAmount().subtract(totalAccruedInterest);
+                    // if the amount is whole number when divided across the days in the period, then do same for last
+                    // day
+                    if (interestForInstallment.getAmount().remainder(BigDecimal.valueOf(daysInPeriod)).compareTo(BigDecimal.ZERO) == 0) {
+                        dailyInterest = interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2,
+                                RoundingMode.HALF_UP);
+                    } else {
+                        BigDecimal totalAccruedInterest = installment.getAccruedInterest(getCurrency()).getAmount();
+                        // This will ensure no rounding differences remain
+                        dailyInterest = interestForInstallment.getAmount().subtract(totalAccruedInterest);
+                    }
 
                 } else {
                     dailyInterest = interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2, RoundingMode.HALF_UP);
@@ -2828,7 +2837,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 return dailyInterest;
             }
         }
-        return BigDecimal.ZERO;
+
+        return null;
     }
 
     private void regenerateRepaymentScheduleWithInterestRecalculationIfNeeded(boolean interestRecalculationEnabledParam,
