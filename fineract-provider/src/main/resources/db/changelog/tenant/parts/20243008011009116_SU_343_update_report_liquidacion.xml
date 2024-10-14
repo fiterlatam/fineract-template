@@ -65,12 +65,12 @@ order by
         <update tableName="stretchy_report">
             <column name="report_sql">
                 <![CDATA[
-                   SELECT 	   macs.id                                     AS "ID",
+                  SELECT 	   macs.id                                     AS "ID",
                                TO_CHAR(macs.collection_date, 'DD/MM/YYYY') AS "Fecha de Cobro",
                                macs.nit                                    AS "NIT",
                                macs.client_ally_id                         AS "ID de Aliado del Cliente",
                                macs.company_name                           AS "Nombre de la Empresa",
-                               ccapos.code                    			   AS "ID del Punto de Venta",
+                               ccapos.code                    			   AS "Código del Punto de Venta",
                                macs.point_of_sales_name                    AS "Nombre del Punto de Venta",
                                macs.city_id                                AS "ID de la Ciudad",
                                macs.city_name                              AS "Nombre de la Ciudad",

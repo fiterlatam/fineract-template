@@ -291,4 +291,6 @@
     <include file="parts/20243008011009115_SU_382_add_new_columns-loan.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU_382_add_new_columns-loan-transactions.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU_382_new-charge-job.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009115_SU_343_update_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009116_SU_343_update_report_liquidacion.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
