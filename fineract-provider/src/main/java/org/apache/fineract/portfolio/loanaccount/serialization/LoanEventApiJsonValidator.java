@@ -88,7 +88,7 @@ public final class LoanEventApiJsonValidator {
                     "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber", "adjustRepaymentDate",
                     LoanApiConstants.principalDisbursedParameterName, LoanApiConstants.emiAmountParameterName,
                     LoanApiConstants.postDatedChecks, LoanApiConstants.disbursementNetDisbursalAmountParameterName,
-                    LoanApiConstants.CHANNEL_NAME));
+                    LoanApiConstants.CHANNEL_NAME, "isWriteoffPunish"));
         }
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
@@ -101,8 +101,16 @@ public final class LoanEventApiJsonValidator {
         final LocalDate actualDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed("actualDisbursementDate", element);
         baseDataValidator.reset().parameter("actualDisbursementDate").value(actualDisbursementDate).notNull();
 
+
+        Boolean isWriteoffPunish = this.fromApiJsonHelper.extractBooleanNamed("isWriteoffPunish", element);
+        if (isWriteoffPunish == null) {
+            isWriteoffPunish = false;
+        }
+
         final String channelName = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.CHANNEL_NAME, element);
-        baseDataValidator.reset().parameter(LoanApiConstants.CHANNEL_NAME).value(channelName).notBlank();
+        if (!isWriteoffPunish) {
+            baseDataValidator.reset().parameter(LoanApiConstants.CHANNEL_NAME).value(channelName).notBlank();
+        }
 
         final String note = this.fromApiJsonHelper.extractStringNamed("note", element);
         baseDataValidator.reset().parameter("note").value(note).notExceedingLengthOf(1000);
@@ -361,8 +369,14 @@ public final class LoanEventApiJsonValidator {
                     .notExceedingLengthOf(50);
         }
 
-        final String channelHash = this.fromApiJsonHelper.extractStringNamed("channelHash", element);
-        baseDataValidator.reset().parameter("channelHash").value(channelHash).notExceedingLengthOf(5000);
+        Boolean isWriteoffPunish = this.fromApiJsonHelper.extractBooleanNamed("isWriteoffPunish", element);
+        if (isWriteoffPunish == null) {
+            isWriteoffPunish = false;
+        }
+        if (!isWriteoffPunish) {
+            final String channelHash = this.fromApiJsonHelper.extractStringNamed("channelHash", element);
+            baseDataValidator.reset().parameter("channelHash").value(channelHash).notExceedingLengthOf(5000);
+        }
 
     }
 

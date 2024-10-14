@@ -281,7 +281,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     productRelatedDetail.getRepayEvery(), productRelatedDetail.getRepaymentPeriodFrequencyType().getValue(),
                     newLoanApplication);
 
-            if (loanProduct.canUseForTopup() && clientId != null) {
+            Boolean isWriteoffPunish = this.fromJsonHelper.extractBooleanNamed("isWriteoffPunish", command.parsedJson());
+            if (isWriteoffPunish == null) {
+                isWriteoffPunish = false;
+            }
+            if ((loanProduct.canUseForTopup() || isWriteoffPunish)  && clientId != null) {
                 final Boolean isTopup = command.booleanObjectValueOfParameterNamed(LoanApiConstants.isTopup);
                 if (null == isTopup) {
                     newLoanApplication.setIsTopup(false);

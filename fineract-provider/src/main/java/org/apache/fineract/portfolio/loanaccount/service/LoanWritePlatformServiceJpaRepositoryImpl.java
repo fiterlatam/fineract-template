@@ -342,11 +342,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final AppUser currentUser = getAppUserIfPresent();
 
         this.loanEventApiJsonValidator.validateDisbursement(command.json(), isAccountTransfer);
-        String channelName = command.stringValueOfParameterNamed("channelName");
-        if (channelName == null) {
-            channelName = this.platformSecurityContext.getApiRequestChannel();
+        Boolean isWriteoffPunish = command.booleanObjectValueOfParameterNamed("isWriteoffPunish");
+        if (isWriteoffPunish == null) {
+            isWriteoffPunish = false;
         }
-        this.validatedDisbursementChannel(channelName);
+        if (!isWriteoffPunish) {
+            String channelName = command.stringValueOfParameterNamed("channelName");
+            if (channelName == null) {
+                channelName = this.platformSecurityContext.getApiRequestChannel();
+            }
+            this.validatedDisbursementChannel(channelName);
+        }
 
         if (command.parameterExists("postDatedChecks")) {
             // validate with post dated checks for the disbursement

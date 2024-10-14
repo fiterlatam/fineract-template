@@ -1498,6 +1498,7 @@ public class LoansApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Submit a new Loan Application as topup to writeoff the existing loan", description = "Submits a new loan application as topup")
+    @RequestBody(required = true)
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
     public String writeOffPunishLoan(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
                                      @Parameter(hidden = true) final String apiRequestBodyAsJson) {
