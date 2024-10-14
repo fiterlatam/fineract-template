@@ -1273,9 +1273,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             saveLoanTransactionWithDataIntegrityViolationChecks(newTransaction);
             transactionIds.add(newTransaction.getId());
         }
-        changes.put("transactions", transactionIds);
-        changes.put("eventAmount", payPrincipal.getAmount().negate());
-
         if (changedTransactionDetail != null) {
             for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
                 saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.getValue());

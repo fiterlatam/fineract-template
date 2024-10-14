@@ -62,7 +62,7 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
     private final LoanEventApiJsonValidator loanEventApiJsonValidator;
     private final LoanAccountDomainService loanAccountDomainService;
     private final LoanReadPlatformService loanReadPlatformService;
-    private final LoanRepository loanRepository;
+    private final LoanRepositoryWrapper loanRepository;
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
     private final LoanBlockingReasonRepository blockingReasonRepository;
 
@@ -142,7 +142,12 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
                 outstandingAmount = outstandingAmount.subtract(installment.getAdvancePrincipalAmount());
             }
         }*/
-        outstandingAmount = outstandingAmount.add(outstandingAmount);
+        // outstandingAmount = outstandingAmount.add(outstandingAmount);
+
+        existingLoanApplication.setClaimType(claimType);
+        existingLoanApplication.setClaimDate(transactionDate);
+
+        this.loanRepository.saveAndFlush(existingLoanApplication);
         // Create new Loan Application
         Long newLoanId = createLoanApplication(outstandingAmount, castigadoProduct, existingLoanApplication, transactionDate);
         Loan newLoan = this.loanAssembler.assembleFrom(newLoanId);
@@ -170,6 +175,8 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
                 "Castigado", DateUtils.getLocalDateOfTenant());
         blockingReasonRepository.saveAndFlush(loanBlockingReason);
         this.loanRepository.saveAndFlush(newLoan);
+
+        this.loanRepository.removeLoanExclusion(existingLoanApplication.claimType());
 
         final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();
         return commandProcessingResultBuilder //

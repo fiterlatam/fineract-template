@@ -76,6 +76,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
             for (final LoanCharge loanCharge : charges) {
                 if (!loanCharge.isDueAtDisbursement()) {
                     loanCharge.resetPaidAmount(currency);
+                    loanCharge.resetWrittenOffAmount(currency);
                 }
             }
         }

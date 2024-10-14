@@ -1471,9 +1471,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 BigDecimal loanOutstanding = this.loanReadPlatformService
                         .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose, expectedDisbursementDate).getAmount();
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
-                if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
-                            "Topup loan amount should be greater than outstanding amount of loan to be closed.");
+                if (loanToClose.claimType() == null || !loanToClose.claimType().equals("castigado")) {
+                    if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
+                        throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
+                                "Topup loan amount should be greater than outstanding amount of loan to be closed.");
+                    }
                 }
                 BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(loanOutstanding);
                 loan.adjustNetDisbursalAmount(netDisbursalAmount);

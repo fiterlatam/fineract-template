@@ -22,7 +22,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
-    <changeSet id="1" author="fineract">
+    <changeSet id="3" author="fineract">
         <insert tableName="STRETCHY_REPORT">
             <column name="REPORT_NAME" value="Reporte de Castigo de cartera"/>
             <column name="REPORT_SQL">
@@ -43,7 +43,7 @@
                             join m_product_loan mpl on mpl.id = ml.product_id
                             join m_client mcl on mcl.id = ml.client_id
                             join m_loan_arrears_aging mlaa on mlaa.loan_id = ml.id
-                            left left join
+                            left join
                                 (
                                     select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
                                         from m_loan_charge mlc

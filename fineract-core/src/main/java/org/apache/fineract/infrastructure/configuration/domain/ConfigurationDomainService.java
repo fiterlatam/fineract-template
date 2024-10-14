@@ -145,5 +145,8 @@ public interface ConfigurationDomainService {
 
     Long retriveMinimumDaysOfArrearsToClaim();
 
+    boolean allowPaymentsWithPreviousDateEnabled();
+
     Long retriveMinimumDaysOfArrearsToWriteOff();
+
 }
