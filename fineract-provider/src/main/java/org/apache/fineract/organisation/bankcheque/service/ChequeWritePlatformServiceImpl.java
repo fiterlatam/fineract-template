@@ -251,6 +251,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         newCheque.setIssuanceApprovedBy(oldCheque.getIssuanceApprovedBy());
         newCheque.setIssuanceAuthorizeBy(oldCheque.getIssuanceAuthorizeBy());
         newCheque.setIssuanceAuthorizeOnDate(oldCheque.getIssuanceAuthorizeOnDate());
+        newCheque.setNumeroCliente(oldCheque.getNumeroCliente());
         newCheque.setIsReassigned(true);
         this.chequeJpaRepository.saveAll(List.of(oldCheque, newCheque));
         return new CommandProcessingResultBuilder().withCommandId(command.commandId())
@@ -482,49 +483,52 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                     throw new BankChequeException("guarantee.savings.account.not.found",
                             "Guarantee savings is not found for client ID" + numeroCliente);
                 }
-                BigDecimal availableBalance = BigDecimal.ZERO;
-                final SavingsAccountData savingsAccountData = savingsAccountDataOptional.get();
-                final Long savingsAccountId = savingsAccountData.getId();
-                if (savingsAccountData.getSummary() != null) {
-                    availableBalance = savingsAccountData.getSummary().getAvailableBalance();
-                }
-                if (guaranteeAmount.compareTo(availableBalance) > 0) {
-                    throw new BankChequeException("guarantee.amount.greater.than.available.savings.account.balance",
-                            "Guarantee amount is greater than savings account balance of" + availableBalance);
-                }
-                final String localeAsString = "en";
-                final String dateFormat = "dd MMMM yyyy";
-                final JsonObject jsonObject = new JsonObject();
-                final LocalDate localDate = DateUtils.getBusinessLocalDate();
-                Locale locale = JsonParserHelper.localeFromString(localeAsString);
-                final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
-                final String localDateString = localDate.format(dateTimeFormatter);
-                jsonObject.addProperty("locale", localeAsString);
-                jsonObject.addProperty("dateFormat", dateFormat);
-                jsonObject.addProperty("transactionAmount", guaranteeAmount);
-                jsonObject.addProperty("transactionDate", localDateString);
-                if (!CollectionUtils.isEmpty(paymentTypeOptions)) {
-                    Optional<PaymentTypeData> paymentTypeOptional = new ArrayList<>(paymentTypeOptions).stream()
-                            .filter(pt -> BankChequeApiConstants.BANK_CHEQUE_PAYMENT_TYPE.equalsIgnoreCase(pt.getName())).findFirst();
-                    if (paymentTypeOptional.isPresent()) {
-                        PaymentTypeData paymentType = paymentTypeOptional.get();
-                        jsonObject.addProperty("paymentTypeId", paymentType.getId());
+
+                if (!chequeData.getReassingedCheque()){
+                    BigDecimal availableBalance = BigDecimal.ZERO;
+                    final SavingsAccountData savingsAccountData = savingsAccountDataOptional.get();
+                    final Long savingsAccountId = savingsAccountData.getId();
+                    if (savingsAccountData.getSummary() != null) {
+                        availableBalance = savingsAccountData.getSummary().getAvailableBalance();
                     }
-                }
-                jsonObject.addProperty("accountNumber", bankAccNo);
-                jsonObject.addProperty("checkNumber", chequeData.getChequeNo());
-                jsonObject.addProperty("receiptNumber", chequeData.getGuaranteeId());
-                jsonObject.addProperty("bankNumber", chequeData.getBankName());
-                jsonObject.addProperty("glAccountId", chequeData.getGlAccountId());
-                jsonObject.addProperty("routingCode", "");
-                final String note = "Retiro de garantía por ID de garantía " + guaranteeId;
-                jsonObject.addProperty("note", note);
-                final JsonCommand withdrawalJsonCommand = JsonCommand.fromJsonElement(savingsAccountId, jsonObject, this.fromApiJsonHelper);
-                withdrawalJsonCommand.setJsonCommand(jsonObject.toString());
-                CommandProcessingResult result = this.savingsAccountWritePlatformService.withdrawal(savingsAccountId,
-                        withdrawalJsonCommand);
-                if (result != null) {
-                    log.info("Guarantee withdrawal is successful for savings account ID {}", result.getSavingsId());
+                    if (guaranteeAmount.compareTo(availableBalance) > 0) {
+                        throw new BankChequeException("guarantee.amount.greater.than.available.savings.account.balance",
+                                "Guarantee amount is greater than savings account balance of" + availableBalance);
+                    }
+                    final String localeAsString = "en";
+                    final String dateFormat = "dd MMMM yyyy";
+                    final JsonObject jsonObject = new JsonObject();
+                    final LocalDate localDate = DateUtils.getBusinessLocalDate();
+                    Locale locale = JsonParserHelper.localeFromString(localeAsString);
+                    final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+                    final String localDateString = localDate.format(dateTimeFormatter);
+                    jsonObject.addProperty("locale", localeAsString);
+                    jsonObject.addProperty("dateFormat", dateFormat);
+                    jsonObject.addProperty("transactionAmount", guaranteeAmount);
+                    jsonObject.addProperty("transactionDate", localDateString);
+                    if (!CollectionUtils.isEmpty(paymentTypeOptions)) {
+                        Optional<PaymentTypeData> paymentTypeOptional = new ArrayList<>(paymentTypeOptions).stream()
+                                .filter(pt -> BankChequeApiConstants.BANK_CHEQUE_PAYMENT_TYPE.equalsIgnoreCase(pt.getName())).findFirst();
+                        if (paymentTypeOptional.isPresent()) {
+                            PaymentTypeData paymentType = paymentTypeOptional.get();
+                            jsonObject.addProperty("paymentTypeId", paymentType.getId());
+                        }
+                    }
+                    jsonObject.addProperty("accountNumber", bankAccNo);
+                    jsonObject.addProperty("checkNumber", chequeData.getChequeNo());
+                    jsonObject.addProperty("receiptNumber", chequeData.getGuaranteeId());
+                    jsonObject.addProperty("bankNumber", chequeData.getBankName());
+                    jsonObject.addProperty("glAccountId", chequeData.getGlAccountId());
+                    jsonObject.addProperty("routingCode", "");
+                    final String note = "Retiro de garantía por ID de garantía " + guaranteeId;
+                    jsonObject.addProperty("note", note);
+                    final JsonCommand withdrawalJsonCommand = JsonCommand.fromJsonElement(savingsAccountId, jsonObject, this.fromApiJsonHelper);
+                    withdrawalJsonCommand.setJsonCommand(jsonObject.toString());
+                    CommandProcessingResult result = this.savingsAccountWritePlatformService.withdrawal(savingsAccountId,
+                            withdrawalJsonCommand);
+                    if (result != null) {
+                        log.info("Guarantee withdrawal is successful for savings account ID {}", result.getSavingsId());
+                    }
                 }
             }
             if (chequeAmount != null) {
