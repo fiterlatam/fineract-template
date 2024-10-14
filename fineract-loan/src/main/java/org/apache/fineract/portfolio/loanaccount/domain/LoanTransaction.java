@@ -102,6 +102,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "is_daily_accrual", nullable = false)
     private boolean dailyAccrual;
 
+    @Column(name = "is_installment_accrual", nullable = false)
+    private boolean installmentAccrual;
+
     @Column(name = "external_id", length = 100, nullable = true, unique = true)
     private ExternalId externalId;
 
@@ -313,6 +316,13 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         final LoanTransaction applyCharge = new LoanTransaction(loan, office, LoanTransactionType.ACCRUAL, amount.getAmount(), applyDate,
                 externalId);
         applyCharge.updateChargesComponents(feeCharges, penaltyCharges);
+        return applyCharge;
+    }
+
+    public static LoanTransaction accrueInstallmentCharge(final Loan loan, final Office office, final Money amount,
+            final LocalDate applyDate, final Money feeCharges, final Money penaltyCharges, final ExternalId externalId) {
+        LoanTransaction applyCharge = accrueLoanCharge(loan, office, amount, applyDate, feeCharges, penaltyCharges, externalId);
+        applyCharge.setInstallmentAccrual(true);
         return applyCharge;
     }
 
@@ -1010,6 +1020,14 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setDailyAccrual(boolean dailyAccrual) {
         this.dailyAccrual = dailyAccrual;
+    }
+
+    public boolean isInstallmentAccrual() {
+        return installmentAccrual;
+    }
+
+    public void setInstallmentAccrual(boolean installmentAccrual) {
+        this.installmentAccrual = installmentAccrual;
     }
 
     public boolean recalculateEMI() {
