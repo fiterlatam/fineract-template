@@ -1254,7 +1254,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             final PaymentDetail paymentDetail = null;
             payment = LoanTransaction.repayment(loan.getOffice(), payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable),
                     paymentDetail, writeOffDate, externalId);
-            payment.setClaimType("castigado");
+            payment.setClaimType(loan.claimType());
             payment.updateLoan(loan);
             newTransactions.add(payment);
         }

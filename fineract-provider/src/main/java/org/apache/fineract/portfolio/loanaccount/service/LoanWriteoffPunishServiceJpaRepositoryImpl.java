@@ -94,56 +94,6 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
 
         final LoanRepaymentScheduleInstallment foreCloseDetail = existingLoanApplication.fetchLoanForeclosureDetail(transactionDate);
         BigDecimal outstandingAmount = foreCloseDetail.getTotalOutstanding(existingLoanApplication.getCurrency()).getAmount();
-        /* BigDecimal outstandingAmount = this.loanReadPlatformService.retrieveLoanPrePaymentTemplate(
-                LoanTransactionType.REPAYMENT, loanId, existingLoanApplication.getDisbursementDate()).getAmount();
-
-        // Double the outstanding amount as half will go to close the existing loan
-        outstandingAmount = outstandingAmount.add(outstandingAmount);
-        outstandingAmount = BigDecimal.ZERO;
-
-        for (LoanRepaymentScheduleInstallment installment : existingLoanApplication.getRepaymentScheduleInstallments()) {
-            if (transactionDate.isAfter(installment.getDueDate())) {
-                outstandingAmount = outstandingAmount.add(installment.getTotalOutstanding((existingLoanApplication.getCurrency())).getAmount());
-                *//*outstandingAmount = outstandingAmount.add(installment.getPrincipal(existingLoanApplication.getCurrency()).getAmount());
-                outstandingAmount = outstandingAmount.add(installment.getInterestCharged(existingLoanApplication.getCurrency()).getAmount());
-                outstandingAmount = outstandingAmount.add(installment.getFeeChargesCharged(existingLoanApplication.getCurrency()).getAmount());
-                outstandingAmount = outstandingAmount.add(installment.getPenaltyChargesCharged(existingLoanApplication.getCurrency()).getAmount());
-                outstandingAmount = outstandingAmount.subtract(installment.getAdvancePrincipalAmount());*//*
-            } else if (installment.isOnOrBetween(transactionDate)) {
-                Money interestDue = Money.zero(existingLoanApplication.getCurrency());
-                final RoundingMode roundingMode = RoundingMode.HALF_UP;
-
-                BigDecimal numberOfDaysForInterestCalculation = BigDecimal.ZERO;
-                if (installment.interestRecalculatedOnDate() != null) {
-                    if (installment.interestRecalculatedOnDate().isAfter(transactionDate)) { // This should only be true if the
-                        // repayment is reversed
-                        numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(installment.getFromDate(), transactionDate));
-                    } else {
-                        numberOfDaysForInterestCalculation = BigDecimal
-                                .valueOf(ChronoUnit.DAYS.between(installment.interestRecalculatedOnDate(), transactionDate));
-                    }
-                } else {
-                    numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(installment.getFromDate(), transactionDate));
-                }
-                BigDecimal numberOfDaysInPeriod = BigDecimal.valueOf(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
-                BigDecimal oneDayOfInterest = installment.getInterestCharged(existingLoanApplication.getCurrency()).getAmount().divide(numberOfDaysInPeriod, RoundingMode.HALF_UP);
-                oneDayOfInterest = oneDayOfInterest.setScale(5, roundingMode);
-                interestDue = Money.of(existingLoanApplication.getCurrency(), oneDayOfInterest.multiply(numberOfDaysForInterestCalculation));
-                if (interestDue.isGreaterThan(installment.getInterestOutstanding(existingLoanApplication.getCurrency()))) {
-                    interestDue =installment.getInterestOutstanding(existingLoanApplication.getCurrency());
-                }
-                outstandingAmount = outstandingAmount.add(interestDue.getAmount());
-                outstandingAmount = outstandingAmount.add(installment.getPrincipalOutstanding(existingLoanApplication.getCurrency()).getAmount());
-                outstandingAmount = outstandingAmount.add(installment.getFeeChargesOutstanding(existingLoanApplication.getCurrency()).getAmount());
-                outstandingAmount = outstandingAmount.add(installment.getPenaltyChargesOutstanding(existingLoanApplication.getCurrency()).getAmount());
-                outstandingAmount = outstandingAmount.subtract(installment.getAdvancePrincipalAmount());
-            } else {
-                outstandingAmount = outstandingAmount.add(installment.getPrincipalOutstanding(existingLoanApplication.getCurrency()).getAmount());
-                outstandingAmount = outstandingAmount.subtract(installment.getAdvancePrincipalAmount());
-            }
-        }*/
-        // outstandingAmount = outstandingAmount.add(outstandingAmount);
-
         existingLoanApplication.setClaimType(claimType);
         existingLoanApplication.setClaimDate(transactionDate);
 

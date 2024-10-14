@@ -479,9 +479,6 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
             this.loanAccountAssembler.setHelpers(toLoanAccount);
         }
 
-        toLoanAccount.setClaimType("castigado");
-        toLoanAccount.setClaimDate(accountTransferDTO.getTransactionDate());
-
         ExternalId externalIdForDisbursement = accountTransferDTO.getTxnExternalId();
 
         LoanTransaction disburseTransaction = this.loanAccountDomainService.makeDisburseTransaction(accountTransferDTO.getFromAccountId(),
@@ -498,13 +495,14 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
         if (firstUnpaidInstallment.isPresent()) {
             installmentNumber = firstUnpaidInstallment.get().getInstallmentNumber();
         }
-
-        LoanTransaction repayTransaction = this.loanAccountDomainService.writeoffPunishLoan(toLoanAccount, accountTransferDTO.getTransactionDate(), null, externalIdForRepayment, null);
-
-        /*LoanTransaction repayTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.REPAYMENT, toLoanAccount,
-                accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(), accountTransferDTO.getPaymentDetail(),
-                null, externalIdForRepayment, false, chargeRefundChargeType, isAccountTransfer, null, false, true);
-*/
+        LoanTransaction repayTransaction;
+        if (toLoanAccount.claimType() != null) {
+            repayTransaction = this.loanAccountDomainService.writeoffPunishLoan(toLoanAccount, accountTransferDTO.getTransactionDate(), null, externalIdForRepayment, null);
+        } else {
+            repayTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.REPAYMENT, toLoanAccount,
+                    accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(), accountTransferDTO.getPaymentDetail(),
+                    null, externalIdForRepayment, false, chargeRefundChargeType, isAccountTransfer, null, false, true);
+        }
         AccountTransferDetails accountTransferDetails = this.accountTransferAssembler.assembleLoanToLoanTransfer(accountTransferDTO,
                 fromLoanAccount, toLoanAccount, disburseTransaction, repayTransaction);
         this.accountTransferDetailRepository.saveAndFlush(accountTransferDetails);

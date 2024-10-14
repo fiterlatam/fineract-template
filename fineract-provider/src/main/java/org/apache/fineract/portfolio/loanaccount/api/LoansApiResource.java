@@ -1492,22 +1492,4 @@ public class LoansApiResource {
 
         return toApiJsonSerializer.serialize(result);
     }
-
-    @POST
-    @Path("{loanId}/reclaim/writeoff")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
-    @Operation(summary = "Submit a new Loan Application as topup to writeoff the existing loan", description = "Submits a new loan application as topup")
-    @RequestBody(required = true)
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
-    public String writeOffPunishLoan(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
-                                     @Parameter(hidden = true) final String apiRequestBodyAsJson) {
-
-        final CommandWrapper commandRequest = new CommandWrapperBuilder().loanWriteoffPunish(loanId).withJson(apiRequestBodyAsJson).build();
-
-        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
-
-        return this.toApiJsonSerializer.serialize(result);
-    }
-
 }
