@@ -19,9 +19,14 @@
 
 package org.apache.fineract.portfolio.loanproduct.domain;
 
+import lombok.Getter;
+
+@Getter
 public enum LoanProductType {
 
-    SUMAS_PAY("SU+ PAY"), SUMAS_EMPRESSAS("SU+ Empresas");
+    SUMAS_PAY("SU+ PAY"), //
+    SUMAS_EMPRESSAS("SU+ Empresas"), //
+    SUMAS_VEHICULOS("SU+ Vehiculos"); //
 
     private final String code;
 
@@ -29,7 +34,4 @@ public enum LoanProductType {
         this.code = code;
     }
 
-    public String getCode() {
-        return code;
-    }
 }
