@@ -771,12 +771,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         // get only installements beteween the transaction date and current date
-        LocalDate currentDate = DateUtils.getBusinessLocalDate();
-        List<LoanRepaymentScheduleInstallment> applicableInstallments = getRepaymentScheduleInstallments().stream().filter(installment ->
-        // From date is on or after the transaction date
-        !installment.getFromDate().isBefore(suppliedTransactionDate) &&
-        // Due date is on or before the current date
-                !installment.getDueDate().isAfter(currentDate)).toList();
+        LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+        List<LoanRepaymentScheduleInstallment> applicableInstallments = getRepaymentScheduleInstallments().stream()
+                .filter(installment -> installment.getInstallmentNumber() > 0 && // Exclude the graced installment
+                        ( // The installment overlaps with the date range
+                        (!installment.getDueDate().isBefore(suppliedTransactionDate) && !installment.getFromDate().isAfter(currentDate)) ||
+                        // Or the installment starts on the current date
+                                installment.getFromDate().equals(currentDate)))
+                .sorted(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
 
         for (LoanRepaymentScheduleInstallment installment : applicableInstallments) {
             int installmentNumber = installment.getInstallmentNumber();
@@ -791,7 +793,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             for (LoanCharge loanCharge : charges) {
                 LoanInstallmentCharge loanInstallmentCharge = loanCharge.getInstallmentLoanCharge(installmentNumber);
 
-                applyInstallmentCharge(loanInstallmentCharge, installment, loanCharge, suppliedTransactionDate);
+                LocalDate installmentDate = installment.getFromDate();
+
+                applyInstallmentCharge(loanInstallmentCharge, installment, loanCharge, installmentDate);
             }
             // get amount to be paid for the instalment
 
