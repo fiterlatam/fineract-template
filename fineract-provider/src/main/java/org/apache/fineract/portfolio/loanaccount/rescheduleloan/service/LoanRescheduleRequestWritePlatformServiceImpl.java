@@ -24,7 +24,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
@@ -546,8 +545,8 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                             if (rediferirUnpaidInstallments.size() > 1) {
                                 final LoanRepaymentScheduleInstallment secondRediferirUnpaidInstallment = rediferirUnpaidInstallments
                                         .get(0);
-                                 installmentFromDate = transactionDate;
-                                 installmentDueDate = secondRediferirUnpaidInstallment.getDueDate();
+                                installmentFromDate = transactionDate;
+                                installmentDueDate = secondRediferirUnpaidInstallment.getDueDate();
                             }
                         }
                     }
@@ -628,12 +627,11 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                             oldScheduleIds.add(loanTransactionToRepaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getId());
 
                         }
-                        for(LoanRepaymentScheduleInstallment oldSchedulesInstallment : repaymentScheduleInstallments){
+                        for (LoanRepaymentScheduleInstallment oldSchedulesInstallment : repaymentScheduleInstallments) {
                             if (oldScheduleIds.contains(oldSchedulesInstallment.getId())) {
                                 loanSchedule.getInstallments().add(oldSchedulesInstallment);
                             }
                         }
-
 
                         if (newRepaymentTransaction.getLoanTransactionToRepaymentScheduleMappings().size() > 1) {
                             for (LoanRepaymentScheduleInstallment newinstalment : loanSchedule.getInstallments()) {
@@ -648,9 +646,9 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                                     }
                                 }
                             }
-                        }else{
+                        } else {
                             for (LoanRepaymentScheduleInstallment newinstalment : loanSchedule.getInstallments()) {
-                                if(oldScheduleIds.contains(newinstalment.getId())){
+                                if (oldScheduleIds.contains(newinstalment.getId())) {
                                     for (LoanTransactionToRepaymentScheduleMapping newMaping : oldScheduleMaping) {
                                         newinstalment.updatePrincipal(newMaping.getPrincipalPortion());
                                         newinstalment.updateInterestCharged(newMaping.getInterestPortion());
