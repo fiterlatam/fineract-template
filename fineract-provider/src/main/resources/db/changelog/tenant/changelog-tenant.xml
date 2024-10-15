@@ -291,4 +291,5 @@
     <include file="parts/20243008011009115_SU_382_add_new_columns-loan.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU_382_add_new_columns-loan-transactions.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU_382_new-charge-job.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2024100611009115_SU_154_add_columns_for_reclaim_writeoff.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
