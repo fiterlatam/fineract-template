@@ -36,4 +36,54 @@
             ]]>
         </sql>
     </changeSet>
+    <changeSet id="2" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_loan_product_payment_allocation_rule (
+                    loan_product_id,
+                    transaction_type,
+                    allocation_types,
+                    future_installment_allocation_rule,
+                    created_by,
+                    last_modified_by,
+                    created_on_utc,
+                    last_modified_on_utc)
+                SELECT mpl.id,
+                       'DEFAULT',
+                       'PAST_DUE_FEES,DUE_FEES,IN_ADVANCE_FEES,PAST_DUE_MANDATORY_INSURANCE,DUE_MANDATORY_INSURANCE,IN_ADVANCE_MANDATORY_INSURANCE,PAST_DUE_AVAL,DUE_AVAL,IN_ADVANCE_AVAL,PAST_DUE_PENALTY,DUE_PENALTY,IN_ADVANCE_PENALTY,PAST_DUE_PRINCIPAL,DUE_PRINCIPAL,IN_ADVANCE_PRINCIPAL,PAST_DUE_INTEREST,DUE_INTEREST,IN_ADVANCE_INTEREST,PAST_DUE_VOLUNTARY_INSURANCE,DUE_VOLUNTARY_INSURANCE,IN_ADVANCE_VOLUNTARY_INSURANCE',
+                       'NEXT_INSTALLMENT',
+                       1,
+                       1,
+                       NOW(),
+                       NOW()
+                FROM m_product_loan mpl
+                WHERE mpl.id NOT IN (SELECT loan_product_id FROM m_loan_product_payment_allocation_rule);
+            ]]>
+        </sql>
+    </changeSet>
+    <changeSet id="3" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_loan_payment_allocation_rule (
+                    loan_id,
+                    transaction_type,
+                    allocation_types,
+                    future_installment_allocation_rule,
+                    created_by,
+                    last_modified_by,
+                    created_on_utc,
+                    last_modified_on_utc)
+                SELECT ml.id,
+                       'DEFAULT',
+                       'PAST_DUE_FEES,DUE_FEES,IN_ADVANCE_FEES,PAST_DUE_MANDATORY_INSURANCE,DUE_MANDATORY_INSURANCE,IN_ADVANCE_MANDATORY_INSURANCE,PAST_DUE_AVAL,DUE_AVAL,IN_ADVANCE_AVAL,PAST_DUE_PENALTY,DUE_PENALTY,IN_ADVANCE_PENALTY,PAST_DUE_PRINCIPAL,DUE_PRINCIPAL,IN_ADVANCE_PRINCIPAL,PAST_DUE_INTEREST,DUE_INTEREST,IN_ADVANCE_INTEREST,PAST_DUE_VOLUNTARY_INSURANCE,DUE_VOLUNTARY_INSURANCE,IN_ADVANCE_VOLUNTARY_INSURANCE',
+                       'NEXT_INSTALLMENT',
+                       ml.created_by,
+                       ml.last_modified_by ,
+                       ml.created_on_utc,
+                       ml.last_modified_on_utc
+                FROM m_loan ml
+                WHERE ml.id NOT IN (SELECT loan_id FROM m_loan_payment_allocation_rule);
+            ]]>
+        </sql>
+    </changeSet>
 </databaseChangeLog>
