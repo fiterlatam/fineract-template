@@ -63,7 +63,8 @@ public enum JobName {
     LIQUIDACION_DE_RECAUDOS("Liquidacion de Recaudos"), RECALCULATE_LOAN_INTEREST_AFTER_MAXIMUM_LEGAL_RATE_CHANGE(
             "Recalculate Loan Interest After Maximum Legal Rate Change"), LIQUIDACION_DE_COMPRAS("Liquidacion de Compras"), COMPENSATION(
                     "Compensation"), COMPENSATION_ALERT_EMAIL("Compensation Alert Email"), DAILY_LOAN_ACCRUAL("Devengo de Interés diario"), //
-    INSURANCE_CHARGE_CANCELLATION_DUE_TO_DEFAULT("Cancel Default Insurance Charges"), INSTALLMENT_LOAN_CHARGE_ACCRUAL("Devengo de seguro");
+    INSURANCE_CHARGE_CANCELLATION_DUE_TO_DEFAULT("Cancel Default Insurance Charges"), INSTALLMENT_LOAN_CHARGE_ACCRUAL("Devengo de seguro"),
+    ARCHIVE_LOAN_HISTORY("Archivo de cartera");
 
     private final String name;
 
