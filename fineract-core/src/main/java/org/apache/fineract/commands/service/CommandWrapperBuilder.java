@@ -1011,6 +1011,15 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder loanWriteoffPunish(final Long loanId) {
+        this.actionName = "WRITEOFF_PUNISH";
+        this.entityName = "LOAN";
+        this.entityId = null;
+        this.loanId = loanId;
+        this.href = "/loans/reclaim/writeoff/" + loanId;
+        return this;
+    }
+
     public CommandWrapperBuilder creditBalanceRefund(final Long loanId) {
         this.actionName = "CREDITBALANCEREFUND";
         this.entityName = "LOAN";

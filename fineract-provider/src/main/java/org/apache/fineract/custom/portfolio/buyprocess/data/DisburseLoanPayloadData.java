@@ -24,5 +24,6 @@ public class DisburseLoanPayloadData {
     private String dateFormat;
     private String locale;
     private String channelName;
+    private boolean isWriteoffPunish;
 
 }

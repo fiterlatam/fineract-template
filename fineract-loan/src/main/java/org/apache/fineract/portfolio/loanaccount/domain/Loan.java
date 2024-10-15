@@ -771,12 +771,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         // get only installements beteween the transaction date and current date
-        LocalDate currentDate = DateUtils.getBusinessLocalDate();
-        List<LoanRepaymentScheduleInstallment> applicableInstallments = getRepaymentScheduleInstallments().stream().filter(installment ->
-        // From date is on or after the transaction date
-        !installment.getFromDate().isBefore(suppliedTransactionDate) &&
-        // Due date is on or before the current date
-                !installment.getDueDate().isAfter(currentDate)).toList();
+        LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+        List<LoanRepaymentScheduleInstallment> applicableInstallments = getRepaymentScheduleInstallments().stream()
+                .filter(installment -> installment.getInstallmentNumber() > 0 && // Exclude the graced installment
+                        ( // The installment overlaps with the date range
+                        (!installment.getDueDate().isBefore(suppliedTransactionDate) && !installment.getFromDate().isAfter(currentDate)) ||
+                        // Or the installment starts on the current date
+                                installment.getFromDate().equals(currentDate)))
+                .sorted(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
 
         for (LoanRepaymentScheduleInstallment installment : applicableInstallments) {
             int installmentNumber = installment.getInstallmentNumber();
@@ -791,7 +793,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             for (LoanCharge loanCharge : charges) {
                 LoanInstallmentCharge loanInstallmentCharge = loanCharge.getInstallmentLoanCharge(installmentNumber);
 
-                applyInstallmentCharge(loanInstallmentCharge, installment, loanCharge, suppliedTransactionDate);
+                LocalDate installmentDate = installment.getFromDate();
+
+                applyInstallmentCharge(loanInstallmentCharge, installment, loanCharge, installmentDate);
             }
             // get amount to be paid for the instalment
 
@@ -2767,6 +2771,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     .isBefore(currentDate); selectedDate = selectedDate.plusDays(1)) {
                 applyDailyAccruals(selectedDate);
             }
+
         }
 
         ChangedTransactionDetail result = reprocessTransactionForDisbursement();
@@ -2789,7 +2794,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         BigDecimal dailyInterest = calculateDailyInterestForDate(currentDate, installments);
 
-        if (dailyInterest.compareTo(BigDecimal.ZERO) > 0) {
+        // if (dailyInterest.compareTo(BigDecimal.ZERO) > 0) {
+        if (dailyInterest != null) {
             Money dailyInterestMoney = Money.of(getCurrency(), dailyInterest);
             log.info("Applying daily interest for loan with id {} with amount {} converted to {} on date {} ", getId(), dailyInterest,
                     dailyInterestMoney, currentDate);
@@ -2810,9 +2816,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
                 // Adjust interest on the last day of the period to make up the difference
                 if (date.equals(installment.getDueDate())) {
-                    BigDecimal totalAccruedInterest = installment.getAccruedInterest(getCurrency()).getAmount();
-                    // This will ensure no rounding differences remain
-                    dailyInterest = interestForInstallment.getAmount().subtract(totalAccruedInterest);
+                    // if the amount is whole number when divided across the days in the period, then do same for last
+                    // day
+                    if (interestForInstallment.getAmount().remainder(BigDecimal.valueOf(daysInPeriod)).compareTo(BigDecimal.ZERO) == 0) {
+                        dailyInterest = interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2,
+                                RoundingMode.HALF_UP);
+                    } else {
+                        BigDecimal totalAccruedInterest = installment.getAccruedInterest(getCurrency()).getAmount();
+                        // This will ensure no rounding differences remain
+                        dailyInterest = interestForInstallment.getAmount().subtract(totalAccruedInterest);
+                    }
 
                 } else {
                     dailyInterest = interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2, RoundingMode.HALF_UP);
@@ -2824,7 +2837,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 return dailyInterest;
             }
         }
-        return BigDecimal.ZERO;
+
+        return null;
     }
 
     private void regenerateRepaymentScheduleWithInterestRecalculationIfNeeded(boolean interestRecalculationEnabledParam,
@@ -7609,6 +7623,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public ChangedTransactionDetail handleClaimTransactions(final LoanTransaction repaymentTransaction,
+            final LoanLifecycleStateMachine loanLifecycleStateMachine, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
+
+        validateForForeclosure(repaymentTransaction.getTransactionDate());
+        applyAccruals();
+        return handleRepaymentOrRecoveryOrWaiverTransaction(repaymentTransaction, loanLifecycleStateMachine, null, scheduleGeneratorDTO);
+    }
+
+    public ChangedTransactionDetail handleWriteoffPunishTransactions(final LoanTransaction repaymentTransaction,
             final LoanLifecycleStateMachine loanLifecycleStateMachine, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
 
         validateForForeclosure(repaymentTransaction.getTransactionDate());
