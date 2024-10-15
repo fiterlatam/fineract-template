@@ -51,4 +51,5 @@ public class CreateLoanPayloadData {
     private Integer interestRatePoints;
     private String clientIdNumber;
     private String pointOfSaleCode;
+    private boolean isWriteoffPunish;
 }

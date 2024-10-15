@@ -68,6 +68,7 @@ import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollatera
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagementRepositoryWrapper;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.loanproduct.data.AdvanceQuotaConfigurationData;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.savings.data.SavingsProductData;
 import org.apache.fineract.portfolio.savings.service.SavingsProductReadPlatformService;
@@ -312,9 +313,17 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final ClientAdditionalFieldsData loanAdditionalFieldsData = this.retrieveClientAdditionalData(clientId);
             final BigDecimal cupo = ObjectUtils.defaultIfNull(loanAdditionalFieldsData.getCupo(), BigDecimal.ZERO);
             clientData.setCupoMaxAmount(cupo);
-            final BigDecimal totalOutstandingPrincipalAmount = ObjectUtils.defaultIfNull(this.jdbcTemplate.queryForObject(
-                    "SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount FROM m_loan ml WHERE ml.loan_status_id = 300 AND ml.client_id = ?",
-                    BigDecimal.class, new Object[] { clientId }), BigDecimal.ZERO);
+            final String sql = """
+                        SELECT
+                        	COALESCE(SUM(ml.principal_outstanding_derived),0) AS totalOutstandingPrincipalAmount
+                        FROM m_loan ml
+                        INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                        LEFT JOIN m_code_value mcv ON mcv.id = mpl.product_type
+                        WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mcv.code_value != ?
+                    """;
+            final BigDecimal totalOutstandingPrincipalAmount = ObjectUtils.defaultIfNull(
+                    this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, LoanProductType.SUMAS_VEHICULOS.getCode()),
+                    BigDecimal.ZERO);
             final BigDecimal cupoBalance = cupo.subtract(totalOutstandingPrincipalAmount);
             clientData.setCupoBalance(cupoBalance);
             AdvanceQuotaConfigurationData advanceQuotaConfigurationData = this.loanProductReadPlatformService

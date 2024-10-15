@@ -106,4 +106,7 @@ public interface LoanAccountDomainService {
             ExternalId externalId, PaymentDetail paymentDetail);
 
     void applyFinalIncomeAccrualTransaction(Loan loan);
+
+    LoanTransaction writeoffPunishLoan(Loan loan, LocalDate writeOffDate, String noteText, ExternalId externalId,
+            Map<String, Object> changes);
 }
