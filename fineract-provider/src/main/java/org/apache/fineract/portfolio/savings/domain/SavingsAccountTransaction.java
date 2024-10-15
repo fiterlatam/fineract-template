@@ -721,12 +721,12 @@ public final class SavingsAccountTransaction extends AbstractPersistableCustom {
     }
 
     public boolean isCredit() {
-        return isDeposit() || isInterestPostingAndNotReversed() || isDividendPayoutAndNotReversed();
+        return isDeposit() || isInterestPostingAndNotReversed() || isDividendPayoutAndNotReversed() || isAmountRelease();
     }
 
     public boolean isDebit() {
         return isWithdrawal() || isWithdrawalFeeAndNotReversed() || isAnnualFeeAndNotReversed() || isPayCharge()
-                || isOverdraftInterestAndNotReversed() || isWithHoldTaxAndNotReversed();
+                || isOverdraftInterestAndNotReversed() || isWithHoldTaxAndNotReversed() || isAmountOnHold();
     }
 
     public boolean isWithHoldTaxAndNotReversed() {

@@ -920,6 +920,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final Map<String, Object> changes = loan.undoDisbursal(scheduleGeneratorDTO, existingTransactionIds,
                 existingReversedTransactionIds);
 
+        LocalDate localDate = DateUtils.getBusinessLocalDate();
+
         if (!changes.isEmpty()) {
             if (loan.isTopup() && loan.getClientId() != null) {
                 final Long loanIdToClose = loan.getTopupLoanDetails().getLoanIdToClose();
@@ -933,7 +935,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Long userId = currentUser.getId();
             if (loan.getCheque() != null) {
                 final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
-                LocalDate localDate = DateUtils.getBusinessLocalDate();
                 Cheque cheque = loan.getCheque();
                 cheque.setStatus(BankChequeStatus.PENDING_VOIDANCE.getValue());
                 cheque.stampAudit(userId, localDateTime);
@@ -952,6 +953,33 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     final Note note = Note.loanNote(loan, noteText);
                     this.noteRepository.save(note);
                 }
+            }
+            List<SavingsAccountTransaction> savingsAccountTransactions = this.savingsAccountTransactionRepository
+                    .findAllTransactionByLoanId(loanId);
+
+            SavingsAccountTransaction holdTransaction = savingsAccountTransactions.stream().filter(sa -> sa.isAmountOnHoldNotReleased())
+                    .findFirst().orElse(null);
+
+            if (holdTransaction != null) {
+
+                SavingsAccount fromSavingsAccount = holdTransaction.getSavingsAccount();
+                JsonObject requestData = command.parsedJson().getAsJsonObject();
+                requestData.addProperty(fromOfficeIdParamName, fromSavingsAccount.officeId());
+                requestData.addProperty(fromClientIdParamName, fromSavingsAccount.getClient().getId());
+                requestData.addProperty(toClientIdParamName, loan.getClient().getId());
+                requestData.addProperty(toOfficeIdParamName, loan.getOfficeId());
+                final String dateFormat = "dd MMMM yyyy";
+                final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat);
+                requestData.addProperty(transferDateParamName, localDate.format(dateTimeFormatter));
+                requestData.addProperty(transferAmountParamName, holdTransaction.getAmount());
+                requestData.addProperty(transferDescriptionParamName, noteText);
+                final JsonCommand assemblerCommand = JsonCommand.fromJsonElement(loanId, requestData, this.fromApiJsonHelper);
+                assemblerCommand.setJsonCommand(requestData.toString());
+
+                // release loan guarantee to make payment
+                if (holdTransaction.getAmount().compareTo(BigDecimal.ZERO) > 0)
+                    this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command, localDate, holdTransaction);
+
             }
             boolean isAccountTransfer = false;
             final Map<String, Object> accountingBridgeData = loan.deriveAccountingBridgeData(applicationCurrency.toData(),
