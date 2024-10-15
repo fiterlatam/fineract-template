@@ -484,7 +484,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                             "Guarantee savings is not found for client ID" + numeroCliente);
                 }
 
-                if (!chequeData.getReassingedCheque()){
+                if (!chequeData.getReassingedCheque()) {
                     BigDecimal availableBalance = BigDecimal.ZERO;
                     final SavingsAccountData savingsAccountData = savingsAccountDataOptional.get();
                     final Long savingsAccountId = savingsAccountData.getId();
@@ -522,7 +522,8 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                     jsonObject.addProperty("routingCode", "");
                     final String note = "Retiro de garantía por ID de garantía " + guaranteeId;
                     jsonObject.addProperty("note", note);
-                    final JsonCommand withdrawalJsonCommand = JsonCommand.fromJsonElement(savingsAccountId, jsonObject, this.fromApiJsonHelper);
+                    final JsonCommand withdrawalJsonCommand = JsonCommand.fromJsonElement(savingsAccountId, jsonObject,
+                            this.fromApiJsonHelper);
                     withdrawalJsonCommand.setJsonCommand(jsonObject.toString());
                     CommandProcessingResult result = this.savingsAccountWritePlatformService.withdrawal(savingsAccountId,
                             withdrawalJsonCommand);
