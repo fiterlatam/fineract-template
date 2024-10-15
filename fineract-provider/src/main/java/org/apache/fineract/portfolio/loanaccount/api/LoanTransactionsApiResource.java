@@ -495,6 +495,8 @@ public class LoanTransactionsApiResource {
             commandRequest = builder.downPayment(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "claim")) {
             commandRequest = builder.loanClaim(resolvedLoanId).build();
+        } else if (CommandParameterUtil.is(commandParam, "castigado")) {
+            commandRequest = builder.loanWriteoffPunish(resolvedLoanId).build();
         }
 
         if (commandRequest == null) {

@@ -1520,4 +1520,12 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                 || (DateUtils.isBefore(transactionDate, dueDate) && DateUtils.isAfter(transactionDate, fromDate));
     }
 
+    public LocalDate interestRecalculatedOnDate() {
+        return interestRecalculatedOnDate;
+    }
+
+    public void setInterestRecalculatedOnDate(LocalDate interestRecalculatedOnDate) {
+        this.interestRecalculatedOnDate = interestRecalculatedOnDate;
+    }
+
 }
