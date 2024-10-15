@@ -542,4 +542,10 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         return property.isEnabled();
     }
 
+    @Override
+    public Long retriveMinimumDaysOfArrearsToWriteOff() {
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData("Dias de mora minimos castigar cartera");
+        return property.getValue();
+    }
+
 }

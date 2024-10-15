@@ -1462,7 +1462,7 @@ public class LoansApiResource {
             + "loans?orderBy=accountNo&sortOrder=DESC")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansResponse.class))) })
-    public String retrieveAllForAvalReclaim(@Context final UriInfo uriInfo,
+    public String retrieveAllForReclaimOrWriteOff(@Context final UriInfo uriInfo,
             @QueryParam("reclaimType") @Parameter(description = "reclaimType") final String reclaimType) {
 
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
@@ -1479,7 +1479,7 @@ public class LoansApiResource {
     @Path("reclaim/exclude/{loanId}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    @Operation(summary = "Cancel Insurance Due To Bad Sale", description = "Cancel Insurance Due To Bad Sale")
+    @Operation(summary = "Exclude loan from reclaim screen", description = "Exclude loan from reclaim screen")
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
     public String excludeLoanFromReclaim(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
             @Parameter(hidden = true) final String apiRequestBodyAsJson) {
@@ -1492,5 +1492,4 @@ public class LoansApiResource {
 
         return toApiJsonSerializer.serialize(result);
     }
-
 }

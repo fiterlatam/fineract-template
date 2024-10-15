@@ -7630,6 +7630,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return handleRepaymentOrRecoveryOrWaiverTransaction(repaymentTransaction, loanLifecycleStateMachine, null, scheduleGeneratorDTO);
     }
 
+    public ChangedTransactionDetail handleWriteoffPunishTransactions(final LoanTransaction repaymentTransaction,
+            final LoanLifecycleStateMachine loanLifecycleStateMachine, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
+
+        validateForForeclosure(repaymentTransaction.getTransactionDate());
+        applyAccruals();
+        return handleRepaymentOrRecoveryOrWaiverTransaction(repaymentTransaction, loanLifecycleStateMachine, null, scheduleGeneratorDTO);
+    }
+
     public void validateForForeclosure(final LocalDate transactionDate) {
         if (isInterestRecalculationEnabledForProduct()) {
             final String defaultUserMessage = "The loan with interest recalculation enabled cannot be foreclosed.";

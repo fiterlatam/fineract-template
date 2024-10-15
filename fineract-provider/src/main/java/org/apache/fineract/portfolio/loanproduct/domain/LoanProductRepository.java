@@ -39,4 +39,7 @@ public interface LoanProductRepository extends JpaRepository<LoanProduct, Long>,
     LoanProduct findByExternalId(ExternalId externalId);
 
     Optional<LoanProduct> findByName(String name);
+
+    @Query("select loanProduct from LoanProduct loanProduct where loanProduct.productType.label = :productType")
+    List<LoanProduct> findByProductType(@Param("productType") String productType);
 }
