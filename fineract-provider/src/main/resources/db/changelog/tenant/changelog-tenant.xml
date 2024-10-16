@@ -294,4 +294,5 @@
     <include file="parts/2024100611009115_SU_154_add_columns_for_reclaim_writeoff.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009115_SU_343_update_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009116_SU_343_update_report_liquidacion.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009117_SU_384_created_table_archive_loan_history.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
