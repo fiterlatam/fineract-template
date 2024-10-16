@@ -6,7 +6,6 @@ import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
-import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyRepository;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -35,8 +34,8 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
 
     public ArchiveLoansHistoryTasklet(LoanArchiveHistoryReadWritePlatformService loanArchiveHistoryService,
             LoanArchiveHistoryRepository loanArchiveHistoryRepository, LoanRepositoryWrapper loanRepository,
-            DelinquencyReadPlatformService delinquencyReadPlatformService, ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository,
-                                      CodeValueRepository codeValueRepository) {
+            DelinquencyReadPlatformService delinquencyReadPlatformService,
+            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository, CodeValueRepository codeValueRepository) {
         this.loanArchiveHistoryService = loanArchiveHistoryService;
         this.loanArchiveHistoryRepository = loanArchiveHistoryRepository;
         this.loanRepository = loanRepository;
@@ -107,7 +106,6 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                                     lc.getInstallment().getInstallmentNumber()))
                             .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-
                     mandatoryInsuranceAmount = mandatoryInsuranceAmount.add(mandatoryInsuranceTermChargeAmount);
                     voluntaryInsuranceAmount = voluntaryInsuranceAmount.add(voluntaryInsuranceTermChargeAmount);
                     avalAmount = avalAmount.add(avalTermChargeAmount);
@@ -121,21 +119,22 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         }
                     }
                     LoanTransaction transaction = loan.getLatestTransaction();
-                    Optional<ClientAllyPointOfSales> clientAllPointOfsales =clientAllyPointOfSalesRepository.findByCode(transaction.getPaymentDetail().getPointOfSalesCode());
-                    String brand ="";
-                    String ally ="";
+                    Optional<ClientAllyPointOfSales> clientAllPointOfsales = clientAllyPointOfSalesRepository
+                            .findByCode(transaction.getPaymentDetail().getPointOfSalesCode());
+                    String brand = "";
+                    String ally = "";
                     String cityPoinfsales = "";
 
-                    if(clientAllPointOfsales.isPresent()){
+                    if (clientAllPointOfsales.isPresent()) {
                         ClientAllyPointOfSales clientAllyPointOfSales = clientAllPointOfsales.get();
-                        ally =clientAllyPointOfSales.getClientAlly().getCompanyName();
-                         Optional<CodeValue> getbrand = codeValueRepository.findById(clientAllyPointOfSales.getBrandCodeValueId());
-                       if(getbrand.isPresent()){
-                           CodeValue brands = getbrand.get();
-                           brand = brands.getLabel();
-                       }
+                        ally = clientAllyPointOfSales.getClientAlly().getCompanyName();
+                        Optional<CodeValue> getbrand = codeValueRepository.findById(clientAllyPointOfSales.getBrandCodeValueId());
+                        if (getbrand.isPresent()) {
+                            CodeValue brands = getbrand.get();
+                            brand = brands.getLabel();
+                        }
                         Optional<CodeValue> getCity = codeValueRepository.findById(clientAllyPointOfSales.getCityCodeValueId());
-                        if(getCity.isPresent()){
+                        if (getCity.isPresent()) {
                             CodeValue citys = getCity.get();
                             cityPoinfsales = citys.getLabel();
                         }
@@ -221,7 +220,8 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         loanArchiveHistory.setValorCuota(loan.getLoanSummary().getTotalOutstanding());
                         loanArchiveHistory.setCapital(loan.getLoanSummary().getTotalPrincipalOutstanding());
                         loanArchiveHistory.setIntereses(loan.getLoanSummary().getTotalInterestOutstanding());
-                        loanArchiveHistory.setInteresesDeMora(currentInstallment.getPenaltyChargesOutstanding(loan.getCurrency()).getAmount());
+                        loanArchiveHistory
+                                .setInteresesDeMora(currentInstallment.getPenaltyChargesOutstanding(loan.getCurrency()).getAmount());
                         loanArchiveHistory.setSeguro(mandatoryInsuranceAmount);
                         loanArchiveHistory.setSegurosVoluntarios(voluntaryInsuranceAmount);
                         loanArchiveHistory.setPeriodicidad(PeriodFrequencyType.fromInt(loan.getTermPeriodFrequencyType()).name());
@@ -246,7 +246,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                     archiveLoanId.add(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
                 }
             }
-            if(archiveLoanId.size()>0) {
+            if (archiveLoanId.size() > 0) {
                 List<LoanArchiveHistory> oldLoanArchiveHistories = loanArchiveHistoryRepository.findByNumeroObligacionNotIn(archiveLoanId);
                 loanArchiveHistoryRepository.deleteAll(oldLoanArchiveHistories);
             }

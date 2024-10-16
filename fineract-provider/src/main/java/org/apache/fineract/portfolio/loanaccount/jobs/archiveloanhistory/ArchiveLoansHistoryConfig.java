@@ -38,7 +38,6 @@ public class ArchiveLoansHistoryConfig {
     @Autowired
     private CodeValueRepository codeValueRepository;
 
-
     @Bean
     protected Step archiveLoanHistoryStep() {
         return new StepBuilder(JobName.ARCHIVE_LOAN_HISTORY.name(), jobRepository).tasklet(archiveLoansHistoryTasklet(), transactionManager)
@@ -54,6 +53,6 @@ public class ArchiveLoansHistoryConfig {
     @Bean
     public ArchiveLoansHistoryTasklet archiveLoansHistoryTasklet() {
         return new ArchiveLoansHistoryTasklet(loanArchiveHistoryService, loanArchiveHistoryRepository, loanRepository,
-                delinquencyReadPlatformService,clientAllyPointOfSalesRepository, codeValueRepository);
+                delinquencyReadPlatformService, clientAllyPointOfSalesRepository, codeValueRepository);
     }
 }
