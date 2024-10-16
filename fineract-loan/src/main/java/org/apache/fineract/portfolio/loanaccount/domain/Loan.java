@@ -3833,6 +3833,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     private void handleLoanRepaymentInFull(final LocalDate transactionDate, final LoanLifecycleStateMachine loanLifecycleStateMachine) {
 
         boolean isAllChargesPaid = true;
+        // check if foreclosure is happening on a loan created today, this means charges would not be paid
+        boolean isChargeRepaymentRequired = getDisburseDonDate().equals(DateUtils.getLocalDateOfTenant());
+
         for (final LoanCharge loanCharge : this.charges) {
             if (loanCharge.isActive() && loanCharge.amount().compareTo(BigDecimal.ZERO) > 0
                     && !(loanCharge.isPaid() || loanCharge.isWaived())) {
@@ -3840,7 +3843,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 break;
             }
         }
-        if (isAllChargesPaid) {
+        if (isAllChargesPaid || isChargeRepaymentRequired) {
             this.closedOnDate = transactionDate;
             this.actualMaturityDate = transactionDate;
             loanLifecycleStateMachine.transition(LoanEvent.REPAID_IN_FULL, this);
