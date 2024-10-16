@@ -844,8 +844,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(this, getOffice(), chargeAmount,
                 transactionDate, feeCharges, penaltyCharges, externalId);
 
-        final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, loanCharge,
-                loanCharge.getAmount(getCurrency()).getAmount(), installmentNumber);
+        final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, loanCharge, chargeAmount.getAmount(),
+                installmentNumber);
         applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
         addLoanTransaction(applyLoanChargeTransaction);
     }
@@ -3234,7 +3234,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
 
         }
-        if (!installmentalCharges.isEmpty()) {
+        // we don't want to immediately generate ccharges if the disbursedOn is today
+
+        if (!installmentalCharges.isEmpty() && disbursedOn.isBefore(DateUtils.getLocalDateOfTenant())) {
+
             handleChargeAppliedTransactionPerInstallment(installmentalCharges, disbursedOn);
         }
 
