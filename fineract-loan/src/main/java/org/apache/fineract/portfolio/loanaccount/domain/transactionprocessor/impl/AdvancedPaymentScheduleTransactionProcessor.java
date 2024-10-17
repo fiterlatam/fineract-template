@@ -667,7 +667,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
 
             LoanRepaymentScheduleInstallment.PaymentFunction paymentFunction = currentInstallment
                     .getPaymentFunction(paymentAllocationType.getAllocationType(), action);
-            portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction);
+            portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction, loanTransaction);
         }
 
         ChargesPaidByFunction chargesPaidByFunction = getChargesPaymentFunction(action);
