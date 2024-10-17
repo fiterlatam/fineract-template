@@ -181,7 +181,9 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         existingEntry.setGenero(dataLoan.getGenero());
                         existingEntry.setEmpresaLabora(dataLoan.getEmpresaLabora());
                         existingEntry.setIngresos(dataLoan.getIngresos());
-                        existingEntry.setAntiguedadCliente(LocalDate.parse(dataLoan.getAntiguedadCliente()));
+                        if (dataLoan.getAntiguedadCliente() != null) {
+                            existingEntry.setAntiguedadCliente(LocalDate.parse(dataLoan.getAntiguedadCliente()));
+                        }
                         existingEntry.setDiasMora(daysInArrears);
                         existingEntry.setFechaVencimiento(currentInstallment.getDueDate());
                         existingEntry.setTipoCredito(AccountEnumerations.loanType(loan.getLoanType()).toString());
@@ -200,7 +202,9 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         existingEntry.setCreSaldo(dataLoan.getCuoSaldo());
                         existingEntry.setCuoSaldo(dataLoan.getCuoSaldo());
                         existingEntry.setCuoEstado(dataLoan.getCuoEstado());
-                        existingEntry.setFechaNacimiento(LocalDate.parse(dataLoan.getFechaNacimiento()));
+                        if (dataLoan.getFechaNacimiento() != null) {
+                            existingEntry.setFechaNacimiento(LocalDate.parse(dataLoan.getFechaNacimiento()));
+                        }
                         existingEntry.setEmpresa(ally);
                         existingEntry.setMarca(brand);
                         existingEntry.setCiudadPuntoCredito(cityPoinfsales);
@@ -236,7 +240,9 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         loanArchiveHistory.setGenero(dataLoan.getGenero());
                         loanArchiveHistory.setEmpresaLabora(dataLoan.getEmpresaLabora());
                         loanArchiveHistory.setIngresos(dataLoan.getIngresos());
-                        loanArchiveHistory.setAntiguedadCliente(LocalDate.parse(dataLoan.getAntiguedadCliente()));
+                        if (dataLoan.getAntiguedadCliente() != null) {
+                            loanArchiveHistory.setAntiguedadCliente(LocalDate.parse(dataLoan.getAntiguedadCliente()));
+                        }
                         loanArchiveHistory.setDiasMora(daysInArrears);
                         loanArchiveHistory.setFechaVencimiento(currentInstallment.getDueDate());
                         loanArchiveHistory.setTipoCredito(AccountEnumerations.loanType(loan.getLoanType()).toString());
@@ -256,7 +262,9 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         loanArchiveHistory.setCreSaldo(dataLoan.getCuoSaldo());
                         loanArchiveHistory.setCuoSaldo(dataLoan.getCuoSaldo());
                         loanArchiveHistory.setCuoEstado(dataLoan.getCuoEstado());
-                        loanArchiveHistory.setFechaNacimiento(LocalDate.parse(dataLoan.getFechaNacimiento()));
+                        if (dataLoan.getFechaNacimiento() != null) {
+                            loanArchiveHistory.setFechaNacimiento(LocalDate.parse(dataLoan.getFechaNacimiento()));
+                        }
                         loanArchiveHistory.setEmpresa(ally);
                         loanArchiveHistory.setMarca(brand);
                         loanArchiveHistory.setCiudadPuntoCredito(cityPoinfsales);
