@@ -1590,32 +1590,132 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         public String loanPaymentsSchema() {
 
-            return " tr.id as id, tr.transaction_type_enum as transactionType, tr.transaction_date as " + sqlGenerator.escape("date")
-                    + ", tr.amount as total, tr.principal_portion_derived as principal, tr.interest_portion_derived as interest, "
-                    + " tr.fee_charges_portion_derived as fees, tr.penalty_charges_portion_derived as penalties,  "
-                    + " tr.overpayment_portion_derived as overpayment, tr.outstanding_loan_balance_derived as outstandingLoanBalance, "
-                    + " tr.unrecognized_income_portion as unrecognizedIncome, tr.submitted_on_date as submittedOnDate, "
-                    + " tr.manually_adjusted_or_reversed as manuallyReversed, tr.reversal_external_id as reversalExternalId, tr.reversed_on_date as reversedOnDate, "
-                    + " pd.payment_type_id as paymentType,pd.account_number as accountNumber,pd.check_number as checkNumber, "
-                    + " pd.receipt_number as receiptNumber, pd.bank_number as bankNumber,pd.routing_code as routingCode, l.net_disbursal_amount as netDisbursalAmount,"
-                    + " l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, rc."
-                    + sqlGenerator.escape("name") + " as currencyName, l.id as loanId, l.external_id as externalLoanId, "
-                    + " rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, "
-                    + " pt.value as paymentTypeName, tr.external_id as externalId, tr.office_id as officeId, office.name as officeName, "
-                    + " fromtran.id as fromTransferId, fromtran.is_reversed as fromTransferReversed,"
-                    + " fromtran.transaction_date as fromTransferDate, fromtran.amount as fromTransferAmount,"
-                    + " fromtran.description as fromTransferDescription, "
-                    + " totran.id as toTransferId, totran.is_reversed as toTransferReversed, "
-                    + " totran.transaction_date as toTransferDate, totran.amount as toTransferAmount, ch.name as channelName, pd.channel_hash as channelHash, bank.code_value AS bankName, bank.id AS bankId, "
-                    + " totran.description as toTransferDescription,capos.id as pointOfSalesId,capos.name as pointOfSalesName, capos.code as pointOfSalesCode, capos.client_ally_id as clientAllyId from m_loan l join m_loan_transaction tr on tr.loan_id = l.id "
-                    + " join m_currency rc on rc." + sqlGenerator.escape("code") + " = l.currency_code "
-                    + " left JOIN m_payment_detail pd ON tr.payment_detail_id = pd.id"
-                    + " left join m_payment_type pt on pd.payment_type_id = pt.id left join m_office office on office.id=tr.office_id"
-                    + " left join m_account_transfer_transaction fromtran on fromtran.from_loan_transaction_id = tr.id "
-                    + " left join m_account_transfer_transaction totran on totran.to_loan_transaction_id = tr.id "
-                    + " left join custom.c_channel ch on ch.id = pd.channel_id"
-                    + " left join custom.c_client_ally_point_of_sales capos on capos.code = pd.point_of_sales_code "
-                    + " left join m_code_value bank on bank.id = pd.payment_bank_cv_id ";
+            return """
+                        tr.id as id, tr.transaction_type_enum as transactionType, tr.transaction_date as %s ,
+                      tr.amount as total, tr.principal_portion_derived as principal, tr.interest_portion_derived as interest,
+                      tr.fee_charges_portion_derived as fees, tr.penalty_charges_portion_derived as penalties,
+                      tr.overpayment_portion_derived as overpayment, tr.outstanding_loan_balance_derived as outstandingLoanBalance,
+                      tr.unrecognized_income_portion as unrecognizedIncome, tr.submitted_on_date as submittedOnDate,
+                      tr.manually_adjusted_or_reversed as manuallyReversed, tr.reversal_external_id as reversalExternalId, tr.reversed_on_date as reversedOnDate,
+                      pd.payment_type_id as paymentType,pd.account_number as accountNumber,pd.check_number as checkNumber,
+                      pd.receipt_number as receiptNumber, pd.bank_number as bankNumber,pd.routing_code as routingCode, l.net_disbursal_amount as netDisbursalAmount,
+                      l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, rc.
+                      %s as currencyName, l.id as loanId, l.external_id as externalLoanId,
+                      rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode,
+                      pt.value as paymentTypeName, tr.external_id as externalId, tr.office_id as officeId, office.name as officeName,
+                      fromtran.id as fromTransferId, fromtran.is_reversed as fromTransferReversed,
+                      fromtran.transaction_date as fromTransferDate, fromtran.amount as fromTransferAmount,
+                      fromtran.description as fromTransferDescription,
+                      totran.id as toTransferId, totran.is_reversed as toTransferReversed,
+                      totran.transaction_date as toTransferDate, totran.amount as toTransferAmount, ch.name as channelName, pd.channel_hash as channelHash, bank.code_value AS bankName, bank.id AS bankId,
+                      totran.description as toTransferDescription,capos.id as pointOfSalesId,capos.name as pointOfSalesName, capos.code as pointOfSalesCode, capos.client_ally_id as clientAllyId,
+                    (COALESCE(mandatory_insurance.amount, 0) + COALESCE(vat_mandatory_insurance.amount, 0)) mandatory_insurance,
+                    (COALESCE(voluntary_insurance.amount, 0) + COALESCE(vat_voluntary_insurance.amount, 0)) voluntary_insurance,
+                    (COALESCE(hono.amount, 0) + COALESCE(vat_hono.amount, 0)) hono,
+                    (COALESCE(aval.amount, 0) + COALESCE(vat_aval.amount, 0)) aval,
+                    (COALESCE(penalty.amount, 0) + COALESCE(vat_penalty.amount, 0)) penalty
+                     from m_loan l
+                     join m_loan_transaction tr on tr.loan_id = l.id
+                      join m_currency rc on rc.%s = l.currency_code
+                      left JOIN m_payment_detail pd ON tr.payment_detail_id = pd.id
+                      left join m_payment_type pt on pd.payment_type_id = pt.id left join m_office office on office.id=tr.office_id
+                      left join m_account_transfer_transaction fromtran on fromtran.from_loan_transaction_id = tr.id
+                      left join m_account_transfer_transaction totran on totran.to_loan_transaction_id = tr.id
+                      left join custom.c_channel ch on ch.id = pd.channel_id
+                      left join custom.c_client_ally_point_of_sales capos on capos.code = pd.point_of_sales_code
+                      left join m_code_value bank on bank.id = pd.payment_bank_cv_id
+                      left join (
+                                    select mlcpd.loan_transaction_id , sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    where mlc.charge_calculation_enum IN (468, 575, 231)
+                                group by mlcpd.loan_transaction_id
+                                ) mandatory_insurance on mandatory_insurance.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id, sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    join m_charge mc on mc.id = mlc.charge_id
+                                    join m_charge parent on parent.id = mc.parent_charge_id
+                                    where mc.charge_calculation_enum = 342
+                                    and parent.charge_calculation_enum IN (468, 575, 231)
+                                group by mlcpd.loan_transaction_id
+                                ) vat_mandatory_insurance on vat_mandatory_insurance.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id , sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    where mlc.charge_calculation_enum = 1034
+                                group by mlcpd.loan_transaction_id
+                                ) voluntary_insurance on voluntary_insurance.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id, sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    join m_charge mc on mc.id = mlc.charge_id
+                                    join m_charge parent on parent.id = mc.parent_charge_id
+                                    where mc.charge_calculation_enum = 342
+                                    and parent.charge_calculation_enum = 1034
+                                group by mlcpd.loan_transaction_id
+                                ) vat_voluntary_insurance on vat_voluntary_insurance.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id , sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    where mlc.charge_calculation_enum = 41
+                                group by mlcpd.loan_transaction_id
+                                ) aval on aval.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id, sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    join m_charge mc on mc.id = mlc.charge_id
+                                    join m_charge parent on parent.id = mc.parent_charge_id
+                                    where mc.charge_calculation_enum = 342
+                                    and parent.charge_calculation_enum = 41
+                                group by mlcpd.loan_transaction_id
+                                ) vat_aval on vat_aval.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id , sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    where mlc.charge_calculation_enum = 1009
+                                group by mlcpd.loan_transaction_id
+                                ) hono on hono.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id, sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    join m_charge mc on mc.id = mlc.charge_id
+                                    join m_charge parent on parent.id = mc.parent_charge_id
+                                    where mc.charge_calculation_enum = 342
+                                    and parent.charge_calculation_enum = 1009
+                                group by mlcpd.loan_transaction_id
+                                ) vat_hono on vat_hono.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id , sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    where mlc.is_penalty = true
+                                group by mlcpd.loan_transaction_id
+                                ) penalty on penalty.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id, sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    join m_charge mc on mc.id = mlc.charge_id
+                                    join m_charge parent on parent.id = mc.parent_charge_id
+                                    where mc.charge_calculation_enum = 342
+                                    and mc.is_penalty = true
+                                    and parent.charge_calculation_enum = 1009
+                                    and parent.is_penalty = true
+                                group by mlcpd.loan_transaction_id
+                                ) vat_penalty on vat_penalty.loan_transaction_id = tr.id
+
+
+
+                    """
+                    .formatted(sqlGenerator.escape("date"), sqlGenerator.escape("name"), sqlGenerator.escape("code"));
         }
 
         @Override
@@ -1706,10 +1806,24 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         toTransferDescription, toTransferReversed);
             }
 
-            return new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData, currencyData, date, totalAmount,
-                    netDisbursalAmount, principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion, overPaymentPortion,
-                    unrecognizedIncomePortion, externalId, transfer, null, outstandingLoanBalance, submittedOnDate, manuallyReversed,
-                    reversalExternalId, reversedOnDate, loanId, externalLoanId);
+            final BigDecimal mandatoryInsurance = rs.getBigDecimal("mandatory_insurance");
+            final BigDecimal voluntaryInsurance = rs.getBigDecimal("voluntary_insurance");
+            final BigDecimal hono = rs.getBigDecimal("hono");
+            final BigDecimal aval = rs.getBigDecimal("aval");
+            final BigDecimal penalty = rs.getBigDecimal("penalty");
+            LoanChargePaidByData data = new LoanChargePaidByData(null, null, null, null, null, null);
+            data.setMandatoryInsurance(mandatoryInsurance);
+            data.setVoluntaryInsurance(voluntaryInsurance);
+            data.setAval(aval);
+            data.setHono(hono);
+            data.setPenalty(penalty);
+
+            LoanTransactionData transactionData = new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData,
+                    currencyData, date, totalAmount, netDisbursalAmount, principalPortion, interestPortion, feeChargesPortion,
+                    penaltyChargesPortion, overPaymentPortion, unrecognizedIncomePortion, externalId, transfer, null,
+                    outstandingLoanBalance, submittedOnDate, manuallyReversed, reversalExternalId, reversedOnDate, loanId, externalLoanId);
+            transactionData.setLoanChargePaidBySummary(data);
+            return transactionData;
         }
     }
 

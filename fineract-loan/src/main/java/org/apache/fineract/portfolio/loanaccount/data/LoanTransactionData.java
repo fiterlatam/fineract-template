@@ -65,6 +65,7 @@ public class LoanTransactionData {
     private final boolean manuallyReversed;
     private final LocalDate possibleNextRepaymentDate;
     private Collection<LoanChargePaidByData> loanChargePaidByList;
+    private LoanChargePaidByData loanChargePaidBySummary;
     // templates
     final Collection<PaymentTypeData> paymentTypeOptions;
     private Collection<CodeValueData> writeOffReasonOptions = null;
@@ -448,5 +449,13 @@ public class LoanTransactionData {
 
     public void setLoanTransactionRelations(List<LoanTransactionRelationData> transactionRelations) {
         this.transactionRelations = transactionRelations;
+    }
+
+    public LoanChargePaidByData loanChargePaidBySummary() {
+        return loanChargePaidBySummary;
+    }
+
+    public void setLoanChargePaidBySummary(LoanChargePaidByData loanChargePaidBySummary) {
+        this.loanChargePaidBySummary = loanChargePaidBySummary;
     }
 }
