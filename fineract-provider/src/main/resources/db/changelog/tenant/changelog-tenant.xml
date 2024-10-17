@@ -295,4 +295,5 @@
     <include file="parts/20243008011009115_SU_343_update_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009116_SU_343_update_report_liquidacion.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009117_SU_384_created_table_archive_loan_history.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009122_SU_384_add_report_loan_archive_history.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
