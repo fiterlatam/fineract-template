@@ -49,7 +49,8 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
                     + "       COALESCE(ccp.\"Ciudad_cd_Ciudad\",cce.\"Ciudad_cd_Ciudad\") as ciudad, \n"
                     + "       cce.\"Departamento_cd_Departamento\" as departamento,\n" + "       mcbr.name_of_reason AS creaditBlock, \n"
                     + "       ccp.\"Referencia\"AS referencia,\n" + "       ccp.\"Media de ingresos\" AS media_de_ingreso,  \n"
-                    + "       ccp.\"Nombre empresa\" AS nombre_empresa, \n" + "       mc.created_on_utc, \n"
+                    + "       ccp.\"Nombre empresa\" AS nombre_empresa, \n"
+                    + "       mc.created_on_utc, ccp.\"Estado Civil_cd_Estado civil\" as estado_civil, \n"
                     + "       ml.disbursedon_date, \n" + "       mc.date_of_birth,\n" + "       (SELECT code_value \n"
                     + "        FROM m_code_value \n"
                     + "        WHERE id = mc.gender_cv_id) AS gender, ccp.\"Actividad Laboral_cd_Actividad laboral\" as activeLab\n"
@@ -75,7 +76,8 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
                     .fechaFinanciacion(rs.getString("disbursedon_date")).genero(rs.getString("gender"))
                     .ingresos(rs.getBigDecimal("media_de_ingreso")).antiguedadCliente(rs.getString("disbursedon_date"))
                     .actividadLaboral(rs.getString("activeLab")).creSaldo(rs.getBigDecimal("cupo")).cuoSaldo(rs.getBigDecimal("cupo"))
-                    .cuoEstado(rs.getString("name_of_reason")).fechaNacimiento(rs.getString("date_of_birth")).build();
+                    .cuoEstado(rs.getString("name_of_reason")).estadoCivil(rs.getString("estado_civil"))
+                    .fechaNacimiento(rs.getString("date_of_birth")).build();
         }
     }
 

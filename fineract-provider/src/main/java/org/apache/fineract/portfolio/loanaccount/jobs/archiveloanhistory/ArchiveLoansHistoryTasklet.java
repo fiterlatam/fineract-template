@@ -119,24 +119,41 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         }
                     }
                     LoanTransaction transaction = loan.getLatestTransaction();
-                    Optional<ClientAllyPointOfSales> clientAllPointOfsales = clientAllyPointOfSalesRepository
-                            .findByCode(transaction.getPaymentDetail().getPointOfSalesCode());
                     String brand = "";
                     String ally = "";
                     String cityPoinfsales = "";
-
-                    if (clientAllPointOfsales.isPresent()) {
-                        ClientAllyPointOfSales clientAllyPointOfSales = clientAllPointOfsales.get();
-                        ally = clientAllyPointOfSales.getClientAlly().getCompanyName();
-                        Optional<CodeValue> getbrand = codeValueRepository.findById(clientAllyPointOfSales.getBrandCodeValueId());
-                        if (getbrand.isPresent()) {
-                            CodeValue brands = getbrand.get();
-                            brand = brands.getLabel();
+                    String categoryPointOfSales = "";
+                    String pointOfSale = "";
+                    String estadoCivil = "";
+                    if (transaction.getPaymentDetail() != null) {
+                        Optional<ClientAllyPointOfSales> clientAllPointOfsales = clientAllyPointOfSalesRepository
+                                .findByCode(transaction.getPaymentDetail().getPointOfSalesCode());
+                        if (clientAllPointOfsales.isPresent()) {
+                            ClientAllyPointOfSales clientAllyPointOfSales = clientAllPointOfsales.get();
+                            ally = clientAllyPointOfSales.getClientAlly().getCompanyName();
+                            pointOfSale = clientAllyPointOfSales.getName();
+                            Optional<CodeValue> getbrand = codeValueRepository.findById(clientAllyPointOfSales.getBrandCodeValueId());
+                            if (getbrand.isPresent()) {
+                                CodeValue brands = getbrand.get();
+                                brand = brands.getLabel();
+                            }
+                            Optional<CodeValue> getCity = codeValueRepository.findById(clientAllyPointOfSales.getCityCodeValueId());
+                            if (getCity.isPresent()) {
+                                CodeValue citys = getCity.get();
+                                cityPoinfsales = citys.getLabel();
+                            }
+                            Optional<CodeValue> getCategory = codeValueRepository.findById(clientAllyPointOfSales.getCategoryCodeValueId());
+                            if (getCategory.isPresent()) {
+                                CodeValue categoryCode = getCategory.get();
+                                categoryPointOfSales = categoryCode.getLabel();
+                            }
                         }
-                        Optional<CodeValue> getCity = codeValueRepository.findById(clientAllyPointOfSales.getCityCodeValueId());
-                        if (getCity.isPresent()) {
-                            CodeValue citys = getCity.get();
-                            cityPoinfsales = citys.getLabel();
+                    }
+                    if (dataLoan.getEstadoCivil() != null) {
+                        Optional<CodeValue> getEstadoCivil = codeValueRepository.findById(Long.parseLong(dataLoan.getEstadoCivil()));
+                        if (getEstadoCivil.isPresent()) {
+                            CodeValue estadoCivilCode = getEstadoCivil.get();
+                            estadoCivil = estadoCivilCode.getLabel();
                         }
                     }
 
@@ -146,6 +163,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         existingEntry.setIdentificacion(dataLoan.getIdentificacion());
                         existingEntry.setPrimerNombre(dataLoan.getPrimerNombre());
                         existingEntry.setSegundoNombre(dataLoan.getSegundoNombre());
+                        existingEntry.setPrimerApellido(dataLoan.getPrimerNombre());
                         existingEntry.setSegundoApellido(dataLoan.getSegundoApellido());
                         existingEntry.setEstadoCliente(dataLoan.getEstadoCliente());
                         existingEntry.setNumeroObligacion(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
@@ -156,7 +174,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         existingEntry.setDireccionSac(dataLoan.getDireccionSac());
                         existingEntry.setBarrioSac(dataLoan.getBarrioSac());
                         existingEntry.setCiudadSac(dataLoan.getCiudadSac());
-                        existingEntry.setCiudadSac(dataLoan.getCiudadSac());
+                        existingEntry.setTipoCredito(categoryPointOfSales);
                         existingEntry.setDepartamento(dataLoan.getDepartamento());
                         existingEntry.setRazonSocial(dataLoan.getRazonSocial());
                         existingEntry.setNombreFamiliar(dataLoan.getNombreFamiliar());
@@ -169,18 +187,19 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         existingEntry.setTipoCredito(AccountEnumerations.loanType(loan.getLoanType()).toString());
                         existingEntry.setValorCuota(loan.getLoanSummary().getTotalOutstanding());
                         existingEntry.setCapital(loan.getLoanSummary().getTotalPrincipalOutstanding());
+                        existingEntry.setAval(avalAmount);
                         existingEntry.setIntereses(loan.getLoanSummary().getTotalInterestOutstanding());
                         existingEntry.setInteresesDeMora(currentInstallment.getPenaltyChargesOutstanding(loan.getCurrency()).getAmount());
-                        existingEntry.setSeguro(BigDecimal.ZERO);
-                        existingEntry.setSegurosVoluntarios(BigDecimal.ZERO);
+                        existingEntry.setSeguro(mandatoryInsuranceAmount);
+                        existingEntry.setSegurosVoluntarios(voluntaryInsuranceAmount);
                         existingEntry.setPeriodicidad(PeriodFrequencyType.fromInt(loan.getTermPeriodFrequencyType()).name());
                         existingEntry.setEmpresaReporta("INTERCREDITO");
                         existingEntry.setAbono(BigDecimal.ZERO);
                         existingEntry.setActividadLaboral(dataLoan.getActividadLaboral());
                         existingEntry.setNumeroDeReprogramaciones(numberReschedule);
+                        existingEntry.setCreSaldo(dataLoan.getCuoSaldo());
+                        existingEntry.setCuoSaldo(dataLoan.getCuoSaldo());
                         existingEntry.setCuoEstado(dataLoan.getCuoEstado());
-                        existingEntry.setCreSaldo(dataLoan.getCreSaldo());
-                        existingEntry.setCreSaldo(dataLoan.getCreSaldo());
                         existingEntry.setFechaNacimiento(LocalDate.parse(dataLoan.getFechaNacimiento()));
                         existingEntry.setEmpresa(ally);
                         existingEntry.setMarca(brand);
@@ -189,12 +208,16 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         existingEntry.setIvaInteresDeMora(BigDecimal.ZERO);
                         existingEntry.setFechaFinanciacion(loan.getDisbursementDate());
                         existingEntry.setCiudadPuntoCredito("");
+                        existingEntry.setPuntoDeVenta(pointOfSale);
+                        existingEntry.setTipoDocumento("");
+                        existingEntry.setEstadoCivil(estadoCivil);
                     } else {
                         LoanArchiveHistory loanArchiveHistory = new LoanArchiveHistory();
                         loanArchiveHistory.setTitle("Archive Loan " + loan.getId());
                         loanArchiveHistory.setIdentificacion(dataLoan.getIdentificacion());
                         loanArchiveHistory.setPrimerNombre(dataLoan.getPrimerNombre());
                         loanArchiveHistory.setSegundoNombre(dataLoan.getSegundoNombre());
+                        loanArchiveHistory.setPrimerApellido(dataLoan.getPrimerNombre());
                         loanArchiveHistory.setSegundoApellido(dataLoan.getSegundoApellido());
                         loanArchiveHistory.setEstadoCliente(dataLoan.getEstadoCliente());
                         loanArchiveHistory
@@ -206,7 +229,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         loanArchiveHistory.setDireccionSac(dataLoan.getDireccionSac());
                         loanArchiveHistory.setBarrioSac(dataLoan.getBarrioSac());
                         loanArchiveHistory.setCiudadSac(dataLoan.getCiudadSac());
-                        loanArchiveHistory.setCiudadSac(dataLoan.getCiudadSac());
+                        loanArchiveHistory.setTipoCredito(categoryPointOfSales);
                         loanArchiveHistory.setDepartamento(dataLoan.getDepartamento());
                         loanArchiveHistory.setRazonSocial(dataLoan.getRazonSocial());
                         loanArchiveHistory.setNombreFamiliar(dataLoan.getNombreFamiliar());
@@ -219,6 +242,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         loanArchiveHistory.setTipoCredito(AccountEnumerations.loanType(loan.getLoanType()).toString());
                         loanArchiveHistory.setValorCuota(loan.getLoanSummary().getTotalOutstanding());
                         loanArchiveHistory.setCapital(loan.getLoanSummary().getTotalPrincipalOutstanding());
+                        loanArchiveHistory.setAval(avalAmount);
                         loanArchiveHistory.setIntereses(loan.getLoanSummary().getTotalInterestOutstanding());
                         loanArchiveHistory
                                 .setInteresesDeMora(currentInstallment.getPenaltyChargesOutstanding(loan.getCurrency()).getAmount());
@@ -240,6 +264,9 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         loanArchiveHistory.setIvaInteresDeMora(BigDecimal.ZERO);
                         loanArchiveHistory.setFechaFinanciacion(loan.getDisbursementDate());
                         loanArchiveHistory.setCiudadPuntoCredito("");
+                        loanArchiveHistory.setPuntoDeVenta(pointOfSale);
+                        loanArchiveHistory.setTipoDocumento("");
+                        loanArchiveHistory.setEstadoCivil(estadoCivil);
 
                         loanArchiveHistoryRepository.save(loanArchiveHistory);
                     }
