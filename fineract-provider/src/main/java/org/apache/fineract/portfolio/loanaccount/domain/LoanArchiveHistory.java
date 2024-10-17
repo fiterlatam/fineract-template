@@ -26,6 +26,8 @@ public class LoanArchiveHistory {
     private String primerNombre;
     @Column(name = "segundo_nombre")
     private String segundoNombre;
+    @Column(name = "primer_apellido")
+    private String primerApellido;
     @Column(name = "segundo_apellido")
     private String segundoApellido;
     @Column(name = "estado_cliente")
@@ -62,6 +64,8 @@ public class LoanArchiveHistory {
     private BigDecimal valorCuota;
     @Column(name = "capital")
     private BigDecimal capital;
+    @Column(name = "aval")
+    private BigDecimal aval;
     @Column(name = "intereses")
     private BigDecimal intereses;
     @Column(name = "intereses_de_mora")
