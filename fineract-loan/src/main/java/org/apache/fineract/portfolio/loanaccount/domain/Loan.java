@@ -2832,9 +2832,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
 
                 // Accumulate the daily interest to the installment's accrued interest
-                installment.addAccruedInterest(Money.of(getCurrency(), dailyInterest));
+                BigDecimal roundedDownDailyInterest = dailyInterest.setScale(0, RoundingMode.DOWN);
+                installment.addAccruedInterest(Money.of(getCurrency(), roundedDownDailyInterest));
 
-                return dailyInterest;
+                return roundedDownDailyInterest;
             }
         }
 
