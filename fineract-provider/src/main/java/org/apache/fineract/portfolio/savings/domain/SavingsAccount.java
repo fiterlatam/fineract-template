@@ -1535,9 +1535,9 @@ public class SavingsAccount extends AbstractPersistableCustom {
         Money minRequiredBalance = minRequiredBalanceDerived(getCurrency());
         LocalDate lastSavingsDate = null;
         for (final SavingsAccountTransaction transaction : transactionsSortedByDate) {
-            if (transaction.isNotReversed() && transaction.isCredit()) {
+            if (transaction.isNotReversed() && transaction.isCredit() && !transaction.isAmountRelease()) {
                 runningBalance = runningBalance.plus(transaction.getAmount(this.currency));
-            } else if (transaction.isNotReversed() && transaction.isDebit()) {
+            } else if (transaction.isNotReversed() && transaction.isDebit() && !transaction.isAmountOnHold()) {
                 runningBalance = runningBalance.minus(transaction.getAmount(this.currency));
             }
 
