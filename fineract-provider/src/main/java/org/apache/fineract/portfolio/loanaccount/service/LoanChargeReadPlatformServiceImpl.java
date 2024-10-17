@@ -580,7 +580,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
             final Long transactionId = rs.getLong("transactionId");
             final Integer installmentNumber = rs.getInt("installmentNumber");
 
-            return new LoanChargePaidByData(id, amount, installmentNumber, chargeId, transactionId);
+            return new LoanChargePaidByData(id, amount, installmentNumber, chargeId, transactionId, null);
         }
     }
 
