@@ -601,7 +601,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public interface PaymentFunction {
 
-        Money accept(LocalDate transactionDate, Money transactionAmountRemaining, boolean isWriteOffTransaction, LoanTransaction loanTransaction);
+        Money accept(LocalDate transactionDate, Money transactionAmountRemaining, boolean isWriteOffTransaction,
+                LoanTransaction loanTransaction);
     }
 
     public PaymentFunction getPaymentFunction(AllocationType allocationType, PaymentAction action) {
@@ -626,7 +627,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public Money payPenaltyChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
-                                            final boolean isWriteOffTransaction) {
+            final boolean isWriteOffTransaction) {
         return payPenaltyChargesComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction, null);
     }
 
@@ -649,7 +650,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                         penaltyPortionOfTransaction = payPenaltyCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
                                 penaltyPortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
 
-                        updateChargePaidByAmount(penaltyPortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction, installmentCharge.getLoanCharge());
+                        updateChargePaidByAmount(penaltyPortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
+                                installmentCharge.getLoanCharge());
                         loanChargePaidByPortion = penaltyPortionOfTransaction.minus(loanChargePaidByPortion);
                         transactionAmountRemaining = transactionAmountRemaining.minus(penaltyPortionOfTransaction);
                         break;
@@ -658,40 +660,36 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                 penaltyPortionOfTransaction = payPenaltyCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
                         penaltyPortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
 
-                updateChargePaidByAmount(penaltyPortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction, installmentCharge.getLoanCharge());
+                updateChargePaidByAmount(penaltyPortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
+                        installmentCharge.getLoanCharge());
                 loanChargePaidByPortion = penaltyPortionOfTransaction.minus(loanChargePaidByPortion);
             }
         }
 
         ///////////////////////
-        /*final Money penaltyChargesDue = getPenaltyChargesOutstanding(currency);
-        if (transactionAmountRemaining.isGreaterThanOrEqualTo(penaltyChargesDue)) {
-            if (isWriteOffTransaction) {
-                this.penaltyChargesWrittenOff = getPenaltyChargesWrittenOff(currency).plus(penaltyChargesDue).getAmount();
-            } else {
-                this.penaltyChargesPaid = getPenaltyChargesPaid(currency).plus(penaltyChargesDue).getAmount();
-            }
-            penaltyPortionOfTransaction = penaltyPortionOfTransaction.plus(penaltyChargesDue);
-        } else {
-            if (isWriteOffTransaction) {
-                this.penaltyChargesWrittenOff = getPenaltyChargesWrittenOff(currency).plus(transactionAmountRemaining).getAmount();
-            } else {
-                this.penaltyChargesPaid = getPenaltyChargesPaid(currency).plus(transactionAmountRemaining).getAmount();
-            }
-            penaltyPortionOfTransaction = penaltyPortionOfTransaction.plus(transactionAmountRemaining);
-        }
-
-        this.penaltyChargesPaid = defaultToNullIfZero(this.penaltyChargesPaid);
-
-        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
-
-        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, penaltyPortionOfTransaction);*/
+        /*
+         * final Money penaltyChargesDue = getPenaltyChargesOutstanding(currency); if
+         * (transactionAmountRemaining.isGreaterThanOrEqualTo(penaltyChargesDue)) { if (isWriteOffTransaction) {
+         * this.penaltyChargesWrittenOff = getPenaltyChargesWrittenOff(currency).plus(penaltyChargesDue).getAmount(); }
+         * else { this.penaltyChargesPaid = getPenaltyChargesPaid(currency).plus(penaltyChargesDue).getAmount(); }
+         * penaltyPortionOfTransaction = penaltyPortionOfTransaction.plus(penaltyChargesDue); } else { if
+         * (isWriteOffTransaction) { this.penaltyChargesWrittenOff =
+         * getPenaltyChargesWrittenOff(currency).plus(transactionAmountRemaining).getAmount(); } else {
+         * this.penaltyChargesPaid = getPenaltyChargesPaid(currency).plus(transactionAmountRemaining).getAmount(); }
+         * penaltyPortionOfTransaction = penaltyPortionOfTransaction.plus(transactionAmountRemaining); }
+         *
+         * this.penaltyChargesPaid = defaultToNullIfZero(this.penaltyChargesPaid);
+         *
+         * checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+         *
+         * trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, penaltyPortionOfTransaction);
+         */
 
         return penaltyPortionOfTransaction;
     }
 
     public Money payFeeChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
-                                            final boolean isWriteOffTransaction) {
+            final boolean isWriteOffTransaction) {
         return payFeeChargesComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction, null);
     }
 
@@ -730,9 +728,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public Money payHonorariosChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
-                                               final boolean isWriteOffTransaction) {
+            final boolean isWriteOffTransaction) {
         return payHonorariosChargesComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction, null);
     }
+
     public Money payHonorariosChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
 
@@ -747,7 +746,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
                 feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
                         feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
-                updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction, installmentCharge.getLoanCharge());
+                updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
+                        installmentCharge.getLoanCharge());
                 loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
             }
         }
@@ -768,7 +768,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             if (installmentCharge.getLoanCharge().isAvalCharge()) {
                 feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
                         feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
-                updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction, installmentCharge.getLoanCharge());
+                updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
+                        installmentCharge.getLoanCharge());
                 loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
             }
         }
@@ -793,7 +794,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                             vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
                         feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
                                 feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
-                        updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction, installmentCharge.getLoanCharge());
+                        updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
+                                installmentCharge.getLoanCharge());
                         transactionAmountRemaining = transactionAmountRemaining.minus(feePortionOfTransaction);
                         loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
                         break;
@@ -802,7 +804,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                 feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
                         feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
 
-                updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction, installmentCharge.getLoanCharge());
+                updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
+                        installmentCharge.getLoanCharge());
                 loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
             }
         }
@@ -812,12 +815,14 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     private void updateChargePaidByAmount(Money amountPaidTowardsCharge, LoanTransaction loanTransaction, LoanCharge unpaidCharge) {
         if (!amountPaidTowardsCharge.isZero()) {
-            // Ideally Java Set should not allow duplicates but here if the transaction is reprocessed then it adds a duplicate.
+            // Ideally Java Set should not allow duplicates but here if the transaction is reprocessed then it adds a
+            // duplicate.
             // This fix is made to stop that duplicate enry of loanChargepaidByObject
             if (!loanTransaction.getLoanChargesPaid().isEmpty()) {
-                long count = loanTransaction.getLoanChargesPaid()
-                        .stream()
-                        .filter(p -> Objects.equals(p.getLoanCharge().getId(), unpaidCharge.getId()) && p.getInstallmentNumber().equals(installmentNumber)).count();
+                long count = loanTransaction.getLoanChargesPaid().stream()
+                        .filter(p -> Objects.equals(p.getLoanCharge().getId(), unpaidCharge.getId())
+                                && p.getInstallmentNumber().equals(installmentNumber))
+                        .count();
                 if (count > 0) {
                     return;
                 }
@@ -855,13 +860,15 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                             vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
                         feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
                                 feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
-                        updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction, installmentCharge.getLoanCharge());
+                        updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
+                                installmentCharge.getLoanCharge());
                         loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
                     }
                 }
                 feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
                         feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
-                updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction, installmentCharge.getLoanCharge());
+                updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
+                        installmentCharge.getLoanCharge());
                 loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
             }
         }
@@ -915,8 +922,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public Money payPenaltyCharge(LoanInstallmentCharge installmentCharge, final LocalDate transactionDate,
-                               final Money transactionAmountRemaining, final MonetaryCurrency currency, Money feePortionOfTransaction,
-                               final boolean isWriteOffTransaction, Money loanChargePaidByPortion) {
+            final Money transactionAmountRemaining, final MonetaryCurrency currency, Money feePortionOfTransaction,
+            final boolean isWriteOffTransaction, Money loanChargePaidByPortion) {
         if (transactionAmountRemaining.isZero()) {
             return feePortionOfTransaction;
         }
@@ -960,7 +967,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public Money payInterestComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
-                                      final boolean isWriteOffTransaction) {
+            final boolean isWriteOffTransaction) {
         return payInterestComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction, null);
     }
 
@@ -1043,7 +1050,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public Money payPrincipalComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
-                                      final boolean isWriteOffTransaction) {
+            final boolean isWriteOffTransaction) {
         return payPrincipalComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction, null);
     }
 
@@ -1391,9 +1398,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     /********** UNPAY COMPONENTS ****/
 
     public Money unpayPenaltyChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
-                                              final boolean isWriteOffTransaction) {
+            final boolean isWriteOffTransaction) {
         return unpayPenaltyChargesComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction, null);
     }
+
     public Money unpayPenaltyChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
 
@@ -1423,7 +1431,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public Money unpayFeeChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
-                                          final boolean isWriteOffTransaction) {
+            final boolean isWriteOffTransaction) {
         return unpayFeeChargesComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction, null);
     }
 
@@ -1458,7 +1466,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public Money unpayInterestComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
-                                          final boolean isWriteOffTransaction) {
+            final boolean isWriteOffTransaction) {
         return unpayInterestComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction, null);
     }
 
@@ -1489,7 +1497,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public Money unpayPrincipalComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
-                                        final boolean isWriteOffTransaction) {
+            final boolean isWriteOffTransaction) {
         return unpayPrincipalComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction, null);
     }
 

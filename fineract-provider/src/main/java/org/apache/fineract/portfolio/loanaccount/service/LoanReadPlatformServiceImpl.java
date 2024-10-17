@@ -1593,7 +1593,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             return """
                         tr.id as id, tr.transaction_type_enum as transactionType, tr.transaction_date as %s ,
                       tr.amount as total, tr.principal_portion_derived as principal, tr.interest_portion_derived as interest,
-                      tr.fee_charges_portion_derived as fees, tr.penalty_charges_portion_derived as penalties, 
+                      tr.fee_charges_portion_derived as fees, tr.penalty_charges_portion_derived as penalties,
                       tr.overpayment_portion_derived as overpayment, tr.outstanding_loan_balance_derived as outstandingLoanBalance,
                       tr.unrecognized_income_portion as unrecognizedIncome, tr.submitted_on_date as submittedOnDate,
                       tr.manually_adjusted_or_reversed as manuallyReversed, tr.reversal_external_id as reversalExternalId, tr.reversed_on_date as reversedOnDate,
@@ -1711,10 +1711,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                     and parent.is_penalty = true
                                 group by mlcpd.loan_transaction_id
                                 ) vat_penalty on vat_penalty.loan_transaction_id = tr.id
-                                        
-                                        
-                                        
-                    """.formatted(sqlGenerator.escape("date"), sqlGenerator.escape("name"), sqlGenerator.escape("code"));
+
+
+
+                    """
+                    .formatted(sqlGenerator.escape("date"), sqlGenerator.escape("name"), sqlGenerator.escape("code"));
         }
 
         @Override
@@ -1817,10 +1818,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             data.setHono(hono);
             data.setPenalty(penalty);
 
-            LoanTransactionData transactionData = new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData, currencyData, date, totalAmount,
-                    netDisbursalAmount, principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion, overPaymentPortion,
-                    unrecognizedIncomePortion, externalId, transfer, null, outstandingLoanBalance, submittedOnDate, manuallyReversed,
-                    reversalExternalId, reversedOnDate, loanId, externalLoanId);
+            LoanTransactionData transactionData = new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData,
+                    currencyData, date, totalAmount, netDisbursalAmount, principalPortion, interestPortion, feeChargesPortion,
+                    penaltyChargesPortion, overPaymentPortion, unrecognizedIncomePortion, externalId, transfer, null,
+                    outstandingLoanBalance, submittedOnDate, manuallyReversed, reversalExternalId, reversedOnDate, loanId, externalLoanId);
             transactionData.setLoanChargePaidBySummary(data);
             return transactionData;
         }
