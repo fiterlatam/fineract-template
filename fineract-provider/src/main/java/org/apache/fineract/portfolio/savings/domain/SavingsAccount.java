@@ -1454,9 +1454,9 @@ public class SavingsAccount extends AbstractPersistableCustom {
         LocalDate lastSavingsDate = null;
         final BigDecimal withdrawalFee = null;
         for (final SavingsAccountTransaction transaction : transactionsSortedByDate) {
-            if (transaction.isNotReversed() && transaction.isCredit() && !transaction.isReversalTransaction()) {
+            if (transaction.isNotReversed() && transaction.isCredit() && !transaction.isReversalTransaction() && !transaction.isAmountRelease()) {
                 runningBalance = runningBalance.plus(transaction.getAmount(this.currency));
-            } else if (transaction.isNotReversed() && transaction.isDebit() && !transaction.isReversalTransaction()) {
+            } else if (transaction.isNotReversed() && transaction.isDebit() && !transaction.isReversalTransaction() && !transaction.isAmountOnHold()) {
                 runningBalance = runningBalance.minus(transaction.getAmount(this.currency));
             } else {
                 continue;
