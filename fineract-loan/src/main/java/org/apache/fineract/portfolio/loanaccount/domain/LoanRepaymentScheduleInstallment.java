@@ -578,10 +578,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
     }
 
-    public void resetPrincipalComponents() {
-        this.principal = BigDecimal.ZERO;
-        this.principalCompleted = BigDecimal.ZERO;
-        this.principalWrittenOff = BigDecimal.ZERO;
+    public void derivePrincipalComponents() {
+        this.principal = defaultToZeroIfNull(this.principalCompleted).add(defaultToZeroIfNull(this.principalWrittenOff));
     }
 
     public void resetAccrualComponents() {

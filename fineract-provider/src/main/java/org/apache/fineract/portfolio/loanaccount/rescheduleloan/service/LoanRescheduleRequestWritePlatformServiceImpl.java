@@ -510,7 +510,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     for (final LoanRepaymentScheduleInstallment repaymentScheduleInstallment : repaymentScheduleInstallments) {
                         if (repaymentScheduleInstallment.isNotFullyPaidOff()
                                 && !rediferirUnpaidInstallments.contains(repaymentScheduleInstallment)) {
-                            repaymentScheduleInstallment.resetPrincipalComponents();
+                            repaymentScheduleInstallment.derivePrincipalComponents();
                         }
                     }
                     rediferirTermVariationValue.setDecimalValue(BigDecimal.valueOf(numberOfNewRepaymentPeriods));
