@@ -844,8 +844,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(this, getOffice(), chargeAmount,
                 transactionDate, feeCharges, penaltyCharges, externalId);
 
-        final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, loanCharge,
-                loanCharge.getAmount(getCurrency()).getAmount(), installmentNumber);
+        final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, loanCharge, chargeAmount.getAmount(),
+                installmentNumber);
         applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
         addLoanTransaction(applyLoanChargeTransaction);
     }
@@ -2832,9 +2832,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
 
                 // Accumulate the daily interest to the installment's accrued interest
-                installment.addAccruedInterest(Money.of(getCurrency(), dailyInterest));
+                BigDecimal roundedDownDailyInterest = dailyInterest.setScale(0, RoundingMode.DOWN);
+                installment.addAccruedInterest(Money.of(getCurrency(), roundedDownDailyInterest));
 
-                return dailyInterest;
+                return roundedDownDailyInterest;
             }
         }
 
@@ -3234,7 +3235,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
 
         }
-        if (!installmentalCharges.isEmpty()) {
+        // we don't want to immediately generate ccharges if the disbursedOn is today
+
+        if (!installmentalCharges.isEmpty() && disbursedOn.isBefore(DateUtils.getLocalDateOfTenant())) {
+
             handleChargeAppliedTransactionPerInstallment(installmentalCharges, disbursedOn);
         }
 
@@ -3830,6 +3834,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     private void handleLoanRepaymentInFull(final LocalDate transactionDate, final LoanLifecycleStateMachine loanLifecycleStateMachine) {
 
         boolean isAllChargesPaid = true;
+        // check if foreclosure is happening on a loan created today, this means charges would not be paid
+        boolean isChargeRepaymentRequired = getDisburseDonDate().equals(DateUtils.getLocalDateOfTenant());
+
         for (final LoanCharge loanCharge : this.charges) {
             if (loanCharge.isActive() && loanCharge.amount().compareTo(BigDecimal.ZERO) > 0
                     && !(loanCharge.isPaid() || loanCharge.isWaived())) {
@@ -3837,7 +3844,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 break;
             }
         }
-        if (isAllChargesPaid) {
+        if (isAllChargesPaid || isChargeRepaymentRequired) {
             this.closedOnDate = transactionDate;
             this.actualMaturityDate = transactionDate;
             loanLifecycleStateMachine.transition(LoanEvent.REPAID_IN_FULL, this);

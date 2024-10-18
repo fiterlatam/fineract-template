@@ -335,7 +335,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
         }
 
         if (rescheduleFromDate != null && extraTerms != null) {
-            LoanTermVariations parent = null;
+            final LoanTermVariations parent = null;
             final Integer termType = LoanTermVariationType.EXTEND_REPAYMENT_PERIOD.getValue();
             createLoanTermVariations(loanRescheduleRequest, termType, loan, rescheduleFromDate, dueDate,
                     loanRescheduleRequestToTermVariationMappings, isActive, isSpecificToInstallment, BigDecimal.valueOf(extraTerms),
