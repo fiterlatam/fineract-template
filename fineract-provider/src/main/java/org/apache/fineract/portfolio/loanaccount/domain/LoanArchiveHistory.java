@@ -21,7 +21,7 @@ public class LoanArchiveHistory {
     @Column(name = "title", unique = true)
     private String title;
     @Column(name = "identificacion")
-    private Integer identificacion;
+    private String identificacion;
     @Column(name = "primer_nombre")
     private String primerNombre;
     @Column(name = "segundo_nombre")
@@ -51,7 +51,7 @@ public class LoanArchiveHistory {
     @Column(name = "barrio_sac")
     private String barrioSac;
     @Column(name = "ciudad_sac")
-    private Integer ciudadSac;
+    private String ciudadSac;
     @Column(name = "departamento")
     private String departamento;
     @Column(name = "tipo_credito")
