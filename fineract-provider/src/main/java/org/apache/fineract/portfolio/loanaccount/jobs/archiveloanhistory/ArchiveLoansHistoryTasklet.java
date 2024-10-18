@@ -10,7 +10,6 @@ import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
-import org.apache.fineract.portfolio.accountdetails.service.AccountEnumerations;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
@@ -113,18 +112,19 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
 
                     for (LoanTermVariations termVariations : loan.getLoanTermVariations()) {
                         if (termVariations.getTermType().isRediferir() || termVariations.getTermType().isInterestRateVariation()
-                                || termVariations.getTermType().isInterestRateFromInstallment()
                                 || termVariations.getTermType().isExtendRepaymentPeriod()) {
                             numberReschedule = numberReschedule + 1;
                         }
                     }
-                    LoanTransaction transaction = loan.getLatestTransaction();
+                    LoanTransaction transaction = loan.getLastPaymentTransaction();
                     String brand = "";
                     String ally = "";
                     String cityPoinfsales = "";
                     String categoryPointOfSales = "";
                     String pointOfSale = "";
                     String estadoCivil = "";
+                    String cityClient = " ";
+
                     if (transaction.getPaymentDetail() != null) {
                         Optional<ClientAllyPointOfSales> clientAllPointOfsales = clientAllyPointOfSalesRepository
                                 .findByCode(transaction.getPaymentDetail().getPointOfSalesCode());
@@ -149,6 +149,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             }
                         }
                     }
+
                     if (dataLoan.getEstadoCivil() != null) {
                         Optional<CodeValue> getEstadoCivil = codeValueRepository.findById(Long.parseLong(dataLoan.getEstadoCivil()));
                         if (getEstadoCivil.isPresent()) {
@@ -156,24 +157,31 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             estadoCivil = estadoCivilCode.getLabel();
                         }
                     }
+                    if (dataLoan.getCiudadSac() != null) {
+                        Optional<CodeValue> getCiudadSac = codeValueRepository.findById(Long.valueOf(dataLoan.getCiudadSac()));
+                        if (getCiudadSac.isPresent()) {
+                            CodeValue ciudadSac = getCiudadSac.get();
+                            cityClient = ciudadSac.getLabel();
+                        }
+                    }
 
                     if (existingLoanArchive.isPresent()) {
                         LoanArchiveHistory existingEntry = existingLoanArchive.get();
 
-                        existingEntry.setIdentificacion(dataLoan.getIdentificacion());
+                        existingEntry.setIdentificacion(dataLoan.getNitEmpresa());
                         existingEntry.setPrimerNombre(dataLoan.getPrimerNombre());
                         existingEntry.setSegundoNombre(dataLoan.getSegundoNombre());
-                        existingEntry.setPrimerApellido(dataLoan.getPrimerNombre());
+                        existingEntry.setPrimerApellido(dataLoan.getSegundoApellido());
                         existingEntry.setSegundoApellido(dataLoan.getSegundoApellido());
                         existingEntry.setEstadoCliente(dataLoan.getEstadoCliente());
                         existingEntry.setNumeroObligacion(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
-                        existingEntry.setNitEmpresa(dataLoan.getNitEmpresa());
+                        existingEntry.setNitEmpresa("900486370");
                         existingEntry.setTelefonoSac(dataLoan.getTelefonoSac());
                         existingEntry.setCelularSac(dataLoan.getCelularSac());
                         existingEntry.setEmailSac(dataLoan.getEmailSac());
                         existingEntry.setDireccionSac(dataLoan.getDireccionSac());
                         existingEntry.setBarrioSac(dataLoan.getBarrioSac());
-                        existingEntry.setCiudadSac(dataLoan.getCiudadSac());
+                        existingEntry.setCiudadSac(cityClient);
                         existingEntry.setTipoCredito(categoryPointOfSales);
                         existingEntry.setDepartamento(dataLoan.getDepartamento());
                         existingEntry.setRazonSocial(dataLoan.getRazonSocial());
@@ -186,7 +194,6 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         }
                         existingEntry.setDiasMora(daysInArrears);
                         existingEntry.setFechaVencimiento(currentInstallment.getDueDate());
-                        existingEntry.setTipoCredito(AccountEnumerations.loanType(loan.getLoanType()).toString());
                         existingEntry.setValorCuota(loan.getLoanSummary().getTotalOutstanding());
                         existingEntry.setCapital(loan.getLoanSummary().getTotalPrincipalOutstanding());
                         existingEntry.setAval(avalAmount);
@@ -211,28 +218,27 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         existingEntry.setEstadoCuota("");
                         existingEntry.setIvaInteresDeMora(BigDecimal.ZERO);
                         existingEntry.setFechaFinanciacion(loan.getDisbursementDate());
-                        existingEntry.setCiudadPuntoCredito("");
                         existingEntry.setPuntoDeVenta(pointOfSale);
                         existingEntry.setTipoDocumento("");
                         existingEntry.setEstadoCivil(estadoCivil);
                     } else {
                         LoanArchiveHistory loanArchiveHistory = new LoanArchiveHistory();
                         loanArchiveHistory.setTitle("Archive Loan " + loan.getId());
-                        loanArchiveHistory.setIdentificacion(dataLoan.getIdentificacion());
+                        loanArchiveHistory.setIdentificacion(dataLoan.getNitEmpresa());
                         loanArchiveHistory.setPrimerNombre(dataLoan.getPrimerNombre());
                         loanArchiveHistory.setSegundoNombre(dataLoan.getSegundoNombre());
-                        loanArchiveHistory.setPrimerApellido(dataLoan.getPrimerNombre());
+                        loanArchiveHistory.setPrimerApellido(dataLoan.getSegundoApellido());
                         loanArchiveHistory.setSegundoApellido(dataLoan.getSegundoApellido());
                         loanArchiveHistory.setEstadoCliente(dataLoan.getEstadoCliente());
                         loanArchiveHistory
                                 .setNumeroObligacion(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
-                        loanArchiveHistory.setNitEmpresa(dataLoan.getNitEmpresa());
+                        loanArchiveHistory.setNitEmpresa("900486370");
                         loanArchiveHistory.setTelefonoSac(dataLoan.getTelefonoSac());
                         loanArchiveHistory.setCelularSac(dataLoan.getCelularSac());
                         loanArchiveHistory.setEmailSac(dataLoan.getEmailSac());
                         loanArchiveHistory.setDireccionSac(dataLoan.getDireccionSac());
                         loanArchiveHistory.setBarrioSac(dataLoan.getBarrioSac());
-                        loanArchiveHistory.setCiudadSac(dataLoan.getCiudadSac());
+                        loanArchiveHistory.setCiudadSac(cityClient);
                         loanArchiveHistory.setTipoCredito(categoryPointOfSales);
                         loanArchiveHistory.setDepartamento(dataLoan.getDepartamento());
                         loanArchiveHistory.setRazonSocial(dataLoan.getRazonSocial());
@@ -245,7 +251,6 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         }
                         loanArchiveHistory.setDiasMora(daysInArrears);
                         loanArchiveHistory.setFechaVencimiento(currentInstallment.getDueDate());
-                        loanArchiveHistory.setTipoCredito(AccountEnumerations.loanType(loan.getLoanType()).toString());
                         loanArchiveHistory.setValorCuota(loan.getLoanSummary().getTotalOutstanding());
                         loanArchiveHistory.setCapital(loan.getLoanSummary().getTotalPrincipalOutstanding());
                         loanArchiveHistory.setAval(avalAmount);
