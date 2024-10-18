@@ -125,27 +125,30 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                     String estadoCivil = "";
                     String cityClient = " ";
 
-                    if (transaction.getPaymentDetail() != null) {
-                        Optional<ClientAllyPointOfSales> clientAllPointOfsales = clientAllyPointOfSalesRepository
-                                .findByCode(transaction.getPaymentDetail().getPointOfSalesCode());
-                        if (clientAllPointOfsales.isPresent()) {
-                            ClientAllyPointOfSales clientAllyPointOfSales = clientAllPointOfsales.get();
-                            ally = clientAllyPointOfSales.getClientAlly().getCompanyName();
-                            pointOfSale = clientAllyPointOfSales.getName();
-                            Optional<CodeValue> getbrand = codeValueRepository.findById(clientAllyPointOfSales.getBrandCodeValueId());
-                            if (getbrand.isPresent()) {
-                                CodeValue brands = getbrand.get();
-                                brand = brands.getLabel();
-                            }
-                            Optional<CodeValue> getCity = codeValueRepository.findById(clientAllyPointOfSales.getCityCodeValueId());
-                            if (getCity.isPresent()) {
-                                CodeValue citys = getCity.get();
-                                cityPoinfsales = citys.getLabel();
-                            }
-                            Optional<CodeValue> getCategory = codeValueRepository.findById(clientAllyPointOfSales.getCategoryCodeValueId());
-                            if (getCategory.isPresent()) {
-                                CodeValue categoryCode = getCategory.get();
-                                categoryPointOfSales = categoryCode.getLabel();
+                    if (transaction != null) {
+                        if (transaction.getPaymentDetail() != null) {
+                            Optional<ClientAllyPointOfSales> clientAllPointOfsales = clientAllyPointOfSalesRepository
+                                    .findByCode(transaction.getPaymentDetail().getPointOfSalesCode());
+                            if (clientAllPointOfsales.isPresent()) {
+                                ClientAllyPointOfSales clientAllyPointOfSales = clientAllPointOfsales.get();
+                                ally = clientAllyPointOfSales.getClientAlly().getCompanyName();
+                                pointOfSale = clientAllyPointOfSales.getName();
+                                Optional<CodeValue> getbrand = codeValueRepository.findById(clientAllyPointOfSales.getBrandCodeValueId());
+                                if (getbrand.isPresent()) {
+                                    CodeValue brands = getbrand.get();
+                                    brand = brands.getLabel();
+                                }
+                                Optional<CodeValue> getCity = codeValueRepository.findById(clientAllyPointOfSales.getCityCodeValueId());
+                                if (getCity.isPresent()) {
+                                    CodeValue citys = getCity.get();
+                                    cityPoinfsales = citys.getLabel();
+                                }
+                                Optional<CodeValue> getCategory = codeValueRepository
+                                        .findById(clientAllyPointOfSales.getCategoryCodeValueId());
+                                if (getCategory.isPresent()) {
+                                    CodeValue categoryCode = getCategory.get();
+                                    categoryPointOfSales = categoryCode.getLabel();
+                                }
                             }
                         }
                     }
