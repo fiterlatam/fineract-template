@@ -21,8 +21,10 @@ package org.apache.fineract.portfolio.loanaccount.data;
 import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 @Getter
+@Setter
 @RequiredArgsConstructor
 public class LoanChargePaidByData {
 
@@ -32,15 +34,10 @@ public class LoanChargePaidByData {
     private final Long chargeId;
     private final Long transactionId;
     private final String name;
-
-    public LoanChargePaidByData(final Long id, final BigDecimal amount, final Integer installmentNumber, final Long chargeId,
-            final Long transactionId) {
-        this.id = id;
-        this.amount = amount;
-        this.installmentNumber = installmentNumber;
-        this.chargeId = chargeId;
-        this.transactionId = transactionId;
-        this.name = null;
-    }
+    private BigDecimal mandatoryInsurance;
+    private BigDecimal voluntaryInsurance;
+    private BigDecimal aval;
+    private BigDecimal hono;
+    private BigDecimal penalty;
 
 }

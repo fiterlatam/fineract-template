@@ -1,6 +1,7 @@
 package org.apache.fineract.custom.portfolio.ally.jobs.collectionsettlement;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -48,8 +49,8 @@ public class CollectionSettlementTasklet implements Tasklet {
 
         for (ClientAllyPointOfSalesCollectionData data : collectionData) {
             LocalDate collectDate = LocalDate.parse(data.getCollectionDate());
-            List<AllyCollectionSettlement> collect = allyCollectionSettlementRepository.findByLoanIdAndCollectionDate(data.getLoanId(),
-                    collectDate);
+            List<AllyCollectionSettlement> existingCollections = allyCollectionSettlementRepository
+                    .findByLoanIdAndCollectionDate(data.getLoanId(), collectDate);
             String freq = LiquidationFrequency.fromInt(data.getLiquidationFrequencyId().intValue()).toString();
             LocalDate period;
             boolean isEqual = true;
@@ -103,20 +104,23 @@ public class CollectionSettlementTasklet implements Tasklet {
             }
             isEqual = now.isEqual(period);
             if (isEqual) {
-                boolean isNewCollection = false;
-                if (!collect.isEmpty()) {
-                    for (AllyCollectionSettlement allyCollectionSettlementdata : collect) {
-                        if (collectDate != allyCollectionSettlementdata.getCollectionDate()
-                                && data.getLoanId() != allyCollectionSettlementdata.getLoanId()
-                                && data.getAmount() != allyCollectionSettlementdata.getCollectionAmount()) {
-                            isNewCollection = true;
-                        }
+                List<AllyCollectionSettlement> duplicatesToRemove = new ArrayList<>();
+                boolean isNewCollection = true;
+
+                for (AllyCollectionSettlement existingCollection : existingCollections) {
+                    if (isSameCollection(existingCollection, data, collectDate)) {
+                        duplicatesToRemove.add(existingCollection);
+                    } else {
+                        isNewCollection = false;
                     }
-                } else {
-                    isNewCollection = true;
                 }
 
-                if (isNewCollection) {
+                if (!duplicatesToRemove.isEmpty()) {
+                    allyCollectionSettlementRepository.deleteAll(duplicatesToRemove);
+                    existingCollections.removeAll(duplicatesToRemove);
+                }
+
+                if (isNewCollection || existingCollections.isEmpty()) {
                     AllyCollectionSettlement allyCollectionSettlement = new AllyCollectionSettlement();
                     CodeValueData city = codeValueReadPlatformService.retrieveCodeValue(data.getCityId());
                     allyCollectionSettlement.setCollectionDate(collectDate);
@@ -144,5 +148,11 @@ public class CollectionSettlementTasklet implements Tasklet {
             }
         }
         return RepeatStatus.FINISHED;
+    }
+
+    private boolean isSameCollection(AllyCollectionSettlement existingCollection, ClientAllyPointOfSalesCollectionData data,
+            LocalDate collectDate) {
+        return existingCollection.getCollectionDate().equals(collectDate) && existingCollection.getLoanId().equals(data.getLoanId())
+                && existingCollection.getCollectionAmount().equals(data.getAmount());
     }
 }

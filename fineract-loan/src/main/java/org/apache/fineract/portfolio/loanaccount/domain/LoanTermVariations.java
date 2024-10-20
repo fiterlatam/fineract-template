@@ -167,4 +167,8 @@ public class LoanTermVariations extends AbstractPersistableCustom {
         this.isActive = false;
     }
 
+    public void setTermType(final Integer termType) {
+        this.termType = termType;
+    }
+
 }
