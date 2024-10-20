@@ -1017,11 +1017,12 @@ public class Charge extends AbstractPersistableCustom {
                             this.getName());
                 }
                 if (this.isCustomPercentageBasedOfAnotherCharge()) {
-                    verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.PERCENT_OF_ANOTHER_CHARGE.getIndex(), null, null, null,
-                            null);
+                    verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.PERCENT_OF_ANOTHER_CHARGE.getIndex(), null, null,
+                            null, null);
                 } else {
                     verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
-                            ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(), ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
+                            ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex(),
+                            ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
                             ChargeCalculationTypeBaseItemsEnum.INTEREST_INSTALLMENT.getIndex(),
                             ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex());
                 }

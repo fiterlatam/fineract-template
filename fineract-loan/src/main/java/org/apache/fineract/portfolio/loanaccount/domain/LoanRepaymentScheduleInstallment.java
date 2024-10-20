@@ -630,7 +630,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public Money payPenaltyChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
-                                            final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
+            final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
 
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money penaltyPortionOfTransaction = Money.zero(currency);

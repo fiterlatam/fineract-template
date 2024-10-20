@@ -421,7 +421,9 @@ public class LoanChargeAssembler {
                     for (LoanCharge parentCharge : loan.getCharges()) {
                         if (parentCharge.getCharge().getId() != null && parentCharge.isPenaltyCharge()
                                 && parentCharge.getCharge().getId().equals(chargeDefinition.getParentChargeId())
-                                && parentCharge.getOverdueInstallmentCharge() != null && Objects.equals(parentCharge.getOverdueInstallmentCharge().installment().getInstallmentNumber(), installment.getInstallmentNumber())) {
+                                && parentCharge.getOverdueInstallmentCharge() != null
+                                && Objects.equals(parentCharge.getOverdueInstallmentCharge().installment().getInstallmentNumber(),
+                                        installment.getInstallmentNumber())) {
                             amountPercentageAppliedTo = amountPercentageAppliedTo.add(parentCharge.amount());
                             numberOfPenaltyDays = null;
                             break;
