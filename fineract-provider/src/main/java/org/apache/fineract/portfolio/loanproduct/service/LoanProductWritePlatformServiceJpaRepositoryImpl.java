@@ -370,8 +370,8 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
 
             final Map<String, Object> changes = product.update(command, this.aprCalculator, floatingRate);
 
-            if (changes.containsKey("interestRateId")) {
-                final Long interestRateId = (Long) changes.get("interestRateId");
+            if (command.parameterExists("interestRateId")) {
+                final Long interestRateId = command.longValueOfParameterNamed("interestRateId");
                 final InterestRate interestRate = this.interestRateRepository.findById(interestRateId)
                         .orElseThrow(() -> new InterestRateException(interestRateId));
                 product.setInterestRate(interestRate);
