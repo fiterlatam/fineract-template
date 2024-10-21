@@ -2016,10 +2016,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
          * if (this.loanInstallmentCharge.isEmpty()) { this.loanInstallmentCharge.addAll(newChargeInstallments);
          */
         Loan loan = loanCharge.getLoan();
-        if (loan.isDisbursed() && this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)
-                && (this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.HORIZONTAL)
-                        || (this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.VERTICAL)
-                                && loan.claimType != null))) {
+        /*
+         * if (loan.isDisbursed() &&
+         * this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE) &&
+         * (this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.
+         * HORIZONTAL) ||
+         * (this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.
+         * VERTICAL) && loan.claimType != null))) {
+         */
+        if (loan.isDisbursed() && this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)) {
             if (loanCharge.isInstalmentFee()) {
 
                 loanCharge.clearLoanInstallmentCharges();
@@ -3585,8 +3590,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         loanTransaction.updateLoan(this);
 
         boolean isTransactionChronologicallyLatest = true;
-        if (this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)
-                && this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.HORIZONTAL)) {
+        if (isHorizontalLoan()) {
             isTransactionChronologicallyLatest = isChronologicallyLatestRepaymentOrWaiverForProgressiveLoans(loanTransaction,
                     getLoanTransactions());
         } else {
@@ -3674,16 +3678,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             }
 
-            if (this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)
-                    && this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.HORIZONTAL)) {
+            if (isHorizontalLoan()) {
                 reprocess = true;
             }
         }
         if (reprocess) {
             if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
                 regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
-            } else if (this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE) && !isForeclosure()
-                    && !isClaim()) {
+            } else if (isHorizontalLoan() && !isForeclosure() && !isClaim()) {
                 if (adjustedTransaction == null) {
                     regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
                 }
@@ -3691,7 +3693,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
             changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(getDisbursementDate(),
                     allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), getActiveCharges());
-            if (this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)) {
+            if (isHorizontalLoan()) {
                 if (!isForeclosure() && !isClaim() && !loanTransaction.isReversed() && loanTransaction.getAmount().equals(BigDecimal.ZERO)
                         && adjustedTransaction != null && adjustedTransaction.isReversed()) {
                     regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
@@ -8103,5 +8105,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setInterestAccruedTill(LocalDate interestAccruedTill) {
         this.interestAccruedTill = interestAccruedTill;
+    }
+
+    public boolean isHorizontalLoan() {
+        return this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)
+                && this.getLoanProductRelatedDetail().getLoanScheduleProcessingType().equals(LoanScheduleProcessingType.HORIZONTAL);
     }
 }

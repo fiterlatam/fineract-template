@@ -416,6 +416,21 @@ public class LoanChargeAssembler {
                         }
                     }
                 }
+                if (chargeCalculationType.isPercentageOfAnotherCharge()) {
+                    System.out.println("loan id===" + loan.getId());
+                    for (LoanCharge parentCharge : loan.getCharges()) {
+                        if (parentCharge.getCharge().getId() != null && parentCharge.isPenaltyCharge()
+                                && parentCharge.getCharge().getId().equals(chargeDefinition.getParentChargeId())
+                                && parentCharge.getOverdueInstallmentCharge() != null
+                                && Objects.equals(parentCharge.getOverdueInstallmentCharge().installment().getInstallmentNumber(),
+                                        installment.getInstallmentNumber())) {
+                            amountPercentageAppliedTo = amountPercentageAppliedTo.add(parentCharge.amount());
+                            numberOfPenaltyDays = null;
+                            break;
+                        }
+                    }
+
+                }
             }
         }
 
@@ -443,6 +458,7 @@ public class LoanChargeAssembler {
             for (final LoanDisbursementDetails loanDisbursementDetails : loan.getDisbursementDetails()) {
                 if (!DateUtils.isAfter(loanDisbursementDetails.expectedDisbursementDate(), dueDate)) {
                     amountPercentageAppliedTo = amountPercentageAppliedTo.add(loanDisbursementDetails.principal());
+                    numberOfPenaltyDays = null;
                 }
             }
         }
