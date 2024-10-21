@@ -170,12 +170,14 @@ public class SingleLoanChargeRepaymentScheduleProcessingWrapper {
 
         if (loanCharge.isPenaltyCharge()) {
             boolean isDue = false;
-            if (loanCharge.getCharge().getFeeInterval() == null ) {
-               isDue = loanChargeIsDue(periodStart, periodEnd, isFirstPeriod, loanCharge);
+            if (loanCharge.getCharge().getFeeInterval() == null) {
+                isDue = loanChargeIsDue(periodStart, periodEnd, isFirstPeriod, loanCharge);
             } else {
                 if (loanCharge.getOverdueInstallmentCharge().installment().getInstallmentNumber().equals(period.getInstallmentNumber())) {
-                    // This condition should only be true when charge frequency is daily because charges calculated after installment due date are added to
-                    // next installment. This condition will make sure that charges are added to the correct installment.
+                    // This condition should only be true when charge frequency is daily because charges calculated
+                    // after installment due date are added to
+                    // next installment. This condition will make sure that charges are added to the correct
+                    // installment.
                     isDue = true;
                 }
             }

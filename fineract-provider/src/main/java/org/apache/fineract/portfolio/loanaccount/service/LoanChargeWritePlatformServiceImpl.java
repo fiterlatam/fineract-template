@@ -790,7 +790,8 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
             }
 
             if (reprocessRequired) {
-                // No need to add new penalty installment. This has been handled in SingleLoanChargeRepaymentScheduleProcessingWrapper.reprocess
+                // No need to add new penalty installment. This has been handled in
+                // SingleLoanChargeRepaymentScheduleProcessingWrapper.reprocess
                 // addInstallmentIfPenaltyAppliedAfterLastDueDate(loan, lastChargeDate);
                 ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions();
                 if (changedTransactionDetail != null) {
@@ -1009,23 +1010,18 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         }
 
         /*
-        Do not need to add additional penalty installment anymore
-
-        if (!loan.isInterestBearing() && loanCharge.isSpecifiedDueDate()) {
-            LoanRepaymentScheduleInstallment latestRepaymentScheduleInstalment = loan.getRepaymentScheduleInstallments()
-                    .get(loan.getLoanRepaymentScheduleInstallmentsSize() - 1);
-            if (DateUtils.isAfter(loanCharge.getDueDate(), latestRepaymentScheduleInstalment.getDueDate())) {
-                if (latestRepaymentScheduleInstalment.isAdditional()) {
-                    latestRepaymentScheduleInstalment.updateDueDate(loanCharge.getDueDate());
-                } else {
-                    final LoanRepaymentScheduleInstallment installment = new LoanRepaymentScheduleInstallment(loan,
-                            (loan.getLoanRepaymentScheduleInstallmentsSize() + 1), latestRepaymentScheduleInstalment.getDueDate(),
-                            loanCharge.getDueDate(), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, false, null);
-                    installment.markAsAdditional();
-                    loan.addLoanRepaymentScheduleInstallment(installment);
-                }
-            }
-        }*/
+         * Do not need to add additional penalty installment anymore
+         *
+         * if (!loan.isInterestBearing() && loanCharge.isSpecifiedDueDate()) { LoanRepaymentScheduleInstallment
+         * latestRepaymentScheduleInstalment = loan.getRepaymentScheduleInstallments()
+         * .get(loan.getLoanRepaymentScheduleInstallmentsSize() - 1); if (DateUtils.isAfter(loanCharge.getDueDate(),
+         * latestRepaymentScheduleInstalment.getDueDate())) { if (latestRepaymentScheduleInstalment.isAdditional()) {
+         * latestRepaymentScheduleInstalment.updateDueDate(loanCharge.getDueDate()); } else { final
+         * LoanRepaymentScheduleInstallment installment = new LoanRepaymentScheduleInstallment(loan,
+         * (loan.getLoanRepaymentScheduleInstallmentsSize() + 1), latestRepaymentScheduleInstalment.getDueDate(),
+         * loanCharge.getDueDate(), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, false, null);
+         * installment.markAsAdditional(); loan.addLoanRepaymentScheduleInstallment(installment); } } }
+         */
 
         loan.addLoanCharge(loanCharge);
 
@@ -1076,9 +1072,10 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
             scheduleDates.remove(frequency);
         }
         Long numberOfPenaltyDays = java.time.temporal.ChronoUnit.DAYS.between(dueDate, DateUtils.getBusinessLocalDate());
-        numberOfPenaltyDays = numberOfPenaltyDays +( penaltyWaitPeriodValue + 1L) - diff;
+        numberOfPenaltyDays = numberOfPenaltyDays + (penaltyWaitPeriodValue + 1L) - diff;
         if (feeFrequency != null && feeFrequency == 0 && feeInterval != null && feeInterval == 1) {
-            // If fee frequency is daily then we should not multiply charge amount with number of days as charge amount is already calculated based on single day
+            // If fee frequency is daily then we should not multiply charge amount with number of days as charge amount
+            // is already calculated based on single day
             numberOfPenaltyDays = null;
         }
         LoanRepaymentScheduleInstallment installment = null;
