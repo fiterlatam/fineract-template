@@ -68,4 +68,8 @@ public class LoanOverdueInstallmentCharge extends AbstractPersistableCustom {
         }
         return penaltyAmountOutstanding;
     }
+
+    public LoanRepaymentScheduleInstallment installment() {
+        return installment;
+    }
 }

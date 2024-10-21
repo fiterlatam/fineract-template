@@ -638,50 +638,28 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         if (transactionAmountRemaining.isZero()) {
             return penaltyPortionOfTransaction;
         }
-        ///////////////////////
-        for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
-            if (installmentCharge.getLoanCharge().isPenaltyCharge()) {
-
-                for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
-                    if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
-                            vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
-                        penaltyPortionOfTransaction = payPenaltyCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
-                                penaltyPortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
-
-                        updateChargePaidByAmount(penaltyPortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
-                                installmentCharge.getLoanCharge());
-                        loanChargePaidByPortion = penaltyPortionOfTransaction.minus(loanChargePaidByPortion);
-                        transactionAmountRemaining = transactionAmountRemaining.minus(penaltyPortionOfTransaction);
-                        break;
-                    }
-                }
-                penaltyPortionOfTransaction = payPenaltyCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
-                        penaltyPortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
-
-                updateChargePaidByAmount(penaltyPortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
-                        installmentCharge.getLoanCharge());
-                loanChargePaidByPortion = penaltyPortionOfTransaction.minus(loanChargePaidByPortion);
+        final Money penaltyChargesDue = getPenaltyChargesOutstanding(currency);
+        if (transactionAmountRemaining.isGreaterThanOrEqualTo(penaltyChargesDue)) {
+            if (isWriteOffTransaction) {
+                this.penaltyChargesWrittenOff = getPenaltyChargesWrittenOff(currency).plus(penaltyChargesDue).getAmount();
+            } else {
+                this.penaltyChargesPaid = getPenaltyChargesPaid(currency).plus(penaltyChargesDue).getAmount();
             }
+            penaltyPortionOfTransaction = penaltyPortionOfTransaction.plus(penaltyChargesDue);
+        } else {
+            if (isWriteOffTransaction) {
+                this.penaltyChargesWrittenOff = getPenaltyChargesWrittenOff(currency).plus(transactionAmountRemaining).getAmount();
+            } else {
+                this.penaltyChargesPaid = getPenaltyChargesPaid(currency).plus(transactionAmountRemaining).getAmount();
+            }
+            penaltyPortionOfTransaction = penaltyPortionOfTransaction.plus(transactionAmountRemaining);
         }
 
-        ///////////////////////
-        /*
-         * final Money penaltyChargesDue = getPenaltyChargesOutstanding(currency); if
-         * (transactionAmountRemaining.isGreaterThanOrEqualTo(penaltyChargesDue)) { if (isWriteOffTransaction) {
-         * this.penaltyChargesWrittenOff = getPenaltyChargesWrittenOff(currency).plus(penaltyChargesDue).getAmount(); }
-         * else { this.penaltyChargesPaid = getPenaltyChargesPaid(currency).plus(penaltyChargesDue).getAmount(); }
-         * penaltyPortionOfTransaction = penaltyPortionOfTransaction.plus(penaltyChargesDue); } else { if
-         * (isWriteOffTransaction) { this.penaltyChargesWrittenOff =
-         * getPenaltyChargesWrittenOff(currency).plus(transactionAmountRemaining).getAmount(); } else {
-         * this.penaltyChargesPaid = getPenaltyChargesPaid(currency).plus(transactionAmountRemaining).getAmount(); }
-         * penaltyPortionOfTransaction = penaltyPortionOfTransaction.plus(transactionAmountRemaining); }
-         *
-         * this.penaltyChargesPaid = defaultToNullIfZero(this.penaltyChargesPaid);
-         *
-         * checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
-         *
-         * trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, penaltyPortionOfTransaction);
-         */
+        this.penaltyChargesPaid = defaultToNullIfZero(this.penaltyChargesPaid);
+
+        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, penaltyPortionOfTransaction);
 
         return penaltyPortionOfTransaction;
     }
