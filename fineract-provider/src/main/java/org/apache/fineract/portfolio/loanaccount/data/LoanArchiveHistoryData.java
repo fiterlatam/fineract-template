@@ -15,6 +15,7 @@ public class LoanArchiveHistoryData {
     private Integer identificacion;
     private String primerNombre;
     private String segundoNombre;
+    private String primerApellido;
     private String segundoApellido;
     private String estadoCliente;
     private String numeroObligacion;
