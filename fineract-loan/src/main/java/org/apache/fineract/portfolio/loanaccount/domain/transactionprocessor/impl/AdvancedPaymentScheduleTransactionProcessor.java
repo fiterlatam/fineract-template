@@ -1259,10 +1259,15 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
     @NotNull
     private static Set<LoanCharge> getLoanChargesOfInstallment(Set<LoanCharge> charges, LoanRepaymentScheduleInstallment currentInstallment,
             int firstNormalInstallmentNumber) {
-        return charges.stream().filter(loanCharge -> currentInstallment.getInstallmentNumber().equals(firstNormalInstallmentNumber)
-                ? loanCharge.isDueForCollectionFromIncludingAndUpToAndIncluding(currentInstallment.getFromDate(),
-                        currentInstallment.getDueDate())
-                : loanCharge.isDueForCollectionFromAndUpToAndIncluding(currentInstallment.getFromDate(), currentInstallment.getDueDate()))
+        /*
+         * return charges.stream().filter(loanCharge ->
+         * currentInstallment.getInstallmentNumber().equals(firstNormalInstallmentNumber) ?
+         * loanCharge.isDueForCollectionFromIncludingAndUpToAndIncluding(currentInstallment.getFromDate(),
+         * currentInstallment.getDueDate()) :
+         * loanCharge.isDueForCollectionFromAndUpToAndIncluding(currentInstallment.getFromDate(),
+         * currentInstallment.getDueDate())) .collect(Collectors.toSet());
+         */
+        return charges.stream().filter(loanCharge -> loanCharge.isDueForCollectionForInstallment(currentInstallment))
                 .collect(Collectors.toSet());
     }
 
