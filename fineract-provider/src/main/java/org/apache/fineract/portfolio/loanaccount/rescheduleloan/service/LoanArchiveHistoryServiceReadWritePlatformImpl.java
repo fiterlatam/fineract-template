@@ -41,8 +41,8 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
                     + "    INNER JOIN m_blocking_reason_setting mbrs ON mbrs.id = mcbr.blocking_reason_id\n"
                     + "    WHERE mcbr.is_active = false\n" + ")\n" + "SELECT mc.id AS client_id, \n" + "       ml.id AS loan_id,\n"
                     + "       COALESCE(mc.firstname,'') AS firstname, \n" + "       COALESCE(mc.middlename,'') AS middlename, \n"
-                    + " COALESCE(mc.second_lastname,'') AS second_lastname, \n" + "       mc.display_name, \n"
-                    + "       cbr.name_of_reason,\n"
+                    + " COALESCE(mc.second_lastname,'') AS second_lastname, \n"
+                    + " mc.display_name, COALESCE(mc.lastname,'') AS lastname, \n" + "       cbr.name_of_reason,\n"
                     + "       COALESCE(cce.\"NIT\", ccp.\"Cedula\") AS nit_empresa, COALESCE(cce.\"Cupo\", ccp.\"Cupo solicitado\") AS cupo, \n"
                     + "       COALESCE(ccp.\"Telefono\" , cce.\"Telefono\") AS telefono, \n"
                     + "       ccp.\"Celular Referencia\" AS celuar,\n" + "       mc.email_address,\n"
@@ -68,10 +68,10 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
         public LoanArchiveHistoryData mapRow(ResultSet rs, int rowNum) throws SQLException {
             return LoanArchiveHistoryData.builder().identificacion(rs.getInt("client_id")).primerNombre(rs.getString("firstname"))
                     .segundoNombre(rs.getString("middlename")).segundoApellido(rs.getString("second_lastname"))
-                    .estadoCliente(rs.getString("name_of_reason")).numeroObligacion(rs.getString("loan_id"))
-                    .nitEmpresa(rs.getString("nit_empresa")).telefonoSac(rs.getString("telefono")).celularSac(rs.getString("celuar"))
-                    .emailSac(rs.getString("email_address")).direccionSac(rs.getString("direction")).barrioSac(rs.getString("direction"))
-                    .ciudadSac(rs.getInt("ciudad")).departamento(rs.getString("departamento"))
+                    .primerApellido(rs.getString("lastname")).estadoCliente(rs.getString("name_of_reason"))
+                    .numeroObligacion(rs.getString("loan_id")).nitEmpresa(rs.getString("nit_empresa")).telefonoSac(rs.getString("telefono"))
+                    .celularSac(rs.getString("celuar")).emailSac(rs.getString("email_address")).direccionSac(rs.getString("direction"))
+                    .barrioSac(rs.getString("direction")).ciudadSac(rs.getInt("ciudad")).departamento(rs.getString("departamento"))
                     .razonSocial(rs.getString("firstname") + " " + rs.getString("middlename") + " " + rs.getString("second_lastname"))
                     .nombreFamiliar(rs.getString("nombre_empresa")).parentescoFamiliar(rs.getString("referencia"))
                     .fechaFinanciacion(rs.getString("disbursedon_date")).genero(rs.getString("gender"))

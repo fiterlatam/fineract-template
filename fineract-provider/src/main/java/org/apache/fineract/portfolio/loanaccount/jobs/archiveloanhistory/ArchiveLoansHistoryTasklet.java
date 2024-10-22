@@ -174,7 +174,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         existingEntry.setIdentificacion(dataLoan.getNitEmpresa());
                         existingEntry.setPrimerNombre(dataLoan.getPrimerNombre());
                         existingEntry.setSegundoNombre(dataLoan.getSegundoNombre());
-                        existingEntry.setPrimerApellido(dataLoan.getSegundoApellido());
+                        existingEntry.setPrimerApellido(dataLoan.getPrimerApellido());
                         existingEntry.setSegundoApellido(dataLoan.getSegundoApellido());
                         existingEntry.setEstadoCliente(dataLoan.getEstadoCliente());
                         existingEntry.setNumeroObligacion(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
@@ -230,7 +230,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         loanArchiveHistory.setIdentificacion(dataLoan.getNitEmpresa());
                         loanArchiveHistory.setPrimerNombre(dataLoan.getPrimerNombre());
                         loanArchiveHistory.setSegundoNombre(dataLoan.getSegundoNombre());
-                        loanArchiveHistory.setPrimerApellido(dataLoan.getSegundoApellido());
+                        loanArchiveHistory.setPrimerApellido(dataLoan.getPrimerApellido());
                         loanArchiveHistory.setSegundoApellido(dataLoan.getSegundoApellido());
                         loanArchiveHistory.setEstadoCliente(dataLoan.getEstadoCliente());
                         loanArchiveHistory
