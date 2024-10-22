@@ -780,8 +780,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean isDueForCollectionForInstallment(final LoanRepaymentScheduleInstallment installment) {
-        return this.getOverdueInstallmentCharge() != null
-                && Objects.equals(this.getOverdueInstallmentCharge().installment().getInstallmentNumber(), installment.getInstallmentNumber());
+        return this.getOverdueInstallmentCharge() != null && Objects
+                .equals(this.getOverdueInstallmentCharge().installment().getInstallmentNumber(), installment.getInstallmentNumber());
     }
 
     public boolean isDueForCollectionFromIncludingAndUpToAndIncluding(final LocalDate fromAndInclusive, final LocalDate upToAndInclusive) {
