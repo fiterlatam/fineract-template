@@ -72,7 +72,8 @@ public final class CalculateLoanScheduleQueryFromApiJsonHelper {
             LoanApiConstants.datatables, LoanApiConstants.isEqualAmortizationParam, LoanProductConstants.RATES_PARAM_NAME,
             LoanApiConstants.daysInYearTypeParameterName, LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName,
             LoanApiConstants.INTEREST_RATE_POINTS, LoanApiConstants.POINT_OF_SALE_CODE, LoanApiConstants.CLIENT_ID_NUMBER,
-            LoanApiConstants.DISCOUNT_VALUE, LoanApiConstants.DISCOUNT_TRANSFER_VALUE));
+            LoanApiConstants.DISCOUNT_VALUE, LoanApiConstants.DISCOUNT_TRANSFER_VALUE, LoanApiConstants.POINT_OF_SALE_CODE,
+            LoanApiConstants.AllYID));
 
     private final FromJsonHelper fromApiJsonHelper;
 
