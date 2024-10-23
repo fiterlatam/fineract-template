@@ -7285,10 +7285,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return amount;
     }
 
-    public void updatePostDatedChecks(final List<PostDatedChecks> postDatedChecks) {
-        this.postDatedChecks = postDatedChecks;
-    }
-
     public List<PostDatedChecks> getPostDatedChecks() {
         return this.postDatedChecks;
     }
@@ -7320,8 +7316,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money paidFromFutureInstallments = Money.zero(currency);
         Money fee = Money.zero(currency);
         Money penalty = Money.zero(currency);
-        int firstNormalInstallmentNumber = LoanRepaymentScheduleProcessingWrapper
-                .fetchFirstNormalInstallmentNumber(repaymentScheduleInstallments);
         final List<LoanChargeData> currentOutstandingLoanCharges = new ArrayList<>();
         for (LoanCharge loanCharge : this.charges) {
             if (loanCharge.isActive() && !loanCharge.isDueAtDisbursement()) {
@@ -7336,7 +7330,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
-            boolean isFirstNormalInstallment = installment.getInstallmentNumber().equals(firstNormalInstallmentNumber);
             if (!DateUtils.isBefore(writtenOffOnDate, installment.getDueDate())) {
                 interest = interest.plus(installment.getInterestOutstanding(currency));
                 penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
@@ -7344,8 +7337,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 this.incrementOutstandingInstallmentChargeBalances(installment.getInstallmentNumber(), currentOutstandingLoanCharges);
                 this.incrementOutstandingPenaltyChargeBalances(installment.getInstallmentNumber(), currentOutstandingLoanCharges);
             } else if (DateUtils.isAfter(writtenOffOnDate, installment.getFromDate())) {
-                Money penaltyForCurrentPeriod = Money.zero(getCurrency());
-                Money penaltyAccoutedForCurrentPeriod = Money.zero(getCurrency());
                 int totalPeriodDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
                 int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), writtenOffOnDate));
                 Money interestForCurrentPeriod = Money.of(getCurrency(), BigDecimal.valueOf(
@@ -7356,23 +7347,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 Money feeAccountedForCurrentPeriod = installment.getFeeChargesWaived(getCurrency())
                         .plus(installment.getFeeChargesPaid(getCurrency())).plus(installment.getFeeChargesWrittenOff(getCurrency()));
                 this.incrementOutstandingInstallmentChargeBalances(installment.getInstallmentNumber(), currentOutstandingLoanCharges);
-                for (LoanCharge loanCharge : this.charges) {
-                    if (loanCharge.isActive() && !loanCharge.isDueAtDisbursement()) {
-                        boolean isDue = isFirstNormalInstallment
-                                ? loanCharge.isDueForCollectionFromIncludingAndUpToAndIncluding(installment.getFromDate(), writtenOffOnDate)
-                                : loanCharge.isDueForCollectionFromAndUpToAndIncluding(installment.getFromDate(), writtenOffOnDate);
-                        if (isDue) {
-                            if (loanCharge.isPenaltyCharge()) {
-                                penaltyForCurrentPeriod = penaltyForCurrentPeriod.plus(loanCharge.getAmount(getCurrency()));
-                                penaltyAccoutedForCurrentPeriod = penaltyAccoutedForCurrentPeriod
-                                        .plus(loanCharge.getAmountWaived(getCurrency()).plus(loanCharge.getAmountPaid(getCurrency())))
-                                        .plus(loanCharge.getAmountWrittenOff(getCurrency()));
-                                this.incrementOutstandingPenaltyChargeBalances(installment.getInstallmentNumber(),
-                                        currentOutstandingLoanCharges);
-                            }
-                        }
-                    }
-                }
                 if (interestForCurrentPeriod.isGreaterThan(interestAccountedForCurrentPeriod)) {
                     interest = interest.plus(interestForCurrentPeriod).minus(interestAccountedForCurrentPeriod);
                 } else {
@@ -7383,12 +7357,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     fee = fee.plus(feeForCurrentPeriod.minus(feeAccountedForCurrentPeriod));
                 } else {
                     paidFromFutureInstallments = paidFromFutureInstallments.plus(feeAccountedForCurrentPeriod.minus(feeForCurrentPeriod));
-                }
-                if (penaltyForCurrentPeriod.isGreaterThan(penaltyAccoutedForCurrentPeriod)) {
-                    penalty = penalty.plus(penaltyForCurrentPeriod.minus(penaltyAccoutedForCurrentPeriod));
-                } else {
-                    paidFromFutureInstallments = paidFromFutureInstallments.plus(penaltyAccoutedForCurrentPeriod)
-                            .minus(penaltyForCurrentPeriod);
                 }
             } else {
                 paidFromFutureInstallments = paidFromFutureInstallments.plus(installment.getInterestPaid(currency))
