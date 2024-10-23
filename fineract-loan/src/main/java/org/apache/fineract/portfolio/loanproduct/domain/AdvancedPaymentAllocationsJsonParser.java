@@ -100,24 +100,15 @@ public class AdvancedPaymentAllocationsJsonParser {
 
         } else if (loanScheduleProcessingType.equals(LoanScheduleProcessingType.VERTICAL.name())) {
 
-            /* for (Object obj : orderList) {
-                JsonObject object = (JsonObject) obj;
-                String val = object.get("paymentAllocationRule").getAsString();
-                for (int i = 1; i <= 3; i++) {
-                    JsonObject newObj = new JsonObject();
-                    newObj.add("order", new JsonPrimitive(index));
-                    if (i == 1) {
-                        newObj.add("paymentAllocationRule", new JsonPrimitive("PAST_DUE_" + val));
-                    } else if (i == 2) {
-                        newObj.add("paymentAllocationRule", new JsonPrimitive("DUE_" + val));
-                    } else if (i == 3) {
-                        newObj.add("paymentAllocationRule", new JsonPrimitive("IN_ADVANCE_" + val));
-                    }
-                    updatedOrderList.add(newObj);
-                    index++;
-                }
-            }
-
+            /*
+             * for (Object obj : orderList) { JsonObject object = (JsonObject) obj; String val =
+             * object.get("paymentAllocationRule").getAsString(); for (int i = 1; i <= 3; i++) { JsonObject newObj = new
+             * JsonObject(); newObj.add("order", new JsonPrimitive(index)); if (i == 1) {
+             * newObj.add("paymentAllocationRule", new JsonPrimitive("PAST_DUE_" + val)); } else if (i == 2) {
+             * newObj.add("paymentAllocationRule", new JsonPrimitive("DUE_" + val)); } else if (i == 3) {
+             * newObj.add("paymentAllocationRule", new JsonPrimitive("IN_ADVANCE_" + val)); }
+             * updatedOrderList.add(newObj); index++; } }
+             *
              */
             // Vertical Loan repayments should behave like Horizontal for Past Due and Due installments
             for (int i = 1; i <= 3; i++) {
