@@ -26,56 +26,56 @@
     <changeSet author="fineract" id="10">
         <sql endDelimiter=";">
             with cte as (
-	select mpl.id product_id, mpl.name product_name, mpl.loan_schedule_type, mpl.loan_schedule_processing_type, mplr.id allocation_id,
-	unnest(string_to_array(mplr.allocation_types, ',')) allocation_type
-	from m_product_loan mpl
-	join m_loan_product_payment_allocation_rule mplr on mplr.loan_product_id = mpl.id
-	where mpl.loan_schedule_processing_type = 'VERTICAL'
-	),
-	allocation_types as (
-	select  ROW_NUMBER() OVER (order by 1) serial_num,
-	case
-		when cte.allocation_type like 'PAST_DUE%' THEN 1
-		when cte.allocation_type like 'DUE%' THEN 2
-		Else 3
-	END as "sort_order", cte.allocation_type, cte.allocation_id
-	from cte
-	), 
-	sorted_allocation_types as (
-		select  allocation_id, string_agg(allocation_types.allocation_type,',' order by allocation_id, sort_order, serial_num) from allocation_types group by allocation_id
-	)
-	update m_loan_product_payment_allocation_rule
-	set allocation_types = sat.string_agg
-	from sorted_allocation_types as sat 
-	where sat.allocation_id = id;
+    select mpl.id product_id, mpl.name product_name, mpl.loan_schedule_type, mpl.loan_schedule_processing_type, mplr.id allocation_id,
+    unnest(string_to_array(mplr.allocation_types, ',')) allocation_type
+    from m_product_loan mpl
+    join m_loan_product_payment_allocation_rule mplr on mplr.loan_product_id = mpl.id
+    where mpl.loan_schedule_processing_type = 'VERTICAL'
+    ),
+    allocation_types as (
+    select  ROW_NUMBER() OVER (order by 1) serial_num,
+    case
+        when cte.allocation_type like 'PAST_DUE%' THEN 1
+        when cte.allocation_type like 'DUE%' THEN 2
+        Else 3
+    END as "sort_order", cte.allocation_type, cte.allocation_id
+    from cte
+    ),
+    sorted_allocation_types as (
+        select  allocation_id, string_agg(allocation_types.allocation_type,',' order by allocation_id, sort_order, serial_num) from allocation_types group by allocation_id
+    )
+    update m_loan_product_payment_allocation_rule
+    set allocation_types = sat.string_agg
+    from sorted_allocation_types as sat
+    where sat.allocation_id = id;
         </sql>
     </changeSet>
 
     <changeSet author="fineract" id="20">
         <sql endDelimiter=";">
             with cte as (
-	select mpl.loan_schedule_type, mpl.loan_schedule_processing_type, mplr.id allocation_id,
-	unnest(string_to_array(mplr.allocation_types, ',')) allocation_type
-	from m_loan mpl
-	join m_loan_payment_allocation_rule mplr on mplr.loan_id = mpl.id
-	where mpl.loan_schedule_processing_type = 'VERTICAL'
-	),
-	allocation_types as (
-	select  ROW_NUMBER() OVER (order by 1) serial_num,
-	case
-		when cte.allocation_type like 'PAST_DUE%' THEN 1
-		when cte.allocation_type like 'DUE%' THEN 2
-		Else 3
-	END as "sort_order", cte.allocation_type, cte.allocation_id
-	from cte
-	), 
-	sorted_allocation_types as (
-		select  allocation_id, string_agg(allocation_types.allocation_type,',' order by allocation_id, sort_order, serial_num) from allocation_types group by allocation_id
-	)
-	update m_loan_payment_allocation_rule
-	set allocation_types = sat.string_agg
-	from sorted_allocation_types as sat 
-	where sat.allocation_id = id;
+    select mpl.loan_schedule_type, mpl.loan_schedule_processing_type, mplr.id allocation_id,
+    unnest(string_to_array(mplr.allocation_types, ',')) allocation_type
+    from m_loan mpl
+    join m_loan_payment_allocation_rule mplr on mplr.loan_id = mpl.id
+    where mpl.loan_schedule_processing_type = 'VERTICAL'
+    ),
+    allocation_types as (
+    select  ROW_NUMBER() OVER (order by 1) serial_num,
+    case
+        when cte.allocation_type like 'PAST_DUE%' THEN 1
+        when cte.allocation_type like 'DUE%' THEN 2
+        Else 3
+    END as "sort_order", cte.allocation_type, cte.allocation_id
+    from cte
+    ),
+    sorted_allocation_types as (
+        select  allocation_id, string_agg(allocation_types.allocation_type,',' order by allocation_id, sort_order, serial_num) from allocation_types group by allocation_id
+    )
+    update m_loan_payment_allocation_rule
+    set allocation_types = sat.string_agg
+    from sorted_allocation_types as sat
+    where sat.allocation_id = id;
         </sql>
     </changeSet>
 
