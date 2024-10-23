@@ -27,16 +27,18 @@ public class CollectionSettlementTasklet implements Tasklet {
     private CodeValueReadPlatformService codeValueReadPlatformService;
     private final WorkingDaysRepositoryWrapper daysRepositoryWrapper;
     private final ClientAllyRepository clientAllyRepository;
+    private final AllyCompensationRepository allyCompensationRepository;
 
     public CollectionSettlementTasklet(AllyCollectionSettlementReadWritePlatformService allyCollectionSettlementReadWritePlatformService,
             AllyCollectionSettlementRepository allyCollectionSettlementRepository,
             CodeValueReadPlatformService codeValueReadPlatformService, WorkingDaysRepositoryWrapper daysRepositoryWrapper,
-            ClientAllyRepository clientAllyRepository) {
+            ClientAllyRepository clientAllyRepository, AllyCompensationRepository allyCompensationRepository) {
         this.allyCollectionSettlementReadWritePlatformService = allyCollectionSettlementReadWritePlatformService;
         this.allyCollectionSettlementRepository = allyCollectionSettlementRepository;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.daysRepositoryWrapper = daysRepositoryWrapper;
         this.clientAllyRepository = clientAllyRepository;
+        this.allyCompensationRepository = allyCompensationRepository;
 
     }
 
@@ -46,7 +48,7 @@ public class CollectionSettlementTasklet implements Tasklet {
         List<ClientAllyPointOfSalesCollectionData> collectionData = allyCollectionSettlementReadWritePlatformService.getCollectionData();
         final WorkingDays workingDays = this.daysRepositoryWrapper.findOne();
         LocalDate now = LocalDate.now();
-        List<Long> addLoandId = new ArrayList<Long>();
+
         for (ClientAllyPointOfSalesCollectionData data : collectionData) {
             LocalDate collectDate = LocalDate.parse(data.getCollectionDate());
             List<AllyCollectionSettlement> existingCollections = allyCollectionSettlementRepository
@@ -106,25 +108,24 @@ public class CollectionSettlementTasklet implements Tasklet {
             if (isEqual) {
                 List<AllyCollectionSettlement> duplicatesToRemove = new ArrayList<>();
                 boolean isNewCollection = true;
-
+                boolean status = false;
+                if (data.getLoanStatusId() == 600) {
+                    status = true;
+                }
                 for (AllyCollectionSettlement existingCollection : existingCollections) {
+                    if (existingCollection.getSettlementStatus() == null) {
+                        existingCollection.setSettlementStatus(status);
+                        allyCollectionSettlementReadWritePlatformService.update(existingCollection);
+                    }
                     if (isSameCollection(existingCollection, data, collectDate)) {
-                        if (!existingCollection.getSettlementStatus() && data.getLoanStatusId() == 600) {
-                            existingCollection.setSettlementStatus(true);
-                            allyCollectionSettlementReadWritePlatformService.update(existingCollection);
-                        }
                         duplicatesToRemove.add(existingCollection);
                     } else {
                         isNewCollection = false;
-                    }
-                    if (existingCollection.geLoanId() == data.getLoanId() && data.getLoanStatusId() == 600) {
-                        addLoandId = existingCollection.getId();
                     }
                 }
 
                 if (!duplicatesToRemove.isEmpty()) {
                     allyCollectionSettlementRepository.deleteAll(duplicatesToRemove);
-                    existingCollections.removeAll(duplicatesToRemove);
                 }
 
                 if (isNewCollection || existingCollections.isEmpty()) {
@@ -143,16 +144,30 @@ public class CollectionSettlementTasklet implements Tasklet {
                     allyCollectionSettlement.setLoanId(data.getLoanId());
                     allyCollectionSettlement.setClientId(data.getClientId());
                     allyCollectionSettlement.setChannelId(data.getChannelId());
-
-                    boolean status = false;
-                    if (data.getLoanStatusId() == 600) {
-
-                        status = true;
-                    }
                     allyCollectionSettlement.setSettlementStatus(status);
-
                     allyCollectionSettlementReadWritePlatformService.create(allyCollectionSettlement);
                 }
+
+                Optional<AllyCollectionSettlement> getlastCollection = allyCollectionSettlementRepository
+                        .findCollectionByLoanId(data.getLoanId());
+                if (getlastCollection.isPresent()) {
+                    AllyCollectionSettlement lastCollection = getlastCollection.get();
+                    allyCollectionSettlementRepository.deleteByLoanIdAndNotCollectionDate(lastCollection.getLoanId(),
+                            lastCollection.getCollectionDate());
+                }
+
+                Optional<AllyCompensation> getallyCompensation = allyCompensationRepository
+                        .findCompensationByClientId(data.getClientAllyId());
+                if (getallyCompensation.isPresent()) {
+                    AllyCompensation allyCompensation = getallyCompensation.get();
+                    if (allyCompensation.getSettlementStatus() != null) {
+                        if (!allyCompensation.getSettlementStatus() && data.getClientId() == allyCompensation.getClientAllyId()
+                                && !allyCompensation.getEndDate().isEqual(collectDate)) {
+                            allyCollectionSettlementRepository.deleteByLoanIdAndNotCollectionDate(data.getLoanId(), collectDate);
+                        }
+                    }
+                }
+
                 Optional<ClientAlly> clientAlly = clientAllyRepository.findById(data.getClientAllyId());
                 if (clientAlly.isPresent()) {
                     ClientAlly clientAllyjobs = clientAlly.get();
