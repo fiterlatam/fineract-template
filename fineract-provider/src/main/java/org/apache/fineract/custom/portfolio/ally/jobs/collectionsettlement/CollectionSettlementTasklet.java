@@ -46,7 +46,7 @@ public class CollectionSettlementTasklet implements Tasklet {
         List<ClientAllyPointOfSalesCollectionData> collectionData = allyCollectionSettlementReadWritePlatformService.getCollectionData();
         final WorkingDays workingDays = this.daysRepositoryWrapper.findOne();
         LocalDate now = LocalDate.now();
-
+        List<Long> addLoandId = new ArrayList<Long>();
         for (ClientAllyPointOfSalesCollectionData data : collectionData) {
             LocalDate collectDate = LocalDate.parse(data.getCollectionDate());
             List<AllyCollectionSettlement> existingCollections = allyCollectionSettlementRepository
@@ -109,9 +109,16 @@ public class CollectionSettlementTasklet implements Tasklet {
 
                 for (AllyCollectionSettlement existingCollection : existingCollections) {
                     if (isSameCollection(existingCollection, data, collectDate)) {
+                        if (!existingCollection.getSettlementStatus() && data.getLoanStatusId() == 600) {
+                            existingCollection.setSettlementStatus(true);
+                            allyCollectionSettlementReadWritePlatformService.update(existingCollection);
+                        }
                         duplicatesToRemove.add(existingCollection);
                     } else {
                         isNewCollection = false;
+                    }
+                    if (existingCollection.geLoanId() == data.getLoanId() && data.getLoanStatusId() == 600) {
+                        addLoandId = existingCollection.getId();
                     }
                 }
 
@@ -136,6 +143,14 @@ public class CollectionSettlementTasklet implements Tasklet {
                     allyCollectionSettlement.setLoanId(data.getLoanId());
                     allyCollectionSettlement.setClientId(data.getClientId());
                     allyCollectionSettlement.setChannelId(data.getChannelId());
+
+                    boolean status = false;
+                    if (data.getLoanStatusId() == 600) {
+
+                        status = true;
+                    }
+                    allyCollectionSettlement.setSettlementStatus(status);
+
                     allyCollectionSettlementReadWritePlatformService.create(allyCollectionSettlement);
                 }
                 Optional<ClientAlly> clientAlly = clientAllyRepository.findById(data.getClientAllyId());

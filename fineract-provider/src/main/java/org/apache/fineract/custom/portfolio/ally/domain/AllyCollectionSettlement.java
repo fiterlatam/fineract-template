@@ -58,4 +58,6 @@ public class AllyCollectionSettlement {
     @Column(name = "channel_id", nullable = false)
     private Long channelId;
 
+    @Column(name = "settlement_status")
+    private Boolean settlementStatus;
 }
