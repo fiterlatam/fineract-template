@@ -115,10 +115,11 @@ public class AllyCompensationReadWritePlatformServiceImpl implements AllyCompens
         try {
             this.context.authenticatedUser();
             AllyCompensation allyCompensation = new AllyCompensation();
+            final Boolean status = command.booleanObjectValueOfParameterNamed("status");
             Optional<AllyCompensation> dbEntity = repository.findById(id);
             if (dbEntity.isPresent()) {
                 allyCompensation = dbEntity.get();
-                allyCompensation.setSettlementStatus(true);
+                allyCompensation.setSettlementStatus(status);
                 repository.save(allyCompensation);
             }
             return new CommandProcessingResultBuilder().withEntityId(allyCompensation.getId()).build();
