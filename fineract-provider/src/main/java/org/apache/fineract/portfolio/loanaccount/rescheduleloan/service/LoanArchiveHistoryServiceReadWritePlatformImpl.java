@@ -78,7 +78,7 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
                     .ingresos(rs.getBigDecimal("media_de_ingreso")).antiguedadCliente(rs.getString("disbursedon_date"))
                     .actividadLaboral(rs.getString("activeLab")).creSaldo(rs.getBigDecimal("cupo")).cuoSaldo(rs.getBigDecimal("cupo"))
                     .cuoEstado(rs.getString("name_of_reason")).estadoCivil(rs.getString("estado_civil"))
-                    .fechaNacimiento(rs.getString("date_of_birth")).build();
+                    .fechaNacimiento(rs.getString("date_of_birth")).estadoCuota(rs.getString("creaditBlock")).build();
         }
     }
 
