@@ -3430,7 +3430,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 loanRescheduleRequest);
 
         List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
-                .getLoanDataWithDefaultOrCancelInsurance(loanId, null, null);
+                .getLoanDataWithDefaultOrCancelInsurance(loanId, null, transactionDate);
         InsuranceIncident incident = this.insuranceIncidentRepository
                 .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
         if (incident == null) {
@@ -4044,7 +4044,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 for (LoanInstallmentCharge installmentCharge : installment.getInstallmentCharges()) {
                     if (Objects.equals(installmentCharge.getLoanCharge().getId(), data.loanChargeId())) {
                         if (installment.getInstallmentNumber().compareTo(data.installment()) == 0) {
-                            installmentCharge.getLoanCharge().setDefaultFromInstallment(data.installment());
+                            if (!isForeClosure) {
+                                installmentCharge.getLoanCharge().setDefaultFromInstallment(data.installment());
+                            }
                             if (!isForeClosure && installmentCharge.getAmountPaid(loan.getCurrency()).isGreaterThanZero()) {
                                 // First default installment could have partially paid amount
                                 installmentCharge.getLoanCharge().setPartialAmountPaidInFirstDefaultInstallment(

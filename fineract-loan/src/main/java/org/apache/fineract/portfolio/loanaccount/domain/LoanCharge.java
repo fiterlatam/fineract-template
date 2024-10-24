@@ -261,10 +261,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     if (numberOfRepayments == null) {
                         numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
                     }
-                    if (isCustomFlatDistributedCharge()) { // FlatMandatoryInsurance
+                    if (isCustomFlatDistributedCharge()) {
                         updateAmountOrPercentageForDistributedCharge(numberOfRepayments, chargeAmount);
                         this.amount = chargeAmount;
                     } else {
+                        //Voluntary and Flat Mandatory Insurance
                         this.amount = chargeAmount.multiply(BigDecimal.valueOf(numberOfRepayments));
                     }
                 } else {
@@ -1368,7 +1369,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isCustomFlatDistributedCharge() {
         // Charge is distributed among the installments
-        return getChargeCalculation().isFlatMandatoryInsurance();
+        // return getChargeCalculation().isFlatMandatoryInsurance();
+        return false;
     }
 
     public boolean isCustomPercentageBasedDistributedCharge() {
