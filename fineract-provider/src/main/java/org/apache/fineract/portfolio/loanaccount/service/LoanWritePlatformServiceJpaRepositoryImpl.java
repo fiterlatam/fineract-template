@@ -4104,7 +4104,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
                 .getSingleBlockingReasonSettingByReason("Reclamación avaladora/aseguradora", BlockLevel.CREDIT.toString());
 
-        loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "Reclamación avaladora/aseguradora", DateUtils.getLocalDateOfTenant());
+        loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "Reclamación avaladora/aseguradora",
+                DateUtils.getLocalDateOfTenant());
         this.loanRepository.saveAndFlush(loan);
 
         final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();

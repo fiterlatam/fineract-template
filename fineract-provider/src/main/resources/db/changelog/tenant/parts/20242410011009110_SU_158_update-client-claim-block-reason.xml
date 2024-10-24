@@ -22,12 +22,12 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
-	<changeSet id="1" author="fineract">
-        	<sql>
-	            INSERT INTO m_blocking_reason_setting
-			( priority, description, name_of_reason, "level", createdby_id, created_date, lastmodifiedby_id, lastmodified_date, is_enabled, disabled_on_date, enabled_on_date, disabled_by, enabled_by, affects_client_level, affects_credit_level)
-			VALUES( 24, 'Reclamación avaladora/aseguradora', 'Reclamación avaladora/aseguradora', 'CLIENT', NULL, '2024-04-26 06:48:49.570', NULL, '2024-04-26 06:48:49.570', 1, NULL, NULL, NULL, NULL, NULL, NULL);
-        	</sql>
+    <changeSet id="1" author="fineract">
+            <sql>
+                INSERT INTO m_blocking_reason_setting
+            ( priority, description, name_of_reason, "level", createdby_id, created_date, lastmodifiedby_id, lastmodified_date, is_enabled, disabled_on_date, enabled_on_date, disabled_by, enabled_by, affects_client_level, affects_credit_level)
+            VALUES( 24, 'Reclamación avaladora/aseguradora', 'Reclamación avaladora/aseguradora', 'CLIENT', NULL, '2024-04-26 06:48:49.570', NULL, '2024-04-26 06:48:49.570', 1, NULL, NULL, NULL, NULL, NULL, NULL);
+            </sql>
     </changeSet>
     <changeSet author="fineract" id="2">
         <update tableName="m_blocking_reason_setting">
