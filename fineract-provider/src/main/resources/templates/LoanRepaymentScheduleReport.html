@@ -96,8 +96,8 @@
             <th>Saldo del Crédito</th>
             <th>Principal vencido</th>
             <th>Interés</th>
-            <th>Seguro Voluntario</th>
-            <th>Seguro Obligatorio</th>
+            <th>Seg Vol/Asist</th>
+            <th>Seguro</th>
             <th>Aval</th>
             <th>Honorarios</th>
             <th>Penalizaciones</th>
@@ -111,8 +111,8 @@
         </thead>
         <tbody>
         <tr th:each="ele : ${originalScheduleDetails.periods}">
-            <td th:text="${ele.dueDate != null ? #temporals.format(ele.dueDate, 'dd MMMM yyyy') : ''}"></td>
-            <td th:text="${ele.obligationsMetOnDate != null ? #temporals.format(ele.obligationsMetOnDate, 'dd MMMM yyyy') : ''}"></td>
+            <td th:text="${ele.dueDate != null ? #temporals.format(ele.dueDate, 'dd/MM/yyyy') : ''}"></td>
+            <td th:text="${ele.obligationsMetOnDate != null ? #temporals.format(ele.obligationsMetOnDate, 'dd/MM/yyyy') : ''}"></td>
             <td th:text="${#numbers.formatDecimal(ele.principalLoanBalanceOutstanding, 1, 'POINT', 0, 'POINT')}"></td>
             <td th:text="${#numbers.formatDecimal(ele.principalDue, 1, 'POINT', 0, 'POINT')}"></td>
             <td th:text="${#numbers.formatDecimal(ele.interestOriginalDue, 1, 'POINT', 0, 'POINT')}"></td>
