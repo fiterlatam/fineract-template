@@ -3832,7 +3832,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         @Override
         public void onBusinessEvent(LoanDisbursalBusinessEvent event) {
             final Loan loan = event.get();
-            recalculateInterestRate(loan);
+            if (loan.getLoanProduct() == null) {
+                recalculateInterestRate(loan);
+            }
         }
     }
 
