@@ -265,7 +265,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                         updateAmountOrPercentageForDistributedCharge(numberOfRepayments, chargeAmount);
                         this.amount = chargeAmount;
                     } else {
-                        //Voluntary and Flat Mandatory Insurance
+                        // Voluntary and Flat Mandatory Insurance
                         this.amount = chargeAmount.multiply(BigDecimal.valueOf(numberOfRepayments));
                     }
                 } else {
