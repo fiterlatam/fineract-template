@@ -534,7 +534,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     amountToDisburse = disburseAmount.minus(loanOutstanding);
                 }
 
-                disburseLoanToLoan(loan, command, loanOutstanding);
+                disburseLoanToLoan(loan, command, loanOutstanding, loanToClose);
             }
             LoanTransaction disbursementTransaction = null;
             if (isAccountTransfer) {
@@ -2310,7 +2310,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .build();
     }
 
-    private void disburseLoanToLoan(final Loan loan, final JsonCommand command, final BigDecimal amount) {
+    private void disburseLoanToLoan(final Loan loan, final JsonCommand command, final BigDecimal amount, final Loan loanToClose) {
 
         final LocalDate transactionDate = command.localDateValueOfParameterNamed("actualDisbursementDate");
         final ExternalId txnExternalId = externalIdFactory.createFromCommand(command, LoanApiConstants.externalIdParameterName);
@@ -2323,9 +2323,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         AccountTransferDetails accountTransferDetails = this.accountTransfersWritePlatformService.repayLoanWithTopup(accountTransferDTO);
         loan.getTopupLoanDetails().setAccountTransferDetails(accountTransferDetails.getId());
         loan.getTopupLoanDetails().setTopupAmount(amount);
-        BlockingReasonSetting setting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
-                BlockingReasonSettingEnum.CREDIT_RESTRUCTURE.getDatabaseString(), BlockLevel.CREDIT.toString());
-        loanBlockWritePlatformService.blockLoan(loan.getId(), setting, "Reestructurada", DateUtils.getLocalDateOfTenant());
+        if (loanToClose.claimType() == null || !loanToClose.claimType().equals("castigado")) {
+            BlockingReasonSetting setting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
+                    BlockingReasonSettingEnum.CREDIT_RESTRUCTURE.getDatabaseString(), BlockLevel.CREDIT.toString());
+            loanBlockWritePlatformService.blockLoan(loan.getId(), setting, "Reestructurada", DateUtils.getLocalDateOfTenant());
+        }
     }
 
     private void disburseLoanToSavings(final Loan loan, final JsonCommand command, final Money amount, final PaymentDetail paymentDetail) {
@@ -4102,12 +4104,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
                 .getSingleBlockingReasonSettingByReason("Reclamación avaladora/aseguradora", BlockLevel.CREDIT.toString());
 
-        final Optional<LoanBlockingReason> existingBlockingReason = this.blockingReasonRepository.findExistingBlockingReason(loan.getId(),
-                blockingReasonSetting.getId());
-        loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
-        final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
-                "Reclamación avaladora/aseguradora", DateUtils.getLocalDateOfTenant());
-        blockingReasonRepository.saveAndFlush(loanBlockingReason);
+        loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "Reclamación avaladora/aseguradora", DateUtils.getLocalDateOfTenant());
         this.loanRepository.saveAndFlush(loan);
 
         final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();
