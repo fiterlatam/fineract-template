@@ -145,6 +145,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "claim_type")
     private String claimType;
 
+    // This property is added to process vertical payments horizontally for Past Due and Due installments.
+    // Advance Payments will be handled through VerticalPayment Scheme
+    @Transient
+    private boolean doNotProcessAdvanceInstallments;
+
     protected LoanTransaction() {}
 
     public static LoanTransaction incomePosting(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
@@ -1059,6 +1064,15 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         } else
             return claimType.equalsIgnoreCase("guarantor");
     }
+
+    public boolean doNotProcessAdvanceInstallments() {
+        return doNotProcessAdvanceInstallments;
+    }
+
+    public void setDoNotProcessAdvanceInstallments(boolean doNotProcessAdvanceInstallments) {
+        this.doNotProcessAdvanceInstallments = doNotProcessAdvanceInstallments;
+    }
+
     // TODO missing hashCode(), equals(Object obj), but probably OK as long as
     // this is never stored in a Collection.
 }
