@@ -56,6 +56,7 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
     private final LoanRepositoryWrapper loanRepository;
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
     private final LoanBlockingReasonRepository blockingReasonRepository;
+    private final LoanBlockWritePlatformService loanBlockWritePlatformService;
 
     @Override
     public CommandProcessingResult writeOffPunishLoan(final Long loanId, JsonCommand command) {
@@ -111,12 +112,8 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
 
         newLoan = this.loanAssembler.assembleFrom(newLoanId);
         BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
-                .getSingleBlockingReasonSettingByReason("Castigado", BlockLevel.CREDIT.toString());
-
-        newLoan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
-        final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(newLoan, blockingReasonSetting, "Castigado",
-                DateUtils.getLocalDateOfTenant());
-        blockingReasonRepository.saveAndFlush(loanBlockingReason);
+                .getSingleBlockingReasonSettingByReason("CASTIGADO", BlockLevel.CREDIT.toString());
+        loanBlockWritePlatformService.blockLoan(newLoan.getId(), blockingReasonSetting, "CASTIGADO", DateUtils.getLocalDateOfTenant());
         this.loanRepository.saveAndFlush(newLoan);
 
         this.loanRepository.removeLoanExclusion(existingLoanApplication.claimType());

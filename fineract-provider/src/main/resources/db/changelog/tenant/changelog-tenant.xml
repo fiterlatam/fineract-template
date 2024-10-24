@@ -298,4 +298,6 @@
     <include file="parts/20243008011009123_SU_384_add_report_loan_archive_history.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009124_SU_384_update_report_name_loan_archive_history.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009128_SU_384_update_report_name_loan_archive_history.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20242410011009110_SU_158_update-client-claim-block-reason.xml" relativeToChangelogFile="true"/>
+
 </databaseChangeLog>
