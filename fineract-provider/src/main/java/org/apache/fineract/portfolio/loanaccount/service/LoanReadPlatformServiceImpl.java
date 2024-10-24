@@ -850,6 +850,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         cch.codigo_seguro AS codigoSeguro,
                         pos.name AS point_of_sales_name,
                         pos.code AS point_of_sales_code,
+                        pos.client_ally_id AS allyId,
                         l.valor_descuento,l.valor_giro
                     FROM
                         m_loan l
@@ -889,10 +890,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                             SELECT
                                 ps.name,
                                 ps.code,
-                                cbp.loan_id
+                                cbp.loan_id,
+                                ps.client_ally_id
                             FROM
                                 custom.c_client_ally_point_of_sales ps
                             JOIN custom.c_client_buy_process cbp ON cbp.point_if_sales_id = ps.id
+                            JOIN custom.c_client_ally cca on cca.id = ps.client_ally_id
                         ) pos ON pos.loan_id = l.id
                     """;
         }
@@ -1232,6 +1235,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final String channelDescription = rs.getString("channel_description");
             final String pointOfSalesName = rs.getString("point_of_sales_name");
             final String pointOfSalesCode = rs.getString("point_of_sales_code");
+            final Long allyId = rs.getLong("allyId");
 
             if (!StringUtils.isEmpty(blockStatusName)) {
                 blockStatusData = BlockingReasonsData.builder().id(rs.getLong("blockStatusId")).nameOfReason(blockStatusName)
@@ -1265,6 +1269,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             basicLoanDetails.setChannelName(channelName);
             basicLoanDetails.setPointOfSalesName(pointOfSalesName);
             basicLoanDetails.setPointOfSalesCode(pointOfSalesCode);
+            basicLoanDetails.setAllyId(allyId);
             basicLoanDetails.setValorDescuento(valorDescuento);
             basicLoanDetails.setValorGiro(valorGiro);
             final Long interestRatePoints = JdbcSupport.getLong(rs, "interestRatePoints");

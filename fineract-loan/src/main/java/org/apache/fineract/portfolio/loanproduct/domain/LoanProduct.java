@@ -1851,6 +1851,10 @@ public class LoanProduct extends AbstractPersistableCustom {
         return this.shortName;
     }
 
+    public String getName() {
+        return this.name;
+    }
+
     public BigDecimal getPrincipalThresholdForLastInstallment() {
         return this.principalThresholdForLastInstallment;
     }

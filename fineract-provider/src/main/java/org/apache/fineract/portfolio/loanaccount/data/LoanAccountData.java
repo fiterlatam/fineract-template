@@ -280,6 +280,7 @@ public class LoanAccountData {
     private String channelDescription;
     private String pointOfSalesName;
     private String pointOfSalesCode;
+    private Long allyId;
 
     private Long codigoSeguro;
     private Long cedulaSeguroVoluntario;
@@ -840,8 +841,9 @@ public class LoanAccountData {
                 .setLoanScheduleProcessingType(acc.loanScheduleProcessingType).setLoanScheduleTypeOptions(loanScheduleTypeOptions)
                 .setChannelName(acc.channelName).setChannelDescription(acc.channelDescription).setChannelId(acc.channelId)
                 .setPointOfSalesName(acc.pointOfSalesName).setLoanScheduleProcessingTypeOptions(loanScheduleProcessingTypeOptions)
-                .setBlockStatus(acc.blockStatus).setPointOfSalesCode(acc.pointOfSalesCode).setCodigoSeguro(acc.codigoSeguro)
-                .setCedulaSeguroVoluntario(acc.cedulaSeguroVoluntario).setValorDescuento(acc.valorDescuento).setValorGiro(acc.valorGiro);
+                .setBlockStatus(acc.blockStatus).setPointOfSalesCode(acc.pointOfSalesCode).setAllyId(acc.allyId)
+                .setCodigoSeguro(acc.codigoSeguro).setCedulaSeguroVoluntario(acc.cedulaSeguroVoluntario)
+                .setValorDescuento(acc.valorDescuento).setValorGiro(acc.valorGiro);
     }
 
     public static LoanAccountData associationsAndTemplate(final LoanAccountData acc, final Collection<LoanProductData> productOptions,
