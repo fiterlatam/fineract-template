@@ -62,5 +62,6 @@ public class LoanArchiveHistoryData {
     private String estadoCivil;
     private Integer numeroDeReprogramaciones;
     private String departamento;
+    private String estadoCuota;
 
 }
