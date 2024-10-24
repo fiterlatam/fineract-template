@@ -1,6 +1,7 @@
 package org.apache.fineract.custom.portfolio.ally.jobs.collectionsettlement;
 
 import org.apache.fineract.custom.portfolio.ally.domain.AllyCollectionSettlementRepository;
+import org.apache.fineract.custom.portfolio.ally.domain.AllyCompensationRepository;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyRepository;
 import org.apache.fineract.custom.portfolio.ally.service.AllyCollectionSettlementReadWritePlatformService;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -40,6 +41,9 @@ public class CollectionOfSettlementConfig {
     @Autowired
     private ClientAllyRepository clientAllyRepository;
 
+    @Autowired
+    private AllyCompensationRepository allyCompensationRepository;
+
     @Bean
     public Step collectionOfSettlementStep() {
         return new StepBuilder(JobName.LIQUIDACION_DE_RECAUDOS.name(), jobRepository)
@@ -55,7 +59,7 @@ public class CollectionOfSettlementConfig {
     @Bean
     public CollectionSettlementTasklet collectionOfSettlementTasklet() {
         return new CollectionSettlementTasklet(allyCollectionSettlementReadWritePlatformService, allyCollectionSettlementRepository,
-                codeValueReadPlatformService, daysRepositoryWrapper, clientAllyRepository);
+                codeValueReadPlatformService, daysRepositoryWrapper, clientAllyRepository, allyCompensationRepository);
     }
 
 }
