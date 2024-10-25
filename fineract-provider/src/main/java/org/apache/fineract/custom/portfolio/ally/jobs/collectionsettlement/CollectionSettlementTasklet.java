@@ -117,6 +117,10 @@ public class CollectionSettlementTasklet implements Tasklet {
                         existingCollection.setSettlementStatus(status);
                         allyCollectionSettlementReadWritePlatformService.update(existingCollection);
                     }
+                    if (!existingCollection.getSettlementStatus() && data.getLoanStatusId() == 600) {
+                        existingCollection.setSettlementStatus(true);
+                        allyCollectionSettlementReadWritePlatformService.update(existingCollection);
+                    }
                     if (isSameCollection(existingCollection, data, collectDate)) {
                         duplicatesToRemove.add(existingCollection);
                     } else {
@@ -152,8 +156,10 @@ public class CollectionSettlementTasklet implements Tasklet {
                         .findCollectionByLoanId(data.getLoanId());
                 if (getlastCollection.isPresent()) {
                     AllyCollectionSettlement lastCollection = getlastCollection.get();
-                    allyCollectionSettlementRepository.deleteByLoanIdAndNotCollectionDate(lastCollection.getLoanId(),
-                            lastCollection.getCollectionDate());
+                    if (lastCollection.getSettlementStatus()) {
+                        allyCollectionSettlementRepository.deleteByLoanIdAndNotCollectionDate(lastCollection.getLoanId(),
+                                lastCollection.getCollectionDate());
+                    }
                 }
 
                 Optional<AllyCompensation> getallyCompensation = allyCompensationRepository
