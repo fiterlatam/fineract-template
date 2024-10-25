@@ -261,10 +261,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     if (numberOfRepayments == null) {
                         numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
                     }
-                    if (isCustomFlatDistributedCharge()) { // FlatMandatoryInsurance
+                    if (isCustomFlatDistributedCharge()) {
                         updateAmountOrPercentageForDistributedCharge(numberOfRepayments, chargeAmount);
                         this.amount = chargeAmount;
                     } else {
+                        // Voluntary and Flat Mandatory Insurance
                         this.amount = chargeAmount.multiply(BigDecimal.valueOf(numberOfRepayments));
                     }
                 } else {
@@ -777,6 +778,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     public boolean isDueForCollectionFromAndUpToAndIncluding(final LocalDate fromNotInclusive, final LocalDate upToAndInclusive) {
         final LocalDate dueDate = getDueLocalDate();
         return occursOnDayFromExclusiveAndUpToAndIncluding(fromNotInclusive, upToAndInclusive, dueDate);
+    }
+
+    public boolean isDueForCollectionForInstallment(final LoanRepaymentScheduleInstallment installment) {
+        return this.getOverdueInstallmentCharge() != null && Objects
+                .equals(this.getOverdueInstallmentCharge().installment().getInstallmentNumber(), installment.getInstallmentNumber());
     }
 
     public boolean isDueForCollectionFromIncludingAndUpToAndIncluding(final LocalDate fromAndInclusive, final LocalDate upToAndInclusive) {
@@ -1363,7 +1369,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isCustomFlatDistributedCharge() {
         // Charge is distributed among the installments
-        return getChargeCalculation().isFlatMandatoryInsurance();
+        // return getChargeCalculation().isFlatMandatoryInsurance();
+        return false;
     }
 
     public boolean isCustomPercentageBasedDistributedCharge() {

@@ -68,7 +68,6 @@ public class CompensationOfSettlementTasklet implements Tasklet {
                 allyCompensation.setNetPurchaseAmount(allySettlementCompansationData.get().getNetPurchaseAmount());
                 allyCompensation.setNetOutstandingAmount(allySettlementCompansationData.get().getCompensationAmount());
                 allyCompensation.setNetOutstandingAmount(allySettlementCompansationData.get().getCompensationAmount());
-                allyCompensation.setSettlementStatus(false);
 
                 if (!compensationCheck.isPresent()) {
                     Optional<AllyCompensation> check = allyCompensationRepository.findFirst1ByNit(allyCompensation.getNit());
@@ -80,9 +79,12 @@ public class CompensationOfSettlementTasklet implements Tasklet {
                     allyCompensationReadWritePlatformService.create(allyCompensation);
 
                 } else {
-                    if (!compensationCheck.get().getSettlementStatus()) {
-                        allyCompensation.setId(compensationCheck.get().getId());
-                        allyCompensationRepository.save(allyCompensation);
+                    if (compensationCheck.get().getSettlementStatus() != null) {
+                        if (!compensationCheck.get().getSettlementStatus()) {
+                            allyCompensation.setId(compensationCheck.get().getId());
+                            allyCompensation.setSettlementStatus(compensationCheck.get().getSettlementStatus());
+                            allyCompensationRepository.save(allyCompensation);
+                        }
                     }
                 }
             }

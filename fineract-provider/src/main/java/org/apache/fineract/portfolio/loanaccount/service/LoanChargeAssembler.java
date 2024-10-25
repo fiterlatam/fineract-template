@@ -417,7 +417,6 @@ public class LoanChargeAssembler {
                     }
                 }
                 if (chargeCalculationType.isPercentageOfAnotherCharge()) {
-                    System.out.println("loan id===" + loan.getId());
                     for (LoanCharge parentCharge : loan.getCharges()) {
                         if (parentCharge.getCharge().getId() != null && parentCharge.isPenaltyCharge()
                                 && parentCharge.getCharge().getId().equals(chargeDefinition.getParentChargeId())

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="fineract" id="1">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                Select count(*) from stretchy_report where report_name = 'Archivo de cartera'
+            </sqlCheck>
+        </preConditions>
+        <update tableName="stretchy_report">
+            <column name="report_name" value="Archivo de cartera"/>
+            <column name="report_sql">
+                <![CDATA[
+                SELECT title AS "Descripcion",
+                identificacion AS "Cedula del cliente",
+                primer_nombre AS "Primer Nombre",
+                segundo_nombre AS "Segundo Nombre",
+                primer_apellido AS "Primer Apellido",
+                segundo_apellido AS "Segundo Apellido",
+                estado_cliente AS "Estado Cliente",
+                numero_obligacion AS "Numero Cuenta Cuota",
+                nit_empresa AS "Nit Empresa",
+                telefono_sac_1 AS "Telefono",
+                celular_sac_1 AS "Mobile No",
+                telefono_sac_2 AS "Telefono Sac 2",
+                celular_sac_2 AS "Celular Sac 2",
+                email_sac AS "Email",
+                direccion_sac AS "Direccion",
+                barrio_sac AS "Barrio",
+                ciudad_sac AS "Ciudad",
+                departamento AS "Departamento",
+                tipo_credito AS "Categoria punto de venta de origen del credito",
+                COALESCE(fecha_vencimiento::text, '') AS "Vencimiento cuota",
+                dias_mora AS "Dias de mora de la cuenta",
+                valor_cuota AS "Cuota",
+                capital AS "Capital",
+                aval AS "Aval",
+                intereses AS "Intereses",
+                intereses_de_mora AS "Intereses de mora",
+                iva_interes_de_mora AS "IVA de mora",
+                seguro AS "Seguro obligatorio cuota",
+                seguros_voluntarios AS "Seguros voluntarios cuota",
+                punto_de_venta AS "Punto de venta de origen del credito",
+                tipo_documento AS "Tipo de documento",
+                empresa AS "Empresa",
+                marca AS "Nombre Aliado",
+                razon_social AS "Nombre completo del cliente",
+                ciudad_punto_credito AS "Ciudad punto de venta",
+                estado_cuota AS "Estado de la cuenta",
+                nombre_familiar_1 AS "Referencia del cliente",
+                parentesco_familiar_1 AS "Parentesco referencia",
+                celular_familiar_1 AS "Celular referencia",
+                nombre_familiar_2 AS "Nombre familiar",
+                parentesco_familiar_2 AS "Parentesco familiar",
+                celular_familiar_2 AS "Celular familiar",
+                COALESCE(fecha_financiacion::text, '') AS "Fecha de desembolso",
+                COALESCE(fecha_nacimiento::text, '') AS "Fecha nacimiento cliente",
+                genero AS "Genero cliente",
+                empresa_labora AS "Nombre empresa donde labora",
+                ingresos AS "Media de ingresos",
+                periodicidad AS "Mensual",
+                COALESCE(antiguedad_cliente::text, '') AS "Fecha de creacion del cliente",
+                empresa_reporta AS "Intercredito",
+                abono AS "Abonos cuota",
+                condonaciones AS "Condonaciones cuota",
+                actividad_laboral AS "Actividad laboral del cliente",
+                cre_estado AS "Estado cliente",
+                cre_saldo AS "Saldo total del credito",
+                cuo_saldo AS "Saldo total cuota",
+                cuo_estado AS "Cuo Estado de la cuenta",
+                estado_civil AS "Estado civil del cliente",
+                numero_de_reprogramaciones AS "Numero de reprogramaciones" FROM m_archive_loan_history order by identificacion,numero_obligacion ASC
+                ]]>
+            </column>
+            <where>report_name = 'Archivo de cartera'</where>
+        </update>
+    </changeSet>
+</databaseChangeLog>

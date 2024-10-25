@@ -14,7 +14,7 @@ public interface AllyCompensationRepository extends JpaRepository<AllyCompensati
 
     Optional<AllyCompensation> findFirst1ByNit(String nit);
 
-    @Query("select allyCompensation from AllyCompensation allyCompensation where allyCompensation.settlementStatus=false")
+    @Query("select allyCompensation from AllyCompensation allyCompensation where allyCompensation.settlementStatus=null")
     List<AllyCompensation> findBySettlementStatus();
 
     @Query("select allyCompensation from AllyCompensation allyCompensation where allyCompensation.nit = :nit and allyCompensation.startDate = :startDate and allyCompensation.endDate = :endDate")
@@ -23,4 +23,7 @@ public interface AllyCompensationRepository extends JpaRepository<AllyCompensati
 
     @Query("select allyCompensation from AllyCompensation allyCompensation where allyCompensation.netOutstandingAmount < 0")
     List<AllyCompensation> findNegativeCompensations();
+
+    @Query("select allyCompensation from AllyCompensation allyCompensation where allyCompensation.clientAllyId= :clientAllyId")
+    Optional<AllyCompensation> findCompensationByClientId(@Param("clientAllyId") Long clientAllyId);
 }
