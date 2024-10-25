@@ -418,11 +418,6 @@ public class Charge extends AbstractPersistableCustom {
         return ChargeCalculationType.fromInt(this.chargeCalculation).isFlatHono();
     }
 
-    public boolean isCustomFlatDistributedCharge() {
-        // Charge is distributed among the installments
-        return isCustomFlatVoluntaryInsurenceCharge() || ChargeCalculationType.fromInt(this.chargeCalculation).isFlatMandatoryInsurance();
-    }
-
     public boolean isFlatMandatoryInsurance() {
         // Charge is distributed among the installments
         return ChargeCalculationType.fromInt(this.chargeCalculation).isFlatMandatoryInsurance();

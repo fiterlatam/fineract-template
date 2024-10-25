@@ -957,49 +957,46 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
 
         Money interestDue = Money.zero(currency);
-        if (this.getLoan() != null && this.getLoan().getLoanProductRelatedDetail().getLoanScheduleProcessingType()
-                .equals(LoanScheduleProcessingType.HORIZONTAL)) {
-            if (isOn(transactionDate, this.getDueDate())) {
-                interestDue = getInterestOutstanding(currency);
-            } else if (isOnOrBetween(transactionDate) && getInterestOutstanding(currency).isGreaterThanZero()) {
-                final RoundingMode roundingMode = RoundingMode.HALF_UP;
 
-                BigDecimal numberOfDaysForInterestCalculation = BigDecimal.ZERO;
-                if (this.interestRecalculatedOnDate != null) {
-                    if (this.interestRecalculatedOnDate.isAfter(transactionDate)) { // This should only be true if the
-                                                                                    // repayment is reversed
-                        numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
-                    } else {
-                        numberOfDaysForInterestCalculation = BigDecimal
-                                .valueOf(ChronoUnit.DAYS.between(this.interestRecalculatedOnDate, transactionDate));
-                    }
-                } else {
+        if (isOn(transactionDate, this.getDueDate())) {
+            interestDue = getInterestOutstanding(currency);
+        } else if (isOnOrBetween(transactionDate) && getInterestOutstanding(currency).isGreaterThanZero()) {
+            final RoundingMode roundingMode = RoundingMode.HALF_UP;
+
+            BigDecimal numberOfDaysForInterestCalculation = BigDecimal.ZERO;
+            if (this.interestRecalculatedOnDate != null) {
+                if (this.interestRecalculatedOnDate.isAfter(transactionDate)) { // This should only be true if the
+                                                                                // repayment is reversed
                     numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
+                } else {
+                    numberOfDaysForInterestCalculation = BigDecimal
+                            .valueOf(ChronoUnit.DAYS.between(this.interestRecalculatedOnDate, transactionDate));
                 }
-                BigDecimal numberOfDaysInPeriod = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, this.dueDate));
-                BigDecimal oneDayOfInterest = this.interestCharged.divide(numberOfDaysInPeriod, RoundingMode.HALF_UP);
-                oneDayOfInterest = oneDayOfInterest.setScale(5, roundingMode);
-                interestDue = Money.of(currency, oneDayOfInterest.multiply(numberOfDaysForInterestCalculation));
-                if (interestDue.isGreaterThan(getInterestOutstanding(currency))) {
-                    interestDue = getInterestOutstanding(currency);
-                }
-
-                //// Update installment interest charged if principal is fully paid during the accrual period
-                // Keep the original interest charged in case the transaction is rollbacked and interest charged needs
-                //// to be moved to original amount.
-                this.interestRecalculatedOnDate = transactionDate;
-                if (this.getPrincipalOutstanding(currency).isZero()) {
-                    this.originalInterestChargedAmount = this.interestCharged;
-                    this.interestCharged = getInterestPaid(currency).plus(getInterestWaived(currency)).plus(getInterestWrittenOff(currency))
-                            .plus(interestDue).getAmount();
-                }
-
             } else {
+                numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
+            }
+            BigDecimal numberOfDaysInPeriod = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, this.dueDate));
+            BigDecimal oneDayOfInterest = this.interestCharged.divide(numberOfDaysInPeriod, RoundingMode.HALF_UP);
+            oneDayOfInterest = oneDayOfInterest.setScale(5, roundingMode);
+            interestDue = Money.of(currency, oneDayOfInterest.multiply(numberOfDaysForInterestCalculation));
+            if (interestDue.isGreaterThan(getInterestOutstanding(currency))) {
                 interestDue = getInterestOutstanding(currency);
             }
+
+            //// Update installment interest charged if principal is fully paid during the accrual period
+            // Keep the original interest charged in case the transaction is rollbacked and interest charged needs
+            //// to be moved to original amount.
+            this.interestRecalculatedOnDate = transactionDate;
+            if (this.getPrincipalOutstanding(currency).isZero()) {
+                this.originalInterestChargedAmount = this.interestCharged;
+                this.interestCharged = getInterestPaid(currency).plus(getInterestWaived(currency)).plus(getInterestWrittenOff(currency))
+                        .plus(interestDue).getAmount();
+            }
+
         } else {
             interestDue = getInterestOutstanding(currency);
         }
+
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(interestDue)) {
             if (isWriteOffTransaction) {
                 this.interestWrittenOff = getInterestWrittenOff(currency).plus(interestDue).getAmount();
@@ -1280,7 +1277,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     private boolean isInAdvance(final LocalDate transactionDate) {
-        return DateUtils.isBefore(transactionDate, getDueDate());
+        return DateUtils.isBefore(transactionDate, getFromDate());
     }
 
     private boolean isLatePayment(final LocalDate transactionDate) {
