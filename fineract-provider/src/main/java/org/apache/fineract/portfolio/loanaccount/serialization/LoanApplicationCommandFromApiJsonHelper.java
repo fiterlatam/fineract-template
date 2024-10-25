@@ -112,7 +112,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.DISALLOW_EXPECTED_DISBURSEMENTS, LoanApiConstants.FRAUD_ATTRIBUTE_NAME,
             LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE, LoanApiConstants.INTEREST_RATE_POINTS, LoanApiConstants.POINT_OF_SALE_CODE,
             LoanApiConstants.CLIENT_ID_NUMBER, LoanApiConstants.DISCOUNT_VALUE, LoanApiConstants.DISCOUNT_TRANSFER_VALUE,
-            "isWriteoffPunish"));
+            "isWriteoffPunish", LoanApiConstants.AllYID, LoanApiConstants.POINT_OF_SALE_CODE));
     public static final String LOANAPPLICATION_UNDO = "loanapplication.undo";
 
     private final FromJsonHelper fromApiJsonHelper;
@@ -507,6 +507,19 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                     this.fromApiJsonHelper.extractLocalDateNamed(LoanApiConstants.dueDateParamName, loanChargeElement, dateFormat, locale);
                 }
             }
+            Long allyId = null;
+            if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.AllYID, element)) {
+                allyId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.AllYID, element);
+                baseDataValidator.reset().parameter(LoanApiConstants.AllYID).ignoreIfNull();
+            }
+            if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.POINT_OF_SALE_CODE, element)) {
+                baseDataValidator.reset().parameter(LoanApiConstants.POINT_OF_SALE_CODE).ignoreIfNull();
+                String pointSaleCode = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.POINT_OF_SALE_CODE, element);
+                if (allyId != null) {
+                    baseDataValidator.reset().parameter(LoanApiConstants.POINT_OF_SALE_CODE).value(pointSaleCode).notNull();
+                }
+            }
+
         }
 
         /**
@@ -1181,6 +1194,19 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         if (LoanScheduleProcessingType.HORIZONTAL.name().equals(loanScheduleProcessingType)
                 && AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY.equals(transactionProcessingStrategy)) {
             advancedPaymentAllocationsValidator.checkGroupingOfAllocationRules(allocationRules);
+        }
+
+        Long allyId = null;
+        if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.AllYID, element)) {
+            allyId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.AllYID, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.AllYID).ignoreIfNull();
+        }
+        if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.POINT_OF_SALE_CODE, element)) {
+            baseDataValidator.reset().parameter(LoanApiConstants.POINT_OF_SALE_CODE).ignoreIfNull();
+            String pointSaleCode = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.POINT_OF_SALE_CODE, element);
+            if (allyId != null) {
+                baseDataValidator.reset().parameter(LoanApiConstants.POINT_OF_SALE_CODE).value(pointSaleCode).notNull();
+            }
         }
 
         if (!dataValidationErrors.isEmpty()) {
