@@ -30,6 +30,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
+import org.apache.fineract.custom.portfolio.ally.api.ClientAllyPointOfSalesApiConstants;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
+import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
+import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcessRepository;
+import org.apache.fineract.custom.portfolio.buyprocess.validator.ClientBuyProsessPoinOfSalesInactive;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormat;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
@@ -195,6 +202,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final GSIMReadPlatformService gsimReadPlatformService;
     private final LoanLifecycleStateMachine defaultLoanLifecycleStateMachine;
 
+    private final ClientBuyProcessRepository clientBuyProcessRepository;
+    private final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository;
+
     @Transactional
     @Override
     public CommandProcessingResult submitApplication(final JsonCommand command) {
@@ -205,16 +215,33 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             final Long entityId = clientId != null ? clientId : groupId;
             boolean isTopUp = false;
-            if (this.fromJsonHelper.parameterExists("isTopup", command.parsedJson())) {
-                isTopUp = this.fromJsonHelper.extractBooleanNamed("isTopup", command.parsedJson());
-            }
-            if (!isTopUp) {
-                this.fromApiJsonDeserializer.validateClientBlockingList(entityId);
-            }
-            boolean isMeetingMandatoryForJLGLoans = configurationDomainService.isMeetingMandatoryForJLGLoans();
             final Long productId = this.fromJsonHelper.extractLongNamed("productId", command.parsedJson());
             final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
                     .orElseThrow(() -> new LoanProductNotFoundException(productId));
+            boolean isAjuste = false;
+            boolean isMifosChannel = false;
+            Long mifosChannelId = null;
+            String mifosChannelHash = null;
+            List<Channel> channels = loanProduct.getRepaymentChannels();
+            for (Channel channel : channels) {
+                if (channel.getName().equals("Mifos")) {
+                    isMifosChannel = true;
+                    mifosChannelId = channel.getId();
+                    mifosChannelHash = channel.getHash();
+                }
+            }
+
+            if (loanProduct.getName().equals("Ajuste") && isMifosChannel) {
+                isAjuste = true;
+            }
+
+            if (this.fromJsonHelper.parameterExists("isTopup", command.parsedJson())) {
+                isTopUp = this.fromJsonHelper.extractBooleanNamed("isTopup", command.parsedJson());
+            }
+            if (!isTopUp && !isAjuste) {
+                this.fromApiJsonDeserializer.validateClientBlockingList(entityId);
+            }
+            boolean isMeetingMandatoryForJLGLoans = configurationDomainService.isMeetingMandatoryForJLGLoans();
 
             if (clientId != null) {
                 Client client = this.clientRepository.findOneWithNotFoundDetection(clientId);
@@ -236,6 +263,20 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 if (existByExternalId) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.with.externalId.already.used",
                             "Loan with externalId is already registered.");
+                }
+            }
+
+            String pointOfSaleCode = this.fromJsonHelper.extractStringNamed(LoanApiConstants.POINT_OF_SALE_CODE, command.parsedJson());
+            Long pointOfSalesId = 0L;
+            if (pointOfSaleCode != null) {
+                Optional<ClientAllyPointOfSales> clientAllyPointOfSales = clientAllyPointOfSalesRepository.findByCode(pointOfSaleCode);
+                if (clientAllyPointOfSales.isPresent()) {
+                    if (clientAllyPointOfSales.get()
+                            .getStateCodeValueId() == ClientAllyPointOfSalesApiConstants.stateCodeValueInavtiveParamName.longValue()) {
+                        throw new ClientBuyProsessPoinOfSalesInactive(
+                                "No se ha podido proceder debido a que el Punto de venta esta inactivo", "");
+                    }
+                    pointOfSalesId = clientAllyPointOfSales.get().getId();
                 }
             }
 
@@ -529,6 +570,19 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             businessEventNotifierService.notifyPostBusinessEvent(new LoanCreatedBusinessEvent(newLoanApplication));
 
+            Long allyId = this.fromJsonHelper.extractLongNamed(LoanApiConstants.AllYID, command.parsedJson());
+
+            if (allyId != null && pointOfSaleCode != null) {
+                final String ipDetails = context.getApiRequestClientIP();
+                ClientBuyProcess clientBuyProcess = new ClientBuyProcess(mifosChannelId, clientId, pointOfSalesId, productId,
+                        newLoanApplication.getId(), newLoanApplication.getSubmittedOnDate(), newLoanApplication.getPrincipal().getAmount(),
+                        newLoanApplication.getTermFrequency().longValue(), newLoanApplication.getCreatedDate().get().toLocalDateTime(),
+                        newLoanApplication.getCreatedBy().get().longValue(), ipDetails, null, null, mifosChannelHash);
+                clientBuyProcess.setStatus(newLoanApplication.getPlainStatus());
+                clientBuyProcess.setLoanId(newLoanApplication.getId());
+                clientBuyProcessRepository.saveAndFlush(clientBuyProcess);
+
+            }
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .withEntityId(newLoanApplication.getId()) //
@@ -537,6 +591,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     .withClientId(newLoanApplication.getClientId()) //
                     .withGroupId(newLoanApplication.getGroupId()) //
                     .withLoanId(newLoanApplication.getId()).withGlimId(newLoanApplication.getGlimId()).build();
+
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
@@ -749,6 +804,31 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             LoanProduct loanProductForValidations = newLoanProduct == null ? existingLoanApplication.loanProduct() : newLoanProduct;
 
             this.fromApiJsonDeserializer.validateForModify(command.json(), loanProductForValidations, existingLoanApplication);
+            boolean isAjuste = false;
+            boolean isMifosChannel = false;
+            Long mifosChannelId = null;
+            String mifosChannelHash = null;
+            List<Channel> channels = existingLoanApplication.getLoanProduct().getRepaymentChannels();
+            for (Channel channel : channels) {
+                if (channel.getName().equals("Mifos")) {
+                    isMifosChannel = true;
+                    mifosChannelId = channel.getId();
+                    mifosChannelHash = channel.getHash();
+                }
+            }
+            String pointOfSaleCode = this.fromJsonHelper.extractStringNamed(LoanApiConstants.POINT_OF_SALE_CODE, command.parsedJson());
+            Long pointOfSalesId = 0L;
+            if (pointOfSaleCode != null) {
+                Optional<ClientAllyPointOfSales> clientAllyPointOfSales = clientAllyPointOfSalesRepository.findByCode(pointOfSaleCode);
+                if (clientAllyPointOfSales.isPresent()) {
+                    if (clientAllyPointOfSales.get()
+                            .getStateCodeValueId() == ClientAllyPointOfSalesApiConstants.stateCodeValueInavtiveParamName.longValue()) {
+                        throw new ClientBuyProsessPoinOfSalesInactive(
+                                "No se ha podido proceder debido a que el Punto de venta esta inactivo", "");
+                    }
+                    pointOfSalesId = clientAllyPointOfSales.get().getId();
+                }
+            }
 
             checkIfIsAllowedCreationAndDisbursal(loanProductForValidations);
 
@@ -1236,9 +1316,39 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 this.fromApiJsonDeserializer.validateLoanForInterestRecalculation(existingLoanApplication);
                 if (changes.containsKey(LoanProductConstants.IS_INTEREST_RECALCULATION_ENABLED_PARAMETER_NAME)) {
                     createAndPersistCalendarInstanceForInterestRecalculation(existingLoanApplication);
+                }
+            }
 
+            Long allyId = this.fromJsonHelper.extractLongNamed(LoanApiConstants.AllYID, command.parsedJson());
+            Optional<ClientBuyProcess> existingClientByProses = clientBuyProcessRepository.findClienByProsesLoanByLoanId(loanId);
+            if (allyId != null && pointOfSaleCode != null) {
+                final String ipDetails = context.getApiRequestClientIP();
+                if (existingClientByProses.isPresent()) {
+                    ClientBuyProcess oldClientBuyProses = existingClientByProses.get();
+                    oldClientBuyProses.setPointOfSalesId(pointOfSalesId);
+                    oldClientBuyProses.setChannelId(mifosChannelId);
+                    oldClientBuyProses.setProductId(existingLoanApplication.productId());
+                    oldClientBuyProses.setStatus(existingLoanApplication.getPlainStatus());
+                    oldClientBuyProses.setLoanId(existingLoanApplication.getId());
+                    oldClientBuyProses.setCreditId(loanId);
+                    clientBuyProcessRepository.saveAndFlush(oldClientBuyProses);
+                } else {
+                    ClientBuyProcess clientBuyProcess = new ClientBuyProcess(mifosChannelId, existingLoanApplication.getClientId(),
+                            pointOfSalesId, existingLoanApplication.productId(), existingLoanApplication.getId(),
+                            existingLoanApplication.getSubmittedOnDate(), existingLoanApplication.getPrincipal().getAmount(),
+                            existingLoanApplication.getTermFrequency().longValue(),
+                            existingLoanApplication.getCreatedDate().get().toLocalDateTime(),
+                            existingLoanApplication.getCreatedBy().get().longValue(), ipDetails, null, null, mifosChannelHash);
+                    clientBuyProcess.setStatus(existingLoanApplication.getPlainStatus());
+                    clientBuyProcess.setLoanId(existingLoanApplication.getId());
+                    clientBuyProcessRepository.saveAndFlush(clientBuyProcess);
                 }
 
+            } else {
+                if (existingClientByProses.isPresent()) {
+                    ClientBuyProcess oldClientBuyProses = existingClientByProses.get();
+                    clientBuyProcessRepository.delete(oldClientBuyProses);
+                }
             }
 
             return new CommandProcessingResultBuilder() //
