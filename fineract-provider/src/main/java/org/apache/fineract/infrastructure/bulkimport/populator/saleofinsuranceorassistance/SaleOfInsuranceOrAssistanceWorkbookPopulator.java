@@ -74,7 +74,7 @@ public class SaleOfInsuranceOrAssistanceWorkbookPopulator extends AbstractWorkbo
         worksheet.setColumnWidth(SaleOfInsuranceOrAssistanceConstants.ADVISOR_ID_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         worksheet.setColumnWidth(SaleOfInsuranceOrAssistanceConstants.SALES_CHANNEL_COL, TemplatePopulateImportConstants.SMALL_COL_SIZE);
         writeString(SaleOfInsuranceOrAssistanceConstants.CUSTOMER_ID_COL, rowHeader, "Cédula del cliente*");
-        writeString(SaleOfInsuranceOrAssistanceConstants.INSURANCE_PRODUCT_COL, rowHeader, "Producto de seguro*");
+        writeString(SaleOfInsuranceOrAssistanceConstants.INSURANCE_PRODUCT_COL, rowHeader, "Producto de Crédito*");
         writeString(SaleOfInsuranceOrAssistanceConstants.TERM_COL, rowHeader, "Plazo*");
         writeString(SaleOfInsuranceOrAssistanceConstants.INSURANCE_CODE_COL, rowHeader, "Código del seguro*");
         writeString(SaleOfInsuranceOrAssistanceConstants.ADVISOR_ID_COL, rowHeader, "Cédula del asesor*");
