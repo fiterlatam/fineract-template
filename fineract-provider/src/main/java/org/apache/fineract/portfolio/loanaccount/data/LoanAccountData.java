@@ -667,7 +667,7 @@ public class LoanAccountData {
                 .setDisallowExpectedDisbursements(product.getDisallowExpectedDisbursements()).setFraud(acc.fraud)
                 .setOverpaidOnDate(acc.overpaidOnDate).setChargedOff(acc.chargedOff).setLoanScheduleType(acc.getLoanScheduleType())
                 .setLoanScheduleProcessingType(acc.getLoanScheduleProcessingType()).setValorDescuento(acc.valorDescuento)
-                .setValorGiro(acc.valorGiro);
+                .setValorGiro(acc.valorGiro).setCedulaSeguroVoluntario(acc.cedulaSeguroVoluntario);
     }
 
     /*
@@ -859,6 +859,7 @@ public class LoanAccountData {
                 acc.interestRatesPeriods, acc.clientActiveLoanOptions, acc.rates, isRatesEnabled, acc.delinquent,
                 acc.loanScheduleTypeOptions, acc.loanScheduleProcessingTypeOptions);
         loanAccountData.setClientIdNumber(acc.getClientIdNumber());
+        loanAccountData.setCedulaSeguroVoluntario(acc.getCedulaSeguroVoluntario());
         return loanAccountData;
     }
 
@@ -1227,7 +1228,7 @@ public class LoanAccountData {
                 .setChannelId(acc.channelId).setChannelName(acc.channelName).setChannelDescription(acc.channelDescription)
                 .setPointOfSalesName(acc.pointOfSalesName).setPointOfSalesCode(acc.pointOfSalesCode)
                 .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions).setValorDescuento(acc.valorDescuento)
-                .setValorGiro(acc.valorGiro);
+                .setValorGiro(acc.valorGiro).setCedulaSeguroVoluntario(acc.cedulaSeguroVoluntario);
     }
 
     public static final Comparator<LoanAccountData> ClientNameComparator = (loan1, loan2) -> {
