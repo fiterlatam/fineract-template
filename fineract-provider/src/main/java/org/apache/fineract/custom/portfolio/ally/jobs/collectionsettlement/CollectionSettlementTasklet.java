@@ -105,22 +105,25 @@ public class CollectionSettlementTasklet implements Tasklet {
 
             }
             isEqual = now.isEqual(period);
+            boolean status = false;
+            if (data.getLoanStatusId() == 600) {
+                status = true;
+            }
             if (isEqual) {
                 List<AllyCollectionSettlement> duplicatesToRemove = new ArrayList<>();
                 boolean isNewCollection = true;
-                boolean status = false;
-                if (data.getLoanStatusId() == 600) {
-                    status = true;
-                }
+
                 for (AllyCollectionSettlement existingCollection : existingCollections) {
-                    if (existingCollection.getSettlementStatus() == null) {
-                        existingCollection.setSettlementStatus(status);
+
+                    existingCollection.setSettlementStatus(status);
+                    allyCollectionSettlementReadWritePlatformService.update(existingCollection);
+
+                    if (!existingCollection.getSettlementStatus() && data.getLoanStatusId() == 600) {
+                        existingCollection.setSettlementStatus(true);
                         allyCollectionSettlementReadWritePlatformService.update(existingCollection);
                     }
                     if (isSameCollection(existingCollection, data, collectDate)) {
                         duplicatesToRemove.add(existingCollection);
-                    } else {
-                        isNewCollection = false;
                     }
                 }
 
@@ -128,7 +131,7 @@ public class CollectionSettlementTasklet implements Tasklet {
                     allyCollectionSettlementRepository.deleteAll(duplicatesToRemove);
                 }
 
-                if (isNewCollection || existingCollections.isEmpty()) {
+                if (isNewCollection) {
                     AllyCollectionSettlement allyCollectionSettlement = new AllyCollectionSettlement();
                     CodeValueData city = codeValueReadPlatformService.retrieveCodeValue(data.getCityId());
                     allyCollectionSettlement.setCollectionDate(collectDate);
@@ -152,8 +155,10 @@ public class CollectionSettlementTasklet implements Tasklet {
                         .findCollectionByLoanId(data.getLoanId());
                 if (getlastCollection.isPresent()) {
                     AllyCollectionSettlement lastCollection = getlastCollection.get();
-                    allyCollectionSettlementRepository.deleteByLoanIdAndNotCollectionDate(lastCollection.getLoanId(),
-                            lastCollection.getCollectionDate());
+                    if (lastCollection.getSettlementStatus()) {
+                        allyCollectionSettlementRepository.deleteByLoanIdAndNotCollectionDate(lastCollection.getLoanId(),
+                                lastCollection.getCollectionDate());
+                    }
                 }
 
                 Optional<AllyCompensation> getallyCompensation = allyCompensationRepository
@@ -162,7 +167,10 @@ public class CollectionSettlementTasklet implements Tasklet {
                     AllyCompensation allyCompensation = getallyCompensation.get();
                     if (allyCompensation.getSettlementStatus() != null) {
                         if (!allyCompensation.getSettlementStatus() && data.getClientId() == allyCompensation.getClientAllyId()
-                                && !allyCompensation.getEndDate().isEqual(collectDate)) {
+                                && (collectDate.isBefore(allyCompensation.getEndDate())
+                                        || collectDate.isEqual(allyCompensation.getEndDate()))
+                                && (collectDate.isEqual(allyCompensation.getEndDate())
+                                        || collectDate.isAfter(allyCompensation.getEndDate()))) {
                             allyCollectionSettlementRepository.deleteByLoanIdAndNotCollectionDate(data.getLoanId(), collectDate);
                         }
                     }
@@ -176,13 +184,19 @@ public class CollectionSettlementTasklet implements Tasklet {
                 }
 
             }
+            for (AllyCollectionSettlement existingCollection : existingCollections) {
+                if (existingCollection.getSettlementStatus() == null) {
+                    existingCollection.setSettlementStatus(status);
+                    allyCollectionSettlementReadWritePlatformService.update(existingCollection);
+                }
+            }
         }
         return RepeatStatus.FINISHED;
     }
 
     private boolean isSameCollection(AllyCollectionSettlement existingCollection, ClientAllyPointOfSalesCollectionData data,
             LocalDate collectDate) {
-        return existingCollection.getCollectionDate().equals(collectDate) && existingCollection.getLoanId().equals(data.getLoanId())
+        return existingCollection.getCollectionDate().equals(collectDate) && existingCollection.getLoanId() == data.getLoanId()
                 && existingCollection.getCollectionAmount().equals(data.getAmount());
     }
 }
