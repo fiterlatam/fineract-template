@@ -24,6 +24,6 @@ public interface AllyCompensationRepository extends JpaRepository<AllyCompensati
     @Query("select allyCompensation from AllyCompensation allyCompensation where allyCompensation.netOutstandingAmount < 0")
     List<AllyCompensation> findNegativeCompensations();
 
-    @Query("select allyCompensation from AllyCompensation allyCompensation where allyCompensation.clientAllyId= :clientAllyId")
+    @Query(value = "select * from m_ally_compensation allyCompensation where allyCompensation.client_ally_id= ? order by id DESC limit 1", nativeQuery = true)
     Optional<AllyCompensation> findCompensationByClientId(@Param("clientAllyId") Long clientAllyId);
 }
