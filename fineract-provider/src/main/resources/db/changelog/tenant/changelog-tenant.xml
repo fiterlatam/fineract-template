@@ -300,4 +300,5 @@
     <include file="parts/20243008011009128_SU_384_update_report_name_loan_archive_history.xml" relativeToChangelogFile="true"/>
     <include file="parts/20242410011009110_SU_158_update-client-claim-block-reason.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009131_SU_419_add_filter_on_report_recaudos_de_seguros_obligatorios.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009131_SU_419_update_transaltion_filter_on_translation.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
