@@ -4,6 +4,7 @@ import org.apache.fineract.custom.portfolio.ally.domain.AllyCollectionSettlement
 import org.apache.fineract.custom.portfolio.ally.domain.AllyCompensationRepository;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyRepository;
 import org.apache.fineract.custom.portfolio.ally.service.AllyCollectionSettlementReadWritePlatformService;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
@@ -44,6 +45,9 @@ public class CollectionOfSettlementConfig {
     @Autowired
     private AllyCompensationRepository allyCompensationRepository;
 
+    @Autowired
+    private CodeValueRepositoryWrapper codeValueRepositoryWrapper;
+
     @Bean
     public Step collectionOfSettlementStep() {
         return new StepBuilder(JobName.LIQUIDACION_DE_RECAUDOS.name(), jobRepository)
@@ -59,7 +63,8 @@ public class CollectionOfSettlementConfig {
     @Bean
     public CollectionSettlementTasklet collectionOfSettlementTasklet() {
         return new CollectionSettlementTasklet(allyCollectionSettlementReadWritePlatformService, allyCollectionSettlementRepository,
-                codeValueReadPlatformService, daysRepositoryWrapper, clientAllyRepository, allyCompensationRepository);
+                codeValueReadPlatformService, daysRepositoryWrapper, clientAllyRepository, allyCompensationRepository,
+                codeValueRepositoryWrapper);
     }
 
 }
