@@ -15,5 +15,6 @@ public class ClientAllySettlementData {
     private String purchaseDate;
     private String lastClientCollectionJobRun;
     private String lastClientPurchaseJobRun;
+    private String liquidationFrequency;
 
 }

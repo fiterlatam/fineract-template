@@ -35,55 +35,75 @@ public class CompensationOfSettlementTasklet implements Tasklet {
         LocalDate endDate;
         for (ClientAllySettlementData clientAllySettlementData : clientAllySettlementList) {
             LocalDate purchaseJobDate = LocalDate.parse(clientAllySettlementData.getLastClientPurchaseJobRun());
-            LocalDate collectionJonDate = LocalDate.parse(clientAllySettlementData.getLastClientCollectionJobRun());
-            LocalDate collectionDate = LocalDate.parse(clientAllySettlementData.getPurchaseDate());
-            LocalDate purchaseDate = LocalDate.parse(clientAllySettlementData.getCollectionDate());
-            if (collectionDate.isBefore(purchaseDate)) {
-                startDate = collectionDate;
-                endDate = purchaseDate;
-            } else {
-                startDate = purchaseDate;
-                endDate = collectionDate;
+            LocalDate collectionJobDate = LocalDate.parse(clientAllySettlementData.getLastClientPurchaseJobRun());
+            endDate = LocalDate.parse(clientAllySettlementData.getLastClientPurchaseJobRun());
+            LocalDate purchaseDate = LocalDate.parse(clientAllySettlementData.getPurchaseDate());
+            LocalDate collectionDate = LocalDate.parse(clientAllySettlementData.getCollectionDate());
+            String frequency = clientAllySettlementData.getLiquidationFrequency();
+            frequency = frequency.replaceAll("\\s", "");
+
+            switch (frequency.toUpperCase()) {
+                case "SEMANAL":
+                    startDate = endDate.minusWeeks(1).plusDays(1);
+                    System.out.println(" mingguan  " + startDate);
+                break;
+                case "QUINCENAL":
+                    startDate = endDate.minusWeeks(2).plusDays(1);
+                    System.out.println(" QUINCENAL  " + startDate);
+                break;
+                case "MENSUAL":
+                    startDate = endDate.minusMonths(1).plusDays(1);
+                    System.out.println(" MENSUAL  " + startDate);
+                break;
+                default:
+                    startDate = endDate;
             }
+
             Optional<AllySettlementCompansationCollectionData> allySettlementCompansationData = allyCompensationReadWritePlatformService
                     .getCompensationSettlementByNit(clientAllySettlementData.getNit(), startDate, endDate);
 
-            if (allySettlementCompansationData.isPresent() && purchaseJobDate.isEqual(collectionJonDate)) {
+            if (allySettlementCompansationData.isPresent() && purchaseJobDate.isEqual(collectionJobDate)) {
+                List<Long> duplicateIds = allyCompensationRepository
+                        .findListDuplicateIdsToDeleteByNitDate(clientAllySettlementData.getNit(), purchaseDate, collectionDate);
+                if (!duplicateIds.isEmpty()) {
+                    allyCompensationRepository.deleteAllById(duplicateIds);
+                }
                 Optional<AllyCompensation> compensationCheck = allyCompensationRepository
                         .findBynitAndDate(clientAllySettlementData.getNit(), startDate, endDate);
                 AllyCompensation allyCompensation = new AllyCompensation();
-                allyCompensation.setCompensationDate(LocalDate.now());
-                allyCompensation.setStartDate(startDate);
-                allyCompensation.setEndDate(endDate);
-                allyCompensation.setNit(allySettlementCompansationData.get().getNit());
-                allyCompensation.setClientAllyId(allySettlementCompansationData.get().getClientAllyId());
-                allyCompensation.setCompanyName(allySettlementCompansationData.get().getCompanyName());
-                allyCompensation.setBankName(allySettlementCompansationData.get().getBankName());
-                allyCompensation.setAccontType(allySettlementCompansationData.get().getAccountType());
-                allyCompensation.setAccountNumber(allySettlementCompansationData.get().getAccountNumber());
-                allyCompensation.setPurchaseAmount(allySettlementCompansationData.get().getPurchaseAmount());
-                allyCompensation.setCollectionAmount(allySettlementCompansationData.get().getCollectionAmount());
-                allyCompensation.setComissionAmount(allySettlementCompansationData.get().getCollectionAmount());
-                allyCompensation.setVaComissionAmount(allySettlementCompansationData.get().getVaComissionAmount());
-                allyCompensation.setNetPurchaseAmount(allySettlementCompansationData.get().getNetPurchaseAmount());
-                allyCompensation.setNetOutstandingAmount(allySettlementCompansationData.get().getCompensationAmount());
-                allyCompensation.setNetOutstandingAmount(allySettlementCompansationData.get().getCompensationAmount());
-
                 if (!compensationCheck.isPresent()) {
-                    Optional<AllyCompensation> check = allyCompensationRepository.findFirst1ByNit(allyCompensation.getNit());
-                    if (check.isPresent()) {
-                        LocalDate newstartDate = check.get().getEndDate();
-                        allyCompensation.setStartDate(newstartDate.plusDays(1));
-                        allyCompensation.setEndDate(endDate);
-                    }
+
+                    allyCompensation.setCompensationDate(purchaseDate);
+                    allyCompensation.setStartDate(startDate);
+                    allyCompensation.setEndDate(endDate);
+                    allyCompensation.setNit(allySettlementCompansationData.get().getNit());
+                    allyCompensation.setClientAllyId(allySettlementCompansationData.get().getClientAllyId());
+                    allyCompensation.setCompanyName(allySettlementCompansationData.get().getCompanyName());
+                    allyCompensation.setBankName(allySettlementCompansationData.get().getBankName());
+                    allyCompensation.setAccontType(allySettlementCompansationData.get().getAccountType());
+                    allyCompensation.setAccountNumber(allySettlementCompansationData.get().getAccountNumber());
+                    allyCompensation.setPurchaseAmount(allySettlementCompansationData.get().getPurchaseAmount());
+                    allyCompensation.setCollectionAmount(allySettlementCompansationData.get().getCollectionAmount());
+                    allyCompensation.setComissionAmount(allySettlementCompansationData.get().getCollectionAmount());
+                    allyCompensation.setVaComissionAmount(allySettlementCompansationData.get().getVaComissionAmount());
+                    allyCompensation.setNetPurchaseAmount(allySettlementCompansationData.get().getNetPurchaseAmount());
+                    allyCompensation.setNetOutstandingAmount(allySettlementCompansationData.get().getCompensationAmount());
+                    allyCompensation.setNetOutstandingAmount(allySettlementCompansationData.get().getCompensationAmount());
                     allyCompensationReadWritePlatformService.create(allyCompensation);
 
                 } else {
-                    if (compensationCheck.get().getSettlementStatus() != null) {
-                        if (!compensationCheck.get().getSettlementStatus()) {
-                            allyCompensation.setId(compensationCheck.get().getId());
-                            allyCompensation.setSettlementStatus(compensationCheck.get().getSettlementStatus());
-                            allyCompensationRepository.save(allyCompensation);
+                    AllyCompensation exisiting = compensationCheck.get();
+                    if (exisiting.getSettlementStatus() != null) {
+                        if (!exisiting.getSettlementStatus()) {
+                            exisiting.setPurchaseAmount(allySettlementCompansationData.get().getPurchaseAmount());
+                            exisiting.setCollectionAmount(allySettlementCompansationData.get().getCollectionAmount());
+                            exisiting.setComissionAmount(allySettlementCompansationData.get().getCollectionAmount());
+                            exisiting.setVaComissionAmount(allySettlementCompansationData.get().getVaComissionAmount());
+                            exisiting.setNetPurchaseAmount(allySettlementCompansationData.get().getNetPurchaseAmount());
+                            exisiting.setNetOutstandingAmount(allySettlementCompansationData.get().getCompensationAmount());
+                            exisiting.setNetOutstandingAmount(allySettlementCompansationData.get().getCompensationAmount());
+                            exisiting.setSettlementStatus(exisiting.getSettlementStatus());
+                            allyCompensationRepository.save(exisiting);
                         }
                     }
                 }
