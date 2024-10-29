@@ -1244,6 +1244,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                  * transactionAmountUnprocessed.minus(paidPortion); }
                                  *
                                  */
+                                Money zero = transactionAmountUnprocessed.zero();
                                 for (LoanRepaymentScheduleInstallment inAdvanceInstallment : inAdvanceInstallments) {
                                     if (transactionAmountUnprocessed.isGreaterThanZero()) {
                                         loanTransaction.updateComponents(transactionAmountUnprocessed, Money.zero(currency),
@@ -1251,6 +1252,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                         inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment.getAdvancePrincipalAmount()
                                                 .add(transactionAmountUnprocessed.getAmount()));
                                         inAdvanceInstallment.setRecalculateEMI(loanTransaction.recalculateEMI());
+                                        LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
+                                                transactionMappings, loanTransaction, inAdvanceInstallment, currency);
+                                        addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, transactionAmountUnprocessed, zero, zero, zero);
                                     }
                                 }
                                 transactionAmountUnprocessed = Money.zero(currency);
