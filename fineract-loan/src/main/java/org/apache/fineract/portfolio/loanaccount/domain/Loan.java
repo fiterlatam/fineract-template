@@ -790,10 +790,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 continue;
             }
 
-            /// because the due date of the last installment is the same as the start date of a new installement we need
-            /// to ensure that we don't
-            // post charges on a date that is the due date of the last installement
-
             for (LoanCharge loanCharge : charges) {
                 LoanInstallmentCharge loanInstallmentCharge = loanCharge.getInstallmentLoanCharge(installmentNumber);
 
