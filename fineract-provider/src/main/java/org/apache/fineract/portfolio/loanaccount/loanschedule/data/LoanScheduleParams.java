@@ -99,6 +99,9 @@ public final class LoanScheduleParams {
     private int loanTermInDays;
     private final MonetaryCurrency currency;
     private final boolean applyInterestRecalculation;
+    // Transient Object to hold advance transactions while calculating advance interest. The object is cleared
+    // immediately after use
+    private Collection<RecalculationDetail> advanceTransactions;
 
     private LoanScheduleParams(final int periodNumber, final int instalmentNumber, int loanTermInDays, LocalDate periodStartDate,
             final LocalDate actualRepaymentDate, final Money totalCumulativePrincipal, final Money totalCumulativeInterest,
@@ -541,5 +544,13 @@ public final class LoanScheduleParams {
 
     public boolean isFirstPeriod() {
         return 1 == instalmentNumber;
+    }
+
+    public Collection<RecalculationDetail> advanceTransactions() {
+        return advanceTransactions;
+    }
+
+    public void setAdvanceTransactions(Collection<RecalculationDetail> advanceTransactions) {
+        this.advanceTransactions = advanceTransactions;
     }
 }

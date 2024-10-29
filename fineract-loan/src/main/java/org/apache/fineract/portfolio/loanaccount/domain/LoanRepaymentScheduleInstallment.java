@@ -40,7 +40,6 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanproduct.domain.AllocationType;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 
@@ -1057,8 +1056,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         //// Update installment interest charged if principal is fully paid during the accrual period and interest has
         //// also been recalculated and paid
         // Keep the original interest charged in case the transaction is rollbacked.
-        if (this.getLoan() != null && this.getLoan().getLoanProductRelatedDetail().getLoanScheduleProcessingType()
-                .equals(LoanScheduleProcessingType.HORIZONTAL)) {
+        if (this.getLoan() != null && this.getLoan().isProgressiveLoan()) {
             if (isOnOrBetween(transactionDate)) {
                 if (this.getPrincipalOutstanding(currency).isZero()
                         && (this.originalInterestChargedAmount == null || this.originalInterestChargedAmount.equals(BigDecimal.ZERO))

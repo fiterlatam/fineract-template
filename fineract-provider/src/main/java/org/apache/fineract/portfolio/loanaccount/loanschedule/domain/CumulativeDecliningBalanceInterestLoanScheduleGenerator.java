@@ -79,10 +79,28 @@ public class CumulativeDecliningBalanceInterestLoanScheduleGenerator extends Abs
             final TreeMap<LocalDate, Money> principalVariation, final Map<LocalDate, Money> compoundingMap, final LocalDate periodStartDate,
             final LocalDate periodEndDate, final Collection<LoanTermVariationsData> termVariations) {
 
+        Money accruedInterestByAdvancePmt = Money.zero(loanApplicationTerms.getCurrency());
+        return calculatePrincipalInterestComponentsForPeriod(calculator, interestCalculationGraceOnRepaymentPeriodFraction,
+                totalCumulativePrincipal, totalCumulativeInterest, totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace,
+                outstandingBalance, loanApplicationTerms, periodNumber, mc, principalVariation, compoundingMap, periodStartDate,
+                periodEndDate, termVariations, accruedInterestByAdvancePmt);
+
+    }
+
+    @Override
+    public PrincipalInterest calculatePrincipalInterestComponentsForPeriod(final PaymentPeriodsInOneYearCalculator calculator,
+            final BigDecimal interestCalculationGraceOnRepaymentPeriodFraction, final Money totalCumulativePrincipal,
+            @SuppressWarnings("unused") final Money totalCumulativeInterest,
+            @SuppressWarnings("unused") final Money totalInterestDueForLoan, final Money cumulatingInterestPaymentDueToGrace,
+            final Money outstandingBalance, final LoanApplicationTerms loanApplicationTerms, final int periodNumber, final MathContext mc,
+            final TreeMap<LocalDate, Money> principalVariation, final Map<LocalDate, Money> compoundingMap, final LocalDate periodStartDate,
+            final LocalDate periodEndDate, final Collection<LoanTermVariationsData> termVariations,
+            final Money accruedInterestByAdvancePmt) {
+
         PrincipalInterestCalculator principalInterestCalculator = new PrincipalInterestCalculator();
         return principalInterestCalculator.principalInterestComponentsForDecliningBalanceLoan(calculator,
                 interestCalculationGraceOnRepaymentPeriodFraction, totalCumulativePrincipal, totalCumulativeInterest,
                 totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms, periodNumber, mc,
-                principalVariation, compoundingMap, periodStartDate, periodEndDate, termVariations);
+                principalVariation, compoundingMap, periodStartDate, periodEndDate, termVariations, accruedInterestByAdvancePmt);
     }
 }
