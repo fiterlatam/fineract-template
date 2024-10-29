@@ -222,9 +222,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             boolean isMifosChannel = false;
             Long mifosChannelId = null;
             String mifosChannelHash = null;
+            String mifosChannel = "Mifos";
             List<Channel> channels = loanProduct.getRepaymentChannels();
             for (Channel channel : channels) {
-                if (channel.getName().equals("Mifos")) {
+                if (channel.getName().toUpperCase().equals(mifosChannel.toUpperCase())) {
                     isMifosChannel = true;
                     mifosChannelId = channel.getId();
                     mifosChannelHash = channel.getHash();
