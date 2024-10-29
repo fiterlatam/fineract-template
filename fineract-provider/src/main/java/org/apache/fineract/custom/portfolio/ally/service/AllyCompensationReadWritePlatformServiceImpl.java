@@ -135,7 +135,7 @@ public class AllyCompensationReadWritePlatformServiceImpl implements AllyCompens
         public String schema() {
             return " cca.id, cca.nit, \n"
                     + "last_job_run as lastClientCollectionJobRun, last_job_run_purchase as lastClientPurchaseJobRun\n"
-                    + ",min(maps.purchase_date) as purchaseDate, max(collection_date) as collectionDate, (select code_value from m_code_value where id =liquidation_frequency_id) as liquidation_frequency\n"
+                    + ",max(maps.purchase_date) as purchaseDate, max(collection_date) as collectionDate, (select code_value from m_code_value where id =liquidation_frequency_id) as liquidation_frequency\n"
                     + "from custom.c_client_ally cca \n" + "inner join m_ally_collection_settlement macs on macs.client_ally_id = cca.id\n"
                     + "inner join m_ally_purchase_settlement maps on maps.client_ally_id = cca.id where last_job_run_purchase is not null and last_job_run is not null \n"
                     + "group by cca.id";
