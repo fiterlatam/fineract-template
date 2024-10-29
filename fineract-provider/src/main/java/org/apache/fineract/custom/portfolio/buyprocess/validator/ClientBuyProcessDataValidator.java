@@ -28,6 +28,7 @@ import java.util.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelRepository;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformation;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformation;
@@ -72,6 +73,7 @@ public class ClientBuyProcessDataValidator {
     private final ClientRepository clientRepository;
     private final LoanProductRepository loanProductRepository;
     private final ChargeReadPlatformService chargeReadPlatformService;
+    private ChannelRepository channelRepository;
 
     @Autowired
     public ClientBuyProcessDataValidator(final FromJsonHelper fromApiJsonHelper, final PlatformSecurityContext platformSecurityContext,
@@ -79,7 +81,7 @@ public class ClientBuyProcessDataValidator {
             final ClientAdditionalInformationRepository camposClienteEmpresaRepository,
             final IndividualAdditionalInformationRepository individualAdditionalInformationRepository,
             final ClientRepository clientRepository, final LoanProductRepository loanProductRepository,
-            final ChargeReadPlatformService chargeReadPlatformService) {
+            final ChargeReadPlatformService chargeReadPlatformService, ChannelRepository channelRepository) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.platformSecurityContext = platformSecurityContext;
         this.clientAllyPointOfSalesRepository = clientAllyPointOfSalesRepository;
@@ -88,6 +90,7 @@ public class ClientBuyProcessDataValidator {
         this.clientRepository = clientRepository;
         this.loanProductRepository = loanProductRepository;
         this.chargeReadPlatformService = chargeReadPlatformService;
+        this.channelRepository = channelRepository;
     }
 
     @Autowired
@@ -224,18 +227,25 @@ public class ClientBuyProcessDataValidator {
         if (productId != null) {
 
             String finalChannelHash = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.CHANNEL_HASH, element);
-
             LoanProduct loanProduct = this.loanProductRepository.findById(productId)
                     .orElseThrow(() -> new LoanProductNotFoundException(productId));
-            List<Channel> channels = loanProduct.getRepaymentChannels();
-            String mifosChannel = "Mifos";
 
-            isMifosChannel = channels.stream().anyMatch(channel -> mifosChannel.toUpperCase().equals(channel.getName().toUpperCase())
-                    && finalChannelHash.equals(channel.getHash()));
-
-            if (loanProduct.getName().equals("Ajuste") && !isMifosChannel) {
-                baseDataValidator.reset().parameter(LoanApiConstants.CHANNEL_HASH).failWithCode("Ajuste sólo es permitido desde Mifos",
-                        "Ajuste sólo es permitido desde Mifos");
+            if (loanProduct.getName().equals("Ajuste")) {
+                Optional<Channel> getchannel = channelRepository.findByHash(finalChannelHash);
+                String mifosChannel = "Mifos";
+                if (getchannel.isPresent()) {
+                    Channel channel = getchannel.get();
+                    if (mifosChannel.toUpperCase().equals(channel.getName().toUpperCase())) {
+                        isMifosChannel = true;
+                    }
+                } else {
+                    baseDataValidator.reset().parameter(LoanApiConstants.CHANNEL_HASH).failWithCode("Ajuste sólo es permitido desde Mifos",
+                            "Ajuste sólo es permitido desde Mifos");
+                }
+                if (!isMifosChannel) {
+                    baseDataValidator.reset().parameter(LoanApiConstants.CHANNEL_HASH).failWithCode("Ajuste sólo es permitido desde Mifos",
+                            "Ajuste sólo es permitido desde Mifos");
+                }
             }
 
         }
