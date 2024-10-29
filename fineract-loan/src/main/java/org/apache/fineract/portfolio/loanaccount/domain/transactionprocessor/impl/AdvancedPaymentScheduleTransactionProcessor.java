@@ -1024,12 +1024,18 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             if (loanTransaction.getLoanScheduleProcessingType() != null) {
                 loanScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();
             }
+
+            // As per requirement under SU-377 vertical loan will now behave similar to Horizontal loans. Below code is commented now
+            transactionAmountUnprocessed = processPeriodsHorizontally(loanTransaction, currency, installments,
+                    transactionAmountUnprocessed, paymentAllocationRule, transactionMappings, charges, balances);
+            /*
             if (LoanScheduleProcessingType.HORIZONTAL.equals(loanScheduleProcessingType)) {
                 transactionAmountUnprocessed = processPeriodsHorizontally(loanTransaction, currency, installments,
                         transactionAmountUnprocessed, paymentAllocationRule, transactionMappings, charges, balances);
             } else if (LoanScheduleProcessingType.VERTICAL.equals(loanScheduleProcessingType)) {
                 // Past Due and Due installments for VERTICAL loans must be processed horizontally
-                loanTransaction.setDoNotProcessAdvanceInstallments(true);
+
+                // loanTransaction.setDoNotProcessAdvanceInstallments(true);
                 transactionAmountUnprocessed = processPeriodsHorizontally(loanTransaction, currency, installments,
                         transactionAmountUnprocessed, paymentAllocationRule, transactionMappings, charges, balances);
                 // If there is still any amount left then process Advance payments vertically
@@ -1038,6 +1044,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                             transactionAmountUnprocessed, paymentAllocationRule, transactionMappings, charges, balances);
                 }
             }
+            */
             loanTransaction.updateComponents(balances.getAggregatedPrincipalPortion(), balances.getAggregatedInterestPortion(),
                     balances.getAggregatedFeeChargesPortion(), balances.getAggregatedPenaltyChargesPortion());
             loanTransaction.updateLoanTransactionToRepaymentScheduleMappings(transactionMappings);

@@ -782,7 +782,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             String[] allocationRule = allocationOrders.split(",");
             String[] convertedAllocationRule = new String[7];
             int index = 0;
-            if (loanScheduleType.equals(LoanScheduleType.PROGRESSIVE)
+            /*if (loanScheduleType.equals(LoanScheduleType.PROGRESSIVE)
                     && loanScheduleProcessingType.equals(LoanScheduleProcessingType.VERTICAL)) {
                 for (int i = 0; i < allocationRule.length; i += 3) {
                     String rule = allocationRule[i];
@@ -794,6 +794,17 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                 }
             } else if (loanScheduleType.equals(LoanScheduleType.PROGRESSIVE)
                     && loanScheduleProcessingType.equals(LoanScheduleProcessingType.HORIZONTAL)) {
+                for (int i = 0; i < 7; i++) {
+                    String rule = allocationRule[i];
+                    // PAST_DUE will always be the one captured here. Strip PAST_DUE from the string to get the
+                    // Allocation Type
+                    String allocationType = rule.substring(9);
+                    convertedAllocationRule[index] = allocationType;
+                    index++;
+                }
+            }*/
+
+            if (loanScheduleType.equals(LoanScheduleType.PROGRESSIVE)) {
                 for (int i = 0; i < 7; i++) {
                     String rule = allocationRule[i];
                     // PAST_DUE will always be the one captured here. Strip PAST_DUE from the string to get the
