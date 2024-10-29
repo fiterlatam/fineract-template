@@ -28,6 +28,5 @@ public interface AllyCompensationRepository extends JpaRepository<AllyCompensati
     Optional<AllyCompensation> findCompensationByClientId(@Param("clientAllyId") Long clientAllyId);
 
     @Query("SELECT allyCompensation.id FROM AllyCompensation allyCompensation WHERE allyCompensation.id NOT IN (SELECT MAX(allyCompensation2.id) FROM AllyCompensation allyCompensation2 GROUP BY allyCompensation2.nit,allyCompensation2.startDate,allyCompensation2.endDate)")
-    List<Long> findListDuplicateIdsToDeleteByNitDate(@Param("nit") String nit, @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
+    List<Long> findListDuplicateIdsToDeleteByNitDate();
 }

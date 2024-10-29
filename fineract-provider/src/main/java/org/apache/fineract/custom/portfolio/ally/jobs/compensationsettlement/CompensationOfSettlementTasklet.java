@@ -45,7 +45,6 @@ public class CompensationOfSettlementTasklet implements Tasklet {
             switch (frequency.toUpperCase()) {
                 case "SEMANAL":
                     startDate = endDate.minusWeeks(1).plusDays(1);
-                    System.out.println(" mingguan  " + startDate);
                 break;
                 case "QUINCENAL":
                     startDate = endDate.minusWeeks(2).plusDays(1);
@@ -60,14 +59,15 @@ public class CompensationOfSettlementTasklet implements Tasklet {
             }
 
             Optional<AllySettlementCompansationCollectionData> allySettlementCompansationData = allyCompensationReadWritePlatformService
-                    .getCompensationSettlementByNit(clientAllySettlementData.getNit(), startDate, endDate);
+                    .getCompensationSettlementByNit(clientAllySettlementData.getNit(), purchaseDate, collectionDate);
+
+            List<Long> duplicateIds = allyCompensationRepository.findListDuplicateIdsToDeleteByNitDate();
+            if (!duplicateIds.isEmpty()) {
+                allyCompensationRepository.deleteAllById(duplicateIds);
+            }
 
             if (allySettlementCompansationData.isPresent() && purchaseJobDate.isEqual(collectionJobDate)) {
-                List<Long> duplicateIds = allyCompensationRepository
-                        .findListDuplicateIdsToDeleteByNitDate(clientAllySettlementData.getNit(), purchaseDate, collectionDate);
-                if (!duplicateIds.isEmpty()) {
-                    allyCompensationRepository.deleteAllById(duplicateIds);
-                }
+
                 Optional<AllyCompensation> compensationCheck = allyCompensationRepository
                         .findBynitAndDate(clientAllySettlementData.getNit(), startDate, endDate);
                 AllyCompensation allyCompensation = new AllyCompensation();
