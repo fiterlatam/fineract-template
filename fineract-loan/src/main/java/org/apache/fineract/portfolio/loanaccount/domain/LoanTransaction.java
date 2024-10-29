@@ -22,7 +22,6 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
-
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -1017,10 +1016,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     public boolean hasPaidInstallmentInAdvance(Integer installmentNumber) {
         boolean found = false;
         if (this.loanTransactionToRepaymentScheduleMappings != null) {
-            found = this.loanTransactionToRepaymentScheduleMappings
-                    .stream()
+            found = this.loanTransactionToRepaymentScheduleMappings.stream()
                     .anyMatch(i -> i.getLoanRepaymentScheduleInstallment().getInstallmentNumber().equals(installmentNumber)
-                        && i.getPrincipalPortion(this.loan.getCurrency()).isGreaterThanZero()
+                            && i.getPrincipalPortion(this.loan.getCurrency()).isGreaterThanZero()
                             && i.getFeeChargesPortion(this.loan.getCurrency()).isZero()
                             && i.getInterestPortion(this.loan.getCurrency()).isZero()
                             && i.getPenaltyChargesPortion(this.loan.getCurrency()).isZero());
@@ -1031,14 +1029,16 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     public BigDecimal getAdvancePrincipalAmountPaidForInstallment(Integer installmentNumber) {
         BigDecimal principalPortion = BigDecimal.ZERO;
         if (this.loanTransactionToRepaymentScheduleMappings != null) {
-           Optional<LoanTransactionToRepaymentScheduleMapping> optionalMapping = this.loanTransactionToRepaymentScheduleMappings.stream().filter(i -> i.getLoanRepaymentScheduleInstallment().getInstallmentNumber().equals(installmentNumber)
-                    && i.getPrincipalPortion(this.loan.getCurrency()).isGreaterThanZero()
-                    && i.getFeeChargesPortion(this.loan.getCurrency()).isZero()
-                    && i.getInterestPortion(this.loan.getCurrency()).isZero()
-                    && i.getPenaltyChargesPortion(this.loan.getCurrency()).isZero()).findFirst();
-           if (optionalMapping.isPresent()) {
-               principalPortion = optionalMapping.get().getPrincipalPortion();
-           }
+            Optional<LoanTransactionToRepaymentScheduleMapping> optionalMapping = this.loanTransactionToRepaymentScheduleMappings.stream()
+                    .filter(i -> i.getLoanRepaymentScheduleInstallment().getInstallmentNumber().equals(installmentNumber)
+                            && i.getPrincipalPortion(this.loan.getCurrency()).isGreaterThanZero()
+                            && i.getFeeChargesPortion(this.loan.getCurrency()).isZero()
+                            && i.getInterestPortion(this.loan.getCurrency()).isZero()
+                            && i.getPenaltyChargesPortion(this.loan.getCurrency()).isZero())
+                    .findFirst();
+            if (optionalMapping.isPresent()) {
+                principalPortion = optionalMapping.get().getPrincipalPortion();
+            }
         }
         return principalPortion;
     }

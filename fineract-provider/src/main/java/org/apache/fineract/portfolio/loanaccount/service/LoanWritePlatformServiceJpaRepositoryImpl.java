@@ -1465,8 +1465,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         LocalDate recalculateFrom = null;
 
-        if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()
-                || loan.isProgressiveLoan()) {
+        if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled() || loan.isProgressiveLoan()) {
             recalculateFrom = DateUtils.isAfter(transactionToAdjust.getTransactionDate(), transactionDate) ? transactionDate
                     : transactionToAdjust.getTransactionDate();
         }

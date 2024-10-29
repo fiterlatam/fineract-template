@@ -348,10 +348,12 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         transactionDates.add(detail.getTransactionDate());
                     }
                     // Increase the outstanding balance as it was before the advance transactions
-                    tempOutstandingBalance = tempOutstandingBalance.add(detail.getTransaction().getAdvancePrincipalAmountPaidForInstallment(periodNumber));
+                    tempOutstandingBalance = tempOutstandingBalance
+                            .add(detail.getTransaction().getAdvancePrincipalAmountPaidForInstallment(periodNumber));
                 }
                 for (RecalculationDetail detail : scheduleParams.advanceTransactions()) {
-                    // If there are more than one advance transactions then start date is current transaction date while end date is next transaction date.
+                    // If there are more than one advance transactions then start date is current transaction date while
+                    // end date is next transaction date.
                     // For last advance transaction, end date is installment start date
                     LocalDate toDate;
                     if (!transactionDates.isEmpty()) {
@@ -360,12 +362,12 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     } else {
                         toDate = periodStartDateApplicableForInterest;
                     }
-                    tempOutstandingBalance = tempOutstandingBalance.minus(detail.getTransaction().getAdvancePrincipalAmountPaidForInstallment(periodNumber));
+                    tempOutstandingBalance = tempOutstandingBalance
+                            .minus(detail.getTransaction().getAdvancePrincipalAmountPaidForInstallment(periodNumber));
                     PrincipalInterest principalInterestAccruedForAdvancePmt = calculatePrincipalInterestComponentsForPeriod(calculator,
                             interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
                             totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, tempOutstandingBalance, loanApplicationTerms,
-                            periodNumber, mc, principalVariation, compoundingMap, detail.getTransactionDate(), toDate,
-                            interestRates);
+                            periodNumber, mc, principalVariation, compoundingMap, detail.getTransactionDate(), toDate, interestRates);
 
                     accruedInterestByAdvancePmt = accruedInterestByAdvancePmt.add(principalInterestAccruedForAdvancePmt.interest());
 
@@ -455,7 +457,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 PrincipalInterest endPrincipalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
                         interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
                         totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
-                        periodNumber, mc, principalVariation, compoundingMap, rescheduleFromDate, periodEndDate, interestRates, accruedInterestByAdvancePmt);
+                        periodNumber, mc, principalVariation, compoundingMap, rescheduleFromDate, periodEndDate, interestRates,
+                        accruedInterestByAdvancePmt);
 
                 final Money periodEndInterestRate = endPrincipalInterestForThisPeriod.interest();
 
@@ -3055,11 +3058,15 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         updateFixedInstallmentAmount(mc, loanApplicationTerms, instalmentNumber, outstandingBalance);
                         loanApplicationTerms.setRecalculateEMIForInstallment(installment.recalculateEMI());
                     }
-                    //// SU-377 Get a list of transactions used to pay in advance for this installment to calculate interest for this installment based on the formula
-                    // (outstanding principal * daily interest rate *days in installment) + (outstanding principal * daily interest rate * number of days between installment start date and advance transaction date)
+                    //// SU-377 Get a list of transactions used to pay in advance for this installment to calculate
+                    //// interest for this installment based on the formula
+                    // (outstanding principal * daily interest rate *days in installment) + (outstanding principal *
+                    //// daily interest rate * number of days between installment start date and advance transaction
+                    //// date)
                     // Keeping track of transactions since there could be multiple advance transactions
                     for (LoanTransaction loanTransaction : transactions) {
-                        if (loanTransaction.isPaymentTransaction() && loanTransaction.hasPaidInstallmentInAdvance(installment.getInstallmentNumber())) {
+                        if (loanTransaction.isPaymentTransaction()
+                                && loanTransaction.hasPaidInstallmentInAdvance(installment.getInstallmentNumber())) {
                             advancePayments.add(new RecalculationDetail(loanTransaction.getTransactionDate(), loanTransaction));
                         }
                     }
@@ -3614,10 +3621,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     }
 
     public abstract PrincipalInterest calculatePrincipalInterestComponentsForPeriod(PaymentPeriodsInOneYearCalculator calculator,
-                                                                                    BigDecimal interestCalculationGraceOnRepaymentPeriodFraction, Money totalCumulativePrincipal,
-                                                                                    @SuppressWarnings("unused") Money totalCumulativeInterest,
-                                                                                    @SuppressWarnings("unused") Money totalInterestDueForLoan, Money cumulatingInterestPaymentDueToGrace,
-                                                                                    Money outstandingBalance, LoanApplicationTerms loanApplicationTerms, int periodNumber, MathContext mc,
-                                                                                    TreeMap<LocalDate, Money> principalVariation, Map<LocalDate, Money> compoundingMap, LocalDate periodStartDate,
-                                                                                    LocalDate periodEndDate, Collection<LoanTermVariationsData> termVariations, Money accruedInterestForAdvancePmt);
+            BigDecimal interestCalculationGraceOnRepaymentPeriodFraction, Money totalCumulativePrincipal,
+            @SuppressWarnings("unused") Money totalCumulativeInterest, @SuppressWarnings("unused") Money totalInterestDueForLoan,
+            Money cumulatingInterestPaymentDueToGrace, Money outstandingBalance, LoanApplicationTerms loanApplicationTerms,
+            int periodNumber, MathContext mc, TreeMap<LocalDate, Money> principalVariation, Map<LocalDate, Money> compoundingMap,
+            LocalDate periodStartDate, LocalDate periodEndDate, Collection<LoanTermVariationsData> termVariations,
+            Money accruedInterestForAdvancePmt);
 }

@@ -59,7 +59,8 @@ public class PrincipalInterestCalculator {
             @SuppressWarnings("unused") final Money totalInterestDueForLoan, final Money cumulatingInterestPaymentDueToGrace,
             final Money outstandingBalance, final LoanApplicationTerms loanApplicationTerms, final int periodNumber, final MathContext mc,
             final TreeMap<LocalDate, Money> principalVariation, final Map<LocalDate, Money> compoundingMap, final LocalDate periodStartDate,
-            final LocalDate periodEndDate, final Collection<LoanTermVariationsData> termVariations, final Money accruedInterestByAdvancePmt) {
+            final LocalDate periodEndDate, final Collection<LoanTermVariationsData> termVariations,
+            final Money accruedInterestByAdvancePmt) {
 
         LocalDate interestStartDate = periodStartDate;
         Money interestForThisInstallment = totalCumulativePrincipal.zero();

@@ -99,7 +99,8 @@ public final class LoanScheduleParams {
     private int loanTermInDays;
     private final MonetaryCurrency currency;
     private final boolean applyInterestRecalculation;
-    // Transient Object to hold advance transactions while calculating advance interest. The object is cleared immediately after use
+    // Transient Object to hold advance transactions while calculating advance interest. The object is cleared
+    // immediately after use
     private Collection<RecalculationDetail> advanceTransactions;
 
     private LoanScheduleParams(final int periodNumber, final int instalmentNumber, int loanTermInDays, LocalDate periodStartDate,
