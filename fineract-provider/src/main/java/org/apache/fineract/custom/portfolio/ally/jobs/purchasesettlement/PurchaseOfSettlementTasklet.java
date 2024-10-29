@@ -52,34 +52,37 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
         LocalDate now = LocalDate.now();
 
         for (ClientAlly clientAlly : clientAllyList) {
-            String freq = LiquidationFrequency.fromInt(clientAlly.getLiquidationFrequencyCodeValueId().intValue()).toString();
+            CodeValueData frequency = codeValueReadPlatformService.retrieveCodeValue(clientAlly.getLiquidationFrequencyCodeValueId());
+            String freq = frequency.getName().replaceAll("\\s", "");
             LocalDate period;
+
             boolean isEqual = true;
             if (clientAlly.getLastJobRunPurchase() != null) {
                 period = clientAlly.getLastJobRunPurchase();
-                switch (freq) {
-                    case "WEEKLY":
+
+                switch (freq.toUpperCase()) {
+                    case "SEMANAL":
                         if (period.isBefore(now.minusWeeks(1))) {
                             period = now;
                         } else {
                             period = period.plusWeeks(1);
                         }
                     break;
-                    case "BIWEEKLY":
+                    case "QUINCENAL":
                         if (period.isBefore(now.minusWeeks(2))) {
                             period = now;
                         } else {
                             period = period.plusWeeks(2);
                         }
                     break;
-                    case "MONTHLY":
+                    case "MENSUAL":
                         if (period.isBefore(now.minusMonths(1))) {
                             period = now;
                         } else {
                             period = period.plusMonths(1);
                         }
                     break;
-                    case "DAILY":
+                    case "DIARIA":
                         if (period.isBefore(now.minusDays(1))) {
                             period = now;
                         } else {

@@ -86,8 +86,9 @@ public class AllyCompensationReadWritePlatformServiceImpl implements AllyCompens
         try {
             final AllyCompensationReadWritePlatformServiceImpl.AllyCompensationSettlementRowMaper rm = new AllyCompensationReadWritePlatformServiceImpl.AllyCompensationSettlementRowMaper();
             String purchaseCondition = "where purchase_date <= '" + endDate + "' and purchase_date >= '" + startDate + "'";
-            String collectionCondtion = "where collection_date <= '" + endDate + "' and collection_date >= '" + startDate + "'";
+            String collectionCondtion = "where collection_date between '" + startDate + "' and '" + endDate + "'";
             final String sql = "select" + rm.schema(purchaseCondition, collectionCondtion) + " Where nit = ?";
+
             return Optional.ofNullable(this.jdbcTemplate.queryForObject(sql, rm, nit));
         } catch (EmptyResultDataAccessException e) {
             log.info("result not found " + e);
@@ -134,7 +135,7 @@ public class AllyCompensationReadWritePlatformServiceImpl implements AllyCompens
         public String schema() {
             return " cca.id, cca.nit, \n"
                     + "last_job_run as lastClientCollectionJobRun, last_job_run_purchase as lastClientPurchaseJobRun\n"
-                    + ",min(maps.purchase_date) as purchaseDate, max(collection_date) as collectionDate\n"
+                    + ",max(maps.purchase_date) as purchaseDate, max(collection_date) as collectionDate, (select code_value from m_code_value where id =liquidation_frequency_id) as liquidation_frequency\n"
                     + "from custom.c_client_ally cca \n" + "inner join m_ally_collection_settlement macs on macs.client_ally_id = cca.id\n"
                     + "inner join m_ally_purchase_settlement maps on maps.client_ally_id = cca.id where last_job_run_purchase is not null and last_job_run is not null \n"
                     + "group by cca.id";
@@ -145,7 +146,8 @@ public class AllyCompensationReadWritePlatformServiceImpl implements AllyCompens
             return ClientAllySettlementData.builder().clientAllyId(rs.getLong("id")).nit(rs.getString("nit"))
                     .collectionDate(rs.getString("collectionDate")).purchaseDate(rs.getString("purchaseDate"))
                     .lastClientCollectionJobRun(rs.getString("lastClientCollectionJobRun"))
-                    .lastClientPurchaseJobRun(rs.getString("lastClientPurchaseJobRun")).build();
+                    .lastClientPurchaseJobRun(rs.getString("lastClientPurchaseJobRun"))
+                    .liquidationFrequency(rs.getString("liquidation_frequency")).build();
         }
     }
 

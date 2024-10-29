@@ -1,7 +1,6 @@
 package org.apache.fineract.custom.portfolio.ally.jobs.collectionsettlement;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -9,10 +8,11 @@ import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesColl
 import org.apache.fineract.custom.portfolio.ally.domain.*;
 import org.apache.fineract.custom.portfolio.ally.service.AllyCollectionSettlementReadWritePlatformService;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDays;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
-import org.apache.fineract.organisation.workingdays.service.WorkingDaysUtil;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -28,18 +28,20 @@ public class CollectionSettlementTasklet implements Tasklet {
     private final WorkingDaysRepositoryWrapper daysRepositoryWrapper;
     private final ClientAllyRepository clientAllyRepository;
     private final AllyCompensationRepository allyCompensationRepository;
+    private CodeValueRepositoryWrapper codeValueRepositoryWrapper;
 
     public CollectionSettlementTasklet(AllyCollectionSettlementReadWritePlatformService allyCollectionSettlementReadWritePlatformService,
             AllyCollectionSettlementRepository allyCollectionSettlementRepository,
             CodeValueReadPlatformService codeValueReadPlatformService, WorkingDaysRepositoryWrapper daysRepositoryWrapper,
-            ClientAllyRepository clientAllyRepository, AllyCompensationRepository allyCompensationRepository) {
+            ClientAllyRepository clientAllyRepository, AllyCompensationRepository allyCompensationRepository,
+            CodeValueRepositoryWrapper codeValueRepositoryWrapper) {
         this.allyCollectionSettlementReadWritePlatformService = allyCollectionSettlementReadWritePlatformService;
         this.allyCollectionSettlementRepository = allyCollectionSettlementRepository;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.daysRepositoryWrapper = daysRepositoryWrapper;
         this.clientAllyRepository = clientAllyRepository;
         this.allyCompensationRepository = allyCompensationRepository;
-
+        this.codeValueRepositoryWrapper = codeValueRepositoryWrapper;
     }
 
     @Override
@@ -51,36 +53,46 @@ public class CollectionSettlementTasklet implements Tasklet {
 
         for (ClientAllyPointOfSalesCollectionData data : collectionData) {
             LocalDate collectDate = LocalDate.parse(data.getCollectionDate());
+
             List<AllyCollectionSettlement> existingCollections = allyCollectionSettlementRepository
                     .findByLoanIdAndCollectionDate(data.getLoanId(), collectDate);
-            String freq = LiquidationFrequency.fromInt(data.getLiquidationFrequencyId().intValue()).toString();
+
+            if (existingCollections.size() > 1) {
+                AllyCollectionSettlement collectionToKeep = existingCollections.get(0);
+                existingCollections.remove(0);
+                allyCollectionSettlementRepository.deleteAll(existingCollections);
+                existingCollections = List.of(collectionToKeep);
+            }
+
+            CodeValue codeValue = codeValueRepositoryWrapper.findOneWithNotFoundDetection(data.getLiquidationFrequencyId());
+            String freq = codeValue.getLabel().replaceAll("\\s", "");
             LocalDate period;
             boolean isEqual = true;
             if (data.getLastJobsRun() != null) {
                 period = LocalDate.parse(data.getLastJobsRun());
-                switch (freq) {
-                    case "WEEKLY":
+                switch (freq.toUpperCase()) {
+                    case "SEMANAL":
                         if (period.isBefore(now.minusWeeks(1))) {
                             period = now;
                         } else {
                             period = period.plusWeeks(1);
                         }
                     break;
-                    case "BIWEEKLY":
+                    case "QUINCENAL":
                         if (period.isBefore(now.minusWeeks(2))) {
                             period = now;
                         } else {
                             period = period.plusWeeks(2);
                         }
                     break;
-                    case "MONTHLY":
+                    case "MENSUAL":
                         if (period.isBefore(now.minusMonths(1))) {
                             period = now;
                         } else {
                             period = period.plusMonths(1);
                         }
                     break;
-                    case "DAILY":
+                    case "DIARIA":
                         if (period.isBefore(now.minusDays(1))) {
                             period = now;
                         } else {
@@ -98,37 +110,16 @@ public class CollectionSettlementTasklet implements Tasklet {
             String[] arrayCount = arrayweekdays[1].split(",");
             Integer countWokringDay = arrayCount.length - 1;
 
-            if (!WorkingDaysUtil.isWorkingDay(workingDays, period)) {
-                do {
-                    period = period.plusDays(1);
-                } while (period.getDayOfWeek().getValue() >= countWokringDay);
-
-            }
             isEqual = now.isEqual(period);
+            boolean status = false;
+            if (data.getLoanStatusId() == 600) {
+                status = true;
+            }
+
             if (isEqual) {
-                List<AllyCollectionSettlement> duplicatesToRemove = new ArrayList<>();
-                boolean isNewCollection = true;
-                boolean status = false;
-                if (data.getLoanStatusId() == 600) {
-                    status = true;
-                }
-                for (AllyCollectionSettlement existingCollection : existingCollections) {
-                    if (existingCollection.getSettlementStatus() == null) {
-                        existingCollection.setSettlementStatus(status);
-                        allyCollectionSettlementReadWritePlatformService.update(existingCollection);
-                    }
-                    if (isSameCollection(existingCollection, data, collectDate)) {
-                        duplicatesToRemove.add(existingCollection);
-                    } else {
-                        isNewCollection = false;
-                    }
-                }
-
-                if (!duplicatesToRemove.isEmpty()) {
-                    allyCollectionSettlementRepository.deleteAll(duplicatesToRemove);
-                }
-
-                if (isNewCollection || existingCollections.isEmpty()) {
+                // Check if we already have a record for this loan and date
+                if (existingCollections.isEmpty()) {
+                    // Only create new if no existing record
                     AllyCollectionSettlement allyCollectionSettlement = new AllyCollectionSettlement();
                     CodeValueData city = codeValueReadPlatformService.retrieveCodeValue(data.getCityId());
                     allyCollectionSettlement.setCollectionDate(collectDate);
@@ -146,14 +137,23 @@ public class CollectionSettlementTasklet implements Tasklet {
                     allyCollectionSettlement.setChannelId(data.getChannelId());
                     allyCollectionSettlement.setSettlementStatus(status);
                     allyCollectionSettlementReadWritePlatformService.create(allyCollectionSettlement);
+                } else {
+                    AllyCollectionSettlement existingCollection = existingCollections.get(0);
+                    if (existingCollection.getSettlementStatus() == null
+                            || (!existingCollection.getSettlementStatus() && data.getLoanStatusId() == 600)) {
+                        existingCollection.setSettlementStatus(status);
+                        allyCollectionSettlementReadWritePlatformService.update(existingCollection);
+                    }
                 }
 
                 Optional<AllyCollectionSettlement> getlastCollection = allyCollectionSettlementRepository
                         .findCollectionByLoanId(data.getLoanId());
                 if (getlastCollection.isPresent()) {
                     AllyCollectionSettlement lastCollection = getlastCollection.get();
-                    allyCollectionSettlementRepository.deleteByLoanIdAndNotCollectionDate(lastCollection.getLoanId(),
-                            lastCollection.getCollectionDate());
+                    if (lastCollection.getSettlementStatus()) {
+                        allyCollectionSettlementRepository.deleteByLoanIdAndNotCollectionDate(lastCollection.getLoanId(),
+                                lastCollection.getCollectionDate());
+                    }
                 }
 
                 Optional<AllyCompensation> getallyCompensation = allyCompensationRepository
@@ -162,7 +162,10 @@ public class CollectionSettlementTasklet implements Tasklet {
                     AllyCompensation allyCompensation = getallyCompensation.get();
                     if (allyCompensation.getSettlementStatus() != null) {
                         if (!allyCompensation.getSettlementStatus() && data.getClientId() == allyCompensation.getClientAllyId()
-                                && !allyCompensation.getEndDate().isEqual(collectDate)) {
+                                && (collectDate.isBefore(allyCompensation.getEndDate())
+                                        || collectDate.isEqual(allyCompensation.getEndDate()))
+                                && (collectDate.isEqual(allyCompensation.getEndDate())
+                                        || collectDate.isAfter(allyCompensation.getEndDate()))) {
                             allyCollectionSettlementRepository.deleteByLoanIdAndNotCollectionDate(data.getLoanId(), collectDate);
                         }
                     }
@@ -174,7 +177,6 @@ public class CollectionSettlementTasklet implements Tasklet {
                     clientAllyjobs.setLastJobRun(period);
                     clientAllyRepository.save(clientAllyjobs);
                 }
-
             }
         }
         return RepeatStatus.FINISHED;
@@ -182,7 +184,6 @@ public class CollectionSettlementTasklet implements Tasklet {
 
     private boolean isSameCollection(AllyCollectionSettlement existingCollection, ClientAllyPointOfSalesCollectionData data,
             LocalDate collectDate) {
-        return existingCollection.getCollectionDate().equals(collectDate) && existingCollection.getLoanId().equals(data.getLoanId())
-                && existingCollection.getCollectionAmount().equals(data.getAmount());
+        return existingCollection.getCollectionDate().equals(collectDate) && existingCollection.getLoanId() == data.getLoanId();
     }
 }
