@@ -790,10 +790,17 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 continue;
             }
 
+            /// because the due date of the last installment is the same as the start date of a new installement we need
+            /// to ensure that we don't
+            // post charges on a date that is the due date of the last installement
+
             for (LoanCharge loanCharge : charges) {
                 LoanInstallmentCharge loanInstallmentCharge = loanCharge.getInstallmentLoanCharge(installmentNumber);
 
                 LocalDate installmentDate = installment.getFromDate();
+                // if the installment date is the same as the due date of the last installment we should move the date
+                // to the next day
+                installmentDate = installmentDate.plusDays(1);
 
                 applyInstallmentCharge(loanInstallmentCharge, installment, loanCharge, installmentDate);
             }
@@ -2802,8 +2809,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         // if (dailyInterest.compareTo(BigDecimal.ZERO) > 0) {
         if (dailyInterest != null) {
             Money dailyInterestMoney = Money.of(getCurrency(), dailyInterest);
-            log.info("Applying daily interest for loan with id {} with amount {} converted to {} on date {} ", getId(), dailyInterest,
-                    dailyInterestMoney, currentDate);
             LoanTransaction dailyAccrualTransaction = LoanTransaction.accrueDailyInterest(getOffice(), this, dailyInterestMoney,
                     currentDate, externalIdentifier);
             addLoanTransaction(dailyAccrualTransaction);
