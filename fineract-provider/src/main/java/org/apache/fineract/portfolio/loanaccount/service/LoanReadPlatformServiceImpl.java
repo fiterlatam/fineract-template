@@ -3188,7 +3188,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         final String disbursementAmountString = Money.of(loanBasicDetails.getCurrency(), disbursementAmount).toString();
 
-        final Map<String, String> amortizationTypes = Map.of("Equal installments", "Pagos de cuotas iguales - Sistema Frances",
+        final Map<String, String> amortizationTypes = Map.of("Equal installments", "Pagos de cuotas iguales - Sistema Francés",
                 "Equal principal payments", "Pagos de capital iguales - Sistema Aleman", "Capital at end",
                 "Capital al final - Sistema Americano");
         String templateName;
