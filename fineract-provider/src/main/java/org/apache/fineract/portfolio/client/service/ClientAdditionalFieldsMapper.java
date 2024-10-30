@@ -41,6 +41,7 @@ public class ClientAdditionalFieldsMapper implements RowMapper<ClientAdditionalF
                 tipo.code_value AS tipo,
                 ccp."Cedula" AS cedula,
                 COALESCE(ccp."Cupo aprobado", cce."Cupo") AS cupo,
+                COALESCE(ccp."Cupo otros prestamos", cce."Cupo otros prestamos") AS otherLoansCupo,
                 mc.legal_form_enum AS legalForm,
                 mc.blocking_reason_id AS blockingReasonId
                 FROM m_client mc
@@ -57,6 +58,7 @@ public class ClientAdditionalFieldsMapper implements RowMapper<ClientAdditionalF
         final String nit = rs.getString("nit");
         final String cedula = rs.getString("cedula");
         final BigDecimal cupo = rs.getBigDecimal("cupo");
+        final BigDecimal otherLoansCupo = rs.getBigDecimal("otherLoansCupo");
         final int statusInt = rs.getInt("status");
         final Long blockingReasonId = JdbcSupport.getLong(rs, "blockingReasonId");
         EnumOptionData statusData;
@@ -67,6 +69,6 @@ public class ClientAdditionalFieldsMapper implements RowMapper<ClientAdditionalF
         }
         final String clientName = rs.getString("clientName");
         final Integer legalForm = JdbcSupport.getInteger(rs, "legalForm");
-        return new ClientAdditionalFieldsData(clientId, tipo, nit, cedula, cupo, statusData, clientName, legalForm);
+        return new ClientAdditionalFieldsData(clientId, tipo, nit, cedula, cupo, otherLoansCupo, statusData, clientName, legalForm);
     }
 }

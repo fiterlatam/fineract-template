@@ -38,6 +38,7 @@ public class ClientAdditionalFieldsData {
     private String nit;
     private String cedula;
     private BigDecimal cupo;
+    private BigDecimal otherLoansCupo;
     private EnumOptionData status;
     private String clientName;
     private Integer legalForm;
