@@ -1049,6 +1049,11 @@ public class Charge extends AbstractPersistableCustom {
                 throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
                         this.getName());
             }
+
+            if (!this.isPenalty() && !ChargeTimeType.fromInt(this.getChargeTimeType()).isInstalmentFee()) {
+                throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
+                        this.getName());
+            }
         }
     }
 
