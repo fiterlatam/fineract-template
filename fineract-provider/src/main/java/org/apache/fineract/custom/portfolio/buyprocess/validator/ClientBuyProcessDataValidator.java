@@ -235,8 +235,10 @@ public class ClientBuyProcessDataValidator {
                 String mifosChannel = "Mifos";
                 if (getchannel.isPresent()) {
                     Channel channel = getchannel.get();
-                    if (mifosChannel.toUpperCase().equals(channel.getName().toUpperCase())) {
-                        isMifosChannel = true;
+                    if (mifosChannel.equalsIgnoreCase(channel.getName())) {
+                        List<Channel> channelRepayment = loanProduct.getRepaymentChannels();
+                        isMifosChannel = channelRepayment.stream()
+                                .anyMatch(repaymentchannel -> repaymentchannel.getName().equalsIgnoreCase(repaymentchannel.getName()));
                     }
                 } else {
                     baseDataValidator.reset().parameter(LoanApiConstants.CHANNEL_HASH).failWithCode("Ajuste sólo es permitido desde Mifos",
