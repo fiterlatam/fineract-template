@@ -796,7 +796,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 LocalDate installmentDate = installment.getFromDate();
                 // if the installment date is the same as the due date of the last installment we should move the date
                 // to the next day
-                installmentDate = installmentDate.plusDays(1);
+                if (installmentNumber > 1) {
+                    installmentDate = installmentDate.plusDays(1);
+                }
 
                 applyInstallmentCharge(loanInstallmentCharge, installment, loanCharge, installmentDate);
             }
