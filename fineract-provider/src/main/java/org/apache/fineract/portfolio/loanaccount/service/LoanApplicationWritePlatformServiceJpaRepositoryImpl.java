@@ -222,19 +222,24 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             boolean isMifosChannel = false;
             Long mifosChannelId = null;
             String mifosChannelHash = null;
+            String mifosChannel = "Mifos";
             List<Channel> channels = loanProduct.getRepaymentChannels();
             for (Channel channel : channels) {
-                if (channel.getName().equals("Mifos")) {
+                if (channel.getName().equalsIgnoreCase(mifosChannel)) {
                     isMifosChannel = true;
                     mifosChannelId = channel.getId();
                     mifosChannelHash = channel.getHash();
                 }
             }
 
-            if (loanProduct.getName().equals("Ajuste") && isMifosChannel) {
-                isAjuste = true;
+            if (loanProduct.getName().equals("Ajuste")) {
+                if (isMifosChannel) {
+                    isAjuste = true;
+                } else {
+                    throw new GeneralPlatformDomainRuleException("Ajuste sólo es permitido desde Mifos",
+                            "Ajuste sólo es permitido desde Mifos");
+                }
             }
-
             if (this.fromJsonHelper.parameterExists("isTopup", command.parsedJson())) {
                 isTopUp = this.fromJsonHelper.extractBooleanNamed("isTopup", command.parsedJson());
             }

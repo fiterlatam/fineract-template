@@ -27,6 +27,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelRepository;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformation;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformation;
@@ -55,6 +57,7 @@ import org.apache.fineract.portfolio.client.domain.ClientRepository;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
+import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -70,6 +73,7 @@ public class ClientBuyProcessDataValidator {
     private final ClientRepository clientRepository;
     private final LoanProductRepository loanProductRepository;
     private final ChargeReadPlatformService chargeReadPlatformService;
+    private ChannelRepository channelRepository;
 
     @Autowired
     public ClientBuyProcessDataValidator(final FromJsonHelper fromApiJsonHelper, final PlatformSecurityContext platformSecurityContext,
@@ -77,7 +81,7 @@ public class ClientBuyProcessDataValidator {
             final ClientAdditionalInformationRepository camposClienteEmpresaRepository,
             final IndividualAdditionalInformationRepository individualAdditionalInformationRepository,
             final ClientRepository clientRepository, final LoanProductRepository loanProductRepository,
-            final ChargeReadPlatformService chargeReadPlatformService) {
+            final ChargeReadPlatformService chargeReadPlatformService, ChannelRepository channelRepository) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.platformSecurityContext = platformSecurityContext;
         this.clientAllyPointOfSalesRepository = clientAllyPointOfSalesRepository;
@@ -86,6 +90,7 @@ public class ClientBuyProcessDataValidator {
         this.clientRepository = clientRepository;
         this.loanProductRepository = loanProductRepository;
         this.chargeReadPlatformService = chargeReadPlatformService;
+        this.channelRepository = channelRepository;
     }
 
     @Autowired
@@ -214,8 +219,37 @@ public class ClientBuyProcessDataValidator {
                 element);
 
         String channelHash = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.CHANNEL_HASH, element);
+        boolean isMifosChannel = false;
         if (channelHash == null) {
             channelHash = this.platformSecurityContext.getApiRequestChannel();
+        }
+
+        if (productId != null) {
+
+            String finalChannelHash = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.CHANNEL_HASH, element);
+            LoanProduct loanProduct = this.loanProductRepository.findById(productId)
+                    .orElseThrow(() -> new LoanProductNotFoundException(productId));
+
+            if (loanProduct.getName().equals("Ajuste")) {
+                Optional<Channel> getchannel = channelRepository.findByHash(finalChannelHash);
+                String mifosChannel = "Mifos";
+                if (getchannel.isPresent()) {
+                    Channel channel = getchannel.get();
+                    if (mifosChannel.equalsIgnoreCase(channel.getName())) {
+                        List<Channel> channelRepayment = loanProduct.getRepaymentChannels();
+                        isMifosChannel = channelRepayment.stream()
+                                .anyMatch(repaymentchannel -> repaymentchannel.getName().equalsIgnoreCase(repaymentchannel.getName()));
+                    }
+                } else {
+                    baseDataValidator.reset().parameter(LoanApiConstants.CHANNEL_HASH).failWithCode("Ajuste sólo es permitido desde Mifos",
+                            "Ajuste sólo es permitido desde Mifos");
+                }
+                if (!isMifosChannel) {
+                    baseDataValidator.reset().parameter(LoanApiConstants.CHANNEL_HASH).failWithCode("Ajuste sólo es permitido desde Mifos",
+                            "Ajuste sólo es permitido desde Mifos");
+                }
+            }
+
         }
 
         BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(ClientBuyProcessApiConstants.amountParamName, element);
@@ -225,6 +259,7 @@ public class ClientBuyProcessDataValidator {
             Optional<LoanProduct> entityOpt = loanProductRepository.findById(productId);
             if (entityOpt.isPresent()) {
                 LoanProduct productEntity = entityOpt.get();
+
                 if ((codigoSeguro != null && codigoSeguro > 0) && (cedulaSeguroVoluntario != null && cedulaSeguroVoluntario > 0)) {
                     final Collection<ChargeData> insuranceCharges = this.chargeReadPlatformService
                             .retrieveChargesByInsuranceCode(codigoSeguro);
