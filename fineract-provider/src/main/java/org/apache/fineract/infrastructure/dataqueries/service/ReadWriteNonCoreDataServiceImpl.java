@@ -60,6 +60,7 @@ import jakarta.persistence.PersistenceException;
 import jakarta.validation.constraints.NotNull;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1439,6 +1440,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         DatabaseType dialect = sqlGenerator.getDialect();
         ArrayList<String> updateColumns = new ArrayList<>(List.of(UPDATEDAT_FIELD_NAME));
         ArrayList<Object> params = new ArrayList<>(List.of(DateUtils.getAuditLocalDateTime()));
+        BigDecimal cupo = BigDecimal.ZERO;
         final HashMap<String, Object> changes = new HashMap<>();
         for (Map.Entry<String, String> entry : dataParams.entrySet()) {
             if (isTechnicalParam(entry.getKey())) {
@@ -1457,6 +1459,12 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 log.debug("Ignore change on update {}:{}", dataTableName, columnName);
                 continue;
             }
+            if (columnName.equals("Cupo aprobado") || columnName.equals("Cupo")) {
+                if (columnValue instanceof Number) {
+                    cupo = BigDecimal.valueOf((Integer) columnValue);
+                }
+
+            }
             updateColumns.add(columnName);
             params.add(columnHeader.getColumnType().toJdbcValue(dialect, columnValue, false));
             changes.put(columnName, columnValue);
@@ -1465,6 +1473,17 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         if (!updateColumns.isEmpty()) {
             ResultsetColumnHeaderData pkColumn = SearchUtil.getFiltered(columnHeaders, ResultsetColumnHeaderData::getIsColumnPrimaryKey);
             params.add(primaryKey);
+            BigDecimal minCupo = this.minCupoAvail(commandProcessingResult.getClientId()).setScale(2, RoundingMode.HALF_UP);
+
+            if (cupo.compareTo(BigDecimal.ZERO) > 0) {
+                if (cupo.compareTo(minCupo) < 0) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.cupo.limit.exceeded",
+                            String.format("Límite de cupo total excedido. Límite disponible: %s y Total del monto principal pendiente: %s",
+                                    minCupo, minCupo),
+                            minCupo.toString());
+                }
+            }
+
             final String sql = sqlGenerator.buildUpdate(dataTableName, updateColumns, headersByName) + " WHERE " + pkColumn.getColumnName()
                     + " = ?";
             int updated;
@@ -1509,6 +1528,21 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 .withLoanId(commandProcessingResult.getLoanId()) //
                 .withTransactionId(commandProcessingResult.getTransactionId()) //
                 .with(changes).build();
+    }
+
+    @Transactional
+    private BigDecimal minCupoAvail(Long clientId) {
+        final String sql = """
+                    SELECT
+                    	COALESCE(SUM(ml.principal_outstanding_derived),0) AS totalOutstandingPrincipalAmount
+                    FROM m_loan ml
+                    INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                    WHERE ml.loan_status_id = 300 AND ml.client_id = ?
+                """;
+        final BigDecimal totalOutstandingPrincipalAmount = ObjectUtils
+                .defaultIfNull(this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId), BigDecimal.ZERO);
+        // final BigDecimal cupoBalance = cupo.subtract(totalOutstandingPrincipalAmount);
+        return totalOutstandingPrincipalAmount;
     }
 
     private static boolean isUserUpdatable(@NotNull EntityTables entityTable, @NotNull ResultsetColumnHeaderData columnHeader) {

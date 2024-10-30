@@ -2837,21 +2837,20 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Money purchaseTotalOutstandingPrincipalAmount;
             final LoanProduct loanProduct = loan.loanProduct();
             final CodeValue loanProductType = loanProduct.getProductType();
-            if (loanProductType != null
-                    && LoanProductType.SUMAS_VEHICULOS.getCode().equals(loanProductType.getLabel())
+            if (loanProductType != null && LoanProductType.SUMAS_VEHICULOS.getCode().equals(loanProductType.getLabel())
                     && loanProduct.isUseOtherLoansCupo()) {
                 sql = sql + " AND mcv.code_value = ? AND mpl.use_other_loans_cupo = true ";
                 cupo = Money.of(currency, loanAdditionalFieldsData.getOtherLoansCupo());
                 advanceTotalOutstandingPrincipalAmount = Money.of(currency,
                         this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, true, LoanProductType.SUMAS_VEHICULOS.getCode()));
-                purchaseTotalOutstandingPrincipalAmount = Money.of(currency,
-                        this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, false, LoanProductType.SUMAS_VEHICULOS.getCode()));
+                purchaseTotalOutstandingPrincipalAmount = Money.of(currency, this.jdbcTemplate.queryForObject(sql, BigDecimal.class,
+                        clientId, false, LoanProductType.SUMAS_VEHICULOS.getCode()));
             } else {
                 cupo = Money.of(currency, loanAdditionalFieldsData.getCupo());
                 advanceTotalOutstandingPrincipalAmount = Money.of(currency,
                         this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, true));
-                purchaseTotalOutstandingPrincipalAmount = Money.of(currency, this.jdbcTemplate.queryForObject(sql, BigDecimal.class,
-                        clientId, false));
+                purchaseTotalOutstandingPrincipalAmount = Money.of(currency,
+                        this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, false));
             }
 
             if (isAdvanceLoanProduct) {

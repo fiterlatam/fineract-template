@@ -186,7 +186,8 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             loanProduct.setTransactionProcessingStrategyName(
                     loanRepaymentScheduleTransactionProcessorFactory.determineProcessor(loanTransactionProcessingStrategyCode).getName());
             if (productType != null && LoanProductType.SUMAS_VEHICULOS.getCode().equals(productType.getLabel())) {
-                final boolean useOtherLoansCupo = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME);
+                final boolean useOtherLoansCupo = command
+                        .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME);
                 loanProduct.setUseOtherLoansCupo(useOtherLoansCupo);
             }
             loanProduct.setProductType(productType);
@@ -402,7 +403,8 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             if (changes.containsKey(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME)) {
                 final CodeValue productTypeValue = product.getProductType();
                 if (productTypeValue != null && LoanProductType.SUMAS_VEHICULOS.getCode().equals(productTypeValue.getLabel())) {
-                    final boolean useOtherLoansCupo = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME);
+                    final boolean useOtherLoansCupo = command
+                            .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME);
                     product.setUseOtherLoansCupo(useOtherLoansCupo);
                 }
             }

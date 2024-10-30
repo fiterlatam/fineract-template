@@ -321,18 +321,20 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                         LEFT JOIN m_code_value mcv ON mcv.id = mpl.product_type
                         WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mpl.use_other_loans_cupo = ?
                     """;
-            final BigDecimal totalOutstandingPrincipalAmount = ObjectUtils.defaultIfNull(
-                    this.jdbcTemplate.queryForObject(baseSQL, BigDecimal.class, clientId, false),
-                    BigDecimal.ZERO);
+            final BigDecimal totalOutstandingPrincipalAmount = ObjectUtils
+                    .defaultIfNull(this.jdbcTemplate.queryForObject(baseSQL, BigDecimal.class, clientId, false), BigDecimal.ZERO);
+            if (totalOutstandingPrincipalAmount.compareTo(BigDecimal.ZERO) < 0) {
+                totalOutstandingPrincipalAmount.abs();
+            }
             final BigDecimal cupoBalance = cupo.subtract(totalOutstandingPrincipalAmount);
             clientData.setCupoBalance(cupoBalance);
             AdvanceQuotaConfigurationData advanceQuotaConfigurationData = this.loanProductReadPlatformService
                     .retrieveAdvanceQuotaConfigurationData();
             BigDecimal advanceCupoBalance = cupoBalance;
             if (advanceQuotaConfigurationData.getEnabled()) {
-               final String advanceSQL = baseSQL + " AND mpl.is_advance = TRUE";
-                final BigDecimal advanceOutstandingPrincipalAmount = ObjectUtils.defaultIfNull(this.jdbcTemplate.queryForObject(advanceSQL,
-                        BigDecimal.class, clientId, false), BigDecimal.ZERO);
+                final String advanceSQL = baseSQL + " AND mpl.is_advance = TRUE";
+                final BigDecimal advanceOutstandingPrincipalAmount = ObjectUtils
+                        .defaultIfNull(this.jdbcTemplate.queryForObject(advanceSQL, BigDecimal.class, clientId, false), BigDecimal.ZERO);
                 final BigDecimal percentageValue = advanceQuotaConfigurationData.getPercentageValue();
                 final BigDecimal advanceCupo = ObjectUtils.defaultIfNull(percentageValue, BigDecimal.ZERO).multiply(cupo)
                         .divide(BigDecimal.valueOf(100), MoneyHelper.getRoundingMode());
