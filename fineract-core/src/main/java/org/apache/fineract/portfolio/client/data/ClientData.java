@@ -132,6 +132,8 @@ public final class ClientData implements Comparable<ClientData>, Serializable {
     private BigDecimal cupoBalance;
     private BigDecimal advanceCupoBalance;
     private BigDecimal cupoMaxAmount;
+    private BigDecimal otherLoansCupo;
+    private BigDecimal otherLoansCupoBalance;
 
     public static ClientData importClientEntityInstance(Long legalFormId, Integer rowIndex, String fullname, Long officeId,
             Long clientTypeId, Long clientClassificationId, Long staffId, Boolean active, LocalDate activationDate,

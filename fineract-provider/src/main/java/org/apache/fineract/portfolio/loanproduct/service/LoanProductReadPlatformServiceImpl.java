@@ -384,7 +384,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                                 	lp.is_purchase_charge AS "isPurchaseCharge",
                                 	lp.voluntary_insurance_id AS "voluntaryInsuranceId",
                                 	lp.is_interest_starts_after_grace_period AS "isInterestStartsAfterGracePeriod",
-                                	lp.max_vehicle_cupo AS "vehicleCupo"
+                                	lp.use_other_loans_cupo AS "useOtherLoansCupo"
                                 FROM m_product_loan lp
                                 JOIN m_currency curr ON curr.code = lp.currency_code
                                 LEFT JOIN m_fund f ON f.id = lp.fund_id
@@ -650,7 +650,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                 final String productTypeValue = rs.getString("productTypeValue");
                 productType = CodeValueData.instance(productTypeId, productTypeValue);
             }
-            final BigDecimal vehicleCupo = rs.getBigDecimal("vehicleCupo");
+            final boolean useOtherLoansCupo = rs.getBoolean("useOtherLoansCupo");
             final boolean advance = rs.getBoolean("advance");
             final boolean requirePoints = rs.getBoolean("requirePoints");
 
@@ -687,7 +687,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             loanProductData.setOverdueAmountForArrearsConsideration(overdueAmountForArrears);
             loanProductData.setExtendTermForMonthlyRepayments(extendTermForMonthlyRepayments);
             loanProductData.setProductType(productType);
-            loanProductData.setVehicleCupo(vehicleCupo);
+            loanProductData.setUseOtherLoansCupo(useOtherLoansCupo);
             loanProductData.setAdvance(advance);
             loanProductData.setRequirePoints(requirePoints);
             loanProductData.setCustomAllowCreateOrDisburse(customAllowCreateOrDisburse);
