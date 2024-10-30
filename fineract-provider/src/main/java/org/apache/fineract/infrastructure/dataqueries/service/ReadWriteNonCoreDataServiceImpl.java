@@ -1474,7 +1474,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
             ResultsetColumnHeaderData pkColumn = SearchUtil.getFiltered(columnHeaders, ResultsetColumnHeaderData::getIsColumnPrimaryKey);
             params.add(primaryKey);
             BigDecimal minCupo = this.minCupoAvail(commandProcessingResult.getClientId()).setScale(2, RoundingMode.HALF_UP);
-            System.out.println("min " + cupo + " " + minCupo);
+
             if (cupo.compareTo(BigDecimal.ZERO) > 0) {
                 if (cupo.compareTo(minCupo) < 0) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.cupo.limit.exceeded",
