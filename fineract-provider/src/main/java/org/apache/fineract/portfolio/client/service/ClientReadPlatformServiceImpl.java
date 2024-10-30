@@ -313,17 +313,16 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final ClientAdditionalFieldsData loanAdditionalFieldsData = this.retrieveClientAdditionalData(clientId);
             final BigDecimal cupo = ObjectUtils.defaultIfNull(loanAdditionalFieldsData.getCupo(), BigDecimal.ZERO);
             clientData.setCupoMaxAmount(cupo);
-            final String sql = """
+            final String baseSQL = """
                         SELECT
                         	COALESCE(SUM(ml.principal_outstanding_derived),0) AS totalOutstandingPrincipalAmount
                         FROM m_loan ml
                         INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
                         LEFT JOIN m_code_value mcv ON mcv.id = mpl.product_type
-                        WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mcv.code_value != ?
+                        WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mpl.use_other_loans_cupo = ?
                     """;
-            final BigDecimal totalOutstandingPrincipalAmount = ObjectUtils.defaultIfNull(
-                    this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, LoanProductType.SUMAS_VEHICULOS.getCode()),
-                    BigDecimal.ZERO);
+            final BigDecimal totalOutstandingPrincipalAmount = ObjectUtils
+                    .defaultIfNull(this.jdbcTemplate.queryForObject(baseSQL, BigDecimal.class, clientId, false), BigDecimal.ZERO);
             if (totalOutstandingPrincipalAmount.compareTo(BigDecimal.ZERO) < 0) {
                 totalOutstandingPrincipalAmount.abs();
             }
@@ -333,9 +332,9 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     .retrieveAdvanceQuotaConfigurationData();
             BigDecimal advanceCupoBalance = cupoBalance;
             if (advanceQuotaConfigurationData.getEnabled()) {
-                final BigDecimal advanceOutstandingPrincipalAmount = ObjectUtils.defaultIfNull(this.jdbcTemplate.queryForObject(
-                        "SELECT COALESCE(SUM(ml.principal_outstanding_derived), 0) AS totalOutstandingPrincipalAmount FROM m_loan ml  INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id WHERE ml.loan_status_id = 300 AND mpl.is_advance = TRUE AND ml.client_id = ?",
-                        BigDecimal.class, new Object[] { clientId }), BigDecimal.ZERO);
+                final String advanceSQL = baseSQL + " AND mpl.is_advance = TRUE";
+                final BigDecimal advanceOutstandingPrincipalAmount = ObjectUtils
+                        .defaultIfNull(this.jdbcTemplate.queryForObject(advanceSQL, BigDecimal.class, clientId, false), BigDecimal.ZERO);
                 final BigDecimal percentageValue = advanceQuotaConfigurationData.getPercentageValue();
                 final BigDecimal advanceCupo = ObjectUtils.defaultIfNull(percentageValue, BigDecimal.ZERO).multiply(cupo)
                         .divide(BigDecimal.valueOf(100), MoneyHelper.getRoundingMode());
@@ -343,6 +342,14 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             }
             clientData.setAdvanceCupoBalance(advanceCupoBalance);
             clientData.setIdNumber(ObjectUtils.defaultIfNull(loanAdditionalFieldsData.getNit(), loanAdditionalFieldsData.getCedula()));
+
+            final BigDecimal otherLoansCupo = loanAdditionalFieldsData.getOtherLoansCupo();
+            final String otherLoanSQL = baseSQL + " AND mcv.code_value = ? ";
+            final BigDecimal otherLoansOutstandingPrincipalAmount = ObjectUtils.defaultIfNull(this.jdbcTemplate.queryForObject(otherLoanSQL,
+                    BigDecimal.class, clientId, true, LoanProductType.SUMAS_VEHICULOS.getCode()), BigDecimal.ZERO);
+            final BigDecimal otherLoansCupoBalance = otherLoansCupo.subtract(otherLoansOutstandingPrincipalAmount);
+            clientData.setOtherLoansCupoBalance(otherLoansCupoBalance);
+            clientData.setOtherLoansCupo(otherLoansCupo);
             return clientData;
 
         } catch (final EmptyResultDataAccessException e) {

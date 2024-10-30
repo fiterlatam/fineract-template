@@ -2837,21 +2837,20 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Money purchaseTotalOutstandingPrincipalAmount;
             final LoanProduct loanProduct = loan.loanProduct();
             final CodeValue loanProductType = loanProduct.getProductType();
-            if (loanProductType != null && LoanProductType.SUMAS_VEHICULOS.getCode().equals(loanProductType.getLabel())) {
-                sql = sql + " AND mpl.id = ? ";
-                final Long loanProductId = loanProduct.getId();
-                cupo = Money.of(currency, loanProduct.getMaxVehicleCupo());
-                advanceTotalOutstandingPrincipalAmount = Money.of(currency,
-                        this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, true, loanProductId));
-                purchaseTotalOutstandingPrincipalAmount = Money.of(currency,
-                        this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, false, loanProductId));
-            } else {
-                cupo = Money.of(currency, loanAdditionalFieldsData.getCupo());
-                sql = sql + " AND mcv.code_value != ? ";
+            if (loanProductType != null && LoanProductType.SUMAS_VEHICULOS.getCode().equals(loanProductType.getLabel())
+                    && loanProduct.isUseOtherLoansCupo()) {
+                sql = sql + " AND mcv.code_value = ? AND mpl.use_other_loans_cupo = true ";
+                cupo = Money.of(currency, loanAdditionalFieldsData.getOtherLoansCupo());
                 advanceTotalOutstandingPrincipalAmount = Money.of(currency,
                         this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, true, LoanProductType.SUMAS_VEHICULOS.getCode()));
                 purchaseTotalOutstandingPrincipalAmount = Money.of(currency, this.jdbcTemplate.queryForObject(sql, BigDecimal.class,
                         clientId, false, LoanProductType.SUMAS_VEHICULOS.getCode()));
+            } else {
+                cupo = Money.of(currency, loanAdditionalFieldsData.getCupo());
+                advanceTotalOutstandingPrincipalAmount = Money.of(currency,
+                        this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, true));
+                purchaseTotalOutstandingPrincipalAmount = Money.of(currency,
+                        this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, false));
             }
 
             if (isAdvanceLoanProduct) {
@@ -2865,7 +2864,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     .retrieveAdvanceQuotaConfigurationData();
             final Money advanceQuotaPercentage = Money.of(currency, advanceQuotaConfigurationData.getPercentageValue());
             final boolean isAdvanceQuotaEnabled = advanceQuotaConfigurationData.getEnabled();
-            if (isAdvanceQuotaEnabled && isAdvanceLoanProduct) {
+            if (isAdvanceQuotaEnabled && isAdvanceLoanProduct && !loanProduct.isUseOtherLoansCupo()) {
                 final Money maximumAdvanceQuota = cupo.multipliedBy(advanceQuotaPercentage.getAmount()).dividedBy(BigDecimal.valueOf(100L),
                         MoneyHelper.getRoundingMode());
                 if (approvedPrincipal.isGreaterThan(maximumAdvanceQuota)) {

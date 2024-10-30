@@ -87,6 +87,8 @@ public interface ClientMapper {
     @Mapping(target = "advanceCupoBalance", ignore = true)
     @Mapping(target = "idNumber", ignore = true)
     @Mapping(target = "cupoMaxAmount", ignore = true)
+    @Mapping(target = "otherLoansCupo", ignore = true)
+    @Mapping(target = "otherLoansCupoBalance", ignore = true)
     ClientData map(Client source);
 
     @Named("clientTypeCode")

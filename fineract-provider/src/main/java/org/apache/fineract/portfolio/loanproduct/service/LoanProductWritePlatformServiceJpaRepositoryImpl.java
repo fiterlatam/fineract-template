@@ -186,13 +186,9 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             loanProduct.setTransactionProcessingStrategyName(
                     loanRepaymentScheduleTransactionProcessorFactory.determineProcessor(loanTransactionProcessingStrategyCode).getName());
             if (productType != null && LoanProductType.SUMAS_VEHICULOS.getCode().equals(productType.getLabel())) {
-                final BigDecimal maxVehicleCupo = command
-                        .bigDecimalValueOfParameterNamed(LoanProductConstants.EXCLUSIVE_VEHICLE_CUPO_PARAM_NAME);
-                if (maxVehicleCupo == null) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loanproduct.vehicle.cupo.required",
-                            "Vehicle cupo is required for product type SU+ Vehiculos");
-                }
-                loanProduct.setMaxVehicleCupo(maxVehicleCupo);
+                final boolean useOtherLoansCupo = command
+                        .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME);
+                loanProduct.setUseOtherLoansCupo(useOtherLoansCupo);
             }
             loanProduct.setProductType(productType);
 
@@ -402,21 +398,14 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                 final Long parameterTypeId = (Long) changes.get(LoanProductConstants.PRODUCT_TYPE);
                 final CodeValue productType = this.codeValueRepository.findOneWithNotFoundDetection(parameterTypeId);
                 product.setProductType(productType);
-                if (productType != null && !LoanProductType.SUMAS_VEHICULOS.getCode().equals(productType.getLabel())) {
-                    product.setMaxVehicleCupo(null);
-                }
             }
 
-            if (changes.containsKey(LoanProductConstants.EXCLUSIVE_VEHICLE_CUPO_PARAM_NAME)) {
+            if (changes.containsKey(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME)) {
                 final CodeValue productTypeValue = product.getProductType();
                 if (productTypeValue != null && LoanProductType.SUMAS_VEHICULOS.getCode().equals(productTypeValue.getLabel())) {
-                    final BigDecimal maxVehicleCupo = command
-                            .bigDecimalValueOfParameterNamed(LoanProductConstants.EXCLUSIVE_VEHICLE_CUPO_PARAM_NAME);
-                    if (maxVehicleCupo == null) {
-                        throw new GeneralPlatformDomainRuleException("error.msg.loanproduct.vehicle.cupo.required",
-                                "Vehicle cupo is required for product type SU+ Vehiculos");
-                    }
-                    product.setMaxVehicleCupo(maxVehicleCupo);
+                    final boolean useOtherLoansCupo = command
+                            .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME);
+                    product.setUseOtherLoansCupo(useOtherLoansCupo);
                 }
             }
 
