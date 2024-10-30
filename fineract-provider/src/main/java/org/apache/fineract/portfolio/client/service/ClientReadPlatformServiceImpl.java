@@ -324,6 +324,9 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final BigDecimal totalOutstandingPrincipalAmount = ObjectUtils.defaultIfNull(
                     this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, LoanProductType.SUMAS_VEHICULOS.getCode()),
                     BigDecimal.ZERO);
+            if (totalOutstandingPrincipalAmount.compareTo(BigDecimal.ZERO) < 0) {
+                totalOutstandingPrincipalAmount.abs();
+            }
             final BigDecimal cupoBalance = cupo.subtract(totalOutstandingPrincipalAmount);
             clientData.setCupoBalance(cupoBalance);
             AdvanceQuotaConfigurationData advanceQuotaConfigurationData = this.loanProductReadPlatformService
