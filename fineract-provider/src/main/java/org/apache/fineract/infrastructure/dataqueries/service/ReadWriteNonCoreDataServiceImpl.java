@@ -1461,7 +1461,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
             }
             if (columnName.equals("Cupo aprobado") || columnName.equals("Cupo")) {
                 if (columnValue instanceof Number) {
-                    cupo = BigDecimal.valueOf((Integer) columnValue);
+                    cupo = BigDecimal.valueOf(((Number) columnValue).intValue());
                 }
 
             }
