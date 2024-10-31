@@ -37,8 +37,8 @@ public class LoanCreditNote extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "current_interest", scale = 6, precision = 19)
     private BigDecimal currentInterest;
 
-    @Column(name = "honoarios", scale = 6, precision = 19)
-    private BigDecimal honoarios;
+    @Column(name = "honorarios", scale = 6, precision = 19)
+    private BigDecimal honorarios;
 
     @Column(name = "aval", scale = 6, precision = 19)
     private BigDecimal aval;
@@ -60,6 +60,6 @@ public class LoanCreditNote extends AbstractAuditableWithUTCDateTimeCustom {
             documentName = this.document.getName();
         }
         return new LoanCreditNoteData(this.getId(), loan.getId(), this.creditNoteDate, this.arrearInterest, this.currentInterest,
-                this.honoarios, this.aval, this.insurance, this.capital, this.totalAmount, documentId, documentName);
+                this.honorarios, this.aval, this.insurance, this.capital, this.totalAmount, documentId, documentName);
     }
 }

@@ -41,13 +41,13 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
         if (creditNoteDate.isAfter(currentDate)) {
             throw new LoanCreditNoteDateCannotBeFutureException();
         }
-        BigDecimal currentInterest = command.bigDecimalValueOfParameterNamed("currentInterest");
-        BigDecimal arrearInterest = command.bigDecimalValueOfParameterNamed("arrearInterest");
-        BigDecimal honoarios = command.bigDecimalValueOfParameterNamed("honoarios");
-        BigDecimal aval = command.bigDecimalValueOfParameterNamed("aval");
-        BigDecimal insurance = command.bigDecimalValueOfParameterNamed("insurance");
-        BigDecimal capital = command.bigDecimalValueOfParameterNamed("capital");
-        BigDecimal totalAmount = command.bigDecimalValueOfParameterNamed("totalAmount");
+        BigDecimal currentInterest = command.bigDecimalValueOfParameterDefaultToZeroIfNull("currentInterest");
+        BigDecimal arrearInterest = command.bigDecimalValueOfParameterDefaultToZeroIfNull("arrearInterest");
+        BigDecimal honorarios = command.bigDecimalValueOfParameterDefaultToZeroIfNull("honorarios");
+        BigDecimal aval = command.bigDecimalValueOfParameterDefaultToZeroIfNull("aval");
+        BigDecimal insurance = command.bigDecimalValueOfParameterDefaultToZeroIfNull("insurance");
+        BigDecimal capital = command.bigDecimalValueOfParameterDefaultToZeroIfNull("capital");
+
         Long documentId = command.longValueOfParameterNamed("documentId");
         // if document id is not null, then fetch the document and attach it to the credit note
         Document document = null;
@@ -57,17 +57,20 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
             creditNote.setDocument(document);
 
         }
+        BigDecimal totalAmount = (currentInterest != null ? currentInterest : BigDecimal.ZERO)
+                .add(arrearInterest != null ? arrearInterest : BigDecimal.ZERO).add(honorarios != null ? honorarios : BigDecimal.ZERO)
+                .add(aval != null ? aval : BigDecimal.ZERO).add(insurance != null ? insurance : BigDecimal.ZERO)
+                .add(capital != null ? capital : BigDecimal.ZERO);
 
         creditNote.setLoan(loan);
         creditNote.setCreditNoteDate(creditNoteDate);
         creditNote.setArrearInterest(arrearInterest);
         creditNote.setCurrentInterest(currentInterest);
-        creditNote.setHonoarios(honoarios);
+        creditNote.setHonorarios(honorarios);
         creditNote.setAval(aval);
         creditNote.setInsurance(insurance);
         creditNote.setCapital(capital);
         creditNote.setTotalAmount(totalAmount);
-        // creditNote.setAttachment(creditNoteData.getAttachment());
 
         // save the credit note
         return this.loanCreditNoteRepository.save(creditNote);

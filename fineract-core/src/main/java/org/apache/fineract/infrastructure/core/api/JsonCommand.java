@@ -474,6 +474,14 @@ public final class JsonCommand {
         return this.fromApiJsonHelper.extractBigDecimalNamed(parameterName, this.parsedCommand, locale);
     }
 
+    public BigDecimal bigDecimalValueOfParameterDefaultToZeroIfNull(final String parameterName) {
+        BigDecimal value = bigDecimalValueOfParameterNamed(parameterName);
+        if (value == null) {
+            value = BigDecimal.ZERO;
+        }
+        return value;
+    }
+
     public BigDecimal bigDecimalValueOfParameterNamedDefaultToNullIfZero(final String parameterName) {
         return defaultToNullIfZero(bigDecimalValueOfParameterNamed(parameterName));
     }

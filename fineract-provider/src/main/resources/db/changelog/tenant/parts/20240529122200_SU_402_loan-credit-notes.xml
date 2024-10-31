@@ -35,7 +35,7 @@
             </column>
             <column name="arrear_interest" type="DECIMAL(19, 6)" defaultValue="0"/>
             <column name="current_interest" type="DECIMAL(19, 6)" defaultValue="0"/>
-            <column name="honoarios" type="DECIMAL(19, 6)" defaultValue="0"/>
+            <column name="honorarios" type="DECIMAL(19, 6)" defaultValue="0"/>
             <column name="aval" type="DECIMAL(19, 6)" defaultValue="0"/>
             <column name="insurance" type="DECIMAL(19, 6)" defaultValue="0"/>
 
