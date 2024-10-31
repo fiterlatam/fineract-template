@@ -18,7 +18,7 @@ public class LoanCreditNoteData {
     private LocalDate creditNoteDate;
     private BigDecimal arrearInterest;
     private BigDecimal currentInterest;
-    private BigDecimal honoarios;
+    private BigDecimal honorarios;
     private BigDecimal aval;
     private BigDecimal insurance;
     private BigDecimal capital;
