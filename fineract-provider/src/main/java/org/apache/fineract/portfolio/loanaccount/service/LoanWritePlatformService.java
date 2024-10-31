@@ -131,6 +131,10 @@ public interface LoanWritePlatformService {
 
     void cancelDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds);
 
+    void temporarySuspendDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultInsuranceIds);
+
+    void suspendDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultInsuranceIds);
+
     CommandProcessingResult cancelInsurance(JsonCommand command, boolean isVoluntaryInsurance);
 
     @Transactional

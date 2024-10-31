@@ -22,6 +22,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import jakarta.persistence.PersistenceException;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -100,11 +102,8 @@ import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepository;
 import org.apache.fineract.portfolio.group.exception.GroupMemberCountNotInPermissibleRangeException;
 import org.apache.fineract.portfolio.group.exception.GroupNotFoundException;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReason;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.insurance.domain.*;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanBlockingReasonNotFoundException;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
@@ -155,6 +154,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final ClientReadPlatformService clientReadPlatformService;
     private final LoanBlockingReasonRepository loanBlockingReasonRepository;
     private final LoanRepository loanRepository;
+    private final InsuranceIncidentRepository insuranceIncidentRepository;
+    private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
 
     @Transactional
     @Override
@@ -1059,6 +1060,28 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             final ClientBlockingReason clientBlockingReason = blockClient(client, blockedOnDate, blockingComment, blockingReason,
                     currentUser);
+            // Death ... Block all active loans
+            if (blockingReason.getNameOfReason().equals("FALLECIMIENTO")) {
+                List<Loan> activeLoans = this.loanRepository.findActiveLoansByClientId(clientId);
+                BlockingReasonSetting loanBlockingReasonSetting = this.blockingReasonSettingsRepositoryWrapper
+                        .getSingleBlockingReasonSettingByReason("FALLECIMIENTO", BlockLevel.CREDIT.toString());
+
+                InsuranceIncident incident = this.insuranceIncidentRepository
+                        .findByIncidentType(InsuranceIncidentType.DEATH_CANCELLATION);
+
+                for (Loan loan : activeLoans) {
+                    final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, loanBlockingReasonSetting, "FALLECIMIENTO", DateUtils.getLocalDateOfTenant());
+                    loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
+                    loan.getLoanCustomizationDetail().setBlockStatus(loanBlockingReasonSetting);
+                    this.loanRepository.saveAndFlush(loan);
+
+                    for (LoanCharge loanCharge : loan.getInsuranceChargesForNoveltyIncidentReporting(incident.isMandatory(), incident.isVoluntary())) {
+                        InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, 0,
+                                incident, loan.getClosedOnDate(), BigDecimal.ZERO);
+                        this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+                    }
+                }
+            }
 
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //

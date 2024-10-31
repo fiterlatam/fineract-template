@@ -54,6 +54,7 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.transaction
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
+import org.apache.fineract.portfolio.insurance.domain.*;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReason;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
@@ -83,6 +84,8 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
     private final LoanRepository loanRepository;
     private final PlatformSecurityContext context;
+    private final InsuranceIncidentRepository insuranceIncidentRepository;
+    private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
 
     @PostConstruct
     public void registerForNotification() {
@@ -628,6 +631,12 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             loan.getLoanCustomizationDetail().setBlockStatus(null);
             loanRepository.save(loan);
             loanBlockingReasonRepository.saveAndFlush(blockingReason);
+
+            InsuranceIncident incident = this.insuranceIncidentRepository
+                    .findByIncidentType(InsuranceIncidentType.MORA_EXIT);
+            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, 0,
+                    incident, loan.getClosedOnDate(), cumulative);
+            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
         }
 
     }

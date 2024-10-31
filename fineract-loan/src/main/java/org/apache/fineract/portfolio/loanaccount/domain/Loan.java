@@ -8079,4 +8079,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public boolean isProgressiveLoan() {
         return this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE);
     }
+
+    public Collection<LoanCharge> getInsuranceChargesForNoveltyIncidentReporting(boolean mandatoryCharges, boolean voluntaryCharges) {
+        if (mandatoryCharges && voluntaryCharges) {
+            return this.getCharges().stream().filter(charge -> charge.isMandatoryInsurance() || charge.isVoluntaryInsurance()).toList();
+        } else if (mandatoryCharges) {
+            return this.getCharges().stream().filter(LoanCharge::isMandatoryInsurance).toList();
+        } else {
+            return this.getCharges().stream().filter(LoanCharge::isVoluntaryInsurance).toList();
+        }
+
+    }
 }

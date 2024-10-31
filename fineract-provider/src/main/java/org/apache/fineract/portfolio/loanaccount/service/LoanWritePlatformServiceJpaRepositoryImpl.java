@@ -3948,6 +3948,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .toList();
     }
 
+    @Override
     public void cancelDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultInsuranceIds) {
         final LocalDate currentDate = DateUtils.getBusinessLocalDate();
         InsuranceIncident incident = this.insuranceIncidentRepository
@@ -3970,6 +3971,56 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
             this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+        }
+    }
+
+    @Override
+    public void temporarySuspendDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultInsuranceIds) {
+        final LocalDate currentDate = DateUtils.getBusinessLocalDate();
+        InsuranceIncident incident = this.insuranceIncidentRepository
+                .findByIncidentType(InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT);
+        if (incident == null) {
+            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT.name());
+        }
+        for (DefaultOrCancelInsuranceInstallmentData data : defaultInsuranceIds) {
+            Loan loan = this.loanAssembler.assembleFrom(data.loanId());
+            LoanCharge loanCharge = null;
+            Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream()
+                    .filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
+            if (loanChargeOptional.isPresent()) {
+                loanCharge = loanChargeOptional.get();
+            }
+            BigDecimal cumulative = BigDecimal.ZERO;
+            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                    data.installment(), incident, currentDate, cumulative);
+
+            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+        }
+    }
+
+    @Override
+    public void suspendDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultInsuranceIds) {
+        final LocalDate currentDate = DateUtils.getBusinessLocalDate();
+        InsuranceIncident incident = this.insuranceIncidentRepository
+                .findByIncidentType(InsuranceIncidentType.SUSPENSION_DUE_TO_DEFAULT);
+        if (incident == null) {
+            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.SUSPENSION_DUE_TO_DEFAULT.name());
+        }
+        for (DefaultOrCancelInsuranceInstallmentData data : defaultInsuranceIds) {
+            Loan loan = this.loanAssembler.assembleFrom(data.loanId());
+            LoanCharge loanCharge = null;
+            Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream()
+                    .filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
+            if (loanChargeOptional.isPresent()) {
+                loanCharge = loanChargeOptional.get();
+            }
+            if ((incident.isMandatory() && loanCharge.isMandatoryInsurance()) || incident.isVoluntary() && loanCharge.isVoluntaryInsurance()) {
+                BigDecimal cumulative = BigDecimal.ZERO;
+                InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                        data.installment(), incident, currentDate, cumulative);
+
+                this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+            }
         }
     }
 
