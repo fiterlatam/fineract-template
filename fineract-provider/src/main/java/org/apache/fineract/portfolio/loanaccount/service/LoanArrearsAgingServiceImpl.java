@@ -68,6 +68,7 @@ import org.apache.fineract.portfolio.loanaccount.exception.LoanBlockingReasonNot
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 
@@ -642,10 +643,16 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     private void createSuspensionRemovedNews(Loan loan) {
         /// CREATE Salida de suspensión news if loan is in TEMPORARY_SUSPENSION_DUE_TO_DEFAULT novelty news status and
         /// arrears less than 90 days
-        Integer arrearsDays = this.jdbcTemplate.queryForObject(
-                "select COALESCE(current_date - overdue_since_date_derived,0) aging_days from m_loan_arrears_aging where mla.loan_id =?",
-                Integer.class, loan.getId());
-        if (arrearsDays != null && arrearsDays >= 90) {
+        Integer daysInArrears = null;
+        try {
+            daysInArrears = this.jdbcTemplate.queryForObject(
+                    "select COALESCE(current_date - overdue_since_date_derived,0) aging_days from m_loan_arrears_aging mlaa where mlaa.loan_id =?",
+                    Integer.class, loan.getId());
+        } catch (final EmptyResultDataAccessException e) {
+            // not in arrears
+            daysInArrears = 0;
+        }
+        if (daysInArrears >= 90) {
             return;
         }
         final LocalDate currentDate = DateUtils.getBusinessLocalDate();
