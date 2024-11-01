@@ -56,4 +56,22 @@
             <column name="max_vehicle_cupo" type="DECIMAL(19, 4)" />
         </addColumn>
     </changeSet>
+
+    <changeSet author="fineract" id="4">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="m_product_loan" columnName="max_vehicle_cupo" />
+        </preConditions>
+        <dropColumn tableName="m_product_loan" columnName="max_vehicle_cupo"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="5">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_product_loan" columnName="use_other_loans_cupo" />
+            </not>
+        </preConditions>
+        <addColumn tableName="m_product_loan">
+            <column name="use_other_loans_cupo" type="boolean" defaultValueBoolean="false" />
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

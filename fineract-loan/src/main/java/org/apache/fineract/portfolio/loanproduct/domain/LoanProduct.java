@@ -251,8 +251,8 @@ public class LoanProduct extends AbstractPersistableCustom {
 
     @lombok.Setter
     @lombok.Getter
-    @Column(name = "max_vehicle_cupo")
-    private BigDecimal maxVehicleCupo;
+    @Column(name = "use_other_loans_cupo")
+    private boolean useOtherLoansCupo;
 
     @lombok.Setter
     @lombok.Getter
@@ -1568,9 +1568,9 @@ public class LoanProduct extends AbstractPersistableCustom {
             actualChanges.put(LoanProductConstants.PRODUCT_TYPE, newValue);
         }
 
-        if (command.isChangeInBigDecimalParameterNamed(LoanProductConstants.EXCLUSIVE_VEHICLE_CUPO_PARAM_NAME, this.maxVehicleCupo)) {
-            BigDecimal newValue = command.bigDecimalValueOfParameterNamed(LoanProductConstants.EXCLUSIVE_VEHICLE_CUPO_PARAM_NAME);
-            actualChanges.put(LoanProductConstants.EXCLUSIVE_VEHICLE_CUPO_PARAM_NAME, newValue);
+        if (command.isChangeInBooleanParameterNamed(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME, this.useOtherLoansCupo)) {
+            final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME);
+            actualChanges.put(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME, newValue);
         }
 
         if (command.isChangeInBooleanParameterNamed(LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS,

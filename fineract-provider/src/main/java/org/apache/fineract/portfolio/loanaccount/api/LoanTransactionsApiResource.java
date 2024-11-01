@@ -485,6 +485,8 @@ public class LoanTransactionsApiResource {
             commandRequest = builder.refundLoanTransactionByCash(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "foreclosure")) {
             commandRequest = builder.loanForeclosure(resolvedLoanId).build();
+        } else if (CommandParameterUtil.is(commandParam, "cancel-loan")) {
+            commandRequest = builder.loanCancel(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "creditBalanceRefund")) {
             commandRequest = builder.creditBalanceRefund(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, CHARGE_OFF_COMMAND_VALUE)) {

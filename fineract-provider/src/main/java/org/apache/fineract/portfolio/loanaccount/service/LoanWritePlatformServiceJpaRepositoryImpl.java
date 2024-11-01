@@ -2837,21 +2837,20 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Money purchaseTotalOutstandingPrincipalAmount;
             final LoanProduct loanProduct = loan.loanProduct();
             final CodeValue loanProductType = loanProduct.getProductType();
-            if (loanProductType != null && LoanProductType.SUMAS_VEHICULOS.getCode().equals(loanProductType.getLabel())) {
-                sql = sql + " AND mpl.id = ? ";
-                final Long loanProductId = loanProduct.getId();
-                cupo = Money.of(currency, loanProduct.getMaxVehicleCupo());
-                advanceTotalOutstandingPrincipalAmount = Money.of(currency,
-                        this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, true, loanProductId));
-                purchaseTotalOutstandingPrincipalAmount = Money.of(currency,
-                        this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, false, loanProductId));
-            } else {
-                cupo = Money.of(currency, loanAdditionalFieldsData.getCupo());
-                sql = sql + " AND mcv.code_value != ? ";
+            if (loanProductType != null && LoanProductType.SUMAS_VEHICULOS.getCode().equals(loanProductType.getLabel())
+                    && loanProduct.isUseOtherLoansCupo()) {
+                sql = sql + " AND mcv.code_value = ? AND mpl.use_other_loans_cupo = true ";
+                cupo = Money.of(currency, loanAdditionalFieldsData.getOtherLoansCupo());
                 advanceTotalOutstandingPrincipalAmount = Money.of(currency,
                         this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, true, LoanProductType.SUMAS_VEHICULOS.getCode()));
                 purchaseTotalOutstandingPrincipalAmount = Money.of(currency, this.jdbcTemplate.queryForObject(sql, BigDecimal.class,
                         clientId, false, LoanProductType.SUMAS_VEHICULOS.getCode()));
+            } else {
+                cupo = Money.of(currency, loanAdditionalFieldsData.getCupo());
+                advanceTotalOutstandingPrincipalAmount = Money.of(currency,
+                        this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, true));
+                purchaseTotalOutstandingPrincipalAmount = Money.of(currency,
+                        this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId, false));
             }
 
             if (isAdvanceLoanProduct) {
@@ -2865,7 +2864,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     .retrieveAdvanceQuotaConfigurationData();
             final Money advanceQuotaPercentage = Money.of(currency, advanceQuotaConfigurationData.getPercentageValue());
             final boolean isAdvanceQuotaEnabled = advanceQuotaConfigurationData.getEnabled();
-            if (isAdvanceQuotaEnabled && isAdvanceLoanProduct) {
+            if (isAdvanceQuotaEnabled && isAdvanceLoanProduct && !loanProduct.isUseOtherLoansCupo()) {
                 final Money maximumAdvanceQuota = cupo.multipliedBy(advanceQuotaPercentage.getAmount()).dividedBy(BigDecimal.valueOf(100L),
                         MoneyHelper.getRoundingMode());
                 if (approvedPrincipal.isGreaterThan(maximumAdvanceQuota)) {
@@ -3459,6 +3458,59 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withEntityExternalId(foreclosureTransaction.getExternalId()) //
                 .with(changes) //
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public CommandProcessingResult cancelLoan(final Long loanId, final JsonCommand command) {
+        final String json = command.json();
+        final JsonElement element = fromApiJsonHelper.parse(json);
+        final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        final LocalDate transactionDate = this.fromApiJsonHelper.extractLocalDateNamed(LoanApiConstants.transactionDateParamName, element);
+        final ExternalId externalId = externalIdFactory.createFromCommand(command, LoanApiConstants.externalIdParameterName);
+        this.loanEventApiJsonValidator.validateLoanForeclosure(command.json());
+        final Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("dateFormat", command.dateFormat());
+        changes.put("transactionDate", command.stringValueOfParameterNamed(LoanApiConstants.transactionDateParamName));
+        changes.put("externalId", externalId);
+        String noteText = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.noteParamName, element);
+        for (LoanDisbursementDetails loanDisbursementDetails : loan.getDisbursementDetails()) {
+            if (!DateUtils.isAfter(loanDisbursementDetails.expectedDisbursementDateAsLocalDate(), transactionDate)
+                    && loanDisbursementDetails.actualDisbursementDate() == null) {
+                final String defaultUserMessage = "The loan with undisbursed tranche before foreclosure cannot be foreclosed.";
+                throw new LoanForeclosureException("loan.with.undisbursed.tranche.before.foreclosure.cannot.be.foreclosured",
+                        defaultUserMessage, transactionDate);
+            }
+        }
+        this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan, null);
+        List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
+                .getLoanDataWithDefaultOrCancelInsurance(loanId, null, transactionDate);
+        InsuranceIncident incident = this.insuranceIncidentRepository
+                .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
+        if (incident == null) {
+            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION.name());
+        }
+        for (final DefaultOrCancelInsuranceInstallmentData data : cancelInsuranceInstallmentIds) {
+            LoanCharge loanCharge = null;
+            Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream()
+                    .filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
+            if (loanChargeOptional.isPresent()) {
+                loanCharge = loanChargeOptional.get();
+            }
+            BigDecimal cumulative = BigDecimal.ZERO;
+            cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, true);
+            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                    data.installment(), incident, transactionDate, cumulative);
+            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+        }
+        final LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText,
+                externalId, changes);
+        final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
+                BlockingReasonSettingEnum.CREDIT_ANULADO.getDatabaseString(), BlockLevel.CREDIT.toString());
+        loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "Anulado", DateUtils.getLocalDateOfTenant());
+        final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();
+        return commandProcessingResultBuilder.withLoanId(loanId).withEntityId(foreclosureTransaction.getId())
+                .withEntityExternalId(foreclosureTransaction.getExternalId()).with(changes).build();
     }
 
     @Override
