@@ -40,12 +40,9 @@ public class SuspensionDueToDefaultChargesTasklet implements Tasklet {
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
         List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds = this.loanReadPlatformService
-                .getLoanDataWithDefaultMandatoryInsurance(60L);
+                .getLoanDataWithDefaultMandatoryInsurance(90L);
         loanWritePlatformService.temporarySuspendDefaultInsuranceCharges(defaultLoanIds);
 
-        List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIdsForSuspension = this.loanReadPlatformService
-                .getLoanDataForSuspensionOfInsurance(90L);
-        loanWritePlatformService.suspendDefaultInsuranceCharges(defaultLoanIdsForSuspension);
         return RepeatStatus.FINISHED;
     }
 

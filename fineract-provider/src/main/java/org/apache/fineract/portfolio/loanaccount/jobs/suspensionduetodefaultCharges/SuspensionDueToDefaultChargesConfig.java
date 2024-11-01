@@ -48,13 +48,13 @@ public class SuspensionDueToDefaultChargesConfig {
 
     @Bean
     protected Step suspensionDueToDefaultChargesStep() {
-        return new StepBuilder(JobName.INSURANCE_CHARGE_TEMPORARY_SUSPENSION_DUE_TO_DEFAULT.name(), jobRepository)
+        return new StepBuilder(JobName.INSURANCE_CHARGE_SUSPENSION_DUE_TO_DEFAULT.name(), jobRepository)
                 .tasklet(suspensionDueToDefaultChargesTasklet(), transactionManager).build();
     }
 
     @Bean
     public Job temporarySuspensionDueToDefaultChargesJob() {
-        return new JobBuilder(JobName.INSURANCE_CHARGE_TEMPORARY_SUSPENSION_DUE_TO_DEFAULT.name(), jobRepository)
+        return new JobBuilder(JobName.INSURANCE_CHARGE_SUSPENSION_DUE_TO_DEFAULT.name(), jobRepository)
                 .start(suspensionDueToDefaultChargesStep()).incrementer(new RunIdIncrementer()).build();
     }
 

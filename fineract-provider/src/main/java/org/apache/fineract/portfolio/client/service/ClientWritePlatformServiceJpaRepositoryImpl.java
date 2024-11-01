@@ -1076,9 +1076,13 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                     this.loanRepository.saveAndFlush(loan);
 
                     for (LoanCharge loanCharge : loan.getInsuranceChargesForNoveltyIncidentReporting(incident.isMandatory(), incident.isVoluntary())) {
-                        InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, 0,
-                                incident, loan.getClosedOnDate(), BigDecimal.ZERO);
-                        this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+                        if ((incident.isMandatory() && loanCharge.isMandatoryInsurance()) || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
+                            if (loanCharge.getAmountOutstanding(loan.getCurrency()).isGreaterThanZero()) {
+                                InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, 0,
+                                        incident, loan.getClosedOnDate(), BigDecimal.ZERO);
+                                this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+                            }
+                        }
                     }
                 }
             }
