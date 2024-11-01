@@ -21,14 +21,13 @@ public class ClientAvailableCupoFieldsData {
     private BigDecimal cupoOtrosPrestamos;
     private BigDecimal availableCupoOtrosPrestamos;
 
-    public ClientAvailableCupoFieldsData(Long clientId, String tipo, String nit, String cedula, BigDecimal cupo, BigDecimal availableCupo,
-                                         BigDecimal totalOutstandingPrincipalAmount) {
+    public ClientAvailableCupoFieldsData(Long clientId, String tipo, String nit, String cedula, BigDecimal cupo,
+            BigDecimal totalOutstandingPrincipalAmount) {
         this.clientId = clientId;
         this.tipo = tipo;
         this.nit = nit;
         this.cedula = cedula;
         this.cupo = cupo;
-        this.availableCupo = availableCupo;
         this.totalOutstandingPrincipalAmount = totalOutstandingPrincipalAmount;
     }
 }

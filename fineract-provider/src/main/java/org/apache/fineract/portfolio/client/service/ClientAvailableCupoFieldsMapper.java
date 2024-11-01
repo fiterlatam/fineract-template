@@ -8,7 +8,7 @@ import org.apache.fineract.portfolio.client.data.ClientAvailableCupoFieldsData;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.jdbc.core.RowMapper;
 
-public class ClienAvailableCupoFieldsMapper implements RowMapper<ClientAvailableCupoFieldsData> {
+public class ClientAvailableCupoFieldsMapper implements RowMapper<ClientAvailableCupoFieldsData> {
 
     public String schema() {
         return """
