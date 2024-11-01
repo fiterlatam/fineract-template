@@ -272,8 +272,8 @@ public class LoanAccountConfiguration {
             PlatformSecurityContext context, InsuranceIncidentRepository insuranceIncidentRepository,
             InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository) {
         return new LoanArrearsAgingServiceImpl(jdbcTemplate, businessEventNotifierService, sqlGenerator, clientWritePlatformService,
-                loanBlockWritePlatformService, blockingReasonSettingsRepositoryWrapper, loanRepository, context, insuranceIncidentRepository,
-                insuranceIncidentNoveltyNewsRepository);
+                loanBlockWritePlatformService, blockingReasonSettingsRepositoryWrapper, loanRepository, context,
+                insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository);
     }
 
     @Bean

@@ -22,7 +22,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import jakarta.persistence.PersistenceException;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -1066,20 +1065,22 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 BlockingReasonSetting loanBlockingReasonSetting = this.blockingReasonSettingsRepositoryWrapper
                         .getSingleBlockingReasonSettingByReason("FALLECIMIENTO", BlockLevel.CREDIT.toString());
 
-                InsuranceIncident incident = this.insuranceIncidentRepository
-                        .findByIncidentType(InsuranceIncidentType.DEATH_CANCELLATION);
+                InsuranceIncident incident = this.insuranceIncidentRepository.findByIncidentType(InsuranceIncidentType.DEATH_CANCELLATION);
 
                 for (Loan loan : activeLoans) {
-                    final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, loanBlockingReasonSetting, "FALLECIMIENTO", DateUtils.getLocalDateOfTenant());
+                    final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, loanBlockingReasonSetting,
+                            "FALLECIMIENTO", DateUtils.getLocalDateOfTenant());
                     loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
                     loan.getLoanCustomizationDetail().setBlockStatus(loanBlockingReasonSetting);
                     this.loanRepository.saveAndFlush(loan);
 
-                    for (LoanCharge loanCharge : loan.getInsuranceChargesForNoveltyIncidentReporting(incident.isMandatory(), incident.isVoluntary())) {
-                        if ((incident.isMandatory() && loanCharge.isMandatoryInsurance()) || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
+                    for (LoanCharge loanCharge : loan.getInsuranceChargesForNoveltyIncidentReporting(incident.isMandatory(),
+                            incident.isVoluntary())) {
+                        if ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
+                                || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
                             if (loanCharge.getAmountOutstanding(loan.getCurrency()).isGreaterThanZero()) {
-                                InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, 0,
-                                        incident, loan.getClosedOnDate(), BigDecimal.ZERO);
+                                InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan,
+                                        loanCharge, 0, incident, loan.getClosedOnDate(), BigDecimal.ZERO);
                                 this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
                             }
                         }

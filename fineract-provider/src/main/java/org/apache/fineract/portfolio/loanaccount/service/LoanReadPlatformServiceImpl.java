@@ -3328,8 +3328,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         Object[] params = null;
         sql = sql + " and mc.charge_calculation_enum =  " + ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue();
         if (loanId == null && insuranceCode == null) {
-            sql = sql + " and mlrs.duedate < CURRENT_DATE "
-                    + " and CURRENT_DATE - mlrs.duedate = 60 ";
+            sql = sql + " and mlrs.duedate < CURRENT_DATE " + " and CURRENT_DATE - mlrs.duedate = 60 ";
             params = new Object[] {};
         } else if (insuranceCode == null) {
             sql = sql + " and ml.id = ? ";
@@ -3354,9 +3353,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
         String sql = "SELECT " + rowMapper.suspensionSchema();
-        Object[] params = new Object[] {numberOfDays};
-        sql = sql + " and (CURRENT_DATE - mlaa.overdue_since_date_derived) >= ? "
-                + " group by ml.id, mlc.id order by ml.id";
+        Object[] params = new Object[] { numberOfDays };
+        sql = sql + " and (CURRENT_DATE - mlaa.overdue_since_date_derived) >= ? " + " group by ml.id, mlc.id order by ml.id";
 
         return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
     }
@@ -3366,12 +3364,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
         String sql = "SELECT " + rowMapper.schema();
-        Object[] params = new Object[] {numberOfDays};
-        Integer[] codes = {ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue(), ChargeCalculationType.FLAT_SEGO.getValue(), ChargeCalculationType.OPRIN_SEGO.getValue(), ChargeCalculationType.DISB_SEGO.getValue() };
+        Object[] params = new Object[] { numberOfDays };
+        Integer[] codes = { ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue(), ChargeCalculationType.FLAT_SEGO.getValue(),
+                ChargeCalculationType.OPRIN_SEGO.getValue(), ChargeCalculationType.DISB_SEGO.getValue() };
         sql = sql + " and mc.charge_calculation_enum in (" + Arrays.toString(codes).replaceAll("\\[|\\]", "") + ") ";
-        sql = sql + " and mlrs.duedate < CURRENT_DATE "
-                + " and CURRENT_DATE - mlrs.duedate = ?"
-                + " group by ml.id, mlc.id order by ml.id";
+        sql = sql + " and mlrs.duedate < CURRENT_DATE " + " and CURRENT_DATE - mlrs.duedate = ?" + " group by ml.id, mlc.id order by ml.id";
 
         return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
     }

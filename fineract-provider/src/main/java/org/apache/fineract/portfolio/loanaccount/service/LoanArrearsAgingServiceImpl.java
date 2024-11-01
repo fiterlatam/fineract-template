@@ -640,22 +640,23 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     }
 
     private void createSuspensionRemovedNews(Loan loan) {
-        /// CREATE Salida de suspensión news if loan is in TEMPORARY_SUSPENSION_DUE_TO_DEFAULT novelty news status and arrears less than 90 days
-        Integer arrearsDays = this.jdbcTemplate.queryForObject("select COALESCE(current_date - overdue_since_date_derived,0) aging_days from m_loan_arrears_aging where mla.loan_id =?",
+        /// CREATE Salida de suspensión news if loan is in TEMPORARY_SUSPENSION_DUE_TO_DEFAULT novelty news status and
+        /// arrears less than 90 days
+        Integer arrearsDays = this.jdbcTemplate.queryForObject(
+                "select COALESCE(current_date - overdue_since_date_derived,0) aging_days from m_loan_arrears_aging where mla.loan_id =?",
                 Integer.class, loan.getId());
         if (arrearsDays != null && arrearsDays >= 90) {
             return;
         }
         final LocalDate currentDate = DateUtils.getBusinessLocalDate();
-        InsuranceIncident incident = this.insuranceIncidentRepository
-                .findByIncidentType(InsuranceIncidentType.SUSPENSION_REMOVED);
+        InsuranceIncident incident = this.insuranceIncidentRepository.findByIncidentType(InsuranceIncidentType.SUSPENSION_REMOVED);
         InsuranceIncident temporarySuspensionIncident = this.insuranceIncidentRepository
                 .findByIncidentType(InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT);
         if (incident == null || (!incident.isMandatory() && !incident.isVoluntary())) {
             throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.SUSPENSION_REMOVED.name());
         }
-        Optional<InsuranceIncidentNoveltyNews> lastSuspensionNewsOptional =
-                this.insuranceIncidentNoveltyNewsRepository.findLastSuspensionIfPresent(loan.getId(), incident.getId(), temporarySuspensionIncident.getId());
+        Optional<InsuranceIncidentNoveltyNews> lastSuspensionNewsOptional = this.insuranceIncidentNoveltyNewsRepository
+                .findLastSuspensionIfPresent(loan.getId(), incident.getId(), temporarySuspensionIncident.getId());
         if (lastSuspensionNewsOptional.isPresent()) {
             InsuranceIncidentNoveltyNews news = lastSuspensionNewsOptional.get();
             if (news.getInsuranceIncident().getIncidentType().equals(InsuranceIncidentType.SUSPENSION_REMOVED)) {
@@ -663,11 +664,13 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                 return;
             }
         }
-        Collection<LoanCharge> loanCharges = loan.getInsuranceChargesForNoveltyIncidentReporting(incident.isMandatory(), incident.isVoluntary());
+        Collection<LoanCharge> loanCharges = loan.getInsuranceChargesForNoveltyIncidentReporting(incident.isMandatory(),
+                incident.isVoluntary());
         if (loanCharges != null && !loanCharges.isEmpty()) {
             for (LoanCharge loanCharge : loanCharges) {
                 if (loanCharge.getAmountOutstanding(loan.getCurrency()).isGreaterThanZero()) {
-                    if ((incident.isMandatory() && loanCharge.isMandatoryInsurance()) || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
+                    if ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
+                            || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
                         BigDecimal cumulative = BigDecimal.ZERO;
                         InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
                                 null, incident, currentDate, cumulative);

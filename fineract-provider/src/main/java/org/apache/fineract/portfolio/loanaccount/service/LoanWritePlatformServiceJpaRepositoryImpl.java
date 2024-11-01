@@ -3986,8 +3986,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         for (DefaultOrCancelInsuranceInstallmentData data : defaultInsuranceIds) {
             Loan loan = this.loanAssembler.assembleFrom(data.loanId());
-            Optional<InsuranceIncidentNoveltyNews> lastSuspensionNewsOptional =
-                    this.insuranceIncidentNoveltyNewsRepository.findLastSuspensionIfPresent(loan.getId(), incident.getId(), suspensionRemovedIncident.getId());
+            Optional<InsuranceIncidentNoveltyNews> lastSuspensionNewsOptional = this.insuranceIncidentNoveltyNewsRepository
+                    .findLastSuspensionIfPresent(loan.getId(), incident.getId(), suspensionRemovedIncident.getId());
             if (lastSuspensionNewsOptional.isPresent()) {
                 InsuranceIncidentNoveltyNews news = lastSuspensionNewsOptional.get();
                 if (news.getInsuranceIncident().getIncidentType().equals(InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT)) {
@@ -4001,7 +4001,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             if (loanChargeOptional.isPresent()) {
                 loanCharge = loanChargeOptional.get();
             }
-            if ((incident.isMandatory() && loanCharge.isMandatoryInsurance()) || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
+            if ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
+                    || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
                 BigDecimal cumulative = BigDecimal.ZERO;
                 InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
                         data.installment(), incident, currentDate, cumulative);
