@@ -3822,6 +3822,15 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder addLoanCreditNote(Long loanId) {
+        this.actionName = "CREATE";
+        this.entityName = "LOAN_CREDIT_NOTE";
+        this.href = String.format("/loans/%s/credit-notes", loanId);
+        this.loanId = loanId;
+        this.entityId = loanId;
+        return this;
+    }
+
     public CommandWrapperBuilder updateInsuranceIncident(final Long id) {
         this.actionName = "UPDATE";
         this.entityName = "INSURANCE_INCIDENT";
