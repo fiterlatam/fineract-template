@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ClienAvailableCupoFieldsData {
+public class ClientAvailableCupoFieldsData {
 
     private Long clientId;
     private String tipo;
@@ -18,9 +18,11 @@ public class ClienAvailableCupoFieldsData {
     private BigDecimal availableCupo;
     private BigDecimal availableCupoAvance;
     private BigDecimal totalOutstandingPrincipalAmount;
+    private BigDecimal cupoOtrosPrestamos;
+    private BigDecimal availableCupoOtrosPrestamos;
 
-    public ClienAvailableCupoFieldsData(Long clientId, String tipo, String nit, String cedula, BigDecimal cupo, BigDecimal availableCupo,
-            BigDecimal totalOutstandingPrincipalAmount) {
+    public ClientAvailableCupoFieldsData(Long clientId, String tipo, String nit, String cedula, BigDecimal cupo, BigDecimal availableCupo,
+                                         BigDecimal totalOutstandingPrincipalAmount) {
         this.clientId = clientId;
         this.tipo = tipo;
         this.nit = nit;
