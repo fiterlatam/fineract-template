@@ -643,7 +643,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
         /// CREATE Salida de suspensión news if loan is in TEMPORARY_SUSPENSION_DUE_TO_DEFAULT novelty news status and
         /// arrears less than 90 days
         Integer arrearsDays = this.jdbcTemplate.queryForObject(
-                "select COALESCE(current_date - overdue_since_date_derived,0) aging_days from m_loan_arrears_aging where mla.loan_id =?",
+                "select COALESCE(current_date - overdue_since_date_derived,0) aging_days from m_loan_arrears_aging mla where mla.loan_id =?",
                 Integer.class, loan.getId());
         if (arrearsDays != null && arrearsDays >= 90) {
             return;
