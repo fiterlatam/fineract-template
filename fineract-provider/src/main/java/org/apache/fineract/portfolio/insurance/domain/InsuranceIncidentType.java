@@ -23,7 +23,8 @@ public enum InsuranceIncidentType {
     TEMPORARY_SUSPENSION_DUE_TO_DEFAULT(8, "labels.inputs.insurance.incident.temporary.suspension.default", "Suspensión temporal por mora"), //
     PERMANENT_CANCELLATION_DUE_TO_MAX_AGE(9, "labels.inputs.insurance.incident.permanent.cancellation.max.age",
             "Cancelación definitiva por edad máxima de permanencia"), //
-    DEATH_CANCELLATION(10, "labels.inputs.insurance.incident.death.cancellation", "Cancelación definitiva por fallecimiento");
+    DEATH_CANCELLATION(10, "labels.inputs.insurance.incident.death.cancellation", "Cancelación definitiva por fallecimiento"), //
+    SUSPENSION_REMOVED(11, "labels.inputs.insurance.incident.removed.suspension", "Salida de suspensión"); //
 
     private final Integer value;
     private final String code;
