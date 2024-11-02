@@ -125,6 +125,7 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
         final Sheet clientCupoIncrementSheet = workbook.getSheet(TemplatePopulateImportConstants.CLIENT_CUPO_INCREMENT_SHEET_NAME);
         int successCount = 0;
         int errorCount = 0;
+        ArrayList<String> errMesg;
         String errorMessage;
         final GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(dateFormat, locale));
@@ -207,7 +208,17 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
                 clientCupoIncrementSheet.getRow(clientCupoIncrementData.getRowIndex())
                         .createCell(ClientCupoIncrementConstants.PREVIOUS_MAXIMUM_CUPO_AMOUNT_COL)
                         .setCellValue(previousMaximumCupoAmount.doubleValue());
-                if (maximumCupoAmount.compareTo(previousMaximumCupoAmount) < 0) {
+
+                if (maximumCupoAmount.compareTo(previousMaximumCupoAmount) > 0) {
+                    errorCount++;
+                    errorMessage = "No puede modificarse ya que el nuevo cupo que sugiere es menor al actual";
+                    ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(), errorMessage,
+                            ClientCupoIncrementConstants.STATUS_COL);
+                    clientCupoIncrementSheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL,
+                            TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
+                    continue;
+                }
+                if (maximumCupoAmount.compareTo(previousMaximumCupoAmount) > 1) {
                     errorCount++;
                     errorMessage = "No puede modificarse ya que el nuevo cupo que sugiere es menor al actual";
                     ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(), errorMessage,
