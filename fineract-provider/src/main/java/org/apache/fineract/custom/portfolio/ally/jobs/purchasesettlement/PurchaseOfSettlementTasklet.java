@@ -65,14 +65,14 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                         if (period.isBefore(now.minusWeeks(1))) {
                             period = now;
                         } else {
-                            period = period.plusWeeks(1);
+                            period = period.plusWeeks(1).minusDays(1);
                         }
                     break;
                     case "QUINCENAL":
                         if (period.isBefore(now.minusWeeks(2))) {
                             period = now;
                         } else {
-                            period = period.plusWeeks(2);
+                            period = period.plusWeeks(2).minusDays(1);
                         }
                     break;
                     case "MENSUAL":
