@@ -49,8 +49,9 @@ jobs:
         run: |
           ./gradlew --no-daemon --console=plain :integration-tests:cleanTest :integration-tests:test -PcargoDisabled --info
           ./gradlew --stop
+
   continuous-integration:
-    if: github.ref == 'refs/heads/fiter/sumas/dev'
+    if: github.ref == 'refs/heads/fiter/oncredit/dev'
     needs: [integration-tests]
     runs-on: ubuntu-latest
     steps:
@@ -87,8 +88,8 @@ jobs:
           ECR_REPOSITORY: latam-backend
           IMAGE_TAG: ${{ steps.commit.outputs.short }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:sumas_$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:sumas_$IMAGE_TAG
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:oncredit_$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:oncredit_$IMAGE_TAG
 
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:sumas_latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:sumas_latest
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:oncredit_latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:oncredit_latest
