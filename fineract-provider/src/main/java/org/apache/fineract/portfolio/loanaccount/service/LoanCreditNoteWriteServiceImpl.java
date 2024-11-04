@@ -20,6 +20,8 @@ import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerialize
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.documentmanagement.domain.Document;
 import org.apache.fineract.infrastructure.documentmanagement.domain.DocumentRepository;
+import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.SpecialWriteOffPayload;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
@@ -140,12 +142,14 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
 
     }
 
-    private static List<Map<String, Object>> generateChargesForSpecialWriteOff(Loan loan, LoanCreditNote creditNote) {
+    private List<Map<String, Object>> generateChargesForSpecialWriteOff(Loan loan, LoanCreditNote creditNote) {
         List<Map<String, Object>> charges = new ArrayList<>();
         boolean writeOffCharge = creditNote.includesCharges();
-        Collection<LoanCharge> loanCharges = loan.getCharges().stream().filter(LoanCharge::isNotPaid).toList();
-        log.info("Loan charges {}", loanCharges.size());
-
+        LoanTransactionData loanTransaction = this.loanReadPlatformService.retrieveLoanSpecialWriteOffTemplate(loan.getId());
+        List<LoanChargeData> currentOutstandingLoanCharges = loanTransaction.getCurrentOutstandingLoanCharges();
+        List<Long> currentOutstandingLoanChargeIds = currentOutstandingLoanCharges.stream().map(LoanChargeData::getChargeId).toList();
+        Collection<LoanCharge> loanCharges = loan.getCharges().stream().filter(LoanCharge::isNotPaid)
+                .filter(l -> currentOutstandingLoanChargeIds.contains(l.getCharge().getId())).toList();
         if (writeOffCharge) {
 
             // check for arrears
