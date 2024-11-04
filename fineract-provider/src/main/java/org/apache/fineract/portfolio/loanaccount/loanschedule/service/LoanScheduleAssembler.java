@@ -230,7 +230,7 @@ public class LoanScheduleAssembler {
         }
 
         final boolean requireInterestRatePoint = loanProduct.isRequirePoints();
-        Long interestRatePoints = null;
+        Float interestRatePoints = null;
         BigDecimal interestRatePerPeriod = BigDecimal.ZERO;
         if (loanProduct.getInterestRate() != null) {
             final InterestRate interestRate = loanProduct.getInterestRate();
@@ -256,12 +256,13 @@ public class LoanScheduleAssembler {
             }
             interestRatePerPeriod = currentInterestRate;
             if (requireInterestRatePoint) {
-                interestRatePoints = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.INTEREST_RATE_POINTS, element);
-                if (interestRatePoints == null) {
+                BigDecimal points = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanApiConstants.INTEREST_RATE_POINTS, element);
+                if (points == null) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.interestRatePoints.is.mandatory",
                             "Interest rate points are mandatory for this loan product.");
                 }
-                interestRatePerPeriod = interestRatePerPeriod.add(BigDecimal.valueOf(interestRatePoints));
+                interestRatePoints = points.floatValue();
+                interestRatePerPeriod = interestRatePerPeriod.add(points);
             }
         }
         final PeriodFrequencyType interestRatePeriodFrequencyType = PeriodFrequencyType.YEARS;
