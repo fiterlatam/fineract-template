@@ -1002,6 +1002,15 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder loanCancel(final Long loanId) {
+        this.actionName = "ANULAR";
+        this.entityName = "LOAN";
+        this.entityId = loanId;
+        this.loanId = loanId;
+        this.href = "/loans/" + loanId + "/transactions?command=cancel-loan";
+        return this;
+    }
+
     public CommandWrapperBuilder loanClaim(final Long loanId) {
         this.actionName = "CLAIM";
         this.entityName = "LOAN";
@@ -3819,6 +3828,15 @@ public class CommandWrapperBuilder {
         this.actionName = "CREATE";
         this.entityName = "INSURANCE_INCIDENT";
         this.href = "/insurance-incidents";
+        return this;
+    }
+
+    public CommandWrapperBuilder addLoanCreditNote(Long loanId) {
+        this.actionName = "CREATE";
+        this.entityName = "LOAN_CREDIT_NOTE";
+        this.href = String.format("/loans/%s/credit-notes", loanId);
+        this.loanId = loanId;
+        this.entityId = loanId;
         return this;
     }
 

@@ -68,7 +68,7 @@ import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.accountdetails.data.AccountSummaryCollectionData;
 import org.apache.fineract.portfolio.accountdetails.service.AccountDetailsReadPlatformService;
-import org.apache.fineract.portfolio.client.data.ClienAvailableCupoFieldsData;
+import org.apache.fineract.portfolio.client.data.ClientAvailableCupoFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientBlockingReasonData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.data.ClientMaximumLoanArrearsData;
@@ -750,7 +750,7 @@ public class ClientsApiResource {
 
     private String retriveClientAvailableCupo(String nitId) {
         context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
-        final List<ClienAvailableCupoFieldsData> cupoList = clientReadPlatformService.retriveClientAvailableCupo(nitId);
+        final List<ClientAvailableCupoFieldsData> cupoList = clientReadPlatformService.retriveClientAvailableCupo(nitId);
         return this.toApiJsonSerializer.serialize(cupoList);
     }
 }
