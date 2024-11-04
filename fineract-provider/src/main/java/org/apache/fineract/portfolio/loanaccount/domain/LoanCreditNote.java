@@ -52,6 +52,9 @@ public class LoanCreditNote extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "total_amount", scale = 6, precision = 19, nullable = false)
     private BigDecimal totalAmount;
 
+    @Column(name = "transaction_id", nullable = false)
+    private Long transactionId;
+
     public LoanCreditNoteData toData() {
         Long documentId = null;
         String documentName = null;
@@ -60,6 +63,6 @@ public class LoanCreditNote extends AbstractAuditableWithUTCDateTimeCustom {
             documentName = this.document.getName();
         }
         return new LoanCreditNoteData(this.getId(), loan.getId(), this.creditNoteDate, this.arrearInterest, this.currentInterest,
-                this.honorarios, this.aval, this.insurance, this.capital, this.totalAmount, documentId, documentName);
+                this.honorarios, this.aval, this.insurance, this.capital, this.totalAmount, documentId, documentName, this.transactionId);
     }
 }

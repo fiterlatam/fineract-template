@@ -66,6 +66,10 @@ public class LoanTransactionData {
     private final LocalDate possibleNextRepaymentDate;
     private Collection<LoanChargePaidByData> loanChargePaidByList;
     private LoanChargePaidByData loanChargePaidBySummary;
+    private String createdByFirstname;
+    private String createdByLastname;
+    private String lastModifiedByFirstname;
+    private String lastModifiedByLastname;
     // templates
     final Collection<PaymentTypeData> paymentTypeOptions;
     private Collection<CodeValueData> writeOffReasonOptions = null;

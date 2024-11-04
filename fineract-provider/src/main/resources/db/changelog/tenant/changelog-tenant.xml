@@ -303,4 +303,5 @@
     <include file="parts/20243008011009131_SU_419_update_transaltion_filter_on_translation.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009132_SU_421_add_other_loan_cupo.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240529122200_SU_402_loan-credit-notes.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240529122200_SU_402_loan-credit-notes-transaction.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
