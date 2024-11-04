@@ -811,7 +811,7 @@ public class LoanProduct extends AbstractPersistableCustom {
         if (charges != null) {
             this.charges = charges;
         }
-        final Long interestRatePoints = null;
+        final Float interestRatePoints = null;
 
         this.isLinkedToFloatingInterestRate = isLinkedToFloatingInterestRates != null && isLinkedToFloatingInterestRates;
         if (isLinkedToFloatingInterestRate) {

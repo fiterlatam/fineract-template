@@ -60,7 +60,7 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
     private BigDecimal nominalInterestRatePerPeriod;
 
     @Column(name = "interest_rate_points")
-    private Long interestRatePoints;
+    private Float interestRatePoints;
 
     // FIXME - move away form JPA ordinal use for enums using just integer -
     // requires sql patch for existing users of software.
@@ -155,7 +155,7 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
     private LoanScheduleProcessingType loanScheduleProcessingType;
 
     public static LoanProductRelatedDetail createFrom(final MonetaryCurrency currency, final BigDecimal principal,
-            final BigDecimal nominalInterestRatePerPeriod, final Long interestRatePoints,
+            final BigDecimal nominalInterestRatePerPeriod, final Float interestRatePoints,
             final PeriodFrequencyType interestRatePeriodFrequencyType, final BigDecimal nominalAnnualInterestRate,
             final InterestMethod interestMethod, final InterestCalculationPeriodMethod interestCalculationPeriodMethod,
             final boolean allowPartialPeriodInterestCalcualtion, final Integer repaymentEvery,
@@ -181,7 +181,7 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
     }
 
     public LoanProductRelatedDetail(final MonetaryCurrency currency, final BigDecimal defaultPrincipal,
-            final BigDecimal defaultNominalInterestRatePerPeriod, final Long interestRatePoints,
+            final BigDecimal defaultNominalInterestRatePerPeriod, final Float interestRatePoints,
             final PeriodFrequencyType interestPeriodFrequencyType, final BigDecimal defaultAnnualNominalInterestRate,
             final InterestMethod interestMethod, final InterestCalculationPeriodMethod interestCalculationPeriodMethod,
             final boolean allowPartialPeriodInterestCalcualtion, final Integer repayEvery, final PeriodFrequencyType repaymentFrequencyType,
@@ -397,11 +397,11 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
         }
 
         final String interestRatePoints = "interestRatePoints";
-        if (command.isChangeInLongParameterNamed(interestRatePoints, this.interestRatePoints)) {
-            final Long newValue = command.longValueOfParameterNamed(interestRatePoints);
+        if (command.isChangeInBigDecimalParameterNamed(interestRatePoints, BigDecimal.valueOf(this.interestRatePoints))) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(interestRatePoints);
             actualChanges.put(interestRatePoints, newValue);
             actualChanges.put(Loan.RECALCULATE_LOAN_SCHEDULE, true);
-            this.interestRatePoints = newValue;
+            this.interestRatePoints = newValue.floatValue();
         }
 
         final String repaymentEveryParamName = "repaymentEvery";
@@ -776,11 +776,11 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
         return loanScheduleProcessingType;
     }
 
-    public Long getInterestRatePoints() {
+    public Float getInterestRatePoints() {
         return interestRatePoints;
     }
 
-    public void setInterestRatePoints(Long interestRatePoints) {
+    public void setInterestRatePoints(Float interestRatePoints) {
         this.interestRatePoints = interestRatePoints;
     }
 

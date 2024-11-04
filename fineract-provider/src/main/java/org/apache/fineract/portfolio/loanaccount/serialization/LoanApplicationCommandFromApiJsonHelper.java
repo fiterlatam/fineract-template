@@ -255,7 +255,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
         if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.INTEREST_RATE_POINTS, element)) {
             final String interestRatePoints = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.INTEREST_RATE_POINTS, element);
             baseDataValidator.reset().parameter(LoanApiConstants.INTEREST_RATE_POINTS).value(interestRatePoints)
-                    .matchesRegularExpression("\\d+");
+                    .matchesRegularExpression("^\\d+(\\.\\d{1,2})?$");
         }
 
         if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.loanOfficerIdParameterName, element)) {

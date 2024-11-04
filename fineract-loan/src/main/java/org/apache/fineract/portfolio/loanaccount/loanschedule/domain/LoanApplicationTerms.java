@@ -78,7 +78,7 @@ public final class LoanApplicationTerms {
 
     private InterestMethod interestMethod;
     private BigDecimal interestRatePerPeriod;
-    private final Long interestRatePoints;
+    private final Float interestRatePoints;
     private final PeriodFrequencyType interestRatePeriodFrequencyType;
     private BigDecimal annualNominalInterestRate;
     private InterestCalculationPeriodMethod interestCalculationPeriodMethod;
@@ -238,7 +238,7 @@ public final class LoanApplicationTerms {
             final PeriodFrequencyType loanTermPeriodFrequencyType, final Integer numberOfRepayments, final Integer repaymentEvery,
             final PeriodFrequencyType repaymentPeriodFrequencyType, Integer nthDay, DayOfWeekType weekDayType,
             final AmortizationMethod amortizationMethod, final InterestMethod interestMethod, final BigDecimal interestRatePerPeriod,
-            final Long interestRatePoints, final PeriodFrequencyType interestRatePeriodFrequencyType,
+            final Float interestRatePoints, final PeriodFrequencyType interestRatePeriodFrequencyType,
             final BigDecimal annualNominalInterestRate, final InterestCalculationPeriodMethod interestCalculationPeriodMethod,
             final boolean allowPartialPeriodInterestCalcualtion, final Money principalMoney, final LocalDate expectedDisbursementDate,
             final LocalDate repaymentsStartingFromDate, final LocalDate calculatedRepaymentsStartingFromDate,
@@ -309,7 +309,7 @@ public final class LoanApplicationTerms {
         final AmortizationMethod amortizationMethod = loanProductRelatedDetail.getAmortizationMethod();
         final InterestMethod interestMethod = loanProductRelatedDetail.getInterestMethod();
         final BigDecimal interestRatePerPeriod = loanProductRelatedDetail.getNominalInterestRatePerPeriod();
-        final Long interestRatePoints = loanProductRelatedDetail.getInterestRatePoints();
+        final Float interestRatePoints = loanProductRelatedDetail.getInterestRatePoints();
         final PeriodFrequencyType interestRatePeriodFrequencyType = loanProductRelatedDetail.getInterestPeriodFrequencyType();
         final InterestCalculationPeriodMethod interestCalculationPeriodMethod = loanProductRelatedDetail
                 .getInterestCalculationPeriodMethod();
@@ -361,7 +361,7 @@ public final class LoanApplicationTerms {
             final PeriodFrequencyType loanTermPeriodFrequencyType, final Integer numberOfRepayments, final Integer repaymentEvery,
             final PeriodFrequencyType repaymentPeriodFrequencyType, final Integer nthDay, final DayOfWeekType weekDayType,
             final AmortizationMethod amortizationMethod, final InterestMethod interestMethod, final BigDecimal interestRatePerPeriod,
-            final Long interestRatePoints, final PeriodFrequencyType interestRatePeriodFrequencyType,
+            final Float interestRatePoints, final PeriodFrequencyType interestRatePeriodFrequencyType,
             final BigDecimal annualNominalInterestRate, final InterestCalculationPeriodMethod interestCalculationPeriodMethod,
             final boolean allowPartialPeriodInterestCalcualtion, final Money principal, final LocalDate expectedDisbursementDate,
             final LocalDate repaymentsStartingFromDate, final LocalDate calculatedRepaymentsStartingFromDate, final Integer principalGrace,
@@ -1952,7 +1952,7 @@ public final class LoanApplicationTerms {
         return interestRatePerPeriod;
     }
 
-    public Long getInterestRatePoints() {
+    public Float getInterestRatePoints() {
         return interestRatePoints;
     }
 
