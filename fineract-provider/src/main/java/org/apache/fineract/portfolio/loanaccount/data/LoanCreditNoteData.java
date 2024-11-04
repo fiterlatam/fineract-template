@@ -25,5 +25,6 @@ public class LoanCreditNoteData {
     private BigDecimal totalAmount;
     private Long documentId;
     private String documentName;
+    private Long transactionId;
 
 }
