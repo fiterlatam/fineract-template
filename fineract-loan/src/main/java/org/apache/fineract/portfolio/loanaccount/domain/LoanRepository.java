@@ -160,6 +160,9 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     @Query("select loan from Loan loan where loan.loanStatus = 300")
     List<Loan> findActiveLoans();
 
+    @Query("select loan from Loan loan where loan.loanStatus = 300 and loan.client.id = :clientId")
+    List<Loan> findActiveLoansByClientId(@Param("clientId") Long clientId);
+
     @Query("select loan from Loan loan where loan.glim.id = :glimId")
     List<Loan> findByGlimId(@Param("glimId") Long glimId);
 
