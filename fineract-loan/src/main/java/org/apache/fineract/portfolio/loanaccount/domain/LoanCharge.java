@@ -820,6 +820,10 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         return this.paid;
     }
 
+    public boolean isNotPaid() {
+        return !this.paid;
+    }
+
     public boolean isWaived() {
         return this.waived;
     }
