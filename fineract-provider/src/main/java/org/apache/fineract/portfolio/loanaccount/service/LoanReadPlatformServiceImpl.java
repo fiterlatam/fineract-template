@@ -1618,10 +1618,13 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     (COALESCE(voluntary_insurance.amount, 0) + COALESCE(vat_voluntary_insurance.amount, 0)) voluntary_insurance,
                     (COALESCE(hono.amount, 0) + COALESCE(vat_hono.amount, 0)) hono,
                     (COALESCE(aval.amount, 0) + COALESCE(vat_aval.amount, 0)) aval,
-                    (COALESCE(penalty.amount, 0) + COALESCE(vat_penalty.amount, 0)) penalty
+                    (COALESCE(penalty.amount, 0) + COALESCE(vat_penalty.amount, 0)) penalty,
+                    trcu.firstname as creator_firstname, trcu.lastname as creator_lastname, trmu.firstname as modifier_firstname, trmu.lastname as modifier_lastname
                      from m_loan l
                      join m_loan_transaction tr on tr.loan_id = l.id
                       join m_currency rc on rc.%s = l.currency_code
+                      LEFT JOIN m_appuser trcu ON trcu.id = tr.created_by
+                      LEFT JOIN m_appuser trmu ON trmu.id = tr.last_modified_by
                       left JOIN m_payment_detail pd ON tr.payment_detail_id = pd.id
                       left join m_payment_type pt on pd.payment_type_id = pt.id left join m_office office on office.id=tr.office_id
                       left join m_account_transfer_transaction fromtran on fromtran.from_loan_transaction_id = tr.id
@@ -1823,11 +1826,22 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             data.setHono(hono);
             data.setPenalty(penalty);
 
+            // include name of creator and modifier
+            final String creatorFirstName = rs.getString("creator_firstname");
+            final String creatorLastName = rs.getString("creator_lastname");
+            final String modifierFirstName = rs.getString("modifier_firstname");
+            final String modifierLastName = rs.getString("modifier_lastname");
+
             LoanTransactionData transactionData = new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData,
                     currencyData, date, totalAmount, netDisbursalAmount, principalPortion, interestPortion, feeChargesPortion,
                     penaltyChargesPortion, overPaymentPortion, unrecognizedIncomePortion, externalId, transfer, null,
                     outstandingLoanBalance, submittedOnDate, manuallyReversed, reversalExternalId, reversedOnDate, loanId, externalLoanId);
             transactionData.setLoanChargePaidBySummary(data);
+            transactionData.setCreatedByFirstname(creatorFirstName);
+            transactionData.setCreatedByLastname(creatorLastName);
+            transactionData.setLastModifiedByFirstname(modifierFirstName);
+            transactionData.setLastModifiedByLastname(modifierLastName);
+
             return transactionData;
         }
     }
