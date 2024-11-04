@@ -178,6 +178,10 @@ public interface LoanReadPlatformService {
 
     List<DefaultOrCancelInsuranceInstallmentData> getLoanDataWithDefaultOrCancelInsurance(Long loanId, Long insuranceCode, LocalDate date);
 
+    List<DefaultOrCancelInsuranceInstallmentData> getLoanDataWithDefaultMandatoryInsurance(Long numberOfDays);
+
+    List<DefaultOrCancelInsuranceInstallmentData> getLoanDataForSuspensionOfInsurance(Long numberOfDays);
+
     List<LoanReclaimData> retrieveClaimTemplate(String claimType);
 
     List<LoanReclaimData> retrieveExcludedTemplate(String claimType);

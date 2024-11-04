@@ -104,6 +104,8 @@ public interface LoanWritePlatformService {
 
     CommandProcessingResult forecloseLoan(Long loanId, JsonCommand command);
 
+    CommandProcessingResult cancelLoan(Long loanId, JsonCommand command);
+
     CommandProcessingResult disburseGLIMLoan(Long loanId, JsonCommand command);
 
     CommandProcessingResult undoGLIMLoanDisbursal(Long loanId, JsonCommand command);
@@ -130,6 +132,8 @@ public interface LoanWritePlatformService {
     void persistInstallmentalChargeAccrual(LocalDate localDate);
 
     void cancelDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds);
+
+    void temporarySuspendDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultInsuranceIds);
 
     CommandProcessingResult cancelInsurance(JsonCommand command, boolean isVoluntaryInsurance);
 

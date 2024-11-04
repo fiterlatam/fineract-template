@@ -1002,6 +1002,15 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder loanCancel(final Long loanId) {
+        this.actionName = "ANULAR";
+        this.entityName = "LOAN";
+        this.entityId = loanId;
+        this.loanId = loanId;
+        this.href = "/loans/" + loanId + "/transactions?command=cancel-loan";
+        return this;
+    }
+
     public CommandWrapperBuilder loanClaim(final Long loanId) {
         this.actionName = "CLAIM";
         this.entityName = "LOAN";
