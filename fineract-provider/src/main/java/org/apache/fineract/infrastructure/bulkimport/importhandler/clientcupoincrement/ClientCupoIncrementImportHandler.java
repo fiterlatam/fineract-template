@@ -218,15 +218,7 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
                             TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
                     continue;
                 }
-                if (maximumCupoAmount.compareTo(previousMaximumCupoAmount) > 1) {
-                    errorCount++;
-                    errorMessage = "No puede modificarse ya que el nuevo cupo que sugiere es menor al actual";
-                    ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(), errorMessage,
-                            ClientCupoIncrementConstants.STATUS_COL);
-                    clientCupoIncrementSheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL,
-                            TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
-                    continue;
-                }
+
                 if (!ClientStatus.ACTIVE.getValue().equals(clientStatus.getId().intValue())) {
                     errorCount++;
                     errorMessage = "El cliente NO esta activo, no puede ejectuarse el cambio de cupo";
