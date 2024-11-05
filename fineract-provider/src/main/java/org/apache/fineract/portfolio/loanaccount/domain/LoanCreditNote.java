@@ -66,7 +66,8 @@ public class LoanCreditNote extends AbstractAuditableWithUTCDateTimeCustom {
             documentName = this.document.getName();
         }
         return new LoanCreditNoteData(this.getId(), loan.getId(), this.creditNoteDate, this.arrearInterest, this.currentInterest,
-                this.honorarios, this.aval, this.insurance, this.capital, this.totalAmount, documentId, documentName, this.transactionId);
+                this.honorarios, this.aval, this.insurance, this.mandatoryInsurance, this.capital, this.totalAmount, documentId,
+                documentName, this.transactionId);
     }
 
     public void calculateTotalAmount() {
