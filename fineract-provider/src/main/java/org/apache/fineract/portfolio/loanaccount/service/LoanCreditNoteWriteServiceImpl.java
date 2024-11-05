@@ -4,7 +4,13 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.custom.infrastructure.core.service.CustomDateUtils;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -14,13 +20,18 @@ import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerialize
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.documentmanagement.domain.Document;
 import org.apache.fineract.infrastructure.documentmanagement.domain.DocumentRepository;
+import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
+import org.apache.fineract.portfolio.loanaccount.data.SpecialWriteOffPayload;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCreditNote;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCreditNoteRepository;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanCreditNoteAmountCannotBeZeroException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanCreditNoteDateCannotBeFutureException;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteService {
@@ -29,6 +40,7 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
     private final LoanAssembler loanAssembler;
     private final DocumentRepository documentRepository;
     private final LoanWritePlatformService loanWritePlatformService;
+    private final LoanReadPlatformService loanReadPlatformService;
     private final FromJsonHelper fromApiJsonHelper;
 
     @Override
@@ -55,6 +67,7 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
         BigDecimal honorarios = command.bigDecimalValueOfParameterDefaultToZeroIfNull("honorarios");
         BigDecimal aval = command.bigDecimalValueOfParameterDefaultToZeroIfNull("aval");
         BigDecimal insurance = command.bigDecimalValueOfParameterDefaultToZeroIfNull("insurance");
+        BigDecimal mandatoryInsurance = command.bigDecimalValueOfParameterDefaultToZeroIfNull("mandatoryInsurance");
         BigDecimal capital = command.bigDecimalValueOfParameterDefaultToZeroIfNull("capital");
 
         Long documentId = command.longValueOfParameterNamed("documentId");
@@ -66,14 +79,6 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
             creditNote.setDocument(document);
 
         }
-        BigDecimal totalAmount = (currentInterest != null ? currentInterest : BigDecimal.ZERO)
-                .add(arrearInterest != null ? arrearInterest : BigDecimal.ZERO).add(honorarios != null ? honorarios : BigDecimal.ZERO)
-                .add(aval != null ? aval : BigDecimal.ZERO).add(insurance != null ? insurance : BigDecimal.ZERO)
-                .add(capital != null ? capital : BigDecimal.ZERO);
-        // validate that total amount is not zero
-        if (totalAmount.compareTo(BigDecimal.ZERO) == 0) {
-            throw new LoanCreditNoteAmountCannotBeZeroException();
-        }
 
         // set the credit note fields
         creditNote.setLoan(loan);
@@ -83,8 +88,14 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
         creditNote.setHonorarios(honorarios);
         creditNote.setAval(aval);
         creditNote.setInsurance(insurance);
+        creditNote.setMandatoryInsurance(mandatoryInsurance);
         creditNote.setCapital(capital);
-        creditNote.setTotalAmount(totalAmount);
+        creditNote.calculateTotalAmount();
+
+        // validate that total amount is not less than or equal to zero
+        if (creditNote.getTotalAmount().compareTo(BigDecimal.ZERO) < 1) {
+            throw new LoanCreditNoteAmountCannotBeZeroException();
+        }
 
         // first apply the credit note to the loan
         this.applyCreditNoteToLoan(loan, creditNote);
@@ -97,10 +108,8 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
     private void applyCreditNoteToLoan(final Loan loan, LoanCreditNote creditNote) {
         // apply the credit note to the loan
 
-        GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
-        gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.SPANISH_DATE_FORMAT));
-        Object payloadData = generateSpecialWriteOffPayload(loan, creditNote);
-        String payload = gsonBuilder.create().toJson(payloadData);
+        String payload = generateSpecialWriteOffPayload(loan, creditNote);
+        log.info("Payload for special write off {}", payload);
         JsonElement jsonElement = fromApiJsonHelper.parse(payload);
         // setup json command
         JsonCommand jsonCommand = new JsonCommand(null, payload, jsonElement, fromApiJsonHelper, null, null, null, null, null, null, null,
@@ -112,27 +121,107 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
     }
 
     private String generateSpecialWriteOffPayload(Loan loan, LoanCreditNote creditNote) {
-        // generate the payload for the special write off
-        // this is a simplified version of the payload
-        // you can add more fields as needed
-        // here we are just setting the transaction date and the amount
-        // you can add more fields as needed
-        // here we are just setting the transaction date and the amount
+        // we need to chack for charges
 
-        // sample paload
-        /*
-         *
-         * { "loanId": 453, "charges": [ { "chargeId": 5, "writeOffAmount": 2594 }, { "chargeId": 46, "writeOffAmount":
-         * 8800 }, { "chargeId": 35, "writeOffAmount": 32 } ], "principalPortion": 1000, "interestPortion": 12,
-         * "totalWriteOffAmount": 12438, "dateFormat": "dd MMMM yyyy", "locale": "en" }
-         */
-        // TODO , I'll be changing this in the next commit
-        return "{\n" + "  \"loanId\": " + loan.getId() + ",\n" + "  \"charges\": [\n" + "    {\n" + "      \"chargeId\": 5,\n"
-                + "      \"writeOffAmount\": " + creditNote.getArrearInterest() + "\n" + "    },\n" + "    {\n"
-                + "      \"chargeId\": 46,\n" + "      \"writeOffAmount\": " + creditNote.getHonorarios() + "\n" + "    },\n" + "    {\n"
-                + "      \"chargeId\": 35,\n" + "      \"writeOffAmount\": " + creditNote.getAval() + "\n" + "    }\n" + "  ],\n"
-                + "  \"principalPortion\": " + creditNote.getCapital() + ",\n" + "  \"interestPortion\": " + creditNote.getCurrentInterest()
-                + ",\n" + "  \"totalWriteOffAmount\": " + creditNote.getTotalAmount() + ",\n" + "  \"dateFormat\": \"dd MMMM yyyy\",\n"
-                + "  \"locale\": \"en\"\n" + "}";
+        List<Map<String, Object>> charges = generateChargesForSpecialWriteOff(loan, creditNote);
+        if (creditNote.getTotalAmount().compareTo(BigDecimal.ZERO) < 1) {
+            throw new LoanCreditNoteAmountCannotBeZeroException();
+        }
+
+        SpecialWriteOffPayload specialWriteOffPayload = SpecialWriteOffPayload.builder().loanId(loan.getId())
+                .principalPortion(creditNote.getCapital()).interestPortion(creditNote.getCurrentInterest())
+                .totalWriteOffAmount(creditNote.getTotalAmount()).dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT).locale("es").build();
+
+        if (!charges.isEmpty()) {
+            specialWriteOffPayload.setCharges(charges);
+        }
+
+        GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
+        gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.SPANISH_DATE_FORMAT));
+        return gsonBuilder.create().toJson(specialWriteOffPayload);
+
+    }
+
+    private List<Map<String, Object>> generateChargesForSpecialWriteOff(Loan loan, LoanCreditNote creditNote) {
+        List<Map<String, Object>> charges = new ArrayList<>();
+        boolean writeOffCharge = creditNote.includesCharges();
+        LoanTransactionData loanTransaction = this.loanReadPlatformService.retrieveLoanSpecialWriteOffTemplate(loan.getId());
+        List<LoanChargeData> currentOutstandingLoanCharges = loanTransaction.getCurrentOutstandingLoanCharges();
+        List<Long> currentOutstandingLoanChargeIds = currentOutstandingLoanCharges.stream().map(LoanChargeData::getChargeId).toList();
+        Collection<LoanCharge> loanCharges = loan.getCharges().stream().filter(LoanCharge::isNotPaid)
+                .filter(l -> currentOutstandingLoanChargeIds.contains(l.getCharge().getId())).toList();
+        if (writeOffCharge) {
+
+            // check for arrears
+            BigDecimal arrearInterest = creditNote.getArrearInterest();
+            if (arrearInterest != null && arrearInterest.compareTo(BigDecimal.ZERO) > 0) {
+                LoanCharge arrearCharge = loanCharges.stream().filter(LoanCharge::isPenaltyCharge).findFirst().orElse(null);
+
+                if (arrearCharge != null) {
+                    charges.add(Map.of("chargeId", Objects.requireNonNull(arrearCharge.getCharge().getId()), "writeOffAmount",
+                            creditNote.getArrearInterest()));
+                } else {
+                    creditNote.setArrearInterest(BigDecimal.ZERO);
+                }
+
+            }
+            // check for voluntary insurance
+            BigDecimal insurance = creditNote.getInsurance();
+            if (insurance != null && insurance.compareTo(BigDecimal.ZERO) > 0) {
+                LoanCharge insuranceCharge = loanCharges.stream().filter(loanCharge -> loanCharge.getCharge().isVoluntaryInsurance())
+                        .findFirst().orElse(null);
+                if (insuranceCharge != null) {
+                    charges.add(Map.of("chargeId", Objects.requireNonNull(insuranceCharge.getCharge().getId()), "writeOffAmount",
+                            creditNote.getInsurance()));
+                } else {
+                    creditNote.setInsurance(BigDecimal.ZERO);
+                }
+            }
+
+            // check for mandatory insurance
+            BigDecimal mandatoryInsurance = creditNote.getMandatoryInsurance();
+            if (mandatoryInsurance != null && mandatoryInsurance.compareTo(BigDecimal.ZERO) > 0) {
+
+                LoanCharge insuranceCharge = loanCharges.stream().filter(loanCharge -> loanCharge.getCharge().isMandatoryInsurance())
+                        .findFirst().orElse(null);
+                log.info(" is charge present {}", insuranceCharge);
+                // check if insurance is present
+                if (insuranceCharge != null) {
+                    charges.add(Map.of("chargeId", Objects.requireNonNull(insuranceCharge.getCharge().getId()), "writeOffAmount",
+                            creditNote.getMandatoryInsurance()));
+                } else {
+                    creditNote.setMandatoryInsurance(BigDecimal.ZERO);
+                }
+            }
+            // check for honorarios
+            BigDecimal honorarios = creditNote.getHonorarios();
+            if (honorarios != null && honorarios.compareTo(BigDecimal.ZERO) > 0) {
+                LoanCharge honorariosCharge = loanCharges.stream().filter(loanCharge -> loanCharge.getCharge().isFlatHono()).findFirst()
+                        .orElse(null);
+                if (honorariosCharge != null) {
+                    charges.add(Map.of("chargeId", Objects.requireNonNull(honorariosCharge.getCharge().getId()), "writeOffAmount",
+                            creditNote.getHonorarios()));
+                } else {
+                    creditNote.setHonorarios(BigDecimal.ZERO);
+                }
+            }
+            // check for aval
+            BigDecimal aval = creditNote.getAval();
+            if (aval != null && aval.compareTo(BigDecimal.ZERO) > 0) {
+                LoanCharge avalCharge = loanCharges.stream().filter(loanCharge -> loanCharge.getCharge().isAvalCharge()).findFirst()
+                        .orElse(null);
+                if (avalCharge != null) {
+                    charges.add(Map.of("chargeId", Objects.requireNonNull(avalCharge.getCharge().getId()), "writeOffAmount",
+                            creditNote.getAval()));
+                } else {
+                    creditNote.setAval(BigDecimal.ZERO);
+                }
+            }
+
+        } else {
+            creditNote.resetCharges();
+        }
+        creditNote.calculateTotalAmount();
+        return charges;
     }
 }
