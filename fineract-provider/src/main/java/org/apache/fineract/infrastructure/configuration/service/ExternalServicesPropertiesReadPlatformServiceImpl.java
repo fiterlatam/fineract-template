@@ -22,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import lombok.RequiredArgsConstructor;
+import org.apache.fineract.infrastructure.campaigns.masivian.data.MasivianConfigurationData;
 import org.apache.fineract.infrastructure.campaigns.sms.data.MessageGatewayConfigurationData;
 import org.apache.fineract.infrastructure.configuration.data.ExternalServicesPropertiesData;
 import org.apache.fineract.infrastructure.configuration.data.S3CredentialsData;
@@ -137,6 +138,24 @@ public class ExternalServicesPropertiesReadPlatformServiceImpl implements Extern
         }
     }
 
+    private static final class MasivianConfigurationDataExtractor implements ResultSetExtractor<MasivianConfigurationData> {
+
+        @Override
+        public MasivianConfigurationData extractData(final ResultSet rs) throws SQLException, DataAccessException {
+            String smsApiUrl = null;
+            String smsAuthorization = null;
+            while (rs.next()) {
+                final String paramName = rs.getString("name");
+                if (ExternalServicesConstants.MASIVIAN_SMS_API_URL.equalsIgnoreCase(paramName)) {
+                    smsApiUrl = rs.getString("value");
+                } else if (ExternalServicesConstants.MASIVIAN_SMS_API_AUTHORIZATION_HEADER.equalsIgnoreCase(paramName)) {
+                    smsAuthorization = rs.getString("value");
+                }
+            }
+            return MasivianConfigurationData.builder().smsApiUrl(smsApiUrl).smsAuthorization(smsAuthorization).build();
+        }
+    }
+
     @Override
     public S3CredentialsData getS3Credentials() {
         final ResultSetExtractor<S3CredentialsData> resultSetExtractor = new S3CredentialsDataExtractor();
@@ -167,6 +186,14 @@ public class ExternalServicesPropertiesReadPlatformServiceImpl implements Extern
     }
 
     @Override
+    public MasivianConfigurationData getMasivianConfiguration() {
+        final ResultSetExtractor<MasivianConfigurationData> resultSetExtractor = new MasivianConfigurationDataExtractor();
+        final String sql = "SELECT esp.name, esp.value FROM c_external_service_properties esp inner join c_external_service es on esp.external_service_id = es.id where es.name = '"
+                + ExternalServicesConstants.MASIVIAN_SERVICE_NAME + "'";
+        return this.jdbcTemplate.query(sql, resultSetExtractor, new Object[] {});
+    }
+
+    @Override
     public Collection<ExternalServicesPropertiesData> retrieveOne(String serviceName) {
         String serviceNameToUse = null;
         switch (serviceName) {
@@ -188,6 +215,10 @@ public class ExternalServicesPropertiesReadPlatformServiceImpl implements Extern
 
             case "CUSTOM_CHARGE_HONORARIO_PROVIDER":
                 serviceNameToUse = ExternalServicesConstants.CUSTOM_CHARGE_HONORARIO_SERVICE_NAME;
+            break;
+
+            case "MASIVIAN_SERVICE":
+                serviceNameToUse = ExternalServicesConstants.MASIVIAN_SERVICE_NAME;
             break;
 
             default:
