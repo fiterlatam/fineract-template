@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.List;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.PaginationHelper;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
@@ -212,16 +211,13 @@ public class SmsReadPlatformServiceImpl implements SmsReadPlatformService {
             objectArray[arrayPos] = status;
             arrayPos = arrayPos + 1;
         }
-        String fromDateString = null;
-        String toDateString = null;
+
         if (dateFrom != null && dateTo != null) {
-            fromDateString = DateUtils.DEFAULT_DATE_FORMATTER.format(dateFrom);
-            toDateString = DateUtils.DEFAULT_DATE_FORMATTER.format(dateTo);
             sqlBuilder.append(" and smo.submittedon_date >= ? and smo.submittedon_date <= ? ");
-            objectArray[arrayPos] = fromDateString;
+            objectArray[arrayPos] = dateFrom;
             arrayPos = arrayPos + 1;
 
-            objectArray[arrayPos] = toDateString;
+            objectArray[arrayPos] = dateTo;
             arrayPos = arrayPos + 1;
         }
 

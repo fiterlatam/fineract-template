@@ -43,6 +43,8 @@ public class ExternalServicesPropertiesCommandFromApiJsonDeserializer {
     private static final Set<String> NOTIFICATION_SUPPORTED_PARAMETERS = NotificationJSONinputParams.getAllValues();
     private static final Set<String> CUSTOM_CHARGE_HONORARIO_PROVIDER_SUPPORTED_PARAMETERS = ExternalServicesConstants.CustomChargeHonorarioJSONinputParams
             .getAllValues();
+    private static final Set<String> MASIVIAN_SERVICE_SUPPORTED_PARAMETERS = ExternalServicesConstants.MasivianJSONinputParams
+            .getAllValues();
     private final FromJsonHelper fromApiJsonHelper;
 
     @Autowired
@@ -65,6 +67,8 @@ public class ExternalServicesPropertiesCommandFromApiJsonDeserializer {
             case "NOTIFICATION" -> this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, NOTIFICATION_SUPPORTED_PARAMETERS);
             case "CUSTOM_CHARGE_HONORARIO_PROVIDER" -> this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json,
                     CUSTOM_CHARGE_HONORARIO_PROVIDER_SUPPORTED_PARAMETERS);
+            case "MASIVIAN_SERVICE" ->
+                this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, MASIVIAN_SERVICE_SUPPORTED_PARAMETERS);
             default -> throw new ExternalServiceConfigurationNotFoundException(externalServiceName);
         }
 
