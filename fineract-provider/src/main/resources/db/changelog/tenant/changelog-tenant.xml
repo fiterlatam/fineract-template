@@ -306,4 +306,5 @@
     <include file="parts/20240529122200_SU_402_loan-credit-notes-transaction.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241031220000_SU_420_insurance_incident_addition.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240529122200_SU_402_loan-credit-notes-1.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009132_SU_433_update_report_de_prestamos _reclamados.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
