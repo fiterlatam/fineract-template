@@ -202,14 +202,33 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
                 final Long clientId = client.getClientId();
                 final String clientName = client.getClientName();
                 final EnumOptionData clientStatus = client.getStatus();
-                final BigDecimal previousMaximumCupoAmount = client.getCupo();
+                BigDecimal previousMaximumCupoAmount = client.getCupo();
+                BigDecimal totalOutstandingPrincipalAmount = client.getTotalOutstandingPrincipalAmount();
+
                 clientCupoIncrementSheet.getRow(clientCupoIncrementData.getRowIndex())
                         .createCell(ClientCupoIncrementConstants.CLIENT_NAME_COL).setCellValue(clientName);
                 clientCupoIncrementSheet.getRow(clientCupoIncrementData.getRowIndex())
                         .createCell(ClientCupoIncrementConstants.PREVIOUS_MAXIMUM_CUPO_AMOUNT_COL)
                         .setCellValue(previousMaximumCupoAmount.doubleValue());
 
-                if (maximumCupoAmount.compareTo(previousMaximumCupoAmount) > 0) {
+                if (totalOutstandingPrincipalAmount.compareTo(BigDecimal.ZERO) < 0) {
+                    totalOutstandingPrincipalAmount = totalOutstandingPrincipalAmount.abs();
+                    previousMaximumCupoAmount = previousMaximumCupoAmount.subtract(totalOutstandingPrincipalAmount);
+                }
+                if (totalOutstandingPrincipalAmount.compareTo(previousMaximumCupoAmount) > 0) {
+                    if (maximumCupoAmount.compareTo(totalOutstandingPrincipalAmount) < 0) {
+                        errorCount++;
+                        errorMessage = "No puede modificarse ya que el nuevo cupo que sugiere es menor al actual "
+                                + totalOutstandingPrincipalAmount;
+                        ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(), errorMessage,
+                                ClientCupoIncrementConstants.STATUS_COL);
+                        clientCupoIncrementSheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL,
+                                TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
+                        continue;
+                    }
+                }
+
+                if (maximumCupoAmount.compareTo(previousMaximumCupoAmount) < 0) {
                     errorCount++;
                     errorMessage = "No puede modificarse ya que el nuevo cupo que sugiere es menor al actual";
                     ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(), errorMessage,
