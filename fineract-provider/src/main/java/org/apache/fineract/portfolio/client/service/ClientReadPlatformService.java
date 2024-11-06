@@ -25,8 +25,8 @@ import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
-import org.apache.fineract.portfolio.client.data.ClienAvailableCupoFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
+import org.apache.fineract.portfolio.client.data.ClientAvailableCupoFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.data.ClientMaximumLoanArrearsData;
 
@@ -71,7 +71,7 @@ public interface ClientReadPlatformService {
 
     ClientAdditionalFieldsData retrieveClientAdditionalData(Long clientId);
 
-    List<ClienAvailableCupoFieldsData> retriveClientAvailableCupo(String nitId);
+    List<ClientAvailableCupoFieldsData> retriveClientAvailableCupo(String nitId);
 
     List<ClientData> retrieveByIdNumber(String idNumber);
 

@@ -163,7 +163,7 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
 
     private void sendSmsForLoanRepayment(LoanTransaction loanTransaction) {
         List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("Loan Repayment");
-        if (smsCampaigns.size() > 0) {
+        if (!smsCampaigns.isEmpty()) {
             for (SmsCampaign smsCampaign : smsCampaigns) {
                 try {
                     Loan loan = loanTransaction.getLoan();

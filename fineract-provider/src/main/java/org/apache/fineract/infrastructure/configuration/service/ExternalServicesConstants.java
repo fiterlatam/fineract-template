@@ -20,6 +20,7 @@ package org.apache.fineract.infrastructure.configuration.service;
 
 import java.util.HashSet;
 import java.util.Set;
+import lombok.Getter;
 
 public final class ExternalServicesConstants {
 
@@ -56,6 +57,11 @@ public final class ExternalServicesConstants {
     public static final String NOTIFICATION_GCM_END_POINT = "gcm_end_point";
     public static final String NOTIFICATION_FCM_END_POINT = "fcm_end_point";
 
+    public static final String MASIVIAN_SERVICE_NAME = "MASIVIAN_SERVICE";
+    public static final String MASIVIAN_SMS_API_URL = "SMS_API_URL";
+    public static final String MASIVIAN_SMS_API_AUTHORIZATION_HEADER = "SMS_API_AUTHORIZATION_HEADER";
+
+    @Getter
     public enum ExternalservicePropertiesJSONinputParams {
 
         EXTERNAL_SERVICE_ID("external_service_id"), NAME("name"), VALUE("value");
@@ -83,9 +89,6 @@ public final class ExternalServicesConstants {
             return name().toString().replaceAll("_", " ");
         }
 
-        public String getValue() {
-            return this.value;
-        }
     }
 
     public enum SMTPJSONinputParams {
@@ -249,4 +252,31 @@ public final class ExternalServicesConstants {
         }
     }
 
+    @Getter
+    public enum MasivianJSONinputParams {
+
+        SMS_API_URL("SMS_API_URL"), SMS_API_AUTHORIZATION_HEADER("SMS_API_AUTHORIZATION_HEADER");
+
+        private final String value;
+
+        MasivianJSONinputParams(final String value) {
+            this.value = value;
+        }
+
+        private static final Set<String> values = new HashSet<>();
+        static {
+            for (final MasivianJSONinputParams type : MasivianJSONinputParams.values()) {
+                values.add(type.value);
+            }
+        }
+
+        public static Set<String> getAllValues() {
+            return values;
+        }
+
+        @Override
+        public String toString() {
+            return name().replaceAll("_", " ");
+        }
+    }
 }

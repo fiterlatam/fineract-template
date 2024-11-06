@@ -3462,6 +3462,59 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     @Override
     @Transactional
+    public CommandProcessingResult cancelLoan(final Long loanId, final JsonCommand command) {
+        final String json = command.json();
+        final JsonElement element = fromApiJsonHelper.parse(json);
+        final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        final LocalDate transactionDate = this.fromApiJsonHelper.extractLocalDateNamed(LoanApiConstants.transactionDateParamName, element);
+        final ExternalId externalId = externalIdFactory.createFromCommand(command, LoanApiConstants.externalIdParameterName);
+        this.loanEventApiJsonValidator.validateLoanForeclosure(command.json());
+        final Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("dateFormat", command.dateFormat());
+        changes.put("transactionDate", command.stringValueOfParameterNamed(LoanApiConstants.transactionDateParamName));
+        changes.put("externalId", externalId);
+        String noteText = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.noteParamName, element);
+        for (LoanDisbursementDetails loanDisbursementDetails : loan.getDisbursementDetails()) {
+            if (!DateUtils.isAfter(loanDisbursementDetails.expectedDisbursementDateAsLocalDate(), transactionDate)
+                    && loanDisbursementDetails.actualDisbursementDate() == null) {
+                final String defaultUserMessage = "The loan with undisbursed tranche before foreclosure cannot be foreclosed.";
+                throw new LoanForeclosureException("loan.with.undisbursed.tranche.before.foreclosure.cannot.be.foreclosured",
+                        defaultUserMessage, transactionDate);
+            }
+        }
+        this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan, null);
+        List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
+                .getLoanDataWithDefaultOrCancelInsurance(loanId, null, transactionDate);
+        InsuranceIncident incident = this.insuranceIncidentRepository
+                .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
+        if (incident == null) {
+            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION.name());
+        }
+        for (final DefaultOrCancelInsuranceInstallmentData data : cancelInsuranceInstallmentIds) {
+            LoanCharge loanCharge = null;
+            Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream()
+                    .filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
+            if (loanChargeOptional.isPresent()) {
+                loanCharge = loanChargeOptional.get();
+            }
+            BigDecimal cumulative = BigDecimal.ZERO;
+            cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, true);
+            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                    data.installment(), incident, transactionDate, cumulative);
+            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+        }
+        final LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText,
+                externalId, changes);
+        final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
+                BlockingReasonSettingEnum.CREDIT_ANULADO.getDatabaseString(), BlockLevel.CREDIT.toString());
+        loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "Anulado", DateUtils.getLocalDateOfTenant());
+        final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();
+        return commandProcessingResultBuilder.withLoanId(loanId).withEntityId(foreclosureTransaction.getId())
+                .withEntityExternalId(foreclosureTransaction.getExternalId()).with(changes).build();
+    }
+
+    @Override
+    @Transactional
     public CommandProcessingResult chargeOff(JsonCommand command) {
 
         loanEventApiJsonValidator.validateChargeOffTransaction(command.json());
@@ -3947,6 +4000,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .toList();
     }
 
+    @Override
     public void cancelDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultInsuranceIds) {
         final LocalDate currentDate = DateUtils.getBusinessLocalDate();
         InsuranceIncident incident = this.insuranceIncidentRepository
@@ -3969,6 +4023,44 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
             this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+        }
+    }
+
+    @Override
+    public void temporarySuspendDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultInsuranceIds) {
+        final LocalDate currentDate = DateUtils.getBusinessLocalDate();
+        InsuranceIncident incident = this.insuranceIncidentRepository
+                .findByIncidentType(InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT);
+        InsuranceIncident suspensionRemovedIncident = this.insuranceIncidentRepository
+                .findByIncidentType(InsuranceIncidentType.SUSPENSION_REMOVED);
+        if (incident == null || (!incident.isMandatory() && !incident.isVoluntary())) {
+            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT.name());
+        }
+        for (DefaultOrCancelInsuranceInstallmentData data : defaultInsuranceIds) {
+            Loan loan = this.loanAssembler.assembleFrom(data.loanId());
+            Optional<InsuranceIncidentNoveltyNews> lastSuspensionNewsOptional = this.insuranceIncidentNoveltyNewsRepository
+                    .findLastSuspensionIfPresent(loan.getId(), incident.getId(), suspensionRemovedIncident.getId());
+            if (lastSuspensionNewsOptional.isPresent()) {
+                InsuranceIncidentNoveltyNews news = lastSuspensionNewsOptional.get();
+                if (news.getInsuranceIncident().getIncidentType().equals(InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT)) {
+                    // Do not add suspension news if loan is already in suspension
+                    continue;
+                }
+            }
+            LoanCharge loanCharge = null;
+            Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream()
+                    .filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
+            if (loanChargeOptional.isPresent()) {
+                loanCharge = loanChargeOptional.get();
+            }
+            if ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
+                    || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
+                BigDecimal cumulative = BigDecimal.ZERO;
+                InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                        data.installment(), incident, currentDate, cumulative);
+
+                this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+            }
         }
     }
 

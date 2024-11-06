@@ -16,16 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.insurance.domain;
+package org.apache.fineract.portfolio.loanaccount.exception;
 
-import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 
-public interface InsuranceIncidentNoveltyNewsRepository
-        extends JpaRepository<InsuranceIncidentNoveltyNews, Long>, JpaSpecificationExecutor<InsuranceIncidentNoveltyNews> {
+/**
+ * {@link AbstractPlatformDomainRuleException} thrown an action to transition a loan from one state to another violates
+ * a domain rule.
+ */
+public class LoanCreditNoteDateCannotBeFutureException extends AbstractPlatformDomainRuleException {
 
-    @Query(nativeQuery = true, value = "select * from m_insurance_novelty_news where loan_id = ?1 and novelty_id in (?2, ?3) order by id desc limit 1")
-    Optional<InsuranceIncidentNoveltyNews> findLastSuspensionIfPresent(Long loanId, Long suspensionId, Long suspensionExitId);
+    public LoanCreditNoteDateCannotBeFutureException() {
+        super("error.msg.loan.credit.note.date.cannot.be.future", "Credit note date cannot be a future date");
+    }
 }

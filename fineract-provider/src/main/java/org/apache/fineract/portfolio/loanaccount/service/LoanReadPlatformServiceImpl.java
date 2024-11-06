@@ -1618,10 +1618,13 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     (COALESCE(voluntary_insurance.amount, 0) + COALESCE(vat_voluntary_insurance.amount, 0)) voluntary_insurance,
                     (COALESCE(hono.amount, 0) + COALESCE(vat_hono.amount, 0)) hono,
                     (COALESCE(aval.amount, 0) + COALESCE(vat_aval.amount, 0)) aval,
-                    (COALESCE(penalty.amount, 0) + COALESCE(vat_penalty.amount, 0)) penalty
+                    (COALESCE(penalty.amount, 0) + COALESCE(vat_penalty.amount, 0)) penalty,
+                    trcu.firstname as creator_firstname, trcu.lastname as creator_lastname, trmu.firstname as modifier_firstname, trmu.lastname as modifier_lastname
                      from m_loan l
                      join m_loan_transaction tr on tr.loan_id = l.id
                       join m_currency rc on rc.%s = l.currency_code
+                      LEFT JOIN m_appuser trcu ON trcu.id = tr.created_by
+                      LEFT JOIN m_appuser trmu ON trmu.id = tr.last_modified_by
                       left JOIN m_payment_detail pd ON tr.payment_detail_id = pd.id
                       left join m_payment_type pt on pd.payment_type_id = pt.id left join m_office office on office.id=tr.office_id
                       left join m_account_transfer_transaction fromtran on fromtran.from_loan_transaction_id = tr.id
@@ -1823,11 +1826,22 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             data.setHono(hono);
             data.setPenalty(penalty);
 
+            // include name of creator and modifier
+            final String creatorFirstName = rs.getString("creator_firstname");
+            final String creatorLastName = rs.getString("creator_lastname");
+            final String modifierFirstName = rs.getString("modifier_firstname");
+            final String modifierLastName = rs.getString("modifier_lastname");
+
             LoanTransactionData transactionData = new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData,
                     currencyData, date, totalAmount, netDisbursalAmount, principalPortion, interestPortion, feeChargesPortion,
                     penaltyChargesPortion, overPaymentPortion, unrecognizedIncomePortion, externalId, transfer, null,
                     outstandingLoanBalance, submittedOnDate, manuallyReversed, reversalExternalId, reversedOnDate, loanId, externalLoanId);
             transactionData.setLoanChargePaidBySummary(data);
+            transactionData.setCreatedByFirstname(creatorFirstName);
+            transactionData.setCreatedByLastname(creatorLastName);
+            transactionData.setLastModifiedByFirstname(modifierFirstName);
+            transactionData.setLastModifiedByLastname(modifierLastName);
+
             return transactionData;
         }
     }
@@ -3293,6 +3307,22 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     """;
         }
 
+        public String suspensionSchema() {
+            return """
+                    distinct ml.id loanId, min(mlrs.installment) installment, mlc.id loanChargeId
+                    from
+                    m_loan ml
+                    join m_loan_arrears_aging mlaa on mlaa.loan_id = ml.id
+                    join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id and mlrs.completed_derived = false
+                    join m_loan_charge mlc on mlc.loan_id = ml.id
+                    join m_loan_installment_charge mlic on mlic.loan_charge_id = mlc.id and mlic.loan_schedule_id = mlrs.id
+                    join m_charge mc on mc.id = mlc.charge_id
+                        where
+                            ml.loan_status_id = 300
+                            and mlc.amount_outstanding_derived > 0
+                    """;
+        }
+
         @Override
         public DefaultOrCancelInsuranceInstallmentData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
             final Long loanId = JdbcSupport.getLong(rs, "loanId");
@@ -3312,9 +3342,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         Object[] params = null;
         sql = sql + " and mc.charge_calculation_enum =  " + ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue();
         if (loanId == null && insuranceCode == null) {
-            sql = sql + " and mlrs.duedate < CURRENT_DATE " + "                        and mc.days_in_arrears is not null "
-                    + "                        and mc.days_in_arrears > 0 "
-                    + "                        and CURRENT_DATE - mlrs.duedate > mc.days_in_arrears ";
+            sql = sql + " and mlrs.duedate < CURRENT_DATE " + " and CURRENT_DATE - mlrs.duedate = 60 ";
             params = new Object[] {};
         } else if (insuranceCode == null) {
             sql = sql + " and ml.id = ? ";
@@ -3330,6 +3358,31 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             params[N] = date;
         }
         sql = sql + " group by ml.id, mlc.id order by ml.id";
+
+        return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
+    }
+
+    @Override
+    public List<DefaultOrCancelInsuranceInstallmentData> getLoanDataWithDefaultMandatoryInsurance(Long numberOfDays) {
+
+        final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
+        String sql = "SELECT " + rowMapper.suspensionSchema();
+        Object[] params = new Object[] { numberOfDays };
+        sql = sql + " and (CURRENT_DATE - mlaa.overdue_since_date_derived) >= ? " + " group by ml.id, mlc.id order by ml.id";
+
+        return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
+    }
+
+    @Override
+    public List<DefaultOrCancelInsuranceInstallmentData> getLoanDataForSuspensionOfInsurance(Long numberOfDays) {
+
+        final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
+        String sql = "SELECT " + rowMapper.schema();
+        Object[] params = new Object[] { numberOfDays };
+        Integer[] codes = { ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue(), ChargeCalculationType.FLAT_SEGO.getValue(),
+                ChargeCalculationType.OPRIN_SEGO.getValue(), ChargeCalculationType.DISB_SEGO.getValue() };
+        sql = sql + " and mc.charge_calculation_enum in (" + Arrays.toString(codes).replaceAll("\\[|\\]", "") + ") ";
+        sql = sql + " and mlrs.duedate < CURRENT_DATE " + " and CURRENT_DATE - mlrs.duedate = ?" + " group by ml.id, mlc.id order by ml.id";
 
         return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
     }
@@ -3376,69 +3429,83 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         	(COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0)) AS outstandingAvalAmount,
                         	(COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0)) AS outstandingOtherChargesAmount,
                         	(COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0)) AS outstandingPenaltyAmount,
-                        	ml.total_outstanding_derived totalOutstandingAmount
+                        	((COALESCE(insurance_chg.outstanding_amount,0) + COALESCE(vat_chg.outstanding_amount,0))+(COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0))+(COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0))+(COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0))) as totalOutstandingAmount
                         	from
                         	m_loan ml
                         	join m_product_loan mpl on mpl.id = ml.product_id
                         	join m_client mcl on mcl.id = ml.client_id
                         	join m_loan_arrears_aging mlaa on mlaa.loan_id = ml.id
-                        	left join
-                        		(
-                        			select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
-                                    	from m_loan_charge mlc
-                                       where mlc.charge_calculation_enum IN (468, 575, 231)
-                                       group by mlc.loan_id
-                        		) insurance_chg ON insurance_chg.loan_id = ml.id
-                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
-                                            FROM m_loan_charge mlc2
-                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
-                        					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                        					WHERE parent_charge.charge_calculation_enum IN (468, 575, 231)
-                        					group by mlc2.loan_id
-                        				) vat_chg  ON vat_chg.loan_id = ml.id
                         	join
-                        		(
-                        			select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
-                                    	from m_loan_charge mlc
-                                       where mlc.charge_calculation_enum = 41
-                                       group by mlc.loan_id
-                        		) aval_chg ON aval_chg.loan_id = ml.id
-                        	LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
-                                            FROM m_loan_charge mlc2
-                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
-                        					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                        					WHERE parent_charge.charge_calculation_enum = 41
-                        					group by mlc2.loan_id
-                        				) aval_vat_chg  ON aval_vat_chg.loan_id = ml.id
-                        	left join
-                        		(
-                        			select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
-                                    	from m_loan_charge mlc
-                                       where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41)
-                        				and mlc.is_penalty = false
-                                       group by mlc.loan_id
-                        		) other_chg ON other_chg.loan_id = ml.id
-                        	LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
-                                            FROM m_loan_charge mlc2
-                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
-                        					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                        					WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231)
-                        					group by mlc2.loan_id
-                        				) other_vat_chg  ON other_vat_chg.loan_id = ml.id
-                        	left join
-                        		(
-                        			select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
-                                    	from m_loan_charge mlc
-                                       where mlc.is_penalty = true
-                                       group by mlc.loan_id
-                        		) penalty_chg ON penalty_chg.loan_id = ml.id
-                        	LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
-                                            FROM m_loan_charge mlc2
-                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
-                        					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                        					WHERE parent_charge.is_penalty = true
-                        					group by mlc2.loan_id
-                        				) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
+                                                                                     		(
+                                                                                     			select mlc.loan_id, sum(mlic.amount) outstanding_amount
+                                                                                                 	from m_loan_charge mlc
+                                                                                                 	inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id\s
+                                                                                 				inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id and mlrs.completed_derived != true and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id) and mlrs.duedate <= current_date
+                                                                                                    where mlc.charge_calculation_enum IN (468, 575, 231)
+                                                                                                    group by mlc.loan_id
+                                                                                     		) insurance_chg ON insurance_chg.loan_id = ml.id
+                                                                                         LEFT JOIN (SELECT sum(mlic.amount) outstanding_amount, mlc2.loan_id
+                                                                                                         FROM m_loan_charge mlc2
+                                                                                                         inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id\s
+                                                                                 				inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id and mlrs.completed_derived != true and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id) and mlrs.duedate <= current_date
+                                                                                                         JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                                                                     					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                                                                     					WHERE parent_charge.charge_calculation_enum IN (468, 575, 231)
+                                                                                     					group by mlc2.loan_id
+                                                                                     				) vat_chg  ON vat_chg.loan_id = ml.id
+                                                                                     	left join
+                                                                                     		(
+                                                                                     			select mlc.loan_id, sum(mlic.amount) outstanding_amount
+                                                                                                 	from m_loan_charge mlc
+                                                                                                 	inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id\s
+                                                                                 				inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id and mlrs.completed_derived != true and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id) and mlrs.duedate <= current_date
+                                                                                                    where mlc.charge_calculation_enum = 41
+                                                                                                    group by mlc.loan_id
+                                                                                     		) aval_chg ON aval_chg.loan_id = ml.id
+                                                                                     	LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                                                                                         FROM m_loan_charge mlc2
+                                                                                                         JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                                                                     					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                                                                     					WHERE parent_charge.charge_calculation_enum = 41
+                                                                                     					group by mlc2.loan_id
+                                                                                     				) aval_vat_chg  ON aval_vat_chg.loan_id = ml.id
+                                                                                     	left join
+                                                                                     		(
+                                                                                     			select mlc.loan_id, sum(mlic.amount) outstanding_amount
+                                                                                                 	from m_loan_charge mlc
+                                                                                                 	inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id\s
+                                                                                 				inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id and mlrs.completed_derived != true and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id) and mlrs.duedate <= current_date
+                                                                                                    where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41)
+                                                                                     				and mlc.is_penalty = false
+                                                                                                    group by mlc.loan_id
+                                                                                     		) other_chg ON other_chg.loan_id = ml.id
+                                                                                     	LEFT JOIN (SELECT sum(mlic.amount) outstanding_amount, mlc2.loan_id
+                                                                                                         FROM m_loan_charge mlc2
+                                                                                                         inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id\s
+                                                                                 				inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id and mlrs.completed_derived != true and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id) and mlrs.duedate <= current_date
+                                                                                                         JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                                                                     					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                                                                     					WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231)
+                                                                                     					group by mlc2.loan_id
+                                                                                     				) other_vat_chg  ON other_vat_chg.loan_id = ml.id
+                                                                                     	left join
+                                                                                     		(
+                                                                                     			select mlc.loan_id, sum(mlic.amount) outstanding_amount
+                                                                                                 	from m_loan_charge mlc
+                                                                                                 	inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id\s
+                                                                                 					inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id and mlrs.completed_derived != true and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id) and mlrs.duedate <= current_date
+                                                                                                    where mlc.is_penalty = true
+                                                                                                    group by mlc.loan_id
+                                                                                     		) penalty_chg ON penalty_chg.loan_id = ml.id
+                                                                                     	LEFT JOIN (SELECT sum(mlic.amount) outstanding_amount, mlc2.loan_id
+                                                                                                         FROM m_loan_charge mlc2
+                                                                                                         inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id\s
+                                                                                 				inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id and mlrs.completed_derived != true and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id) and mlrs.duedate <= current_date
+                                                                                                         JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                                                                     					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                                                                     					WHERE parent_charge.is_penalty = true
+                                                                                     					group by mlc2.loan_id
+                                                                                     				) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
                         WHERE
                     		ml.loan_status_id = 300
                     		and (CURRENT_DATE - mlaa.overdue_since_date_derived) > ?
@@ -3458,69 +3525,83 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         	(COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0)) AS outstandingAvalAmount,
                         	(COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0)) AS outstandingOtherChargesAmount,
                         	(COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0)) AS outstandingPenaltyAmount,
-                        	ml.total_outstanding_derived totalOutstandingAmount
+                        	((COALESCE(insurance_chg.outstanding_amount,0) + COALESCE(vat_chg.outstanding_amount,0))+(COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0))+(COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0))+(COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0))) as totalOutstandingAmount
                         	from
                         	m_loan ml
                         	join m_product_loan mpl on mpl.id = ml.product_id
                         	join m_client mcl on mcl.id = ml.client_id
                         	join m_loan_arrears_aging mlaa on mlaa.loan_id = ml.id
                         	join
-                        		(
-                        			select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
-                                    	from m_loan_charge mlc
-                                       where mlc.charge_calculation_enum IN (468, 575, 231)
-                                       group by mlc.loan_id
-                        		) insurance_chg ON insurance_chg.loan_id = ml.id
-                            LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
-                                            FROM m_loan_charge mlc2
-                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
-                        					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                        					WHERE parent_charge.charge_calculation_enum IN (468, 575, 231)
-                        					group by mlc2.loan_id
-                        				) vat_chg  ON vat_chg.loan_id = ml.id
-                        	left join
-                        		(
-                        			select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
-                                    	from m_loan_charge mlc
-                                       where mlc.charge_calculation_enum = 41
-                                       group by mlc.loan_id
-                        		) aval_chg ON aval_chg.loan_id = ml.id
-                        	LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
-                                            FROM m_loan_charge mlc2
-                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
-                        					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                        					WHERE parent_charge.charge_calculation_enum = 41
-                        					group by mlc2.loan_id
-                        				) aval_vat_chg  ON aval_vat_chg.loan_id = ml.id
-                        	left join
-                        		(
-                        			select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
-                                    	from m_loan_charge mlc
-                                       where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41)
-                        				and mlc.is_penalty = false
-                                       group by mlc.loan_id
-                        		) other_chg ON other_chg.loan_id = ml.id
-                        	LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
-                                            FROM m_loan_charge mlc2
-                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
-                        					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                        					WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231)
-                        					group by mlc2.loan_id
-                        				) other_vat_chg  ON other_vat_chg.loan_id = ml.id
-                        	left join
-                        		(
-                        			select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount
-                                    	from m_loan_charge mlc
-                                       where mlc.is_penalty = true
-                                       group by mlc.loan_id
-                        		) penalty_chg ON penalty_chg.loan_id = ml.id
-                        	LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
-                                            FROM m_loan_charge mlc2
-                                            JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
-                        					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                        					WHERE parent_charge.is_penalty = true
-                        					group by mlc2.loan_id
-                        				) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
+                                                                                     		(
+                                                                                     			select mlc.loan_id, sum(mlic.amount) outstanding_amount
+                                                                                                 	from m_loan_charge mlc
+                                                                                                 	inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id\s
+                                                                                 				inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id and mlrs.completed_derived != true and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id) and mlrs.duedate <= current_date
+                                                                                                    where mlc.charge_calculation_enum IN (468, 575, 231)
+                                                                                                    group by mlc.loan_id
+                                                                                     		) insurance_chg ON insurance_chg.loan_id = ml.id
+                                                                                         LEFT JOIN (SELECT sum(mlic.amount) outstanding_amount, mlc2.loan_id
+                                                                                                         FROM m_loan_charge mlc2
+                                                                                                         inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id\s
+                                                                                 				inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id and mlrs.completed_derived != true and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id) and mlrs.duedate <= current_date
+                                                                                                         JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                                                                     					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                                                                     					WHERE parent_charge.charge_calculation_enum IN (468, 575, 231)
+                                                                                     					group by mlc2.loan_id
+                                                                                     				) vat_chg  ON vat_chg.loan_id = ml.id
+                                                                                     	left join
+                                                                                     		(
+                                                                                     			select mlc.loan_id, sum(mlic.amount) outstanding_amount
+                                                                                                 	from m_loan_charge mlc
+                                                                                                 	inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id\s
+                                                                                 				inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id and mlrs.completed_derived != true and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id) and mlrs.duedate <= current_date
+                                                                                                    where mlc.charge_calculation_enum = 41
+                                                                                                    group by mlc.loan_id
+                                                                                     		) aval_chg ON aval_chg.loan_id = ml.id
+                                                                                     	LEFT JOIN (SELECT sum(mlc2.amount_outstanding_derived) outstanding_amount, mlc2.loan_id
+                                                                                                         FROM m_loan_charge mlc2
+                                                                                                         JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                                                                     					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                                                                     					WHERE parent_charge.charge_calculation_enum = 41
+                                                                                     					group by mlc2.loan_id
+                                                                                     				) aval_vat_chg  ON aval_vat_chg.loan_id = ml.id
+                                                                                     	left join
+                                                                                     		(
+                                                                                     			select mlc.loan_id, sum(mlic.amount) outstanding_amount
+                                                                                                 	from m_loan_charge mlc
+                                                                                                 	inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id\s
+                                                                                 				inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id and mlrs.completed_derived != true and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id) and mlrs.duedate <= current_date
+                                                                                                    where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41)
+                                                                                     				and mlc.is_penalty = false
+                                                                                                    group by mlc.loan_id
+                                                                                     		) other_chg ON other_chg.loan_id = ml.id
+                                                                                     	LEFT JOIN (SELECT sum(mlic.amount) outstanding_amount, mlc2.loan_id
+                                                                                                         FROM m_loan_charge mlc2
+                                                                                                         inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id\s
+                                                                                 				inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id and mlrs.completed_derived != true and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id) and mlrs.duedate <= current_date
+                                                                                                         JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                                                                     					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                                                                     					WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231)
+                                                                                     					group by mlc2.loan_id
+                                                                                     				) other_vat_chg  ON other_vat_chg.loan_id = ml.id
+                                                                                     	left join
+                                                                                     		(
+                                                                                     			select mlc.loan_id, sum(mlic.amount) outstanding_amount
+                                                                                                 	from m_loan_charge mlc
+                                                                                                 	inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id\s
+                                                                                 					inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id and mlrs.completed_derived != true and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id) and mlrs.duedate <= current_date
+                                                                                                    where mlc.is_penalty = true
+                                                                                                    group by mlc.loan_id
+                                                                                     		) penalty_chg ON penalty_chg.loan_id = ml.id
+                                                                                     	LEFT JOIN (SELECT sum(mlic.amount) outstanding_amount, mlc2.loan_id
+                                                                                                         FROM m_loan_charge mlc2
+                                                                                                         inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id\s
+                                                                                 				inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id and mlrs.completed_derived != true and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id) and mlrs.duedate <= current_date
+                                                                                                         JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                                                                     					JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                                                                     					WHERE parent_charge.is_penalty = true
+                                                                                     					group by mlc2.loan_id
+                                                                                     				) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
                         WHERE
                     		ml.loan_status_id = 300
                     		and (CURRENT_DATE - mlaa.overdue_since_date_derived) > ?
@@ -3656,7 +3737,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             minimDaysToReclaim = this.configurationDomainService.retriveMinimumDaysOfArrearsToWriteOff();
         }
         final Object[] objectArray = { minimDaysToReclaim };
-
         return this.jdbcTemplate.query(sqlBuilder.toString(), objectArray, loanReclaimMapper);
     }
 

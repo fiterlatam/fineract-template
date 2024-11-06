@@ -16,16 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.insurance.domain;
+package org.apache.fineract.infrastructure.campaigns.masivian.data;
 
-import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
+@lombok.Builder
+@lombok.Data
+public class MasivianConfigurationData {
 
-public interface InsuranceIncidentNoveltyNewsRepository
-        extends JpaRepository<InsuranceIncidentNoveltyNews, Long>, JpaSpecificationExecutor<InsuranceIncidentNoveltyNews> {
-
-    @Query(nativeQuery = true, value = "select * from m_insurance_novelty_news where loan_id = ?1 and novelty_id in (?2, ?3) order by id desc limit 1")
-    Optional<InsuranceIncidentNoveltyNews> findLastSuspensionIfPresent(Long loanId, Long suspensionId, Long suspensionExitId);
+    private String smsApiUrl;
+    private String smsAuthorization;
 }

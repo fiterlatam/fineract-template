@@ -321,11 +321,12 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                         LEFT JOIN m_code_value mcv ON mcv.id = mpl.product_type
                         WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mpl.use_other_loans_cupo = ?
                     """;
-            final BigDecimal totalOutstandingPrincipalAmount = ObjectUtils
+            BigDecimal totalOutstandingPrincipalAmount = ObjectUtils
                     .defaultIfNull(this.jdbcTemplate.queryForObject(baseSQL, BigDecimal.class, clientId, false), BigDecimal.ZERO);
             if (totalOutstandingPrincipalAmount.compareTo(BigDecimal.ZERO) < 0) {
-                totalOutstandingPrincipalAmount.abs();
+                totalOutstandingPrincipalAmount = totalOutstandingPrincipalAmount.abs();
             }
+
             final BigDecimal cupoBalance = cupo.subtract(totalOutstandingPrincipalAmount);
             clientData.setCupoBalance(cupoBalance);
             AdvanceQuotaConfigurationData advanceQuotaConfigurationData = this.loanProductReadPlatformService
@@ -954,23 +955,20 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         return new ClientAdditionalFieldsData();
     }
 
-    public List<ClienAvailableCupoFieldsData> retriveClientAvailableCupo(String nitId) {
-        final ClienAvailableCupoFieldsMapper rowMapper = new ClienAvailableCupoFieldsMapper();
-        final String sql = "SELECT " + rowMapper.schema() + " and ( cce.\"NIT\" = ? or ccp.\"Cedula\" = ? )";
-        List<ClienAvailableCupoFieldsData> resultList = this.jdbcTemplate.query(sql, rowMapper, nitId, nitId);
-        AdvanceQuotaConfigurationData advanceQuotaConfigurationData = this.loanProductReadPlatformService
-                .retrieveAdvanceQuotaConfigurationData();
-        if (advanceQuotaConfigurationData.getEnabled()) {
-            BigDecimal advanceCupoBalance;
-            for (ClienAvailableCupoFieldsData list : resultList) {
-                final BigDecimal percentageValue = advanceQuotaConfigurationData.getPercentageValue();
-                final BigDecimal advanceCupo = ObjectUtils.defaultIfNull(percentageValue, BigDecimal.ZERO).multiply(list.getCupo())
-                        .divide(BigDecimal.valueOf(100), MoneyHelper.getRoundingMode());
-                advanceCupoBalance = advanceCupo.subtract(list.getTotalOutstandingPrincipalAmount());
-                list.setAvailableCupoAvance(advanceCupoBalance);
+    public List<ClientAvailableCupoFieldsData> retriveClientAvailableCupo(String nitId) {
+        final ClientAvailableCupoFieldsMapper rowMapper = new ClientAvailableCupoFieldsMapper();
+        final String sql = "SELECT " + rowMapper.schema() + " WHERE ( cce.\"NIT\" = ? or ccp.\"Cedula\" = ? )";
+        final List<ClientAvailableCupoFieldsData> resultList = this.jdbcTemplate.query(sql, rowMapper, nitId, nitId);
+        if (!CollectionUtils.isEmpty(resultList)) {
+            for (final ClientAvailableCupoFieldsData clientFieldData : resultList) {
+                final ClientData clientData = this.retrieveOne(clientFieldData.getClientId());
+                clientFieldData.setCupo(clientData.getCupoMaxAmount());
+                clientFieldData.setAvailableCupo(clientData.getCupoBalance());
+                clientFieldData.setAvailableCupoAvance(clientData.getAdvanceCupoBalance());
+                clientFieldData.setCupoOtrosPrestamos(clientData.getOtherLoansCupo());
+                clientFieldData.setAvailableCupoOtrosPrestamos(clientData.getOtherLoansCupoBalance());
             }
-        }
-        if (resultList.isEmpty()) {
+        } else {
             throw new ClientNotFoundException("No exite cliente con el NIT/Cedula : " + nitId, nitId);
         }
         return resultList;

@@ -16,16 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.insurance.domain;
+package org.apache.fineract.portfolio.loanaccount.exception;
 
-import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public interface InsuranceIncidentNoveltyNewsRepository
-        extends JpaRepository<InsuranceIncidentNoveltyNews, Long>, JpaSpecificationExecutor<InsuranceIncidentNoveltyNews> {
+public class LoanCreditNoteNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    @Query(nativeQuery = true, value = "select * from m_insurance_novelty_news where loan_id = ?1 and novelty_id in (?2, ?3) order by id desc limit 1")
-    Optional<InsuranceIncidentNoveltyNews> findLastSuspensionIfPresent(Long loanId, Long suspensionId, Long suspensionExitId);
+    public LoanCreditNoteNotFoundException(final Long id, final Long loanId) {
+        super("error.msg.loan.credit.note.not.found", String.format("Loan Credit note with id %s for loan id %s not found ", id, loanId),
+                id);
+    }
+
+    public LoanCreditNoteNotFoundException(final Long id) {
+        super("error.msg.loan.credit.note.not.found", String.format("Loan Credit note with id %s not found ", id), id);
+    }
 }
