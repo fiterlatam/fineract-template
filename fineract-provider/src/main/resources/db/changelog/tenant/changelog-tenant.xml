@@ -302,4 +302,10 @@
     <include file="parts/20243008011009131_SU_419_add_filter_on_report_recaudos_de_seguros_obligatorios.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009131_SU_419_update_transaltion_filter_on_translation.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009132_SU_421_add_other_loan_cupo.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240529122200_SU_402_loan-credit-notes.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240529122200_SU_402_loan-credit-notes-transaction.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20241031220000_SU_420_insurance_incident_addition.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240529122200_SU_402_loan-credit-notes-1.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009132_SU_433_update_report_de_prestamos_reclamados.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009133_SU_205_Masivian_Services.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
