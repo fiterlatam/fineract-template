@@ -43,7 +43,8 @@ public class ClientAdditionalFieldsMapper implements RowMapper<ClientAdditionalF
                 COALESCE(ccp."Cupo aprobado", cce."Cupo") AS cupo,
                 COALESCE(ccp."Cupo otros prestamos", cce."Cupo otros prestamos") AS otherLoansCupo,
                 mc.legal_form_enum AS legalForm,
-                mc.blocking_reason_id AS blockingReasonId
+                mc.blocking_reason_id AS blockingReasonId,
+                (select COALESCE(SUM(ml.principal_outstanding_derived), 0)  FROM m_loan ml WHERE ml.loan_status_id = 300 and client_id =mc.id) AS totalOutstandingPrincipalAmount
                 FROM m_client mc
                 LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
                 LEFT JOIN m_code_value tipo ON tipo.id = cce."Tipo ID_cd_Tipo ID"
@@ -61,6 +62,7 @@ public class ClientAdditionalFieldsMapper implements RowMapper<ClientAdditionalF
         final BigDecimal otherLoansCupo = rs.getBigDecimal("otherLoansCupo");
         final int statusInt = rs.getInt("status");
         final Long blockingReasonId = JdbcSupport.getLong(rs, "blockingReasonId");
+        final BigDecimal totalOutstandingPrincipalAmount = rs.getBigDecimal("totalOutstandingPrincipalAmount");
         EnumOptionData statusData;
         if (blockingReasonId != null) {
             statusData = ClientEnumerations.status(ClientStatus.BLOCKED);
@@ -69,6 +71,7 @@ public class ClientAdditionalFieldsMapper implements RowMapper<ClientAdditionalF
         }
         final String clientName = rs.getString("clientName");
         final Integer legalForm = JdbcSupport.getInteger(rs, "legalForm");
-        return new ClientAdditionalFieldsData(clientId, tipo, nit, cedula, cupo, otherLoansCupo, statusData, clientName, legalForm);
+        return new ClientAdditionalFieldsData(clientId, tipo, nit, cedula, cupo, otherLoansCupo, statusData, clientName, legalForm,
+                totalOutstandingPrincipalAmount);
     }
 }

@@ -321,11 +321,12 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                         LEFT JOIN m_code_value mcv ON mcv.id = mpl.product_type
                         WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mpl.use_other_loans_cupo = ?
                     """;
-            final BigDecimal totalOutstandingPrincipalAmount = ObjectUtils
+            BigDecimal totalOutstandingPrincipalAmount = ObjectUtils
                     .defaultIfNull(this.jdbcTemplate.queryForObject(baseSQL, BigDecimal.class, clientId, false), BigDecimal.ZERO);
             if (totalOutstandingPrincipalAmount.compareTo(BigDecimal.ZERO) < 0) {
-                totalOutstandingPrincipalAmount.abs();
+                totalOutstandingPrincipalAmount = totalOutstandingPrincipalAmount.abs();
             }
+
             final BigDecimal cupoBalance = cupo.subtract(totalOutstandingPrincipalAmount);
             clientData.setCupoBalance(cupoBalance);
             AdvanceQuotaConfigurationData advanceQuotaConfigurationData = this.loanProductReadPlatformService
