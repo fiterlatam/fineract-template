@@ -42,6 +42,7 @@ public class ClientAdditionalFieldsData {
     private EnumOptionData status;
     private String clientName;
     private Integer legalForm;
+    private BigDecimal totalOutstandingPrincipalAmount;
 
     public boolean isPerson() {
         LegalForm legalForm = LegalForm.fromInt(this.legalForm);
