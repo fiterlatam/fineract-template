@@ -46,6 +46,8 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.calendar.service.CalendarUtils;
+import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeRepository;
 import org.apache.fineract.portfolio.client.domain.ClientBlockingReason;
 import org.apache.fineract.portfolio.client.domain.ClientBlockingReasonRepositoryWrapper;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
@@ -123,6 +125,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
     private final AdvancedPaymentAllocationsValidator advancedPaymentAllocationsValidator;
     private final ClientBlockingReasonRepositoryWrapper clientBlockingReasonRepositoryWrapper;
     public final LoanProductReadPlatformService loanProductReadPlatformService;
+    private final ChargeRepository chargeRepository;
 
     public void validateClientBlockingList(final Long clientId) {
 

@@ -678,7 +678,7 @@ public class Charge extends AbstractPersistableCustom {
             }
         }
 
-        if (amount.compareTo(BigDecimal.ZERO) == 0 && !isLoanCharge() && !isMandatoryInsurance()) {
+        if (BigDecimal.ZERO.equals(amount) && !isLoanCharge() && !isMandatoryInsurance()) {
             baseDataValidator.reset().parameter("amount").value(this.amount).failWithCodeNoParameterAddedToErrorCode("zero.amount");
         }
         // validate only for loan charge
