@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -558,7 +557,7 @@ public class JsonParserHelper {
                         .parseDefaulting(ChronoField.HOUR_OF_DAY, 0).parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
                         .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0).toFormatter(clientApplicationLocale)
                         .withResolverStyle(ResolverStyle.STRICT);
-                log.info("disbursement date: " +dateTimeAsString);
+                log.info("disbursement date: " + dateTimeAsString);
                 log.info("formatter locale: " + formatter.getLocale());
                 log.info("formatter zone: " + formatter.getZone());
                 log.info("formatter resolver style: " + formatter.getResolverStyle());
