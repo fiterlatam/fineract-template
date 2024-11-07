@@ -135,7 +135,9 @@ public class LoanChargeAssembler {
                     if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.chargeExpireDate, loanChargeElement)) {
                         String expdDateString = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.chargeExpireDate,
                                 loanChargeElement);
-                        expDate = LocalDate.parse(expdDateString);
+                        if (expdDateString != null) {
+                            expDate = LocalDate.parse(expdDateString);
+                        }
                     }
                     // if loan product has grace on charge , apply to the
                     Integer graceOnCharge = loanProduct.getLoanProductRelatedDetail().getGraceOnChargesPayment();
@@ -265,7 +267,6 @@ public class LoanChargeAssembler {
                                     }
                                 }
                             } else {
-                                System.out.println("here ");
                                 final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                         chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
                                         getPercentageAmountFromTable, applicableFromInstallment, expDate, isEndorsed);
