@@ -148,6 +148,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "amount_paid_in_default_installment", nullable = true)
     private BigDecimal partialAmountPaidInFirstDefaultInstallment;
 
+    @Column(name = "is_endorse", nullable = false)
+    private boolean endorse = false;
+
     // This attribute is used only to hold the current installment charge amount calculated and used
     // when repayment schedule is generated during loan creation. This amount is needed to show individual charge
     // amounts on the loan schedule screen.
