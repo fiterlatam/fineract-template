@@ -148,8 +148,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "amount_paid_in_default_installment", nullable = true)
     private BigDecimal partialAmountPaidInFirstDefaultInstallment;
 
-    @Column(name = "is_endorse", nullable = false)
-    private boolean endorse = false;
+    @Column(name = "is_endorse", nullable = true)
+    private boolean isEndorse = false;
+
+    @Column(name = "expire_date", nullable = true)
+    private LocalDate expDate;
 
     // This attribute is used only to hold the current installment charge amount calculated and used
     // when repayment schedule is generated during loan creation. This amount is needed to show individual charge
@@ -170,6 +173,19 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
         this(loan, chargeDefinition, loanPrincipal, amount, chargeTime, chargeCalculation, dueDate, chargePaymentMode, numberOfRepayments,
                 loanCharge, externalId, getPercentageAmountFromTable, numberOfPenaltyDays);
+
+        this.setApplicableFromInstallment(applicableFromInstallment);
+
+    }
+
+    public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
+            final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
+            final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
+            final ExternalId externalId, boolean getPercentageAmountFromTable, Long numberOfPenaltyDays, Integer applicableFromInstallment,
+            LocalDate expDate, Boolean isEndorse) {
+
+        this(loan, chargeDefinition, loanPrincipal, amount, chargeTime, chargeCalculation, dueDate, chargePaymentMode, numberOfRepayments,
+                loanCharge, externalId, getPercentageAmountFromTable, numberOfPenaltyDays, expDate, isEndorse);
 
         this.setApplicableFromInstallment(applicableFromInstallment);
 
@@ -223,6 +239,60 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         populateDerivedFields(loanPrincipal, chargeAmount, numberOfRepayments, loanCharge, numberOfPenaltyDays);
         this.paid = determineIfFullyPaid();
         this.externalId = externalId;
+
+    }
+
+    public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
+            final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
+            final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
+            final ExternalId externalId, boolean getPercentageAmountFromTable, Long numberOfPenaltyDays, LocalDate expDate,
+            Boolean isEndorse) {
+        this.loan = loan;
+        this.charge = chargeDefinition;
+        this.submittedOnDate = DateUtils.getBusinessLocalDate();
+        this.penaltyCharge = chargeDefinition.isPenalty();
+        this.minCap = chargeDefinition.getMinCap();
+        this.maxCap = chargeDefinition.getMaxCap();
+        this.getPercentageAmountFromTable = getPercentageAmountFromTable;
+
+        this.chargeTime = chargeDefinition.getChargeTimeType();
+        if (chargeTime != null) {
+            this.chargeTime = chargeTime.getValue();
+        }
+
+        if (ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.SPECIFIED_DUE_DATE)
+                || ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.OVERDUE_INSTALLMENT)) {
+
+            if (dueDate == null) {
+                final String defaultUserMessage = "Loan charge is missing due date.";
+                throw new LoanChargeWithoutMandatoryFieldException("loanCharge", "dueDate", defaultUserMessage, chargeDefinition.getId(),
+                        chargeDefinition.getName());
+            }
+
+            this.dueDate = dueDate;
+        } else {
+            this.dueDate = null;
+        }
+
+        this.chargeCalculation = chargeDefinition.getChargeCalculation();
+        if (chargeCalculation != null) {
+            this.chargeCalculation = chargeCalculation.getValue();
+        }
+
+        BigDecimal chargeAmount = chargeDefinition.getAmount();
+        if (amount != null) {
+            chargeAmount = amount;
+        }
+        this.chargePaymentMode = chargeDefinition.getChargePaymentMode();
+        if (chargePaymentMode != null) {
+            this.chargePaymentMode = chargePaymentMode.getValue();
+        }
+
+        populateDerivedFields(loanPrincipal, chargeAmount, numberOfRepayments, loanCharge, numberOfPenaltyDays);
+        this.paid = determineIfFullyPaid();
+        this.externalId = externalId;
+        this.expDate = expDate;
+        this.isEndorse = isEndorse;
     }
 
     private void populateDerivedFields(final BigDecimal amountPercentageAppliedTo, final BigDecimal chargeAmount,
