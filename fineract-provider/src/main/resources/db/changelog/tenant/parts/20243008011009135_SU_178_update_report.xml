@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet id="1" author="fineract">
+        <update tableName="STRETCHY_REPORT">
+            <column name="REPORT_NAME" value="Polizas Endosadas"/>
+            <column name="REPORT_SQL">
+                <![CDATA[
+                SELECT
+                      ml.id as "Préstamo",
+                      mc.name as "Seguro endosado",
+                      mc.insurer_name  as "Insurer name",
+                      mc.insurance_company  as "Nit aseguradora",
+                      TO_CHAR(mlc.expire_date, 'DD/MM/YYYY') as "fecha de vencimiento de la póliza"
+                FROM m_loan ml
+                INNER JOIN m_loan_charge mlc ON ml.id = mlc.loan_id
+                INNER JOIN m_charge mc ON mlc.charge_id = mc.id
+                WHERE (mc.insurance_company = '${insuranceCompany}' OR '${insuranceCompany}' = '-1')
+                AND mlc.expire_date BETWEEN '${startDate}' AND '${endDate}'
+                ]]>
+            </column>
+           <where> report_name ='Loan with Endorse'</where>
+        </update>
+    </changeSet>
+
+</databaseChangeLog>

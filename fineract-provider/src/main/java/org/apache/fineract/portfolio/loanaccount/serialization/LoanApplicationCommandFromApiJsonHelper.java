@@ -503,6 +503,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                         if (chargeOptional.isPresent()) {
                             Charge charge = chargeOptional.get();
                             if (charge.isMandatoryInsurance()) {
+
                                 if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.isEndorsed, loanChargeElement)) {
                                     Boolean isEndorsed = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isEndorsed,
                                             loanChargeElement);
@@ -512,8 +513,14 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                                 if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.chargeExpireDate, loanChargeElement)) {
                                     String expddate = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.chargeExpireDate,
                                             loanChargeElement);
-                                    baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
-                                            .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
+                                    if (amount.compareTo(BigDecimal.ZERO) == 0) {
+                                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                                .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
+                                    } else {
+                                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                                .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).ignoreIfNull();
+                                    }
+
                                 }
                                 baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
                                         .parameterAtIndexArray(LoanApiConstants.amountParameterName, i).value(amount).notNull();
