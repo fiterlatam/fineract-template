@@ -186,6 +186,8 @@ public interface LoanProductConstants {
     String CUSTOM_ALLOW_DEBIT_NOTE_PARAM_NAME = "customAllowDebitNote";
     String CUSTOM_ALLOW_FORGIVENESS_PARAM_NAME = "customAllowForgiveness";
     String CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_PARAM_NAME = "customAllowReversalCancellation";
-
+    String CUSTOM_ALLOW_SMS_RESTRUCTURE_PARAM_NAME = "customAllowSmsRestructure";
+    String CUSTOM_ALLOW_SMS_REFINANCE_PARAM_NAME = "customAllowSmsRefinance";
+    String CUSTOM_ALLOW_SMS_REFERIDO_PARAM_NAME = "customAllowSmsReferido";
     String CUSTOM_COLLECTION_SUBCHANNEL_LOAN_PRODUC_MAPPER_PARAM_NAME = "subChannelLoanProductMapper";
 }

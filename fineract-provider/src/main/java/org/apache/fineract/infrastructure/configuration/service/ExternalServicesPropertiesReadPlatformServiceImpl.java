@@ -144,15 +144,19 @@ public class ExternalServicesPropertiesReadPlatformServiceImpl implements Extern
         public MasivianConfigurationData extractData(final ResultSet rs) throws SQLException, DataAccessException {
             String smsApiUrl = null;
             String smsAuthorization = null;
+            boolean smsApiEnabled = false;
             while (rs.next()) {
                 final String paramName = rs.getString("name");
                 if (ExternalServicesConstants.MASIVIAN_SMS_API_URL.equalsIgnoreCase(paramName)) {
                     smsApiUrl = rs.getString("value");
                 } else if (ExternalServicesConstants.MASIVIAN_SMS_API_AUTHORIZATION_HEADER.equalsIgnoreCase(paramName)) {
                     smsAuthorization = rs.getString("value");
+                } else if (ExternalServicesConstants.MASIVIAN_SMS_API_ENABLED.equalsIgnoreCase(paramName)) {
+                    smsApiEnabled = Boolean.parseBoolean(rs.getString("value"));
                 }
             }
-            return MasivianConfigurationData.builder().smsApiUrl(smsApiUrl).smsAuthorization(smsAuthorization).build();
+            return MasivianConfigurationData.builder().smsApiUrl(smsApiUrl).smsAuthorization(smsAuthorization).smsApiEnabled(smsApiEnabled)
+                    .build();
         }
     }
 
