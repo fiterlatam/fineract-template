@@ -95,6 +95,7 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.LoanReassig
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanRejectTransferBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanRemoveOfficerBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanRescheduledDueCalendarChangeBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanTopUpBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanUndoDisbursalBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanUndoLastDisbursalBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanUpdateDisbursementDataBusinessEvent;
@@ -671,6 +672,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             disbursalTransactionId = disbursalTransaction.getId();
             disbursalTransactionExternalId = disbursalTransaction.getExternalId();
             businessEventNotifierService.notifyPostBusinessEvent(new LoanDisbursalTransactionBusinessEvent(disbursalTransaction));
+        }
+        if (loan.isTopup() && loan.getClientId() != null) {
+            this.businessEventNotifierService.notifyPostBusinessEvent(new LoanTopUpBusinessEvent(loan));
         }
 
         return new CommandProcessingResultBuilder() //
