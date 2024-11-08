@@ -126,6 +126,19 @@ public class LoanChargeAssembler {
                     final Long id = this.fromApiJsonHelper.extractLongNamed("id", loanChargeElement);
                     final Long chargeId = this.fromApiJsonHelper.extractLongNamed("chargeId", loanChargeElement);
                     BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed("amount", loanChargeElement, locale);
+                    Boolean isEndorsed = false;
+                    LocalDate expDate = null;
+                    if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.isEndorsed, loanChargeElement)) {
+                        isEndorsed = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isEndorsed, loanChargeElement);
+                    }
+
+                    if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.chargeExpireDate, loanChargeElement)) {
+                        String expdDateString = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.chargeExpireDate,
+                                loanChargeElement);
+                        if (expdDateString != null) {
+                            expDate = LocalDate.parse(expdDateString);
+                        }
+                    }
                     // if loan product has grace on charge , apply to the
                     Integer graceOnCharge = loanProduct.getLoanProductRelatedDetail().getGraceOnChargesPayment();
                     Integer graceOnInterestPayment = this.fromApiJsonHelper
@@ -195,7 +208,7 @@ public class LoanChargeAssembler {
                         if (!isMultiDisbursal) {
                             final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                     chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
-                                    getPercentageAmountFromTable, applicableFromInstallment);
+                                    getPercentageAmountFromTable, applicableFromInstallment, expDate, isEndorsed);
 
                             loanCharges.add(loanCharge);
                         } else {
@@ -216,7 +229,7 @@ public class LoanChargeAssembler {
                                             && disbursementDetail.expectedDisbursementDateAsLocalDate().equals(expectedDisbursementDate)) {
                                         final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                                 chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
-                                                getPercentageAmountFromTable, applicableFromInstallment);
+                                                getPercentageAmountFromTable, applicableFromInstallment, expDate, isEndorsed);
                                         loanCharges.add(loanCharge);
                                         if (loanCharge.isTrancheDisbursementCharge()) {
                                             loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge,
@@ -228,8 +241,8 @@ public class LoanChargeAssembler {
                                             final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition,
                                                     disbursementDetail.principal(), amount, chargeTime, chargeCalculation,
                                                     disbursementDetail.expectedDisbursementDateAsLocalDate(), chargePaymentModeEnum,
-                                                    numberOfRepayments, externalId, getPercentageAmountFromTable,
-                                                    applicableFromInstallment);
+                                                    numberOfRepayments, externalId, getPercentageAmountFromTable, applicableFromInstallment,
+                                                    expDate, isEndorsed);
                                             loanCharges.add(loanCharge);
                                             if (loanCharge.isTrancheDisbursementCharge()) {
                                                 loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge,
@@ -246,7 +259,8 @@ public class LoanChargeAssembler {
                                         final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, disbursementDetail.principal(),
                                                 amount, chargeTime, chargeCalculation,
                                                 disbursementDetail.expectedDisbursementDateAsLocalDate(), chargePaymentModeEnum,
-                                                numberOfRepayments, externalId, getPercentageAmountFromTable, applicableFromInstallment);
+                                                numberOfRepayments, externalId, getPercentageAmountFromTable, applicableFromInstallment,
+                                                expDate, isEndorsed);
                                         loanCharges.add(loanCharge);
                                         loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge, disbursementDetail);
                                         loanCharge.updateLoanTrancheDisbursementCharge(loanTrancheDisbursementCharge);
@@ -255,7 +269,7 @@ public class LoanChargeAssembler {
                             } else {
                                 final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                         chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
-                                        getPercentageAmountFromTable, applicableFromInstallment);
+                                        getPercentageAmountFromTable, applicableFromInstallment, expDate, isEndorsed);
                                 loanCharges.add(loanCharge);
                             }
                         }
@@ -473,7 +487,7 @@ public class LoanChargeAssembler {
     public LoanCharge createNewWithoutLoan(final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
             final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
             final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final ExternalId externalId,
-            boolean getPercentageAmountFromTable, Integer applicableFromInstallment) {
+            boolean getPercentageAmountFromTable, Integer applicableFromInstallment, LocalDate expDate, Boolean isEndorsed) {
         // if applicableFromInstallment is not null and applicableFromInstallment is greater than one . it means number
         // of repayments should be reduced for the charge calculation
         Integer applicableNumberOfRepayments = numberOfRepayments;
@@ -482,7 +496,8 @@ public class LoanChargeAssembler {
         }
 
         return new LoanCharge(null, chargeDefinition, loanPrincipal, amount, chargeTime, chargeCalculation, dueDate, chargePaymentMode,
-                applicableNumberOfRepayments, BigDecimal.ZERO, externalId, getPercentageAmountFromTable, null, applicableFromInstallment);
+                applicableNumberOfRepayments, BigDecimal.ZERO, externalId, getPercentageAmountFromTable, null, applicableFromInstallment,
+                expDate, isEndorsed);
     }
 
     private BigDecimal percentageOf(final BigDecimal value, final BigDecimal percentage) {
