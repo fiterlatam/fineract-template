@@ -678,6 +678,9 @@ public class Charge extends AbstractPersistableCustom {
             }
         }
 
+        if (BigDecimal.ZERO.equals(amount) && !isLoanCharge() && !isMandatoryInsurance()) {
+            baseDataValidator.reset().parameter("amount").value(this.amount).failWithCodeNoParameterAddedToErrorCode("zero.amount");
+        }
         // validate only for loan charge
         if (isLoanCharge()) {
             final String paymentModeParamName = "chargePaymentMode";

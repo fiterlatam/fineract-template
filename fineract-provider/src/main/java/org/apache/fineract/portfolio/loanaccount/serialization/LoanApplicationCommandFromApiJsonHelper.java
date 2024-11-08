@@ -25,14 +25,7 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -46,6 +39,8 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.calendar.service.CalendarUtils;
+import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeRepository;
 import org.apache.fineract.portfolio.client.domain.ClientBlockingReason;
 import org.apache.fineract.portfolio.client.domain.ClientBlockingReasonRepositoryWrapper;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
@@ -123,6 +118,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
     private final AdvancedPaymentAllocationsValidator advancedPaymentAllocationsValidator;
     private final ClientBlockingReasonRepositoryWrapper clientBlockingReasonRepositoryWrapper;
     public final LoanProductReadPlatformService loanProductReadPlatformService;
+    private final ChargeRepository chargeRepository;
 
     public void validateClientBlockingList(final Long clientId) {
 
@@ -480,10 +476,10 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                 final Type arrayObjectParameterTypeOfMap = new TypeToken<Map<String, Object>>() {
 
                 }.getType();
-                final Set<String> supportedParameters = new HashSet<>(
-                        Arrays.asList(LoanApiConstants.idParameterName, LoanApiConstants.chargeIdParameterName,
-                                LoanApiConstants.amountParameterName, LoanApiConstants.chargeTimeTypeParameterName,
-                                LoanApiConstants.chargeCalculationTypeParameterName, LoanApiConstants.dueDateParamName));
+                final Set<String> supportedParameters = new HashSet<>(Arrays.asList(LoanApiConstants.idParameterName,
+                        LoanApiConstants.chargeIdParameterName, LoanApiConstants.amountParameterName,
+                        LoanApiConstants.chargeTimeTypeParameterName, LoanApiConstants.chargeCalculationTypeParameterName,
+                        LoanApiConstants.dueDateParamName, LoanApiConstants.chargeExpireDate, LoanApiConstants.isEndorsed));
 
                 final JsonArray array = topLevelJsonElement.get(LoanApiConstants.chargesParameterName).getAsJsonArray();
                 for (int i = 1; i <= array.size(); i++) {
@@ -495,14 +491,49 @@ public final class LoanApplicationCommandFromApiJsonHelper {
 
                     final Long chargeId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.chargeIdParameterName,
                             loanChargeElement);
+
                     baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
                             .parameterAtIndexArray(LoanApiConstants.chargeIdParameterName, i).value(chargeId).notNull()
                             .integerGreaterThanZero();
 
                     final BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed(LoanApiConstants.amountParameterName,
                             loanChargeElement, locale);
-                    baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
-                            .parameterAtIndexArray(LoanApiConstants.amountParameterName, i).value(amount).notNull().positiveAmount();
+                    if ("SU+ Vehiculos".equalsIgnoreCase(loanProduct.getProductType().getLabel())) {
+                        Optional<Charge> chargeOptional = chargeRepository.findById(chargeId);
+                        if (chargeOptional.isPresent()) {
+                            Charge charge = chargeOptional.get();
+                            if (charge.isMandatoryInsurance()) {
+
+                                if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.isEndorsed, loanChargeElement)) {
+                                    Boolean isEndorsed = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isEndorsed,
+                                            loanChargeElement);
+                                    baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                            .parameterAtIndexArray(LoanApiConstants.isEndorsed, i).value(isEndorsed).notNull();
+                                }
+                                if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.chargeExpireDate, loanChargeElement)) {
+                                    String expddate = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.chargeExpireDate,
+                                            loanChargeElement);
+                                    if (amount.compareTo(BigDecimal.ZERO) == 0) {
+                                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                                .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
+                                    } else {
+                                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                                .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).ignoreIfNull();
+                                    }
+
+                                }
+                                baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                        .parameterAtIndexArray(LoanApiConstants.amountParameterName, i).value(amount).notNull();
+                            } else {
+                                baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                        .parameterAtIndexArray(LoanApiConstants.amountParameterName, i).value(amount).notNull()
+                                        .positiveAmount();
+                            }
+                        }
+                    } else {
+                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                .parameterAtIndexArray(LoanApiConstants.amountParameterName, i).value(amount).notNull().positiveAmount();
+                    }
 
                     this.fromApiJsonHelper.extractLocalDateNamed(LoanApiConstants.dueDateParamName, loanChargeElement, dateFormat, locale);
                 }
@@ -1015,10 +1046,10 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                 final Type arrayObjectParameterTypeOfMap = new TypeToken<Map<String, Object>>() {
 
                 }.getType();
-                final Set<String> supportedParameters = new HashSet<>(
-                        Arrays.asList(LoanApiConstants.idParameterName, LoanApiConstants.chargeIdParameterName,
-                                LoanApiConstants.amountParameterName, LoanApiConstants.chargeTimeTypeParameterName,
-                                LoanApiConstants.chargeCalculationTypeParameterName, LoanApiConstants.dueDateParamName));
+                final Set<String> supportedParameters = new HashSet<>(Arrays.asList(LoanApiConstants.idParameterName,
+                        LoanApiConstants.chargeIdParameterName, LoanApiConstants.amountParameterName,
+                        LoanApiConstants.chargeTimeTypeParameterName, LoanApiConstants.chargeCalculationTypeParameterName,
+                        LoanApiConstants.dueDateParamName, LoanApiConstants.chargeExpireDate, LoanApiConstants.isEndorsed));
 
                 final JsonArray array = topLevelJsonElement.get(LoanApiConstants.chargesParameterName).getAsJsonArray();
                 for (int i = 1; i <= array.size(); i++) {
@@ -1036,8 +1067,35 @@ public final class LoanApplicationCommandFromApiJsonHelper {
 
                     final BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed(LoanApiConstants.amountParameterName,
                             loanChargeElement, locale);
-                    baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
-                            .parameterAtIndexArray(LoanApiConstants.amountParameterName, i).value(amount).notNull().positiveAmount();
+                    if ("SU+ Vehiculos".equalsIgnoreCase(loanProduct.getProductType().getLabel())) {
+                        Optional<Charge> chargeOptional = chargeRepository.findById(chargeId);
+                        if (chargeOptional.isPresent()) {
+                            Charge charge = chargeOptional.get();
+                            if (charge.isMandatoryInsurance()) {
+                                if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.isEndorsed, loanChargeElement)) {
+                                    Boolean isEndorsed = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isEndorsed,
+                                            loanChargeElement);
+                                    baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                            .parameterAtIndexArray(LoanApiConstants.isEndorsed, i).value(isEndorsed).notNull();
+                                }
+                                if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.chargeExpireDate, loanChargeElement)) {
+                                    String expddate = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.chargeExpireDate,
+                                            loanChargeElement);
+                                    baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                            .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
+                                }
+                                baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                        .parameterAtIndexArray(LoanApiConstants.amountParameterName, i).value(amount).notNull();
+                            } else {
+                                baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                        .parameterAtIndexArray(LoanApiConstants.amountParameterName, i).value(amount).notNull()
+                                        .positiveAmount();
+                            }
+                        }
+                    } else {
+                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                .parameterAtIndexArray(LoanApiConstants.amountParameterName, i).value(amount).notNull().positiveAmount();
+                    }
 
                     this.fromApiJsonHelper.extractLocalDateNamed(LoanApiConstants.dueDateParamName, loanChargeElement, dateFormat, locale);
                 }

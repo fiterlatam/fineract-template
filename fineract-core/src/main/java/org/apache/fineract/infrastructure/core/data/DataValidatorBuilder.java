@@ -400,6 +400,7 @@ public class DataValidatorBuilder {
 
         if (this.value != null) {
             final BigDecimal number = BigDecimal.valueOf(Double.parseDouble(this.value.toString()));
+
             if (number.compareTo(BigDecimal.ZERO) <= 0) {
                 final StringBuilder validationErrorCode = new StringBuilder("validation.msg.").append(this.resource).append(".")
                         .append(this.parameter).append(".not.greater.than.zero");
