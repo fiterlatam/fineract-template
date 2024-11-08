@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DateFormat;
@@ -52,6 +53,7 @@ import org.springframework.format.number.NumberStyleFormatter;
 /**
  * Helper class to extract values of json named attributes.
  */
+@Slf4j
 public class JsonParserHelper {
 
     public boolean parameterExists(final String parameterName, final JsonElement element) {
@@ -549,6 +551,19 @@ public class JsonParserHelper {
                         .withResolverStyle(ResolverStyle.STRICT);
                 eventLocalDateTime = LocalDateTime.parse(dateTimeAsString, formatter);
             } catch (final IllegalArgumentException | DateTimeParseException e) {
+                String strictResolveCompatibleDateTimeFormat = dateTimeFormat.replace("y", "u");
+                DateTimeFormatter formatter = new DateTimeFormatterBuilder().parseCaseInsensitive().parseLenient()
+                        .appendPattern(strictResolveCompatibleDateTimeFormat).optionalStart().appendPattern(" HH:mm:ss").optionalEnd()
+                        .parseDefaulting(ChronoField.HOUR_OF_DAY, 0).parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+                        .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0).toFormatter(clientApplicationLocale)
+                        .withResolverStyle(ResolverStyle.STRICT);
+                log.info("disbursement date: " + dateTimeAsString);
+                log.info("formatter locale: " + formatter.getLocale());
+                log.info("formatter zone: " + formatter.getZone());
+                log.info("formatter resolver style: " + formatter.getResolverStyle());
+                log.info("formatter: " + formatter.toString());
+                e.printStackTrace();
+
                 final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
                 final ApiParameterError error = ApiParameterError
                         .parameterError("validation.msg.invalid.dateFormat.format",
