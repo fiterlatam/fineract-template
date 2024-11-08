@@ -308,7 +308,5 @@
     <include file="parts/20240529122200_SU_402_loan-credit-notes-1.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009132_SU_433_update_report_de_prestamos_reclamados.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009133_SU_205_Masivian_Services.xml" relativeToChangelogFile="true"/>
-    <include file="parts/20243008011009134_SU_178_add_column_endorsed.xml" relativeToChangelogFile="true"/>
-    <include file="parts/20243008011009135_SU_178_add_report.xml" relativeToChangelogFile="true"/>
-    <include file="parts/20243008011009135_SU_178_update_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009134_SU_433_update_report_de_prestamos_reclamados.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
