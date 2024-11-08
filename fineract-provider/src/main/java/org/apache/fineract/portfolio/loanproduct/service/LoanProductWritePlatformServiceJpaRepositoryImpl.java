@@ -283,6 +283,21 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             loanProduct.setCustomAllowReversalCancellation(res);
         }
 
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_SMS_REFERIDO_PARAM_NAME)) {
+            final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_SMS_REFERIDO_PARAM_NAME);
+            loanProduct.setCustomAllowSmsReferido(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_SMS_REFINANCE_PARAM_NAME)) {
+            final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_SMS_REFINANCE_PARAM_NAME);
+            loanProduct.setCustomAllowSmsRefinance(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_SMS_RESTRUCTURE_PARAM_NAME)) {
+            final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_SMS_RESTRUCTURE_PARAM_NAME);
+            loanProduct.setCustomAllowSmsRestructure(newValue);
+        }
+
         this.loanProductRepository.saveAndFlush(loanProduct);
 
         JsonArray jsonArraySubChannelLoanProductMapper = command.arrayOfParameterNamed("subChannelLoanProductMapper");

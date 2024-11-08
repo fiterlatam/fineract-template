@@ -271,6 +271,15 @@ public class LoanProductData implements Serializable {
     private Boolean customAllowReversalCancellation;
 
     @Setter
+    private Boolean customAllowSmsReferido;
+
+    @Setter
+    private Boolean customAllowSmsRefinance;
+
+    @Setter
+    private Boolean customAllowSmsRestructure;
+
+    @Setter
     private List<SubChannelLoanProductData> customCollectionsSubChannelList;
 
     @Setter

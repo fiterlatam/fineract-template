@@ -302,6 +302,21 @@ public class LoanProduct extends AbstractPersistableCustom {
 
     @Getter
     @Setter
+    @Column(name = "custom_allow_sms_restructure")
+    private Boolean customAllowSmsRestructure = false;
+
+    @Getter
+    @Setter
+    @Column(name = "custom_allow_sms_refinance")
+    private Boolean customAllowSmsRefinance = false;
+
+    @Getter
+    @Setter
+    @Column(name = "custom_allow_sms_referido")
+    private Boolean customAllowSmsReferido = false;
+
+    @Getter
+    @Setter
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "m_loan_product_channel", joinColumns = @JoinColumn(name = "loan_product_id"), inverseJoinColumns = @JoinColumn(name = "channel_id"))
     private List<Channel> repaymentChannels;
