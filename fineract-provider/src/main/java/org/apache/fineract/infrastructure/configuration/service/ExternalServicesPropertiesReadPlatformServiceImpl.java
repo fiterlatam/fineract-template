@@ -151,11 +151,12 @@ public class ExternalServicesPropertiesReadPlatformServiceImpl implements Extern
                     smsApiUrl = rs.getString("value");
                 } else if (ExternalServicesConstants.MASIVIAN_SMS_API_AUTHORIZATION_HEADER.equalsIgnoreCase(paramName)) {
                     smsAuthorization = rs.getString("value");
-                } else if(ExternalServicesConstants.MASIVIAN_SMS_API_ENABLED.equalsIgnoreCase(paramName)) {
+                } else if (ExternalServicesConstants.MASIVIAN_SMS_API_ENABLED.equalsIgnoreCase(paramName)) {
                     smsApiEnabled = Boolean.parseBoolean(rs.getString("value"));
                 }
             }
-            return MasivianConfigurationData.builder().smsApiUrl(smsApiUrl).smsAuthorization(smsAuthorization).smsApiEnabled(smsApiEnabled).build();
+            return MasivianConfigurationData.builder().smsApiUrl(smsApiUrl).smsAuthorization(smsAuthorization).smsApiEnabled(smsApiEnabled)
+                    .build();
         }
     }
 

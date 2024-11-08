@@ -68,7 +68,7 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
     @SuppressFBWarnings("SLF4J_SIGN_ONLY_FORMAT")
     private void connectAndSendToIntermediateServer(Collection<SmsMessageApiQueueResourceData> apiQueueResourceDatas) {
         final MasivianConfigurationData masivianConfigurationData = this.externalServicesReadPlatformService.getMasivianConfiguration();
-        if(masivianConfigurationData.isSmsApiEnabled()) {
+        if (masivianConfigurationData.isSmsApiEnabled()) {
             final String smsApiURL = masivianConfigurationData.getSmsApiUrl();
             final String smsApiAuthorizationToken = masivianConfigurationData.getSmsAuthorization();
             final HttpHeaders requestHeaders = new HttpHeaders();
@@ -87,9 +87,9 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
                         log.error("Failed to send SMS to {} | Response: {}", apiQueueResourceData.getMobileNumber(), response.getBody());
                     }
                 } catch (Exception e) {
-                    log.error("Failed to send SMS message ==> {} to mobile ==> {}", apiQueueResourceData.getMessage(), apiQueueResourceData.getMobileNumber(), e);
+                    log.error("Failed to send SMS message: {} to mobile: {}", apiQueueResourceData.getMessage(),
+                            apiQueueResourceData.getMobileNumber(), e);
                     log.error("Error occurred.", e);
-                    throw e;
                 }
             }
         }
@@ -137,7 +137,7 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
     public void sendTriggeredMessage(Collection<SmsMessage> smsMessages, long providerId) {
         try {
             final MasivianConfigurationData masivianConfigurationData = this.externalServicesReadPlatformService.getMasivianConfiguration();
-            if(masivianConfigurationData != null && masivianConfigurationData.isSmsApiEnabled()) {
+            if (masivianConfigurationData != null && masivianConfigurationData.isSmsApiEnabled()) {
                 Collection<SmsMessageApiQueueResourceData> apiQueueResourceDatas = new ArrayList<>();
                 StringBuilder request = new StringBuilder();
                 for (SmsMessage smsMessage : smsMessages) {

@@ -171,8 +171,8 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
 
     private void notifyReferidoLoanOwner(final Loan loan) {
         final LoanProduct loanProduct = loan.loanProduct();
-        if(loanProduct != null) {
-            if(loanProduct.getCustomAllowSmsReferido()) {
+        if (loanProduct != null) {
+            if (loanProduct.getCustomAllowSmsReferido()) {
                 final List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("movimiento por referido");
                 if (!smsCampaigns.isEmpty()) {
                     for (final SmsCampaign campaign : smsCampaigns) {
@@ -185,7 +185,7 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
 
     private void notifyTopUpLoanOwner(final Loan loan) {
         final LoanProduct loanProduct = loan.loanProduct();
-        if(loanProduct != null) {
+        if (loanProduct != null) {
             if (loanProduct.getCustomAllowSmsRestructure()) {
                 final List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("movimiento por reestructuración");
                 if (!smsCampaigns.isEmpty()) {
@@ -199,8 +199,8 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
 
     private void notifyRescheduleLoanOwner(final Loan loan) {
         final LoanProduct loanProduct = loan.loanProduct();
-        if(loanProduct != null) {
-            if(loanProduct.getCustomAllowSmsRefinance()){
+        if (loanProduct != null) {
+            if (loanProduct.getCustomAllowSmsRefinance()) {
                 final List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("movimiento por refinanciación");
                 if (!smsCampaigns.isEmpty()) {
                     for (final SmsCampaign campaign : smsCampaigns) {

@@ -607,7 +607,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 businessEventNotifierService
                         .notifyPostBusinessEvent(new LoanRescheduledDueAdjustScheduleBusinessEvent(loan, isJobTriggered));
             }
-            if(Boolean.FALSE.equals(isJobTriggered)) {
+            if (Boolean.FALSE.equals(isJobTriggered)) {
                 if (!rediferirVariations.isEmpty()) {
                     this.businessEventNotifierService.notifyPostBusinessEvent(new LoanReferidoBusinessEvent(loan));
                 } else {

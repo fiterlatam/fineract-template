@@ -67,15 +67,19 @@
                         mc.lastname AS "lastName",
                         mc.display_name AS "fullName",
                         mobile_no AS "mobileNo",
-                        round(ml.principal_amount, ml.currency_digits) AS "loanAmount",
-                        round(ml."total_outstanding_derived", ml.currency_digits) AS "loanOutstandingAmount",
+                        ROUND(ml.principal_amount, ml.currency_digits) AS "loanAmount",
+                        ROUND(ml."total_outstanding_derived", ml.currency_digits) AS "loanOutstandingAmount",
                         ml."account_no" AS "loanAccountNo",
-                        ml.currency_code AS "currencyCode"
+                        ml.currency_code AS "currencyCode",
+                        mlt.closure_loan_id AS "loanClosureId",
+                        mlt.topup_amount AS "topUpAmount",
+                        ROUND(topup."total_outstanding_derived", topup.currency_digits) AS "topUpOutstanding"
                     FROM m_loan ml
                     INNER JOIN m_client mc ON mc.id = ml.client_id
-                    WHERE mc.status_enum = 300 AND mobile_no IS NOT NULL AND ml."loan_status_id" = 300
+                    INNER JOIN m_loan_topup mlt ON mlt.loan_id = ml.id
+                    INNER JOIN m_loan topup ON topup.id = mlt.closure_loan_id
+                    WHERE mc.status_enum = 300 AND mobile_no IS NOT NULL AND ml.is_topup = TRUE
                     AND (mc.id = ${clientId} OR '-1' = ${clientId}) AND (ml.id = ${loanId} OR '-1' = ${loanId})
-                    GROUP BY ml.id, mc.id, mc.firstname, mc.middlename, mc.lastname, mc.display_name, mc.mobile_no
                 ]]>
             </column>
             <column name="description" value="movimiento por reestructuración"/>
