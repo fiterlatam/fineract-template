@@ -544,6 +544,9 @@ public class LoanProductsApiResource {
         ret.setCustomAllowForgiveness(productData.getCustomAllowForgiveness());
         ret.setCustomAllowReversalCancellation(productData.getCustomAllowReversalCancellation());
         ret.setInterestStartsAfterGracePeriod(productData.isInterestStartsAfterGracePeriod());
+        ret.setCustomAllowSmsRefinance(productData.getCustomAllowSmsRefinance());
+        ret.setCustomAllowSmsRestructure(productData.getCustomAllowSmsRestructure());
+        ret.setCustomAllowSmsReferido(productData.getCustomAllowSmsReferido());
 
         final SearchParameters searchParameters = SearchParameters.builder().active(true)
                 .interestRateTypeId(InterestRateType.REGULAR.getValue()).build();

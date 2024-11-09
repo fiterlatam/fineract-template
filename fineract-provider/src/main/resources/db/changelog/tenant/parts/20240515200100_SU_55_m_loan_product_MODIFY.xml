@@ -58,4 +58,22 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="61">
+        <addColumn tableName="m_product_loan">
+            <column name="custom_allow_sms_refinance" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="62">
+        <addColumn tableName="m_product_loan">
+            <column name="custom_allow_sms_restructure" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="63">
+        <addColumn tableName="m_product_loan">
+            <column name="custom_allow_sms_referido" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
