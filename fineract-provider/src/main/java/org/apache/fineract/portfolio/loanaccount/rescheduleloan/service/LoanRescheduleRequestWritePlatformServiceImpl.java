@@ -46,6 +46,8 @@ import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRu
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanReferidoBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanRescheduleBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanRescheduledDueAdjustScheduleBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -604,6 +606,13 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             if (loan.isTopup()) {
                 businessEventNotifierService
                         .notifyPostBusinessEvent(new LoanRescheduledDueAdjustScheduleBusinessEvent(loan, isJobTriggered));
+            }
+            if (Boolean.FALSE.equals(isJobTriggered)) {
+                if (!rediferirVariations.isEmpty()) {
+                    this.businessEventNotifierService.notifyPostBusinessEvent(new LoanReferidoBusinessEvent(loan));
+                } else {
+                    this.businessEventNotifierService.notifyPostBusinessEvent(new LoanRescheduleBusinessEvent(loan));
+                }
             }
             return new CommandProcessingResultBuilder().withCommandId(jsonCommand.commandId()).withEntityId(loanRescheduleRequestId)
                     .withLoanId(loanRescheduleRequest.getLoan().getId()).with(changes).withClientId(loan.getClientId())

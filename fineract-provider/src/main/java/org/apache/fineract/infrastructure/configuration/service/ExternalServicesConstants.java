@@ -60,6 +60,7 @@ public final class ExternalServicesConstants {
     public static final String MASIVIAN_SERVICE_NAME = "MASIVIAN_SERVICE";
     public static final String MASIVIAN_SMS_API_URL = "SMS_API_URL";
     public static final String MASIVIAN_SMS_API_AUTHORIZATION_HEADER = "SMS_API_AUTHORIZATION_HEADER";
+    public static final String MASIVIAN_SMS_API_ENABLED = "SMS_API_ENABLED";
 
     @Getter
     public enum ExternalservicePropertiesJSONinputParams {
@@ -255,7 +256,7 @@ public final class ExternalServicesConstants {
     @Getter
     public enum MasivianJSONinputParams {
 
-        SMS_API_URL("SMS_API_URL"), SMS_API_AUTHORIZATION_HEADER("SMS_API_AUTHORIZATION_HEADER");
+        SMS_API_URL("SMS_API_URL"), SMS_API_AUTHORIZATION_HEADER("SMS_API_AUTHORIZATION_HEADER"), SMS_API_ENABLED("SMS_API_ENABLED");
 
         private final String value;
 

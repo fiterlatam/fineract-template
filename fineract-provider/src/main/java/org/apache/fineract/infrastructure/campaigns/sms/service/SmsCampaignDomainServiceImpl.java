@@ -44,7 +44,10 @@ import org.apache.fineract.infrastructure.event.business.BusinessEventListener;
 import org.apache.fineract.infrastructure.event.business.domain.client.ClientActivateBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.client.ClientRejectBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanApprovedBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanReferidoBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanRejectedBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanRescheduleBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanTopUpBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanTransactionMakeRepaymentPostBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.savings.SavingsActivateBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.savings.SavingsRejectBusinessEvent;
@@ -64,6 +67,7 @@ import org.apache.fineract.portfolio.group.exception.GroupNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanaccount.exception.InvalidLoanTypeException;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.springframework.stereotype.Service;
@@ -87,6 +91,10 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
     public void addListeners() {
         businessEventNotifierService.addPostBusinessEventListener(LoanApprovedBusinessEvent.class, new SendSmsOnLoanApproved());
         businessEventNotifierService.addPostBusinessEventListener(LoanRejectedBusinessEvent.class, new SendSmsOnLoanRejected());
+        businessEventNotifierService.addPostBusinessEventListener(LoanReferidoBusinessEvent.class, new SendSmsOnLoanReferido());
+        businessEventNotifierService.addPostBusinessEventListener(LoanTopUpBusinessEvent.class, new SendSmsOnLoanTopUp());
+        businessEventNotifierService.addPostBusinessEventListener(LoanRescheduleBusinessEvent.class, new SendSmsOnRescheduleTopUp());
+
         businessEventNotifierService.addPostBusinessEventListener(LoanTransactionMakeRepaymentPostBusinessEvent.class,
                 new SendSmsOnLoanRepayment());
         businessEventNotifierService.addPostBusinessEventListener(ClientActivateBusinessEvent.class, new ClientActivatedListener());
@@ -159,6 +167,48 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
             }
         }
 
+    }
+
+    private void notifyReferidoLoanOwner(final Loan loan) {
+        final LoanProduct loanProduct = loan.loanProduct();
+        if (loanProduct != null) {
+            if (loanProduct.getCustomAllowSmsReferido()) {
+                final List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("movimiento por referido");
+                if (!smsCampaigns.isEmpty()) {
+                    for (final SmsCampaign campaign : smsCampaigns) {
+                        this.smsCampaignWritePlatformCommandHandler.insertDirectCampaignIntoSmsOutboundTable(loan, campaign);
+                    }
+                }
+            }
+        }
+    }
+
+    private void notifyTopUpLoanOwner(final Loan loan) {
+        final LoanProduct loanProduct = loan.loanProduct();
+        if (loanProduct != null) {
+            if (loanProduct.getCustomAllowSmsRestructure()) {
+                final List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("movimiento por reestructuración");
+                if (!smsCampaigns.isEmpty()) {
+                    for (final SmsCampaign campaign : smsCampaigns) {
+                        this.smsCampaignWritePlatformCommandHandler.insertDirectCampaignIntoSmsOutboundTable(loan, campaign);
+                    }
+                }
+            }
+        }
+    }
+
+    private void notifyRescheduleLoanOwner(final Loan loan) {
+        final LoanProduct loanProduct = loan.loanProduct();
+        if (loanProduct != null) {
+            if (loanProduct.getCustomAllowSmsRefinance()) {
+                final List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("movimiento por refinanciación");
+                if (!smsCampaigns.isEmpty()) {
+                    for (final SmsCampaign campaign : smsCampaigns) {
+                        this.smsCampaignWritePlatformCommandHandler.insertDirectCampaignIntoSmsOutboundTable(loan, campaign);
+                    }
+                }
+            }
+        }
     }
 
     private void sendSmsForLoanRepayment(LoanTransaction loanTransaction) {
@@ -388,6 +438,30 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
         public void onBusinessEvent(LoanApprovedBusinessEvent event) {
             Loan loan = event.get();
             notifyAcceptedLoanOwner(loan);
+        }
+    }
+
+    private final class SendSmsOnLoanReferido implements BusinessEventListener<LoanReferidoBusinessEvent> {
+
+        @Override
+        public void onBusinessEvent(LoanReferidoBusinessEvent event) {
+            notifyReferidoLoanOwner(event.get());
+        }
+    }
+
+    private final class SendSmsOnLoanTopUp implements BusinessEventListener<LoanTopUpBusinessEvent> {
+
+        @Override
+        public void onBusinessEvent(LoanTopUpBusinessEvent event) {
+            notifyTopUpLoanOwner(event.get());
+        }
+    }
+
+    private final class SendSmsOnRescheduleTopUp implements BusinessEventListener<LoanRescheduleBusinessEvent> {
+
+        @Override
+        public void onBusinessEvent(LoanRescheduleBusinessEvent event) {
+            notifyRescheduleLoanOwner(event.get());
         }
     }
 

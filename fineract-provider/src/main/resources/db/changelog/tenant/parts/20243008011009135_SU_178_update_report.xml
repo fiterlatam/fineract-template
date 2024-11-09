@@ -10,9 +10,9 @@
                 SELECT
                       ml.id as "Préstamo",
                       mc.name as "Seguro endosado",
-                      mc.insurer_name  as "Insurer name",
+                      mc.insurer_name  as "Nombre aseguradora",
                       mc.insurance_company  as "Nit aseguradora",
-                      TO_CHAR(mlc.expire_date, 'DD/MM/YYYY') as "fecha de vencimiento de la póliza"
+                      TO_CHAR(mlc.expire_date, 'DD/MM/YYYY') as "Fecha de vencimiento de la póliza"
                 FROM m_loan ml
                 INNER JOIN m_loan_charge mlc ON ml.id = mlc.loan_id
                 INNER JOIN m_charge mc ON mlc.charge_id = mc.id

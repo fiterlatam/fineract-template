@@ -16,13 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.campaigns.masivian.data;
+package org.apache.fineract.infrastructure.event.business.domain.loan;
 
-@lombok.Builder
-@lombok.Data
-public class MasivianConfigurationData {
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 
-    private String smsApiUrl;
-    private String smsAuthorization;
-    private boolean smsApiEnabled;
+public class LoanTopUpBusinessEvent extends LoanBusinessEvent {
+
+    private static final String TYPE = "LoanTopUpBusinessEvent";
+
+    public LoanTopUpBusinessEvent(Loan value) {
+        super(value);
+    }
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 }
