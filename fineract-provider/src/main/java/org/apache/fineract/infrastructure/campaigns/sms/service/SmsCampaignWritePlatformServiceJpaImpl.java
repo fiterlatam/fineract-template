@@ -285,7 +285,6 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
             final Client client = loan.client();
             final MasivianConfigurationData masivianConfigurationData = this.externalServicesReadPlatformService.getMasivianConfiguration();
             if (masivianConfigurationData != null && masivianConfigurationData.isSmsApiEnabled()) {
-                ;
                 final HashMap<String, String> campaignParams = new ObjectMapper().readValue(smsCampaign.getParamValue(),
                         new TypeReference<>() {});
                 campaignParams.put("loanId", String.valueOf(loan.getId()));
@@ -294,8 +293,8 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
                 queryParamForRunReport.put("loanId", loan.getId().toString());
                 campaignParams.put("clientId", String.valueOf(client.getId()));
                 queryParamForRunReport.put("clientId", String.valueOf(client.getId()));
-                campaignParams.put("transactionId", String.valueOf(loanTransaction.getId()));
-                queryParamForRunReport.put("transactionId", String.valueOf(loanTransaction.getId()));
+                campaignParams.put("loanTransactionId", String.valueOf(loanTransaction.getId()));
+                queryParamForRunReport.put("loanTransactionId", String.valueOf(loanTransaction.getId()));
                 final List<HashMap<String, Object>> runReportObject = this.getRunReportByServiceImpl(campaignParams.get("reportName"),
                         queryParamForRunReport);
                 if (runReportObject != null && !runReportObject.isEmpty()) {
@@ -342,7 +341,7 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
                 List<HashMap<String, Object>> runReportObject = this.getRunReportByServiceImpl(campaignParams.get("reportName"),
                         queryParamForRunReport);
 
-                if (runReportObject != null && runReportObject.size() > 0) {
+                if (runReportObject != null && !runReportObject.isEmpty()) {
                     for (HashMap<String, Object> entry : runReportObject) {
                         String textMessage = this.compileSmsTemplate(smsCampaign.getMessage(), smsCampaign.getCampaignName(), entry);
                         Object mobileNo = entry.get("mobileNo");

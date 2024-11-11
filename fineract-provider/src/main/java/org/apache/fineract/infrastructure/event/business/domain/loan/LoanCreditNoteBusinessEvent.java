@@ -18,13 +18,14 @@
  */
 package org.apache.fineract.infrastructure.event.business.domain.loan;
 
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanTransactionBusinessEvent;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 
-public class LoanCreditNoteBusinessEvent extends LoanBusinessEvent {
+public class LoanCreditNoteBusinessEvent extends LoanTransactionBusinessEvent {
 
     private static final String TYPE = "LoanCreditNoteBusinessEvent";
 
-    public LoanCreditNoteBusinessEvent(Loan value) {
+    public LoanCreditNoteBusinessEvent(LoanTransaction value) {
         super(value);
     }
 

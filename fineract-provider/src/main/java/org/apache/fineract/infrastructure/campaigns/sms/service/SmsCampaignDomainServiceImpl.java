@@ -228,7 +228,7 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
         final LoanProduct loanProduct = loan.loanProduct();
         if (loanProduct != null) {
             if (loanProduct.getCustomAllowCreateOrDisburseSms()) {
-                final List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("Compras/Avances");
+                final List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("Compras o Avances");
                 if (!smsCampaigns.isEmpty()) {
                     for (final SmsCampaign campaign : smsCampaigns) {
                         this.smsCampaignWritePlatformCommandHandler.insertDirectCampaignIntoSmsOutboundTable(loan, campaign);
@@ -238,28 +238,30 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
         }
     }
 
-    private void notifyCreditNoteLoanOwner(final Loan loan) {
+    private void notifyCreditNoteLoanOwner(final LoanTransaction loanTransaction) {
+        final Loan loan = loanTransaction.getLoan();
         final LoanProduct loanProduct = loan.loanProduct();
         if (loanProduct != null) {
             if (loanProduct.getCustomAllowCreditNoteSms()) {
                 final List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("Nota de Crédito");
                 if (!smsCampaigns.isEmpty()) {
                     for (final SmsCampaign campaign : smsCampaigns) {
-                        this.smsCampaignWritePlatformCommandHandler.insertDirectCampaignIntoSmsOutboundTable(loan, campaign);
+                        this.smsCampaignWritePlatformCommandHandler.insertDirectCampaignIntoSmsOutboundTable(loanTransaction, campaign);
                     }
                 }
             }
         }
     }
 
-    private void notifyDebitNoteLoanOwner(final Loan loan) {
+    private void notifyDebitNoteLoanOwner(final LoanTransaction loanTransaction) {
+        final Loan loan = loanTransaction.getLoan();
         final LoanProduct loanProduct = loan.loanProduct();
         if (loanProduct != null) {
             if (loanProduct.getCustomAllowDebitNote()) {
                 final List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("Nota de Débito");
                 if (!smsCampaigns.isEmpty()) {
                     for (final SmsCampaign campaign : smsCampaigns) {
-                        this.smsCampaignWritePlatformCommandHandler.insertDirectCampaignIntoSmsOutboundTable(loan, campaign);
+                        this.smsCampaignWritePlatformCommandHandler.insertDirectCampaignIntoSmsOutboundTable(loanTransaction, campaign);
                     }
                 }
             }
@@ -271,7 +273,7 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
         final LoanProduct loanProduct = loan.getLoanProduct();
         if (loanProduct != null) {
             if (loanProduct.getCustomAllowReversalCancellationSms()) {
-                final List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("Reversos/Cancelaciones");
+                final List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("Reversos o Cancelaciones");
                 if (!smsCampaigns.isEmpty()) {
                     for (final SmsCampaign campaign : smsCampaigns) {
                         this.smsCampaignWritePlatformCommandHandler.insertDirectCampaignIntoSmsOutboundTable(loanTransaction, campaign);
