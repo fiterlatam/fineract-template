@@ -303,15 +303,17 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
                     } else {
                         sql = "UPDATE campos_cliente_empresas SET \"Cupo\" = ? WHERE client_id = ? AND \"NIT\" = ?";
                     }
-                    final int affectedRows = jdbcTemplate.update(sql, maximumCupoAmount, clientId, documentNumber);
-                    if (affectedRows == 0) {
-                        errorCount++;
-                        errorMessage = "No se pudo modificar el cupo";
-                        ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(), errorMessage,
-                                ClientCupoIncrementConstants.STATUS_COL);
-                        clientCupoIncrementSheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL,
-                                TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
-                        continue;
+                    if (maximumCupoAmount.compareTo(previousMaximumCupoAmount) < 0) {
+                        final int affectedRows = jdbcTemplate.update(sql, maximumCupoAmount, clientId, documentNumber);
+                        if (affectedRows == 0) {
+                            errorCount++;
+                            errorMessage = "No se pudo modificar el cupo";
+                            ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(),
+                                    errorMessage, ClientCupoIncrementConstants.STATUS_COL);
+                            clientCupoIncrementSheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL,
+                                    TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
+                            continue;
+                        }
                     }
                 }
                 final Cell statusCell = clientCupoIncrementSheet.getRow(clientCupoIncrementData.getRowIndex())
