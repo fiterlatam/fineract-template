@@ -15,11 +15,14 @@ import org.apache.fineract.custom.infrastructure.core.service.CustomDateUtils;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.documentmanagement.domain.Document;
 import org.apache.fineract.infrastructure.documentmanagement.domain.DocumentRepository;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanCreditNoteBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.SpecialWriteOffPayload;
@@ -27,8 +30,12 @@ import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCreditNote;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCreditNoteRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanCreditNoteAmountCannotBeZeroException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanCreditNoteDateCannotBeFutureException;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanTransactionNotFoundException;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -42,14 +49,23 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
     private final LoanWritePlatformService loanWritePlatformService;
     private final LoanReadPlatformService loanReadPlatformService;
     private final FromJsonHelper fromApiJsonHelper;
+    private final BusinessEventNotifierService businessEventNotifierService;
+    private final LoanTransactionRepository loanTransactionRepository;
 
     @Override
     public CommandProcessingResult addLoanCreditNote(Long loanId, JsonCommand command) {
         // first assemble the associated loan
         final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        final LoanProduct loanProduct = loan.loanProduct();
+        if (!loanProduct.getCustomAllowCreditNote()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.credit.note.not.allowed",
+                    "Credit note is not allowed for this loan product");
+        }
         // assemble the credit note
         final LoanCreditNote creditNote = this.assembleLoanCreditNote(loan, command);
-
+        final LoanTransaction loanTransaction = this.loanTransactionRepository.findById(creditNote.getTransactionId())
+                .orElseThrow(() -> new LoanTransactionNotFoundException(creditNote.getTransactionId()));
+        this.businessEventNotifierService.notifyPostBusinessEvent(new LoanCreditNoteBusinessEvent(loanTransaction));
         return CommandProcessingResult.commandOnlyResult(creditNote.getId());
     }
 

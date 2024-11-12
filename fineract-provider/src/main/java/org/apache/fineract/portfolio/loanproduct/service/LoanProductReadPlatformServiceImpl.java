@@ -376,14 +376,23 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                                 	pty.id AS "productTypeId",
                                 	lp.overdue_days_for_npa AS "overdueDaysForNPA",
                                 	lp.custom_allow_create_or_disburse AS "customAllowCreateOrDisburse",
+                                	lp.custom_allow_create_or_disburse_sms AS "customAllowCreateOrDisburseSms",
                                 	lp.custom_allow_collections AS "customAllowCollections",
+                                	lp.custom_allow_collections_sms AS "customAllowCollectionsSms",
                                 	lp.custom_allow_credit_note AS "customAllowCreditNote",
+                                	lp.custom_allow_credit_note_sms AS "customAllowCreditNoteSms",
                                 	lp.custom_allow_debit_note AS "customAllowDebitNote",
+                                	lp.custom_allow_debit_note_sms AS "customAllowDebitNoteSms",
                                 	lp.custom_allow_forgiveness AS "customAllowForgiveness",
-                                	lp.custom_allow_sms_restructure AS "customAllowSmsRestructure",
-                                	lp.custom_allow_sms_refinance AS "customAllowSmsRefinance",
-                                	lp.custom_allow_sms_referido AS "customAllowSmsReferido",
+                                	lp.custom_allow_forgiveness_sms AS "customAllowForgivenessSms",
+                                	lp.custom_allow_restructure AS "customAllowRestructure",
+                                	lp.custom_allow_restructure_sms AS "customAllowRestructureSms",
+                                	lp.custom_allow_refinance AS "customAllowRefinance",
+                                	lp.custom_allow_refinance_sms AS "customAllowRefinanceSms",
+                                	lp.custom_allow_referido AS "customAllowReferido",
+                                	lp.custom_allow_referido_sms AS "customAllowReferidoSms",
                                 	lp.custom_allow_reversal_cancellation AS "customAllowReversalCancellation",
+                                	lp.custom_allow_reversal_cancellation_sms AS "customAllowReversalCancellationSms",
                                 	lp.is_purchase_charge AS "isPurchaseCharge",
                                 	lp.voluntary_insurance_id AS "voluntaryInsuranceId",
                                 	lp.is_interest_starts_after_grace_period AS "isInterestStartsAfterGracePeriod",
@@ -658,14 +667,23 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final boolean requirePoints = rs.getBoolean("requirePoints");
 
             final Boolean customAllowCreateOrDisburse = rs.getBoolean("customAllowCreateOrDisburse");
+            final Boolean customAllowCreateOrDisburseSms = rs.getBoolean("customAllowCreateOrDisburseSms");
             final Boolean customAllowCollections = rs.getBoolean("customAllowCollections");
+            final Boolean customAllowCollectionsSms = rs.getBoolean("customAllowCollectionsSms");
             final Boolean customAllowDebitNote = rs.getBoolean("customAllowDebitNote");
+            final Boolean customAllowDebitNoteSms = rs.getBoolean("customAllowDebitNoteSms");
             final Boolean customAllowCreditNote = rs.getBoolean("customAllowCreditNote");
+            final Boolean customAllowCreditNoteSms = rs.getBoolean("customAllowCreditNoteSms");
             final Boolean customAllowForgiveness = rs.getBoolean("customAllowForgiveness");
+            final Boolean customAllowForgivenessSms = rs.getBoolean("customAllowForgivenessSms");
             final Boolean customAllowReversalCancellation = rs.getBoolean("customAllowReversalCancellation");
-            final Boolean customAllowSmsReferido = rs.getBoolean("customAllowSmsReferido");
-            final Boolean customAllowSmsRefinance = rs.getBoolean("customAllowSmsRefinance");
-            final Boolean customAllowSmsRestructure = rs.getBoolean("customAllowSmsRestructure");
+            final Boolean customAllowReversalCancellationSms = rs.getBoolean("customAllowReversalCancellationSms");
+            final Boolean customAllowReferido = rs.getBoolean("customAllowReferido");
+            final Boolean customAllowReferidoSms = rs.getBoolean("customAllowReferidoSms");
+            final Boolean customAllowRefinance = rs.getBoolean("customAllowRefinance");
+            final Boolean customAllowRefinanceSms = rs.getBoolean("customAllowRefinanceSms");
+            final Boolean customAllowRestructure = rs.getBoolean("customAllowRestructure");
+            final Boolean customAllowRestructureSms = rs.getBoolean("customAllowRestructureSms");
 
             LoanProductData loanProductData = new LoanProductData(id, name, shortName, description, currency, principal, minPrincipal,
                     maxPrincipal, tolerance, numberOfRepayments, minNumberOfRepayments, maxNumberOfRepayments, repaymentEvery,
@@ -696,15 +714,33 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             loanProductData.setUseOtherLoansCupo(useOtherLoansCupo);
             loanProductData.setAdvance(advance);
             loanProductData.setRequirePoints(requirePoints);
+
             loanProductData.setCustomAllowCreateOrDisburse(customAllowCreateOrDisburse);
+            loanProductData.setCustomAllowCreateOrDisburseSms(customAllowCreateOrDisburseSms);
+
             loanProductData.setCustomAllowCollections(customAllowCollections);
+            loanProductData.setCustomAllowCollectionsSms(customAllowCollectionsSms);
+
             loanProductData.setCustomAllowDebitNote(customAllowDebitNote);
+            loanProductData.setCustomAllowDebitNoteSms(customAllowDebitNoteSms);
+
             loanProductData.setCustomAllowCreditNote(customAllowCreditNote);
+            loanProductData.setCustomAllowCreditNoteSms(customAllowCreditNoteSms);
+
             loanProductData.setCustomAllowForgiveness(customAllowForgiveness);
+            loanProductData.setCustomAllowForgivenessSms(customAllowForgivenessSms);
+
             loanProductData.setCustomAllowReversalCancellation(customAllowReversalCancellation);
-            loanProductData.setCustomAllowSmsReferido(customAllowSmsReferido);
-            loanProductData.setCustomAllowSmsRefinance(customAllowSmsRefinance);
-            loanProductData.setCustomAllowSmsRestructure(customAllowSmsRestructure);
+            loanProductData.setCustomAllowReversalCancellationSms(customAllowReversalCancellationSms);
+
+            loanProductData.setCustomAllowReferido(customAllowReferido);
+            loanProductData.setCustomAllowReferidoSms(customAllowReferidoSms);
+
+            loanProductData.setCustomAllowRefinance(customAllowRefinance);
+            loanProductData.setCustomAllowRefinanceSms(customAllowRefinanceSms);
+
+            loanProductData.setCustomAllowRestructure(customAllowRestructure);
+            loanProductData.setCustomAllowRestructureSms(customAllowRestructureSms);
 
             final Long interestRateId = rs.getLong("interestRateId");
             final String interestRateName = rs.getString("interestRateName");

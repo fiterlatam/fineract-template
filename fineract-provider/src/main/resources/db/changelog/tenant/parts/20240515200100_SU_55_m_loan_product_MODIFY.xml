@@ -76,4 +76,64 @@
         </addColumn>
     </changeSet>
 
+
+    <changeSet author="fineract" id="64">
+        <addColumn tableName="m_product_loan">
+            <column name="custom_allow_create_or_disburse_sms" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="65">
+        <addColumn tableName="m_product_loan">
+            <column name="custom_allow_collections_sms" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="66">
+        <addColumn tableName="m_product_loan">
+            <column name="custom_allow_debit_note_sms" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="67">
+        <addColumn tableName="m_product_loan">
+            <column name="custom_allow_credit_note_sms" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="68">
+        <addColumn tableName="m_product_loan">
+            <column name="custom_allow_forgiveness_sms" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="69">
+        <addColumn tableName="m_product_loan">
+            <column name="custom_allow_reversal_cancellation_sms" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="70">
+        <addColumn tableName="m_product_loan">
+            <column name="custom_allow_refinance_sms" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="71">
+        <addColumn tableName="m_product_loan">
+            <column name="custom_allow_restructure_sms" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="fineract" id="72">
+        <addColumn tableName="m_product_loan">
+            <column name="custom_allow_referido_sms" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="73">
+        <renameColumn tableName="m_product_loan" oldColumnName="custom_allow_sms_refinance" newColumnName="custom_allow_refinance" columnDataType="boolean"/>
+        <renameColumn tableName="m_product_loan" oldColumnName="custom_allow_sms_restructure" newColumnName="custom_allow_restructure" columnDataType="boolean"/>
+        <renameColumn tableName="m_product_loan" oldColumnName="custom_allow_sms_referido" newColumnName="custom_allow_referido" columnDataType="boolean"/>
+    </changeSet>
+
 </databaseChangeLog>

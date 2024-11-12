@@ -94,6 +94,7 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.apache.fineract.portfolio.loanaccount.service.ReplayedTransactionBusinessEventService;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
@@ -434,6 +435,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             changes.put("approvedByUserId", appUser.getId());
             final LocalDate businessLocalDate = DateUtils.getBusinessLocalDate();
             Loan loan = loanRescheduleRequest.getLoan();
+            final LoanProduct loanProduct = loan.loanProduct();
             final List<Long> existingTransactionIds = new ArrayList<>(loan.findExistingTransactionIds());
             final List<Long> existingReversedTransactionIds = new ArrayList<>(loan.findExistingReversedTransactionIds());
 
@@ -487,6 +489,10 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 mapping.getLoanTermVariations().updateIsActive(true);
             }
             if (!rediferirVariations.isEmpty()) {
+                if (!loanProduct.getCustomAllowReferido()) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.not.allowed",
+                            "Rediferir is not allowed on this product");
+                }
                 final LoanTermVariations rediferirTermVariationValue = rediferirVariations.get(0);
                 final int rediferirPeriods = rediferirTermVariationValue.getTermValue().intValue();
                 final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
@@ -523,6 +529,13 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     this.loanRescheduleRequestRepository.saveAndFlush(loanRescheduleRequest);
                 }
             }
+            if (rediferirVariations.isEmpty()) {
+                if (!loanProduct.getCustomAllowRefinance()) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.not.allowed.on.product",
+                            "Reschedule is not allowed on this product");
+                }
+            }
+
             BigDecimal annualNominalInterestRate = null;
             final List<LoanTermVariationsData> loanTermVariations = new ArrayList<>();
             loan.constructLoanTermVariations(scheduleGeneratorDTO.getFloatingRateDTO(), annualNominalInterestRate, loanTermVariations);

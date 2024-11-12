@@ -76,6 +76,7 @@ import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanaccount.exception.InvalidLoanTypeException;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -277,6 +278,53 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
     }
 
     @Override
+    public void insertDirectCampaignIntoSmsOutboundTable(final LoanTransaction loanTransaction, final SmsCampaign smsCampaign) {
+
+        try {
+            final Loan loan = loanTransaction.getLoan();
+            final Client client = loan.client();
+            final MasivianConfigurationData masivianConfigurationData = this.externalServicesReadPlatformService.getMasivianConfiguration();
+            if (masivianConfigurationData != null && masivianConfigurationData.isSmsApiEnabled()) {
+                final HashMap<String, String> campaignParams = new ObjectMapper().readValue(smsCampaign.getParamValue(),
+                        new TypeReference<>() {});
+                campaignParams.put("loanId", String.valueOf(loan.getId()));
+                final HashMap<String, String> queryParamForRunReport = new ObjectMapper().readValue(smsCampaign.getParamValue(),
+                        new TypeReference<>() {});
+                queryParamForRunReport.put("loanId", loan.getId().toString());
+                campaignParams.put("clientId", String.valueOf(client.getId()));
+                queryParamForRunReport.put("clientId", String.valueOf(client.getId()));
+                campaignParams.put("loanTransactionId", String.valueOf(loanTransaction.getId()));
+                queryParamForRunReport.put("loanTransactionId", String.valueOf(loanTransaction.getId()));
+                final List<HashMap<String, Object>> runReportObject = this.getRunReportByServiceImpl(campaignParams.get("reportName"),
+                        queryParamForRunReport);
+                if (runReportObject != null && !runReportObject.isEmpty()) {
+                    for (final HashMap<String, Object> entry : runReportObject) {
+                        final String textMessage = this.compileSmsTemplate(smsCampaign.getMessage(), smsCampaign.getCampaignName(), entry);
+                        final Object mobileNo = entry.get("mobileNo");
+                        if (this.smsCampaignValidator.isValidNotificationOrSms(client, smsCampaign, mobileNo)) {
+                            String mobileNumber = null;
+                            if (mobileNo != null) {
+                                mobileNumber = mobileNo.toString();
+                            }
+                            final SmsMessage smsMessage = SmsMessage.pendingSms(null, null, client, null, textMessage, mobileNumber,
+                                    smsCampaign, smsCampaign.isNotification());
+                            smsMessage.setStatusType(SmsMessageStatusType.WAITING_FOR_DELIVERY_REPORT.getValue());
+                            this.smsMessageRepository.save(smsMessage);
+                            final Collection<SmsMessage> messages = new ArrayList<>();
+                            messages.add(smsMessage);
+                            final Map<SmsCampaign, Collection<SmsMessage>> smsDataMap = new HashMap<>();
+                            smsDataMap.put(smsCampaign, messages);
+                            this.smsMessageScheduledJobService.sendTriggeredMessages(smsDataMap);
+                        }
+                    }
+                }
+            }
+        } catch (final IOException | RuntimeException e) {
+            log.error("Error occured.", e);
+        }
+    }
+
+    @Override
     public void insertDirectCampaignIntoSmsOutboundTable(final Client client, final SmsCampaign smsCampaign) {
         try {
             final MasivianConfigurationData masivianConfigurationData = this.externalServicesReadPlatformService.getMasivianConfiguration();
@@ -293,7 +341,7 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
                 List<HashMap<String, Object>> runReportObject = this.getRunReportByServiceImpl(campaignParams.get("reportName"),
                         queryParamForRunReport);
 
-                if (runReportObject != null && runReportObject.size() > 0) {
+                if (runReportObject != null && !runReportObject.isEmpty()) {
                     for (HashMap<String, Object> entry : runReportObject) {
                         String textMessage = this.compileSmsTemplate(smsCampaign.getMessage(), smsCampaign.getCampaignName(), entry);
                         Object mobileNo = entry.get("mobileNo");
