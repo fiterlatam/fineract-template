@@ -20,7 +20,7 @@ package org.apache.fineract.accounting.journalentry.data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -92,7 +92,7 @@ public class JournalEntryData {
     private String receiptNumber;
     private String bankNumber;
     private transient Long savingTransactionId;
-    private LocalDateTime createdTimestamp;
+    private ZonedDateTime createdTimestamp;
 
     // for opening bal bulk import
     public JournalEntryData(Long officeId, LocalDate transactionDate, String currencyCode, List<CreditDebit> credits,
@@ -214,7 +214,7 @@ public class JournalEntryData {
             final EnumOptionData entityType, final Long entityId, final Long createdByUserId, final LocalDate createdDate,
             final String createdByUserName, final String comments, final Boolean reversed, final String referenceNumber,
             final BigDecimal officeRunningBalance, final BigDecimal organizationRunningBalance, final Boolean runningBalanceComputed,
-            final TransactionDetailData transactionDetailData, final CurrencyData currency, LocalDateTime createdTimestamp) {
+            final TransactionDetailData transactionDetailData, final CurrencyData currency, ZonedDateTime createdTimestamp) {
         this.id = id;
         this.officeId = officeId;
         this.officeName = officeName;
@@ -304,7 +304,7 @@ public class JournalEntryData {
         final Boolean runningBalanceComputed = null;
         final TransactionDetailData transactionDetailData = null;
         final CurrencyData currency = null;
-        final LocalDateTime createdTimestamp = null;
+        final ZonedDateTime createdTimestamp = null;
         return new JournalEntryData(id, officeId, officeName, glAccountName, glAccountId, glAccountCode, glAccountClassification,
                 transactionDate, entryType, amount, transactionId, manualEntry, entityType, entityId, createdByUserId, createdDate,
                 createdByUserName, comments, reversed, referenceNumber, officeRunningBalance, organizationRunningBalance,
