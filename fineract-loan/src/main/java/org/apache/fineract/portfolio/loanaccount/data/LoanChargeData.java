@@ -102,6 +102,8 @@ public class LoanChargeData {
 
     private Boolean isEndorsed;
     private String expDate;
+    private String insuranceName;
+    private String insuranceId;
 
     public static LoanChargeData template(final Collection<ChargeData> chargeOptions) {
         return new LoanChargeData(null, null, null, null, null, null, null, null, chargeOptions, false, null, false, false, null,
@@ -174,7 +176,7 @@ public class LoanChargeData {
             final BigDecimal amountPercentageAppliedTo, final boolean penalty, final EnumOptionData chargePaymentMode, final boolean paid,
             final boolean waived, final Long loanId, final ExternalId externalLoanId, final BigDecimal minCap, final BigDecimal maxCap,
             final BigDecimal amountOrPercentage, Collection<LoanInstallmentChargeData> installmentChargeData, final ExternalId externalId,
-            Boolean isEndorse, String expDate) {
+            Boolean isEndorse, String expDate, String insuranceName, String insuranceId) {
         this.id = id;
         this.chargeId = chargeId;
         this.name = name;
@@ -216,6 +218,8 @@ public class LoanChargeData {
         this.externalLoanId = externalLoanId;
         this.isEndorsed = isEndorse;
         this.expDate = expDate;
+        this.insuranceName = insuranceName;
+        this.insuranceId = insuranceId;
     }
 
     private LoanChargeData(final Long id, final Long chargeId, final String name, final CurrencyData currency, final BigDecimal amount,
