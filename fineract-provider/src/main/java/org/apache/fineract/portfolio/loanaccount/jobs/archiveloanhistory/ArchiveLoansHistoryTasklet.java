@@ -132,6 +132,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                         String pointOfSale = "";
                         String estadoCivil = "";
                         String cityClient = " ";
+                        String departement = " ";
 
                         if (transaction != null) {
                             if (transaction.getPaymentDetail() != null) {
@@ -158,6 +159,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                                         CodeValue categoryCode = getCategory.get();
                                         categoryPointOfSales = categoryCode.getLabel();
                                     }
+
                                 }
                             }
                         }
@@ -187,12 +189,12 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             existingEntry.setEstadoCliente(dataLoan.getEstadoCliente());
                             existingEntry
                                     .setNumeroObligacion(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
-                            existingEntry.setNitEmpresa("900486370");
+                            existingEntry.setNitEmpresa("800139398");
                             existingEntry.setTelefonoSac(dataLoan.getTelefonoSac());
                             existingEntry.setCelularSac(dataLoan.getCelularSac());
                             existingEntry.setEmailSac(dataLoan.getEmailSac());
                             existingEntry.setDireccionSac(dataLoan.getDireccionSac());
-                            existingEntry.setBarrioSac(dataLoan.getBarrioSac());
+                            existingEntry.setBarrioSac("OTRO");
                             existingEntry.setCiudadSac(cityClient);
                             existingEntry.setTipoCredito(categoryPointOfSales);
                             existingEntry.setDepartamento(dataLoan.getDepartamento());
@@ -245,12 +247,12 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             loanArchiveHistory.setEstadoCliente(dataLoan.getEstadoCliente());
                             loanArchiveHistory
                                     .setNumeroObligacion(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
-                            loanArchiveHistory.setNitEmpresa("900486370");
+                            loanArchiveHistory.setNitEmpresa("800139398");
                             loanArchiveHistory.setTelefonoSac(dataLoan.getTelefonoSac());
                             loanArchiveHistory.setCelularSac(dataLoan.getCelularSac());
                             loanArchiveHistory.setEmailSac(dataLoan.getEmailSac());
                             loanArchiveHistory.setDireccionSac(dataLoan.getDireccionSac());
-                            loanArchiveHistory.setBarrioSac(dataLoan.getBarrioSac());
+                            loanArchiveHistory.setBarrioSac("OTRO");
                             loanArchiveHistory.setCiudadSac(cityClient);
                             loanArchiveHistory.setTipoCredito(categoryPointOfSales);
                             loanArchiveHistory.setDepartamento(dataLoan.getDepartamento());
