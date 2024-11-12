@@ -26,6 +26,7 @@ import org.apache.fineract.infrastructure.core.api.JsonQuery;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 
 public interface SmsCampaignWritePlatformService {
@@ -45,6 +46,8 @@ public interface SmsCampaignWritePlatformService {
     void insertDirectCampaignIntoSmsOutboundTable(SmsCampaign smsCampaign);
 
     void insertDirectCampaignIntoSmsOutboundTable(Loan loan, SmsCampaign smsCampaign);
+
+    void insertDirectCampaignIntoSmsOutboundTable(LoanTransaction loanTransaction, SmsCampaign smsCampaign);
 
     String compileSmsTemplate(String textMessageTemplate, String campaignName, Map<String, Object> smsParams);
 
