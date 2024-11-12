@@ -334,4 +334,569 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="210">
+        <insert tableName="stretchy_parameter">
+            <column name="parameter_name" value="DefaultLoanTransactionId"/>
+            <column name="parameter_variable" value="loanTransactionId"/>
+            <column name="parameter_label" value="Loan Transaction ID"/>
+            <column name="parameter_displayType" value="none"/>
+            <column name="parameter_FormatType" value="number"/>
+            <column name="parameter_default" value="-1"/>
+            <column name="special" value="NULL"/>
+            <column name="selectOne" value="NULL"/>
+            <column name="selectAll" value="Y"/>
+            <column name="parameter_sql" value="NULL"/>
+            <column name="parent_id" valueComputed="(SELECT id FROM stretchy_parameter WHERE parameter_variable='officeId')"/>
+        </insert>
+    </changeSet>
+
+
+    <changeSet id="21" author="fineract">
+        <insert tableName="stretchy_report">
+            <column name="report_name" value="Compras o Avances"/>
+            <column name="report_type" value="SMS"/>
+            <column name="report_subtype" value="Triggered"/>
+            <column name="report_category" value="Loan"/>
+            <column name="report_sql">
+                <![CDATA[
+                     SELECT
+                        ml.id AS "loanId",
+                        mc.id AS "clientId",
+                        mc.firstname AS "firstName",
+                        COALESCE(mc.middlename, '') AS "middleName",
+                        mc.lastname AS "lastName",
+                        mc.display_name AS "fullName",
+                        mobile_no AS "mobileNo",
+                        round(ml.principal_amount, ml.currency_digits) AS "loanAmount",
+                        round(ml."total_outstanding_derived", ml.currency_digits) AS "loanOutstandingAmount",
+                        ml."account_no" AS "loanAccountNo",
+                        ml.currency_code AS "currencyCode"
+                    FROM m_loan ml
+                    INNER JOIN m_client mc ON mc.id = ml.client_id
+                    WHERE mobile_no IS NOT NULL
+                        AND (mc.id = ${clientId} OR '-1' = ${clientId})
+                        AND (ml.id = ${loanId} OR '-1' = ${loanId})
+                ]]>
+            </column>
+            <column name="description" value="Compras o Avances"/>
+            <column name="core_report" valueBoolean="false"/>
+            <column name="use_report" valueBoolean="false"/>
+            <column name="self_service_user_report" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="22">
+        <insert tableName="m_external_event_configuration">
+            <column name="type" value="LoanBuyBusinessEvent"/>
+            <column name="enabled" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="23" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Compras o Avances') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'officeId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select id from stretchy_report where report_name = 'Compras o Avances')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'officeId')"/>
+            <column name="report_parameter_name" value="officeId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="24" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Compras o Avances') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'clientId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select id from stretchy_report where report_name = 'Compras o Avances')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'clientId')"/>
+            <column name="report_parameter_name" value="clientId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="25" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Compras o Avances') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'loanId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Compras o Avances')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'loanId')"/>
+            <column name="report_parameter_name" value="loanId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="26" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Compras o Avances') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'loanTransactionId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select id from stretchy_report where report_name = 'Compras o Avances')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'loanTransactionId')"/>
+            <column name="report_parameter_name" value="loanTransactionId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="27" author="fineract">
+        <insert tableName="stretchy_report">
+            <column name="report_name" value="Nota de Débito"/>
+            <column name="report_type" value="SMS"/>
+            <column name="report_subtype" value="Triggered"/>
+            <column name="report_category" value="Loan"/>
+            <column name="report_sql">
+                <![CDATA[
+                     SELECT
+                        ml.id AS "loanId",
+                        mc.id AS "clientId",
+                        mc.firstname AS "firstName",
+                        COALESCE(mc.middlename, '') AS "middleName",
+                        mc.lastname AS "lastName",
+                        mc.display_name AS "fullName",
+                        mobile_no AS "mobileNo",
+                        ROUND(ml.principal_amount, ml.currency_digits) AS "loanAmount",
+                        ROUND(ml."total_outstanding_derived", ml.currency_digits) AS "outstandingAmount",
+                        ml."account_no" AS "loanAccountNo",
+                        ml.currency_code AS "currencyCode",
+                        mlt.id AS "transactionId",
+                        ROUND(mlt.amount, ml.currency_digits) AS "transactionAmount",
+                        mlt.transaction_date AS "transactionDate"
+                    FROM m_loan ml
+                    INNER JOIN m_client mc ON mc.id = ml.client_id
+                    INNER JOIN m_loan_transaction mlt ON mlt.loan_id = ml.id
+                    WHERE mobile_no IS NOT NULL
+                        AND (mc.id = ${clientId} OR '-1' = ${clientId})
+                        AND (ml.id = ${loanId} OR '-1' = ${loanId})
+                        AND (mlt.id = ${loanTransactionId} OR '-1' = ${loanTransactionId})
+                ]]>
+            </column>
+            <column name="description" value="Nota de Débito"/>
+            <column name="core_report" valueBoolean="false"/>
+            <column name="use_report" valueBoolean="false"/>
+            <column name="self_service_user_report" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="28">
+        <insert tableName="m_external_event_configuration">
+            <column name="type" value="LoanDebitNoteBusinessEvent"/>
+            <column name="enabled" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="29" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Nota de Débito') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'officeId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select id from stretchy_report where report_name = 'Nota de Débito')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'officeId')"/>
+            <column name="report_parameter_name" value="officeId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="30" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Nota de Débito') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'clientId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Nota de Débito')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'clientId')"/>
+            <column name="report_parameter_name" value="clientId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="31" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Nota de Débito') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'loanId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Nota de Débito')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'loanId')"/>
+            <column name="report_parameter_name" value="loanId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="32" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Nota de Débito') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'loanTransactionId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Nota de Débito')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'loanTransactionId')"/>
+            <column name="report_parameter_name" value="loanTransactionId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="33" author="fineract">
+        <insert tableName="stretchy_report">
+            <column name="report_name" value="Nota de Crédito"/>
+            <column name="report_type" value="SMS"/>
+            <column name="report_subtype" value="Triggered"/>
+            <column name="report_category" value="Loan"/>
+            <column name="report_sql">
+                <![CDATA[
+                     SELECT
+                        ml.id AS "loanId",
+                        mc.id AS "clientId",
+                        mc.firstname AS "firstName",
+                        COALESCE(mc.middlename, '') AS "middleName",
+                        mc.lastname AS "lastName",
+                        mc.display_name AS "fullName",
+                        mobile_no AS "mobileNo",
+                        ROUND(ml.principal_amount, ml.currency_digits) AS "loanAmount",
+                        ROUND(ml."total_outstanding_derived", ml.currency_digits) AS "outstandingAmount",
+                        ml."account_no" AS "loanAccountNo",
+                        ml.currency_code AS "currencyCode",
+                        mlt.id AS "transactionId",
+                        ROUND(mlt.amount, ml.currency_digits) AS "transactionAmount",
+                        mlt.transaction_date AS "transactionDate"
+                    FROM m_loan ml
+                    INNER JOIN m_client mc ON mc.id = ml.client_id
+                    INNER JOIN m_loan_transaction mlt ON mlt.loan_id = ml.id
+                    WHERE mobile_no IS NOT NULL
+                        AND (mc.id = ${clientId} OR '-1' = ${clientId})
+                        AND (ml.id = ${loanId} OR '-1' = ${loanId})
+                        AND (mlt.id = ${loanTransactionId} OR '-1' = ${loanTransactionId})
+                ]]>
+            </column>
+            <column name="description" value="Nota de Crédito"/>
+            <column name="core_report" valueBoolean="false"/>
+            <column name="use_report" valueBoolean="false"/>
+            <column name="self_service_user_report" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="34">
+        <insert tableName="m_external_event_configuration">
+            <column name="type" value="LoanCreditNoteBusinessEvent"/>
+            <column name="enabled" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="35" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Nota de Crédito') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'officeId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Nota de Crédito')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'officeId')"/>
+            <column name="report_parameter_name" value="officeId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="36" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Nota de Crédito') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'clientId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Nota de Crédito')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'clientId')"/>
+            <column name="report_parameter_name" value="clientId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="37" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Nota de Crédito') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'loanId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Nota de Crédito')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'loanId')"/>
+            <column name="report_parameter_name" value="loanId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="38" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Nota de Crédito') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'loanTransactionId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Nota de Crédito')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'loanTransactionId')"/>
+            <column name="report_parameter_name" value="loanTransactionId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="39" author="fineract">
+        <insert tableName="stretchy_report">
+            <column name="report_name" value="Condonaciones"/>
+            <column name="report_type" value="SMS"/>
+            <column name="report_subtype" value="Triggered"/>
+            <column name="report_category" value="Loan"/>
+            <column name="report_sql">
+                <![CDATA[
+                    SELECT
+                        ml.id AS "loanId",
+                        mc.id AS "clientId",
+                        mc.firstname AS "firstName",
+                        COALESCE(mc.middlename, '') AS "middleName",
+                        mc.lastname AS "lastName",
+                        mc.display_name AS "fullName",
+                        mobile_no AS "mobileNo",
+                        ROUND(ml.principal_amount, ml.currency_digits) AS "loanAmount",
+                        ROUND(ml."total_outstanding_derived", ml.currency_digits) AS "outstandingAmount",
+                        ml."account_no" AS "loanAccountNo",
+                        ml.currency_code AS "currencyCode",
+                        mlt.id AS "transactionId",
+                        ROUND(mlt.amount, ml.currency_digits) AS "transactionAmount",
+                        mlt.transaction_date AS "transactionDate"
+                    FROM m_loan ml
+                    INNER JOIN m_client mc ON mc.id = ml.client_id
+                    INNER JOIN m_loan_transaction mlt ON mlt.loan_id = ml.id
+                    WHERE mobile_no IS NOT NULL
+                        AND (mc.id = ${clientId} OR '-1' = ${clientId})
+                        AND (ml.id = ${loanId} OR '-1' = ${loanId})
+                        AND (mlt.id = ${loanTransactionId} OR '-1' = ${loanTransactionId})
+                ]]>
+            </column>
+            <column name="description" value="Condonaciones"/>
+            <column name="core_report" valueBoolean="false"/>
+            <column name="use_report" valueBoolean="false"/>
+            <column name="self_service_user_report" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="40" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Condonaciones') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'officeId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Condonaciones')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'officeId')"/>
+            <column name="report_parameter_name" value="officeId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="41" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Condonaciones') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'clientId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Condonaciones')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'clientId')"/>
+            <column name="report_parameter_name" value="clientId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="42" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Condonaciones') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'loanId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Condonaciones')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'loanId')"/>
+            <column name="report_parameter_name" value="loanId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="43" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Condonaciones') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'loanTransactionId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Condonaciones')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'loanTransactionId')"/>
+            <column name="report_parameter_name" value="loanTransactionId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="44" author="fineract">
+        <insert tableName="stretchy_report">
+            <column name="report_name" value="Reversos o Cancelaciones"/>
+            <column name="report_type" value="SMS"/>
+            <column name="report_subtype" value="Triggered"/>
+            <column name="report_category" value="Loan"/>
+            <column name="report_sql">
+                <![CDATA[
+                    SELECT
+                        ml.id AS "loanId",
+                        mc.id AS "clientId",
+                        mc.firstname AS "firstName",
+                        COALESCE(mc.middlename, '') AS "middleName",
+                        mc.lastname AS "lastName",
+                        mc.display_name AS "fullName",
+                        mobile_no AS "mobileNo",
+                        ROUND(ml.principal_amount, ml.currency_digits) AS "loanAmount",
+                        ROUND(ml."total_outstanding_derived", ml.currency_digits) AS "outstandingAmount",
+                        ml."account_no" AS "loanAccountNo",
+                        ml.currency_code AS "currencyCode",
+                        mlt.id AS "transactionId",
+                        ROUND(mlt.amount, ml.currency_digits) AS "transactionAmount",
+                        mlt.transaction_date AS "transactionDate"
+                    INNER JOIN m_client mc ON mc.id = ml.client_id
+                    FROM m_loan ml
+                    INNER JOIN m_loan_transaction mlt ON mlt.loan_id = ml.id
+                    WHERE mobile_no IS NOT NULL
+                        AND (mc.id = ${clientId} OR '-1' = ${clientId})
+                        AND (ml.id = ${loanId} OR '-1' = ${loanId})
+                        AND (mlt.id = ${loanTransactionId} OR '-1' = ${loanTransactionId})
+                ]]>
+            </column>
+            <column name="description" value="Reversos o Cancelaciones"/>
+            <column name="core_report" valueBoolean="false"/>
+            <column name="use_report" valueBoolean="false"/>
+            <column name="self_service_user_report" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="45">
+        <insert tableName="m_external_event_configuration">
+            <column name="type" value="LoanTxReversalBusinessEvent"/>
+            <column name="enabled" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="46" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Reversos o Cancelaciones') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'officeId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select id from stretchy_report where report_name = 'Reversos o Cancelaciones')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'officeId')"/>
+            <column name="report_parameter_name" value="officeId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="47" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Reversos o Cancelaciones') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'clientId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Reversos o Cancelaciones')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'clientId')"/>
+            <column name="report_parameter_name" value="clientId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="48" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Reversos o Cancelaciones') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'loanId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select id from stretchy_report where report_name = 'Reversos o Cancelaciones')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'loanId')"/>
+            <column name="report_parameter_name" value="loanId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="49" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM stretchy_report_parameter WHERE report_id = (SELECT id FROM stretchy_report WHERE report_name = 'Reversos o Cancelaciones') AND parameter_id = (SELECT id FROM stretchy_parameter WHERE parameter_variable = 'loanTransactionId')
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select id from stretchy_report where report_name = 'Reversos o Cancelaciones')"/>
+            <column name="parameter_id" valueComputed="(select id from stretchy_parameter where parameter_variable  = 'loanTransactionId')"/>
+            <column name="report_parameter_name" value="loanTransactionId"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="50">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM stretchy_report WHERE report_name = 'Reversos o Cancelaciones'
+            </sqlCheck>
+        </preConditions>
+        <update tableName="stretchy_report">
+            <column name="report_sql">
+                <![CDATA[
+                    SELECT
+                        ml.id AS "loanId",
+                        mc.id AS "clientId",
+                        mc.firstname AS "firstName",
+                        COALESCE(mc.middlename, '') AS "middleName",
+                        mc.lastname AS "lastName",
+                        mc.display_name AS "fullName",
+                        mobile_no AS "mobileNo",
+                        ROUND(ml.principal_amount, ml.currency_digits) AS "loanAmount",
+                        ROUND(ml."total_outstanding_derived", ml.currency_digits) AS "outstandingAmount",
+                        ml."account_no" AS "loanAccountNo",
+                        ml.currency_code AS "currencyCode",
+                        mlt.id AS "transactionId",
+                        ROUND(mlt.amount, ml.currency_digits) AS "transactionAmount",
+                        mlt.transaction_date AS "transactionDate"
+                    FROM m_loan ml
+                    INNER JOIN m_client mc ON mc.id = ml.client_id
+                    INNER JOIN m_loan_transaction mlt ON mlt.loan_id = ml.id
+                    WHERE mobile_no IS NOT NULL
+                        AND (mc.id = ${clientId} OR '-1' = ${clientId})
+                        AND (ml.id = ${loanId} OR '-1' = ${loanId})
+                        AND (mlt.id = ${loanTransactionId} OR '-1' = ${loanTransactionId})
+                ]]>
+            </column>
+            <where>report_name = 'Reversos o Cancelaciones'</where>
+        </update>
+    </changeSet>
+
 </databaseChangeLog>
