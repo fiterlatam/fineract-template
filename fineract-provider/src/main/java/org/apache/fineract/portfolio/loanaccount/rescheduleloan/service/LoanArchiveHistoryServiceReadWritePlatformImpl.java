@@ -44,8 +44,8 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
                     + " COALESCE(mc.second_lastname,'') AS second_lastname, \n"
                     + " mc.display_name, COALESCE(mc.lastname,'') AS lastname, \n" + "       cbr.name_of_reason,\n"
                     + "       COALESCE(cce.\"NIT\", ccp.\"Cedula\") AS nit_empresa, COALESCE(cce.\"Cupo\", ccp.\"Cupo solicitado\") AS cupo, \n"
-                    + "       COALESCE(ccp.\"Telefono\" , cce.\"Telefono\") AS telefono, \n"
-                    + "       ccp.\"Celular Referencia\" AS celuar,\n" + "       mc.email_address,\n"
+                    + "       COALESCE(ccp.\"Telefono\" , cce.\"Telefono\") AS telefono, mc.mobile_no \n"
+                    + "       ccp.\"Celular Referencia\" AS celuar_ref,\n" + "       mc.email_address,\n"
                     + "       COALESCE(ccp.\"Direccion\",cce.\"Direccion\") AS direction, \n"
                     + "       COALESCE(ccp.\"Ciudad_cd_Ciudad\",cce.\"Ciudad_cd_Ciudad\") as ciudad, \n"
                     + "       cce.\"Departamento_cd_Departamento\" as departamento,\n" + "       mcbr.name_of_reason AS creaditBlock, \n"
@@ -70,7 +70,7 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
                     .segundoNombre(rs.getString("middlename")).segundoApellido(rs.getString("second_lastname"))
                     .primerApellido(rs.getString("lastname")).estadoCliente(rs.getString("name_of_reason"))
                     .numeroObligacion(rs.getString("loan_id")).nitEmpresa(rs.getString("nit_empresa")).telefonoSac(rs.getString("telefono"))
-                    .celularSac(rs.getString("celuar")).emailSac(rs.getString("email_address")).direccionSac(rs.getString("direction"))
+                    .celularSac(rs.getString("mobile_no")).emailSac(rs.getString("email_address")).direccionSac(rs.getString("direction"))
                     .barrioSac(rs.getString("direction")).ciudadSac(rs.getInt("ciudad")).departamento(rs.getString("departamento"))
                     .razonSocial(rs.getString("firstname") + " " + rs.getString("middlename") + " " + rs.getString("second_lastname"))
                     .nombreFamiliar(rs.getString("nombre_empresa")).parentescoFamiliar(rs.getString("referencia"))
