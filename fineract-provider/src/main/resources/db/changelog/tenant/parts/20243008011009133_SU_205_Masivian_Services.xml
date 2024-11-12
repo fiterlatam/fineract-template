@@ -862,4 +862,41 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="50">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM stretchy_report WHERE report_name = 'Reversos o Cancelaciones'
+            </sqlCheck>
+        </preConditions>
+        <update tableName="stretchy_report">
+            <column name="report_sql">
+                <![CDATA[
+                    SELECT
+                        ml.id AS "loanId",
+                        mc.id AS "clientId",
+                        mc.firstname AS "firstName",
+                        COALESCE(mc.middlename, '') AS "middleName",
+                        mc.lastname AS "lastName",
+                        mc.display_name AS "fullName",
+                        mobile_no AS "mobileNo",
+                        ROUND(ml.principal_amount, ml.currency_digits) AS "loanAmount",
+                        ROUND(ml."total_outstanding_derived", ml.currency_digits) AS "outstandingAmount",
+                        ml."account_no" AS "loanAccountNo",
+                        ml.currency_code AS "currencyCode",
+                        mlt.id AS "transactionId",
+                        ROUND(mlt.amount, ml.currency_digits) AS "transactionAmount",
+                        mlt.transaction_date AS "transactionDate"
+                    FROM m_loan ml
+                    INNER JOIN m_client mc ON mc.id = ml.client_id
+                    INNER JOIN m_loan_transaction mlt ON mlt.loan_id = ml.id
+                    WHERE mobile_no IS NOT NULL
+                        AND (mc.id = ${clientId} OR '-1' = ${clientId})
+                        AND (ml.id = ${loanId} OR '-1' = ${loanId})
+                        AND (mlt.id = ${loanTransactionId} OR '-1' = ${loanTransactionId})
+                ]]>
+            </column>
+            <where>report_name = 'Reversos o Cancelaciones'</where>
+        </update>
+    </changeSet>
+
 </databaseChangeLog>
