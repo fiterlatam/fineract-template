@@ -42,6 +42,8 @@ public interface LoanApiConstants {
     String postDatedChecks = "postDatedChecks";
     String chargeExpireDate = "expdate";
     String isEndorsed = "isEndorsed";
+    String insuranceName = "insuranceName";
+    String insuranceId = "insuranceId";
 
     String approvedLoanAmountParameterName = "approvedLoanAmount";
     String approvedOnDateParameterName = "approvedOnDate";

@@ -154,6 +154,12 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "expire_date", nullable = true)
     private LocalDate expDate;
 
+    @Column(name = "insurance_name", nullable = true)
+    private String insuranceName;
+
+    @Column(name = "insurance_id", nullable = true)
+    private String insuranceId;
+
     // This attribute is used only to hold the current installment charge amount calculated and used
     // when repayment schedule is generated during loan creation. This amount is needed to show individual charge
     // amounts on the loan schedule screen.
@@ -182,10 +188,10 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
             final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
             final ExternalId externalId, boolean getPercentageAmountFromTable, Long numberOfPenaltyDays, Integer applicableFromInstallment,
-            LocalDate expDate, Boolean isEndorse) {
+            LocalDate expDate, Boolean isEndorse, String insuranceName, String insuranceId) {
 
         this(loan, chargeDefinition, loanPrincipal, amount, chargeTime, chargeCalculation, dueDate, chargePaymentMode, numberOfRepayments,
-                loanCharge, externalId, getPercentageAmountFromTable, numberOfPenaltyDays, expDate, isEndorse);
+                loanCharge, externalId, getPercentageAmountFromTable, numberOfPenaltyDays, expDate, isEndorse, insuranceName, insuranceId);
 
         this.setApplicableFromInstallment(applicableFromInstallment);
 
@@ -246,7 +252,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
             final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
             final ExternalId externalId, boolean getPercentageAmountFromTable, Long numberOfPenaltyDays, LocalDate expDate,
-            Boolean isEndorse) {
+            Boolean isEndorse, String insuranceName, String insuranceId) {
         this.loan = loan;
         this.charge = chargeDefinition;
         this.submittedOnDate = DateUtils.getBusinessLocalDate();
@@ -293,6 +299,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         this.externalId = externalId;
         this.expDate = expDate;
         this.isEndorse = isEndorse;
+        this.insuranceName = insuranceName;
+        this.insuranceId = insuranceId;
     }
 
     private void populateDerivedFields(final BigDecimal amountPercentageAppliedTo, final BigDecimal chargeAmount,

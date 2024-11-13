@@ -479,7 +479,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                 final Set<String> supportedParameters = new HashSet<>(Arrays.asList(LoanApiConstants.idParameterName,
                         LoanApiConstants.chargeIdParameterName, LoanApiConstants.amountParameterName,
                         LoanApiConstants.chargeTimeTypeParameterName, LoanApiConstants.chargeCalculationTypeParameterName,
-                        LoanApiConstants.dueDateParamName, LoanApiConstants.chargeExpireDate, LoanApiConstants.isEndorsed));
+                        LoanApiConstants.dueDateParamName, LoanApiConstants.chargeExpireDate, LoanApiConstants.isEndorsed,
+                        LoanApiConstants.insuranceName, LoanApiConstants.insuranceId));
 
                 final JsonArray array = topLevelJsonElement.get(LoanApiConstants.chargesParameterName).getAsJsonArray();
                 for (int i = 1; i <= array.size(); i++) {
@@ -498,11 +499,25 @@ public final class LoanApplicationCommandFromApiJsonHelper {
 
                     final BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed(LoanApiConstants.amountParameterName,
                             loanChargeElement, locale);
+
+                    if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.insuranceName, loanChargeElement)) {
+                        String insuranceName = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.insuranceName, loanChargeElement);
+                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                .parameterAtIndexArray(LoanApiConstants.insuranceName, i).value(insuranceName).ignoreIfNull();
+                    }
+
+                    if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.insuranceId, loanChargeElement)) {
+                        String insuranceId = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.insuranceId, loanChargeElement);
+                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                .parameterAtIndexArray(LoanApiConstants.insuranceId, i).value(insuranceId).ignoreIfNull();
+                    }
+
                     if ("SU+ Vehiculos".equalsIgnoreCase(loanProduct.getProductType().getLabel())) {
                         Optional<Charge> chargeOptional = chargeRepository.findById(chargeId);
                         if (chargeOptional.isPresent()) {
                             Charge charge = chargeOptional.get();
-                            if (charge.isMandatoryInsurance()) {
+
+                            if (charge.isMandatoryInsurance() || charge.isPercentageOfAnotherCharge()) {
 
                                 if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.isEndorsed, loanChargeElement)) {
                                     Boolean isEndorsed = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isEndorsed,
@@ -513,7 +528,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                                 if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.chargeExpireDate, loanChargeElement)) {
                                     String expddate = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.chargeExpireDate,
                                             loanChargeElement);
-                                    if (amount.compareTo(BigDecimal.ZERO) == 0) {
+                                    if (amount.compareTo(BigDecimal.ZERO) == 0 && !charge.isPercentageOfAnotherCharge()) {
                                         baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
                                                 .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
                                     } else {
@@ -1049,7 +1064,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                 final Set<String> supportedParameters = new HashSet<>(Arrays.asList(LoanApiConstants.idParameterName,
                         LoanApiConstants.chargeIdParameterName, LoanApiConstants.amountParameterName,
                         LoanApiConstants.chargeTimeTypeParameterName, LoanApiConstants.chargeCalculationTypeParameterName,
-                        LoanApiConstants.dueDateParamName, LoanApiConstants.chargeExpireDate, LoanApiConstants.isEndorsed));
+                        LoanApiConstants.dueDateParamName, LoanApiConstants.chargeExpireDate, LoanApiConstants.isEndorsed,
+                        LoanApiConstants.insuranceName, LoanApiConstants.insuranceId));
 
                 final JsonArray array = topLevelJsonElement.get(LoanApiConstants.chargesParameterName).getAsJsonArray();
                 for (int i = 1; i <= array.size(); i++) {
@@ -1067,11 +1083,25 @@ public final class LoanApplicationCommandFromApiJsonHelper {
 
                     final BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed(LoanApiConstants.amountParameterName,
                             loanChargeElement, locale);
+
+                    if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.insuranceName, loanChargeElement)) {
+                        String insuranceName = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.insuranceName, loanChargeElement);
+                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                .parameterAtIndexArray(LoanApiConstants.insuranceName, i).value(insuranceName).ignoreIfNull();
+                    }
+
+                    if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.insuranceId, loanChargeElement)) {
+                        String insuranceId = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.insuranceId, loanChargeElement);
+                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                .parameterAtIndexArray(LoanApiConstants.insuranceId, i).value(insuranceId).ignoreIfNull();
+                    }
+
                     if ("SU+ Vehiculos".equalsIgnoreCase(loanProduct.getProductType().getLabel())) {
                         Optional<Charge> chargeOptional = chargeRepository.findById(chargeId);
                         if (chargeOptional.isPresent()) {
                             Charge charge = chargeOptional.get();
-                            if (charge.isMandatoryInsurance()) {
+
+                            if (charge.isMandatoryInsurance() || charge.isPercentageOfAnotherCharge()) {
                                 if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.isEndorsed, loanChargeElement)) {
                                     Boolean isEndorsed = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isEndorsed,
                                             loanChargeElement);
@@ -1081,8 +1111,13 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                                 if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.chargeExpireDate, loanChargeElement)) {
                                     String expddate = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.chargeExpireDate,
                                             loanChargeElement);
-                                    baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
-                                            .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
+                                    if (amount.compareTo(BigDecimal.ZERO) == 0 && !charge.isPercentageOfAnotherCharge()) {
+                                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                                .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
+                                    } else {
+                                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                                .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).ignoreIfNull();
+                                    }
                                 }
                                 baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
                                         .parameterAtIndexArray(LoanApiConstants.amountParameterName, i).value(amount).notNull();
@@ -1092,6 +1127,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                                         .positiveAmount();
                             }
                         }
+
                     } else {
                         baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
                                 .parameterAtIndexArray(LoanApiConstants.amountParameterName, i).value(amount).notNull().positiveAmount();
