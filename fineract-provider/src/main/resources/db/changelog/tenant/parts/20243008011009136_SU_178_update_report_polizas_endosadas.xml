@@ -2,7 +2,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
-    <changeSet id="1" author="fineract">
+    <changeSet id="4" author="fineract">
         <update tableName="STRETCHY_REPORT">
             <column name="REPORT_NAME" value="Polizas Endosadas"/>
             <column name="REPORT_SQL">
@@ -10,18 +10,21 @@
                 SELECT
                       ml.id as "Préstamo",
                       mc.name as "Seguro endosado",
-                      mlc.insurer_name  as "Nombre aseguradora",
+                      mlc.insurance_name  as "Nombre aseguradora",
                       mlc.insurance_id  as "Nit aseguradora",
                       TO_CHAR(mlc.expire_date, 'DD/MM/YYYY') as "Fecha de vencimiento de la póliza"
                 FROM m_loan ml
                 INNER JOIN m_loan_charge mlc ON ml.id = mlc.loan_id
                 INNER JOIN m_charge mc ON mlc.charge_id = mc.id
-                WHERE (mc.insurance_company = '${insuranceCompany}' OR '${insuranceCompany}' = '-1')
-                AND mlc.expire_date BETWEEN '${startDate}' AND '${endDate}'
+                WHERE mlc.is_endorse = true and mlc.expire_date is not null
+                AND ml.disbursedon_date BETWEEN '${startDate}' AND '${endDate}'
                 ]]>
             </column>
             <where> report_name ='Polizas Endosadas'</where>
         </update>
+        <delete tableName="stretchy_report_parameter">
+            <where>report_id = (select id from stretchy_report where report_name = 'Polizas Endosadas') and report_parameter_name = 'insuranceCompany'</where>
+        </delete>
     </changeSet>
 
 </databaseChangeLog>
