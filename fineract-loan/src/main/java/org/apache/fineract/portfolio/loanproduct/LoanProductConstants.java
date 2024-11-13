@@ -180,14 +180,32 @@ public interface LoanProductConstants {
 
     String PRODUCT_TYPES_THAT_BLOCK_CREDIT = LoanProductType.SUMAS_PAY.getCode();
 
-    String CUSTOM_ALLOW_CREATE_OR_DISBUSE_PARAM_NAME = "customAllowCreateOrDisburse";
+    String CUSTOM_ALLOW_CREATE_OR_DISBURSE_PARAM_NAME = "customAllowCreateOrDisburse";
+    String CUSTOM_ALLOW_CREATE_OR_DISBURSE_SMS_PARAM_NAME = "customAllowCreateOrDisburseSms";
+
     String CUSTOM_ALLOW_COLLECTIONS_PARAM_NAME = "customAllowCollections";
+    String CUSTOM_ALLOW_COLLECTIONS_SMS_PARAM_NAME = "customAllowCollectionsSms";
+
     String CUSTOM_ALLOW_CREDIT_NOTE_PARAM_NAME = "customAllowCreditNote";
+    String CUSTOM_ALLOW_CREDIT_NOTE_SMS_PARAM_NAME = "customAllowCreditNoteSms";
+
     String CUSTOM_ALLOW_DEBIT_NOTE_PARAM_NAME = "customAllowDebitNote";
+    String CUSTOM_ALLOW_DEBIT_NOTE_SMS_PARAM_NAME = "customAllowDebitNoteSms";
+
     String CUSTOM_ALLOW_FORGIVENESS_PARAM_NAME = "customAllowForgiveness";
+    String CUSTOM_ALLOW_FORGIVENESS_SMS_PARAM_NAME = "customAllowForgivenessSms";
+
     String CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_PARAM_NAME = "customAllowReversalCancellation";
-    String CUSTOM_ALLOW_SMS_RESTRUCTURE_PARAM_NAME = "customAllowSmsRestructure";
-    String CUSTOM_ALLOW_SMS_REFINANCE_PARAM_NAME = "customAllowSmsRefinance";
-    String CUSTOM_ALLOW_SMS_REFERIDO_PARAM_NAME = "customAllowSmsReferido";
+    String CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_SMS_PARAM_NAME = "customAllowReversalCancellationSms";
+
+    String CUSTOM_ALLOW_RESTRUCTURE_PARAM_NAME = "customAllowRestructure";
+    String CUSTOM_ALLOW_RESTRUCTURE_SMS_PARAM_NAME = "customAllowRestructureSms";
+
+    String CUSTOM_ALLOW_REFINANCE_PARAM_NAME = "customAllowRefinance";
+    String CUSTOM_ALLOW_REFINANCE_SMS_PARAM_NAME = "customAllowRefinanceSms";
+
+    String CUSTOM_ALLOW_REFERIDO_PARAM_NAME = "customAllowReferido";
+    String CUSTOM_ALLOW_REFERIDO_SMS_PARAM_NAME = "customAllowReferidoSms";
+
     String CUSTOM_COLLECTION_SUBCHANNEL_LOAN_PRODUC_MAPPER_PARAM_NAME = "subChannelLoanProductMapper";
 }
