@@ -424,6 +424,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
 
             final AppUser appUser = this.platformSecurityContext.authenticatedUser();
             final Map<String, Object> changes = new LinkedHashMap<>();
+            final Boolean isJobTriggered = jsonCommand.booleanPrimitiveValueOfParameterNamed("isJobTriggered");
 
             LocalDate approvedOnDate = jsonCommand.localDateValueOfParameterNamed("approvedOnDate");
             final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(jsonCommand.dateFormat())
@@ -489,7 +490,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 mapping.getLoanTermVariations().updateIsActive(true);
             }
             if (!rediferirVariations.isEmpty()) {
-                if (!loanProduct.getCustomAllowReferido()) {
+                if (Boolean.FALSE.equals(isJobTriggered) && !loanProduct.getCustomAllowReferido()) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.not.allowed",
                             "Rediferir is not allowed on this product");
                 }
@@ -529,7 +530,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     this.loanRescheduleRequestRepository.saveAndFlush(loanRescheduleRequest);
                 }
             }
-            if (rediferirVariations.isEmpty()) {
+            if (Boolean.FALSE.equals(isJobTriggered) && rediferirVariations.isEmpty()) {
                 if (!loanProduct.getCustomAllowRefinance()) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.not.allowed.on.product",
                             "Reschedule is not allowed on this product");
@@ -614,8 +615,6 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
             loanAccrualTransactionBusinessEventService.raiseBusinessEventForAccrualTransactions(loan, existingTransactionIds);
             this.loanAccountDomainService.recalculateAccruals(loan, true);
-
-            final Boolean isJobTriggered = jsonCommand.booleanPrimitiveValueOfParameterNamed("isJobTriggered");
             if (loan.isTopup()) {
                 businessEventNotifierService
                         .notifyPostBusinessEvent(new LoanRescheduledDueAdjustScheduleBusinessEvent(loan, isJobTriggered));
