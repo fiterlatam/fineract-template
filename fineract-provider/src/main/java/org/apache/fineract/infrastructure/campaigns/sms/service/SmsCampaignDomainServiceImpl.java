@@ -257,7 +257,7 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
         final Loan loan = loanTransaction.getLoan();
         final LoanProduct loanProduct = loan.loanProduct();
         if (loanProduct != null) {
-            if (loanProduct.getCustomAllowDebitNote()) {
+            if ("Ajuste".equalsIgnoreCase(loanProduct.getName()) && loanProduct.getCustomAllowDebitNote()) {
                 final List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("Nota de Débito");
                 if (!smsCampaigns.isEmpty()) {
                     for (final SmsCampaign campaign : smsCampaigns) {
