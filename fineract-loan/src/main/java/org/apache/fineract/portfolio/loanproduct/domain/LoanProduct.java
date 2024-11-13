@@ -277,8 +277,18 @@ public class LoanProduct extends AbstractPersistableCustom {
 
     @Getter
     @Setter
+    @Column(name = "custom_allow_create_or_disburse_sms")
+    private Boolean customAllowCreateOrDisburseSms = false;
+
+    @Getter
+    @Setter
     @Column(name = "custom_allow_collections")
     private Boolean customAllowCollections = false;
+
+    @Getter
+    @Setter
+    @Column(name = "custom_allow_collections_sms")
+    private Boolean customAllowCollectionsSms = false;
 
     @Getter
     @Setter
@@ -287,8 +297,18 @@ public class LoanProduct extends AbstractPersistableCustom {
 
     @Getter
     @Setter
+    @Column(name = "custom_allow_debit_note_sms")
+    private Boolean customAllowDebitNoteSms = false;
+
+    @Getter
+    @Setter
     @Column(name = "custom_allow_credit_note")
     private Boolean customAllowCreditNote = false;
+
+    @Getter
+    @Setter
+    @Column(name = "custom_allow_credit_note_sms")
+    private Boolean customAllowCreditNoteSms = false;
 
     @Getter
     @Setter
@@ -297,23 +317,48 @@ public class LoanProduct extends AbstractPersistableCustom {
 
     @Getter
     @Setter
+    @Column(name = "custom_allow_forgiveness_sms")
+    private Boolean customAllowForgivenessSms = false;
+
+    @Getter
+    @Setter
     @Column(name = "custom_allow_reversal_cancellation")
     private Boolean customAllowReversalCancellation = false;
 
     @Getter
     @Setter
-    @Column(name = "custom_allow_sms_restructure")
-    private Boolean customAllowSmsRestructure = false;
+    @Column(name = "custom_allow_reversal_cancellation_sms")
+    private Boolean customAllowReversalCancellationSms = false;
 
     @Getter
     @Setter
-    @Column(name = "custom_allow_sms_refinance")
-    private Boolean customAllowSmsRefinance = false;
+    @Column(name = "custom_allow_restructure")
+    private Boolean customAllowRestructure = false;
 
     @Getter
     @Setter
-    @Column(name = "custom_allow_sms_referido")
-    private Boolean customAllowSmsReferido = false;
+    @Column(name = "custom_allow_restructure_sms")
+    private Boolean customAllowRestructureSms = false;
+
+    @Getter
+    @Setter
+    @Column(name = "custom_allow_refinance")
+    private Boolean customAllowRefinance = false;
+
+    @Getter
+    @Setter
+    @Column(name = "custom_allow_refinance_sms")
+    private Boolean customAllowRefinanceSms = false;
+
+    @Getter
+    @Setter
+    @Column(name = "custom_allow_referido")
+    private Boolean customAllowReferido = false;
+
+    @Getter
+    @Setter
+    @Column(name = "custom_allow_referido_sms")
+    private Boolean customAllowReferidoSms = false;
 
     @Getter
     @Setter
