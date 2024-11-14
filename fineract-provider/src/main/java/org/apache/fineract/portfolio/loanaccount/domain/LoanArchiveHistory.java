@@ -130,4 +130,8 @@ public class LoanArchiveHistory {
     private String estadoCivil;
     @Column(name = "numero_de_reprogramaciones")
     private Integer numeroDeReprogramaciones;
+    @Column(name = "monto_inicial")
+    private BigDecimal montoInicial;
+    @Column(name = "nit_empresa_aliada")
+    private String nitEmpresaAliada;
 }
