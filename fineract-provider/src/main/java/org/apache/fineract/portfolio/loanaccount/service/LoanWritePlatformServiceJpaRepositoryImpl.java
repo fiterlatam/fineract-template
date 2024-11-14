@@ -4216,8 +4216,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     public CommandProcessingResult excludeLoanFromReclaim(final Long loanId, final JsonCommand command) {
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         String claimType = command.stringValueOfParameterNamed("claimType");
-        loan.setExcludedFromReclaim(true);
-        loan.setExcludedForClaimType(claimType);
+        if (claimType.equals("guarantor")) {
+            loan.setExcludedForAvalClaim(claimType);
+        } else if (claimType.equals("insurance")) {
+            loan.setExcludedForInsuranceClaim(claimType);
+        } else {
+            loan.setExcludedForCastigadoClaim(claimType);
+        }
         this.loanRepositoryWrapper.saveAndFlush(loan);
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
