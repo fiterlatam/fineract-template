@@ -34,4 +34,13 @@ public enum LoanProductType {
         this.code = code;
     }
 
+    public static boolean isValidProductType(String productType) {
+        for (LoanProductType type : LoanProductType.values()) {
+            if (type.getCode().equals(productType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
