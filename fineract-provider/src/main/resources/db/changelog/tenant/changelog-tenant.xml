@@ -312,4 +312,5 @@
     <include file="parts/20243008011009134_SU_178_add_column_endorsed.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009135_SU_178_add_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009135_SU_178_update_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240529122200_SU_198_loan-product-parameters.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

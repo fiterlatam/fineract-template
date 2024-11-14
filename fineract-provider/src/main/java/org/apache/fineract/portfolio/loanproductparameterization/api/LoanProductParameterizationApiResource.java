@@ -39,25 +39,28 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.loanproductparameterization.data.LoanProductParameterizationData;
+import org.apache.fineract.portfolio.loanproductparameterization.service.LoanProductParameterizationReadService;
 import org.springframework.stereotype.Component;
 
-@Path("/v1/loan-products-parameterization")
+@Path("/v1/loan-product-parameters")
 @Component
 @RequiredArgsConstructor
 public class LoanProductParameterizationApiResource {
 
-    private static final String RESOURCE_NAME_FOR_PERMISSIONS = "INSURANCE_NOVELTY";
+    private static final String RESOURCE_NAME_FOR_PERMISSIONS = "LOAN_PRODUCT_PARAMETERIZATION";
     private final PlatformSecurityContext context;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final DefaultToApiJsonSerializer<LoanProductParameterizationData> toApiJsonSerializer;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final LoanProductParameterizationReadService loanProductParameterizationReadService;
 
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveAll(@Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
-        final Collection<LoanProductParameterizationData> loanProductParameterizationData = null;
+        final Collection<LoanProductParameterizationData> loanProductParameterizationData = loanProductParameterizationReadService
+                .retrieveAllProductParameterizationList();
         return this.toApiJsonSerializer.serialize(loanProductParameterizationData);
     }
 
@@ -67,7 +70,8 @@ public class LoanProductParameterizationApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveOne(@PathParam("parameterId") final Long parameterId, @Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
-        final LoanProductParameterizationData loanProductParameterizationData = null;
+        final LoanProductParameterizationData loanProductParameterizationData = loanProductParameterizationReadService
+                .retrieveProductParameterization(parameterId);
         return this.toApiJsonSerializer.serialize(loanProductParameterizationData);
     }
 
