@@ -264,7 +264,13 @@ public class LoanRepositoryWrapper {
     }
 
     public void removeLoanExclusion(String claimType) {
-        repository.removeLoanExclusion(claimType);
+        if (claimType.equals("insurance")) {
+            repository.removeLoanInsuranceExclusion();
+        } else if (claimType.equals("guarantor")) {
+            repository.removeLoanAvalExclusion();
+        } else {
+            repository.removeLoanCastigadoExclusion();
+        }
     }
 
 }
