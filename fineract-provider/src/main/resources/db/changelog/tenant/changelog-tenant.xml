@@ -313,4 +313,9 @@
     <include file="parts/20243008011009135_SU_178_add_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009135_SU_178_update_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240529122200_SU_198_loan-product-parameters.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009135_SU_178_add_column_loan_charge.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009136_SU_178_update_report_polizas_endosadas.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20241112011009115_SU_442_add_columns_for_reclaim_exclusion.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009140_SU_441_add_field.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009140_SU_441_update_report.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
