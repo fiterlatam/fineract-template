@@ -16,31 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.fineract.portfolio.loanproductparameterization.service;
 
-package org.apache.fineract.portfolio.loanproduct.domain;
+import java.util.Collection;
+import org.apache.fineract.portfolio.loanproductparameterization.data.LoanProductParameterizationData;
 
-import lombok.Getter;
+public interface LoanProductParameterizationReadService {
 
-@Getter
-public enum LoanProductType {
+    Collection<LoanProductParameterizationData> retrieveAllProductParameterizationList();
 
-    SUMAS_PAY("SU+ PAY"), //
-    SUMAS_EMPRESSAS("SU+ Empresas"), //
-    SUMAS_VEHICULOS("SU+ Vehiculos"); //
-
-    private final String code;
-
-    LoanProductType(String code) {
-        this.code = code;
-    }
-
-    public static boolean isValidProductType(String productType) {
-        for (LoanProductType type : LoanProductType.values()) {
-            if (type.getCode().equals(productType)) {
-                return true;
-            }
-        }
-        return false;
-    }
+    LoanProductParameterizationData retrieveProductParameterization(Long parameterId);
 
 }
