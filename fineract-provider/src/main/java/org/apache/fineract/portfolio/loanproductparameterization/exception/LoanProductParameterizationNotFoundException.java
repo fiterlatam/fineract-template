@@ -16,31 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.fineract.portfolio.loanproductparameterization.exception;
 
-package org.apache.fineract.portfolio.loanproduct.domain;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-import lombok.Getter;
+public class LoanProductParameterizationNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-@Getter
-public enum LoanProductType {
-
-    SUMAS_PAY("SU+ PAY"), //
-    SUMAS_EMPRESSAS("SU+ Empresas"), //
-    SUMAS_VEHICULOS("SU+ Vehiculos"); //
-
-    private final String code;
-
-    LoanProductType(String code) {
-        this.code = code;
-    }
-
-    public static boolean isValidProductType(String productType) {
-        for (LoanProductType type : LoanProductType.values()) {
-            if (type.getCode().equals(productType)) {
-                return true;
-            }
-        }
-        return false;
+    public LoanProductParameterizationNotFoundException(final Long id) {
+        super("error.msg.loan.product.parameterization.id.invalid",
+                "Loan product parameterization with identifier " + id + " does not exist", id);
     }
 
 }

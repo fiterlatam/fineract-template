@@ -16,31 +16,39 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.fineract.portfolio.loanproductparameterization.data;
 
-package org.apache.fineract.portfolio.loanproduct.domain;
-
+import java.time.LocalDate;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
-public enum LoanProductType {
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class LoanProductParameterizationData {
 
-    SUMAS_PAY("SU+ PAY"), //
-    SUMAS_EMPRESSAS("SU+ Empresas"), //
-    SUMAS_VEHICULOS("SU+ Vehiculos"); //
+    private Long id;
 
-    private final String code;
+    private String productType;
 
-    LoanProductType(String code) {
-        this.code = code;
-    }
+    private String billingPrefix;
 
-    public static boolean isValidProductType(String productType) {
-        for (LoanProductType type : LoanProductType.values()) {
-            if (type.getCode().equals(productType)) {
-                return true;
-            }
-        }
-        return false;
-    }
+    private Long billingResolutionNumber;
 
+    private LocalDate generationDate;
+
+    private LocalDate expirationDate;
+
+    private Long rangeStartNumber;
+
+    private Long rangeEndNumber;
+
+    private Long lastInvoiceNumber;
+
+    private Long lastCreditNoteNumber;
+
+    private Long lastDebitNoteNumber;
 }
