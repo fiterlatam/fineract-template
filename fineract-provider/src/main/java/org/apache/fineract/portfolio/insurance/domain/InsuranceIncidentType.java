@@ -77,6 +77,21 @@ public enum InsuranceIncidentType {
             case 7:
                 enumeration = InsuranceIncidentType.PORTFOLIO_WRITE_OFF_CANCELLATION;
             break;
+            case 8:
+                enumeration = InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT;
+            break;
+            case 9:
+                enumeration = InsuranceIncidentType.PERMANENT_CANCELLATION_DUE_TO_MAX_AGE;
+            break;
+            case 10:
+                enumeration = InsuranceIncidentType.DEATH_CANCELLATION;
+            break;
+            case 11:
+                enumeration = InsuranceIncidentType.SUSPENSION_REMOVED;
+            break;
+            default:
+                enumeration = InsuranceIncidentType.INVALID;
+            break;
         }
         return enumeration;
     }
