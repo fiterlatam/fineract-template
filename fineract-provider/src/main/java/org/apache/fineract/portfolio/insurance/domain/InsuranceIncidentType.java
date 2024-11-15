@@ -7,7 +7,7 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 public enum InsuranceIncidentType {
 
-    INVALID(0, "insurance.incident.invalid", "invalid"), //
+    INVALID(0, "labels.inputs.insurance.incident.invalid", "invalid"), //
     DEFINITIVE_CANCELLATION_DEFAULT(1, "labels.inputs.insurance.incident.definitive.default", "Cancelación definitiva por mora"), //
     DEFINITIVE_VOLUNTARY_CANCELLATION(2, "labels.inputs.insurance.incident.definitive.voluntary.cancellation",
             "Cancelación voluntaria definitiva"), //
