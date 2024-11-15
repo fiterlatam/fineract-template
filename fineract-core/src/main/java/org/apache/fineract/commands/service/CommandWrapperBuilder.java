@@ -79,6 +79,30 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder createLoanProductParameterization() {
+        this.actionName = "CREATE";
+        this.entityName = "LOANPRODUCTPARAMETERIZATION";
+        this.entityId = null;
+        this.href = "/loanproductparameterization";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateLoanProductParameterization(final Long parameterId) {
+        this.actionName = "UPDATE";
+        this.entityName = "LOANPRODUCTPARAMETERIZATION";
+        this.entityId = parameterId;
+        this.href = "/loanproductparameterization/" + parameterId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteLoanProductParameterization(final Long parameterId) {
+        this.actionName = "DELETE";
+        this.entityName = "LOANPRODUCTPARAMETERIZATION";
+        this.entityId = parameterId;
+        this.href = "/loanproductparameterization/" + parameterId;
+        return this;
+    }
+
     public CommandWrapperBuilder addOrganisationCreditBureau(final long organisationCreditBureauId) {
         this.actionName = "CREATE";
         this.entityName = "ORGANISATIONCREDITBUREAU";
