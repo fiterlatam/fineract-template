@@ -54,6 +54,9 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
 
     public static final String CHARGE_ACCRUAL_DATE_CRITERIA = "charge-accrual-date";
     public static final String NEXT_PAYMENT_DUE_DATE = "next-payment-due-date";
+    public static final String INVOICE_RESOLUTION_EXPIRY = "invoice-resolution-expiry-days";
+    public static final String REMAINING_INVOICES_THRESHOLD = "invoice-numbering-threshold";
+    public static final String INVOICE_NOTIFICATION_EMAILS = "invoice-notification-emails";
 
     private final PermissionRepository permissionRepository;
     private final GlobalConfigurationRepositoryWrapper globalConfigurationRepository;
