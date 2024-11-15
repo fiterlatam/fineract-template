@@ -44,20 +44,26 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
                     + " COALESCE(mc.second_lastname,'') AS second_lastname, \n"
                     + " mc.display_name, COALESCE(mc.lastname,'') AS lastname, \n" + "       cbr.name_of_reason,\n"
                     + "       COALESCE(cce.\"NIT\", ccp.\"Cedula\") AS nit_empresa, COALESCE(cce.\"Cupo\", ccp.\"Cupo solicitado\") AS cupo, \n"
-                    + "       COALESCE(ccp.\"Telefono\" , cce.\"Telefono\") AS telefono, \n"
-                    + "       ccp.\"Celular Referencia\" AS celuar,\n" + "       mc.email_address,\n"
+                    + "       COALESCE(ccp.\"Telefono\" , cce.\"Telefono\") AS telefono, mc.mobile_no, \n"
+                    + "       ccp.\"Celular Referencia\" AS celular_referencia,\n" + "       mc.email_address,\n"
+                    + "       CASE WHEN mc.legal_form_enum = 2 THEN 'NIT' ELSE 'Cédula' END AS tipo_documento,\n"
                     + "       COALESCE(ccp.\"Direccion\",cce.\"Direccion\") AS direction, \n"
                     + "       COALESCE(ccp.\"Ciudad_cd_Ciudad\",cce.\"Ciudad_cd_Ciudad\") as ciudad, \n"
                     + "       cce.\"Departamento_cd_Departamento\" as departamento,\n" + "       mcbr.name_of_reason AS creaditBlock, \n"
                     + "       ccp.\"Referencia\"AS referencia,\n" + "       ccp.\"Media de ingresos\" AS media_de_ingreso,  \n"
-                    + "       ccp.\"Nombre empresa\" AS nombre_empresa, \n"
+                    + "       ccp.\"Nombre empresa\" AS nombre_empresa, \n" + "       caps.client_ally_id,\n"
+                    + "       ca.nit as nit_empresa_aliada,\n" + "       caps.name as point_of_sale_name,\n"
+                    + "       ccp.\"Parentesco_cd_Parentesco\" AS parentesco,\n"
                     + "       mc.created_on_utc, ccp.\"Estado Civil_cd_Estado civil\" as estado_civil, \n"
                     + "       ml.disbursedon_date, \n" + "       mc.date_of_birth,\n" + "       (SELECT code_value \n"
                     + "        FROM m_code_value \n"
                     + "        WHERE id = mc.gender_cv_id) AS gender, ccp.\"Actividad Laboral_cd_Actividad laboral\" as activeLab\n"
                     + "FROM m_client mc\n" + "INNER JOIN m_loan ml ON ml.client_id = mc.id \n" + "LEFT JOIN (\n"
                     + "    SELECT client_id, name_of_reason, priority\n" + "    FROM RankedReasons\n" + "    WHERE row_num = 1\n"
-                    + ") AS cbr ON cbr.client_id = mc.id\n" + "LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id\n"
+                    + ") AS cbr ON cbr.client_id = mc.id\n" + "LEFT JOIN custom.c_client_buy_process cbp ON cbp.loan_id = ml.id\n"
+                    + "LEFT JOIN custom.c_client_ally_point_of_sales caps ON caps.id = cbp.point_if_sales_id\n"
+                    + "LEFT JOIN custom.c_client_ally ca ON ca.id = caps.client_ally_id\n"
+                    + "LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id\n"
                     + "LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id \n" + "LEFT JOIN (\n"
                     + "    SELECT loan_id, name_of_reason, priority\n" + "    FROM RankedCreaditReasons\n" + "    WHERE row_num = 1\n"
                     + ") AS mcbr ON mcbr.loan_id = ml.id\n" + "WHERE total_outstanding_derived > 0  \n"
@@ -70,15 +76,18 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
                     .segundoNombre(rs.getString("middlename")).segundoApellido(rs.getString("second_lastname"))
                     .primerApellido(rs.getString("lastname")).estadoCliente(rs.getString("name_of_reason"))
                     .numeroObligacion(rs.getString("loan_id")).nitEmpresa(rs.getString("nit_empresa")).telefonoSac(rs.getString("telefono"))
-                    .celularSac(rs.getString("celuar")).emailSac(rs.getString("email_address")).direccionSac(rs.getString("direction"))
+                    .celularSac(rs.getString("mobile_no")).emailSac(rs.getString("email_address")).direccionSac(rs.getString("direction"))
                     .barrioSac(rs.getString("direction")).ciudadSac(rs.getInt("ciudad")).departamento(rs.getString("departamento"))
                     .razonSocial(rs.getString("firstname") + " " + rs.getString("middlename") + " " + rs.getString("second_lastname"))
-                    .nombreFamiliar(rs.getString("nombre_empresa")).parentescoFamiliar(rs.getString("referencia"))
+                    .nombreFamiliar(rs.getString("referencia")).parentescoFamiliar(rs.getString("parentesco"))
                     .fechaFinanciacion(rs.getString("disbursedon_date")).genero(rs.getString("gender"))
                     .ingresos(rs.getBigDecimal("media_de_ingreso")).antiguedadCliente(rs.getString("disbursedon_date"))
                     .actividadLaboral(rs.getString("activeLab")).creSaldo(rs.getBigDecimal("cupo")).cuoSaldo(rs.getBigDecimal("cupo"))
                     .cuoEstado(rs.getString("name_of_reason")).estadoCivil(rs.getString("estado_civil"))
-                    .fechaNacimiento(rs.getString("date_of_birth")).estadoCuota(rs.getString("creaditBlock")).build();
+                    .tipoDocumento(rs.getString("tipo_documento")).celularSac2(rs.getString("celular_referencia"))
+                    .referencia(rs.getString("referencia")).empresaLabora(rs.getString("nombre_empresa"))
+                    .nitEmpresaAliada(rs.getString("nit_empresa_aliada")).fechaNacimiento(rs.getString("date_of_birth"))
+                    .estadoCuota(rs.getString("creaditBlock")).build();
         }
     }
 

@@ -474,12 +474,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Embedded
     private LoanCustomizationDetail loanCustomizationDetail;
 
-    @Column(name = "excluded_from_reclaim", nullable = false)
-    private boolean excludedFromReclaim = false;
+    @Column(name = "excluded_for_insurance_claim")
+    private String excludedForInsuranceClaim;
 
-    @Column(name = "excluded_for_claim_type")
-    private String excludedForClaimType;
+    @Column(name = "excluded_for_aval_claim")
+    private String excludedForAvalClaim;
 
+    @Column(name = "excluded_for_castigado_claim")
+    private String excludedForCastigadoClaim;
     // This attribute is used only to capture the repayment strategy (VERTICAL/HORIZONTAL). Updating all the related
     // methods to add this attribute as a parameter was creating a mess
     @Transient
@@ -8030,12 +8032,28 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         this.recalculateEMI = recalculateEMI;
     }
 
-    public boolean excludedFromReclaim() {
-        return excludedFromReclaim;
+    public String excludedForInsuranceClaim() {
+        return excludedForInsuranceClaim;
     }
 
-    public void setExcludedFromReclaim(boolean excludedFromReclaim) {
-        this.excludedFromReclaim = excludedFromReclaim;
+    public void setExcludedForInsuranceClaim(String excludedForInsuranceClaim) {
+        this.excludedForInsuranceClaim = excludedForInsuranceClaim;
+    }
+
+    public String excludedForAvalClaim() {
+        return excludedForAvalClaim;
+    }
+
+    public void setExcludedForAvalClaim(String excludedForAvalClaim) {
+        this.excludedForAvalClaim = excludedForAvalClaim;
+    }
+
+    public String excludedForCastigadoClaim() {
+        return excludedForCastigadoClaim;
+    }
+
+    public void setExcludedForCastigadoClaim(String excludedForCastigadoClaim) {
+        this.excludedForCastigadoClaim = excludedForCastigadoClaim;
     }
 
     public String claimType() {
@@ -8052,14 +8070,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setClaimDate(LocalDate claimDate) {
         this.claimDate = claimDate;
-    }
-
-    public String excludedForClaimType() {
-        return excludedForClaimType;
-    }
-
-    public void setExcludedForClaimType(String excludedForClaimType) {
-        this.excludedForClaimType = excludedForClaimType;
     }
 
     public Integer getLastInstallmentChargeCalculatedOn() {
