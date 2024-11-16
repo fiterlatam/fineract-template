@@ -29,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.loanproductparameterization.data.LoanProductParameterizationData;
 
@@ -141,5 +142,26 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
 
         return new LoanProductParameterization(productType, billingPrefix, billingResolutionNumber, generationDate, expirationDate,
                 rangeStartNumber, rangeEndNumber, lastInvoiceNumber, lastCreditNoteNumber, lastDebitNoteNumber);
+    }
+
+    public boolean isInvoiceResolutionExpiring(int daysPrior) {
+        LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+        LocalDate warningDate = currentDate.plusDays(daysPrior);
+        // Implement logic to check if the invoice resolution is expiring within the specified days
+        // Return true if the condition is met, otherwise false
+
+        // Check if the expiration date is within the specified days
+        return expirationDate != null && (warningDate.isAfter(expirationDate) || warningDate.isEqual(expirationDate));
+    }
+
+    public boolean isInvoiceNumberingLimitReached(int threshold) {
+        // Implement logic to check if the invoice numbering limit is reached within the specified quantity
+        // Return true if the condition is met, otherwise false
+        long maximumInvoiceNumber = rangeEndNumber;
+        long usedInvoiceNumber = lastInvoiceNumber;
+        long remainingInvoiceNumber = maximumInvoiceNumber - usedInvoiceNumber;
+
+        // Check if the last invoice number is within the specified quantity
+        return remainingInvoiceNumber <= threshold;
     }
 }
