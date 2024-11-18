@@ -990,6 +990,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                 this.originalInterestChargedAmount = this.interestCharged;
                 this.interestCharged = getInterestPaid(currency).plus(getInterestWaived(currency)).plus(getInterestWrittenOff(currency))
                         .plus(interestDue).getAmount();
+            } else {
+                this.originalInterestChargedAmount = BigDecimal.ZERO;
             }
 
         } else {
@@ -1261,7 +1263,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
     }
 
-    private void trackAdvanceAndLateTotalsForRepaymentPeriod(final LocalDate transactionDate, final MonetaryCurrency currency,
+    public void trackAdvanceAndLateTotalsForRepaymentPeriod(final LocalDate transactionDate, final MonetaryCurrency currency,
             final Money amountPaidInRepaymentPeriod) {
         if (isInAdvance(transactionDate)) {
             this.totalPaidInAdvance = asMoney(this.totalPaidInAdvance, currency).plus(amountPaidInRepaymentPeriod).getAmount();
@@ -1330,6 +1332,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public void updateObligationMet(final Boolean obligationMet) {
+
         this.obligationsMet = obligationMet;
     }
 
