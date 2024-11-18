@@ -24,6 +24,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 
 /**
@@ -93,6 +94,7 @@ public class JournalEntryData {
     private String bankNumber;
     private transient Long savingTransactionId;
     private ZonedDateTime createdTimestamp;
+    private String systemTimezone;
 
     // for opening bal bulk import
     public JournalEntryData(Long officeId, LocalDate transactionDate, String currencyCode, List<CreditDebit> credits,
@@ -241,6 +243,7 @@ public class JournalEntryData {
         this.transactionDetails = transactionDetailData;
         this.currency = currency;
         this.createdTimestamp = createdTimestamp;
+        this.systemTimezone = DateUtils.getTimeZoneOfTenant().getID();
     }
 
     public JournalEntryData(final Long id, final Long officeId, final String glAccountName, final Long glAccountId,
@@ -275,6 +278,7 @@ public class JournalEntryData {
         this.transactionDetails = null;
         this.currency = null;
         this.currencyCode = currencyCode;
+        this.systemTimezone = DateUtils.getTimeZoneOfTenant().getDisplayName();
     }
 
     public static JournalEntryData fromGLAccountData(final GLAccountData glAccountData) {
