@@ -4243,7 +4243,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (overpaid.isZero()) {
             Money totalPrincipalPaid = Money.zero(this.getCurrency());
             for (final LoanRepaymentScheduleInstallment scheduledRepayment : installments) {
-                totalPrincipalPaid = totalPrincipalPaid.add(scheduledRepayment.getPrincipalCompleted(this.getCurrency()).plus(scheduledRepayment.getAdvancePrincipalAmount()));
+                totalPrincipalPaid = totalPrincipalPaid.add(
+                        scheduledRepayment.getPrincipalCompleted(this.getCurrency()).plus(scheduledRepayment.getAdvancePrincipalAmount()));
             }
             if (totalPrincipalPaid.isGreaterThan(this.getPrincipal())) {
                 overpaid = totalPrincipalPaid.minus(this.getPrincipal());

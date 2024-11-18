@@ -3072,15 +3072,16 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     }
                     // Extra amount paid in advance
                     if (outstandingBalance.isLessThanZero()) {
-			// If overpaid in advance then add the last installment to keep track of advance payment amount
+                        // If overpaid in advance then add the last installment to keep track of advance payment amount
                         outstandingBalanceAsPerRest = outstandingBalance.zero();
                         outstandingBalance = outstandingBalance.zero();
                         loanApplicationTerms.setLoanOverpaidInAdvance(true);
                         BigDecimal remainingLoanPrincipal = principalToBeScheduled.getAmount();
                         for (LoanRepaymentScheduleInstallment inst : loan.getRepaymentScheduleInstallments()) {
                             if (inst.getInstallmentNumber().intValue() < installment.getInstallmentNumber()) {
-                                remainingLoanPrincipal = remainingLoanPrincipal.subtract(inst.getPrincipal(loanApplicationTerms.getCurrency()).getAmount()
-                                        .subtract(inst.getAdvancePrincipalAmount()));
+                                remainingLoanPrincipal = remainingLoanPrincipal
+                                        .subtract(inst.getPrincipal(loanApplicationTerms.getCurrency()).getAmount()
+                                                .subtract(inst.getAdvancePrincipalAmount()));
                             }
                         }
                         installment.setPrincipal(remainingLoanPrincipal);

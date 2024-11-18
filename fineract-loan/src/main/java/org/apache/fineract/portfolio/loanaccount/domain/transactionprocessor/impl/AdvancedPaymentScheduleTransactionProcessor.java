@@ -1252,10 +1252,13 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                 Money zero = transactionAmountUnprocessed.zero();
                                 for (LoanRepaymentScheduleInstallment inAdvanceInstallment : inAdvanceInstallments) {
                                     if (transactionAmountUnprocessed.isGreaterThanZero()) {
-                                        balances.setAggregatedPrincipalPortion(balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
-                                        inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(loanTransaction.getTransactionDate(), currency);
+                                        balances.setAggregatedPrincipalPortion(
+                                                balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
+                                        inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(loanTransaction.getTransactionDate(),
+                                                currency);
 
-                                        inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
+                                        inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
+                                                loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
                                         inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment.getAdvancePrincipalAmount()
                                                 .add(transactionAmountUnprocessed.getAmount()));
                                         inAdvanceInstallment.setRecalculateEMI(loanTransaction.recalculateEMI());
