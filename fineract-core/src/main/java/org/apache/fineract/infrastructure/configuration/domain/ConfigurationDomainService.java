@@ -149,4 +149,6 @@ public interface ConfigurationDomainService {
 
     Long retriveMinimumDaysOfArrearsToWriteOff();
 
+    Integer retriveIvaConfiguration();
+
 }

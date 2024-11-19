@@ -86,6 +86,16 @@ public class DelinquencyReadPlatformServiceImpl implements DelinquencyReadPlatfo
     }
 
     @Override
+    public DelinquencyRange retrieveDelinquencyRangeCategeory(Integer range) {
+        Optional<DelinquencyRange> delinquencyRange = repositoryRange.findByRange(range);
+        if (delinquencyRange.isPresent()) {
+            DelinquencyRange delinquencyRange1 = delinquencyRange.get();
+            return delinquencyRange1;
+        }
+        return null;
+    }
+
+    @Override
     public Collection<DelinquencyBucketData> retrieveAllDelinquencyBuckets() {
         final List<DelinquencyBucket> delinquencyRangeList = repositoryBucket.findAll();
         return mapperBucket.map(delinquencyRangeList);

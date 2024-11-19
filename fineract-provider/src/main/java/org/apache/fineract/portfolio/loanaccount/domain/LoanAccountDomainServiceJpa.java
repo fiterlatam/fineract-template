@@ -20,16 +20,13 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
+import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
@@ -70,14 +67,12 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.transaction
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanTransactionRecoveryPaymentPostBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanTransactionRecoveryPaymentPreBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
+import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.holiday.domain.Holiday;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepository;
 import org.apache.fineract.organisation.holiday.domain.HolidayStatusType;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
-import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
-import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
-import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
-import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.organisation.monetary.domain.*;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDays;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
 import org.apache.fineract.portfolio.account.domain.AccountTransferRepository;
@@ -89,6 +84,8 @@ import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
+import org.apache.fineract.portfolio.delinquency.data.DelinquencyRangeData;
+import org.apache.fineract.portfolio.delinquency.domain.DelinquencyRange;
 import org.apache.fineract.portfolio.delinquency.domain.LoanDelinquencyAction;
 import org.apache.fineract.portfolio.delinquency.helper.DelinquencyEffectivePauseHelper;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
@@ -148,6 +145,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
     private final LoanBlockingReasonRepository loanBlockingReasonRepository;
+
+    private final PlatformSecurityContext platformSecurityContext;
 
     @Transactional
     @Override
@@ -216,6 +215,15 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         }
         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom,
                 holidayDetailDto);
+        List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
+        if (loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()) > 0) {
+            for (LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : loanRepaymentScheduleInstallments) {
+                if (loanRepaymentScheduleInstallment.isOverdueOn(transactionDate) && !loanRepaymentScheduleInstallment.isObligationsMet()) {
+                    updateCalculationHonoLoanChargeOverDueVat(repaymentAmount.getAmount(), loanRepaymentScheduleInstallment);
+                    break;
+                }
+            }
+        }
 
         final ChangedTransactionDetail changedTransactionDetail = loan.makeRepayment(newRepaymentTransaction,
                 defaultLoanLifecycleStateMachine, existingTransactionIds, existingReversedTransactionIds, isRecoveryRepayment,
@@ -293,6 +301,69 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         setStatusToCanceledOnClosedLoan(loan, transactionDate);
 
         return newRepaymentTransaction;
+    }
+
+    private void updateCalculationHonoLoanChargeOverDueVat(BigDecimal repaymentAmount,
+            LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment) {
+        Integer ageOverdue = loanRepaymentScheduleInstallment.getLoan().getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
+        BigDecimal delinquencyValue = BigDecimal.ZERO;
+        Integer vatConfig = configurationDomainService.retriveIvaConfiguration();
+        BigDecimal vatPercentage = BigDecimal.valueOf(vatConfig).divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
+        MonetaryCurrency currency = loanRepaymentScheduleInstallment.getLoan().getCurrency();
+        DelinquencyRangeData delinquencyRangeData = delinquencyReadPlatformService
+                .retrieveCurrentDelinquencyTag(loanRepaymentScheduleInstallment.getLoan().getId());
+        if (delinquencyRangeData != null) {
+            delinquencyValue = BigDecimal.valueOf(delinquencyRangeData.getPercentageValue());
+        } else {
+            DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
+            if (delinquencyRange != null) {
+                delinquencyValue = BigDecimal.valueOf(delinquencyRangeData.getPercentageValue());
+            }
+        }
+        // Step 1: Value of delinquent portion / (1 + (delinquency percentage * (1 + vat percentage)))
+        BigDecimal deliquncyrange = delinquencyValue.divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
+        BigDecimal delinquentPortion = repaymentAmount
+                .divide(BigDecimal.ONE.add(deliquncyrange.multiply(BigDecimal.ONE.add(vatPercentage))), 2, MoneyHelper.getRoundingMode());
+        // Step 2: Value of the fee with VAT = Step 1 value * (delinquency percentage * 1+ vat Percentage)
+        BigDecimal feewithTax = delinquentPortion.multiply(deliquncyrange.multiply(BigDecimal.ONE.add(vatPercentage))).setScale(2,
+                MoneyHelper.getRoundingMode());
+        // Step 3: Fee basis = Fee with VAT / (1 + VAT percentage)
+        BigDecimal feeBasis = feewithTax.divide(BigDecimal.ONE.add(vatPercentage), 2, MoneyHelper.getRoundingMode());
+
+        // Step 4: Fee VAT = Value of fee with VAT - Fee basis
+        BigDecimal feeVat = feewithTax.subtract(feeBasis).setScale(2, MoneyHelper.getRoundingMode());
+        BigDecimal feeHono = feeVat.add(feeBasis).setScale(0, MoneyHelper.getRoundingMode());
+
+        Optional<LoanCharge> charges = loanRepaymentScheduleInstallment.getLoan().getActiveCharges().stream()
+                .filter(charge -> charge.getChargeCalculation().isFlatHono()).findFirst();
+        if (charges.isPresent()) {
+            LoanCharge chargeHono = charges.get();
+            chargeHono.setInstallmentChargeAmount(chargeHono.chargeAmount().add(feeHono));
+            chargeHono.resetAndUpdateInstallmentCharges();
+            Set<CustomChargeHonorarioMap> honoMap = chargeHono.getCustomChargeHonorarioMaps();
+            if (!honoMap.isEmpty()) {
+                for (CustomChargeHonorarioMap honorarioMap : honoMap) {
+                    honorarioMap.setFeeBaseAmount(feeBasis);
+                    honorarioMap.setFeeTotalAmount(feeHono);
+                    honorarioMap.setFeeVatAmount(feeVat);
+                    honorarioMap.setUpdatedBy(this.platformSecurityContext.authenticatedUser().getId());
+                    honorarioMap.setUpdatedAt(DateUtils.getLocalDateTimeOfTenant());
+                    honorarioMap.setLoanChargeId(chargeHono.getId());
+                }
+            } else {
+                CustomChargeHonorarioMap current = new CustomChargeHonorarioMap();
+                current.setFeeBaseAmount(feeBasis);
+                current.setFeeTotalAmount(feeHono);
+                current.setFeeVatAmount(feeVat);
+                current.setUpdatedBy(this.platformSecurityContext.authenticatedUser().getId());
+                current.setUpdatedAt(DateUtils.getLocalDateTimeOfTenant());
+                current.setLoanChargeId(chargeHono.getId());
+            }
+            loanRepaymentScheduleInstallment.getLoan().updateLoanDerivedFields();
+            loanRepaymentScheduleInstallment.getLoan().updateLoanScheduleAfterCustomChargeApplied();
+
+        }
+
     }
 
     private void setStatusToCanceledOnClosedLoan(final Loan loan, final LocalDate transactionDate) {

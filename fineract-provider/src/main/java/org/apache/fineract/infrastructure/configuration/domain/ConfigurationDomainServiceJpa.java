@@ -548,4 +548,11 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         return property.getValue();
     }
 
+    @Override
+    public Integer retriveIvaConfiguration() {
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData("IVA Por comision");
+        int value = property.getValue().intValue();
+        return value;
+    }
+
 }

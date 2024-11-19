@@ -29,6 +29,7 @@ public final class DelinquencyApiConstants {
     public static final String RANGES_PARAM_NAME = "ranges";
     public static final String MINIMUMAGEDAYS_PARAM_NAME = "minimumAgeDays";
     public static final String MAXIMUMAGEDAYS_PARAM_NAME = "maximumAgeDays";
+    public static final String PERCENTAGEVALUE = "percentageValue";
     public static final String LOCALE_PARAM_NAME = "locale";
 
 }
