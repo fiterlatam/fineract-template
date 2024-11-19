@@ -48,4 +48,6 @@ public interface DelinquencyReadPlatformService {
 
     List<LoanDelinquencyAction> retrieveLoanDelinquencyActions(Long loanId);
 
+    DelinquencyRange retrieveDelinquencyRangeCategeory(Integer range);
+
 }

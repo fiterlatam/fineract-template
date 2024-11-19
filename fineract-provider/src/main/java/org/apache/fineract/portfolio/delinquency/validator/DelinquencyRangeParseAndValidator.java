@@ -56,7 +56,8 @@ public class DelinquencyRangeParseAndValidator extends ParseAndValidator {
 
         jsonHelper.checkForUnsupportedParameters(element,
                 List.of(DelinquencyApiConstants.CLASSIFICATION_PARAM_NAME, DelinquencyApiConstants.MINIMUMAGEDAYS_PARAM_NAME,
-                        DelinquencyApiConstants.MAXIMUMAGEDAYS_PARAM_NAME, DelinquencyApiConstants.LOCALE_PARAM_NAME));
+                        DelinquencyApiConstants.MAXIMUMAGEDAYS_PARAM_NAME, DelinquencyApiConstants.LOCALE_PARAM_NAME,
+                        DelinquencyApiConstants.PERCENTAGEVALUE));
 
         final String localeValue = jsonHelper.extractStringNamed(DelinquencyApiConstants.LOCALE_PARAM_NAME, element);
         dataValidator.reset().parameter(DelinquencyApiConstants.LOCALE_PARAM_NAME).value(localeValue).notBlank();
