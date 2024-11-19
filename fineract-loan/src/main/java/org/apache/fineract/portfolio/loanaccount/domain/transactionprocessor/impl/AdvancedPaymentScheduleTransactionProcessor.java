@@ -1172,10 +1172,13 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             }
             // For having similar logic we are populating installment list even when the future installment
             // allocation rule is NEXT_INSTALLMENT or LAST_INSTALLMENT hence the list has only one element.
+            // As per SU+ requirements, advance payment goes to outstanding balance so first immediate advance installment
+            // will always be seleted
             List<LoanRepaymentScheduleInstallment> inAdvanceInstallments = new ArrayList<>();
             if (FutureInstallmentAllocationRule.REAMORTIZATION.equals(futureInstallmentAllocationRule)) {
                 inAdvanceInstallments = installments.stream().filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
-                        .filter(e -> loanTransaction.isBefore(e.getFromDate())).toList();
+                        .filter(e -> loanTransaction.isBefore(e.getFromDate()))
+                        .max(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).stream().toList();
             } else if (FutureInstallmentAllocationRule.NEXT_INSTALLMENT.equals(futureInstallmentAllocationRule)) {
                 inAdvanceInstallments = installments.stream().filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
                         .filter(e -> loanTransaction.isBefore(e.getFromDate()))
@@ -1187,7 +1190,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             }
 
             int firstNormalInstallmentNumber = LoanRepaymentScheduleProcessingWrapper.fetchFirstNormalInstallmentNumber(installments);
-
+            boolean stopProcessingAdvanceInstallment = false;
             for (PaymentAllocationType paymentAllocationType : paymentAllocationTypes) {
                 switch (paymentAllocationType.getDueType()) {
                     case PAST_DUE -> {
@@ -1220,7 +1223,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                         }
                     }
                     case IN_ADVANCE -> {
-                        if (loanTransaction.doNotProcessAdvanceInstallments()) {
+                        if (loanTransaction.doNotProcessAdvanceInstallments() || stopProcessingAdvanceInstallment) {
                             // This condition will only be true if loan processing type is VERTICAL.
                             // For vertical payments, Past Due and Due installments MUST be processed Horizontally
                             exit = true;
@@ -1252,23 +1255,47 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                 Money zero = transactionAmountUnprocessed.zero();
                                 for (LoanRepaymentScheduleInstallment inAdvanceInstallment : inAdvanceInstallments) {
                                     if (transactionAmountUnprocessed.isGreaterThanZero()) {
-                                        balances.setAggregatedPrincipalPortion(
-                                                balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
-                                        inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(loanTransaction.getTransactionDate(),
-                                                currency);
+                                        if (inAdvanceInstallment.isLastInstallment(installments)
+                                                && inAdvanceInstallment.isOverpaidInAdvance(currency)
+                                                && transactionAmountUnprocessed.isGreaterThan(inAdvanceInstallment.getPrincipal(currency))) {
+                                            // This MUST be true only in case of advance overpayment after repayment schedule is regenerated
+                                            // Process principal and move the remaining amount to overpaid
 
-                                        inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
-                                                loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
-                                        inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment.getAdvancePrincipalAmount()
-                                                .add(transactionAmountUnprocessed.getAmount()));
-                                        inAdvanceInstallment.setRecalculateEMI(loanTransaction.recalculateEMI());
-                                        LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
-                                                transactionMappings, loanTransaction, inAdvanceInstallment, currency);
-                                        addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, transactionAmountUnprocessed,
-                                                zero, zero, zero);
+                                            Money paidPrincipalComponent = inAdvanceInstallment.payPrincipalComponent(
+                                                    loanTransaction.getTransactionDate(), transactionAmountUnprocessed, false, loanTransaction);
+
+                                            inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment.getAdvancePrincipalAmount()
+                                                    .add(transactionAmountUnprocessed.getAmount()));
+
+                                            balances.setAggregatedPrincipalPortion(
+                                                    balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
+                                            LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
+                                                    transactionMappings, loanTransaction, inAdvanceInstallment, currency);
+                                            addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, transactionAmountUnprocessed,
+                                                    zero, zero, zero);
+                                            transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPrincipalComponent);
+                                            stopProcessingAdvanceInstallment = true;
+
+                                        } else {
+                                            balances.setAggregatedPrincipalPortion(
+                                                    balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
+                                            inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(loanTransaction.getTransactionDate(),
+                                                    currency);
+
+                                            inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
+                                                    loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
+                                            inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment.getAdvancePrincipalAmount()
+                                                    .add(transactionAmountUnprocessed.getAmount()));
+                                            inAdvanceInstallment.setRecalculateEMI(loanTransaction.recalculateEMI());
+                                            LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
+                                                    transactionMappings, loanTransaction, inAdvanceInstallment, currency);
+                                            addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, transactionAmountUnprocessed,
+                                                    zero, zero, zero);
+
+                                            transactionAmountUnprocessed = Money.zero(currency);
+                                        }
                                     }
                                 }
-                                transactionAmountUnprocessed = Money.zero(currency);
                                 exit = true;
                             } else {
                                 exit = true;

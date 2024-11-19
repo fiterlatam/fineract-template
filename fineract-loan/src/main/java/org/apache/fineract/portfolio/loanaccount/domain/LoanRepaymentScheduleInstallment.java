@@ -1671,4 +1671,16 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.interestRecalculatedOnDate = interestRecalculatedOnDate;
     }
 
+    public boolean isLastInstallment(List<LoanRepaymentScheduleInstallment> installments) {
+        return this.installmentNumber.equals(installments.get(installments.size() -1 ).getInstallmentNumber());
+    }
+
+    public boolean isOverpaidInAdvance(MonetaryCurrency currency) {
+        return this.getPrincipal(currency).isGreaterThanZero()
+                && this.getInterestCharged(currency).isZero()
+                && this.getFeeChargesCharged(currency).isZero()
+                && this.getPenaltyChargesCharged(currency).isZero()
+                && this.isRecalculatedInterestComponent();
+    }
+
 }
