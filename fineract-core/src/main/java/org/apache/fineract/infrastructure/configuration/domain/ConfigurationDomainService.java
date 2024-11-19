@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.configuration.domain;
 
 import java.time.LocalDate;
+import java.util.List;
 import org.apache.fineract.infrastructure.cache.domain.CacheType;
 
 public interface ConfigurationDomainService {
@@ -148,5 +149,11 @@ public interface ConfigurationDomainService {
     boolean allowPaymentsWithPreviousDateEnabled();
 
     Long retriveMinimumDaysOfArrearsToWriteOff();
+
+    Long retrieveInvoiceResolutionExpiryDays();
+
+    Long retrieveInvoiceThreshold();
+
+    List<String> retrieveInvoiceJobNotificationEmails();
 
 }

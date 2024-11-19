@@ -18,12 +18,10 @@
  */
 package org.apache.fineract.portfolio.loanproductparameterization.jobs.invoicenumberinglimit;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.portfolio.loanproductparameterization.service.LoanProductParameterizationWriteService;
 import org.springframework.batch.core.StepContribution;
@@ -43,11 +41,11 @@ public class InvoiceNumberingLimitTasklet implements Tasklet {
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
 
         List<Throwable> errors = new ArrayList<>();
-        LocalDate accrualDate = DateUtils.getLocalDateOfTenant().minusDays(1);
         try {
-            // do something soon here
+            loanProductParameterizationWriteService.sendInvoiceNumberingLimitNotification();
+
         } catch (Exception e) {
-            log.error("Failed to run Daily Accrual for loans on  {}", accrualDate, e);
+            log.error("Failed to run InvoiceNumberingLimitTasklet  ", e);
             errors.add(e);
         }
         if (!errors.isEmpty()) {
