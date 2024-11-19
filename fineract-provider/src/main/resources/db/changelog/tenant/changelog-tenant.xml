@@ -318,4 +318,5 @@
     <include file="parts/20241112011009115_SU_442_add_columns_for_reclaim_exclusion.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009140_SU_441_add_field.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009140_SU_441_update_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009141_SU_441_update_report.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
