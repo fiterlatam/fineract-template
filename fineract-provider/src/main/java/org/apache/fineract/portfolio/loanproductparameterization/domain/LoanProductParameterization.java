@@ -144,7 +144,7 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
                 rangeStartNumber, rangeEndNumber, lastInvoiceNumber, lastCreditNoteNumber, lastDebitNoteNumber);
     }
 
-    public boolean isInvoiceResolutionExpiring(int daysPrior) {
+    public boolean isInvoiceResolutionExpiring(Long daysPrior) {
         LocalDate currentDate = DateUtils.getLocalDateOfTenant();
         LocalDate warningDate = currentDate.plusDays(daysPrior);
         // Implement logic to check if the invoice resolution is expiring within the specified days
@@ -154,7 +154,7 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
         return expirationDate != null && (warningDate.isAfter(expirationDate) || warningDate.isEqual(expirationDate));
     }
 
-    public boolean isInvoiceNumberingLimitReached(int threshold) {
+    public boolean isInvoiceNumberingLimitReached(Long threshold) {
         // Implement logic to check if the invoice numbering limit is reached within the specified quantity
         // Return true if the condition is met, otherwise false
         long maximumInvoiceNumber = rangeEndNumber;
@@ -163,5 +163,16 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
 
         // Check if the last invoice number is within the specified quantity
         return remainingInvoiceNumber <= threshold;
+    }
+
+    public Long getInvoiceNumberingRemaining() {
+        long maximumInvoiceNumber = rangeEndNumber;
+        long usedInvoiceNumber = lastInvoiceNumber;
+        return maximumInvoiceNumber - usedInvoiceNumber;
+    }
+
+    public Long getInvoiceResolutionExpiryDays() {
+        LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+        return DateUtils.getDifferenceInDays(currentDate, expirationDate);
     }
 }
