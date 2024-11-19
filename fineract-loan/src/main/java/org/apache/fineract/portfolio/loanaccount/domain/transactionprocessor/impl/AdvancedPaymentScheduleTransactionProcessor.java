@@ -1172,7 +1172,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             }
             // For having similar logic we are populating installment list even when the future installment
             // allocation rule is NEXT_INSTALLMENT or LAST_INSTALLMENT hence the list has only one element.
-            // As per SU+ requirements, advance payment goes to outstanding balance so first immediate advance installment
+            // As per SU+ requirements, advance payment goes to outstanding balance so first immediate advance
+            // installment
             // will always be seleted
             List<LoanRepaymentScheduleInstallment> inAdvanceInstallments = new ArrayList<>();
             if (FutureInstallmentAllocationRule.REAMORTIZATION.equals(futureInstallmentAllocationRule)) {
@@ -1256,13 +1257,15 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                 for (LoanRepaymentScheduleInstallment inAdvanceInstallment : inAdvanceInstallments) {
                                     if (transactionAmountUnprocessed.isGreaterThanZero()) {
                                         if (inAdvanceInstallment.isLastInstallment(installments)
-                                                && inAdvanceInstallment.isOverpaidInAdvance(currency)
-                                                && transactionAmountUnprocessed.isGreaterThan(inAdvanceInstallment.getPrincipal(currency))) {
-                                            // This MUST be true only in case of advance overpayment after repayment schedule is regenerated
+                                                && inAdvanceInstallment.isOverpaidInAdvance(currency) && transactionAmountUnprocessed
+                                                        .isGreaterThan(inAdvanceInstallment.getPrincipal(currency))) {
+                                            // This MUST be true only in case of advance overpayment after repayment
+                                            // schedule is regenerated
                                             // Process principal and move the remaining amount to overpaid
 
                                             Money paidPrincipalComponent = inAdvanceInstallment.payPrincipalComponent(
-                                                    loanTransaction.getTransactionDate(), transactionAmountUnprocessed, false, loanTransaction);
+                                                    loanTransaction.getTransactionDate(), transactionAmountUnprocessed, false,
+                                                    loanTransaction);
 
                                             inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment.getAdvancePrincipalAmount()
                                                     .add(transactionAmountUnprocessed.getAmount()));
@@ -1279,8 +1282,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                         } else {
                                             balances.setAggregatedPrincipalPortion(
                                                     balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
-                                            inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(loanTransaction.getTransactionDate(),
-                                                    currency);
+                                            inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(
+                                                    loanTransaction.getTransactionDate(), currency);
 
                                             inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
                                                     loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
