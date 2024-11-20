@@ -3283,7 +3283,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     .plus(totalPenaltyChargesCharged);
 
             // for partial schedule generation
-            if (!newRepaymentScheduleInstallments.isEmpty() && totalCumulativeInterest.isGreaterThanZero()) {
+            if (!newRepaymentScheduleInstallments.isEmpty()) {
                 Money totalOutstandingInterestPaymentDueToGrace = Money.zero(currency);
                 loanScheduleParams = LoanScheduleParams.createLoanScheduleParamsForPartialUpdate(periodNumber, instalmentNumber,
                         loanTermInDays, periodStartDate, actualRepaymentDate, totalCumulativePrincipal, totalCumulativeInterest,
@@ -3362,7 +3362,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             MonetaryCurrency currency) {
         List<LoanRepaymentScheduleInstallment> newRepaymentScheduleInstallments = new ArrayList<>();
         for (LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
-            if (DateUtils.isBefore(installment.getFromDate(), rescheduleFrom)) {
+            if (DateUtils.isOnOrBefore(installment.getFromDate(), rescheduleFrom)) {
                 newRepaymentScheduleInstallments.add(installment);
             } else {
                 // Check if there is any installment having advance payment then add the installment to calculate
