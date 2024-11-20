@@ -335,6 +335,10 @@ public final class DateUtils {
         return first != null && (second == null || first.isAfter(second) || first.isEqual(second));
     }
 
+    public static boolean isOnOrBefore(LocalDate first, LocalDate second) {
+        return second != null && (first == null || first.isBefore(second) || first.isEqual(second));
+    }
+
     public static long getDifferenceInDays(final LocalDate localDateBefore, final LocalDate localDateAfter) {
         return DAYS.between(localDateBefore, localDateAfter);
     }
