@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
@@ -160,6 +161,7 @@ public class JournalEntryReadPlatformServiceImpl implements JournalEntryReadPlat
             final Long entityId = JdbcSupport.getLong(rs, "entityId");
             final Long createdByUserId = rs.getLong("createdByUserId");
             final LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
+            final ZonedDateTime createdTimestamp = JdbcSupport.getDateTime(rs, "createdDate");
             final String createdByUserName = rs.getString("createdByUserName");
             final String comments = rs.getString("comments");
             final Boolean reversed = rs.getBoolean("reversed");
@@ -229,7 +231,7 @@ public class JournalEntryReadPlatformServiceImpl implements JournalEntryReadPlat
             return new JournalEntryData(id, officeId, officeName, glAccountName, glAccountId, glCode, accountType, transactionDate,
                     entryType, amount, transactionId, manualEntry, entityType, entityId, createdByUserId, createdDate, createdByUserName,
                     comments, reversed, referenceNumber, officeRunningBalance, organizationRunningBalance, runningBalanceComputed,
-                    transactionDetailData, currency);
+                    transactionDetailData, currency, createdTimestamp);
         }
     }
 

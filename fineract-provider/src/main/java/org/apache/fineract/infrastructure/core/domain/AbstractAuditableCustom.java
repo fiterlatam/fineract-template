@@ -19,9 +19,11 @@
 package org.apache.fineract.infrastructure.core.domain;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.springframework.data.domain.Auditable;
 import org.springframework.data.jpa.domain.AbstractAuditable;
 
@@ -70,7 +72,7 @@ public abstract class AbstractAuditableCustom extends AbstractPersistableCustom 
 
     @Override
     public void setCreatedDate(final LocalDateTime createdDate) {
-        this.createdDate = createdDate;
+        this.createdDate = ZonedDateTime.now(DateUtils.getDateTimeZoneOfTenant()).toLocalDateTime();
     }
 
     @Override
