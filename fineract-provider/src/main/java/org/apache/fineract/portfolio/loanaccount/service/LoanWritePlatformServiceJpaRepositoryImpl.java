@@ -3612,17 +3612,36 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         checkIfProductAllowsCancelationOrReversal(loan);
 
-        businessEventNotifierService.notifyPreBusinessEvent(new LoanChargeOffPreBusinessEvent(loan));
+        loan.markAsChargedOff(transactionDate, currentUser, null);
 
-        if (command.hasParameter(LoanApiConstants.chargeOffReasonIdParamName)) {
-            Long chargeOffReasonId = command.longValueOfParameterNamed(LoanApiConstants.chargeOffReasonIdParamName);
-            CodeValue chargeOffReason = this.codeValueRepository
-                    .findOneByCodeNameAndIdWithNotFoundDetection(LoanApiConstants.CHARGE_OFF_REASONS, chargeOffReasonId);
-            changes.put(LoanApiConstants.chargeOffReasonIdParamName, chargeOffReasonId);
-            loan.markAsChargedOff(transactionDate, currentUser, chargeOffReason);
-        } else {
-            loan.markAsChargedOff(transactionDate, currentUser, null);
+        InsuranceIncidentType incidentType = InsuranceIncidentType.DEATH_CANCELLATION;
+        if (command.hasParameter("incidentTypeId")) {
+            Integer incidentTypeId = command.integerValueOfParameterNamed("incidentTypeId");
+            incidentType = InsuranceIncidentType.fromInt(incidentTypeId);
         }
+
+        this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan, null);
+        List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
+                .getLoanDataWithDefaultOrCancelInsurance(loanId, null, transactionDate);
+        InsuranceIncident incident = this.insuranceIncidentRepository.findByIncidentType(incidentType);
+        if (incident == null) {
+            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEATH_CANCELLATION.name());
+        }
+        for (final DefaultOrCancelInsuranceInstallmentData data : cancelInsuranceInstallmentIds) {
+            LoanCharge loanCharge = null;
+            Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream()
+                    .filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
+            if (loanChargeOptional.isPresent()) {
+                loanCharge = loanChargeOptional.get();
+            }
+            BigDecimal cumulative = BigDecimal.ZERO;
+            cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, true);
+            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                    data.installment(), incident, transactionDate, cumulative);
+            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+        }
+
+        businessEventNotifierService.notifyPreBusinessEvent(new LoanChargeOffPreBusinessEvent(loan));
 
         final List<Long> existingTransactionIds = loan.findExistingTransactionIds();
         final List<Long> existingReversedTransactionIds = loan.findExistingReversedTransactionIds();
@@ -3639,6 +3658,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final Note note = Note.loanTransactionNote(loan, chargeOffTransaction, noteText);
             this.noteRepository.save(note);
         }
+
+        this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, txnExternalId, changes);
+        final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
+                BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(), BlockLevel.CREDIT.toString());
+        loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "CANCELADO", DateUtils.getLocalDateOfTenant());
 
         postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
         businessEventNotifierService.notifyPostBusinessEvent(new LoanChargeOffPostBusinessEvent(chargeOffTransaction));

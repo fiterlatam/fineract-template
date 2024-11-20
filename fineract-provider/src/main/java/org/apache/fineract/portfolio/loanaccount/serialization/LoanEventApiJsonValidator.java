@@ -435,7 +435,7 @@ public final class LoanEventApiJsonValidator {
         }
 
         final Set<String> chargeOffParameters = new HashSet<>(
-                Arrays.asList("transactionDate", "note", "locale", "dateFormat", "chargeOffReasonId", "externalId"));
+                Arrays.asList("transactionDate", "note", "locale", "dateFormat", "chargeOffReasonId", "externalId", "incidentTypeId"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, chargeOffParameters);
@@ -455,6 +455,9 @@ public final class LoanEventApiJsonValidator {
 
         final Long chargeOffReasonId = fromApiJsonHelper.extractLongNamed("chargeOffReasonId", element);
         baseDataValidator.reset().parameter("chargeOffReasonId").value(chargeOffReasonId).ignoreIfNull().integerGreaterThanZero();
+
+        final Long incidentTypeId = fromApiJsonHelper.extractLongNamed("incidentTypeId", element);
+        baseDataValidator.reset().parameter("incidentTypeId").value(incidentTypeId).ignoreIfNull().integerGreaterThanZero();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }

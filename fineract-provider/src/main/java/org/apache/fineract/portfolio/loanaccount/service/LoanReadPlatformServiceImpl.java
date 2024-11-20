@@ -1525,8 +1525,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(principalDue);
                 }
                 BigDecimal advancePrincipalAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "advancePrincipalAmount");
-                this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.subtract(advancePrincipalAmount);
-                outstandingPrincipalBalanceOfLoan = outstandingPrincipalBalanceOfLoan.subtract(advancePrincipalAmount);
+                if (this.outstandingLoanPrincipalBalance.compareTo(BigDecimal.ZERO) > 0) {
+                    this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.subtract(advancePrincipalAmount);
+                    outstandingPrincipalBalanceOfLoan = outstandingPrincipalBalanceOfLoan.subtract(advancePrincipalAmount);
+                }
                 final boolean isDownPayment = rs.getBoolean("isDownPayment");
 
                 LoanSchedulePeriodData periodData;
