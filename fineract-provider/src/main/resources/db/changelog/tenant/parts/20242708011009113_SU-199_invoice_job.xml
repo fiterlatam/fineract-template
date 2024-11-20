@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+    <changeSet author="fineract" id="1">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM job WHERE name ='Daily Loan Accrual';
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="job">
+            <column name="name" value="Control de Límite de Numeración de Facturación Electrónica"/>
+            <column name="display_name" value="Control de Límite de Numeración de Facturación Electrónica"/>
+            <column name="cron_expression" value="0 0 23 1/1 * ? *"/>
+            <column name="create_time" valueDate="${current_datetime}"/>
+            <column name="task_priority" valueNumeric="5"/>
+            <column name="group_name"/>
+            <column name="previous_run_start_time"/>
+            <column name="job_key" value="INVOICE_NUMBERING_LIMIT_Job _DEFAULT"/>
+            <column name="initializing_errorlog"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="currently_running" valueBoolean="false"/>
+            <column name="updates_allowed" valueBoolean="true"/>
+            <column name="scheduler_group" valueNumeric="0"/>
+            <column name="is_misfired" valueBoolean="false"/>
+            <column name="node_id" valueNumeric="1"/>
+            <column name="is_mismatched_job" valueBoolean="true"/>
+        </insert>
+        <insert tableName="job">
+            <column name="name" value="Control de Vencimiento de Resolución de Facturación Electrónica"/>
+            <column name="display_name" value="Control de Vencimiento de Resolución de Facturación Electrónica"/>
+            <column name="cron_expression" value="0 0 23 1/1 * ? *"/>
+            <column name="create_time" valueDate="${current_datetime}"/>
+            <column name="task_priority" valueNumeric="5"/>
+            <column name="group_name"/>
+            <column name="previous_run_start_time"/>
+            <column name="job_key" value="INVOICE_EXPIRY_RESOLUTION_Job _DEFAULT"/>
+            <column name="initializing_errorlog"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="currently_running" valueBoolean="false"/>
+            <column name="updates_allowed" valueBoolean="true"/>
+            <column name="scheduler_group" valueNumeric="0"/>
+            <column name="is_misfired" valueBoolean="false"/>
+            <column name="node_id" valueNumeric="1"/>
+            <column name="is_mismatched_job" valueBoolean="true"/>
+        </insert>
+        <insert tableName="c_configuration">
+            <column name="name" value="Cantidad previa al límte de la numeración de la facturación para notificar"/>
+            <column name="value" value="100000"/>
+            <column name="description" value="Cantidad previa al límte de la numeración de la facturación para notificar"/>
+            <column name="date_value"/>
+            <column name="string_value"/>
+            <column name="enabled" valueBoolean="true"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+        </insert>
+        <insert tableName="c_configuration">
+            <column name="name" value="Días previos para notificar vencimiento de la resolución de facturas"/>
+            <column name="description" value="Días previos para notificar vencimiento de la resolución de facturas"/>
+            <column name="value" valueNumeric="30"/>
+            <column name="date_value"/>
+            <column name="string_value"/>
+            <column name="enabled" valueBoolean="true"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+        </insert>
+        <insert tableName="c_configuration">
+            <column name="name" value="Correo/s para enviar alerta por factura electrónica por vencer o agotarse"/>
+            <column name="description" value="Correo/s para enviar alerta por factura electrónica por vencer o agotarse"/>
+            <column name="value"/>
+            <column name="date_value"/>
+            <column name="string_value" defaultValue=""/>
+            <column name="enabled" valueBoolean="true"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+        </insert>
+        <createIndex
+                indexName="idx_resolution_expiry_date"
+                tableName="m_product_type_parameters">
+            <column name="expiration_date"/>
+        </createIndex>
+        <createIndex
+                indexName="idx_invoice_numbering"
+                tableName="m_product_type_parameters">
+            <column name="range_end_number"/>
+            <column name="last_invoice_number"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
