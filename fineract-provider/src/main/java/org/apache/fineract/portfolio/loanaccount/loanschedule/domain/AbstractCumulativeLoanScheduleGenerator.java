@@ -3072,7 +3072,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     }
                     // Extra amount paid in advance
                     if (outstandingBalance.isZero() || outstandingBalance.isLessThanZero()) {
-                        // Check outstandingBalance.isZero() in case customer pays exact amount equal to outstanding balance
+                        // Check outstandingBalance.isZero() in case customer pays exact amount equal to outstanding
+                        // balance
                         // If overpaid in advance then add the last installment to keep track of advance payment amount
                         outstandingBalanceAsPerRest = outstandingBalance.zero();
                         outstandingBalance = outstandingBalance.zero();
