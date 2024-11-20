@@ -4251,7 +4251,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         /*
          * // This code was added initially under SU-320 to handle overpayments but later on it is no longer needed
-         * based on the way // overpayment is now handled if (overpaid.isZero()) { Money totalPrincipalPaid =
+         * based on the way overpayment is now handled
+         * if (overpaid.isZero()) { Money totalPrincipalPaid =
          * Money.zero(this.getCurrency()); for (final LoanRepaymentScheduleInstallment scheduledRepayment :
          * installments) { totalPrincipalPaid = totalPrincipalPaid.add(
          * scheduledRepayment.getPrincipalCompleted(this.getCurrency()).plus(scheduledRepayment.
