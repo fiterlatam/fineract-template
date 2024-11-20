@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
+import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMapRepository;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
@@ -109,6 +110,7 @@ import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.data.PostDatedChecksStatus;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
@@ -147,6 +149,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final LoanBlockingReasonRepository loanBlockingReasonRepository;
 
     private final PlatformSecurityContext platformSecurityContext;
+    @Autowired
+    private CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
 
     @Transactional
     @Override
@@ -335,32 +339,31 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         BigDecimal feeHono = feeVat.add(feeBasis).setScale(0, MoneyHelper.getRoundingMode());
 
         Optional<LoanCharge> charges = loanRepaymentScheduleInstallment.getLoan().getActiveCharges().stream()
-                .filter(charge -> charge.getChargeCalculation().isFlatHono()).findFirst();
+                .filter(charge -> charge.getChargeCalculation().isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios())
+                .findFirst();
         if (charges.isPresent()) {
             LoanCharge chargeHono = charges.get();
-            chargeHono.setInstallmentChargeAmount(chargeHono.chargeAmount().add(feeHono));
-            chargeHono.resetAndUpdateInstallmentCharges();
+            Money newAmountHono = chargeHono.getAmount(currency).minus(feeHono);
+            chargeHono.setInstallmentChargeAmount(newAmountHono.getAmount());
             Set<CustomChargeHonorarioMap> honoMap = chargeHono.getCustomChargeHonorarioMaps();
-            if (!honoMap.isEmpty()) {
-                for (CustomChargeHonorarioMap honorarioMap : honoMap) {
-                    honorarioMap.setFeeBaseAmount(feeBasis);
-                    honorarioMap.setFeeTotalAmount(feeHono);
-                    honorarioMap.setFeeVatAmount(feeVat);
-                    honorarioMap.setUpdatedBy(this.platformSecurityContext.authenticatedUser().getId());
-                    honorarioMap.setUpdatedAt(DateUtils.getLocalDateTimeOfTenant());
-                    honorarioMap.setLoanChargeId(chargeHono.getId());
-                }
-            } else {
-                CustomChargeHonorarioMap current = new CustomChargeHonorarioMap();
-                current.setFeeBaseAmount(feeBasis);
-                current.setFeeTotalAmount(feeHono);
-                current.setFeeVatAmount(feeVat);
-                current.setUpdatedBy(this.platformSecurityContext.authenticatedUser().getId());
-                current.setUpdatedAt(DateUtils.getLocalDateTimeOfTenant());
-                current.setLoanChargeId(chargeHono.getId());
-            }
-            loanRepaymentScheduleInstallment.getLoan().updateLoanDerivedFields();
-            loanRepaymentScheduleInstallment.getLoan().updateLoanScheduleAfterCustomChargeApplied();
+            CustomChargeHonorarioMap current = new CustomChargeHonorarioMap();
+            current.setFeeBaseAmount(feeBasis);
+            current.setNit("120843958");
+            current.setLoanId(loanRepaymentScheduleInstallment.getLoan().getId());
+            current.setFeeTotalAmount(feeHono);
+            current.setFeeVatAmount(feeVat);
+            current.setLoanInstallmentNr(loanRepaymentScheduleInstallment.getInstallmentNumber());
+            current.setCreatedBy(this.platformSecurityContext.authenticatedUser().getId());
+            current.setCreatedAt(DateUtils.getLocalDateTimeOfTenant());
+            current.setUpdatedAt(DateUtils.getLocalDateTimeOfTenant());
+            current.setUpdatedBy(this.platformSecurityContext.authenticatedUser().getId());
+            current.setUpdatedAt(DateUtils.getLocalDateTimeOfTenant());
+            current.setLoanChargeId(chargeHono.getId());
+
+            customChargeHonorarioMapRepository.saveAndFlush(current);
+
+            // loanRepaymentScheduleInstallment.getLoan().updateLoanDerivedFields();
+            // loanRepaymentScheduleInstallment.getLoan().updateLoanScheduleAfterCustomChargeApplied();
 
         }
 
