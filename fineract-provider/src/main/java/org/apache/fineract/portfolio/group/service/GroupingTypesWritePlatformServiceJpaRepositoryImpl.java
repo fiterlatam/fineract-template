@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.persistence.PersistenceException;
 import lombok.RequiredArgsConstructor;
@@ -95,6 +96,7 @@ import org.apache.fineract.portfolio.group.domain.GroupLevelRepository;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.group.domain.GroupTypes;
 import org.apache.fineract.portfolio.group.exception.GroupAccountExistsException;
+import org.apache.fineract.portfolio.group.exception.GroupExistsInCenterException;
 import org.apache.fineract.portfolio.group.exception.GroupHasNoStaffException;
 import org.apache.fineract.portfolio.group.exception.GroupMeetingTimeCollisionException;
 import org.apache.fineract.portfolio.group.exception.GroupMemberCountNotInPermissibleRangeException;
@@ -177,6 +179,11 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
             final LocalDate activationDate = command.localDateValueOfParameterNamed(GroupingTypesApiConstants.activationDateParamName);
             final GroupLevel groupLevel = this.groupLevelRepository.findById(groupingType.getId()).orElse(null);
 
+            Optional<Group> existingGroupName = this.groupRepository.findByNameAndGroupLevel(name, groupLevel);
+            if (existingGroupName.isPresent()) {
+                Group oldGroup = existingGroupName.get();
+                throw new GroupExistsInCenterException(oldGroup.getParent().getId(), oldGroup.getName());
+            }
             validateOfficeOpeningDateisAfterGroupOrCenterOpeningDate(groupOffice, groupLevel, activationDate);
 
             Staff staff = null;
