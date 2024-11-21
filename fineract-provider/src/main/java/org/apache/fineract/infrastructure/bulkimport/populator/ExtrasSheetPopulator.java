@@ -92,28 +92,32 @@ public class ExtrasSheetPopulator extends AbstractWorkbookPopulator {
             writeString(CURRENCY_CODE_COL, row, currencies.getCode());
         }
         int channelRowIndex = 1;
-        for (ChannelData channelData : channelOptions) {
-            Row row;
-            if (channelRowIndex < currencyCodeRowIndex || currencyCodeRowIndex < paymentTypeRowIndex
-                    || currencyCodeRowIndex < fundRowIndex) {
-                row = extrasSheet.getRow(channelRowIndex++);
-            } else {
-                row = extrasSheet.createRow(channelRowIndex++);
+        if (channelOptions != null) {
+            for (ChannelData channelData : channelOptions) {
+                Row row;
+                if (channelRowIndex < currencyCodeRowIndex || currencyCodeRowIndex < paymentTypeRowIndex
+                        || currencyCodeRowIndex < fundRowIndex) {
+                    row = extrasSheet.getRow(channelRowIndex++);
+                } else {
+                    row = extrasSheet.createRow(channelRowIndex++);
+                }
+                writeLong(CHANNEL_ID_COL, row, channelData.getId());
+                writeString(CHANNEL_NAME_COL, row, channelData.getName().trim().replaceAll("[ )(]", "_"));
             }
-            writeLong(CHANNEL_ID_COL, row, channelData.getId());
-            writeString(CHANNEL_NAME_COL, row, channelData.getName().trim().replaceAll("[ )(]", "_"));
         }
         int bankRowIndex = 1;
-        for (CodeValueData bankCodeValueData : bankOptions) {
-            Row row;
-            if (bankRowIndex < channelRowIndex || channelRowIndex < currencyCodeRowIndex || currencyCodeRowIndex < paymentTypeRowIndex
-                    || currencyCodeRowIndex < fundRowIndex) {
-                row = extrasSheet.getRow(bankRowIndex++);
-            } else {
-                row = extrasSheet.createRow(bankRowIndex++);
+        if (bankOptions != null) {
+            for (CodeValueData bankCodeValueData : bankOptions) {
+                Row row;
+                if (bankRowIndex < channelRowIndex || channelRowIndex < currencyCodeRowIndex || currencyCodeRowIndex < paymentTypeRowIndex
+                        || currencyCodeRowIndex < fundRowIndex) {
+                    row = extrasSheet.getRow(bankRowIndex++);
+                } else {
+                    row = extrasSheet.createRow(bankRowIndex++);
+                }
+                writeLong(BANK_ID_COL, row, bankCodeValueData.getId());
+                writeString(BANK_NAME_COL, row, bankCodeValueData.getName().trim().replaceAll("[ )(]", "_"));
             }
-            writeLong(BANK_ID_COL, row, bankCodeValueData.getId());
-            writeString(BANK_NAME_COL, row, bankCodeValueData.getName().trim().replaceAll("[ )(]", "_"));
         }
         extrasSheet.protectSheet("");
     }

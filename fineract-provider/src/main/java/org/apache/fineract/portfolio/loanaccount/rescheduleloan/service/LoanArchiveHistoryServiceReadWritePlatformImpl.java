@@ -84,7 +84,7 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
                     .ingresos(rs.getBigDecimal("media_de_ingreso")).antiguedadCliente(rs.getString("disbursedon_date"))
                     .actividadLaboral(rs.getString("activeLab")).creSaldo(rs.getBigDecimal("cupo")).cuoSaldo(rs.getBigDecimal("cupo"))
                     .cuoEstado(rs.getString("name_of_reason")).estadoCivil(rs.getString("estado_civil"))
-                    .tipoDocumento(rs.getString("tipo_documento")).celularSac2(rs.getString("celular_referencia"))
+                    .tipoDocumento(rs.getString("tipo_documento")).celularReferencia(rs.getString("celular_referencia"))
                     .referencia(rs.getString("referencia")).empresaLabora(rs.getString("nombre_empresa"))
                     .nitEmpresaAliada(rs.getString("nit_empresa_aliada")).fechaNacimiento(rs.getString("date_of_birth"))
                     .estadoCuota(rs.getString("creaditBlock")).build();

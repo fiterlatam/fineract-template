@@ -1258,7 +1258,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                     if (transactionAmountUnprocessed.isGreaterThanZero()) {
                                         if (inAdvanceInstallment.isLastInstallment(installments)
                                                 && inAdvanceInstallment.isOverpaidInAdvance(currency) && transactionAmountUnprocessed
-                                                        .isGreaterThan(inAdvanceInstallment.getPrincipal(currency))) {
+                                                        .isGreaterThanOrEqualTo(inAdvanceInstallment.getPrincipal(currency))) {
                                             // This MUST be true only in case of advance overpayment after repayment
                                             // schedule is regenerated
                                             // Process principal and move the remaining amount to overpaid

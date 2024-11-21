@@ -134,4 +134,6 @@ public class LoanArchiveHistory {
     private BigDecimal montoInicial;
     @Column(name = "nit_empresa_aliada")
     private String nitEmpresaAliada;
+    @Column(name = "celular_familiar_1")
+    private String celularReferencia;
 }

@@ -549,6 +549,34 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     }
 
     @Override
+    public Long retrieveInvoiceResolutionExpiryDays() {
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(INVOICE_RESOLUTION_EXPIRY);
+        if (property.isEnabled()) {
+            return property.getValue();
+        }
+
+        return null;
+    }
+
+    @Override
+    public Long retrieveInvoiceThreshold() {
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(REMAINING_INVOICES_THRESHOLD);
+        if (property.isEnabled()) {
+            return property.getValue();
+        }
+        return null;
+    }
+
+    @Override
+    public List<String> retrieveInvoiceJobNotificationEmails() {
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(INVOICE_NOTIFICATION_EMAILS);
+        if (property.isEnabled()) {
+            return List.of(property.getStringValue().split(","));
+        }
+        return List.of();
+    }
+
+    @Override
     public Integer retriveIvaConfiguration() {
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData("IVA Por comision");
         int value = property.getValue().intValue();

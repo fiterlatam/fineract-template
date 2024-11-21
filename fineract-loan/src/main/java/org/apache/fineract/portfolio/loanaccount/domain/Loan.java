@@ -4248,16 +4248,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         // if total paid in transactions doesnt match repayment schedule then
         // theres an overpayment.
         Money overpaid = totalPaidInRepayments.minus(cumulativeTotalPaidOnInstallments);
-        if (overpaid.isZero()) {
-            Money totalPrincipalPaid = Money.zero(this.getCurrency());
-            for (final LoanRepaymentScheduleInstallment scheduledRepayment : installments) {
-                totalPrincipalPaid = totalPrincipalPaid.add(
-                        scheduledRepayment.getPrincipalCompleted(this.getCurrency()).plus(scheduledRepayment.getAdvancePrincipalAmount()));
-            }
-            if (totalPrincipalPaid.isGreaterThan(this.getPrincipal())) {
-                overpaid = totalPrincipalPaid.minus(this.getPrincipal());
-            }
-        }
+
+        /*
+         * // This code was added initially under SU-320 to handle overpayments but later on it is no longer needed
+         * based on the way overpayment is now handled if (overpaid.isZero()) { Money totalPrincipalPaid =
+         * Money.zero(this.getCurrency()); for (final LoanRepaymentScheduleInstallment scheduledRepayment :
+         * installments) { totalPrincipalPaid = totalPrincipalPaid.add(
+         * scheduledRepayment.getPrincipalCompleted(this.getCurrency()).plus(scheduledRepayment.
+         * getAdvancePrincipalAmount())); } if (totalPrincipalPaid.isGreaterThan(this.getPrincipal())) { overpaid =
+         * totalPrincipalPaid.minus(this.getPrincipal()); } }
+         */
         return overpaid;
     }
 

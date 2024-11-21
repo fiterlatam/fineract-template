@@ -33,10 +33,17 @@ public final class EmailMessageWithAttachmentData {
     private String text;
     private String subject;
     private List<File> attachments;
+    private List<String> recipients;
 
     public static EmailMessageWithAttachmentData createNew(final String to, final String text, final String subject,
             final List<File> attachments) {
         return new EmailMessageWithAttachmentData().setTo(to).setText(text).setSubject(subject).setAttachments(attachments);
+    }
+
+    public static EmailMessageWithAttachmentData createNew(final String text, final String subject, final List<File> attachments,
+            final List<String> recipients) {
+        return new EmailMessageWithAttachmentData().setText(text).setSubject(subject).setAttachments(attachments).setRecipients(recipients)
+                .setRecipients(recipients);
     }
 
 }

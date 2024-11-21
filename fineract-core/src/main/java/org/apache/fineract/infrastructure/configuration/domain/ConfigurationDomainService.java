@@ -149,6 +149,12 @@ public interface ConfigurationDomainService {
 
     Long retriveMinimumDaysOfArrearsToWriteOff();
 
+    Long retrieveInvoiceResolutionExpiryDays();
+
+    Long retrieveInvoiceThreshold();
+
+    List<String> retrieveInvoiceJobNotificationEmails();
+
     Integer retriveIvaConfiguration();
 
 }
