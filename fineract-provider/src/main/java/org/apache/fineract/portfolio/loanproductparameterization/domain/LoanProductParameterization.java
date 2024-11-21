@@ -71,9 +71,16 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
     @Column(name = "last_debit_note_number")
     private Long lastDebitNoteNumber;
 
+    @Column(name = "clave_tecnica")
+    private String technicalKey;
+
+    @Column(name = "nota")
+    private String note;
+
     public LoanProductParameterizationData toData() {
         return new LoanProductParameterizationData(getId(), productType, billingPrefix, billingResolutionNumber, generationDate,
-                expirationDate, rangeStartNumber, rangeEndNumber, lastInvoiceNumber, lastCreditNoteNumber, lastDebitNoteNumber);
+                expirationDate, rangeStartNumber, rangeEndNumber, lastInvoiceNumber, lastCreditNoteNumber, lastDebitNoteNumber,
+                technicalKey, note);
     }
 
     public static LoanProductParameterization create(JsonCommand command) {
@@ -113,6 +120,12 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
         if (updatedParameters.getLastDebitNoteNumber() != null) {
             this.lastDebitNoteNumber = updatedParameters.getLastDebitNoteNumber();
         }
+        if (StringUtils.isNotBlank(updatedParameters.getTechnicalKey())) {
+            this.technicalKey = updatedParameters.getTechnicalKey();
+        }
+        if (StringUtils.isNotBlank(updatedParameters.getNote())) {
+            this.note = updatedParameters.getNote();
+        }
     }
 
     private static LoanProductParameterization extractParameters(JsonCommand command) {
@@ -126,6 +139,8 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
         final Long lastInvoiceNumber = command.longValueOfParameterNamed("lastInvoiceNumber");
         final Long lastCreditNoteNumber = command.longValueOfParameterNamed("lastCreditNoteNumber");
         final Long lastDebitNoteNumber = command.longValueOfParameterNamed("lastDebitNoteNumber");
+        final String note = command.stringValueOfParameterNamed("note");
+        final String technicalKey = command.stringValueOfParameterNamed("technicalKey");
 
         // validate that rangeStartNumber is less than rangeEndNumber
         if (rangeStartNumber > rangeEndNumber) {
@@ -141,7 +156,7 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
         }
 
         return new LoanProductParameterization(productType, billingPrefix, billingResolutionNumber, generationDate, expirationDate,
-                rangeStartNumber, rangeEndNumber, lastInvoiceNumber, lastCreditNoteNumber, lastDebitNoteNumber);
+                rangeStartNumber, rangeEndNumber, lastInvoiceNumber, lastCreditNoteNumber, lastDebitNoteNumber, technicalKey, note);
     }
 
     public boolean isInvoiceResolutionExpiring(Long daysPrior) {
