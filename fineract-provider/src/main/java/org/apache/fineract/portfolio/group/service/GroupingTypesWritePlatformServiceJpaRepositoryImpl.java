@@ -22,14 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import javax.persistence.PersistenceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -94,15 +87,7 @@ import org.apache.fineract.portfolio.group.domain.GroupLevel;
 import org.apache.fineract.portfolio.group.domain.GroupLevelRepository;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.group.domain.GroupTypes;
-import org.apache.fineract.portfolio.group.exception.GroupAccountExistsException;
-import org.apache.fineract.portfolio.group.exception.GroupHasNoStaffException;
-import org.apache.fineract.portfolio.group.exception.GroupMeetingTimeCollisionException;
-import org.apache.fineract.portfolio.group.exception.GroupMemberCountNotInPermissibleRangeException;
-import org.apache.fineract.portfolio.group.exception.GroupMustBePendingToBeDeletedException;
-import org.apache.fineract.portfolio.group.exception.InvalidGroupLevelException;
-import org.apache.fineract.portfolio.group.exception.InvalidGroupStateTransitionException;
-import org.apache.fineract.portfolio.group.exception.PortfolioOfficeNotFoundException;
-import org.apache.fineract.portfolio.group.exception.PrequalificationMappedException;
+import org.apache.fineract.portfolio.group.exception.*;
 import org.apache.fineract.portfolio.group.serialization.GroupingTypesDataValidator;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
@@ -177,6 +162,11 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
             final LocalDate activationDate = command.localDateValueOfParameterNamed(GroupingTypesApiConstants.activationDateParamName);
             final GroupLevel groupLevel = this.groupLevelRepository.findById(groupingType.getId()).orElse(null);
 
+            Optional<Group> existingGroupName = this.groupRepository.findOneWithNameAndType(name, groupLevel);
+            if (existingGroupName.isPresent()) {
+                Group oldGroup = existingGroupName.get();
+                throw new GroupExistsInCenterException(oldGroup.getParent().getId(), oldGroup.getName());
+            }
             validateOfficeOpeningDateisAfterGroupOrCenterOpeningDate(groupOffice, groupLevel, activationDate);
 
             Staff staff = null;

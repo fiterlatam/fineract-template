@@ -33,6 +33,8 @@ public interface GroupRepository extends JpaRepository<Group, Long>, JpaSpecific
 
     Optional<Group> findByPrequalificationGroup(PrequalificationGroup prequalificationGroup);
 
+    Optional<Group> findByNameAndType(String name, GroupLevel type);
+
     // Collection<Group> findByPrequalificationGroup(PrequalificationGroup prequalificationGroup);
 
     String RETRIEVE_SUBMITTED_ON_DATE = "select g.submittedOnDate from Group g where g.id = :groupId";

@@ -27,4 +27,9 @@ public class GroupExistsInCenterException extends AbstractPlatformDomainRuleExce
                 "Group with identifier " + groupId + " is already exists in Center with identifier " + centerId, groupId, centerId);
     }
 
+    public GroupExistsInCenterException(final Long centerId, final String groupName) {
+        super("error.msg.group.is.already.member.of.center",
+                "Group with name " + groupName + " is already exists in Center with identifier " + centerId, groupName, centerId);
+    }
+
 }
