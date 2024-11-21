@@ -26,6 +26,7 @@ import org.apache.fineract.infrastructure.campaigns.email.service.EmailMessageJo
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.portfolio.loanproductparameterization.data.LoanProductParameterDataValidator;
 import org.apache.fineract.portfolio.loanproductparameterization.domain.LoanProductParameterization;
 import org.apache.fineract.portfolio.loanproductparameterization.domain.LoanProductParameterizationRepository;
 import org.apache.fineract.portfolio.loanproductparameterization.exception.LoanProductParameterizationNotFoundException;
@@ -39,10 +40,13 @@ public class LoanProductParameterizationWriteServiceImpl implements LoanProductP
     private final LoanProductParameterizationRepository productParameterizationRepository;
     private final ConfigurationDomainService configurationDomainService;
     private final EmailMessageJobEmailService emailMessageJobEmailService;
+    private final LoanProductParameterDataValidator loanProductParameterDataValidator;
 
     @Override
     public CommandProcessingResult createProductParameterization(JsonCommand command) {
+
         LoanProductParameterization productParameterization = LoanProductParameterization.create(command);
+        loanProductParameterDataValidator.validateForCreate(command.json());
         LoanProductParameterization savedProductParameterization = productParameterizationRepository.save(productParameterization);
 
         return CommandProcessingResult.commandOnlyResult(savedProductParameterization.getId());
@@ -51,6 +55,7 @@ public class LoanProductParameterizationWriteServiceImpl implements LoanProductP
     @Override
     public CommandProcessingResult updateProductParameterization(Long parameterId, JsonCommand command) {
         LoanProductParameterization productParameterization = findProductParameterization(parameterId);
+        loanProductParameterDataValidator.validateForUpdate(command.json());
         productParameterization.update(command);
         productParameterizationRepository.save(productParameterization);
 
