@@ -45,8 +45,8 @@ public class LoanProductParameterizationWriteServiceImpl implements LoanProductP
     @Override
     public CommandProcessingResult createProductParameterization(JsonCommand command) {
 
-        LoanProductParameterization productParameterization = LoanProductParameterization.create(command);
         loanProductParameterDataValidator.validateForCreate(command.json());
+        LoanProductParameterization productParameterization = LoanProductParameterization.create(command);
         LoanProductParameterization savedProductParameterization = productParameterizationRepository.save(productParameterization);
 
         return CommandProcessingResult.commandOnlyResult(savedProductParameterization.getId());
