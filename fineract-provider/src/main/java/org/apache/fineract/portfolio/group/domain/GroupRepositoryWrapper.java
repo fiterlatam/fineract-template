@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.group.domain;
 
 import java.time.LocalDate;
+import java.util.Optional;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.portfolio.group.exception.GroupNotFoundException;
@@ -42,6 +43,10 @@ public class GroupRepositoryWrapper {
 
     public Group findOneWithNotFoundDetection(final Long id) {
         return this.repository.findById(id).orElseThrow(() -> new GroupNotFoundException(id));
+    }
+
+    public Optional<Group> findByNameAndGroupLevel(final String name, final GroupLevel groupLevel) {
+        return this.repository.findByNameAndGroupLevel(name, groupLevel);
     }
 
     public Group findOneWithPrequalificationIdNotFoundDetection(final PrequalificationGroup prequalificationGroup) {
