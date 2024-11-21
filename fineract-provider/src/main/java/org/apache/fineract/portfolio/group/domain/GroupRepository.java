@@ -33,7 +33,7 @@ public interface GroupRepository extends JpaRepository<Group, Long>, JpaSpecific
 
     Optional<Group> findByPrequalificationGroup(PrequalificationGroup prequalificationGroup);
 
-    Optional<Group> findByNameAndType(String name, GroupLevel type);
+    Optional<Group> findByNameAndGroupLevel(String name, GroupLevel type);
 
     // Collection<Group> findByPrequalificationGroup(PrequalificationGroup prequalificationGroup);
 

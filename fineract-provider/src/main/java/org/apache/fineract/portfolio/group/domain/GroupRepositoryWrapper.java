@@ -45,8 +45,8 @@ public class GroupRepositoryWrapper {
         return this.repository.findById(id).orElseThrow(() -> new GroupNotFoundException(id));
     }
 
-    public Optional<Group> findOneWithNameAndType(final String name, final GroupLevel groupLevel) {
-        return this.repository.findByNameAndType(name, groupLevel);
+    public Optional<Group> findByNameAndGroupLevel(final String name, final GroupLevel groupLevel) {
+        return this.repository.findByNameAndGroupLevel(name, groupLevel);
     }
 
     public Group findOneWithPrequalificationIdNotFoundDetection(final PrequalificationGroup prequalificationGroup) {
