@@ -175,4 +175,8 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
         LocalDate currentDate = DateUtils.getLocalDateOfTenant();
         return DateUtils.getDifferenceInDays(currentDate, expirationDate);
     }
+
+    public void validateForCreate(final String json) {
+        // Implement validation logic for creating a new loan product parameterization
+    }
 }
