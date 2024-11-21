@@ -52,15 +52,16 @@ public class DelinquencyRange extends AbstractAuditableWithUTCDateTimeCustom {
     @Version
     private Long version;
 
-    protected DelinquencyRange(@NotNull String classification, @NotNull Integer minimumAgeDays, Integer maximumAgeDays, Integer percentageValue) {
+    protected DelinquencyRange(@NotNull String classification, @NotNull Integer minimumAgeDays, Integer maximumAgeDays,
+            Integer percentageValue) {
         this.classification = classification;
         this.minimumAgeDays = minimumAgeDays;
         this.maximumAgeDays = maximumAgeDays;
         this.percentageValue = percentageValue;
     }
 
-    public static DelinquencyRange instance(@NotNull String classification, @NotNull Integer minimumAge, Integer maximumAge, Integer percentageValue) {
+    public static DelinquencyRange instance(@NotNull String classification, @NotNull Integer minimumAge, Integer maximumAge,
+            Integer percentageValue) {
         return new DelinquencyRange(classification, minimumAge, maximumAge, percentageValue);
     }
-
 }
