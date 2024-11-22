@@ -28,6 +28,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
+import org.springframework.integration.annotation.Default;
 
 @Getter
 @Setter
@@ -52,6 +53,7 @@ public class DelinquencyRange extends AbstractAuditableWithUTCDateTimeCustom {
     @Version
     private Long version;
 
+    @Default
     protected DelinquencyRange(@NotNull String classification, @NotNull Integer minimumAgeDays, Integer maximumAgeDays,
             Integer percentageValue) {
         this.classification = classification;
@@ -60,9 +62,20 @@ public class DelinquencyRange extends AbstractAuditableWithUTCDateTimeCustom {
         this.percentageValue = percentageValue;
     }
 
+    protected DelinquencyRange(@NotNull String classification, @NotNull Integer minimumAgeDays, Integer maximumAgeDays) {
+        this.classification = classification;
+        this.minimumAgeDays = minimumAgeDays;
+        this.maximumAgeDays = maximumAgeDays;
+        this.percentageValue = null;
+    }
+
     public static DelinquencyRange instance(@NotNull String classification, @NotNull Integer minimumAge, Integer maximumAge,
             Integer percentageValue) {
         return new DelinquencyRange(classification, minimumAge, maximumAge, percentageValue);
+    }
+
+    public static DelinquencyRange instance(@NotNull String classification, @NotNull Integer minimumAge, Integer maximumAge) {
+        return new DelinquencyRange(classification, minimumAge, maximumAge);
     }
 
 }
