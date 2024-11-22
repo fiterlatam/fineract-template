@@ -46,6 +46,9 @@ public class DelinquencyRange extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "max_age_days", nullable = true)
     private Integer maximumAgeDays;
 
+    @Column(name = "percentage_value", nullable = true)
+    private Integer percentageValue;
+
     @Version
     private Long version;
 
@@ -53,6 +56,7 @@ public class DelinquencyRange extends AbstractAuditableWithUTCDateTimeCustom {
         this.classification = classification;
         this.minimumAgeDays = minimumAgeDays;
         this.maximumAgeDays = maximumAgeDays;
+        this.percentageValue = percentageValue;
     }
 
     public static DelinquencyRange instance(@NotNull String classification, @NotNull Integer minimumAge, Integer maximumAge) {
