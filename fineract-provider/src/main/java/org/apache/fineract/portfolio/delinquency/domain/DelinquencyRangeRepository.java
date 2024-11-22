@@ -28,4 +28,7 @@ public interface DelinquencyRangeRepository extends JpaRepository<DelinquencyRan
 
     Optional<DelinquencyRange> findByClassification(String classification);
 
+    @Query("select delinquencyRange from DelinquencyRange delinquencyRange where delinquencyRange.minimumAgeDays <= :range and delinquencyRange.maximumAgeDays >= :range")
+    Optional<DelinquencyRange> findByRange(@Param("range") Integer range);
+
 }
