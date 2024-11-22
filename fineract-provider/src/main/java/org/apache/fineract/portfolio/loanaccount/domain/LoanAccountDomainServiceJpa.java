@@ -352,17 +352,19 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     .filter(customChargeHonorarioMap -> customChargeHonorarioMap.getLoanInstallmentNr() == loanRepaymentScheduleInstallment
                             .getInstallmentNumber() && !loanRepaymentScheduleInstallment.isObligationsMet())
                     .findFirst();
+            LoanInstallmentCharge installmentCharge = chargeHono
+                    .getInstallmentLoanCharge(loanRepaymentScheduleInstallment.getInstallmentNumber());
             if (!honoMap.isEmpty()) {
-                // for (CustomChargeHonorarioMap honorarioMap : honoMap) {
-                CustomChargeHonorarioMap honorarioMap = honoMap.get();
-                honorarioMap.setFeeBaseAmount(feeBasis);
-                honorarioMap.setFeeTotalAmount(feeHono);
-                honorarioMap.setFeeVatAmount(feeVat);
-                honorarioMap.setUpdatedBy(this.platformSecurityContext.authenticatedUser().getId());
-                honorarioMap.setUpdatedAt(DateUtils.getLocalDateTimeOfTenant());
-                honorarioMap.setLoanChargeId(chargeHono.getId());
-                // customChargeHonorarioMapRepository.save(honorarioMap);
-                // }
+                if (!installmentCharge.isPaid()) {
+                    CustomChargeHonorarioMap honorarioMap = honoMap.get();
+                    honorarioMap.setFeeBaseAmount(feeBasis);
+                    honorarioMap.setFeeTotalAmount(feeHono);
+                    honorarioMap.setFeeVatAmount(feeVat);
+                    honorarioMap.setUpdatedBy(this.platformSecurityContext.authenticatedUser().getId());
+                    honorarioMap.setUpdatedAt(DateUtils.getLocalDateTimeOfTenant());
+                    honorarioMap.setLoanChargeId(chargeHono.getId());
+                }
+
             } else {
                 CustomChargeHonorarioMap current = new CustomChargeHonorarioMap();
                 current.setNit("120843958");
@@ -379,9 +381,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 customChargeHonorarioMapRepository.save(current);
             }
 
-            loan.addLoanCharge(chargeHono);
-            saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             loan.updateLoanScheduleAfterCustomChargeApplied();
+            saveLoanWithDataIntegrityViolationChecks(loan);
 
         }
 

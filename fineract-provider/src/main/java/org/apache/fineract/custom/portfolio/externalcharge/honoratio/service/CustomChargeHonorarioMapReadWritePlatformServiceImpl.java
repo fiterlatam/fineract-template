@@ -165,13 +165,25 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
                 } else {
                     List<LoanRepaymentScheduleInstallment> installments = curr.getRepaymentScheduleInstallments().stream()
                             .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
+
                     for (LoanRepaymentScheduleInstallment inst : installments) {
                         if (inst.getInstallmentNumber().equals(entity.getLoanInstallmentNr())) {
+                            Optional<LoanCharge> loanCharges = curr.getLoanCharges(inst.getDueDate()).stream()
+                                    .filter(charge -> charge.isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios())
+                                    .findFirst();
                             if (inst.isObligationsMet()) {
                                 // Cannot throw exception here as it will rollback everything including any new fee rows
                                 // throw new LoanInstallmentAlreadyPaidException(loanId, inst.getInstallmentNumber());
                                 insallmentAlreadyPaid = true;
                                 break;
+                            } else {
+                                if (loanCharges.isPresent()) {
+                                    LoanCharge loanCharge = loanCharges.get();
+                                    if (loanCharge.getInstallmentLoanCharge(inst.getInstallmentNumber()).isPaid()) {
+                                        insallmentAlreadyPaid = true;
+                                        break;
+                                    }
+                                }
                             }
 
                         }

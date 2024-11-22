@@ -20,6 +20,7 @@ package org.apache.fineract.infrastructure.configuration.domain;
 
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -54,6 +55,9 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
 
     public static final String CHARGE_ACCRUAL_DATE_CRITERIA = "charge-accrual-date";
     public static final String NEXT_PAYMENT_DUE_DATE = "next-payment-due-date";
+    public static final String INVOICE_RESOLUTION_EXPIRY = "Días previos para notificar vencimiento de la resolución de facturas";
+    public static final String REMAINING_INVOICES_THRESHOLD = "Cantidad previa al límte de la numeración de la facturación para notificar";
+    public static final String INVOICE_NOTIFICATION_EMAILS = "Correo/s para enviar alerta por factura electrónica por vencer o agotarse";
 
     private final PermissionRepository permissionRepository;
     private final GlobalConfigurationRepositoryWrapper globalConfigurationRepository;
