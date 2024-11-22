@@ -36,8 +36,9 @@ public class DelinquencyRangeData implements Serializable {
     private Integer maximumAgeDays;
     private Integer percentageValue;
 
-    public static DelinquencyRangeData instance(String classification, Integer minimumAgeDays, Integer maximumAgeDays) {
-        return new DelinquencyRangeData(null, classification, minimumAgeDays, maximumAgeDays);
+    public static DelinquencyRangeData instance(String classification, Integer minimumAgeDays, Integer maximumAgeDays,
+            Integer percentageValue) {
+        return new DelinquencyRangeData(null, classification, minimumAgeDays, maximumAgeDays, percentageValue);
     }
 
     public static DelinquencyRangeData reference(Long id) {
