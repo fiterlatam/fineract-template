@@ -77,7 +77,6 @@ public class LoanInvoiceData {
     /** Invoice fields */
     private Long documentNumber;
 
-
     /** Loan outstanding amount fields */
     private BigDecimal outstandingPrincipal;
     private BigDecimal currentInterest;
@@ -88,7 +87,6 @@ public class LoanInvoiceData {
     private BigDecimal outstandingAval;
     private BigDecimal outstandingHonorarios;
     private BigDecimal totalOutstanding;
-
     private Integer loansCount;
     private Integer itemsCount;
 
@@ -107,7 +105,9 @@ public class LoanInvoiceData {
         facturaElectronicaMensual.setConsecutivo_inicial(this.rangeStartNumber);
         facturaElectronicaMensual.setConsecutivo_final(this.rangeEndNumber);
         facturaElectronicaMensual.setClave_tecnica("4917a53d0ca4bb8eae83977f8163a18645533d4382ae22e709e0c249d497b7b8");
-        final String nota = documentNumberString + " " + facturaElectronicaMensual.getFec_desde() + " " + facturaElectronicaMensual.getFec_hasta() + " " + facturaElectronicaMensual.getConsecutivo_inicial() + " " + facturaElectronicaMensual.getConsecutivo_final() + " Habilitación Facturación Electrónica";
+        final String nota = documentNumberString + " " + facturaElectronicaMensual.getFec_desde() + " "
+                + facturaElectronicaMensual.getFec_hasta() + " " + facturaElectronicaMensual.getConsecutivo_inicial() + " "
+                + facturaElectronicaMensual.getConsecutivo_final() + " HabilitaciÃ³n FacturaciÃ³n ElectrÃ³nica";
         facturaElectronicaMensual.setNota(nota);
 
         // INFORMATION AT INVOICE LEVEL
@@ -115,7 +115,7 @@ public class LoanInvoiceData {
         facturaElectronicaMensual.setNumero_doc(documentNumberString);
         String tipoDoc = "INVOIC";
         String tipoFactura = "1";
-        if("Ajuste".equalsIgnoreCase(this.loanProductName)){
+        if ("Ajuste".equalsIgnoreCase(this.loanProductName)) {
             tipoDoc = "ND";
             tipoFactura = "9";
         }
@@ -135,7 +135,7 @@ public class LoanInvoiceData {
         facturaElectronicaMensual.setLogo(logo);
 
         // INFORMATION AT COMPANY LEVEL
-        if(LegalForm.fromInt(this.clientLegalForm).isEntity()) {
+        if (LegalForm.fromInt(this.clientLegalForm).isEntity()) {
             final String taxInformation = "NIT " + this.companyNIT + " DV 0";
             final String companyCountryCode = "CO";
             final String companyCountryName = "COLOMBIA";
@@ -155,7 +155,7 @@ public class LoanInvoiceData {
         }
 
         // INFORMATION AT INDIVIDUAL CLIENT LEVEL
-        if(LegalForm.fromInt(this.clientLegalForm).isPerson()) {
+        if (LegalForm.fromInt(this.clientLegalForm).isPerson()) {
             facturaElectronicaMensual.setId_cliente(this.clientIdNumber);
             facturaElectronicaMensual.setTipo_docid("13");
             facturaElectronicaMensual.setTipo_pers(1L);
@@ -194,7 +194,7 @@ public class LoanInvoiceData {
         facturaElectronicaMensual.setPor_dto(this.totalOutstanding);
         facturaElectronicaMensual.setVal_dto(this.totalOutstanding);
         facturaElectronicaMensual.setTotal(this.totalOutstanding);
-        facturaElectronicaMensual.setNota2("Estos valores corresponden a los cobros asociados a tu crédito: " + this.productTypeName);
+        facturaElectronicaMensual.setNota2("Estos valores corresponden a los cobros asociados a tu crÃ©dito: " + this.productTypeName);
 
         // INFORMATION AT EXCHANGE RATE LEVEL
         facturaElectronicaMensual.setTas_cambmon(null);

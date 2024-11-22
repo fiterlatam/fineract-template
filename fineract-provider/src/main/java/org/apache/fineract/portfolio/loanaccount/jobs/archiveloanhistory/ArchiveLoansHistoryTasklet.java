@@ -220,7 +220,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             existingEntry.setNitEmpresa("800139398");
                             existingEntry.setTelefonoSac(dataLoan.getTelefonoSac());
                             existingEntry.setCelularSac(dataLoan.getCelularSac());
-                            existingEntry.setCelularSac2(dataLoan.getCelularSac2());
+                            existingEntry.setCelularReferencia(dataLoan.getCelularReferencia());
                             existingEntry.setEmailSac(dataLoan.getEmailSac());
                             existingEntry.setDireccionSac(dataLoan.getDireccionSac());
                             existingEntry.setBarrioSac("OTRO");
@@ -283,7 +283,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             loanArchiveHistory.setNitEmpresa("800139398");
                             loanArchiveHistory.setTelefonoSac(dataLoan.getTelefonoSac());
                             loanArchiveHistory.setCelularSac(dataLoan.getCelularSac());
-                            loanArchiveHistory.setCelularSac2(dataLoan.getCelularSac2());
+                            loanArchiveHistory.setCelularReferencia(dataLoan.getCelularReferencia());
                             loanArchiveHistory.setEmailSac(dataLoan.getEmailSac());
                             loanArchiveHistory.setDireccionSac(dataLoan.getDireccionSac());
                             loanArchiveHistory.setBarrioSac("OTRO");

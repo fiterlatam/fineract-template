@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -37,7 +38,12 @@ public final class LoanSummaryWrapper {
         Money total = Money.zero(currency);
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
             total = total.plus(installment.getPrincipalCompleted(currency));
-            total = total.plus(installment.getAdvancePrincipalAmount());
+            if (installment.isLastInstallment(repaymentScheduleInstallments) && installment.isOverpaidInAdvance(currency)
+                    && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
+                continue;
+            } else {
+                total = total.plus(installment.getAdvancePrincipalAmount());
+            }
         }
         return total;
     }

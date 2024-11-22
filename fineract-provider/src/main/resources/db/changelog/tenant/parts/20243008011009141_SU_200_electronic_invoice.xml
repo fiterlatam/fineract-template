@@ -251,4 +251,18 @@
             ]]>
         </sql>
     </changeSet>
+
+    <changeSet id="5" author="fineract">
+        <sql>
+            <![CDATA[
+                DO $$
+                DECLARE
+                    max_id bigint;
+                BEGIN
+                    SELECT MAX(id) + 1 INTO max_id FROM m_code_value;
+                    EXECUTE 'ALTER SEQUENCE m_code_value_id_seq RESTART WITH ' || max_id;
+                END $$;
+            ]]>
+        </sql>
+    </changeSet>
 </databaseChangeLog>

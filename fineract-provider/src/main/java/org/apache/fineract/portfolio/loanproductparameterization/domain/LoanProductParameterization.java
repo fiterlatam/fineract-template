@@ -29,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.loanproductparameterization.data.LoanProductParameterizationData;
 
@@ -70,9 +71,16 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
     @Column(name = "last_debit_note_number")
     private Long lastDebitNoteNumber;
 
+    @Column(name = "clave_tecnica")
+    private String technicalKey;
+
+    @Column(name = "nota")
+    private String note;
+
     public LoanProductParameterizationData toData() {
         return new LoanProductParameterizationData(getId(), productType, billingPrefix, billingResolutionNumber, generationDate,
-                expirationDate, rangeStartNumber, rangeEndNumber, lastInvoiceNumber, lastCreditNoteNumber, lastDebitNoteNumber);
+                expirationDate, rangeStartNumber, rangeEndNumber, lastInvoiceNumber, lastCreditNoteNumber, lastDebitNoteNumber,
+                technicalKey, note);
     }
 
     public static LoanProductParameterization create(JsonCommand command) {
@@ -112,6 +120,12 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
         if (updatedParameters.getLastDebitNoteNumber() != null) {
             this.lastDebitNoteNumber = updatedParameters.getLastDebitNoteNumber();
         }
+        if (StringUtils.isNotBlank(updatedParameters.getTechnicalKey())) {
+            this.technicalKey = updatedParameters.getTechnicalKey();
+        }
+        if (StringUtils.isNotBlank(updatedParameters.getNote())) {
+            this.note = updatedParameters.getNote();
+        }
     }
 
     private static LoanProductParameterization extractParameters(JsonCommand command) {
@@ -125,6 +139,8 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
         final Long lastInvoiceNumber = command.longValueOfParameterNamed("lastInvoiceNumber");
         final Long lastCreditNoteNumber = command.longValueOfParameterNamed("lastCreditNoteNumber");
         final Long lastDebitNoteNumber = command.longValueOfParameterNamed("lastDebitNoteNumber");
+        final String note = command.stringValueOfParameterNamed("note");
+        final String technicalKey = command.stringValueOfParameterNamed("technicalKey");
 
         // validate that rangeStartNumber is less than rangeEndNumber
         if (rangeStartNumber > rangeEndNumber) {
@@ -140,6 +156,42 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
         }
 
         return new LoanProductParameterization(productType, billingPrefix, billingResolutionNumber, generationDate, expirationDate,
-                rangeStartNumber, rangeEndNumber, lastInvoiceNumber, lastCreditNoteNumber, lastDebitNoteNumber);
+                rangeStartNumber, rangeEndNumber, lastInvoiceNumber, lastCreditNoteNumber, lastDebitNoteNumber, technicalKey, note);
+    }
+
+    public boolean isInvoiceResolutionExpiring(Long daysPrior) {
+        LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+        LocalDate warningDate = currentDate.plusDays(daysPrior);
+        // Implement logic to check if the invoice resolution is expiring within the specified days
+        // Return true if the condition is met, otherwise false
+
+        // Check if the expiration date is within the specified days
+        return expirationDate != null && (warningDate.isAfter(expirationDate) || warningDate.isEqual(expirationDate));
+    }
+
+    public boolean isInvoiceNumberingLimitReached(Long threshold) {
+        // Implement logic to check if the invoice numbering limit is reached within the specified quantity
+        // Return true if the condition is met, otherwise false
+        long maximumInvoiceNumber = rangeEndNumber;
+        long usedInvoiceNumber = lastInvoiceNumber;
+        long remainingInvoiceNumber = maximumInvoiceNumber - usedInvoiceNumber;
+
+        // Check if the last invoice number is within the specified quantity
+        return remainingInvoiceNumber <= threshold;
+    }
+
+    public Long getInvoiceNumberingRemaining() {
+        long maximumInvoiceNumber = rangeEndNumber;
+        long usedInvoiceNumber = lastInvoiceNumber;
+        return maximumInvoiceNumber - usedInvoiceNumber;
+    }
+
+    public Long getInvoiceResolutionExpiryDays() {
+        LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+        return DateUtils.getDifferenceInDays(currentDate, expirationDate);
+    }
+
+    public void validateForCreate(final String json) {
+        // Implement validation logic for creating a new loan product parameterization
     }
 }
