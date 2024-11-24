@@ -171,6 +171,15 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
                                 // Cannot throw exception here as it will rollback everything including any new fee rows
                                 // throw new LoanInstallmentAlreadyPaidException(loanId, inst.getInstallmentNumber());
                                 insallmentAlreadyPaid = true;
+                                if (loanCharges.isPresent()) {
+                                    LoanCharge loanCharge = loanCharges.get();
+                                    LoanInstallmentCharge installmentCharge = loanCharge
+                                            .getInstallmentLoanCharge(inst.getInstallmentNumber());
+                                    if (installmentCharge.isPaid()) {
+                                        insallmentAlreadyPaid = true;
+                                        break;
+                                    }
+                                }
                                 break;
                             } else {
                                 if (loanCharges.isPresent()) {
@@ -217,9 +226,13 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
                         for (LoanCharge loanCharge : loanToUpdate.getCharges()) {
                             if (loanCharge.getChargeCalculation().isFlatHono()) {
                                 Set<CustomChargeHonorarioMap> maps = loanCharge.getCustomChargeHonorarioMaps();
+
                                 for (CustomChargeHonorarioMap map : maps) {
+                                    LoanInstallmentCharge installmentCharge = loanCharge
+                                            .getInstallmentLoanCharge(map.getLoanInstallmentNr());
                                     if (entityOpt.isPresent()) {
-                                        if (map.getLoanInstallmentNr().equals(current.getLoanInstallmentNr())) {
+                                        if (map.getLoanInstallmentNr().equals(current.getLoanInstallmentNr())
+                                                || installmentCharge.isPaid()) {
                                             removeList.add(map);
                                             break;
                                         }
