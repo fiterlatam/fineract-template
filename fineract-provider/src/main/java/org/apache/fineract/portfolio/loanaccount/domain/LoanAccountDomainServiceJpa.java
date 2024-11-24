@@ -346,7 +346,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
         if (charges.isPresent()) {
             LoanCharge chargeHono = charges.get();
-            chargeHono.setInstallmentChargeAmount(chargeHono.chargeAmount().add(feeHono));
+            chargeHono.setInstallmentChargeAmount(chargeHono.chargeAmount().subtract(feeHono));
+            BigDecimal lastFeeScheduleCharge = loanRepaymentScheduleInstallment.getFeeChargesCharged(currency)
+                    .getAmountDefaultedToNullIfZero();
+            loanRepaymentScheduleInstallment.setFeeChargesCharged(lastFeeScheduleCharge.subtract(feeHono));
             chargeHono.resetAndUpdateInstallmentCharges();
             Optional<CustomChargeHonorarioMap> honoMap = chargeHono.getCustomChargeHonorarioMaps().stream()
                     .filter(customChargeHonorarioMap -> customChargeHonorarioMap.getLoanInstallmentNr() == loanRepaymentScheduleInstallment
@@ -366,7 +369,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 }
 
             }
-
+            loan.updateLoanDerivedFields();
             loan.updateLoanScheduleAfterCustomChargeApplied();
             saveLoanWithDataIntegrityViolationChecks(loan);
 
