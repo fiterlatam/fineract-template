@@ -457,29 +457,22 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
             final StringBuilder accountsSummary = new StringBuilder("l.id as id, l.account_no as accountNo, l.external_id as externalId,");
             accountsSummary.append(" l.product_id as productId, lp.name as productName, lp.short_name as shortProductName,")
                     .append(" l.loan_status_id as statusId, l.loan_type_enum as loanType,")
-
-                    .append(" glim.account_number as parentAccountNumber,")
-
-                    .append("l.principal_disbursed_derived as originalLoan,").append("l.total_outstanding_derived as loanBalance,")
-                    .append("l.total_repayment_derived as amountPaid,")
-
-                    .append(" l.loan_product_counter as loanCycle,")
-
-                    .append(" l.submittedon_date as submittedOnDate,")
+                    .append(" glim.account_number as parentAccountNumber,").append("""
+                             pos.name AS point_of_sales_name,
+                              pos.code AS point_of_sales_code,
+                               pos.client_ally_id AS allyId,
+                            """).append("l.principal_disbursed_derived as originalLoan,")
+                    .append("l.total_outstanding_derived as loanBalance,").append("l.total_repayment_derived as amountPaid,")
+                    .append(" l.loan_product_counter as loanCycle,").append(" l.submittedon_date as submittedOnDate,")
                     .append(" sbu.username as submittedByUsername, sbu.firstname as submittedByFirstname, sbu.lastname as submittedByLastname,")
-
                     .append(" l.rejectedon_date as rejectedOnDate,")
                     .append(" rbu.username as rejectedByUsername, rbu.firstname as rejectedByFirstname, rbu.lastname as rejectedByLastname,")
-
                     .append(" l.withdrawnon_date as withdrawnOnDate,")
                     .append(" wbu.username as withdrawnByUsername, wbu.firstname as withdrawnByFirstname, wbu.lastname as withdrawnByLastname,")
-
                     .append(" l.approvedon_date as approvedOnDate,")
                     .append(" abu.username as approvedByUsername, abu.firstname as approvedByFirstname, abu.lastname as approvedByLastname,")
-
                     .append(" l.expected_disbursedon_date as expectedDisbursementDate, l.disbursedon_date as actualDisbursementDate,")
                     .append(" dbu.username as disbursedByUsername, dbu.firstname as disbursedByFirstname, dbu.lastname as disbursedByLastname,")
-
                     .append(" l.closedon_date as closedOnDate,")
                     .append(" cbu.username as closedByUsername, cbu.firstname as closedByFirstname, cbu.lastname as closedByLastname,")
                     .append(" la.overdue_since_date_derived as overdueSinceDate, ")
@@ -497,7 +490,19 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
                     .append(" left join m_appuser cobu on cobu.id = l.charged_off_by_userid")
                     .append(" left join m_loan_arrears_aging la on la.loan_id = l.id")
                     .append(" left join glim_accounts glim on glim.id=l.glim_id")
-                    .append(" left join m_blocking_reason_setting brs on brs.id = l.block_status_id ");
+                    .append(" left join m_blocking_reason_setting brs on brs.id = l.block_status_id ").append("""
+                                                LEFT JOIN (
+                                                        SELECT
+                                                            ps.name,
+                                                            ps.code,
+                                                            cbp.loan_id,
+                                                            ps.client_ally_id
+                                                        FROM
+                                                            custom.c_client_ally_point_of_sales ps
+                                                        JOIN custom.c_client_buy_process cbp ON cbp.point_if_sales_id = ps.id
+                                                        JOIN custom.c_client_ally cca on cca.id = ps.client_ally_id
+                                                    ) pos ON pos.loan_id = l.id
+                            """);
 
             return accountsSummary.toString();
         }
@@ -574,6 +579,8 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
                 blockStatusData = BlockingReasonsData.builder().id(rs.getLong("blockStatusId")).nameOfReason(blockStatusName)
                         .level(rs.getString("blockStatusLevel")).priority(JdbcSupport.getInteger(rs, "blockStatusPriority")).build();
             }
+            final String pointOfSalesName = rs.getString("point_of_sales_name");
+            final String pointOfSalesCode = rs.getString("point_of_sales_code");
 
             final LoanApplicationTimelineData timeline = new LoanApplicationTimelineData(submittedOnDate, submittedByUsername,
                     submittedByFirstname, submittedByLastname, rejectedOnDate, rejectedByUsername, rejectedByFirstname, rejectedByLastname,
@@ -585,7 +592,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
 
             return new LoanAccountSummaryData(id, accountNo, parentAccountNumber, externalId, productId, loanProductName,
                     shortLoanProductName, loanStatus, loanType, loanCycle, timeline, inArrears, originalLoan, loanBalance, amountPaid,
-                    blockStatusData);
+                    blockStatusData, pointOfSalesCode);
         }
 
     }
