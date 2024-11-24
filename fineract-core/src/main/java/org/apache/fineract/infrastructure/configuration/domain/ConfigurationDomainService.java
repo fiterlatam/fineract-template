@@ -156,4 +156,6 @@ public interface ConfigurationDomainService {
 
     List<String> retrieveInvoiceJobNotificationEmails();
 
+    Integer retriveIvaConfiguration();
+
 }

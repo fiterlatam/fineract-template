@@ -294,10 +294,11 @@ public class DelinquencyWritePlatformServiceImpl implements DelinquencyWritePlat
         if (delinquencyRange.isEmpty()) {
             if (data.getMaximumAgeDays() != null && data.getMinimumAgeDays() > data.getMaximumAgeDays()) {
                 final String errorMessage = "The age days values are invalid, the maximum age days can't be lower than minimum age days";
-                throw new DelinquencyRangeInvalidAgesException(errorMessage, data.getMinimumAgeDays(), data.getMaximumAgeDays());
+                throw new DelinquencyRangeInvalidAgesException(errorMessage, data.getMinimumAgeDays(), data.getMaximumAgeDays(),
+                        data.getPercentageValue());
             }
             DelinquencyRange newDelinquencyRange = DelinquencyRange.instance(data.getClassification(), data.getMinimumAgeDays(),
-                    data.getMaximumAgeDays());
+                    data.getMaximumAgeDays(), data.getPercentageValue());
             return repositoryRange.saveAndFlush(newDelinquencyRange);
         } else {
             throw new PlatformDataIntegrityException("error.msg.data.integrity.issue.entity.duplicated",
@@ -318,6 +319,10 @@ public class DelinquencyWritePlatformServiceImpl implements DelinquencyWritePlat
         if (!data.getMaximumAgeDays().equals(delinquencyRange.getMaximumAgeDays())) {
             delinquencyRange.setMaximumAgeDays(data.getMaximumAgeDays());
             changes.put(DelinquencyApiConstants.MAXIMUMAGEDAYS_PARAM_NAME, data.getMaximumAgeDays());
+        }
+        if (!data.getPercentageValue().equals(delinquencyRange.getPercentageValue())) {
+            delinquencyRange.setPercentageValue(data.getPercentageValue());
+            changes.put(DelinquencyApiConstants.PERCENTAGEVALUE, data.getPercentageValue());
         }
         if (!changes.isEmpty()) {
             delinquencyRange = repositoryRange.saveAndFlush(delinquencyRange);
