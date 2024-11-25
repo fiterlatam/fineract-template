@@ -16,7 +16,7 @@ import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 @Table(name = "c_facturacion_electronica")
 @Getter
 @Setter
-public class FacturaElectronicaMensual extends AbstractPersistableCustom {
+public class FacturaElectronicaMensual extends AbstractPersistableCustom implements Cloneable {
 
     @Column(name = CREATED_DATE_DB_FIELD)
     private OffsetDateTime createdDate;
@@ -243,4 +243,12 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom {
     @Column(name = "tip_factexport")
     private BigDecimal tip_factexport;
 
+    @Override
+    public FacturaElectronicaMensual clone() {
+        try {
+            return (FacturaElectronicaMensual) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
+    }
 }

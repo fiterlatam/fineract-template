@@ -125,6 +125,13 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     }
 
     @Override
+    public boolean enableMonthlyInvoiceGenerationOnJobTrigger() {
+        final String propertyName = "enable-monthly-invoice-generation-on-job-trigger";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.isEnabled();
+    }
+
+    @Override
     public boolean isConstraintApproachEnabledForDatatables() {
         final String propertyName = "constraint_approach_for_datatables";
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
@@ -578,6 +585,13 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
             return List.of(property.getStringValue().split(","));
         }
         return List.of();
+    }
+
+    @Override
+    public Integer retriveIvaConfiguration() {
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData("IVA Por comision");
+        int value = property.getValue().intValue();
+        return value;
     }
 
 }

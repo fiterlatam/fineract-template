@@ -131,6 +131,20 @@
     </changeSet>
 
     <changeSet id="3" author="fineract">
+        <sql endDelimiter="$$">
+            <![CDATA[
+                DO $$
+                    DECLARE
+                max_id bigint;
+                BEGIN
+                SELECT MAX(id) + 1 INTO max_id FROM m_code_value;
+                EXECUTE 'ALTER SEQUENCE m_code_value_id_seq RESTART WITH ' || max_id;
+                END $$;
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="4" author="fineract">
         <sql>
             <![CDATA[
                     INSERT INTO m_payment_type (value, description, order_position, code_name, is_system_defined) VALUES('Instrumento no definido','Instrumento no definido',1,1,TRUE);
@@ -213,7 +227,7 @@
         </sql>
     </changeSet>
 
-    <changeSet id="4" author="fineract">
+    <changeSet id="5" author="fineract">
         <sql>
             <![CDATA[
                     INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
@@ -252,17 +266,15 @@
         </sql>
     </changeSet>
 
-    <changeSet id="5" author="fineract">
-        <sql>
-            <![CDATA[
-                DO $$
-                DECLARE
-                    max_id bigint;
-                BEGIN
-                    SELECT MAX(id) + 1 INTO max_id FROM m_code_value;
-                    EXECUTE 'ALTER SEQUENCE m_code_value_id_seq RESTART WITH ' || max_id;
-                END $$;
-            ]]>
-        </sql>
+    <changeSet id="6" author="fineract">
+        <insert tableName="c_configuration">
+            <column name="name" value="enable-monthly-invoice-generation-on-job-trigger"/>
+            <column name="value"/>
+            <column name="date_value"/>
+            <column name="string_value"/>
+            <column name="enabled" valueBoolean="false"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+            <column name="description" value="Enable monthly invoice generation on manual job trigger"/>
+        </insert>
     </changeSet>
 </databaseChangeLog>

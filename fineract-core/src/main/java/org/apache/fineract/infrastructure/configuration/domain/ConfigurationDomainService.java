@@ -38,6 +38,8 @@ public interface ConfigurationDomainService {
 
     boolean allowTransactionsOnNonWorkingDayEnabled();
 
+    boolean enableMonthlyInvoiceGenerationOnJobTrigger();
+
     boolean isConstraintApproachEnabledForDatatables();
 
     boolean isEhcacheEnabled();
@@ -155,5 +157,7 @@ public interface ConfigurationDomainService {
     Long retrieveInvoiceThreshold();
 
     List<String> retrieveInvoiceJobNotificationEmails();
+
+    Integer retriveIvaConfiguration();
 
 }
