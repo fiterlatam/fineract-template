@@ -1,0 +1,21 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - develop
+      - hotfix/*
+      - bugfix/*
+      - release/*
+
+resources:
+  repositories:
+    - repository: common
+      type: git
+      name: "Incursor/incursor-back"
+      ref: refs/heads/feat/ynorena/fineract-ci-cd
+
+variables:
+  - template: .cicd/variables/common.yaml@common
+
+stages:
+  - template: .cicd/stages/fineract/backend/ci.yaml@common
