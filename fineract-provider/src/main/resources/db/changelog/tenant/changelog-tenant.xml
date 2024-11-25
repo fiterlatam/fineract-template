@@ -322,4 +322,5 @@
     <include file="parts/20243008011009141_SU_441_update_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240529122200_SU_198_loan-product-parameters-1.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009140_SU_316_add_column.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009141_SU_318_add_tabel_collection_house.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
