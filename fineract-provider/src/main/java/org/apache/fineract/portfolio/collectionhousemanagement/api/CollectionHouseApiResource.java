@@ -47,7 +47,7 @@ public class CollectionHouseApiResource {
     @Path("{collectionId}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveOne(@PathParam("collectionId") final Long collectionId, @Context final UriInfo uriInfo) {
+    public String retrieveOneCollectionHouse(@PathParam("collectionId") final Long collectionId, @Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(COLLECTION_HOUSE_PERMISSIONS);
         final CollectionHouseConfigParameterizationData collectionHouseConfigParameterizationData = collectionHouseReadWriteService
                 .retrieveCollectionHouse(collectionId);
