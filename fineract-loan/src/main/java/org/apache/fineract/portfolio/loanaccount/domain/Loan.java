@@ -505,6 +505,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "interest_accrued_till")
     private LocalDate interestAccruedTill;
 
+    @Transient
+    private boolean isAnulado;
+
+    @Transient
+    private boolean isAnuladoOnDisbursementDate;
+
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
             final String transactionProcessingStrategyCode, final LoanProductRelatedDetail loanRepaymentScheduleDetail,
@@ -798,8 +804,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 LocalDate installmentDate = installment.getFromDate();
                 // if the installment date is the same as the due date of the last installment we should move the date
                 // to the next day
-                if (installmentNumber > 1) {
-                    installmentDate = installmentDate.plusDays(1);
+
+                // SU-444 => Generate accrual on installment start date
+                // if (installmentNumber > 1) {
+                // installmentDate = installmentDate.plusDays(1);
+                // }
+                // Accrual of first installment is generated at disbursal time. Ignore first installment here
+                if (installmentNumber == 1) {
+                    continue;
                 }
 
                 applyInstallmentCharge(loanInstallmentCharge, installment, loanCharge, installmentDate);
@@ -2009,7 +2021,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     }
 
-    private void clearLoanInstallmentChargesBeforeRegeneration(final LoanCharge loanCharge) {
+    public void clearLoanInstallmentChargesBeforeRegeneration(final LoanCharge loanCharge) {
         /*
          * JW https://issues.apache.org/jira/browse/FINERACT-1557 For loan installment charges only : Clear down
          * installment charges from the loanCharge and from each of the repayment installments and allow them to be
@@ -3246,8 +3258,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         }
         // we don't want to immediately generate ccharges if the disbursedOn is today
-
-        if (!installmentalCharges.isEmpty() && disbursedOn.isBefore(DateUtils.getLocalDateOfTenant())) {
+        // SU-444 generate charges from disbursement day
+        if (!installmentalCharges.isEmpty()) {
 
             handleChargeAppliedTransactionPerInstallment(installmentalCharges, disbursedOn);
         }
@@ -5681,6 +5693,22 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public List<LoanInstallmentCharge> generateInstallmentLoanCharges(final LoanCharge loanCharge) {
         final List<LoanInstallmentCharge> loanChargePerInstallments = new ArrayList<>();
         if (loanCharge.isInstalmentFee()) {
+            // Loan canceled on disbursement date. Only charge hono
+            if (this.isAnulado && this.isAnuladoOnDisbursementDate) {
+                if (loanCharge.isCustomPercentageBasedOfAnotherCharge()) {
+                    for (LoanCharge charge : this.getCharges()) {
+                        if (charge.getCharge().getId() != null
+                                && charge.getCharge().getId().equals(loanCharge.getCharge().getParentChargeId())) {
+                            if (!charge.isFlatHono()) {
+                                return loanChargePerInstallments;
+                            }
+                        }
+                    }
+                }
+                if (!loanCharge.isFlatHono()) {
+                    return loanChargePerInstallments;
+                }
+            }
             List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallmentsIgnoringTotalGrace().stream()
                     .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
             this.outstandingBalance = this.loanRepaymentScheduleDetail.getPrincipal();
@@ -7487,6 +7515,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                             .minus(balancesForCurrentPeroid[2]);
                 }
             } else {
+                // When Foreclosure on disbursement date then pay fee charges
+                // When loan is canceled on same date then only pay hono charges
+                if (installment.getInstallmentNumber() == 1 && DateUtils.isEqual(paymentDate, installment.getFromDate())) {
+                    fee = fee.plus(installment.getFeeChargesOutstanding(currency));
+                    if (this.isAnulado) {
+                        fee = getPendingHonoAmountOfAnuladoLoanForInstallment(this, installment.getInstallmentNumber());
+                    }
+                }
                 paidFromFutureInstallments = paidFromFutureInstallments.plus(installment.getInterestPaid(currency))
                         .plus(installment.getPenaltyChargesPaid(currency)).plus(installment.getFeeChargesPaid(currency));
             }
@@ -7557,6 +7593,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     && DateUtils.isBefore(paymentDate, installment.getDueDate())) {
                 balances = fetchInterestFeeAndPenaltyTillDate(paymentDate, installment, isFirstNormalInstallment);
                 break;
+            } else if (installment.getInstallmentNumber() == 1 && DateUtils.isEqual(paymentDate, installment.getFromDate())) {
+                // Foreclosure being done on same date as disbursement date. Fee charge must be paid
+                // If loan is canceled on same date then only pay hono charge
+                Money fee = installment.getFeeChargesOutstanding(currency);
+                if (this.isAnulado) {
+                    fee = getPendingHonoAmountOfAnuladoLoanForInstallment(this, installment.getInstallmentNumber());
+                }
+                balances[1] = fee;
             }
         }
 
@@ -7703,8 +7747,27 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (DateUtils.isAfter(loanCharge.getDueLocalDate(), transactionDate)) {
                 loanCharge.setActive(false);
             } else if (loanCharge.getDueLocalDate() == null) {
-                recalculateLoanCharge(loanCharge, penaltyWaitPeriod);
-                loanCharge.updateWaivedAmount(currency);
+                boolean ivaHono = false;
+                if (this.isAnulado && this.isAnuladoOnDisbursementDate) {
+                    if (loanCharge.isCustomPercentageBasedOfAnotherCharge()) {
+                        for (LoanCharge charge : charges) {
+                            if (charge.isFlatHono() && charge.getCharge().getId() != null
+                                    && charge.getCharge().getId().equals(loanCharge.getCharge().getParentChargeId())) {
+                                ivaHono = true;
+                            }
+                        }
+                    }
+                    if (this.isAnulado && this.isAnuladoOnDisbursementDate && (!loanCharge.isFlatHono() && !ivaHono)) {
+                        // If loan is canceled on same day as disbursement then only charge hono charges
+                        this.clearLoanInstallmentChargesBeforeRegeneration(loanCharge);
+                        loanCharge.setAmount(loanCharge.getAmountPaid(currency).getAmount());
+                        loanCharge.setOutstandingAmount(BigDecimal.ZERO);
+
+                    } else {
+                        recalculateLoanCharge(loanCharge, penaltyWaitPeriod);
+                        loanCharge.updateWaivedAmount(currency);
+                    }
+                }
             }
         }
 
@@ -7728,6 +7791,26 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         for (final LoanRepaymentScheduleInstallment installment : installments) {
             addLoanRepaymentScheduleInstallment(installment);
         }
+    }
+
+    public Money getPendingHonoAmountOfAnuladoLoanForInstallment(Loan loan, Integer installmentNumber) {
+        BigDecimal honorariosAmount = BigDecimal.ZERO;
+        Collection<LoanCharge> honorariosCharges = loan.getLoanCharges().stream().filter(LoanCharge::isFlatHono).toList();
+        Collection<LoanCharge> ivaCharges = loan.getLoanCharges().stream().filter(LoanCharge::isCustomPercentageBasedOfAnotherCharge)
+                .toList();
+
+        BigDecimal chargeAmount = honorariosCharges.stream().flatMap(lic -> lic.installmentCharges().stream())
+                .filter(lc -> Objects.equals(installmentNumber, lc.getInstallment().getInstallmentNumber()))
+                .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal honorariosTermChargeAmount = ivaCharges.stream()
+                .filter(lc -> honorariosCharges.stream()
+                        .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                .flatMap(lic -> lic.installmentCharges().stream())
+                .filter(lc -> Objects.equals(installmentNumber, lc.getInstallment().getInstallmentNumber()))
+                .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+        honorariosAmount = honorariosAmount.add(honorariosTermChargeAmount).add(chargeAmount);
+
+        return Money.of(loan.getCurrency(), honorariosAmount);
     }
 
     public Integer getLoanSubStatus() {
@@ -8120,5 +8203,21 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             return this.getCharges().stream().filter(LoanCharge::isVoluntaryInsurance).toList();
         }
 
+    }
+
+    public boolean isAnulado() {
+        return isAnulado;
+    }
+
+    public void setAnulado(boolean anulado) {
+        this.isAnulado = anulado;
+    }
+
+    public boolean isAnuladoOnDisbursementDate() {
+        return isAnuladoOnDisbursementDate;
+    }
+
+    public void setAnuladoOnDisbursementDate(boolean anuladoOnDisbursementDate) {
+        isAnuladoOnDisbursementDate = anuladoOnDisbursementDate;
     }
 }

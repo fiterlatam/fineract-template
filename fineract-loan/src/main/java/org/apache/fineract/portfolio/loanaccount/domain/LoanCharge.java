@@ -1315,6 +1315,10 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         this.waived = false;
     }
 
+    public void setAmount(final BigDecimal amount) {
+        this.amount = amount;
+    }
+
     public ExternalId getExternalId() {
         return externalId;
     }
