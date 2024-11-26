@@ -125,6 +125,13 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     }
 
     @Override
+    public boolean enableMonthlyInvoiceGenerationOnJobTrigger() {
+        final String propertyName = "enable-monthly-invoice-generation-on-job-trigger";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.isEnabled();
+    }
+
+    @Override
     public boolean isConstraintApproachEnabledForDatatables() {
         final String propertyName = "constraint_approach_for_datatables";
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);

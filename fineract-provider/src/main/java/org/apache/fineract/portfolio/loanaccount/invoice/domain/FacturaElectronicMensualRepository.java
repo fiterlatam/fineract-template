@@ -16,33 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.fineract.portfolio.loanaccount.invoice.domain;
 
-package org.apache.fineract.portfolio.loanproduct.domain;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import lombok.Getter;
-
-@Getter
-public enum LoanProductType {
-
-    SUMAS_PAY("SU+ PAY"), //
-    SUMAS_EMPRESSAS("SU+ Empresas"), //
-    SUMAS_VEHICULOS("SU+ Vehiculos"), //
-    SUMAS_PRESTAMOS("SU+ Préstamos"), //
-    SUMAS_CASTIGADO("SU+ Castigado"); //
-
-    private final String code;
-
-    LoanProductType(String code) {
-        this.code = code;
-    }
-
-    public static boolean isValidProductType(String productType) {
-        for (LoanProductType type : LoanProductType.values()) {
-            if (type.getCode().equals(productType)) {
-                return true;
-            }
-        }
-        return false;
-    }
+public interface FacturaElectronicMensualRepository
+        extends JpaRepository<FacturaElectronicaMensual, Long>, JpaSpecificationExecutor<FacturaElectronicaMensual> {
 
 }
