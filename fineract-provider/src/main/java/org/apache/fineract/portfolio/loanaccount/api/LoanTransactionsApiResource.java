@@ -569,7 +569,15 @@ public class LoanTransactionsApiResource {
             } else {
                 transactionDate = transactionDateParam.getDate("transactionDate", dateFormat, locale);
             }
-            transactionData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(resolvedLoanId, transactionDate);
+            transactionData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(resolvedLoanId, transactionDate, false);
+        } else if (CommandParameterUtil.is(commandParam, "anulado")) {
+            LocalDate transactionDate;
+            if (transactionDateParam == null) {
+                transactionDate = DateUtils.getBusinessLocalDate();
+            } else {
+                transactionDate = transactionDateParam.getDate("transactionDate", dateFormat, locale);
+            }
+            transactionData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(resolvedLoanId, transactionDate, true);
         } else if (CommandParameterUtil.is(commandParam, "special-write-off")) {
             transactionData = this.loanReadPlatformService.retrieveLoanSpecialWriteOffTemplate(resolvedLoanId);
         } else if (CommandParameterUtil.is(commandParam, "creditBalanceRefund")) {

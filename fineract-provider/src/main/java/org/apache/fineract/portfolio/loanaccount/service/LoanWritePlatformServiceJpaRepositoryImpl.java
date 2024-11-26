@@ -3564,6 +3564,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     data.installment(), incident, transactionDate, cumulative);
             this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
         }
+        loan.setAnulado(true);
+        if (transactionDate.equals(loan.getDisbursementDate())) {
+            loan.setAnuladoOnDisbursementDate(true);
+        }
         final LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText,
                 externalId, changes);
         final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
