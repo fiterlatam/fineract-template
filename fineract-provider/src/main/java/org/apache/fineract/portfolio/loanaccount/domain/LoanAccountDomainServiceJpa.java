@@ -20,11 +20,7 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -856,7 +852,16 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             Money[] accruedReceivables = loan.getReceivableIncome(foreClosureDate);
             Money interestPortion = foreCloseDetail.getInterestCharged(currency).minus(accruedReceivables[0]);
             Money feePortion = foreCloseDetail.getFeeChargesCharged(currency).minus(accruedReceivables[1]);
+            // If foreclosure or cancel on disbursement date
+            LoanRepaymentScheduleInstallment inst = loan.getRepaymentScheduleInstallments().get(0);
+            if (DateUtils.isEqual(foreClosureDate, inst.getFromDate())) {
+                feePortion = inst.getFeeChargesOutstanding(currency);
+                if (loan.isAnulado()) {
+                    feePortion = loan.getPendingHonoAmountOfAnuladoLoanForInstallment(loan, inst.getInstallmentNumber());
+                }
+            }
             Money penaltyPortion = foreCloseDetail.getPenaltyChargesCharged(currency).minus(accruedReceivables[2]);
+
             Money total = interestPortion.plus(feePortion).plus(penaltyPortion);
             if (total.isGreaterThanZero()) {
                 ExternalId accrualExternalId = externalIdFactory.create();
@@ -1287,6 +1292,28 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         loanAccrualTransactionBusinessEventService.raiseBusinessEventForAccrualTransactions(loan, existingTransactionIds);
         businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
         return payment;
+    }
+
+    private Money getPendingHonoAmountForAnuladoLoan(Loan loan) {
+        BigDecimal honorariosAmount = BigDecimal.ZERO;
+        Collection<LoanCharge> honorariosCharges = loan.getLoanCharges().stream().filter(LoanCharge::isFlatHono).toList();
+        Collection<LoanCharge> ivaCharges = loan.getLoanCharges().stream().filter(LoanCharge::isCustomPercentageBasedOfAnotherCharge)
+                .toList();
+        for (LoanRepaymentScheduleInstallment repaymentScheduleInstallment : loan.getRepaymentScheduleInstallments()) {
+
+            BigDecimal chargeAmount = honorariosCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                            lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal honorariosTermChargeAmount = ivaCharges.stream()
+                    .filter(lc -> honorariosCharges.stream()
+                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+            honorariosAmount = honorariosAmount.add(honorariosTermChargeAmount).add(chargeAmount);
+        }
+        return Money.of(loan.getCurrency(), honorariosAmount);
     }
 
 }
