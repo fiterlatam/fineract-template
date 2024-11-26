@@ -84,6 +84,7 @@ public class ClientApiConstants {
     public static final String firstnameParamName = "firstname";
     public static final String middlenameParamName = "middlename";
     public static final String lastnameParamName = "lastname";
+    public static final String secondLastnameParamName = "secondLastname";
     public static final String fullnameParamName = "fullname";
     public static final String displaynameParamName = "displayname";
     public static final String officeIdParamName = "officeId";
@@ -94,7 +95,12 @@ public class ClientApiConstants {
     public static final String staffIdParamName = "staffId";
     public static final String isStaffParamName = "isStaff";
     public static final String closureDateParamName = "closureDate";
+    public static final String blockedOnDateParamName = "blockedOnDate";
+    public static final String undoBlockedOnDateParamName = "undoBlockedOnDate";
+    public static final String blockingCommentParamName = "blockingComment";
+    public static final String undoBlockingCommentParamName = "undoBlockingComment";
     public static final String closureReasonIdParamName = "closureReasonId";
+    public static final String blockingReasonIdParamName = "blockingReasonId";
     public static final String reopenedDateParamName = "reopenedDate";
 
     public static final String rejectionDateParamName = "rejectionDate";
@@ -193,11 +199,11 @@ public class ClientApiConstants {
      */
     protected static final Set<String> CLIENT_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(idParamName, accountNoParamName,
             externalIdParamName, statusParamName, activeParamName, activationDateParamName, firstnameParamName, middlenameParamName,
-            lastnameParamName, fullnameParamName, displayNameParamName, mobileNoParamName, emailAddressParamName, officeIdParamName,
-            officeNameParamName, transferToOfficeIdParamName, transferToOfficeNameParamName, hierarchyParamName, imageIdParamName,
-            imagePresentParamName, staffIdParamName, staffNameParamName, timelineParamName, groupsParamName, officeOptionsParamName,
-            staffOptionsParamName, dateOfBirthParamName, genderParamName, clientTypeParamName, clientClassificationParamName,
-            legalFormParamName, clientNonPersonDetailsParamName, isStaffParamName));
+            lastnameParamName, secondLastnameParamName, fullnameParamName, displayNameParamName, mobileNoParamName, emailAddressParamName,
+            officeIdParamName, officeNameParamName, transferToOfficeIdParamName, transferToOfficeNameParamName, hierarchyParamName,
+            imageIdParamName, imagePresentParamName, staffIdParamName, staffNameParamName, timelineParamName, groupsParamName,
+            officeOptionsParamName, staffOptionsParamName, dateOfBirthParamName, genderParamName, clientTypeParamName,
+            clientClassificationParamName, legalFormParamName, clientNonPersonDetailsParamName, isStaffParamName));
 
     protected static final Set<String> CLIENT_CHARGES_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(chargeIdParamName,
             clientIdParamName, chargeNameParamName, penaltyParamName, chargeTimeTypeParamName, dueAsOfDateParamName,

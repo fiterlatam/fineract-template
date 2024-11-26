@@ -19,6 +19,7 @@
 package org.apache.fineract.custom.portfolio.ally.data;
 
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -53,10 +54,11 @@ public class ClientAllyData extends CustomImporterData {
     private String bankEntityCodeValueDescription;
     private Long accountTypeCodeValueId;
     private String accountTypeCodeValueDescription;
-    private Long accountNumber;
+    private String accountNumber;
     private Long taxProfileCodeValueId;
     private String taxProfileCodeValueDescription;
     private Long stateCodeValueId;
     private String stateCodeValueDescription;
     private Integer pointOfSalesCounter;
+    private List<ClientAllyPointOfSalesData> pointOfSales;
 }

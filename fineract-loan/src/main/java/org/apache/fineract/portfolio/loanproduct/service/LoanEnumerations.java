@@ -216,6 +216,8 @@ public final class LoanEnumerations {
                     AmortizationMethod.EQUAL_INSTALLMENTS.getCode(), "Equal installments");
             case EQUAL_PRINCIPAL -> new EnumOptionData(AmortizationMethod.EQUAL_PRINCIPAL.getValue().longValue(),
                     AmortizationMethod.EQUAL_PRINCIPAL.getCode(), "Equal principal payments");
+            case CAPITAL_AT_END -> new EnumOptionData(AmortizationMethod.CAPITAL_AT_END.getValue().longValue(),
+                    AmortizationMethod.CAPITAL_AT_END.getCode(), "Capital at end");
             default ->
                 new EnumOptionData(AmortizationMethod.INVALID.getValue().longValue(), AmortizationMethod.INVALID.getCode(), "Invalid");
         };
@@ -410,6 +412,8 @@ public final class LoanEnumerations {
                     LoanTermVariationType.GRACE_ON_PRINCIPAL.getCode(), "graceOnPrincipal");
             case EXTEND_REPAYMENT_PERIOD -> new EnumOptionData(LoanTermVariationType.EXTEND_REPAYMENT_PERIOD.getValue().longValue(),
                     LoanTermVariationType.EXTEND_REPAYMENT_PERIOD.getCode(), "extendRepaymentPeriod");
+            case REDIFERIR -> new EnumOptionData(LoanTermVariationType.REDIFERIR.getValue().longValue(),
+                    LoanTermVariationType.EXTEND_REPAYMENT_PERIOD.getCode(), "rediferir");
             case INTEREST_RATE_FROM_INSTALLMENT ->
                 new EnumOptionData(LoanTermVariationType.INTEREST_RATE_FROM_INSTALLMENT.getValue().longValue(),
                         LoanTermVariationType.INTEREST_RATE_FROM_INSTALLMENT.getCode(), "interestRateForInstallment");

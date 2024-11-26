@@ -25,16 +25,18 @@ import jakarta.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoField;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
+import org.apache.fineract.custom.portfolio.ally.api.ClientAllyPointOfSalesApiConstants;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
+import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
+import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcessRepository;
+import org.apache.fineract.custom.portfolio.buyprocess.validator.ClientBuyProsessPoinOfSalesInactive;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormat;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
@@ -130,6 +132,7 @@ import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationCo
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationTransitionApiJsonValidator;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRelatedDetail;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
@@ -148,11 +151,13 @@ import org.apache.fineract.portfolio.savings.service.GSIMReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @RequiredArgsConstructor
+@Service
 public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements LoanApplicationWritePlatformService {
 
     private final PlatformSecurityContext context;
@@ -197,22 +202,57 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final GSIMReadPlatformService gsimReadPlatformService;
     private final LoanLifecycleStateMachine defaultLoanLifecycleStateMachine;
 
+    private final ClientBuyProcessRepository clientBuyProcessRepository;
+    private final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository;
+
     @Transactional
     @Override
     public CommandProcessingResult submitApplication(final JsonCommand command) {
 
         try {
-            boolean isMeetingMandatoryForJLGLoans = configurationDomainService.isMeetingMandatoryForJLGLoans();
+            final Long clientId = this.fromJsonHelper.extractLongNamed("clientId", command.parsedJson());
+            final Long groupId = this.fromJsonHelper.extractLongNamed("groupId", command.parsedJson());
+
+            final Long entityId = clientId != null ? clientId : groupId;
+            boolean isTopUp = false;
             final Long productId = this.fromJsonHelper.extractLongNamed("productId", command.parsedJson());
             final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
                     .orElseThrow(() -> new LoanProductNotFoundException(productId));
+            boolean isAjuste = false;
+            boolean isMifosChannel = false;
+            Long mifosChannelId = null;
+            String mifosChannelHash = null;
+            String mifosChannel = "Mifos";
+            List<Channel> channels = loanProduct.getRepaymentChannels();
+            for (Channel channel : channels) {
+                if (channel.getName().equalsIgnoreCase(mifosChannel)) {
+                    isMifosChannel = true;
+                    mifosChannelId = channel.getId();
+                    mifosChannelHash = channel.getHash();
+                }
+            }
 
-            final Long clientId = this.fromJsonHelper.extractLongNamed("clientId", command.parsedJson());
+            if (loanProduct.getName().equals("Ajuste")) {
+                if (isMifosChannel) {
+                    isAjuste = true;
+                } else {
+                    throw new GeneralPlatformDomainRuleException("Ajuste sólo es permitido desde Mifos",
+                            "Ajuste sólo es permitido desde Mifos");
+                }
+            }
+            if (this.fromJsonHelper.parameterExists("isTopup", command.parsedJson())) {
+                isTopUp = this.fromJsonHelper.extractBooleanNamed("isTopup", command.parsedJson());
+            }
+            if (!isTopUp && !isAjuste) {
+                this.fromApiJsonDeserializer.validateClientBlockingList(entityId);
+            }
+            boolean isMeetingMandatoryForJLGLoans = configurationDomainService.isMeetingMandatoryForJLGLoans();
+
             if (clientId != null) {
                 Client client = this.clientRepository.findOneWithNotFoundDetection(clientId);
                 officeSpecificLoanProductValidation(productId, client.getOffice().getId());
             }
-            final Long groupId = this.fromJsonHelper.extractLongNamed("groupId", command.parsedJson());
+
             if (groupId != null) {
                 Group group = this.groupRepository.findOneWithNotFoundDetection(groupId);
                 officeSpecificLoanProductValidation(productId, group.getOffice().getId());
@@ -230,6 +270,23 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                             "Loan with externalId is already registered.");
                 }
             }
+
+            String pointOfSaleCode = this.fromJsonHelper.extractStringNamed(LoanApiConstants.POINT_OF_SALE_CODE, command.parsedJson());
+            Long pointOfSalesId = 0L;
+            if (pointOfSaleCode != null) {
+                Optional<ClientAllyPointOfSales> clientAllyPointOfSales = clientAllyPointOfSalesRepository.findByCode(pointOfSaleCode);
+                if (clientAllyPointOfSales.isPresent()) {
+                    if (clientAllyPointOfSales.get()
+                            .getStateCodeValueId() == ClientAllyPointOfSalesApiConstants.stateCodeValueInavtiveParamName.longValue()) {
+                        throw new ClientBuyProsessPoinOfSalesInactive(
+                                "No se ha podido proceder debido a que el Punto de venta esta inactivo", "");
+                    }
+                    pointOfSalesId = clientAllyPointOfSales.get().getId();
+                }
+            }
+
+            // validate if the loan product allows creation and disbursement
+            checkIfIsAllowedCreationAndDisbursal(loanProduct);
 
             final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
             final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan");
@@ -253,6 +310,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             }
 
             final Loan newLoanApplication = this.loanAssembler.assembleFrom(command);
+            this.validMaximumLegalInterestRate(newLoanApplication);
 
             checkForProductMixRestrictions(newLoanApplication);
 
@@ -269,7 +327,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     productRelatedDetail.getRepayEvery(), productRelatedDetail.getRepaymentPeriodFrequencyType().getValue(),
                     newLoanApplication);
 
-            if (loanProduct.canUseForTopup() && clientId != null) {
+            Boolean isWriteoffPunish = this.fromJsonHelper.extractBooleanNamed("isWriteoffPunish", command.parsedJson());
+            if (isWriteoffPunish == null) {
+                isWriteoffPunish = false;
+            }
+            if ((loanProduct.canUseForTopup() || isWriteoffPunish) && clientId != null) {
                 final Boolean isTopup = command.booleanObjectValueOfParameterNamed(LoanApiConstants.isTopup);
                 if (null == isTopup) {
                     newLoanApplication.setIsTopup(false);
@@ -309,19 +371,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                                         + " should be after last transaction date of loan to be closed "
                                         + lastUserTransactionOnLoanToClose);
                     }
-                    BigDecimal loanOutstanding = this.loanReadPlatformService.retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT,
-                            loanIdToClose, newLoanApplication.getDisbursementDate()).getAmount();
-                    final BigDecimal firstDisbursalAmount = newLoanApplication.getFirstDisbursalAmount();
-                    if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
-                        throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
-                                "Topup loan amount should be greater than outstanding amount of loan to be closed.");
-                    }
 
                     final LoanTopupDetails topupDetails = new LoanTopupDetails(newLoanApplication, loanIdToClose);
                     newLoanApplication.setTopupLoanDetails(topupDetails);
                 }
             }
-
+            validateAllChargesAreSetupCorrectly(newLoanApplication);
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
 
             if (loanProduct.isInterestRecalculationEnabled()) {
@@ -520,6 +575,19 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             businessEventNotifierService.notifyPostBusinessEvent(new LoanCreatedBusinessEvent(newLoanApplication));
 
+            Long allyId = this.fromJsonHelper.extractLongNamed(LoanApiConstants.AllYID, command.parsedJson());
+
+            if (allyId != null && pointOfSaleCode != null) {
+                final String ipDetails = context.getApiRequestClientIP();
+                ClientBuyProcess clientBuyProcess = new ClientBuyProcess(mifosChannelId, clientId, pointOfSalesId, productId,
+                        newLoanApplication.getId(), newLoanApplication.getSubmittedOnDate(), newLoanApplication.getPrincipal().getAmount(),
+                        newLoanApplication.getTermFrequency().longValue(), newLoanApplication.getCreatedDate().get().toLocalDateTime(),
+                        newLoanApplication.getCreatedBy().get().longValue(), ipDetails, null, null, mifosChannelHash);
+                clientBuyProcess.setStatus(newLoanApplication.getPlainStatus());
+                clientBuyProcess.setLoanId(newLoanApplication.getId());
+                clientBuyProcessRepository.saveAndFlush(clientBuyProcess);
+
+            }
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .withEntityId(newLoanApplication.getId()) //
@@ -528,6 +596,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     .withClientId(newLoanApplication.getClientId()) //
                     .withGroupId(newLoanApplication.getGroupId()) //
                     .withLoanId(newLoanApplication.getId()).withGlimId(newLoanApplication.getGlimId()).build();
+
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
@@ -686,6 +755,39 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.calendarInstanceRepository.save(calendarInstance);
     }
 
+    private void validMaximumLegalInterestRate(final Loan loanApplication) {
+        final BigDecimal nominalInterestRatePerPeriod = loanApplication.getLoanRepaymentScheduleDetail().getNominalInterestRatePerPeriod();
+        final PeriodFrequencyType interestPeriodFrequencyType = loanApplication.getLoanRepaymentScheduleDetail()
+                .getInterestPeriodFrequencyType();
+        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
+                .retrieveMaximumCreditRateConfigurationData();
+        final LocalDate appliedOnDate = maximumCreditRateConfigurationData.getAppliedOnDate();
+        LocalDate expectedDisbursementDate = loanApplication.getExpectedDisbursedOnLocalDate();
+        if (appliedOnDate != null && expectedDisbursementDate != null) {
+            if (expectedDisbursementDate.isBefore(appliedOnDate)) {
+                return;
+            }
+        }
+        switch (interestPeriodFrequencyType) {
+            case MONTHS -> {
+                final BigDecimal monthlyNominalRate = maximumCreditRateConfigurationData.getMonthlyNominalRate();
+                if (nominalInterestRatePerPeriod.compareTo(monthlyNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.nominal.interest.rate.per.period",
+                            "Nominal interest rate per period must be less than or equal to maximum legal rate for monthly interest period frequency",
+                            "nominalInterestRatePerPeriod", nominalInterestRatePerPeriod, monthlyNominalRate);
+                }
+            }
+            case YEARS -> {
+                final BigDecimal annualNominalRate = maximumCreditRateConfigurationData.getAnnualNominalRate();
+                if (nominalInterestRatePerPeriod.compareTo(annualNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.nominal.interest.rate.per.period",
+                            "Nominal interest rate per period must be less than or equal to maximum legal rate  for monthly interest period frequency",
+                            "nominalInterestRatePerPeriod", nominalInterestRatePerPeriod, annualNominalRate);
+                }
+            }
+        }
+    }
+
     @Transactional
     @Override
     public CommandProcessingResult modifyApplication(final Long loanId, final JsonCommand command) {
@@ -707,6 +809,33 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             LoanProduct loanProductForValidations = newLoanProduct == null ? existingLoanApplication.loanProduct() : newLoanProduct;
 
             this.fromApiJsonDeserializer.validateForModify(command.json(), loanProductForValidations, existingLoanApplication);
+            boolean isAjuste = false;
+            boolean isMifosChannel = false;
+            Long mifosChannelId = null;
+            String mifosChannelHash = null;
+            List<Channel> channels = existingLoanApplication.getLoanProduct().getRepaymentChannels();
+            for (Channel channel : channels) {
+                if (channel.getName().equals("Mifos")) {
+                    isMifosChannel = true;
+                    mifosChannelId = channel.getId();
+                    mifosChannelHash = channel.getHash();
+                }
+            }
+            String pointOfSaleCode = this.fromJsonHelper.extractStringNamed(LoanApiConstants.POINT_OF_SALE_CODE, command.parsedJson());
+            Long pointOfSalesId = 0L;
+            if (pointOfSaleCode != null) {
+                Optional<ClientAllyPointOfSales> clientAllyPointOfSales = clientAllyPointOfSalesRepository.findByCode(pointOfSaleCode);
+                if (clientAllyPointOfSales.isPresent()) {
+                    if (clientAllyPointOfSales.get()
+                            .getStateCodeValueId() == ClientAllyPointOfSalesApiConstants.stateCodeValueInavtiveParamName.longValue()) {
+                        throw new ClientBuyProsessPoinOfSalesInactive(
+                                "No se ha podido proceder debido a que el Punto de venta esta inactivo", "");
+                    }
+                    pointOfSalesId = clientAllyPointOfSales.get().getId();
+                }
+            }
+
+            checkIfIsAllowedCreationAndDisbursal(loanProductForValidations);
 
             checkClientOrGroupActive(existingLoanApplication);
 
@@ -981,8 +1110,17 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 final JsonQuery query = JsonQuery.from(command.json(), parsedQuery, this.fromJsonHelper);
 
                 final LoanScheduleModel loanSchedule = this.calculationPlatformService.calculateLoanSchedule(query, false);
+                final BigDecimal annualNominalInterestRate = loanSchedule.getLoanApplicationTerms().getAnnualNominalInterestRate();
+                final BigDecimal interestRatePerPeriod = loanSchedule.getLoanApplicationTerms().getInterestRatePerPeriod();
+                final PeriodFrequencyType interestRatePeriodFrequencyType = loanSchedule.getLoanApplicationTerms()
+                        .getInterestRatePeriodFrequencyType();
+
+                existingLoanApplication.getLoanRepaymentScheduleDetail().setAnnualNominalInterestRate(annualNominalInterestRate);
+                existingLoanApplication.getLoanRepaymentScheduleDetail().setNominalInterestRatePerPeriod(interestRatePerPeriod);
+                existingLoanApplication.getLoanRepaymentScheduleDetail().updateInterestPeriodFrequencyType(interestRatePeriodFrequencyType);
                 existingLoanApplication.updateLoanSchedule(loanSchedule);
                 existingLoanApplication.recalculateAllCharges();
+                existingLoanApplication.updateLoanDerivedFields();
             }
 
             // Changes to modify loan rates.
@@ -994,7 +1132,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     existingLoanApplication.getTermPeriodFrequencyType(), productRelatedDetail.getNumberOfRepayments(),
                     productRelatedDetail.getRepayEvery(), productRelatedDetail.getRepaymentPeriodFrequencyType().getValue(),
                     existingLoanApplication);
-
+            validateAllChargesAreSetupCorrectly(existingLoanApplication);
             saveAndFlushLoanWithDataIntegrityViolationChecks(existingLoanApplication);
 
             final String submittedOnNote = command.stringValueOfParameterNamed("submittedOnNote");
@@ -1164,6 +1302,15 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
                 officeSpecificLoanProductValidation(existingLoanApplication.getLoanProduct().getId(), OfficeId);
             }
+            existingLoanApplication.getLoanCustomizationDetail().recordActivity();
+
+            final BigDecimal discountValue = command.bigDecimalValueOfParameterNamed(LoanApiConstants.DISCOUNT_VALUE);
+            existingLoanApplication.updateValorDescuento(discountValue);
+            if (discountValue != null) {
+                changes.put(LoanApiConstants.DISCOUNT_VALUE, discountValue);
+            }
+
+            this.validMaximumLegalInterestRate(existingLoanApplication);
 
             // updating loan interest recalculation details throwing null
             // pointer exception after saveAndFlush
@@ -1174,9 +1321,39 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 this.fromApiJsonDeserializer.validateLoanForInterestRecalculation(existingLoanApplication);
                 if (changes.containsKey(LoanProductConstants.IS_INTEREST_RECALCULATION_ENABLED_PARAMETER_NAME)) {
                     createAndPersistCalendarInstanceForInterestRecalculation(existingLoanApplication);
+                }
+            }
 
+            Long allyId = this.fromJsonHelper.extractLongNamed(LoanApiConstants.AllYID, command.parsedJson());
+            Optional<ClientBuyProcess> existingClientByProses = clientBuyProcessRepository.findClienByProsesLoanByLoanId(loanId);
+            if (allyId != null && pointOfSaleCode != null) {
+                final String ipDetails = context.getApiRequestClientIP();
+                if (existingClientByProses.isPresent()) {
+                    ClientBuyProcess oldClientBuyProses = existingClientByProses.get();
+                    oldClientBuyProses.setPointOfSalesId(pointOfSalesId);
+                    oldClientBuyProses.setChannelId(mifosChannelId);
+                    oldClientBuyProses.setProductId(existingLoanApplication.productId());
+                    oldClientBuyProses.setStatus(existingLoanApplication.getPlainStatus());
+                    oldClientBuyProses.setLoanId(existingLoanApplication.getId());
+                    oldClientBuyProses.setCreditId(loanId);
+                    clientBuyProcessRepository.saveAndFlush(oldClientBuyProses);
+                } else {
+                    ClientBuyProcess clientBuyProcess = new ClientBuyProcess(mifosChannelId, existingLoanApplication.getClientId(),
+                            pointOfSalesId, existingLoanApplication.productId(), existingLoanApplication.getId(),
+                            existingLoanApplication.getSubmittedOnDate(), existingLoanApplication.getPrincipal().getAmount(),
+                            existingLoanApplication.getTermFrequency().longValue(),
+                            existingLoanApplication.getCreatedDate().get().toLocalDateTime(),
+                            existingLoanApplication.getCreatedBy().get().longValue(), ipDetails, null, null, mifosChannelHash);
+                    clientBuyProcess.setStatus(existingLoanApplication.getPlainStatus());
+                    clientBuyProcess.setLoanId(existingLoanApplication.getId());
+                    clientBuyProcessRepository.saveAndFlush(clientBuyProcess);
                 }
 
+            } else {
+                if (existingClientByProses.isPresent()) {
+                    ClientBuyProcess oldClientBuyProses = existingClientByProses.get();
+                    clientBuyProcessRepository.delete(oldClientBuyProses);
+                }
             }
 
             return new CommandProcessingResultBuilder() //
@@ -1194,6 +1371,14 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             handleDataIntegrityIssues(command, throwable, dve);
             return CommandProcessingResult.empty();
+        }
+    }
+
+    private void checkIfIsAllowedCreationAndDisbursal(LoanProduct loanProductForValidations) {
+        // validate if the loan product allows creation and disbursement
+        if (Boolean.FALSE.equals(loanProductForValidations.getCustomAllowCreateOrDisburse())) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.product.does.not.allow.creation.nor.disbursement",
+                    "Loan product does not allow creation and disbursement.");
         }
     }
 
@@ -1339,6 +1524,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             this.validateMultiDisbursementData(command, expectedDisbursementDate);
         }
 
+        // validate if the loan product allows creation and disbursement
+        checkIfIsAllowedCreationAndDisbursal(loan.loanProduct());
+
         checkClientOrGroupActive(loan);
         Boolean isSkipRepaymentOnFirstMonth = false;
         Integer numberOfDays = 0;
@@ -1398,13 +1586,17 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 BigDecimal loanOutstanding = this.loanReadPlatformService
                         .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose, expectedDisbursementDate).getAmount();
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
-                if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
-                            "Topup loan amount should be greater than outstanding amount of loan to be closed.");
+                if (loanToClose.claimType() == null || !loanToClose.claimType().equals("castigado")) {
+                    if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
+                        throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
+                                "Topup loan amount should be greater than outstanding amount of loan to be closed.");
+                    }
                 }
                 BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(loanOutstanding);
                 loan.adjustNetDisbursalAmount(netDisbursalAmount);
             }
+
+            loan.getLoanCustomizationDetail().recordActivity();
 
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
@@ -1733,4 +1925,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         }
     }
 
+    private void validateAllChargesAreSetupCorrectly(Loan loan) {
+        if (loan.getLoanCharges() != null) {
+            for (LoanCharge loanCharge : loan.getLoanCharges()) {
+                Charge charge = loanCharge.getCharge();
+                charge.validateChargeIsSetupCorrectly();
+            }
+        }
+    }
 }

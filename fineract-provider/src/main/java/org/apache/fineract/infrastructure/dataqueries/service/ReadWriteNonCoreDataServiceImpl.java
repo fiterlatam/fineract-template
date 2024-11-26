@@ -60,12 +60,14 @@ import jakarta.persistence.PersistenceException;
 import jakarta.validation.constraints.NotNull;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -100,6 +102,8 @@ import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.GenericResultsetData;
 import org.apache.fineract.infrastructure.dataqueries.data.ResultsetColumnHeaderData;
 import org.apache.fineract.infrastructure.dataqueries.data.ResultsetRowData;
+import org.apache.fineract.infrastructure.dataqueries.domain.RegisteredDatatableFieldMask;
+import org.apache.fineract.infrastructure.dataqueries.domain.RegisteredDatatableFieldMaskRepository;
 import org.apache.fineract.infrastructure.dataqueries.exception.DatatableEntryRequiredException;
 import org.apache.fineract.infrastructure.dataqueries.exception.DatatableNotFoundException;
 import org.apache.fineract.infrastructure.dataqueries.exception.DatatableSystemErrorException;
@@ -107,12 +111,15 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.infrastructure.security.service.SqlInjectionPreventerService;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLInjectionValidator;
+import org.apache.fineract.portfolio.client.api.ClientApiConstants;
+import org.apache.fineract.portfolio.client.service.ClientWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.search.data.AdvancedQueryData;
 import org.apache.fineract.portfolio.search.data.ColumnFilterData;
 import org.apache.fineract.portfolio.search.service.SearchUtil;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -144,6 +151,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final SqlInjectionPreventerService preventSqlInjectionService;
     private final DatatableKeywordGenerator datatableKeywordGenerator;
+    private final RegisteredDatatableFieldMaskRepository registeredDatatableFieldMaskRepository;
 
     @Override
     public List<DatatableData> retrieveDatatableNames(final String appTable) {
@@ -732,6 +740,16 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 final StringBuilder constrainBuilder = new StringBuilder();
                 final List<String> codeMappings = new ArrayList<>();
                 for (final JsonElement column : dropColumns) {
+
+                    // Update table mask if existent
+                    Optional<RegisteredDatatableFieldMask> fieldMaskOpt = registeredDatatableFieldMaskRepository
+                            .findByDatatableNameAndColumnName(datatableName, column.getAsJsonObject().get("name").getAsString());
+
+                    if (fieldMaskOpt.isPresent()) {
+                        RegisteredDatatableFieldMask curr = fieldMaskOpt.get();
+                        registeredDatatableFieldMaskRepository.delete(curr);
+                    }
+
                     parseDatatableColumnForDrop(column.getAsJsonObject(), sqlBuilder, datatableName, constrainBuilder, codeMappings);
                 }
 
@@ -749,6 +767,14 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 final StringBuilder constrainBuilder = new StringBuilder();
                 final Map<String, Long> codeMappings = new HashMap<>();
                 for (final JsonElement column : addColumns) {
+
+                    // Insert table mask if existent
+                    RegisteredDatatableFieldMask curr = RegisteredDatatableFieldMask.builder().datatableName(datatableName)
+                            .columnName(column.getAsJsonObject().get("name").getAsString())
+                            .columnMask(column.getAsJsonObject().get("fieldMask").getAsString()).build();
+
+                    registeredDatatableFieldMaskRepository.save(curr);
+
                     JsonObject columnAsJson = column.getAsJsonObject();
                     if (rowCount > 0 && columnAsJson.has(API_FIELD_MANDATORY) && columnAsJson.get(API_FIELD_MANDATORY).getAsBoolean()) {
                         throw new GeneralPlatformDomainRuleException("error.msg.non.empty.datatable.mandatory.column.cannot.be.added",
@@ -775,6 +801,18 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 final Map<String, Long> codeMappings = new HashMap<>();
                 final List<String> removeMappings = new ArrayList<>();
                 for (final JsonElement column : changeColumns) {
+
+                    // Update table mask if existent
+                    Optional<RegisteredDatatableFieldMask> fieldMaskOpt = registeredDatatableFieldMaskRepository
+                            .findByDatatableNameAndColumnName(datatableName, column.getAsJsonObject().get("name").getAsString());
+
+                    if (fieldMaskOpt.isPresent()) {
+                        RegisteredDatatableFieldMask curr = fieldMaskOpt.get();
+                        curr.setColumnMask(column.getAsJsonObject().get("fieldMask").getAsString());
+                        curr.setColumnName(column.getAsJsonObject().get("newName").getAsString());
+                        registeredDatatableFieldMaskRepository.save(curr);
+                    }
+
                     // remove NULL values from column where mandatory is true
                     removeNullValuesFromStringColumn(datatableName, column.getAsJsonObject(), mapColumnNameDefinition);
                     parseDatatableColumnForUpdate(column.getAsJsonObject(), mapColumnNameDefinition, datatableName, renameBuilder,
@@ -1402,6 +1440,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         DatabaseType dialect = sqlGenerator.getDialect();
         ArrayList<String> updateColumns = new ArrayList<>(List.of(UPDATEDAT_FIELD_NAME));
         ArrayList<Object> params = new ArrayList<>(List.of(DateUtils.getAuditLocalDateTime()));
+        BigDecimal cupo = BigDecimal.ZERO;
         final HashMap<String, Object> changes = new HashMap<>();
         for (Map.Entry<String, String> entry : dataParams.entrySet()) {
             if (isTechnicalParam(entry.getKey())) {
@@ -1420,6 +1459,12 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 log.debug("Ignore change on update {}:{}", dataTableName, columnName);
                 continue;
             }
+            if (columnName.equals("Cupo aprobado") || columnName.equals("Cupo")) {
+                if (columnValue instanceof Number) {
+                    cupo = BigDecimal.valueOf(((Number) columnValue).intValue());
+                }
+
+            }
             updateColumns.add(columnName);
             params.add(columnHeader.getColumnType().toJdbcValue(dialect, columnValue, false));
             changes.put(columnName, columnValue);
@@ -1428,9 +1473,46 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         if (!updateColumns.isEmpty()) {
             ResultsetColumnHeaderData pkColumn = SearchUtil.getFiltered(columnHeaders, ResultsetColumnHeaderData::getIsColumnPrimaryKey);
             params.add(primaryKey);
+            BigDecimal minCupo = this.minCupoAvail(commandProcessingResult.getClientId()).setScale(2, RoundingMode.HALF_UP);
+
+            if (cupo.compareTo(BigDecimal.ZERO) > 0) {
+                if (cupo.compareTo(minCupo) < 0) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.maximum.cupo.limit.exceeded",
+                            String.format("Límite de cupo total excedido. Límite disponible: %s y Total del monto principal pendiente: %s",
+                                    minCupo, minCupo),
+                            minCupo.toString());
+                }
+            }
+
             final String sql = sqlGenerator.buildUpdate(dataTableName, updateColumns, headersByName) + " WHERE " + pkColumn.getColumnName()
                     + " = ?";
-            int updated = jdbcTemplate.update(sql, params.toArray(Object[]::new)); // NOSONAR
+            int updated;
+            try {
+                updated = jdbcTemplate.update(sql, params.toArray(Object[]::new)); // NOSONAR
+            } catch (DuplicateKeyException e) {
+                final Throwable realCause = e.getCause();
+                final String exceptionMessage = e.getMessage();
+                final String realCauseMessage = realCause != null ? realCause.getMessage() : exceptionMessage;
+                log.error("Error occurred: " + realCauseMessage, realCauseMessage);
+                if (realCauseMessage
+                        .contains("ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_empresas_nit\"")
+                        || exceptionMessage
+                                .contains("ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_empresas_nit\"")) {
+                    final JsonArray datatables = command.arrayOfParameterNamed(ClientApiConstants.datatables);
+                    String nit = ClientWritePlatformServiceJpaRepositoryImpl.getNitString(datatables);
+                    throw new GeneralPlatformDomainRuleException("error.msg.entity.datatable.check.duplicate.entry.nit.already.exist",
+                            "Duplicate entry exist with the provided NIT", nit);
+                } else if (realCauseMessage
+                        .contains("ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_personax_Cedula\"")
+                        || exceptionMessage.contains(
+                                "ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_personax_Cedula\"")) {
+                    final JsonArray datatables = command.arrayOfParameterNamed(ClientApiConstants.datatables);
+                    String cedula = ClientWritePlatformServiceJpaRepositoryImpl.getCedulaString(datatables);
+                    throw new GeneralPlatformDomainRuleException("error.msg.entity.datatable.check.duplicate.entry.cedula.already.exist",
+                            "Duplicate entry exist with the provided Cedula", cedula);
+                }
+                throw e;
+            }
             if (updated != 1) {
                 throw new PlatformDataIntegrityException("error.msg.invalid.update", "Expected one updated row.");
             }
@@ -1446,6 +1528,21 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 .withLoanId(commandProcessingResult.getLoanId()) //
                 .withTransactionId(commandProcessingResult.getTransactionId()) //
                 .with(changes).build();
+    }
+
+    @Transactional
+    private BigDecimal minCupoAvail(Long clientId) {
+        final String sql = """
+                    SELECT
+                    	COALESCE(SUM(ml.principal_outstanding_derived),0) AS totalOutstandingPrincipalAmount
+                    FROM m_loan ml
+                    INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                    WHERE ml.loan_status_id = 300 AND ml.client_id = ?
+                """;
+        final BigDecimal totalOutstandingPrincipalAmount = ObjectUtils
+                .defaultIfNull(this.jdbcTemplate.queryForObject(sql, BigDecimal.class, clientId), BigDecimal.ZERO);
+        // final BigDecimal cupoBalance = cupo.subtract(totalOutstandingPrincipalAmount);
+        return totalOutstandingPrincipalAmount;
     }
 
     private static boolean isUserUpdatable(@NotNull EntityTables entityTable, @NotNull ResultsetColumnHeaderData columnHeader) {
@@ -1744,6 +1841,8 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         String param = null;
         Object[] msgArgs;
         final Throwable cause = e.getCause();
+        log.error(cause.getMessage());
+        log.error(realCause.getMessage());
         if ((realCause != null && realCause.getMessage().contains("Duplicate entry"))
                 || (cause != null && cause.getMessage().contains("Duplicate entry"))) {
             msgCode += ".entry.duplicate";
@@ -1767,7 +1866,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
             msgCode += ".unknown.data.integrity.issue";
             msgArgs = new Object[] { dataTableName, e };
         }
-        log.error("Error occured.", e);
+        log.error("Error occurred.", e);
         throw ErrorHandler.getMappable(e, msgCode, msg, param, msgArgs);
     }
 }

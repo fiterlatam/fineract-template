@@ -39,7 +39,12 @@ RUN wget -q https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.0.33/my
 # =========================================
 
 FROM azul/zulu-openjdk:17 as fineract
-
+#pentaho copy
+COPY --from=builder /fineract/fineract-provider/pentahoReports/*.properties /root/.mifosx/pentahoReports/
+COPY --from=builder /fineract/fineract-provider/pentahoReports/*.prpt /root/.mifosx/pentahoReports/
+#Pentaho to run on postgresDB
+COPY --from=builder /fineract/fineract-provider/pentahoReportsPostgres/*.properties /root/.mifosx/pentahoReportsPostgres/
+COPY --from=builder /fineract/fineract-provider/pentahoReportsPostgres/*.prpt /root/.mifosx/pentahoReportsPostgres/
 COPY --from=builder /fineract/fineract-provider/build/libs/ /app
 COPY --from=builder /app/libs /app/libs
 

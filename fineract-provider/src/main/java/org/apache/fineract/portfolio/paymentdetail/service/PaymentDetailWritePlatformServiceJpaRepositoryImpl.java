@@ -20,6 +20,8 @@ package org.apache.fineract.portfolio.paymentdetail.service;
 
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.portfolio.paymentdetail.PaymentDetailConstants;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
@@ -32,8 +34,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentDetailWritePlatformServiceJpaRepositoryImpl implements PaymentDetailWritePlatformService {
 
     private final PaymentDetailRepository paymentDetailRepository;
-    // private final CodeValueRepositoryWrapper codeValueRepositoryWrapper;
     private final PaymentTypeRepositoryWrapper paymentTyperepositoryWrapper;
+    private final CodeValueRepositoryWrapper codeValueRepositoryWrapper;
 
     @Override
     public PaymentDetail createPaymentDetail(final JsonCommand command, final Map<String, Object> changes) {
@@ -41,11 +43,17 @@ public class PaymentDetailWritePlatformServiceJpaRepositoryImpl implements Payme
         if (paymentTypeId == null) {
             return null;
         }
-
         final PaymentType paymentType = this.paymentTyperepositoryWrapper.findOneWithNotFoundDetection(paymentTypeId);
         final PaymentDetail paymentDetail = PaymentDetail.generatePaymentDetail(paymentType, command, changes);
+        if (changes.containsKey("paymentBankId")) {
+            final Long paymentBankId = (Long) changes.get("paymentBankId");
+            if (paymentBankId != null) {
+                final CodeValue paymentBank = this.codeValueRepositoryWrapper.findOneByCodeNameAndIdWithNotFoundDetection("Bancos",
+                        paymentBankId);
+                paymentDetail.setPaymentBank(paymentBank);
+            }
+        }
         return paymentDetail;
-
     }
 
     @Override

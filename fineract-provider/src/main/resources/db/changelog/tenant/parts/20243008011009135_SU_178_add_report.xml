@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="loan_endorse_report_1" author="fineract">
+        <sql>
+            INSERT INTO stretchy_parameter
+            (parameter_name, parameter_variable, parameter_label, "parameter_displayType", "parameter_FormatType", parameter_default, special, "selectOne", "selectAll", parameter_sql, parent_id)
+            VALUES('insuranceCompany', 'insuranceCompany', 'Insurance Company', 'select', 'text', '', NULL, NULL, 'Y', 'select distinct insurance_company as id, insurance_company as name from m_charge where insurance_company is not null', NULL);
+        </sql>
+    </changeSet>
+
+    <changeSet id="loan_endorse_report_2" author="fineract">
+        <insert tableName="STRETCHY_REPORT">
+            <column name="REPORT_NAME" value="Loan with Endorse"/>
+            <column name="REPORT_SQL">
+                <![CDATA[
+                SELECT
+                    ml.id AS "Loan ID",
+                    ml.client_id AS "ID del Cliente",
+                    TO_CHAR(mlc.expire_date, 'DD/MM/YYYY') AS "Policy Expire Date",
+                    mlc.is_endorse AS "Endorse status",
+                    mc.insurance_company AS "Insurance Company",
+                    mc.insurance_name AS "Insurer Name"
+                FROM m_loan ml
+                INNER JOIN m_loan_charge mlc ON ml.id = mlc.loan_id
+                INNER JOIN m_charge mc ON mlc.charge_id = mc.id
+                WHERE (mc.insurance_company = '${insuranceCompany}' OR '${insuranceCompany}' = '-1')
+                AND mlc.expire_date BETWEEN '${startDate}' AND '${endDate}'
+                ]]>
+            </column>
+            <column name="report_type" value="Table"/>
+            <column name="report_category" value="Loan"/>
+            <column name="description" value="Report of Loans with Endorse Information"/>
+            <column name="core_report" value="false"/>
+            <column name="use_report" value="true"/>
+        </insert>
+
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Loan with Endorse')"/>
+            <column name="parameter_id"
+                    valueComputed="(select id from stretchy_parameter where parameter_variable = 'startDate')"/>
+            <column name="report_parameter_name" value="startDate"/>
+            <column name="mandatory_parameter" value="true"/>
+        </insert>
+
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Loan with Endorse')"/>
+            <column name="parameter_id"
+                    valueComputed="(select id from stretchy_parameter where parameter_variable = 'endDate')"/>
+            <column name="report_parameter_name" value="endDate"/>
+            <column name="mandatory_parameter" value="true"/>
+        </insert>
+
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Loan with Endorse')"/>
+            <column name="parameter_id"
+                    valueComputed="(select id from stretchy_parameter where parameter_variable = 'insuranceCompany')"/>
+            <column name="report_parameter_name" value="insuranceCompany"/>
+            <column name="mandatory_parameter" value="false"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

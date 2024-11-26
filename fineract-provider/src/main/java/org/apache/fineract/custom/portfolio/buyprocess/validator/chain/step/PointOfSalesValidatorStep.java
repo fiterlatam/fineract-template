@@ -1,9 +1,9 @@
 package org.apache.fineract.custom.portfolio.buyprocess.validator.chain.step;
 
 import java.util.Optional;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelMessageRepository;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
-import org.apache.fineract.custom.portfolio.buyprocess.domain.ChannelMessageRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
 import org.apache.fineract.custom.portfolio.buyprocess.enumerator.ClientBuyProcessValidatorEnum;
 import org.apache.fineract.custom.portfolio.buyprocess.validator.chain.BuyProcessAbstractStepProcessor;
@@ -33,17 +33,20 @@ public class PointOfSalesValidatorStep extends BuyProcessAbstractStepProcessor i
         setSuperChannelMessageRepository(channelMessageRepository);
 
         // Custom validation comes here
-        Optional<ClientAllyPointOfSales> pointOfSalesOpt = clientAllyPointOfSalesRepository.findById(clientBuyProcess.getPointOfSalesId());
-        if (pointOfSalesOpt.isPresent()) {
+        if (!clientBuyProcess.isSaleOfInsuranceOrAssistance()) {
+            Optional<ClientAllyPointOfSales> pointOfSalesOpt = clientAllyPointOfSalesRepository
+                    .findById(clientBuyProcess.getPointOfSalesId());
+            if (pointOfSalesOpt.isPresent()) {
 
-            ClientAllyPointOfSales pointOfSales = pointOfSalesOpt.get();
-            if (Boolean.FALSE.equals(pointOfSales.getBuyEnabled())) {
+                ClientAllyPointOfSales pointOfSales = pointOfSalesOpt.get();
+                if (Boolean.FALSE.equals(pointOfSales.getBuyEnabled())) {
+                    ammendErrorMessage(stepProcessorEnum, clientBuyProcess);
+                }
+
+            } else {
+
                 ammendErrorMessage(stepProcessorEnum, clientBuyProcess);
             }
-
-        } else {
-
-            ammendErrorMessage(stepProcessorEnum, clientBuyProcess);
         }
     }
 }

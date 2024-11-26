@@ -20,6 +20,7 @@ package org.apache.fineract.infrastructure.bulkimport.importhandler;
 
 import com.google.common.base.Splitter;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +30,6 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.UnsupportedParameterException;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -51,14 +51,25 @@ public final class ImportHandlerUtils {
     }
 
     public static Integer getNumberOfRows(Sheet sheet, int primaryColumn) {
-        Integer noOfEntries = 0;
-        // getLastRowNum and getPhysicalNumberOfRows showing false values
-        // sometimes
-        while (sheet.getRow(noOfEntries + 1) != null && sheet.getRow(noOfEntries + 1).getCell(primaryColumn) != null) {
+        int noOfEntries = 0;
+        while (sheet.getRow(noOfEntries + 1) != null && isCellNotEmpty(sheet.getRow(noOfEntries + 1).getCell(primaryColumn))) {
             noOfEntries++;
         }
-
         return noOfEntries;
+    }
+
+    public static boolean isCellNotEmpty(Cell cell) {
+        if (cell == null) {
+            return false;
+        }
+        final CellType cellType = cell.getCellType();
+        if (CellType.BLANK.equals(cellType)) {
+            return false;
+        } else if (CellType.STRING.equals(cellType)) {
+            return !cell.getStringCellValue().trim().isEmpty();
+        } else {
+            return true;
+        }
     }
 
     public static boolean isNotImported(Row row, int statusColumn) {
@@ -94,7 +105,6 @@ public final class ImportHandlerUtils {
     }
 
     public static String readAsString(int colIndex, Row row) {
-
         Cell c = row.getCell(colIndex);
         if (c == null || c.getCellType() == CellType.BLANK) {
             return null;
@@ -119,9 +129,14 @@ public final class ImportHandlerUtils {
         } else if (c.getCellType() == CellType.STRING) {
             String res = trimEmptyDecimalPortion(c.getStringCellValue().trim());
             return res.trim();
-
         } else if (c.getCellType() == CellType.NUMERIC) {
-            return ((Double) row.getCell(colIndex).getNumericCellValue()).intValue() + "";
+            String valueAsString = String.valueOf(row.getCell(colIndex).getNumericCellValue());
+
+            if (valueAsString.endsWith(".0")) { // It is a numeric integer
+                return String.valueOf(((Double) row.getCell(colIndex).getNumericCellValue()).intValue());
+            }
+
+            return valueAsString; // It is a numeric Double
         } else if (c.getCellType() == CellType.BOOLEAN) {
             return c.getBooleanCellValue() + "";
         } else {
@@ -142,8 +157,7 @@ public final class ImportHandlerUtils {
         if (c == null || c.getCellType() == CellType.BLANK) {
             return null;
         }
-
-        return LocalDate.ofInstant(c.getDateCellValue().toInstant(), DateUtils.getDateTimeZoneOfTenant());
+        return LocalDate.ofInstant(c.getDateCellValue().toInstant(), ZoneId.systemDefault());
     }
 
     public static Boolean readAsBoolean(int colIndex, Row row) {

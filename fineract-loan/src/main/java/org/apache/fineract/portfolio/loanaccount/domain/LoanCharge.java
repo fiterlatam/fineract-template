@@ -18,29 +18,14 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
@@ -58,10 +43,14 @@ import org.apache.fineract.portfolio.loanaccount.command.LoanChargeCommand;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidDetail;
 import org.apache.fineract.portfolio.loanaccount.data.LoanInstallmentChargeData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Entity
 @Table(name = "m_loan_charge", uniqueConstraints = { @UniqueConstraint(columnNames = { "external_id" }, name = "external_id") })
 public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
+
+    private static final Logger LOG = LoggerFactory.getLogger(LoanCharge.class);
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "loan_id", referencedColumnName = "id", nullable = false)
@@ -126,7 +115,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     private BigDecimal maxCap;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "loancharge", orphanRemoval = true, fetch = FetchType.EAGER)
-    private Set<LoanInstallmentCharge> loanInstallmentCharge = new HashSet<>();
+    private TreeSet<LoanInstallmentCharge> loanInstallmentCharge = new TreeSet<>();
 
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
@@ -134,7 +123,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "external_id")
     private ExternalId externalId;
 
-    @OneToOne(mappedBy = "loancharge", cascade = CascadeType.ALL, optional = true, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToOne(mappedBy = "loanCharge", cascade = CascadeType.ALL, optional = true, orphanRemoval = true, fetch = FetchType.EAGER)
     private LoanOverdueInstallmentCharge overdueInstallmentCharge;
 
     @OneToOne(mappedBy = "loancharge", cascade = CascadeType.ALL, optional = true, orphanRemoval = true, fetch = FetchType.EAGER)
@@ -143,6 +132,41 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     @OneToMany(mappedBy = "loanCharge", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<LoanChargePaidBy> loanChargePaidBySet = new HashSet<>();
 
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "loan_charge_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private Set<CustomChargeHonorarioMap> customChargeHonorarioMaps = new HashSet<>();
+
+    @Column(name = "applicable_from_installment", nullable = true)
+    private Integer applicableFromInstallment;
+
+    @Column(name = "is_get_percentage_from_table", nullable = false)
+    private boolean getPercentageAmountFromTable;
+
+    @Column(name = "default_from_installment", nullable = true)
+    private Integer defaultFromInstallment;
+
+    @Column(name = "amount_paid_in_default_installment", nullable = true)
+    private BigDecimal partialAmountPaidInFirstDefaultInstallment;
+
+    @Column(name = "is_endorse", nullable = true)
+    private boolean isEndorse = false;
+
+    @Column(name = "expire_date", nullable = true)
+    private LocalDate expDate;
+
+    @Column(name = "insurance_name", nullable = true)
+    private String insuranceName;
+
+    @Column(name = "insurance_id", nullable = true)
+    private String insuranceId;
+
+    // This attribute is used only to hold the current installment charge amount calculated and used
+    // when repayment schedule is generated during loan creation. This amount is needed to show individual charge
+    // amounts on the loan schedule screen.
+    // Try not to use this variable anywhere else in the code
+    @Transient
+    private BigDecimal installmentChargeAmount = BigDecimal.ZERO;
+
     protected LoanCharge() {
         //
     }
@@ -150,13 +174,40 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
             final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
             final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
-            final ExternalId externalId) {
+            final ExternalId externalId, boolean getPercentageAmountFromTable, Long numberOfPenaltyDays,
+            Integer applicableFromInstallment) {
+
+        this(loan, chargeDefinition, loanPrincipal, amount, chargeTime, chargeCalculation, dueDate, chargePaymentMode, numberOfRepayments,
+                loanCharge, externalId, getPercentageAmountFromTable, numberOfPenaltyDays);
+
+        this.setApplicableFromInstallment(applicableFromInstallment);
+
+    }
+
+    public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
+            final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
+            final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
+            final ExternalId externalId, boolean getPercentageAmountFromTable, Long numberOfPenaltyDays, Integer applicableFromInstallment,
+            LocalDate expDate, Boolean isEndorse, String insuranceName, String insuranceId) {
+
+        this(loan, chargeDefinition, loanPrincipal, amount, chargeTime, chargeCalculation, dueDate, chargePaymentMode, numberOfRepayments,
+                loanCharge, externalId, getPercentageAmountFromTable, numberOfPenaltyDays, expDate, isEndorse, insuranceName, insuranceId);
+
+        this.setApplicableFromInstallment(applicableFromInstallment);
+
+    }
+
+    public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
+            final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
+            final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
+            final ExternalId externalId, boolean getPercentageAmountFromTable, Long numberOfPenaltyDays) {
         this.loan = loan;
         this.charge = chargeDefinition;
         this.submittedOnDate = DateUtils.getBusinessLocalDate();
         this.penaltyCharge = chargeDefinition.isPenalty();
         this.minCap = chargeDefinition.getMinCap();
         this.maxCap = chargeDefinition.getMaxCap();
+        this.getPercentageAmountFromTable = getPercentageAmountFromTable;
 
         this.chargeTime = chargeDefinition.getChargeTimeType();
         if (chargeTime != null) {
@@ -186,31 +237,104 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         if (amount != null) {
             chargeAmount = amount;
         }
-
         this.chargePaymentMode = chargeDefinition.getChargePaymentMode();
         if (chargePaymentMode != null) {
             this.chargePaymentMode = chargePaymentMode.getValue();
         }
 
-        populateDerivedFields(loanPrincipal, chargeAmount, numberOfRepayments, loanCharge);
+        populateDerivedFields(loanPrincipal, chargeAmount, numberOfRepayments, loanCharge, numberOfPenaltyDays);
         this.paid = determineIfFullyPaid();
         this.externalId = externalId;
+
+    }
+
+    public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
+            final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
+            final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
+            final ExternalId externalId, boolean getPercentageAmountFromTable, Long numberOfPenaltyDays, LocalDate expDate,
+            Boolean isEndorse, String insuranceName, String insuranceId) {
+        this.loan = loan;
+        this.charge = chargeDefinition;
+        this.submittedOnDate = DateUtils.getBusinessLocalDate();
+        this.penaltyCharge = chargeDefinition.isPenalty();
+        this.minCap = chargeDefinition.getMinCap();
+        this.maxCap = chargeDefinition.getMaxCap();
+        this.getPercentageAmountFromTable = getPercentageAmountFromTable;
+
+        this.chargeTime = chargeDefinition.getChargeTimeType();
+        if (chargeTime != null) {
+            this.chargeTime = chargeTime.getValue();
+        }
+
+        if (ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.SPECIFIED_DUE_DATE)
+                || ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.OVERDUE_INSTALLMENT)) {
+
+            if (dueDate == null) {
+                final String defaultUserMessage = "Loan charge is missing due date.";
+                throw new LoanChargeWithoutMandatoryFieldException("loanCharge", "dueDate", defaultUserMessage, chargeDefinition.getId(),
+                        chargeDefinition.getName());
+            }
+
+            this.dueDate = dueDate;
+        } else {
+            this.dueDate = null;
+        }
+
+        this.chargeCalculation = chargeDefinition.getChargeCalculation();
+        if (chargeCalculation != null) {
+            this.chargeCalculation = chargeCalculation.getValue();
+        }
+
+        BigDecimal chargeAmount = chargeDefinition.getAmount();
+        if (amount != null) {
+            chargeAmount = amount;
+        }
+        this.chargePaymentMode = chargeDefinition.getChargePaymentMode();
+        if (chargePaymentMode != null) {
+            this.chargePaymentMode = chargePaymentMode.getValue();
+        }
+
+        populateDerivedFields(loanPrincipal, chargeAmount, numberOfRepayments, loanCharge, numberOfPenaltyDays);
+        this.paid = determineIfFullyPaid();
+        this.externalId = externalId;
+        this.expDate = expDate;
+        this.isEndorse = isEndorse;
+        this.insuranceName = insuranceName;
+        this.insuranceId = insuranceId;
     }
 
     private void populateDerivedFields(final BigDecimal amountPercentageAppliedTo, final BigDecimal chargeAmount,
-            Integer numberOfRepayments, BigDecimal loanCharge) {
+            Integer numberOfRepayments, BigDecimal loanCharge, Long numberOfPenaltyDays) {
+        ChargeCalculationType chargeCalculationType = ChargeCalculationType.fromInt(this.chargeCalculation);
 
-        switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
-            case INVALID:
-                this.percentage = null;
-                this.amount = null;
-                this.amountPercentageAppliedTo = null;
+        if (ChargeCalculationType.INVALID.equals(chargeCalculationType)) {
+            this.percentage = null;
+            this.amount = null;
+            this.amountPercentageAppliedTo = null;
+            this.amountPaid = null;
+            this.amountOutstanding = BigDecimal.ZERO;
+            this.amountWaived = null;
+            this.amountWrittenOff = null;
+        } else {
+            if (this.isPenaltyCharge()) {
+                final RoundingMode roundingMode = RoundingMode.HALF_UP;
+                final MathContext mc = MoneyHelper.getMathContext();
+                // Get one day of interest
+                this.percentage = chargeAmount.divide(BigDecimal.valueOf(365), mc).setScale(5, roundingMode);
+
+                this.amountPercentageAppliedTo = amountPercentageAppliedTo;
+                if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
+                    loanCharge = percentageOf(this.amountPercentageAppliedTo);
+                    if (numberOfPenaltyDays != null) {
+                        loanCharge = loanCharge.multiply(BigDecimal.valueOf(numberOfPenaltyDays));
+                    }
+                }
+                this.amount = minimumAndMaximumCap(loanCharge);
                 this.amountPaid = null;
-                this.amountOutstanding = BigDecimal.ZERO;
+                this.amountOutstanding = calculateOutstanding();
                 this.amountWaived = null;
                 this.amountWrittenOff = null;
-            break;
-            case FLAT:
+            } else if (chargeCalculationType.isFlat()) {
                 this.percentage = null;
                 this.amountPercentageAppliedTo = null;
                 this.amountPaid = null;
@@ -218,18 +342,24 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     if (numberOfRepayments == null) {
                         numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
                     }
-                    this.amount = chargeAmount.multiply(BigDecimal.valueOf(numberOfRepayments));
+                    if (isCustomFlatDistributedCharge()) {
+                        updateAmountOrPercentageForDistributedCharge(numberOfRepayments, chargeAmount);
+                        this.amount = chargeAmount;
+                    } else {
+                        // Voluntary and Flat Mandatory Insurance
+                        this.amount = chargeAmount.multiply(BigDecimal.valueOf(numberOfRepayments));
+                    }
                 } else {
                     this.amount = chargeAmount;
                 }
                 this.amountOutstanding = this.amount;
                 this.amountWaived = null;
                 this.amountWrittenOff = null;
-            break;
-            case PERCENT_OF_AMOUNT:
-            case PERCENT_OF_AMOUNT_AND_INTEREST:
-            case PERCENT_OF_INTEREST:
-            case PERCENT_OF_DISBURSEMENT_AMOUNT:
+            } else if (chargeCalculationType.isPercentageOfInstallmentPrincipal()
+                    || chargeCalculationType.isPercentageOfInstallmentPrincipalAndInterest()
+                    || chargeCalculationType.isPercentageOfInstallmentInterest() || chargeCalculationType.isPercentageOfDisbursement()
+                    || chargeCalculationType.isPercentageOfInsurance() || chargeCalculationType.isPercentageOfHonorarios()
+                    || chargeCalculationType.isPercentageOfAnotherCharge()) {
                 this.percentage = chargeAmount;
                 this.amountPercentageAppliedTo = amountPercentageAppliedTo;
                 if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
@@ -240,11 +370,39 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 this.amountOutstanding = calculateOutstanding();
                 this.amountWaived = null;
                 this.amountWrittenOff = null;
-            break;
+                if (isCustomPercentageBasedDistributedCharge()) { // Mandatory Insurance and aval based on disbursement
+                                                                  // amount
+                    if (numberOfRepayments == null) {
+                        numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
+                    }
+                    updateAmountOrPercentageForDistributedCharge(numberOfRepayments, this.amount);
+                }
+            }
         }
-        this.amountOrPercentage = chargeAmount;
+
+        if (!isCustomFlatDistributedCharge() && !isCustomPercentageBasedDistributedCharge()) {
+            this.amountOrPercentage = chargeAmount;
+        }
         if (this.loan != null && isInstalmentFee()) {
             updateInstallmentCharges();
+        }
+    }
+
+    private void updateAmountOrPercentageForDistributedCharge(Integer numberOfRepayments, BigDecimal amount) {
+        if (this.loan != null) {
+            numberOfRepayments = this.loan.getLoanProductRelatedDetail().getNumberOfRepayments();
+            List<LoanRepaymentScheduleInstallment> graceInstallments = this.loan.getRepaymentScheduleInstallments().stream()
+                    .filter(installment -> installment.getInstallmentNumber() != null && installment.getInstallmentNumber() == 0).toList();
+            if (!graceInstallments.isEmpty()) {
+                numberOfRepayments = numberOfRepayments - graceInstallments.size();
+            }
+            if (this.applicableFromInstallment != null) {
+                numberOfRepayments = numberOfRepayments - (this.applicableFromInstallment - 1);
+            }
+        }
+        this.amountOrPercentage = amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
+        if (this.getChargeCalculation().isFlatMandatoryInsurance()) {
+            this.amountOrPercentage = this.amountOrPercentage.setScale(0, RoundingMode.DOWN);
         }
     }
 
@@ -276,6 +434,14 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         this.paid = false;
         for (final LoanInstallmentCharge installmentCharge : this.loanInstallmentCharge) {
             installmentCharge.resetPaidAmount(currency);
+        }
+    }
+
+    public void resetWrittenOffAmount(final MonetaryCurrency currency) {
+        this.amountWrittenOff = BigDecimal.ZERO;
+        this.amountOutstanding = calculateAmountOutstanding(currency);
+        for (final LoanInstallmentCharge installmentCharge : this.loanInstallmentCharge) {
+            installmentCharge.resetWrittenOffAmount(currency);
         }
     }
 
@@ -311,7 +477,8 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private BigDecimal calculateAmountOutstanding(final MonetaryCurrency currency) {
-        return getAmount(currency).minus(getAmountWaived(currency)).minus(getAmountPaid(currency)).getAmount();
+        return getAmount(currency).minus(getAmountWaived(currency)).minus(getAmountPaid(currency)).minus(getAmountWrittenOff(currency))
+                .getAmount();
     }
 
     public void update(final Loan loan) {
@@ -328,12 +495,25 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
                 case INVALID:
                 break;
-                case FLAT:
+                case FLAT_AMOUNT:
+                case FLAT_SEGOVOLUNTARIO:
+                case FLAT_SEGO:
                     if (isInstalmentFee()) {
                         if (numberOfRepayments == null) {
                             numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
                         }
-                        this.amount = amount.multiply(BigDecimal.valueOf(numberOfRepayments));
+                        if (isCustomFlatDistributedCharge()) {
+                            if (this.loan != null) {
+                                numberOfRepayments = this.loan.fetchUnpaidNumberOfInstallments(this.getApplicableFromInstallment());
+                            }
+                            updateAmountOrPercentageForDistributedCharge(numberOfRepayments, amount);
+                            this.amount = amount;
+                        } else {
+                            if (this.defaultFromInstallment != null && this.defaultFromInstallment > 0) {
+                                numberOfRepayments = this.defaultFromInstallment - 1;
+                            }
+                            this.amount = amount.multiply(BigDecimal.valueOf(numberOfRepayments));
+                        }
                     } else {
                         this.amount = amount;
                     }
@@ -342,15 +522,36 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 case PERCENT_OF_AMOUNT_AND_INTEREST:
                 case PERCENT_OF_INTEREST:
                 case PERCENT_OF_DISBURSEMENT_AMOUNT:
+                case DISB_SEGO:
+                case DISB_AVAL:
                     this.percentage = amount;
                     this.amountPercentageAppliedTo = loanPrincipal;
                     if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
                         loanCharge = percentageOf(this.amountPercentageAppliedTo);
                     }
                     this.amount = minimumAndMaximumCap(loanCharge);
+                    if (isInstalmentFee() && isCustomPercentageBasedDistributedCharge()) {
+                        /*
+                         * if (numberOfRepayments == null) { numberOfRepayments =
+                         * this.loan.fetchNumberOfInstallmensAfterExceptions(); } if (this.loan != null) {
+                         * numberOfRepayments =
+                         * this.loan.fetchUnpaidNumberOfInstallments(this.getApplicableFromInstallment()); }
+                         */
+                        updateAmountOrPercentageForDistributedCharge(numberOfRepayments, this.amount);
+                    }
+                break;
+                case OPRIN_SEGO:
+                    this.percentage = amount;
+                    this.amountPercentageAppliedTo = loanPrincipal;
+                break;
+                default:
                 break;
             }
-            this.amountOrPercentage = amount;
+            if (!isCustomPercentageBasedDistributedCharge() && !isCustomFlatDistributedCharge()) {
+                // isCustomPercentageBasedDistributedCharge and isCustomFlatDistributedCharge amount is already
+                // calculated above
+                this.amountOrPercentage = amount;
+            }
             this.amountOutstanding = calculateOutstanding();
             if (this.loan != null && isInstalmentFee()) {
                 updateInstallmentCharges();
@@ -418,7 +619,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
                 case INVALID:
                 break;
-                case FLAT:
+                case FLAT_AMOUNT:
                     if (isInstalmentFee()) {
                         this.amount = newValue.multiply(BigDecimal.valueOf(this.loan.fetchNumberOfInstallmensAfterExceptions()));
                     } else {
@@ -435,13 +636,15 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     loanCharge = BigDecimal.ZERO;
                     if (isInstalmentFee()) {
                         loanCharge = this.loan.calculatePerInstallmentChargeAmount(ChargeCalculationType.fromInt(this.chargeCalculation),
-                                this.percentage);
+                                this.percentage, this.amountOrPercentage, this.getCharge().getParentChargeId());
                     }
                     if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
                         loanCharge = percentageOf(this.amountPercentageAppliedTo);
                     }
                     this.amount = minimumAndMaximumCap(loanCharge);
                     this.amountOutstanding = calculateOutstanding();
+                break;
+                default:
                 break;
             }
             this.amountOrPercentage = newValue;
@@ -450,6 +653,10 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
         return actualChanges;
+    }
+
+    public void resetAndUpdateInstallmentCharges() {
+        updateInstallmentCharges();
     }
 
     private void updateInstallmentCharges() {
@@ -481,11 +688,39 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 this.loanInstallmentCharge.add(loanChargePerInstallmentArray[index++]);
             }
         }
+
         Money amount = Money.zero(this.loan.getCurrency());
-        for (LoanInstallmentCharge charge : this.loanInstallmentCharge) {
-            amount = amount.plus(charge.getAmount());
+        // adjust decimal difference in amount that comes due to division of Charge amount with number of repayments
+        if ((isCustomFlatDistributedCharge()) && this.charge.isInstallmentFee()) {
+            int i = 1;
+            for (LoanInstallmentCharge charge : this.loanInstallmentCharge) {
+                if (i == this.loanInstallmentCharge.size()) {
+                    amount = amount.plus(charge.getAmount());
+                    if (amount.getAmount().compareTo(this.amount) != 0) {
+                        if (amount.getAmount().compareTo(this.amount) < 0) {
+                            BigDecimal difference = this.amount.subtract(amount.getAmount());
+                            charge.setAmount(charge.getAmount().add(difference));
+                        }
+                        if (amount.getAmount().compareTo(this.amount) > 0) {
+                            BigDecimal difference = amount.getAmount().subtract(this.amount);
+                            charge.setAmount(charge.getAmount().subtract(difference));
+                        }
+                        charge.setAmountOutstanding(charge.getAmount());
+                        amount = Money.of(amount.getCurrency(), this.amount);
+
+                    }
+                } else {
+                    amount = amount.plus(charge.getAmount());
+                }
+                i++;
+            }
+        } else {
+            for (LoanInstallmentCharge charge : this.loanInstallmentCharge) {
+                amount = amount.plus(charge.getAmount());
+            }
         }
         this.amount = amount.getAmount();
+        this.amountOutstanding = calculateOutstanding();
     }
 
     public boolean isDueAtDisbursement() {
@@ -626,6 +861,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         return occursOnDayFromExclusiveAndUpToAndIncluding(fromNotInclusive, upToAndInclusive, dueDate);
     }
 
+    public boolean isDueForCollectionForInstallment(final LoanRepaymentScheduleInstallment installment) {
+        return this.getOverdueInstallmentCharge() != null && Objects
+                .equals(this.getOverdueInstallmentCharge().installment().getInstallmentNumber(), installment.getInstallmentNumber());
+    }
+
     public boolean isDueForCollectionFromIncludingAndUpToAndIncluding(final LocalDate fromAndInclusive, final LocalDate upToAndInclusive) {
         final LocalDate dueDate = getDueLocalDate();
         return occursOnDayFromAndUpToAndIncluding(fromAndInclusive, upToAndInclusive, dueDate);
@@ -661,6 +901,10 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         return this.paid;
     }
 
+    public boolean isNotPaid() {
+        return !this.paid;
+    }
+
     public boolean isWaived() {
         return this.waived;
     }
@@ -671,6 +915,10 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public BigDecimal getMaxCap() {
         return this.maxCap;
+    }
+
+    public Set<CustomChargeHonorarioMap> getCustomChargeHonorarioMaps() {
+        return this.customChargeHonorarioMaps;
     }
 
     public boolean isPaidOrPartiallyPaid(final MonetaryCurrency currency) {
@@ -695,6 +943,41 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         return Money.of(currency, this.amountWrittenOff);
     }
 
+    public BigDecimal getInstallmentChargeAmount() {
+        return installmentChargeAmount;
+    }
+
+    public void setInstallmentChargeAmount(BigDecimal installmentChargeAmount) {
+        this.installmentChargeAmount = installmentChargeAmount;
+    }
+
+    public Integer getApplicableFromInstallment() {
+        if (applicableFromInstallment == null) {
+            return 1;
+        }
+        return applicableFromInstallment;
+    }
+
+    public void setApplicableFromInstallment(Integer applicableFromInstallment) {
+        this.applicableFromInstallment = applicableFromInstallment;
+    }
+
+    public BigDecimal partialAmountPaidInFirstDefaultInstallment() {
+        return partialAmountPaidInFirstDefaultInstallment;
+    }
+
+    public void setPartialAmountPaidInFirstDefaultInstallment(BigDecimal partialAmountPaidInFirstDefaultInstallment) {
+        this.partialAmountPaidInFirstDefaultInstallment = partialAmountPaidInFirstDefaultInstallment;
+    }
+
+    public Integer defaultFromInstallment() {
+        return defaultFromInstallment;
+    }
+
+    public void setDefaultFromInstallment(Integer defaultFromInstallment) {
+        this.defaultFromInstallment = defaultFromInstallment;
+    }
+
     /**
      * @param incrementBy
      *
@@ -706,25 +989,44 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
      *
      * @return Actual amount paid on this charge
      */
-    public Money updatePaidAmountBy(final Money incrementBy, final Integer installmentNumber, final Money feeAmount) {
+    public Money updatePaidAmountBy(final Money incrementBy, final Integer installmentNumber, final Money feeAmount,
+            final boolean isWriteOffTransaction) {
         Money processAmount;
         if (isInstalmentFee()) {
             if (installmentNumber == null) {
-                processAmount = getUnpaidInstallmentLoanCharge().updatePaidAmountBy(incrementBy, feeAmount);
+                final LoanInstallmentCharge unpaidInstallmentLoanCharge = getUnpaidInstallmentLoanCharge();
+                if (unpaidInstallmentLoanCharge != null) {
+                    processAmount = unpaidInstallmentLoanCharge.updatePaidAmountBy(incrementBy, feeAmount, isWriteOffTransaction);
+                } else {
+                    processAmount = incrementBy;
+                }
             } else {
-                processAmount = getInstallmentLoanCharge(installmentNumber).updatePaidAmountBy(incrementBy, feeAmount);
+                final LoanInstallmentCharge installmentLoanCharge = getInstallmentLoanCharge(installmentNumber);
+                if (installmentLoanCharge != null) {
+                    processAmount = installmentLoanCharge.updatePaidAmountBy(incrementBy, feeAmount, isWriteOffTransaction);
+                } else {
+                    processAmount = incrementBy;
+                }
             }
         } else {
             processAmount = incrementBy;
         }
+
         Money amountPaidToDate = Money.of(processAmount.getCurrency(), this.amountPaid);
+        if (isWriteOffTransaction) {
+            amountPaidToDate = Money.of(processAmount.getCurrency(), this.amountWrittenOff);
+        }
         final Money amountOutstanding = Money.of(processAmount.getCurrency(), this.amountOutstanding);
 
         Money amountPaidOnThisCharge;
         if (processAmount.isGreaterThanOrEqualTo(amountOutstanding)) {
             amountPaidOnThisCharge = amountOutstanding;
             amountPaidToDate = amountPaidToDate.plus(amountOutstanding);
-            this.amountPaid = amountPaidToDate.getAmount();
+            if (isWriteOffTransaction) {
+                this.amountWrittenOff = amountPaidToDate.getAmount();
+            } else {
+                this.amountPaid = amountPaidToDate.getAmount();
+            }
             this.amountOutstanding = BigDecimal.ZERO;
             Money waivedAmount = getAmountWaived(processAmount.getCurrency());
             if (waivedAmount.isGreaterThanZero()) {
@@ -736,7 +1038,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         } else {
             amountPaidOnThisCharge = processAmount;
             amountPaidToDate = amountPaidToDate.plus(processAmount);
-            this.amountPaid = amountPaidToDate.getAmount();
+            if (isWriteOffTransaction) {
+                this.amountWrittenOff = amountPaidToDate.getAmount();
+            } else {
+                this.amountPaid = amountPaidToDate.getAmount();
+            }
             this.amountOutstanding = calculateAmountOutstanding(incrementBy.getCurrency());
         }
         return amountPaidOnThisCharge;
@@ -1051,5 +1357,198 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 .amountPercentageAppliedTo(amountPercentageAppliedTo).amountOrPercentage(amountOrPercentage).penalty(penaltyCharge)
                 .chargePaymentMode(chargePaymentModeData).paid(paid).waived(waived).loanId(loan.getId()).minCap(minCap).maxCap(maxCap)
                 .installmentChargeData(loanInstallmentChargeDataSet).externalId(externalId).build();
+    }
+
+    public boolean isCustomFeeChargeApplicableOnInstallment(Integer installmentNumber) {
+        boolean isApplicable = false;
+        if (this.getChargeCalculation().isFlatHono() && !this.getCustomChargeHonorarioMaps().isEmpty()) {
+            for (CustomChargeHonorarioMap customCharge : this.getCustomChargeHonorarioMaps()) {
+                if (customCharge.getLoanInstallmentNr().equals(installmentNumber)) {
+                    isApplicable = true;
+                    break;
+                }
+            }
+        } else if (this.isCustomFlatDistributedCharge() || this.isCustomPercentageBasedDistributedCharge()
+                || this.isCustomPercentageBasedOfAnotherCharge() || isCustomPercentageOfOutstandingPrincipalCharge()) {
+            isApplicable = true;
+        }
+        return isApplicable;
+    }
+
+    public boolean isCustomFlatVoluntaryInsurenceCharge() {
+        return this.getChargeCalculation().getCode().equals(ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getCode());
+    }
+
+    public BigDecimal calculateCustomFeeChargeToInstallment(Integer installmentNumber, Money principalDisbursed,
+            Integer numberOfInstallments, Money outstandingBalance) {
+        BigDecimal customAmout = BigDecimal.ZERO;
+        if (this.getChargeCalculation().isFlatHono() && !this.getCustomChargeHonorarioMaps().isEmpty()) {
+            for (CustomChargeHonorarioMap customCharge : this.getCustomChargeHonorarioMaps()) {
+                if (customCharge.getLoanInstallmentNr().equals(installmentNumber)) {
+                    customAmout = customAmout.add(customCharge.getFeeTotalAmount());
+                    break;
+                }
+            }
+        } else if (this.isCustomFlatDistributedCharge()) {
+            BigDecimal amountToAdd = this.amountOrPercentage;
+            if (!this.installmentCharges().isEmpty()) {
+                LoanInstallmentCharge installmentCharge = this.getInstallmentLoanCharge(installmentNumber);
+                if (installmentCharge != null) {
+                    amountToAdd = installmentCharge.getAmount();
+                }
+            }
+            customAmout = customAmout.add(amountToAdd);
+        } else if (this.isCustomPercentageBasedDistributedCharge()) {
+            BigDecimal chargeAmount = BigDecimal.ZERO;
+            if (this.installmentCharges().isEmpty()) {
+                chargeAmount = this.amountOrPercentage;
+            } else {
+                final LoanInstallmentCharge installmentCharge = this.getInstallmentLoanCharge(installmentNumber);
+                if (installmentCharge != null) {
+                    chargeAmount = installmentCharge.getAmount();
+                }
+            }
+            customAmout = customAmout.add(chargeAmount);
+        } else if (this.isCustomPercentageBasedOfAnotherCharge()) {
+            if (!this.installmentCharges().isEmpty()) {
+                final LoanInstallmentCharge installmentCharge = this.getInstallmentLoanCharge(installmentNumber);
+                if (installmentCharge != null) {
+                    customAmout = customAmout.add(installmentCharge.getAmount());
+                }
+            }
+        } else if (this.isCustomPercentageOfOutstandingPrincipalCharge()) {
+            BigDecimal installmentCount;
+            if (this.installmentCharges().isEmpty() || this.loan == null) {
+                installmentCount = BigDecimal.valueOf(numberOfInstallments);
+            } else {
+                Integer numberOfRepayments = this.loan.getLoanProductRelatedDetail().getNumberOfRepayments();
+                List<LoanRepaymentScheduleInstallment> graceInstallments = this.loan.getRepaymentScheduleInstallments().stream()
+                        .filter(installment -> installment.getInstallmentNumber() != null && installment.getInstallmentNumber() == 0)
+                        .toList();
+                if (!graceInstallments.isEmpty()) {
+                    numberOfRepayments = numberOfRepayments - graceInstallments.size();
+                }
+                if (this.applicableFromInstallment != null) {
+                    numberOfRepayments = numberOfRepayments - (this.applicableFromInstallment - 1);
+                }
+                installmentCount = BigDecimal.valueOf(numberOfRepayments);
+            }
+            BigDecimal computedAmount = LoanCharge.percentageOf(outstandingBalance.getAmount(), this.percentage);
+            BigDecimal finalAmount = computedAmount.divide(installmentCount, 0, RoundingMode.HALF_UP);
+            customAmout = customAmout.add(finalAmount);
+        }
+        return customAmout;
+    }
+
+    public BigDecimal calculateCustomFeeChargeToInstallment(Integer installmentNumber) {
+        return calculateCustomFeeChargeToInstallment(installmentNumber, null, null, null);
+    }
+
+    public void updateCustomFeeCharge() {
+        updateInstallmentCharges();
+    }
+
+    public boolean isFlatHono() {
+        return getChargeCalculation().isFlatHono();
+    }
+
+    public boolean isCustomFlatDistributedCharge() {
+        // Charge is distributed among the installments
+        // return getChargeCalculation().isFlatMandatoryInsurance();
+        return false;
+    }
+
+    public boolean isCustomPercentageBasedDistributedCharge() {
+        // Charge is distributed among the installments
+        return getChargeCalculation().isCustomPercentageBasedDistributedCharge();
+    }
+
+    public boolean isAvalCharge() {
+        // Charge is distributed among the installments
+        return getChargeCalculation().isPercentageOfAval();
+    }
+
+    public boolean isMandatoryInsurance() {
+        // Charge is distributed among the installments
+        return getChargeCalculation().isMandatoryInsuranceCharge();
+    }
+
+    public boolean isVoluntaryInsurance() {
+        // Charge is distributed among the installments
+        return getChargeCalculation().isVoluntaryInsurance();
+    }
+
+    public boolean isCustomPercentageBasedOfAnotherCharge() {
+        // Charge is distributed among the installments
+        return getChargeCalculation().isPercentageOfAnotherCharge();
+    }
+
+    public boolean isCustomPercentageOfOutstandingPrincipalCharge() {
+        // Charge is distributed among the installments
+        return getChargeCalculation().isCustomPercentageOfOutstandingPrincipalCharge();
+    }
+
+    public BigDecimal getLastInstallmentRoundOffAmountForCustomFlatDistributedCharge(Integer lastInstallmentNumber,
+            MonetaryCurrency currency) {
+        Integer numberOfRepayments = 1;
+        if (lastInstallmentNumber > 1) {
+            if (this.applicableFromInstallment == null) {
+                numberOfRepayments = lastInstallmentNumber;
+            } else {
+                numberOfRepayments = lastInstallmentNumber - this.applicableFromInstallment + 1;
+            }
+        }
+        BigDecimal installmentAmount = this.amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
+        Money amt = Money.zero(currency);
+        for (int i = 1; i <= numberOfRepayments; i++) {
+            amt = amt.add(installmentAmount);
+        }
+
+        if (amt.getAmount().compareTo(this.amount) > 0) {
+            BigDecimal difference = amt.getAmount().subtract(this.amount);
+            installmentAmount = installmentAmount.subtract(difference);
+        } else if (amt.getAmount().compareTo(this.amount) < 0) {
+            BigDecimal difference = this.amount.subtract(amt.getAmount());
+            installmentAmount = installmentAmount.add(difference);
+        }
+        return installmentAmount;
+    }
+
+    public BigDecimal calculateParentChargeAmountForInstallment(Set<LoanCharge> loanCharges, Integer installmentNumber,
+            Money principalDisbursed, Integer numberOfInstallments, Money outstandingBalance) {
+        // First Identify the parent loan charge and then Calculate the installment charge for the parent Charge. This
+        // has already been calculated before when the parent charge was processed
+        // But we no longer have that value available when the percentage based charge is processed
+        BigDecimal parentChargeAmount = BigDecimal.ZERO;
+        for (LoanCharge parentCharge : loanCharges) {
+            if (parentCharge.getCharge().getId().equals(this.getCharge().getParentChargeId())) {
+                parentChargeAmount = parentCharge.calculateCustomFeeChargeToInstallment(installmentNumber, principalDisbursed,
+                        numberOfInstallments, outstandingBalance);
+                break;
+            }
+        }
+        return parentChargeAmount;
+    }
+
+    public void adjustAmountWrittenOff(final Money amountToBeWrittenOff) {
+        final Money amountOutstanding = Money.of(amountToBeWrittenOff.getCurrency(), this.calculateOutstanding());
+        if (amountOutstanding.isGreaterThanOrEqualTo(amountToBeWrittenOff)) {
+            this.amountWrittenOff = this.getAmountWrittenOff(amountToBeWrittenOff.getCurrency()).plus(amountToBeWrittenOff).getAmount();
+            this.amountOutstanding = calculateOutstanding();
+            this.paid = this.determineIfFullyPaid();
+        }
+    }
+
+    public void adjustChargeAmount(final Money adjustedAmount) {
+        final Money currentAmount = this.getAmount(adjustedAmount.getCurrency());
+        if (currentAmount.isGreaterThanOrEqualTo(adjustedAmount)) {
+            this.amount = currentAmount.minus(adjustedAmount).getAmount();
+            this.amountOutstanding = calculateOutstanding();
+            this.paid = this.determineIfFullyPaid();
+        }
+    }
+
+    public void updateAmountOutstanding() {
+        this.amountOutstanding = calculateOutstanding();
     }
 }

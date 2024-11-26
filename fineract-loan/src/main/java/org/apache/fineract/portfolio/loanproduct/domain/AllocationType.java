@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanproduct.domain;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import lombok.Getter;
@@ -28,14 +29,23 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 @Getter
 public enum AllocationType {
 
-    PENALTY("Penalty"), //
-    FEE("Fee"), //
-    PRINCIPAL("Principal"), //
-    INTEREST("Interest"); //
+    PENALTY("Penalty", "labels.allocations.types.penalty"), //
+    FEE("Fee", "labels.allocations.types.fee"), //
+    PRINCIPAL("Principal", "labels.allocations.types.principal"), //
+    INTEREST("Interest", "labels.allocations.types.interest"), //
+    FEES("Honorarios", "labels.allocations.types.fees"), //
+    AVAL("Aval", "labels.allocations.types.aval"), //
+    MANDATORY_INSURANCE("Mandatory Insurance", "labels.allocations.types.mandatory.insurance"), VOLUNTARY_INSURANCE("Voluntary Insurance",
+            "labels.allocations.types.voluntary.insurance");
 
     private final String humanReadableName;
+    private final String code;
 
     public static List<EnumOptionData> getValuesAsEnumOptionDataList() {
-        return Arrays.stream(values()).map(v -> new EnumOptionData((long) (v.ordinal() + 1), v.name(), v.getHumanReadableName())).toList();
+        List<EnumOptionData> list = new ArrayList<>(
+                Arrays.stream(values()).map(v -> new EnumOptionData((long) (v.ordinal() + 1), v.name(), v.getCode())).toList());
+        // Remove FEE enum from the list as it is split into FEES, AVAL, MANDATORY_INSURANCE and VOLUNTARY_INSURANCE.
+        list.removeIf(x -> x.getCode().equals("FEE"));
+        return list;
     }
 }

@@ -30,6 +30,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.apache.fineract.custom.infrastructure.bulkimport.data.CustomGlobalEntityType;
 import org.apache.fineract.infrastructure.bulkimport.data.BulkImportEvent;
@@ -87,7 +88,7 @@ public class CustomBulkImportWorkbookServiceImpl implements BulkImportWorkbookSe
 
     @Override
     public Long importWorkbook(String entity, InputStream inputStream, FormDataContentDisposition fileDetail, final String locale,
-            final String dateFormat) {
+            final String dateFormat, final Map<String, Object> importAttributes) {
         try {
             if (entity != null && inputStream != null && fileDetail != null && locale != null && dateFormat != null) {
                 final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -107,14 +108,12 @@ public class CustomBulkImportWorkbookServiceImpl implements BulkImportWorkbookSe
 
                 }
                 Workbook workbook = new HSSFWorkbook(clonedInputStream);
-                CustomGlobalEntityType entityType = null;
+                CustomGlobalEntityType entityType;
                 int primaryColumn = 0;
                 if (entity.trim().equalsIgnoreCase(CustomGlobalEntityType.CLIENT_ALLY.getAlias())) {
                     entityType = CustomGlobalEntityType.CLIENT_ALLY;
-                    primaryColumn = 0;
                 } else if (entity.trim().equalsIgnoreCase(CustomGlobalEntityType.CLIENT_ALLY_POINTS_OF_SALES.getAlias())) {
                     entityType = CustomGlobalEntityType.CLIENT_ALLY_POINTS_OF_SALES;
-                    primaryColumn = 0;
                 } else {
                     workbook.close();
                     throw new GeneralPlatformDomainRuleException("error.msg.unable.to.find.resource", "Unable to find requested resource");
@@ -160,6 +159,14 @@ public class CustomBulkImportWorkbookServiceImpl implements BulkImportWorkbookSe
         final String sql = "select " + rm.schema() + " order by i.id desc";
 
         return this.jdbcTemplate.query(sql, rm, new Object[] { type.getValue() }); // NOSONAR
+    }
+
+    @Override
+    public Collection<ImportData> getImports(final GlobalEntityType type, final String fileName) {
+        this.securityContext.authenticatedUser();
+        final ImportMapper rm = new ImportMapper();
+        final String sql = "select " + rm.schema() + " AND d.name = ? order by i.id desc";
+        return this.jdbcTemplate.query(sql, rm, type.getValue(), fileName);
     }
 
     private static final class ImportMapper implements RowMapper<ImportData> {

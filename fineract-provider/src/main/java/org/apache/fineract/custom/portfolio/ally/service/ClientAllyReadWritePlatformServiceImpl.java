@@ -21,16 +21,24 @@ package org.apache.fineract.custom.portfolio.ally.service;
 import jakarta.persistence.PersistenceException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.custom.infrastructure.codes.service.CustomCodeValueReadPlatformService;
+import org.apache.fineract.custom.portfolio.ally.api.ClientAllyPointOfSalesApiConstants;
 import org.apache.fineract.custom.portfolio.ally.data.CityCodeValueData;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyCodeValueData;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyData;
+import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesData;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAlly;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyRepository;
 import org.apache.fineract.custom.portfolio.ally.exception.ClientAllyNotFoundException;
 import org.apache.fineract.custom.portfolio.ally.mapper.ClientAllyMapper;
@@ -66,6 +74,8 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
     private final ClientAllyDataValidator validatorClass;
     private final PlatformSecurityContext context;
     private final CustomCodeValueReadPlatformService customCodeValueReadPlatformService;
+    @Autowired
+    private ClientAllyPointOfSalesRepository repositoryPointofSale;
 
     @Autowired
     public ClientAllyReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
@@ -97,6 +107,46 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
                 + " ORDER BY company_name, stateDescription";
 
         return this.jdbcTemplate.query(sql, rm, new Object[] { name, name });
+    }
+
+    @Override
+    public List<ClientAllyData> retrieveAlliesWithPointOfSales() {
+        final String sql = """
+                    SELECT cca.id AS "clientAllyId",
+                    cca.company_name AS "companyName",
+                    cca.nit AS nit,
+                    ccapos.id AS "pointOfSaleId",
+                    ccapos."name" AS "pointOfSaleName",
+                    ccapos.code AS "pointOfSaleCode"
+                    FROM custom.c_client_ally cca
+                    INNER JOIN custom.c_client_ally_point_of_sales ccapos ON ccapos.client_ally_id = cca.id\s
+                    ORDER BY cca.id
+                """;
+        final List<ClientAllyData> clientAllies = jdbcTemplate.query(sql, resultSet -> {
+            final List<ClientAllyData> clientAllyDataList = new ArrayList<>();
+            final Map<Long, ClientAllyData> clientAllyMap = new HashMap<>();
+            while (resultSet.next()) {
+                Long clientAllyId = resultSet.getLong("clientAllyId");
+                ClientAllyData clientAllyData = clientAllyMap.get(clientAllyId);
+                if (clientAllyData == null) {
+                    clientAllyData = ClientAllyData.builder().id(clientAllyId).companyName(resultSet.getString("companyName"))
+                            .nit(resultSet.getString("nit")).pointOfSales(new ArrayList<>()).build();
+                    clientAllyMap.put(clientAllyId, clientAllyData);
+                    clientAllyDataList.add(clientAllyData);
+                }
+                final long pointOfSaleId = resultSet.getLong("pointOfSaleId");
+                if (pointOfSaleId > 0) {
+                    ClientAllyPointOfSalesData clientAllyPointOfSalesData = ClientAllyPointOfSalesData.builder().id(pointOfSaleId)
+                            .name(resultSet.getString("pointOfSaleName")).code(resultSet.getString("pointOfSaleCode")).build();
+                    clientAllyData.getPointOfSales().add(clientAllyPointOfSalesData);
+                }
+            }
+            return clientAllyDataList;
+        }, new Object[] {});
+        if (CollectionUtils.isNotEmpty(clientAllies)) {
+            clientAllies.sort((c1, c2) -> Integer.compare(c2.getPointOfSales().size(), c1.getPointOfSales().size()));
+        }
+        return clientAllies;
     }
 
     @Override
@@ -171,11 +221,23 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
 
         try {
             this.context.authenticatedUser();
-
             final ClientAlly entity = this.validatorClass.validateForUpdate(command.json());
             Optional<ClientAlly> dbEntity = repository.findById(id);
-
+            final Long stateCodeValueId = command.longValueOfParameterNamed("stateCodeValueId");
             if (dbEntity.isPresent()) {
+                if (stateCodeValueId == ClientAllyPointOfSalesApiConstants.stateCodeValueInavtiveParamName.longValue()) {
+                    final Long parentId = id;
+                    List<ClientAllyPointOfSales> clientAllyPointOfSalesDataList = repositoryPointofSale
+                            .findAllPointOfSalesByAllyId(parentId);
+                    if (!clientAllyPointOfSalesDataList.isEmpty()) {
+                        for (ClientAllyPointOfSales clientofsale : clientAllyPointOfSalesDataList) {
+                            if (clientofsale.getStateCodeValueId() != stateCodeValueId) {
+                                clientofsale.setStateCodeValueId(stateCodeValueId);
+                                repositoryPointofSale.saveAndFlush(clientofsale);
+                            }
+                        }
+                    }
+                }
                 entity.setId(id);
                 repository.save(entity);
             } else {
@@ -232,7 +294,7 @@ public class ClientAllyReadWritePlatformServiceImpl implements ClientAllyReadWri
                     .collectionEnabled(rs.getBoolean("collection_enabled")).bankEntityCodeValueId(rs.getLong("bank_entity_id"))
                     .bankEntityCodeValueDescription(rs.getString("bankEntityDescription"))
                     .accountTypeCodeValueId(rs.getLong("account_type_id"))
-                    .accountTypeCodeValueDescription(rs.getString("accountTypeDescription")).accountNumber(rs.getLong("account_number"))
+                    .accountTypeCodeValueDescription(rs.getString("accountTypeDescription")).accountNumber(rs.getString("account_number"))
                     .taxProfileCodeValueId(rs.getLong("tax_profile_id"))
                     .taxProfileCodeValueDescription(rs.getString("taxProfileDescription")).stateCodeValueId(rs.getLong("state_id"))
                     .stateCodeValueDescription(rs.getString("stateDescription")).pointOfSalesCounter(rs.getInt("pointOfSalesCounter"))

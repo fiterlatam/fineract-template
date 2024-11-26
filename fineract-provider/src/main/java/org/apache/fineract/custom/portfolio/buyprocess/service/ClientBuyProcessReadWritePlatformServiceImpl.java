@@ -19,17 +19,20 @@
 package org.apache.fineract.custom.portfolio.buyprocess.service;
 
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import jakarta.persistence.PersistenceException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.fineract.commands.domain.CommandWrapper;
-import org.apache.fineract.commands.service.CommandWrapperBuilder;
-import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.fineract.custom.infrastructure.core.service.CustomDateUtils;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.data.ApproveLoanPayloadData;
 import org.apache.fineract.custom.portfolio.buyprocess.data.ClientBuyProcessData;
 import org.apache.fineract.custom.portfolio.buyprocess.data.CreateLoanPayloadData;
@@ -44,13 +47,28 @@ import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSe
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
-import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanBuyBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.charge.data.ChargeData;
+import org.apache.fineract.portfolio.charge.data.ChargeInsuranceDetailData;
+import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeInsuranceType;
+import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
+import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
+import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -62,37 +80,48 @@ import org.springframework.stereotype.Service;
 public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyProcessReadWritePlatformService {
 
     private final JdbcTemplate jdbcTemplate;
-    private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final ClientBuyProcessDataValidator validatorClass;
     private final PlatformSecurityContext context;
-    private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final LoanWritePlatformService loanWritePlatformService;
+    private final FromJsonHelper fromApiJsonHelper;
+    private final LoanApplicationWritePlatformService loanApplicationWritePlatformService;
+    private final ClientBuyProcessRepository clientBuyProcessRepository;
+    private final LoanProductRepository loanProductRepository;
+    private final ChargeReadPlatformService chargeReadPlatformService;
+    private final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository;
+    private final BusinessEventNotifierService businessEventNotifierService;
+    private final LoanRepositoryWrapper loanRepository;
 
     @Autowired
-    public ClientBuyProcessReadWritePlatformServiceImpl(final JdbcTemplate jdbcTemplate, final DatabaseSpecificSQLGenerator sqlGenerator,
-            final ClientBuyProcessDataValidator validatorClass, final PlatformSecurityContext context,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+    public ClientBuyProcessReadWritePlatformServiceImpl(JdbcTemplate jdbcTemplate, final ClientBuyProcessDataValidator validatorClass,
+            final PlatformSecurityContext context, LoanWritePlatformService loanWritePlatformService, FromJsonHelper fromApiJsonHelper,
+            LoanApplicationWritePlatformService loanApplicationWritePlatformService, ClientBuyProcessRepository clientBuyProcessRepository,
+            LoanProductRepository loanProductRepository, ChargeReadPlatformService chargeReadPlatformService,
+            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository, BusinessEventNotifierService businessEventNotifierService,
+            LoanRepositoryWrapper loanRepository) {
         this.jdbcTemplate = jdbcTemplate;
-        this.sqlGenerator = sqlGenerator;
         this.validatorClass = validatorClass;
         this.context = context;
-        this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+        this.loanWritePlatformService = loanWritePlatformService;
+        this.fromApiJsonHelper = fromApiJsonHelper;
+        this.loanApplicationWritePlatformService = loanApplicationWritePlatformService;
+        this.clientBuyProcessRepository = clientBuyProcessRepository;
+        this.loanProductRepository = loanProductRepository;
+        this.chargeReadPlatformService = chargeReadPlatformService;
+        this.clientAllyPointOfSalesRepository = clientAllyPointOfSalesRepository;
+        this.businessEventNotifierService = businessEventNotifierService;
+        this.loanRepository = loanRepository;
     }
-
-    @Autowired
-    private ClientBuyProcessRepository repository;
-
-    @Autowired
-    private LoanProductRepository loanProductRepository;
 
     @Override
     public List<ClientBuyProcessData> findAllActive() {
-        return ClientBuyProcessMapper.toDTO(repository.findAll());
+        return ClientBuyProcessMapper.toDTO(clientBuyProcessRepository.findAll());
     }
 
     @Override
     public ClientBuyProcessData findById(Long id) {
-        Optional<ClientBuyProcess> entity = repository.findById(id);
-        if (!entity.isPresent()) {
+        Optional<ClientBuyProcess> entity = clientBuyProcessRepository.findById(id);
+        if (entity.isEmpty()) {
             throw new ClientBuyProcessNotFoundException();
         }
         return ClientBuyProcessMapper.toDTO(entity.get());
@@ -103,21 +132,21 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
 
         try {
             this.context.authenticatedUser();
-
-            final ClientBuyProcess entity = this.validatorClass.validateForCreate(command.json(), repository);
-
+            final ClientBuyProcess entity = this.validatorClass.validateForCreate(command.json(), clientBuyProcessRepository);
+            final LoanProduct loanProduct = this.loanProductRepository.findById(entity.getProductId())
+                    .orElseThrow(() -> new LoanProductNotFoundException(entity.getProductId()));
+            if (!loanProduct.getCustomAllowCreateOrDisburse()) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.product.not.allowed.create.or.disburse",
+                        "El producto de préstamo con identificador " + entity.getProductId() + " no permite crear ni desembolsar");
+            }
             // Create Loan and disburse
             createApproveAndDisburseLoan(entity);
-
-            repository.saveAndFlush(entity);
-
-            return new CommandProcessingResultBuilder().withEntityId(entity.getId()).build();
-        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
-            return CommandProcessingResult.empty();
-        } catch (final PersistenceException dve) {
-            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
-            handleDataIntegrityIssues(command, throwable, dve);
+            clientBuyProcessRepository.saveAndFlush(entity);
+            final Loan loan = this.loanRepository.findOneWithNotFoundDetection(entity.getLoanId());
+            this.businessEventNotifierService.notifyPostBusinessEvent(new LoanBuyBusinessEvent(loan));
+            return new CommandProcessingResultBuilder().withEntityId(entity.getId()).withLoanId(entity.getLoanId()).build();
+        } catch (final JpaSystemException | DataIntegrityViolationException | PersistenceException dve) {
+            handleDataIntegrityIssues(dve);
             return CommandProcessingResult.empty();
         }
     }
@@ -128,16 +157,16 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
         Optional<LoanProduct> entityOpt = loanProductRepository.findById(entity.getProductId());
         if (entityOpt.isPresent()) {
 
-            LoanProduct prodiuctEntity = entityOpt.get();
+            LoanProduct productEntity = entityOpt.get();
 
             // Build create loan dto
-            createLoanApplication(entity, prodiuctEntity);
+            createLoanApplication(entity, productEntity);
 
             // Approve loan
-            approveLoanApplication(entity, prodiuctEntity);
+            approveLoanApplication(entity);
 
             // disburse loan
-            disburseLoanApplication(entity, prodiuctEntity);
+            disburseLoanApplication(entity);
 
             log.info("Loan created and disbursed");
         } else {
@@ -145,24 +174,28 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
         }
     }
 
-    private void disburseLoanApplication(ClientBuyProcess entity, LoanProduct prodiuctEntity) {
+    private void disburseLoanApplication(ClientBuyProcess entity) {
 
         DisburseLoanPayloadData payloadData = DisburseLoanPayloadData.builder()
                 .actualDisbursementDate(DateUtils.format(entity.getRequestedDate(), CustomDateUtils.SPANISH_DATE_FORMAT))
-                .transactionAmount(entity.getAmount()).locale("en").dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT).build();
+                .transactionAmount(entity.getAmount()).locale("es").dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT)
+                .channelName(entity.getChannelName()).build();
 
         // Execute create loan command
+        log.info("Client Buy Process Disburse {} ", entity.getCreditId());
+
         GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.SPANISH_DATE_FORMAT));
 
         String payload = gsonBuilder.create().toJson(payloadData);
-        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                .disburseLoanApplication(entity.getLoanId()).withJson(payload) //
-                .build(); //
-        CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        JsonElement jsonElement = fromApiJsonHelper.parse(payload);
+        JsonCommand jsonCommand = new JsonCommand(null, payload, jsonElement, fromApiJsonHelper, null, null, null, null, null, null, null,
+                null, null, null, null, null, null);
+        loanWritePlatformService.disburseLoan(entity.getLoanId(), jsonCommand, false);
+
     }
 
-    private void approveLoanApplication(ClientBuyProcess entity, LoanProduct prodiuctEntity) {
+    private void approveLoanApplication(ClientBuyProcess entity) {
 
         ApproveLoanPayloadData payloadData = ApproveLoanPayloadData.builder()
                 .approvedOnDate(DateUtils.format(entity.getRequestedDate(), CustomDateUtils.SPANISH_DATE_FORMAT))
@@ -174,52 +207,123 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.SPANISH_DATE_FORMAT));
 
         String payload = gsonBuilder.create().toJson(payloadData);
-        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                .approveLoanApplication(entity.getLoanId()).withJson(payload) //
-                .build(); //
-        CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        JsonElement jsonElement = fromApiJsonHelper.parse(payload);
+        JsonCommand jsonCommand = new JsonCommand(null, payload, jsonElement, fromApiJsonHelper, null, null, null, null, null, null, null,
+                null, null, null, null, null, null);
+        loanApplicationWritePlatformService.approveApplication(entity.getLoanId(), jsonCommand);
     }
 
-    private void createLoanApplication(ClientBuyProcess entity, LoanProduct prodiuctEntity) {
+    private void createLoanApplication(final ClientBuyProcess entity, final LoanProduct productEntity) {
+        BigDecimal loanPrincipalAmount = entity.getAmount();
+        BigDecimal interestRatePerPeriod = productEntity.getLoanProductRelatedDetail().getNominalInterestRatePerPeriod();
+        Long numberOfRepayments = entity.getTerm();
+        final Long codigoSeguro = entity.getCodigoSeguro();
+        final Long cedulaSeguroVoluntario = entity.getCedulaSeguroVoluntario();
+        final List<LoanChargeData> loanCharges = new ArrayList<>();
+        if ((codigoSeguro != null && codigoSeguro > 0) && (cedulaSeguroVoluntario != null && cedulaSeguroVoluntario > 0)) {
+            final Collection<ChargeData> insuranceCharges = this.chargeReadPlatformService.retrieveChargesByInsuranceCode(codigoSeguro);
+            if (CollectionUtils.isNotEmpty(insuranceCharges)) {
+                final ChargeData chargeData = insuranceCharges.iterator().next();
+                final ChargeInsuranceDetailData chargeInsuranceDetailData = chargeData.getChargeInsuranceDetailData();
+                if (chargeInsuranceDetailData != null) {
+                    final ChargeInsuranceType chargeInsuranceType = ChargeInsuranceType
+                            .fromInt(chargeInsuranceDetailData.getInsuranceChargedAs() != null
+                                    ? chargeInsuranceDetailData.getInsuranceChargedAs().intValue()
+                                    : 0);
+                    if (chargeInsuranceType.isCargo() || !productEntity.isPurChaseCharge()) {
+                        final Long loanChargeId = chargeData.getId();
+                        final BigDecimal loanChargeAmount = chargeData.getAmount();
+                        final LoanChargeData loanChargeData = LoanChargeData.builder().chargeId(loanChargeId).amount(loanChargeAmount)
+                                .build();
+                        loanCharges.add(loanChargeData);
+                    } else if (chargeInsuranceType.isCompra() && productEntity.isPurChaseCharge()) {
+                        loanPrincipalAmount = chargeInsuranceDetailData.getTotalValue();
+                        numberOfRepayments = chargeInsuranceDetailData.getDeadline();
+                        interestRatePerPeriod = BigDecimal.ZERO;
+                    }
+                }
+            }
+        }
 
-        CreateLoanPayloadData payloadData = CreateLoanPayloadData.builder().productId(entity.getProductId())
+        for (Charge charge : productEntity.getLoanProductCharges()) {
+            if (!charge.isOverdueInstallment()) {
+                final LoanChargeData loanChargeData = LoanChargeData.builder().chargeId(charge.getId()).amount(charge.getAmount()).build();
+                loanCharges.add(loanChargeData);
+            }
+        }
+        final ClientData clientData = getClientExtras(entity.getClientId());
+        String pointOfSaleCode = null;
+        String clientIdNumber = null;
+        if (clientData != null) {
+            clientIdNumber = clientData.getIdNumber();
+        }
+        if (entity.getPointOfSalesId() != null) {
+            final ClientAllyPointOfSales clientAllyPointOfSales = this.clientAllyPointOfSalesRepository.findById(entity.getPointOfSalesId())
+                    .orElse(null);
+            if (clientAllyPointOfSales != null) {
+                pointOfSaleCode = clientAllyPointOfSales.getCode();
+            }
+        }
+
+        final CreateLoanPayloadData payloadData = CreateLoanPayloadData.builder().productId(entity.getProductId())
+                .interestRatePoints(entity.getInterestRatePoints())
                 .submittedOnDate(DateUtils.format(entity.getRequestedDate(), CustomDateUtils.SPANISH_DATE_FORMAT))
                 .expectedDisbursementDate(DateUtils.format(entity.getRequestedDate(), CustomDateUtils.SPANISH_DATE_FORMAT))
-                .loanTermFrequency(entity.getTerm())
-                .loanTermFrequencyType(prodiuctEntity.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue()) // From
-                                                                                                                                  // product
-                .numberOfRepayments(entity.getTerm()).repaymentEvery(prodiuctEntity.getLoanProductRelatedDetail().getRepayEvery()) // From
-                                                                                                                                   // product
-                .repaymentFrequencyType(prodiuctEntity.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue()) // From
-                                                                                                                                   // product
-                .interestRatePerPeriod(prodiuctEntity.getLoanProductRelatedDetail().getNominalInterestRatePerPeriod()) // From
-                                                                                                                       // product
-                .interestType(prodiuctEntity.getLoanProductRelatedDetail().getInterestMethod().getValue()) // From
-                                                                                                           // product
-                .amortizationType(prodiuctEntity.getLoanProductRelatedDetail().getAmortizationMethod().getValue()) // From
-                                                                                                                   // product
-                .interestCalculationPeriodType(prodiuctEntity.getLoanProductRelatedDetail().getInterestCalculationPeriodMethod().getValue()) // From
-                                                                                                                                             // product
-                .transactionProcessingStrategyCode(prodiuctEntity.getTransactionProcessingStrategyCode()).charges(Collections.emptyList())
+                .loanTermFrequency(numberOfRepayments)
+                .loanTermFrequencyType(productEntity.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue())
+                .numberOfRepayments(numberOfRepayments).repaymentEvery(productEntity.getLoanProductRelatedDetail().getRepayEvery())
+                .repaymentFrequencyType(productEntity.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue())
+                .interestRatePerPeriod(interestRatePerPeriod)
+                .interestType(productEntity.getLoanProductRelatedDetail().getInterestMethod().getValue())
+                .amortizationType(productEntity.getLoanProductRelatedDetail().getAmortizationMethod().getValue())
+                .interestCalculationPeriodType(productEntity.getLoanProductRelatedDetail().getInterestCalculationPeriodMethod().getValue())
+                .transactionProcessingStrategyCode(productEntity.getTransactionProcessingStrategyCode()).charges(loanCharges)
                 .collateral(Collections.emptyList()).dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT).locale("es")
-                .clientId(entity.getClientId()).loanType("individual").principal(entity.getAmount()).build();
-
-        // Execute create loan command
-        GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
+                .clientId(entity.getClientId()).loanType("individual").principal(loanPrincipalAmount)
+                .graceOnPrincipalPayment(productEntity.getLoanProductRelatedDetail().getGraceOnPrincipalPayment())
+                .graceOnInterestPayment(productEntity.getLoanProductRelatedDetail().getGraceOnInterestPayment())
+                .graceOnInterestCharged(productEntity.getLoanProductRelatedDetail().graceOnInterestCharged()).clientIdNumber(clientIdNumber)
+                .pointOfSaleCode(pointOfSaleCode).build();
+        final GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.SPANISH_DATE_FORMAT));
-
-        String payload = gsonBuilder.create().toJson(payloadData);
-        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                .createLoanApplication().withJson(payload) //
-                .build(); //
-        CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
-
-        // Set Loan ID
+        final String payload = gsonBuilder.create().toJson(payloadData);
+        final JsonElement jsonElement = fromApiJsonHelper.parse(payload);
+        final JsonCommand jsonCommand = new JsonCommand(null, payload, jsonElement, fromApiJsonHelper, null, null, null, null, null, null,
+                null, null, null, null, null, null, null);
+        final CommandProcessingResult result = loanApplicationWritePlatformService.submitApplication(jsonCommand);
         entity.setLoanId(result.getLoanId());
+        entity.setAmount(loanPrincipalAmount);
+        entity.setTerm(numberOfRepayments);
     }
 
-    private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
+    private void handleDataIntegrityIssues(final Exception dve) {
         throw new PlatformDataIntegrityException("error.msg.clientbuyprocess.unknown.data.integrity.issue",
                 "Unknown data integrity issue with resource." + dve.getMessage());
     }
+
+    private ClientData getClientExtras(final Long clientId) {
+        final String loanSQL = """
+                      SELECT
+                        mc.id AS "clientId",
+                        COALESCE(cce."NIT", ccp."Cedula") AS "clientIdNumber"
+                     FROM m_client mc
+                     LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
+                     LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+                     WHERE mc.id = ?
+                """;
+        final List<ClientData> clients = jdbcTemplate.query(loanSQL, resultSet -> {
+            final List<ClientData> clientDataList = new ArrayList<>();
+            while (resultSet.next()) {
+                final Long id = resultSet.getLong("clientId");
+                final String clientIdNumber = resultSet.getString("clientIdNumber");
+                final ClientData clientData = new ClientData();
+                clientData.setId(id);
+                clientData.setIdNumber(clientIdNumber);
+                clientDataList.add(clientData);
+            }
+            return clientDataList;
+        }, clientId);
+        return CollectionUtils.isNotEmpty(clients) ? clients.get(0) : null;
+    }
+
 }

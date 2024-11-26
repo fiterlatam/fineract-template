@@ -349,7 +349,7 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                 LoanChargeData chargeData = entry.getKey();
                 final Map<String, Object> loanChargePaidData = new LinkedHashMap<>();
                 loanChargePaidData.put("chargeId", chargeData.getChargeId());
-                loanChargePaidData.put("isPenalty", chargeData.isPenalty());
+                loanChargePaidData.put("isPenalty", chargeData.getPenalty());
                 loanChargePaidData.put("loanChargeId", chargeData.getId());
                 loanChargePaidData.put("amount", entry.getValue());
 
@@ -398,7 +398,7 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
 
                 }
             }
-            if (loanCharge.isPenalty()) {
+            if (loanCharge.getPenalty()) {
                 submittedDatePenaltyIncome = submittedDatePenaltyIncome.add(chargeAmount);
             } else {
                 submittedDateFeeIncome = submittedDateFeeIncome.add(chargeAmount);
@@ -469,7 +469,7 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                 }
             }
 
-            if (loanCharge.isPenalty()) {
+            if (loanCharge.getPenalty()) {
                 dueDatePenaltyIncome = dueDatePenaltyIncome.add(chargeAmount);
             } else {
                 dueDateFeeIncome = dueDateFeeIncome.add(chargeAmount);

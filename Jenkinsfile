@@ -12,6 +12,7 @@ pipeline {
 		K8S_MANIFESTS_CODE_REPOSITORY = "http://10.66.154.26/core/kubernetes-manifests.git"
 		PLAYBOOKS_LOCATION = "/opt/playbooks/manager"
 		PLAYBOOK_NAME = "backend-deployment.yaml"
+		PLAYBOOK_TO_DEPLOY = "deploy-fineract-backend-deployment-playbook.yaml"
 		K8S_CLUSTER_NAMESPACE = ""
 		SLACK_MESSAGE_PREFIX = "[CORE-Fineract]: "
 
@@ -33,18 +34,22 @@ pipeline {
 						K8S_CLUSTER_NAMESPACE=""
 						FINERACT_HIKARI_JDBC=""
 						FINERACT_TENANTS=""
+						PLAYBOOK_NAME = "backend-deployment-prod.yaml"
+						PLAYBOOK_TO_DEPLOY = "deploy-fineract-backend-deployment-playbook-prod.yaml"
 					} else if (env.BRANCH_NAME == 'qa') {
 						FINERACT_DEFAULT_TENANTDB_HOSTNAME="SERLINCOREBDDEV.gco.com.co"
 						K8S_CLUSTER_NAMESPACE="fineract-qa"
 						FINERACT_HIKARI_JDBC="fineract_tenants_qa"
 						FINERACT_TENANTS="fineract_tenants_qa"
 						PLAYBOOK_NAME = "backend-deployment-${env.BRANCH_NAME}.yaml"
+						PLAYBOOK_TO_DEPLOY = "deploy-fineract-backend-deployment-playbook-${env.BRANCH_NAME}.yaml"
 					} else if (env.BRANCH_NAME == 'development') {
 						FINERACT_DEFAULT_TENANTDB_HOSTNAME="SERLINCOREBDDEV.gco.com.co"
 						K8S_CLUSTER_NAMESPACE="fineract-dev"
 						FINERACT_HIKARI_JDBC="fineract_tenants"
 						PLAYBOOK_NAME = "backend-deployment-${env.BRANCH_NAME}.yaml"
 						FINERACT_TENANTS="fineract_tenants"
+						PLAYBOOK_TO_DEPLOY = "deploy-fineract-backend-deployment-playbook-${env.BRANCH_NAME}.yaml"
 					}
 
 					git branch: env.BRANCH_NAME, credentialsId: 'jenkins_gitlab_integration', url: CODE_REPOSITORY
@@ -113,8 +118,8 @@ pipeline {
 
 					dir('scripts') {
             sh "sudo chmod +x generate-playbook.sh"
-            sh "sudo ./generate-playbook.sh ${PLAYBOOK_NAME}"
-            sh "sudo cp deploy-fineract-backend-deployment-playbook.yaml ${PLAYBOOKS_LOCATION}"
+            sh "sudo ./generate-playbook.sh ${PLAYBOOK_NAME} ${PLAYBOOK_TO_DEPLOY}"
+            sh "sudo cp ${PLAYBOOK_TO_DEPLOY} ${PLAYBOOKS_LOCATION}"
           }
 
 					sh "sudo cp backend-deployment.yaml ${PLAYBOOKS_LOCATION}/${PLAYBOOK_NAME}"
@@ -125,7 +130,7 @@ pipeline {
 								configName: 'Jenkins', transfers: [
 									sshTransfer(
 										cleanRemote: false, 
-										execCommand: "ansible-playbook ${PLAYBOOKS_LOCATION}/deploy-fineract-backend-deployment-playbook.yaml", 
+										execCommand: "ansible-playbook ${PLAYBOOKS_LOCATION}/${PLAYBOOK_TO_DEPLOY}", 
 										execTimeout: 240000, 
 									)
 								], 

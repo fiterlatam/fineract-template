@@ -58,6 +58,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -66,6 +67,9 @@ import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformS
 import org.apache.fineract.infrastructure.bulkimport.data.GlobalEntityType;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookPopulatorService;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookService;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -103,6 +107,7 @@ import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.calendar.domain.CalendarEntityType;
 import org.apache.fineract.portfolio.calendar.service.CalendarReadPlatformService;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
@@ -119,20 +124,7 @@ import org.apache.fineract.portfolio.fund.data.FundData;
 import org.apache.fineract.portfolio.fund.service.FundReadPlatformService;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
-import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
-import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
-import org.apache.fineract.portfolio.loanaccount.data.GlimRepaymentTemplate;
-import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanAssignorData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanCollateralManagementData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanSummaryData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
-import org.apache.fineract.portfolio.loanaccount.data.PaidInAdvanceData;
-import org.apache.fineract.portfolio.loanaccount.data.RepaymentScheduleRelatedLoanData;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
+import org.apache.fineract.portfolio.loanaccount.data.*;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariationType;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanTemplateTypeRequiredException;
@@ -146,10 +138,12 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanSchedul
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleCalculationPlatformService;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.GLIMAccountInfoReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanBlockReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
@@ -247,7 +241,10 @@ public class LoansApiResource {
             LoanApiConstants.isTopup, LoanApiConstants.loanIdToClose, LoanApiConstants.topupAmount,
             LoanApiConstants.clientActiveLoanOptions, LoanApiConstants.datatables, LoanProductConstants.RATES_PARAM_NAME,
             LoanApiConstants.MULTIDISBURSE_DETAILS_PARAMNAME, LoanApiConstants.EMI_AMOUNT_VARIATIONS_PARAMNAME,
-            LoanApiConstants.COLLECTION_PARAMNAME));
+            LoanApiConstants.COLLECTION_PARAMNAME, LoanApiConstants.CHANNEL_NAME, LoanApiConstants.CHANNEL_ID,
+            LoanApiConstants.CHANNEL_DESCRIPTION, LoanApiConstants.POINT_OF_SALES_NAME, LoanApiConstants.DISCOUNT_TRANSFER_VALUE,
+            LoanApiConstants.DISCOUNT_VALUE, "cedulaSeguroVoluntario", LoanApiConstants.DISCOUNT_VALUE, LoanApiConstants.AllYID,
+            LoanApiConstants.POINT_OF_SALE_CODE));
 
     private static final Set<String> LOAN_APPROVAL_DATA_PARAMETERS = new HashSet<>(Arrays.asList("approvalDate", "approvalAmount"));
     private static final Set<String> GLIM_ACCOUNTS_DATA_PARAMETERS = new HashSet<>(Arrays.asList("glimId", "groupId", "clientId",
@@ -270,6 +267,7 @@ public class LoansApiResource {
     private final DefaultToApiJsonSerializer<LoanApprovalData> loanApprovalDataToApiJsonSerializer;
     private final DefaultToApiJsonSerializer<LoanScheduleData> loanScheduleToApiJsonSerializer;
     private final DefaultToApiJsonSerializer<LoanDelinquencyActionData> delinquencyActionSerializer;
+    private final DefaultToApiJsonSerializer<ReclaimData> reclainApiJsonSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final FromJsonHelper fromJsonHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
@@ -289,6 +287,7 @@ public class LoansApiResource {
     private final LoanCollateralManagementReadPlatformService loanCollateralManagementReadPlatformService;
     private final DefaultToApiJsonSerializer<LoanDelinquencyTagHistoryData> jsonSerializerTagHistory;
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
+    private final LoanBlockReadPlatformService loanBlockingReasonReadPlatformService;
 
     @Autowired
     private SpringTemplateEngine templateEngine;
@@ -430,6 +429,10 @@ public class LoansApiResource {
 
         final List<LoanAssignorData> loanAssignorOptions = this.loanReadPlatformService.retrieveLoanAssignorData(null);
         newLoanAccount.setLoanAssignorOptions(loanAssignorOptions);
+
+        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
+                .retrieveMaximumCreditRateConfigurationData();
+        newLoanAccount.setMaximumCreditRateConfiguration(maximumCreditRateConfigurationData);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, newLoanAccount, LOAN_DATA_PARAMETERS);
@@ -655,6 +658,14 @@ public class LoansApiResource {
         return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.LOAN_TRANSACTIONS.toString(), officeId, null, dateFormat);
     }
 
+    @GET
+    @Path("loanwriteoffs/downloadtemplate")
+    @Produces("application/vnd.ms-excel")
+    public Response getLoanWriteOffTemplate(@QueryParam("officeId") final Long officeId,
+            @QueryParam("dateFormat") final String dateFormat) {
+        return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.LOAN_WRITE_OFFS.toString(), officeId, null, dateFormat);
+    }
+
     @POST
     @Path("uploadtemplate")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -664,7 +675,7 @@ public class LoansApiResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
             @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.LOANS.toString(), uploadedInputStream,
-                fileDetail, locale, dateFormat);
+                fileDetail, locale, dateFormat, null);
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
 
@@ -677,7 +688,20 @@ public class LoansApiResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
             @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.LOAN_TRANSACTIONS.toString(),
-                uploadedInputStream, fileDetail, locale, dateFormat);
+                uploadedInputStream, fileDetail, locale, dateFormat, null);
+        return this.toApiJsonSerializer.serialize(importDocumentId);
+    }
+
+    @POST
+    @Path("loanwriteoffs/uploadtemplate")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @RequestBody(description = "Upload Loan Write Off template", content = {
+            @Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = @Schema(implementation = UploadRequest.class)) })
+    public String postLoanWriteOffTemplate(@FormDataParam("file") InputStream uploadedInputStream,
+            @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
+            @FormDataParam("dateFormat") final String dateFormat) {
+        final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.LOAN_WRITE_OFFS.toString(),
+                uploadedInputStream, fileDetail, locale, dateFormat, new HashMap<>());
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
 
@@ -859,6 +883,114 @@ public class LoansApiResource {
         this.loanReadPlatformService.exportLoanDisbursementPDF(loanId, response);
     }
 
+    @GET
+    @ModelAttribute
+    @Path("{loanId}/schedule-report")
+    @Operation(summary = "Download loan Schedule report in PDF format", description = "Download loan Schedule report in PDF format")
+    public void getScheduleReportPDF(@Context HttpServletResponse response,
+            @PathParam("loanId") @Parameter(description = "loanId") final Long loanId, @QueryParam("scheduleType") String scheduleType)
+            throws DocumentException, IOException {
+        context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
+        boolean isRepaymentSchedule = scheduleType.equalsIgnoreCase("repayment");
+        LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(loanId);
+        LoanScheduleData repaymentSchedule = null;
+        Collection<DisbursementData> disbursementData = this.loanReadPlatformService.retrieveLoanDisbursementDetails(loanId);
+        ;
+        final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData = loanBasicDetails.getTimeline().repaymentScheduleRelatedData(
+                loanBasicDetails.getCurrency(), loanBasicDetails.getPrincipal(), loanBasicDetails.getApprovedPrincipal(),
+                loanBasicDetails.getInArrearsTolerance(), loanBasicDetails.getFeeChargesAtDisbursementCharged());
+        if (isRepaymentSchedule) {
+            repaymentSchedule = this.loanReadPlatformService.retrieveRepaymentSchedule(loanId, repaymentScheduleRelatedData,
+                    disbursementData, loanBasicDetails.isInterestRecalculationEnabled(),
+                    LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
+            this.calculationPlatformService.getFeeChargesDetail(repaymentSchedule, loanId);
+        } else {
+            repaymentSchedule = this.loanScheduleHistoryReadPlatformService.retrieveRepaymentArchiveSchedule(loanId,
+                    repaymentScheduleRelatedData, disbursementData,
+                    LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
+        }
+        this.loanReadPlatformService.exportLoanSchedulePDF(loanBasicDetails, scheduleType, repaymentSchedule, response);
+    }
+
+    @GET
+    @Path("{loanId}/loanblockingreasons")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve loan blocking reasons", description = "Retrieve loan blocking reasons\n" + "Example Requests:\n" + "\n"
+            + "loans/1/loanblockingreasons\n" + "\n" + "\n")
+    public String retrieveBlockingReasons(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
+            @Context final UriInfo uriInfo) {
+
+        final Collection<LoanBlockingReasonData> blockingReasons = this.loanBlockingReasonReadPlatformService
+                .retrieveLoanBlockingReason(loanId);
+        return this.toApiJsonSerializer.serialize(blockingReasons);
+    }
+
+    @PUT
+    @Path("{loanId}/loanblockingreasons")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Deletes a blocking reason from a loan", description = "")
+    public String deleteLoanBlockingReasons(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
+            @Context final UriInfo uriInfo, @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteLoanBlockingReason(loanId).withJson(apiRequestBodyAsJson)
+                .build();
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        return this.jsonSerializerTagHistory.serialize(result);
+    }
+
+    @GET
+    @Path("block-guarantee/template")
+    @Operation(summary = "Get the template for block guarantee")
+    public String getBlockGuaranteeTemplate() throws DocumentException {
+        context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
+        final BlockingReasonsData blockingReasonSetting = loanBlockingReasonReadPlatformService.retrieveLoanBlockingSettings(
+                BlockLevel.CREDIT.toString(), BlockingReasonSettingEnum.CREDIT_RECLAMADO_A_AVALADORA.getDatabaseString());
+        return this.toApiJsonSerializer.serialize(blockingReasonSetting);
+    }
+
+    @POST
+    @Path("{loanId}/loanblockingreasons")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Adds a new delinquency action for a loan", description = "")
+    public String addBlockingReasonToLoan(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
+            @Context final UriInfo uriInfo, @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().addLoanBlockingReason(loanId).withJson(apiRequestBodyAsJson)
+                .build();
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        return this.jsonSerializerTagHistory.serialize(result);
+    }
+
+    @POST
+    @Path("loanblockingreason/unblock")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Undo block loan with blocking reason", description = "Undo block loan with blocking reason")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
+    public String unblockLoanWithBlockingReason(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
+                .unblockLoanWithBlockingReason() //
+                .withJson(apiRequestBodyAsJson) //
+                .build(); //
+
+        final CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return toApiJsonSerializer.serialize(result);
+    }
+
+    @GET
+    @Path("loanblockingreason/{blockingReasonId}")
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve all loan with blocking reason", description = "Retrieve all loan with blocking reason")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "400", description = "Bad Request") })
+    public String retrieveAllLoanWithBlockingReasonData(@PathParam("blockingReasonId") final Long blockingReasonId) {
+        return retrieveAllLoanWithBlockingReason(blockingReasonId);
+    }
+
     private String retrieveApprovalTemplate(final Long loanId, final String loanExternalIdStr, final String templateType,
             final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
@@ -882,6 +1014,7 @@ public class LoansApiResource {
         ExternalId loanExternalId = ExternalIdFactory.produce(loanExternalIdStr);
         Long resolvedLoanId = getResolvedLoanId(loanId, loanExternalId);
         LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(resolvedLoanId);
+        final Long InterestRatePoints = loanBasicDetails.getInterestRatePoints();
         if (loanBasicDetails.isInterestRecalculationEnabled()) {
             Collection<CalendarData> interestRecalculationCalendarDatas = this.calendarReadPlatformService.retrieveCalendarsByEntity(
                     loanBasicDetails.getInterestRecalculationDetailId(), CalendarEntityType.LOAN_RECALCULATION_REST_DETAIL.getValue(),
@@ -980,6 +1113,7 @@ public class LoansApiResource {
                 repaymentSchedule = this.loanReadPlatformService.retrieveRepaymentSchedule(resolvedLoanId, repaymentScheduleRelatedData,
                         disbursementData, loanBasicDetails.isInterestRecalculationEnabled(),
                         LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
+                this.calculationPlatformService.getFeeChargesDetail(repaymentSchedule, resolvedLoanId);
 
                 if (associationParameters.contains(DataTableApiConstant.futureScheduleAssociateParamName)
                         && loanBasicDetails.isInterestRecalculationEnabled()) {
@@ -987,9 +1121,9 @@ public class LoansApiResource {
                     this.calculationPlatformService.updateFutureSchedule(repaymentSchedule, resolvedLoanId);
                 }
 
-                if (associationParameters.contains(DataTableApiConstant.originalScheduleAssociateParamName)
-                        && loanBasicDetails.isInterestRecalculationEnabled()
-                        && LoanStatus.fromInt(loanBasicDetails.getStatus().getId().intValue()).isActive()) {
+                // Farooq - 14/06/2024 - Added to retrieve original schedule irrespective of loan status and interest
+                // recalculation
+                if (associationParameters.contains(DataTableApiConstant.originalScheduleAssociateParamName)) {
                     mandatoryResponseParameters.add(DataTableApiConstant.originalScheduleAssociateParamName);
                     LoanScheduleData loanScheduleData = this.loanScheduleHistoryReadPlatformService.retrieveRepaymentArchiveSchedule(
                             resolvedLoanId, repaymentScheduleRelatedData, disbursementData,
@@ -1139,7 +1273,7 @@ public class LoansApiResource {
         }
 
         final LoanAccountData loanAccount = LoanAccountData.associationsAndTemplate(loanBasicDetails, repaymentSchedule, loanRepayments,
-                charges, loanCollateralManagementData, guarantors, meeting, productOptions, loanTermFrequencyTypeOptions,
+                charges, loanCollateralManagementData, guarantors, productOptions, loanTermFrequencyTypeOptions,
                 repaymentFrequencyTypeOptions, repaymentFrequencyNthDayTypeOptions, repaymentFrequencyDayOfWeekTypeOptions,
                 repaymentStrategyOptions, interestRateFrequencyTypeOptions, amortizationTypeOptions, interestTypeOptions,
                 interestCalculationPeriodTypeOptions, fundOptions, chargeOptions, chargeTemplate, allowedLoanOfficers, loanPurposeOptions,
@@ -1154,6 +1288,22 @@ public class LoansApiResource {
         }
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters(),
                 mandatoryResponseParameters);
+        loanAccount.setInterestRatePoints(InterestRatePoints);
+
+        if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(charges)) {
+            final Optional<LoanChargeData> voluntaryInsuranceOptional = charges.stream().filter(c -> {
+                final EnumOptionData chargeCalculationTypeEnumOption = c.getChargeCalculationType();
+                return ChargeCalculationType.fromInt(chargeCalculationTypeEnumOption.getId().intValue()).isVoluntaryInsurance();
+            }).findFirst();
+            if (voluntaryInsuranceOptional.isPresent()) {
+                final LoanChargeData voluntaryInsurance = voluntaryInsuranceOptional.get();
+                voluntaryInsurance.setCodigoSeguro(loanAccount.getCodigoSeguro());
+                voluntaryInsurance.setCedulaSeguroVoluntario(loanAccount.getCedulaSeguroVoluntario());
+                loanAccount.setVoluntaryInsurance(voluntaryInsurance);
+            }
+        }
+        final boolean isRediferir = this.loanReadPlatformService.retrieveRediferidoNumber(loanId) > 0;
+        loanAccount.setRediferir(isRediferir);
         return this.toApiJsonSerializer.serialize(settings, loanAccount, LOAN_DATA_PARAMETERS);
     }
 
@@ -1263,4 +1413,84 @@ public class LoansApiResource {
         return delinquencyActionSerializer.serialize(result);
     }
 
+    private String retrieveAllLoanWithBlockingReason(Long blockingReasonId) {
+        this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
+        final Collection<LoanBlockingReasonData> loanBlockingReasonData = this.loanBlockingReasonReadPlatformService
+                .retrieveAllLoanWithBlockingReason(blockingReasonId);
+        return this.toApiJsonSerializer.serialize(loanBlockingReasonData);
+    }
+
+    @POST
+    @Path("cancelinsurance/voluntary")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Cancel Voluntary Insurance", description = "Cancel Voluntary Insurance")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
+    public String cancelVoluntaryInsurance(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
+                .cancelVoluntaryInsurance() //
+                .withJson(apiRequestBodyAsJson) //
+                .build(); //
+
+        final CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return toApiJsonSerializer.serialize(result);
+    }
+
+    @POST
+    @Path("cancelinsurance/badsale")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Cancel Insurance Due To Bad Sale", description = "Cancel Insurance Due To Bad Sale")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
+    public String cancelInsuranceBadSale(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
+                .cancelInsuranceDueToBadSale() //
+                .withJson(apiRequestBodyAsJson) //
+                .build(); //
+
+        final CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return toApiJsonSerializer.serialize(result);
+    }
+
+    @GET
+    @Path("reclaim/template")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "List Loans", description = "The list capability of loans can support pagination and sorting.\n"
+            + "Example Requests:\n" + "\n" + "loans\n" + "\n" + "loans?fields=accountNo\n" + "\n" + "loans?offset=10&limit=50\n" + "\n"
+            + "loans?orderBy=accountNo&sortOrder=DESC")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansResponse.class))) })
+    public String retrieveAllForReclaimOrWriteOff(@Context final UriInfo uriInfo,
+            @QueryParam("reclaimType") @Parameter(description = "reclaimType") final String reclaimType) {
+
+        this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
+
+        final List<LoanReclaimData> reclaimData = this.loanReadPlatformService.retrieveClaimTemplate(reclaimType);
+        final List<LoanReclaimData> excludedData = this.loanReadPlatformService.retrieveExcludedTemplate(reclaimType);
+        ReclaimData data = new ReclaimData(reclaimData, excludedData);
+
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        return this.reclainApiJsonSerializer.serialize(settings, data, LOAN_DATA_PARAMETERS);
+    }
+
+    @POST
+    @Path("reclaim/exclude/{loanId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Exclude loan from reclaim screen", description = "Exclude loan from reclaim screen")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
+    public String excludeLoanFromReclaim(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
+                .excludeFromReclaim(loanId) //
+                .withJson(apiRequestBodyAsJson) //
+                .build(); //
+
+        final CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return toApiJsonSerializer.serialize(result);
+    }
 }

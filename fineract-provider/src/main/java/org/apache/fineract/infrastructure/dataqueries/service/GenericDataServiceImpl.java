@@ -33,6 +33,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -97,6 +98,14 @@ public class GenericDataServiceImpl implements GenericDataService {
         final SqlRowSet columnDefinitions = getTableMetaData(tableName);
         final List<IndexDetail> indexDefinitions = getDatatableIndexData(tableName);
 
+        HashMap<String, String> columnMaskHM = new HashMap<>();
+        // retrieve all entries from tablename on table x_registered_table_field_mask and populate columnMaskHM
+        final String sql = "select column_name, column_mask from x_registered_table_field_mask where registered_table_name = ?";
+        final SqlRowSet rs = this.jdbcTemplate.queryForRowSet(sql, tableName);
+        while (rs.next()) {
+            columnMaskHM.put(rs.getString("column_name"), rs.getString("column_mask"));
+        }
+
         DatabaseType dialect = databaseTypeResolver.databaseType();
         final List<ResultsetColumnHeaderData> columnHeaders = new ArrayList<>();
 
@@ -106,7 +115,9 @@ public class GenericDataServiceImpl implements GenericDataService {
             final String isNullable = columnDefinitions.getString(2);
             final String isPrimaryKey = columnDefinitions.getString(5);
             final String columnType = columnDefinitions.getString(3);
-            final Long columnLength = columnDefinitions.getLong(4);
+            Long columnLength = columnDefinitions.getLong(4);
+
+            columnLength = defineColumnLenghtIfIntegerLike(columnType, columnLength);
 
             final boolean columnNullable = "YES".equalsIgnoreCase(isNullable) || "TRUE".equalsIgnoreCase(isNullable);
             final boolean columnIsPrimaryKey = "PRI".equalsIgnoreCase(isPrimaryKey) || "TRUE".equalsIgnoreCase(isPrimaryKey);
@@ -127,11 +138,47 @@ public class GenericDataServiceImpl implements GenericDataService {
                 columnValues = retrieveCodeValues(codeName);
             }
 
-            columnHeaders.add(ResultsetColumnHeaderData.detailed(columnName, columnType, columnLength, columnNullable, columnIsPrimaryKey,
-                    columnValues, codeName, columnIsUnique, columnIsIndexed, dialect));
+            ResultsetColumnHeaderData columnHeader = ResultsetColumnHeaderData.detailed(columnName, columnType, columnLength,
+                    columnNullable, columnIsPrimaryKey, columnValues, codeName, columnIsUnique, columnIsIndexed, dialect);
+
+            columnHeader.setFieldMask(columnMaskHM.get(columnName));
+
+            columnHeaders.add(columnHeader);
         }
 
         return columnHeaders;
+    }
+
+    private Long defineColumnLenghtIfIntegerLike(String columnType, Long columnLength) {
+        if (columnType.toUpperCase().contains("INT") || columnType.toUpperCase().contains("SERIAL")) {
+            switch (columnType.toUpperCase()) {
+                case "TINYINT":
+                    columnLength = 3L;
+                break;
+                case "SMALLINT":
+                case "INT2":
+                    columnLength = 5L;
+                break;
+                case "MEDIUMINT":
+                    columnLength = 8L;
+                break;
+                case "INT":
+                case "INTEGER":
+                case "INT4":
+                case "SERIAL":
+                    columnLength = 10L;
+                break;
+                case "BIGINT":
+                case "INT8":
+                case "BIGSERIAL":
+                    columnLength = 19L;
+                break;
+                default:
+                    columnLength = 1L;
+                break;
+            }
+        }
+        return columnLength;
     }
 
     @NotNull
@@ -313,7 +360,7 @@ public class GenericDataServiceImpl implements GenericDataService {
         while (rsValues.next()) {
             final Integer id = rsValues.getInt("id");
             final String codeValue = rsValues.getString("code_value");
-            final Integer score = rsValues.getInt("code_score");
+            final String score = rsValues.getString("code_score");
             final Integer parentId = rsValues.getInt("parent_id");
             columnValues.add(new ResultsetColumnValueData(id, codeValue, score, parentId));
         }

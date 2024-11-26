@@ -19,10 +19,7 @@
 package org.apache.fineract.portfolio.charge.service;
 
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.portfolio.charge.domain.ChargeAppliesTo;
-import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
-import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
-import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
+import org.apache.fineract.portfolio.charge.domain.*;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 
 public final class ChargeEnumerations {
@@ -142,20 +139,24 @@ public final class ChargeEnumerations {
         return chargeCalculationType(ChargeCalculationType.fromInt(id));
     }
 
+    public static EnumOptionData loanChargeCalculationType(final int id) {
+        return loanChargeCalculationType(ChargeCalculationType.fromInt(id));
+    }
+
     public static EnumOptionData chargeCalculationType(final ChargeCalculationType type) {
         EnumOptionData optionData = null;
         switch (type) {
-            case FLAT:
-                optionData = new EnumOptionData(ChargeCalculationType.FLAT.getValue().longValue(), ChargeCalculationType.FLAT.getCode(),
-                        "Flat");
+            case FLAT_AMOUNT:
+                optionData = new EnumOptionData(ChargeCalculationType.FLAT_AMOUNT.getValue().longValue(),
+                        ChargeCalculationType.FLAT_AMOUNT.getCode(), "Flat");
             break;
             case PERCENT_OF_AMOUNT:
                 optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_AMOUNT.getValue().longValue(),
-                        ChargeCalculationType.PERCENT_OF_AMOUNT.getCode(), "% Amount");
+                        ChargeCalculationType.PERCENT_OF_AMOUNT.getCode(), "% Principal");
             break;
             case PERCENT_OF_AMOUNT_AND_INTEREST:
                 optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST.getValue().longValue(),
-                        ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST.getCode(), "% Loan Amount + Interest");
+                        ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST.getCode(), "% Principal + Interest");
             break;
             case PERCENT_OF_INTEREST:
                 optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_INTEREST.getValue().longValue(),
@@ -165,9 +166,137 @@ public final class ChargeEnumerations {
                 optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getValue().longValue(),
                         ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getCode(), "% Disbursement Amount");
             break;
+            case PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT.getCode(), "% Outstanding Principal Amount");
+            break;
+            case PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT.getCode(), "% Outstanding Interest Amount");
+            break;
+            case PERCENT_OF_ANOTHER_CHARGE:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_ANOTHER_CHARGE.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_ANOTHER_CHARGE.getCode(), "% of Another Charge Amount");
+            break;
+            case AMOUNT_FROM_EXTERNAL_CALCULATION:
+                optionData = new EnumOptionData(ChargeCalculationType.AMOUNT_FROM_EXTERNAL_CALCULATION.getValue().longValue(),
+                        ChargeCalculationType.AMOUNT_FROM_EXTERNAL_CALCULATION.getCode(), "Amount from External System");
+            break;
+
             default:
+                /*
+                 * FLAT("Flat", "FLAT", "flat"), DISBURSED_AMOUNT("Disbursed Amount", "DISB", "disbursedamount"),
+                 * PRINCIPAL_INSTALLMENT("Installment Principal", "IPRIN", "installmentprincipal"),
+                 * INTEREST_INSTALLMENT("Installment Interest", "IINT", "installmentinterest"),
+                 * OUTSTANDING_PRINCIPAL("Outstanding principal", "OPRIN", "outstandingprincipal"),
+                 * OUTSTANDING_INTEREST("Outstanding Interest", "OINT", "outstandinginterest"),
+                 * SEGURO_OBRIGATORIO("Seguro Obrigatorio", "SEGO", "seguroobrigatorio"), AVAL("Aval", "AVAL", "aval"),
+                 * HOORARIOS("Hoorarios","HONO","hoorarios"), PERCENT_OF_ANOTHER_CHARGE("% Of another charge", "ACHG",
+                 * "percentofanothercharge");
+                 */
+                StringBuilder label = new StringBuilder();
+                if (type.getCode().contains(".flat")) {
+                    label.append("Flat + ");
+                }
+
+                if (type.getCode().contains(".disbursedamount")) {
+                    label.append("Disbursed Amount + ");
+                }
+
+                if (type.getCode().contains(".installmentprincipal")) {
+                    label.append("Installment´s Principal + ");
+                }
+
+                if (type.getCode().contains(".installmentinterest")) {
+                    label.append("Installment´s Interest + ");
+                }
+
+                if (type.getCode().contains(".outstandingprincipal")) {
+                    label.append("Outstanding Principal + ");
+                }
+
+                if (type.getCode().contains(".outstandinginterest")) {
+                    label.append("Outstanding Interest + ");
+                }
+
+                if (type.getCode().contains(".seguroobrigatorio")) {
+                    label.append("Seguro Obrigatorio + ");
+                }
+
+                if (type.getCode().contains(".aval")) {
+                    label.append("Aval + ");
+                }
+
+                if (type.getCode().contains(".honorarios")) {
+                    label.append("Fees + ");
+                }
+
+                if (type.getCode().contains(".percentofanothercharge")) {
+                    label.append("Pct of another Charge + ");
+                }
+
+                String val = label.toString();
+                if (val.endsWith(" + ")) {
+                    label = new StringBuilder(val.substring(0, val.length() - 3));
+                }
+
+                optionData = new EnumOptionData(type.getValue().longValue(), type.getCode(), "% " + val);
+            break;
+        }
+        return optionData;
+    }
+
+    public static EnumOptionData loanChargeCalculationType(final ChargeCalculationType type) {
+        EnumOptionData optionData;
+        switch (type) {
+            case FLAT_AMOUNT:
+                optionData = new EnumOptionData(ChargeCalculationType.FLAT_AMOUNT.getValue().longValue(),
+                        ChargeCalculationType.FLAT_AMOUNT.getCode(), "Flat");
+            break;
+            case PERCENT_OF_AMOUNT:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_AMOUNT.getValue().longValue(),
+                        "chargeCalculationType.percent.of.principal", "% Principal Amount");
+            break;
+            case PERCENT_OF_AMOUNT_AND_INTEREST:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST.getValue().longValue(),
+                        "chargeCalculationType.percent.of.principal.and.interest", "% Loan Principal + Interest");
+            break;
+            case PERCENT_OF_INTEREST:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_INTEREST.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_INTEREST.getCode(), "% Interest");
+            break;
+            case PERCENT_OF_DISBURSEMENT_AMOUNT:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getCode(), "% Disbursement Amount");
+            break;
+            case PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_OUTSTANDING_PRINCIPAL_AMOUNT.getCode(), "% Outstanding Principal Amount");
+            break;
+            case PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_OUTSTANDING_INTEREST_AMOUNT.getCode(), "% Outstanding Interest Amount");
+            break;
+            case PERCENT_OF_ANOTHER_CHARGE:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_ANOTHER_CHARGE.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_ANOTHER_CHARGE.getCode(), "% of Another Charge Amount");
+            break;
+            case AMOUNT_FROM_EXTERNAL_CALCULATION:
+                optionData = new EnumOptionData(ChargeCalculationType.AMOUNT_FROM_EXTERNAL_CALCULATION.getValue().longValue(),
+                        ChargeCalculationType.AMOUNT_FROM_EXTERNAL_CALCULATION.getCode(), "Amount from External System");
+            break;
+            case INVALID:
                 optionData = new EnumOptionData(ChargeCalculationType.INVALID.getValue().longValue(),
                         ChargeCalculationType.INVALID.getCode(), "Invalid");
+            break;
+
+            default:
+                String code = type.getCode();
+                if (Boolean.FALSE.equals("flat.".equalsIgnoreCase(type.getCode()))) {
+                    code = "percent.of." + type.getCode();
+                }
+
+                optionData = new EnumOptionData(type.getValue().longValue(), "chargeCalculationType." + code, type.getCode());
             break;
         }
         return optionData;
@@ -210,6 +339,28 @@ public final class ChargeEnumerations {
             case WHOLE_TERM -> optionData = new EnumOptionData(PeriodFrequencyType.WHOLE_TERM.getValue().longValue(),
                     PeriodFrequencyType.WHOLE_TERM.getCode(), "Whole term");
             default -> throw new UnsupportedOperationException(frequencyType + " is not supported");
+        }
+        return optionData;
+    }
+
+    public static EnumOptionData chargeInsuranceType(final int id) {
+        return chargeInsuranceType(ChargeInsuranceType.fromInt(id));
+    }
+
+    public static EnumOptionData chargeInsuranceType(final ChargeInsuranceType type) {
+        EnumOptionData optionData = null;
+        switch (type) {
+            case CARGO:
+                optionData = new EnumOptionData(ChargeInsuranceType.CARGO.getValue().longValue(), ChargeInsuranceType.CARGO.getCode(),
+                        "Cargo");
+            break;
+            case COMPRA:
+                optionData = new EnumOptionData(ChargeInsuranceType.COMPRA.getValue().longValue(), ChargeInsuranceType.COMPRA.getCode(),
+                        "Compra");
+            break;
+            default:
+                optionData = new EnumOptionData(ChargeTimeType.INVALID.getValue().longValue(), ChargeTimeType.INVALID.getCode(), "Invalid");
+            break;
         }
         return optionData;
     }

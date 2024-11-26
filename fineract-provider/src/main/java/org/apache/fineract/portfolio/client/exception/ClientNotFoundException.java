@@ -40,10 +40,14 @@ public class ClientNotFoundException extends AbstractPlatformResourceNotFoundExc
     }
 
     public ClientNotFoundException(String value, String valueType) {
-        super("error.msg.client.not.found.with." + valueType, "Client not found with valuer " + value + ".", value);
+        super("error.msg.client.not.found.with." + valueType, "Client not found with value " + value + ".", value);
     }
 
     public ClientNotFoundException(Long id, EmptyResultDataAccessException e) {
         super("error.msg.client.id.invalid", "Client with identifier " + id + " does not exist", id, e);
+    }
+
+    public ClientNotFoundException(String message) {
+        super("error.msg.client.id.invalid", message);
     }
 }

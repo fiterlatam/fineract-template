@@ -20,12 +20,17 @@ package org.apache.fineract.infrastructure.configuration.service;
 
 import java.util.HashSet;
 import java.util.Set;
+import lombok.Getter;
 
 public final class ExternalServicesConstants {
 
     private ExternalServicesConstants() {
 
     }
+
+    public static final String CUSTOM_CHARGE_HONORARIO_SERVICE_NAME = "CUSTOM_CHARGE_HONORARIO_PROVIDER";
+    public static final String CUSTOM_CHARGE_HONORARIO_URL = "URL";
+    public static final String CUSTOM_CHARGE_HONORARIO_API_KEY = "API_KEY";
 
     public static final String S3_SERVICE_NAME = "S3";
     public static final String S3_BUCKET_NAME = "s3_bucket_name";
@@ -52,6 +57,12 @@ public final class ExternalServicesConstants {
     public static final String NOTIFICATION_GCM_END_POINT = "gcm_end_point";
     public static final String NOTIFICATION_FCM_END_POINT = "fcm_end_point";
 
+    public static final String MASIVIAN_SERVICE_NAME = "MASIVIAN_SERVICE";
+    public static final String MASIVIAN_SMS_API_URL = "SMS_API_URL";
+    public static final String MASIVIAN_SMS_API_AUTHORIZATION_HEADER = "SMS_API_AUTHORIZATION_HEADER";
+    public static final String MASIVIAN_SMS_API_ENABLED = "SMS_API_ENABLED";
+
+    @Getter
     public enum ExternalservicePropertiesJSONinputParams {
 
         EXTERNAL_SERVICE_ID("external_service_id"), NAME("name"), VALUE("value");
@@ -79,9 +90,6 @@ public final class ExternalServicesConstants {
             return name().toString().replaceAll("_", " ");
         }
 
-        public String getValue() {
-            return this.value;
-        }
     }
 
     public enum SMTPJSONinputParams {
@@ -213,4 +221,63 @@ public final class ExternalServicesConstants {
         }
     }
 
+    public enum CustomChargeHonorarioJSONinputParams {
+
+        URL("URL"), API_KEY("API_KEY");
+
+        private final String value;
+
+        CustomChargeHonorarioJSONinputParams(final String value) {
+            this.value = value;
+        }
+
+        private static final Set<String> values = new HashSet<>();
+
+        static {
+            for (final CustomChargeHonorarioJSONinputParams type : CustomChargeHonorarioJSONinputParams.values()) {
+                values.add(type.value);
+            }
+        }
+
+        public static Set<String> getAllValues() {
+            return values;
+        }
+
+        @Override
+        public String toString() {
+            return name().toString().replaceAll("_", " ");
+        }
+
+        public String getValue() {
+            return this.value;
+        }
+    }
+
+    @Getter
+    public enum MasivianJSONinputParams {
+
+        SMS_API_URL("SMS_API_URL"), SMS_API_AUTHORIZATION_HEADER("SMS_API_AUTHORIZATION_HEADER"), SMS_API_ENABLED("SMS_API_ENABLED");
+
+        private final String value;
+
+        MasivianJSONinputParams(final String value) {
+            this.value = value;
+        }
+
+        private static final Set<String> values = new HashSet<>();
+        static {
+            for (final MasivianJSONinputParams type : MasivianJSONinputParams.values()) {
+                values.add(type.value);
+            }
+        }
+
+        public static Set<String> getAllValues() {
+            return values;
+        }
+
+        @Override
+        public String toString() {
+            return name().replaceAll("_", " ");
+        }
+    }
 }

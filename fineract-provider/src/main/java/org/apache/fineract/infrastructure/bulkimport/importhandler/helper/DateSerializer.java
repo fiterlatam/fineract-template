@@ -25,17 +25,30 @@ import com.google.gson.JsonSerializer;
 import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 
 public class DateSerializer implements JsonSerializer<LocalDate> {
 
     private final String dateFormat;
+    private final String localeAsString;
 
     public DateSerializer(String dateFormat) {
         this.dateFormat = dateFormat;
+        this.localeAsString = null;
+    }
+
+    public DateSerializer(final String dateFormat, final String localeAsString) {
+        this.dateFormat = dateFormat;
+        this.localeAsString = localeAsString;
     }
 
     @Override
     public JsonElement serialize(LocalDate src, Type typeOfSrc, JsonSerializationContext context) {
+        if (this.localeAsString != null && !this.localeAsString.isEmpty()) {
+            final Locale locale = JsonParserHelper.localeFromString(this.localeAsString);
+            return context.serialize(src.format(DateTimeFormatter.ofPattern(dateFormat, locale)));
+        }
         return new JsonPrimitive(src.format(DateTimeFormatter.ofPattern(dateFormat)));
     }
 }

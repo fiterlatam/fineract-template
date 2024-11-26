@@ -31,7 +31,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.RescheduleLoansApiConstants;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.data.LoanRescheduleRequestData;
@@ -250,11 +254,11 @@ public class LoanRescheduleRequestReadPlatformServiceImpl implements LoanResched
     }
 
     @Override
-    public LoanRescheduleRequestData retrieveAllRescheduleReasons(String loanRescheduleReason) {
+    public LoanRescheduleRequestData retrieveAllRescheduleReasons(final String loanRescheduleReason, final Long loanId) {
         final List<CodeValueData> rescheduleReasons = new ArrayList<>(
                 this.codeValueReadPlatformService.retrieveCodeValuesByCode(loanRescheduleReason));
         final Long id = null;
-        final Long loanId = null;
+        BigDecimal rediferirAmount = BigDecimal.ZERO;
         final LoanRescheduleRequestStatusEnumData statusEnum = null;
         final Integer rescheduleFromInstallment = null;
         final LocalDate rescheduleFromDate = null;
@@ -266,10 +270,18 @@ public class LoanRescheduleRequestReadPlatformServiceImpl implements LoanResched
         final Long clientId = null;
         final Boolean recalculateInterest = null;
         final Collection<LoanTermVariationsData> loanTermVariationsData = null;
-
-        return LoanRescheduleRequestData.instance(id, loanId, statusEnum, rescheduleFromInstallment, rescheduleFromDate,
-                rescheduleReasonCodeValue, rescheduleReasonComment, timeline, clientName, loanAccountNumber, clientId, recalculateInterest,
-                rescheduleReasons, loanTermVariationsData);
+        final LoanRescheduleRequestData loanRescheduleRequestData = LoanRescheduleRequestData.instance(id, loanId, statusEnum,
+                rescheduleFromInstallment, rescheduleFromDate, rescheduleReasonCodeValue, rescheduleReasonComment, timeline, clientName,
+                loanAccountNumber, clientId, recalculateInterest, rescheduleReasons, loanTermVariationsData);
+        if (loanId != null) {
+            final Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+            final MonetaryCurrency currency = loan.getCurrency();
+            final LocalDate foreClosureDate = DateUtils.getBusinessLocalDate();
+            final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(foreClosureDate);
+            rediferirAmount = loanRepaymentScheduleInstallment.getRediferirAmount(currency).getAmount();
+        }
+        loanRescheduleRequestData.setRediferirAmount(rediferirAmount);
+        return loanRescheduleRequestData;
     }
 
     @Override

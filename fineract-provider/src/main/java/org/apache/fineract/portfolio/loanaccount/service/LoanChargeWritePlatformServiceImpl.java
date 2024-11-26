@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,7 +74,6 @@ import org.apache.fineract.portfolio.account.service.AccountTransfersWritePlatfo
 import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
-import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeAppliedToException;
 import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeUpdatedException;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeCannotBeAddedException;
@@ -92,28 +92,7 @@ import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
-import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanChargePaidBy;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanChargeRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagement;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanEvent;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanInstallmentCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanInterestRecalcualtionAdditionalDetails;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanOverdueInstallmentCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTrancheDisbursementCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelation;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationTypeEnum;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor.TransactionCtx;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.MoneyHolder;
@@ -186,18 +165,6 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         final Long chargeDefinitionId = command.longValueOfParameterNamed("chargeId");
         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeDefinitionId);
 
-        /*
-         * TODO: remove this check once handling for Installment fee charges is implemented for Advanced Payment
-         * strategy
-         */
-        if (ChargeTimeType.fromInt(chargeDefinition.getChargeTimeType()).isInstalmentFee()
-                && AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
-                        .equals(loan.transactionProcessingStrategy())) {
-            final String errorMessageInstallmentChargeNotSupported = "Charge with identifier " + chargeDefinition.getId()
-                    + " cannot be applied: Installment fee charges are not supported for Advanced payment allocation strategy";
-            throw new ChargeCannotBeAppliedToException("loan", errorMessageInstallmentChargeNotSupported, chargeDefinition.getId());
-        }
-
         if (loan.isDisbursed() && chargeDefinition.isDisbursementCharge()) {
             // validates whether any pending disbursements are available to
             // apply this charge
@@ -221,7 +188,8 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                         externalId = externalIdFactory.create();
                     }
                     loanCharge = loanChargeAssembler.createNewWithoutLoan(chargeDefinition, disbursementDetail.principal(), null, null,
-                            null, disbursementDetail.expectedDisbursementDateAsLocalDate(), null, null, externalId);
+                            null, disbursementDetail.expectedDisbursementDateAsLocalDate(), null, null, externalId, false, 1, null, false,
+                            null, null);
                     loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge, disbursementDetail);
                     loanCharge.updateLoanTrancheDisbursementCharge(loanTrancheDisbursementCharge);
                     businessEventNotifierService.notifyPreBusinessEvent(new LoanAddChargeBusinessEvent(loanCharge));
@@ -243,6 +211,26 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         } else {
             loanCharge = loanChargeAssembler.createNewFromJson(loan, chargeDefinition, command);
             businessEventNotifierService.notifyPreBusinessEvent(new LoanAddChargeBusinessEvent(loanCharge));
+
+            if (loanCharge.isInstalmentFee()) {
+                Integer applicableFromInstallment = 1;
+                if (loanCharge.isCustomFlatDistributedCharge() || loanCharge.isCustomPercentageBasedDistributedCharge()) {
+                    for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
+                        if (!installment.isObligationsMet()) {
+                            applicableFromInstallment = installment.getInstallmentNumber();
+                            break;
+                        }
+                    }
+                    for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
+                        if (!installment.isObligationsMet() && installment.getInstallmentNumber() < applicableFromInstallment) {
+                            applicableFromInstallment = installment.getInstallmentNumber();
+                        }
+                    }
+                }
+                loanCharge.setApplicableFromInstallment(applicableFromInstallment);
+
+                loanCharge.resetAndUpdateInstallmentCharges();
+            }
 
             validateAddLoanCharge(loan, chargeDefinition, loanCharge);
             isAppliedOnBackDate = addCharge(loan, chargeDefinition, loanCharge);
@@ -762,6 +750,17 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         LocalDate lastChargeDate = null;
         for (final OverdueLoanScheduleData overdueInstallment : overdueLoanScheduleDataList) {
 
+            // If installment is overdue but within charge´s grace period, don´t apply charge
+            final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(overdueInstallment.getChargeId());
+            if (chargeDefinition.hasCustomGracePeriodDefined()) {
+                final LocalDate today = DateUtils.getBusinessLocalDate();
+                final LocalDate dueDate = DateUtils.parseLocalDate(overdueInstallment.getDueDate());
+                final LocalDate applyChargeFromDate = dueDate.plusDays(chargeDefinition.getGraceOnChargePeriodAmount());
+                if (today.isBefore(applyChargeFromDate)) {
+                    continue;
+                }
+            }
+
             final JsonElement parsedCommand = this.fromApiJsonHelper.parse(overdueInstallment.toString());
             final JsonCommand command = JsonCommand.from(overdueInstallment.toString(), parsedCommand, this.fromApiJsonHelper, null, null,
                     null, null, null, loanId, null, null, null, null, null, null, null);
@@ -792,7 +791,9 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
             }
 
             if (reprocessRequired) {
-                addInstallmentIfPenaltyAppliedAfterLastDueDate(loan, lastChargeDate);
+                // No need to add new penalty installment. This has been handled in
+                // SingleLoanChargeRepaymentScheduleProcessingWrapper.reprocess
+                // addInstallmentIfPenaltyAppliedAfterLastDueDate(loan, lastChargeDate);
                 ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions();
                 if (changedTransactionDetail != null) {
                     for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings()
@@ -1009,21 +1010,19 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
             }
         }
 
-        if (!loan.isInterestBearing() && loanCharge.isSpecifiedDueDate()) {
-            LoanRepaymentScheduleInstallment latestRepaymentScheduleInstalment = loan.getRepaymentScheduleInstallments()
-                    .get(loan.getLoanRepaymentScheduleInstallmentsSize() - 1);
-            if (DateUtils.isAfter(loanCharge.getDueDate(), latestRepaymentScheduleInstalment.getDueDate())) {
-                if (latestRepaymentScheduleInstalment.isAdditional()) {
-                    latestRepaymentScheduleInstalment.updateDueDate(loanCharge.getDueDate());
-                } else {
-                    final LoanRepaymentScheduleInstallment installment = new LoanRepaymentScheduleInstallment(loan,
-                            (loan.getLoanRepaymentScheduleInstallmentsSize() + 1), latestRepaymentScheduleInstalment.getDueDate(),
-                            loanCharge.getDueDate(), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, false, null);
-                    installment.markAsAdditional();
-                    loan.addLoanRepaymentScheduleInstallment(installment);
-                }
-            }
-        }
+        /*
+         * Do not need to add additional penalty installment anymore
+         *
+         * if (!loan.isInterestBearing() && loanCharge.isSpecifiedDueDate()) { LoanRepaymentScheduleInstallment
+         * latestRepaymentScheduleInstalment = loan.getRepaymentScheduleInstallments()
+         * .get(loan.getLoanRepaymentScheduleInstallmentsSize() - 1); if (DateUtils.isAfter(loanCharge.getDueDate(),
+         * latestRepaymentScheduleInstalment.getDueDate())) { if (latestRepaymentScheduleInstalment.isAdditional()) {
+         * latestRepaymentScheduleInstalment.updateDueDate(loanCharge.getDueDate()); } else { final
+         * LoanRepaymentScheduleInstallment installment = new LoanRepaymentScheduleInstallment(loan,
+         * (loan.getLoanRepaymentScheduleInstallmentsSize() + 1), latestRepaymentScheduleInstalment.getDueDate(),
+         * loanCharge.getDueDate(), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, false, null);
+         * installment.markAsAdditional(); loan.addLoanRepaymentScheduleInstallment(installment); } } }
+         */
 
         loan.addLoanCharge(loanCharge);
 
@@ -1047,6 +1046,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                 chargeDefinition, periodNumber);
 
         Integer feeFrequency = chargeDefinition.feeFrequency();
+        Integer feeInterval = chargeDefinition.feeInterval();
         final ScheduledDateGenerator scheduledDateGenerator = new DefaultScheduledDateGenerator();
         Map<Integer, LocalDate> scheduleDates = new HashMap<>();
         final Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
@@ -1072,7 +1072,13 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         for (Integer frequency : frequencyNumbers) {
             scheduleDates.remove(frequency);
         }
-
+        Long numberOfPenaltyDays = java.time.temporal.ChronoUnit.DAYS.between(dueDate, DateUtils.getBusinessLocalDate());
+        numberOfPenaltyDays = numberOfPenaltyDays + (penaltyWaitPeriodValue + 1L) - diff;
+        if (feeFrequency != null && feeFrequency == 0 && feeInterval != null && feeInterval == 1) {
+            // If fee frequency is daily then we should not multiply charge amount with number of days as charge amount
+            // is already calculated based on single day
+            numberOfPenaltyDays = null;
+        }
         LoanRepaymentScheduleInstallment installment = null;
         LocalDate lastChargeAppliedDate = dueDate;
         LocalDate recalculateFrom = DateUtils.getBusinessLocalDate();
@@ -1083,9 +1089,10 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
             for (Map.Entry<Integer, LocalDate> entry : scheduleDates.entrySet()) {
 
-                final LoanCharge loanCharge = loanChargeAssembler.createNewFromJson(loan, chargeDefinition, command, entry.getValue());
+                final LoanCharge loanCharge = loanChargeAssembler.createNewFromJson(loan, chargeDefinition, command, entry.getValue(),
+                        installment, numberOfPenaltyDays);
 
-                if (BigDecimal.ZERO.compareTo(loanCharge.amount()) == 0) {
+                if (Objects.isNull(loanCharge.amount()) || BigDecimal.ZERO.compareTo(loanCharge.amount()) == 0) {
                     continue;
                 }
                 LoanOverdueInstallmentCharge overdueInstallmentCharge = new LoanOverdueInstallmentCharge(loanCharge, installment,
@@ -1112,7 +1119,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         if (lastChargeDate != null) {
             List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments();
             LoanRepaymentScheduleInstallment lastInstallment = loan.fetchRepaymentScheduleInstallment(installments.size());
-            if (DateUtils.isAfter(lastChargeDate, lastInstallment.getDueDate())) {
+            if (lastInstallment != null && DateUtils.isAfter(lastChargeDate, lastInstallment.getDueDate())) {
                 if (lastInstallment.isRecalculatedInterestComponent()) {
                     installments.remove(lastInstallment);
                     lastInstallment = loan.fetchRepaymentScheduleInstallment(installments.size());

@@ -26,6 +26,7 @@ import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.data.ClientTimelineData;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
+import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -80,6 +81,14 @@ public interface ClientMapper {
     @Mapping(target = "legalFormId", ignore = true)
     @Mapping(target = "clientCollateralManagements", ignore = true)
     @Mapping(target = "groups", ignore = true)
+    @Mapping(target = "blockingReasonsDataOptions", ignore = true)
+    @Mapping(target = "secondLastname", source = "source.secondLastname")
+    @Mapping(target = "cupoBalance", ignore = true)
+    @Mapping(target = "advanceCupoBalance", ignore = true)
+    @Mapping(target = "idNumber", ignore = true)
+    @Mapping(target = "cupoMaxAmount", ignore = true)
+    @Mapping(target = "otherLoansCupo", ignore = true)
+    @Mapping(target = "otherLoansCupoBalance", ignore = true)
     ClientData map(Client source);
 
     @Named("clientTypeCode")
@@ -125,7 +134,11 @@ public interface ClientMapper {
 
     @Named("clientStatusEnum")
     default EnumOptionData clientStatusEnum(Client client) {
-        return ClientEnumerations.status(client.getStatus());
+        if (client.getBlockingReason() != null) {
+            return ClientEnumerations.status(ClientStatus.BLOCKED);
+        } else {
+            return ClientEnumerations.status(client.getStatus());
+        }
     }
 
     @Named("clientTimelineData")

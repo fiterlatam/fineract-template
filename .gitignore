@@ -30,3 +30,4 @@ fineract-client/out/
 fineract-provider/src/main/generated/
 integration-tests/out/
 module/dummy/starter/out/
+/libs/gradle/gradle-8.5-bin.zip

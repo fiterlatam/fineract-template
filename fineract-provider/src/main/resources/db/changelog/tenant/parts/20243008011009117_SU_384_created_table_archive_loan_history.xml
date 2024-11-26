@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="fineract" id="11">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="m_archive_loan_history"/>
+            </not>
+        </preConditions>
+        <createTable tableName="m_archive_loan_history">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="title" type="varchar(255)"/>
+            <column name="identificacion" type="INT4"/>
+            <column name="primer_nombre" type="varchar(255)"/>
+            <column name="segundo_nombre" type="varchar(100)"/>
+            <column name="segundo_apellido" type="varchar(100)"/>
+            <column name="estado_cliente" type="varchar(100)"/>
+            <column name="numero_obligacion" type="varchar(100)"/>
+            <column name="nit_empresa" type="varchar(20)"/>
+            <column name="telefono_sac_1" type="varchar(20)"/>
+            <column name="celular_sac_1" type="varchar(20)"/>
+            <column name="telefono_sac_2" type="varchar(20)"/>
+            <column name="celular_sac_2" type="varchar(20)"/>
+            <column name="email_sac" type="varchar(150)"/>
+            <column name="direccion_sac" type="varchar(200)"/>
+            <column name="barrio_sac" type="varchar(200)"/>
+            <column name="ciudad_sac" type="INT4"/>
+            <column name="departamento" type="varchar(100)"/>
+            <column name="tipo_credito" type="varchar(200)"/>
+            <column name="fecha_vencimiento" type="date"/>
+            <column name="dias_mora" type="INT2"/>
+            <column name="valor_cuota" type="INT"/>
+            <column name="capital" type="numeric(19, 6)"/>
+            <column name="aval" type="INT2"/>
+            <column name="intereses" type="numeric(19, 6)"/>
+            <column name="intereses_de_mora" type="numeric(19, 6)"/>
+            <column name="iva_interes_de_mora" type="numeric(19, 6)"/>
+            <column name="seguro" type="numeric(19, 6)"/>
+            <column name="seguros_voluntarios" type="numeric(19, 6)"/>
+            <column name="punto_de_venta" type="varchar(200)"/>
+            <column name="tipo_documento" type="varchar(200)"/>
+            <column name="empresa" type="varchar(200)"/>
+            <column name="marca" type="varchar(200)"/>
+            <column name="razon_social" type="text"/>
+            <column name="ciudad_punto_credito" type="varchar(255)"/>
+            <column name="estado_cuota" type="varchar(200)"/>
+            <column name="nombre_familiar_1" type="varchar(200)"/>
+            <column name="parentesco_familiar_1" type="varchar(200)"/>
+            <column name="celular_familiar_1" type="varchar(20)"/>
+            <column name="nombre_familiar_2" type="varchar(200)"/>
+            <column name="parentesco_familiar_2" type="varchar(200)"/>
+            <column name="celular_familiar_2" type="varchar(20)"/>
+            <column name="fecha_financiacion" type="date"/>
+            <column name="fecha_nacimiento" type="date"/>
+            <column name="genero" type="varchar(50)"/>
+            <column name="empresa_labora" type="varchar(250)"/>
+            <column name="ingresos" type="numeric(19, 6)"/>
+            <column name="periodicidad" type="varchar(50)"/>
+            <column name="antiguedad_cliente" type="date"/>
+            <column name="empresa_reporta" type="varchar(255)"/>
+            <column name="abono" type="numeric(19, 6)"/>
+            <column name="condonaciones" type="numeric(19, 6)"/>
+            <column name="actividad_laboral" type="varchar(200)"/>
+            <column name="cre_estado" type="varchar(200)"/>
+            <column name="cre_saldo" type="numeric(19, 6)"/>
+            <column name="cuo_saldo" type="numeric(19,6)"/>
+            <column name="cuo_estado" type="varchar(200)"/>
+            <column name="estado_civil" type="varchar(200)"/>
+            <column name="numero_de_reprogramaciones" type="int"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="fineract" id="12">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM job WHERE name ='Archivo de cartera';
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="job">
+            <column name="name" value="Archivo de cartera"/>
+            <column name="display_name" value="Archivo de cartera Job"/>
+            <column name="cron_expression" value="0 0 23 1/1 * ? *"/>
+            <column name="create_time" valueDate="${current_datetime}"/>
+            <column name="task_priority" valueNumeric="3"/>
+            <column name="group_name"/>
+            <column name="previous_run_start_time"/>
+            <column name="job_key" value="Archivo_de_cartera _DEFAULT"/>
+            <column name="initializing_errorlog"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="currently_running" valueBoolean="true"/>
+            <column name="updates_allowed" valueBoolean="true"/>
+            <column name="scheduler_group" valueNumeric="0"/>
+            <column name="is_misfired" valueBoolean="false"/>
+            <column name="node_id" valueNumeric="1"/>
+            <column name="is_mismatched_job" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

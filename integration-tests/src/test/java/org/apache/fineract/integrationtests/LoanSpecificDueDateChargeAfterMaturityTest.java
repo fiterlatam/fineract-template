@@ -441,7 +441,7 @@ public class LoanSpecificDueDateChargeAfterMaturityTest {
                     .date("01 September 2023").dateFormat(DATETIME_PATTERN).locale("en"));
 
             PostChargesResponse penaltyCharge = CHARGES_HELPER.createCharges(new PostChargesRequest().penalty(true).amount(10.0)
-                    .chargeCalculationType(ChargeCalculationType.FLAT.getValue())
+                    .chargeCalculationType(ChargeCalculationType.FLAT_AMOUNT.getValue())
                     .chargeTimeType(ChargeTimeType.SPECIFIED_DUE_DATE.getValue()).chargePaymentMode(ChargePaymentMode.REGULAR.getValue())
                     .currencyCode("USD").name(Utils.randomStringGenerator("PENALTY_" + Calendar.getInstance().getTimeInMillis(), 5))
                     .chargeAppliesTo(1).locale("en").active(true));

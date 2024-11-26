@@ -44,6 +44,12 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     private final Set<LoanInterestRecalcualtionAdditionalDetails> loanCompoundingDetails = new HashSet<>();
     private boolean isEMIFixedSpecificToInstallment = false;
     BigDecimal rescheduleInterestPortion;
+    BigDecimal totalMandatoryInsuranceCharged = BigDecimal.ZERO;
+    BigDecimal totalVoluntaryInsuranceCharged = BigDecimal.ZERO;
+    BigDecimal totalAvalCharged = BigDecimal.ZERO;
+    BigDecimal totalHonorariosCharged = BigDecimal.ZERO;
+    private boolean recalculateEMIForInstallment;
+    private BigDecimal advancePrincipalAmountForInstallment;
 
     public static LoanScheduleModelRepaymentPeriod repayment(final int periodNumber, final LocalDate startDate,
             final LocalDate scheduledDueDate, final Money principalDue, final Money outstandingLoanBalance, final Money interestDue,
@@ -83,6 +89,11 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     @Override
     public boolean isDownPaymentPeriod() {
         return false;
+    }
+
+    @Override
+    public boolean isTotalGracePeriod() {
+        return principalDue.isZero() && interestDue.isZero() && feeChargesDue.isZero() && penaltyChargesDue.isZero();
     }
 
     @Override
@@ -187,5 +198,65 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     @Override
     public BigDecimal rescheduleInterestPortion() {
         return this.rescheduleInterestPortion;
+    }
+
+    @Override
+    public BigDecimal getTotalHonorariosCharged() {
+        return totalHonorariosCharged;
+    }
+
+    @Override
+    public void setTotalHonorariosCharged(BigDecimal totalHonorariosCharged) {
+        this.totalHonorariosCharged = totalHonorariosCharged;
+    }
+
+    @Override
+    public BigDecimal getTotalAvalCharged() {
+        return totalAvalCharged;
+    }
+
+    @Override
+    public void setTotalAvalCharged(BigDecimal totalAvalCharged) {
+        this.totalAvalCharged = totalAvalCharged;
+    }
+
+    @Override
+    public BigDecimal getTotalVoluntaryInsuranceCharged() {
+        return totalVoluntaryInsuranceCharged;
+    }
+
+    @Override
+    public void setTotalVoluntaryInsuranceCharged(BigDecimal totalVoluntaryInsuranceCharged) {
+        this.totalVoluntaryInsuranceCharged = totalVoluntaryInsuranceCharged;
+    }
+
+    @Override
+    public BigDecimal getTotalMandatoryInsuranceCharged() {
+        return totalMandatoryInsuranceCharged;
+    }
+
+    @Override
+    public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged) {
+        this.totalMandatoryInsuranceCharged = totalMandatoryInsuranceCharged;
+    }
+
+    @Override
+    public boolean recalculateEMIForInstallment() {
+        return recalculateEMIForInstallment;
+    }
+
+    @Override
+    public void setRecalculateEMIForInstallment(boolean recalculateEMIForInstallment) {
+        this.recalculateEMIForInstallment = recalculateEMIForInstallment;
+    }
+
+    @Override
+    public BigDecimal advancePrincipalAmountForInstallment() {
+        return advancePrincipalAmountForInstallment;
+    }
+
+    @Override
+    public void setAdvancePrincipalAmountForInstallment(BigDecimal advancePrincipalAmountForInstallment) {
+        this.advancePrincipalAmountForInstallment = advancePrincipalAmountForInstallment;
     }
 }

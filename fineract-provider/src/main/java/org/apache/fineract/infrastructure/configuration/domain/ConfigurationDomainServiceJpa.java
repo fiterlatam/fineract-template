@@ -529,4 +529,23 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         return value;
     }
 
+    @Override
+    public Long retriveMinimumDaysOfArrearsToClaim() {
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData("Dias de mora minimos para reclamar");
+        return property.getValue();
+    }
+
+    @Override
+    public boolean allowPaymentsWithPreviousDateEnabled() {
+        final String allowPaymentsWithPreviousDateProperty = "allow-payments-with-previous-date";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(allowPaymentsWithPreviousDateProperty);
+        return property.isEnabled();
+    }
+
+    @Override
+    public Long retriveMinimumDaysOfArrearsToWriteOff() {
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData("Dias de mora minimos castigar cartera");
+        return property.getValue();
+    }
+
 }

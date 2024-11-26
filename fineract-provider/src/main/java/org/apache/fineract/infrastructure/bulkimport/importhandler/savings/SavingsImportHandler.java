@@ -25,6 +25,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -71,7 +72,8 @@ public class SavingsImportHandler implements ImportHandler {
     }
 
     @Override
-    public Count process(final Workbook workbook, final String locale, final String dateFormat) {
+    public Count process(final Workbook workbook, final String locale, final String dateFormat,
+            final Map<String, Object> importAttributes) {
         List<SavingsAccountData> savings = new ArrayList<>();
         List<SavingsApproval> approvalDates = new ArrayList<>();
         List<SavingsActivation> activationDates = new ArrayList<>();

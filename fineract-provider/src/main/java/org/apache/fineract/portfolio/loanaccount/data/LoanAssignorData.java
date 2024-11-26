@@ -21,12 +21,14 @@ package org.apache.fineract.portfolio.loanaccount.data;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Immutable data object representing a loan assignor details.
  */
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class LoanAssignorData {
 
     private Long id;

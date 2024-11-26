@@ -5372,13 +5372,13 @@ public class ClientLoanIntegrationTest {
                     .usage(1));
 
             PostChargesResponse penaltyCharge = CHARGES_HELPER.createCharges(new PostChargesRequest().penalty(true).amount(10.0)
-                    .chargeCalculationType(ChargeCalculationType.FLAT.getValue())
+                    .chargeCalculationType(ChargeCalculationType.FLAT_AMOUNT.getValue())
                     .chargeTimeType(ChargeTimeType.SPECIFIED_DUE_DATE.getValue()).chargePaymentMode(ChargePaymentMode.REGULAR.getValue())
                     .currencyCode("USD").name(Utils.randomStringGenerator("PENALTY_" + Calendar.getInstance().getTimeInMillis(), 5))
                     .chargeAppliesTo(1).locale("en").active(true));
 
             PostChargesResponse feeCharge = CHARGES_HELPER.createCharges(new PostChargesRequest().penalty(false).amount(9.0)
-                    .chargeCalculationType(ChargeCalculationType.FLAT.getValue())
+                    .chargeCalculationType(ChargeCalculationType.FLAT_AMOUNT.getValue())
                     .chargeTimeType(ChargeTimeType.SPECIFIED_DUE_DATE.getValue()).chargePaymentMode(ChargePaymentMode.REGULAR.getValue())
                     .currencyCode("USD").name(Utils.randomStringGenerator("FEE_" + Calendar.getInstance().getTimeInMillis(), 5))
                     .chargeAppliesTo(1).locale("en").active(true));
@@ -6831,7 +6831,7 @@ public class ClientLoanIntegrationTest {
             final PostLoanProductsResponse loanProductResponse = LOAN_PRODUCT_HELPER.createLoanProduct(loanProductsRequest);
             LOG.info("-----------------------------------CREATE CHARGES-----------------------------------------");
             PostChargesResponse penaltyCharge = CHARGES_HELPER.createCharges(new PostChargesRequest().penalty(true).amount(10.0)
-                    .chargeCalculationType(ChargeCalculationType.FLAT.getValue())
+                    .chargeCalculationType(ChargeCalculationType.FLAT_AMOUNT.getValue())
                     .chargeTimeType(ChargeTimeType.SPECIFIED_DUE_DATE.getValue()).chargePaymentMode(ChargePaymentMode.REGULAR.getValue())
                     .currencyCode("USD").name(Utils.randomStringGenerator("PENALTY_" + Calendar.getInstance().getTimeInMillis(), 5))
                     .chargeAppliesTo(1).locale("en").active(true));

@@ -18,12 +18,17 @@
  */
 package org.apache.fineract.infrastructure.core.service;
 
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
 @Builder
 @AllArgsConstructor
+@Getter
+@Setter
 public final class SearchParameters {
 
     private final Long officeId;
@@ -32,16 +37,16 @@ public final class SearchParameters {
     private final String hierarchy;
     private final String firstname;
     private final String lastname;
-    private final String status;
+    private String status;
     private final Integer offset;
     private final Integer limit;
     private final String orderBy;
     private final String sortOrder;
     private final String accountNo;
     private final String currencyCode;
-
+    private Long interestRateId;
     private final Long staffId;
-
+    private Boolean active;
     private final Long loanId;
 
     private final Long savingsId;
@@ -52,6 +57,10 @@ public final class SearchParameters {
     private final Long productId;
     private final Long categoryId;
     private final boolean isSelfUser;
+    private Integer interestRateTypeId;
+    private BigDecimal currentRate;
+    private Integer channelType;
+    private boolean clientHasActiveLoans;
 
     public static SearchParameters from(final Long officeId, final String externalId, final String name, final String hierarchy) {
         final Long staffId = null;
@@ -472,6 +481,10 @@ public final class SearchParameters {
         return this.savingsId;
     }
 
+    public Long getInterestRateId() {
+        return interestRateId;
+    }
+
     public Boolean isOrphansOnly() {
         if (this.orphansOnly != null) {
             return this.orphansOnly;
@@ -505,6 +518,10 @@ public final class SearchParameters {
 
     public boolean isSelfUser() {
         return this.isSelfUser;
+    }
+
+    public Boolean getActive() {
+        return Boolean.TRUE.equals(this.active);
     }
 
     /**

@@ -31,6 +31,7 @@ import java.util.Map;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
@@ -51,6 +52,7 @@ import org.apache.fineract.portfolio.loanaccount.guarantor.data.GuarantorData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductBorrowerCycleVariationData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductValueConditionType;
 import org.apache.fineract.portfolio.note.data.NoteData;
@@ -76,6 +78,8 @@ public class LoanAccountData {
     // related to
     private Long clientId;
     private String clientAccountNo;
+    private String clientIdNumber;
+    private String pointOfSaleCode;
     private String clientName;
     private ExternalId clientExternalId;
     private Long clientOfficeId;
@@ -171,6 +175,7 @@ public class LoanAccountData {
     private List<EnumOptionData> loanScheduleTypeOptions;
     private List<EnumOptionData> loanScheduleProcessingTypeOptions;
     private List<LoanAssignorData> loanAssignorOptions;
+    private MaximumCreditRateConfigurationData maximumCreditRateConfiguration;
 
     @Transient
     private BigDecimal feeChargesAtDisbursementCharged;
@@ -268,6 +273,21 @@ public class LoanAccountData {
 
     private EnumOptionData loanScheduleType;
     private EnumOptionData loanScheduleProcessingType;
+    private BlockingReasonsData blockStatus;
+    private Long interestRatePoints;
+    private Long channelId;
+    private String channelName;
+    private String channelDescription;
+    private String pointOfSalesName;
+    private String pointOfSalesCode;
+    private Long allyId;
+
+    private Long codigoSeguro;
+    private Long cedulaSeguroVoluntario;
+    private LoanChargeData voluntaryInsurance;
+    private BigDecimal valorDescuento;
+    private BigDecimal valorGiro;
+    private Boolean rediferir;
 
     public static LoanAccountData importInstanceIndividual(EnumOptionData loanTypeEnumOption, Long clientId, Long productId,
             Long loanOfficerId, LocalDate submittedOnDate, Long fundId, BigDecimal principal, Integer numberOfRepayments,
@@ -399,7 +419,7 @@ public class LoanAccountData {
                 .setFraud(acc.fraud).setOverpaidOnDate(acc.overpaidOnDate).setChargedOff(acc.chargedOff)
                 .setLoanScheduleType(acc.loanScheduleType).setLoanScheduleProcessingType(acc.loanScheduleProcessingType)
                 .setLoanScheduleTypeOptions(acc.loanScheduleTypeOptions)
-                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions);
+                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions).setClientIdNumber(clientAcc.clientIdNumber);
     }
 
     /**
@@ -646,7 +666,8 @@ public class LoanAccountData {
                 .setFixedPrincipalPercentagePerInstallment(product.getFixedPrincipalPercentagePerInstallment()).setDelinquent(delinquent)
                 .setDisallowExpectedDisbursements(product.getDisallowExpectedDisbursements()).setFraud(acc.fraud)
                 .setOverpaidOnDate(acc.overpaidOnDate).setChargedOff(acc.chargedOff).setLoanScheduleType(acc.getLoanScheduleType())
-                .setLoanScheduleProcessingType(acc.getLoanScheduleProcessingType());
+                .setLoanScheduleProcessingType(acc.getLoanScheduleProcessingType()).setValorDescuento(acc.valorDescuento)
+                .setValorGiro(acc.valorGiro).setCedulaSeguroVoluntario(acc.cedulaSeguroVoluntario);
     }
 
     /*
@@ -683,7 +704,7 @@ public class LoanAccountData {
             LocalDate lastClosedBusinessDate, LocalDate overpaidOnDate, final boolean chargedOff, final boolean enableDownPayment,
             final BigDecimal disbursedAmountPercentageForDownPayment, final boolean enableAutoRepaymentForDownPayment,
             final boolean enableInstallmentLevelDelinquency, final EnumOptionData loanScheduleType,
-            final EnumOptionData loanScheduleProcessingType) {
+            final EnumOptionData loanScheduleProcessingType, final BigDecimal valorDescuento, final BigDecimal valorGiro) {
 
         final CollectionData delinquent = CollectionData.template();
 
@@ -727,7 +748,7 @@ public class LoanAccountData {
                 .setEnableDownPayment(enableDownPayment).setDisbursedAmountPercentageForDownPayment(disbursedAmountPercentageForDownPayment)
                 .setEnableAutoRepaymentForDownPayment(enableAutoRepaymentForDownPayment)
                 .setEnableInstallmentLevelDelinquency(enableInstallmentLevelDelinquency).setLoanScheduleType(loanScheduleType)
-                .setLoanScheduleProcessingType(loanScheduleProcessingType);
+                .setLoanScheduleProcessingType(loanScheduleProcessingType).setValorDescuento(valorDescuento).setValorGiro(valorGiro);
     }
 
     /*
@@ -736,8 +757,8 @@ public class LoanAccountData {
     public static LoanAccountData associationsAndTemplate(final LoanAccountData acc, final LoanScheduleData repaymentSchedule,
             final Collection<LoanTransactionData> transactions, final Collection<LoanChargeData> charges,
             final Collection<LoanCollateralManagementData> collateral, final Collection<GuarantorData> guarantors,
-            final CalendarData calendarData, final Collection<LoanProductData> productOptions,
-            final Collection<EnumOptionData> termFrequencyTypeOptions, final Collection<EnumOptionData> repaymentFrequencyTypeOptions,
+            final Collection<LoanProductData> productOptions, final Collection<EnumOptionData> termFrequencyTypeOptions,
+            final Collection<EnumOptionData> repaymentFrequencyTypeOptions,
             final Collection<EnumOptionData> repaymentFrequencyNthDayTypeOptions,
             final Collection<EnumOptionData> repaymentFrequencyDayOfWeekTypeOptions,
             final Collection<TransactionProcessingStrategyData> transactionProcessingStrategyOptions,
@@ -818,15 +839,18 @@ public class LoanAccountData {
                 .setEnableAutoRepaymentForDownPayment(acc.enableAutoRepaymentForDownPayment)
                 .setEnableInstallmentLevelDelinquency(acc.enableInstallmentLevelDelinquency).setLoanScheduleType(acc.loanScheduleType)
                 .setLoanScheduleProcessingType(acc.loanScheduleProcessingType).setLoanScheduleTypeOptions(loanScheduleTypeOptions)
-                .setLoanScheduleProcessingTypeOptions(loanScheduleProcessingTypeOptions);
+                .setChannelName(acc.channelName).setChannelDescription(acc.channelDescription).setChannelId(acc.channelId)
+                .setPointOfSalesName(acc.pointOfSalesName).setLoanScheduleProcessingTypeOptions(loanScheduleProcessingTypeOptions)
+                .setBlockStatus(acc.blockStatus).setPointOfSalesCode(acc.pointOfSalesCode).setAllyId(acc.allyId)
+                .setCodigoSeguro(acc.codigoSeguro).setCedulaSeguroVoluntario(acc.cedulaSeguroVoluntario)
+                .setValorDescuento(acc.valorDescuento).setValorGiro(acc.valorGiro);
     }
 
     public static LoanAccountData associationsAndTemplate(final LoanAccountData acc, final Collection<LoanProductData> productOptions,
             final Collection<StaffData> allowedLoanOfficers, final Collection<CalendarData> calendarOptions,
             final Collection<PortfolioAccountData> accountLinkingOptions, final Boolean isRatesEnabled) {
-
-        return associationsAndTemplate(acc, acc.repaymentSchedule, acc.transactions, acc.charges, acc.collateral, acc.guarantors,
-                acc.meeting, productOptions, acc.termFrequencyTypeOptions, acc.repaymentFrequencyTypeOptions,
+        final LoanAccountData loanAccountData = associationsAndTemplate(acc, acc.repaymentSchedule, acc.transactions, acc.charges,
+                acc.collateral, acc.guarantors, productOptions, acc.termFrequencyTypeOptions, acc.repaymentFrequencyTypeOptions,
                 acc.repaymentFrequencyNthDayTypeOptions, acc.repaymentFrequencyDaysOfWeekTypeOptions,
                 acc.transactionProcessingStrategyOptions, acc.interestRateFrequencyTypeOptions, acc.amortizationTypeOptions,
                 acc.interestTypeOptions, acc.interestCalculationPeriodTypeOptions, acc.fundOptions, acc.chargeOptions, null,
@@ -834,6 +858,9 @@ public class LoanAccountData {
                 acc.linkedAccount, acc.disbursementDetails, acc.emiAmountVariations, acc.overdueCharges, acc.paidInAdvance,
                 acc.interestRatesPeriods, acc.clientActiveLoanOptions, acc.rates, isRatesEnabled, acc.delinquent,
                 acc.loanScheduleTypeOptions, acc.loanScheduleProcessingTypeOptions);
+        loanAccountData.setClientIdNumber(acc.getClientIdNumber());
+        loanAccountData.setCedulaSeguroVoluntario(acc.getCedulaSeguroVoluntario());
+        return loanAccountData;
     }
 
     public static LoanAccountData associateGroup(final LoanAccountData acc, final GroupGeneralData group) {
@@ -897,7 +924,8 @@ public class LoanAccountData {
                 .setFraud(acc.fraud).setOverpaidOnDate(acc.overpaidOnDate).setChargedOff(acc.chargedOff)
                 .setEnableInstallmentLevelDelinquency(acc.enableInstallmentLevelDelinquency).setLoanScheduleType(acc.loanScheduleType)
                 .setLoanScheduleProcessingType(acc.loanScheduleProcessingType).setLoanScheduleTypeOptions(acc.loanScheduleTypeOptions)
-                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions);
+                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions).setValorDescuento(acc.valorDescuento)
+                .setValorGiro(acc.valorGiro);
     }
 
     public static LoanAccountData associateMemberVariations(final LoanAccountData acc, final Map<Long, Integer> memberLoanCycle) {
@@ -997,7 +1025,8 @@ public class LoanAccountData {
                 .setFraud(acc.fraud).setOverpaidOnDate(acc.overpaidOnDate).setChargedOff(acc.chargedOff)
                 .setEnableInstallmentLevelDelinquency(acc.enableInstallmentLevelDelinquency).setLoanScheduleType(acc.loanScheduleType)
                 .setLoanScheduleProcessingType(acc.loanScheduleProcessingType).setLoanScheduleTypeOptions(acc.loanScheduleTypeOptions)
-                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions);
+                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions).setValorDescuento(acc.valorDescuento)
+                .setValorGiro(acc.valorGiro);
     }
 
     public static LoanAccountData withInterestRecalculationCalendarData(final LoanAccountData acc, final CalendarData calendarData,
@@ -1065,7 +1094,10 @@ public class LoanAccountData {
                 .setFraud(acc.fraud).setOverpaidOnDate(acc.overpaidOnDate).setChargedOff(acc.chargedOff)
                 .setEnableInstallmentLevelDelinquency(acc.enableInstallmentLevelDelinquency).setLoanScheduleType(acc.loanScheduleType)
                 .setLoanScheduleProcessingType(acc.loanScheduleProcessingType).setLoanScheduleTypeOptions(acc.loanScheduleTypeOptions)
-                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions);
+                .setChannelId(acc.channelId).setChannelName(acc.channelName).setChannelDescription(acc.channelDescription)
+                .setPointOfSalesName(acc.pointOfSalesName).setPointOfSalesCode(acc.pointOfSalesCode)
+                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions).setValorDescuento(acc.valorDescuento)
+                .setValorGiro(acc.valorGiro);
     }
 
     public static LoanAccountData withLoanCalendarData(final LoanAccountData acc, final CalendarData calendarData) {
@@ -1126,7 +1158,10 @@ public class LoanAccountData {
                 .setFraud(acc.fraud).setOverpaidOnDate(acc.overpaidOnDate).setChargedOff(acc.chargedOff)
                 .setEnableInstallmentLevelDelinquency(acc.enableInstallmentLevelDelinquency).setLoanScheduleType(acc.loanScheduleType)
                 .setLoanScheduleProcessingType(acc.loanScheduleProcessingType).setLoanScheduleTypeOptions(acc.loanScheduleTypeOptions)
-                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions);
+                .setChannelId(acc.channelId).setChannelName(acc.channelName).setChannelDescription(acc.channelDescription)
+                .setPointOfSalesName(acc.pointOfSalesName).setPointOfSalesCode(acc.pointOfSalesCode)
+                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions).setValorDescuento(acc.valorDescuento)
+                .setValorGiro(acc.valorGiro);
     }
 
     public static LoanAccountData withOriginalSchedule(final LoanAccountData acc, final LoanScheduleData originalSchedule) {
@@ -1190,7 +1225,10 @@ public class LoanAccountData {
                 .setFraud(acc.fraud).setOverpaidOnDate(acc.overpaidOnDate).setChargedOff(acc.chargedOff)
                 .setEnableInstallmentLevelDelinquency(acc.enableInstallmentLevelDelinquency).setLoanScheduleType(acc.loanScheduleType)
                 .setLoanScheduleProcessingType(acc.loanScheduleProcessingType).setLoanScheduleTypeOptions(acc.loanScheduleTypeOptions)
-                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions);
+                .setChannelId(acc.channelId).setChannelName(acc.channelName).setChannelDescription(acc.channelDescription)
+                .setPointOfSalesName(acc.pointOfSalesName).setPointOfSalesCode(acc.pointOfSalesCode)
+                .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions).setValorDescuento(acc.valorDescuento)
+                .setValorGiro(acc.valorGiro).setCedulaSeguroVoluntario(acc.cedulaSeguroVoluntario);
     }
 
     public static final Comparator<LoanAccountData> ClientNameComparator = (loan1, loan2) -> {

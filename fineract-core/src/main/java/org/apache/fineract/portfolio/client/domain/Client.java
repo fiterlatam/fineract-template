@@ -38,6 +38,7 @@ import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -100,6 +101,9 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "lastname", length = 50)
     private String lastname;
 
+    @Column(name = "second_lastname", length = 50)
+    private String secondLastname;
+
     @Column(name = "fullname", length = 160)
     private String fullname;
 
@@ -135,6 +139,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Transient
     private boolean accountNumberRequiresAutoGeneration = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "blocking_reason_id", nullable = true)
+    private BlockingReasonSetting blockingReason;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "closure_reason_cv_id")
@@ -387,6 +395,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         return ClientStatus.fromInt(this.status).isClosed();
     }
 
+    public boolean isBlocked() {
+        return ClientStatus.fromInt(this.status).isBlocked();
+    }
+
     public boolean isTransferInProgress() {
         return ClientStatus.fromInt(this.status).isTransferInProgress();
     }
@@ -429,13 +441,13 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             baseDataValidator.reset().parameter(ClientApiConstants.lastnameParamName).value(this.lastname)
                     .mustBeBlankWhenParameterProvided(ClientApiConstants.fullnameParamName, this.fullname);
         } else {
-
+            final int maximumNameLength = 60;
             baseDataValidator.reset().parameter(ClientApiConstants.firstnameParamName).value(this.firstname).notBlank()
-                    .notExceedingLengthOf(50);
+                    .notExceedingLengthOf(maximumNameLength);
             baseDataValidator.reset().parameter(ClientApiConstants.middlenameParamName).value(this.middlename).ignoreIfNull()
-                    .notExceedingLengthOf(50);
+                    .notExceedingLengthOf(maximumNameLength);
             baseDataValidator.reset().parameter(ClientApiConstants.lastnameParamName).value(this.lastname).notBlank()
-                    .notExceedingLengthOf(50);
+                    .notExceedingLengthOf(maximumNameLength);
         }
     }
 
@@ -584,16 +596,16 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         this.status = ClientStatus.CLOSED.getValue();
     }
 
-    public CodeValue subStatus() {
-        return this.subStatus;
+    public void block(final BlockingReasonSetting blockingReason) {
+        this.blockingReason = blockingReason;
     }
 
-    public Long subStatusId() {
-        Long subStatusId = null;
-        if (this.subStatus != null) {
-            subStatusId = this.subStatus.getId();
-        }
-        return subStatusId;
+    public void undoBlock() {
+        this.blockingReason = null;
+    }
+
+    public CodeValue subStatus() {
+        return this.subStatus;
     }
 
     public boolean isActivatedAfter(final LocalDate submittedOn) {
@@ -745,6 +757,10 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
             setLastname(null);
             setDisplayName(null);
         }
+    }
+
+    public boolean isPerson() {
+        return LegalForm.fromInt(this.legalForm).isPerson();
     }
 
 }

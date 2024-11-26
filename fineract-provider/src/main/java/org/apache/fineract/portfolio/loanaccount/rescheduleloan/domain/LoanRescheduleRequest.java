@@ -282,4 +282,8 @@ public class LoanRescheduleRequest extends AbstractPersistableCustom {
         }
         return null;
     }
+
+    public void setRescheduleFromDate(LocalDate rescheduleFromDate) {
+        this.rescheduleFromDate = rescheduleFromDate;
+    }
 }

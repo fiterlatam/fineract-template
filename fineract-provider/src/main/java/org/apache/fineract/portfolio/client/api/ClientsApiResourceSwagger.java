@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.client.api;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -432,6 +433,23 @@ final class ClientsApiResourceSwagger {
         public LocalDate proposedTransferDate;
     }
 
+    @Schema(description = "GetClientBlockingReasonResponse")
+    public static final class GetClientBlockingReasonResponse {
+
+        private GetClientBlockingReasonResponse() {}
+
+        @Schema(example = "2")
+        public Long id;
+        @Schema(example = "Name of blocking reason")
+        public String name;
+        @Schema(example = "Description of blocking reason")
+        public String description;
+        @Schema(example = "[2024, 4, 15]")
+        public LocalDate blockDate;
+        @Schema(example = "2")
+        public Integer priority;
+    }
+
     @Schema(description = "GetClientObligeeDetailsResponse")
     public static final class GetClientObligeeDetailsResponse {
 
@@ -609,5 +627,22 @@ final class ClientsApiResourceSwagger {
 
         public Set<GetClientsLoanAccounts> loanAccounts;
         public Set<GetClientsSavingsAccounts> savingsAccounts;
+    }
+
+    @Schema(description = "GetClientAvailableCupoResponse")
+    public static final class GetClientAvailableCupoResponse {
+
+        @Schema(example = "1")
+        public Long clientId;
+        @Schema(example = "Nit")
+        public String tipo;
+        @Schema(example = "001")
+        public String nit;
+        @Schema(example = "001")
+        public String cedula;
+        @Schema(example = "1000")
+        public BigDecimal cupoDisponibleAvance;
+        @Schema(example = "1000")
+        public BigDecimal cupoDisponibleTotal;
     }
 }

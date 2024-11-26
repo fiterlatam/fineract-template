@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.configuration.service;
 
 import java.util.Collection;
+import org.apache.fineract.infrastructure.campaigns.masivian.data.MasivianConfigurationData;
 import org.apache.fineract.infrastructure.campaigns.sms.data.MessageGatewayConfigurationData;
 import org.apache.fineract.infrastructure.configuration.data.ExternalServicesPropertiesData;
 import org.apache.fineract.infrastructure.configuration.data.S3CredentialsData;
@@ -32,6 +33,8 @@ public interface ExternalServicesPropertiesReadPlatformService {
     SMTPCredentialsData getSMTPCredentials();
 
     MessageGatewayConfigurationData getSMSGateway();
+
+    MasivianConfigurationData getMasivianConfiguration();
 
     Collection<ExternalServicesPropertiesData> retrieveOne(String serviceName);
 

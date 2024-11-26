@@ -54,6 +54,12 @@ import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToG
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
+import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.loanproduct.service.SubChannelLoanProductReadWritePlatformService;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
@@ -63,23 +69,35 @@ import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.monetary.service.CurrencyReadPlatformService;
+import org.apache.fineract.organisation.workingdays.data.WorkingDaysData;
+import org.apache.fineract.organisation.workingdays.domain.WorkingDays;
+import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
+import org.apache.fineract.organisation.workingdays.service.WorkingDaysReadPlatformService;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.common.service.DropdownReadPlatformService;
 import org.apache.fineract.portfolio.delinquency.data.DelinquencyBucketData;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
 import org.apache.fineract.portfolio.floatingrates.data.FloatingRateData;
+import org.apache.fineract.portfolio.floatingrates.domain.InterestRateType;
 import org.apache.fineract.portfolio.floatingrates.service.FloatingRatesReadPlatformService;
 import org.apache.fineract.portfolio.fund.data.FundData;
 import org.apache.fineract.portfolio.fund.service.FundReadPlatformService;
+import org.apache.fineract.portfolio.interestrates.data.InterestRateData;
+import org.apache.fineract.portfolio.interestrates.service.InterestRateReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
+import org.apache.fineract.portfolio.loanproduct.data.AdvanceQuotaConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationHistoryData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.AllocationType;
 import org.apache.fineract.portfolio.loanproduct.domain.CreditAllocationTransactionType;
@@ -120,7 +138,8 @@ public class LoanProductsApiResource {
             LoanApiConstants.fixedPrincipalPercentagePerInstallmentParamName, LoanProductConstants.DUE_DAYS_FOR_REPAYMENT_EVENT,
             LoanProductConstants.OVER_DUE_DAYS_FOR_REPAYMENT_EVENT, LoanProductConstants.ENABLE_DOWN_PAYMENT,
             LoanProductConstants.DISBURSED_AMOUNT_PERCENTAGE_DOWN_PAYMENT, LoanProductConstants.ENABLE_AUTO_REPAYMENT_DOWN_PAYMENT,
-            LoanProductConstants.REPAYMENT_START_DATE_TYPE));
+            LoanProductConstants.REPAYMENT_START_DATE_TYPE, LoanProductConstants.MAX_CLIENT_INACTIVITY_PERIOD,
+            LoanProductConstants.INTEREST_STARTS_AFTER_GRACE_PERIOD));
 
     private static final Set<String> PRODUCT_MIX_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList("productId", "productName", "restrictedProducts", "allowedProducts", "productOptions"));
@@ -148,6 +167,12 @@ public class LoanProductsApiResource {
     private final RateReadService rateReadService;
     private final ConfigurationDomainService configurationDomainService;
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
+    private final WorkingDaysReadPlatformService workingDaysReadPlatformService;
+    private final WorkingDaysRepositoryWrapper workingDaysRepositoryWrapper;
+    private final CodeValueReadPlatformService codeValueReadPlatformService;
+    private final SubChannelLoanProductReadWritePlatformService subChannelLoanProductReadWritePlatformService;
+    private final InterestRateReadPlatformService interestRateReadPlatformService;
+    private final ChannelReadWritePlatformService channelReadWritePlatformService;
 
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
@@ -226,6 +251,18 @@ public class LoanProductsApiResource {
         LoanProductData loanProduct = this.loanProductReadPlatformService.retrieveNewLoanProductDetails();
         loanProduct = handleTemplate(loanProduct);
 
+        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
+                .retrieveMaximumCreditRateConfigurationData();
+        loanProduct.setMaximumCreditRateConfiguration(maximumCreditRateConfigurationData);
+
+        final SearchParameters searchParameters = SearchParameters.builder().active(true)
+                .interestRateTypeId(InterestRateType.REGULAR.getValue()).build();
+        final List<InterestRateData> interestRateOptions = this.interestRateReadPlatformService.retrieveInterestRates(searchParameters);
+        loanProduct.setInterestRateOptions(interestRateOptions);
+        final SearchParameters channelSearchParameters = SearchParameters.builder().channelType(ChannelType.REPAYMENT.getValue())
+                .active(true).build();
+        final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(channelSearchParameters);
+        loanProduct.setChannelOptions(channelOptions);
         return this.toApiJsonSerializer.serialize(settings, loanProduct, LOAN_PRODUCT_DATA_PARAMETERS);
     }
 
@@ -309,6 +346,58 @@ public class LoanProductsApiResource {
         return getUpdateLoanProductResult(apiRequestBodyAsJson, productId);
     }
 
+    @GET
+    @Path("maximumCreditRate")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getMaximumCreditConfigurations() {
+        this.context.authenticatedUser().validateHasReadPermission("MAXIMUM_CREDIT_RATE");
+        MaximumCreditRateConfigurationData result = this.loanProductReadPlatformService.retrieveMaximumCreditRateConfigurationData();
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @PUT
+    @Path("maximumCreditRate")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String updateMaximumRate(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().updateMaximumRate().withJson(apiRequestBodyAsJson).build();
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
+    // add a endpoint to fetch maximum credit rate history
+    @GET
+    @Path("maximumCreditRate/history")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getMaximumCreditRateHistory(@Context final UriInfo uriInfo) {
+        this.context.authenticatedUser().validateHasReadPermission("MAXIMUM_CREDIT_RATE");
+        final Collection<MaximumCreditRateConfigurationHistoryData> result = this.loanProductReadPlatformService
+                .retrieveMaximumCreditRateConfigurationHistory();
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @GET
+    @Path("advanceQuotaConfiguration")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getAdvanceQuotaConfiguration() {
+        this.context.authenticatedUser().validateHasReadPermission("ADVANCE_QUOTA");
+        AdvanceQuotaConfigurationData result = this.loanProductReadPlatformService.retrieveAdvanceQuotaConfigurationData();
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @PUT
+    @Path("advanceQuotaConfiguration")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String updateAdvanceQuotaConfiguration(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().updateAdvanceQuota().withJson(apiRequestBodyAsJson).build();
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
     private String getUpdateLoanProductResult(String apiRequestBodyAsJson, Long productId) {
         final CommandWrapper commandRequest = new CommandWrapperBuilder().updateLoanProduct(productId).withJson(apiRequestBodyAsJson)
                 .build();
@@ -326,6 +415,7 @@ public class LoanProductsApiResource {
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
 
         LoanProductData loanProduct = this.loanProductReadPlatformService.retrieveLoanProduct(productId);
+        final Integer graceOnChargesPayment = loanProduct.getGraceOnChargesPayment();
 
         Map<String, Object> accountingMappings;
         Collection<PaymentTypeToGLAccountMapper> paymentChannelToFundSourceMappings;
@@ -339,19 +429,28 @@ public class LoanProductsApiResource {
             feeToGLAccountMappings = this.accountMappingReadPlatformService.fetchFeeToGLAccountMappingsForLoanProduct(productId);
             penaltyToGLAccountMappings = this.accountMappingReadPlatformService
                     .fetchPenaltyToIncomeAccountMappingsForLoanProduct(productId);
-            loanProduct = LoanProductData.withAccountingDetails(loanProduct, accountingMappings, paymentChannelToFundSourceMappings,
+            LoanProductData.withAccountingDetails(loanProduct, accountingMappings, paymentChannelToFundSourceMappings,
                     feeToGLAccountMappings, penaltyToGLAccountMappings);
         }
 
         if (settings.isTemplate()) {
             loanProduct = handleTemplate(loanProduct);
         }
+
+        loanProduct.setCustomCollectionsSubChannelList(subChannelLoanProductReadWritePlatformService.findAllByProductId(productId));
+        loanProduct.setGraceOnChargesPayment(graceOnChargesPayment);
+
         return this.toApiJsonSerializer.serialize(settings, loanProduct, LOAN_PRODUCT_DATA_PARAMETERS);
     }
 
     private LoanProductData handleTemplate(final LoanProductData productData) {
-
         Collection<ChargeData> chargeOptions = this.chargeReadPlatformService.retrieveLoanApplicableFees();
+        final List<ChargeData> voluntaryInsuranceOptions = chargeOptions.stream().filter(chargeData -> {
+            final EnumOptionData chargeCalculationTypeEnumOption = chargeData.getChargeCalculationType();
+            final ChargeCalculationType chargeCalculationType = ChargeCalculationType
+                    .fromInt(chargeCalculationTypeEnumOption.getId().intValue());
+            return chargeCalculationType.isVoluntaryInsurance();
+        }).toList();
         if (chargeOptions.isEmpty()) {
             chargeOptions = null;
         }
@@ -421,18 +520,63 @@ public class LoanProductsApiResource {
         final List<EnumOptionData> advancedPaymentAllocationTypes = PaymentAllocationType.getValuesAsEnumOptionDataList();
         final List<EnumOptionData> creditAllocationTransactionTypes = CreditAllocationTransactionType.getValuesAsEnumOptionDataList();
         final List<EnumOptionData> creditAllocationAllocationTypes = AllocationType.getValuesAsEnumOptionDataList();
+        final WorkingDaysData workingDaysData = this.workingDaysReadPlatformService.repaymentRescheduleType();
+        final WorkingDays workingDays = this.workingDaysRepositoryWrapper.findOne();
+        final Collection<CodeValueData> productTypeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("ProductType");
 
-        return new LoanProductData(productData, chargeOptions, penaltyOptions, paymentTypeOptions, currencyOptions, amortizationTypeOptions,
-                interestTypeOptions, interestCalculationPeriodTypeOptions, repaymentFrequencyTypeOptions, interestRateFrequencyTypeOptions,
-                fundOptions, transactionProcessingStrategyOptions, rateOptions, accountOptions, accountingRuleTypeOptions,
-                loanCycleValueConditionTypeOptions, daysInMonthTypeOptions, daysInYearTypeOptions,
+        LoanProductData ret = new LoanProductData(productData, chargeOptions, penaltyOptions, paymentTypeOptions, currencyOptions,
+                amortizationTypeOptions, interestTypeOptions, interestCalculationPeriodTypeOptions, repaymentFrequencyTypeOptions,
+                interestRateFrequencyTypeOptions, fundOptions, transactionProcessingStrategyOptions, rateOptions, accountOptions,
+                accountingRuleTypeOptions, loanCycleValueConditionTypeOptions, daysInMonthTypeOptions, daysInYearTypeOptions,
                 interestRecalculationCompoundingTypeOptions, rescheduleStrategyTypeOptions, interestRecalculationFrequencyTypeOptions,
                 preCloseInterestCalculationStrategyOptions, floatingRateOptions, interestRecalculationNthDayTypeOptions,
                 interestRecalculationDayOfWeekTypeOptions, isRatesEnabled, delinquencyBucketOptions, repaymentStartDateTypeOptions,
                 advancedPaymentAllocationTransactionTypes, advancedPaymentAllocationFutureInstallmentAllocationRules,
                 advancedPaymentAllocationTypes, LoanScheduleType.getValuesAsEnumOptionDataList(),
                 LoanScheduleProcessingType.getValuesAsEnumOptionDataList(), creditAllocationTransactionTypes,
-                creditAllocationAllocationTypes);
-    }
+                creditAllocationAllocationTypes, workingDaysData.getRepaymentRescheduleOptions(),
+                workingDays.getRepaymentReschedulingType(), productTypeOptions);
 
+        ret.setCustomAllowCreateOrDisburse(productData.getCustomAllowCreateOrDisburse());
+        ret.setCustomAllowCreateOrDisburseSms(productData.getCustomAllowCreateOrDisburseSms());
+
+        ret.setCustomAllowCollections(productData.getCustomAllowCollections());
+        ret.setCustomAllowCollectionsSms(productData.getCustomAllowCollectionsSms());
+
+        ret.setCustomAllowCreditNote(productData.getCustomAllowCreditNote());
+        ret.setCustomAllowCreditNoteSms(productData.getCustomAllowCreditNoteSms());
+
+        ret.setCustomAllowDebitNote(productData.getCustomAllowDebitNote());
+        ret.setCustomAllowDebitNoteSms(productData.getCustomAllowDebitNoteSms());
+
+        ret.setCustomAllowForgiveness(productData.getCustomAllowForgiveness());
+        ret.setCustomAllowForgivenessSms(productData.getCustomAllowForgivenessSms());
+
+        ret.setCustomAllowReversalCancellation(productData.getCustomAllowReversalCancellation());
+        ret.setCustomAllowReversalCancellationSms(productData.getCustomAllowReversalCancellationSms());
+
+        ret.setCustomAllowRefinance(productData.getCustomAllowRefinance());
+        ret.setCustomAllowRefinanceSms(productData.getCustomAllowRefinanceSms());
+
+        ret.setCustomAllowRestructure(productData.getCustomAllowRestructure());
+        ret.setCustomAllowRestructureSms(productData.getCustomAllowRestructureSms());
+
+        ret.setCustomAllowReferido(productData.getCustomAllowReferido());
+        ret.setCustomAllowReferidoSms(productData.getCustomAllowReferidoSms());
+
+        ret.setInterestStartsAfterGracePeriod(productData.isInterestStartsAfterGracePeriod());
+
+        final SearchParameters searchParameters = SearchParameters.builder().active(true)
+                .interestRateTypeId(InterestRateType.REGULAR.getValue()).build();
+        final List<InterestRateData> interestRateOptions = this.interestRateReadPlatformService.retrieveInterestRates(searchParameters);
+        ret.setInterestRateOptions(interestRateOptions);
+        final SearchParameters channelSearchParameters = SearchParameters.builder().channelType(ChannelType.REPAYMENT.getValue())
+                .active(true).build();
+        final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(channelSearchParameters);
+        ret.setChannelOptions(channelOptions);
+        ret.setVoluntaryInsuranceOptions(voluntaryInsuranceOptions);
+        ret.setPurchaseCharge(productData.isPurchaseCharge());
+        ret.setVoluntaryInsuranceId(productData.getVoluntaryInsuranceId());
+        return ret;
+    }
 }

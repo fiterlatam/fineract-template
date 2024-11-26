@@ -65,6 +65,7 @@ public final class DataTableApiConstant {
     public static final String API_PARAM_APPTABLE_NAME = "apptableName";
     public static final String API_PARAM_SUBTYPE = "entitySubType";
     public static final String API_PARAM_MULTIROW = "multiRow";
+    public static final String API_PARAM_FIELD_MASK = "fieldMask";
 
     public static final String API_FIELD_NAME = "name";
     public static final String API_FIELD_NEWNAME = "newName";

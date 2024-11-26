@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.loanproduct;
 
 import java.math.BigDecimal;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 
 public interface LoanProductConstants {
 
@@ -152,13 +153,59 @@ public interface LoanProductConstants {
     String DISBURSED_AMOUNT_PERCENTAGE_DOWN_PAYMENT = "disbursedAmountPercentageForDownPayment";
     String ENABLE_AUTO_REPAYMENT_DOWN_PAYMENT = "enableAutoRepaymentForDownPayment";
     String REPAYMENT_START_DATE_TYPE = "repaymentStartDateType";
-
+    String INTEREST_STARTS_AFTER_GRACE_PERIOD = "isInterestStartsAfterGracePeriod";
     String ENABLE_INSTALLMENT_LEVEL_DELINQUENCY = "enableInstallmentLevelDelinquency";
 
     // loan schedule type
     String LOAN_SCHEDULE_TYPE = "loanScheduleType";
     String LOAN_SCHEDULE_PROCESSING_TYPE = "loanScheduleProcessingType";
+    String REPAYMENT_RESCHEDULING_TYPE = "repaymentReschedulingType";
 
     // Repayment Strategies
     String ADVANCED_PAYMENT_ALLOCATION_STRATEGY = "advanced-payment-allocation-strategy";
+
+    String MAX_CLIENT_INACTIVITY_PERIOD = "maxClientInactivityPeriod";
+
+    String OVERDUE_AMOUNT_FOR_ARREARS = "overdueAmountForArrearsConsideration";
+    String EXTEND_TERM_FOR_MONTHLY_REPAYMENTS = "extendTermForMonthlyRepayments";
+
+    String PRODUCT_TYPE = "productType";
+    String ADVANCE_PARAM = "advance";
+    String INTEREST_RATE_ID_PARAM_NAME = "interestRateId";
+    String REPAYMENT_CHANNELS_PARAM_NAME = "repaymentChannels";
+    String REQUIRE_POINT_PARAM_NAME = "requirePoints";
+    String VOLUNTARY_INSURANCE_ID_PARAM_NAME = "voluntaryInsuranceId";
+    String IS_PURCHASE_CHARGE_PARAM_NAME = "isPurchaseCharge";
+    String USE_OTHER_LOANS_CUPO_PARAM_NAME = "useOtherLoansCupo";
+
+    String PRODUCT_TYPES_THAT_BLOCK_CREDIT = LoanProductType.SUMAS_PAY.getCode();
+
+    String CUSTOM_ALLOW_CREATE_OR_DISBURSE_PARAM_NAME = "customAllowCreateOrDisburse";
+    String CUSTOM_ALLOW_CREATE_OR_DISBURSE_SMS_PARAM_NAME = "customAllowCreateOrDisburseSms";
+
+    String CUSTOM_ALLOW_COLLECTIONS_PARAM_NAME = "customAllowCollections";
+    String CUSTOM_ALLOW_COLLECTIONS_SMS_PARAM_NAME = "customAllowCollectionsSms";
+
+    String CUSTOM_ALLOW_CREDIT_NOTE_PARAM_NAME = "customAllowCreditNote";
+    String CUSTOM_ALLOW_CREDIT_NOTE_SMS_PARAM_NAME = "customAllowCreditNoteSms";
+
+    String CUSTOM_ALLOW_DEBIT_NOTE_PARAM_NAME = "customAllowDebitNote";
+    String CUSTOM_ALLOW_DEBIT_NOTE_SMS_PARAM_NAME = "customAllowDebitNoteSms";
+
+    String CUSTOM_ALLOW_FORGIVENESS_PARAM_NAME = "customAllowForgiveness";
+    String CUSTOM_ALLOW_FORGIVENESS_SMS_PARAM_NAME = "customAllowForgivenessSms";
+
+    String CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_PARAM_NAME = "customAllowReversalCancellation";
+    String CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_SMS_PARAM_NAME = "customAllowReversalCancellationSms";
+
+    String CUSTOM_ALLOW_RESTRUCTURE_PARAM_NAME = "customAllowRestructure";
+    String CUSTOM_ALLOW_RESTRUCTURE_SMS_PARAM_NAME = "customAllowRestructureSms";
+
+    String CUSTOM_ALLOW_REFINANCE_PARAM_NAME = "customAllowRefinance";
+    String CUSTOM_ALLOW_REFINANCE_SMS_PARAM_NAME = "customAllowRefinanceSms";
+
+    String CUSTOM_ALLOW_REFERIDO_PARAM_NAME = "customAllowReferido";
+    String CUSTOM_ALLOW_REFERIDO_SMS_PARAM_NAME = "customAllowReferidoSms";
+
+    String CUSTOM_COLLECTION_SUBCHANNEL_LOAN_PRODUC_MAPPER_PARAM_NAME = "subChannelLoanProductMapper";
 }

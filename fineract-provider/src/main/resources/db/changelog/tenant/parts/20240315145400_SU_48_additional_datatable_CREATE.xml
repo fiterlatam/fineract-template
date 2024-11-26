@@ -884,4 +884,30 @@
         </dropColumn>
     </changeSet>
 
+    <changeSet id="35" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="campos_cliente_empresas" columnName="NIT confirming"/>
+        </preConditions>
+        <dropNotNullConstraint tableName="campos_cliente_empresas" columnName="NIT confirming" columnDataType="varchar(15)"/>
+    </changeSet>
+
+    <changeSet  author="fineract"  id="36">
+        <sql>
+            <![CDATA[
+                ALTER TABLE public.campos_cliente_empresas ADD CONSTRAINT unique_campos_cliente_empresas_nit UNIQUE ("NIT");
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet  author="fineract"  id="37">
+        <sql>
+            <![CDATA[
+                ALTER TABLE public.campos_cliente_empresas ALTER COLUMN "NIT" TYPE VARCHAR(20);
+                ALTER TABLE public.campos_cliente_empresas ALTER COLUMN "Cedula codeudor 1" TYPE VARCHAR(20);
+                ALTER TABLE public.campos_cliente_empresas ALTER COLUMN "Cedula codeudor 2" TYPE VARCHAR(20);
+                ALTER TABLE public.campos_cliente_empresas ALTER COLUMN "Cedula codeudor 3" TYPE VARCHAR(20);
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

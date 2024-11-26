@@ -66,4 +66,8 @@ public class WorkingDaysData {
         this.extendTermForDailyRepayments = data.extendTermForDailyRepayments;
         this.extendTermForRepaymentsOnHolidays = data.extendTermForRepaymentsOnHolidays;
     }
+
+    public Collection<EnumOptionData> getRepaymentRescheduleOptions() {
+        return repaymentRescheduleOptions;
+    }
 }

@@ -22,6 +22,7 @@ import com.google.gson.GsonBuilder;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -56,7 +57,8 @@ public class OfficeImportHandler implements ImportHandler {
     }
 
     @Override
-    public Count process(final Workbook workbook, final String locale, final String dateFormat) {
+    public Count process(final Workbook workbook, final String locale, final String dateFormat,
+            final Map<String, Object> importAttributes) {
         List<OfficeData> offices = readExcelFile(workbook, locale, dateFormat);
         return importEntity(workbook, offices, dateFormat);
     }

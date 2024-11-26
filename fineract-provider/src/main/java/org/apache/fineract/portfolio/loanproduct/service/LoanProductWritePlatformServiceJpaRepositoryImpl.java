@@ -18,31 +18,55 @@
  */
 package org.apache.fineract.portfolio.loanproduct.service;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import jakarta.persistence.PersistenceException;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToGLAccountMappingWritePlatformService;
+import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelRepository;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
+import org.apache.fineract.custom.infrastructure.channel.exception.ChannelNotFoundException;
+import org.apache.fineract.custom.portfolio.loanproduct.data.SubChannelLoanProductData;
+import org.apache.fineract.custom.portfolio.loanproduct.domain.SubChannelLoanProduct;
+import org.apache.fineract.custom.portfolio.loanproduct.domain.SubChannelLoanProductRepository;
+import org.apache.fineract.custom.portfolio.loanproduct.service.SubChannelLoanProductReadWritePlatformService;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityAccessType;
 import org.apache.fineract.infrastructure.entityaccess.service.FineractEntityAccessUtil;
 import org.apache.fineract.infrastructure.event.business.domain.loan.product.LoanProductCreateBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.monetary.exception.InvalidCurrencyException;
 import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
+import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.delinquency.domain.DelinquencyBucket;
 import org.apache.fineract.portfolio.delinquency.domain.DelinquencyBucketRepository;
 import org.apache.fineract.portfolio.floatingrates.domain.FloatingRate;
@@ -50,23 +74,33 @@ import org.apache.fineract.portfolio.floatingrates.domain.FloatingRateRepository
 import org.apache.fineract.portfolio.fund.domain.Fund;
 import org.apache.fineract.portfolio.fund.domain.FundRepository;
 import org.apache.fineract.portfolio.fund.exception.FundNotFoundException;
+import org.apache.fineract.portfolio.interestrates.data.InterestRateData;
+import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
+import org.apache.fineract.portfolio.interestrates.domain.InterestRateRepository;
+import org.apache.fineract.portfolio.interestrates.exception.InterestRateException;
+import org.apache.fineract.portfolio.interestrates.service.InterestRateReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.impl.AdvancedPaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
-import org.apache.fineract.portfolio.loanproduct.domain.AdvancedPaymentAllocationsJsonParser;
-import org.apache.fineract.portfolio.loanproduct.domain.CreditAllocationsJsonParser;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductCreditAllocationRule;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductPaymentAllocationRule;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
+import org.apache.fineract.portfolio.loanproduct.data.ClientCupoData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
+import org.apache.fineract.portfolio.loanproduct.domain.*;
+import org.apache.fineract.portfolio.loanproduct.exception.AdvanceQuotaExceptions;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductCannotBeModifiedDueToNonClosedLoansException;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductDateException;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
+import org.apache.fineract.portfolio.loanproduct.exception.MaximumLegalRateExceptions;
 import org.apache.fineract.portfolio.loanproduct.serialization.LoanProductDataValidator;
 import org.apache.fineract.portfolio.rate.domain.Rate;
 import org.apache.fineract.portfolio.rate.domain.RateRepositoryWrapper;
+import org.apache.fineract.useradministration.domain.AppUser;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,6 +111,8 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private final PlatformSecurityContext context;
     private final LoanProductDataValidator fromApiJsonDeserializer;
     private final LoanProductRepository loanProductRepository;
+    private final MaximumRateRepository maximumRateRepository;
+    private final AdvanceQuotaRepository advanceQuotaRepository;
     private final AprCalculator aprCalculator;
     private final FundRepository fundRepository;
     private final ChargeRepositoryWrapper chargeRepository;
@@ -92,6 +128,15 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private final CreditAllocationsJsonParser creditAllocationsJsonParser;
     private final LoanProductPaymentAllocationRuleMerger loanProductPaymentAllocationRuleMerger = new LoanProductPaymentAllocationRuleMerger();
     private final LoanProductCreditAllocationRuleMerger loanProductCreditAllocationRuleMerger = new LoanProductCreditAllocationRuleMerger();
+    private final LoanProductReadPlatformService loanProductReadPlatformService;
+    private final CodeValueRepositoryWrapper codeValueRepository;
+    private final SubChannelLoanProductReadWritePlatformService subChannelLoanProductReadWritePlatformService;
+    private final SubChannelLoanProductRepository subChannelLoanProductRepository;
+    private final JdbcTemplate jdbcTemplate;
+    private final InterestRateRepository interestRateRepository;
+    private final InterestRateReadPlatformService interestRateReadPlatformService;
+    private final ChannelRepository channelRepository;
+    private final MaximumLegalRateHistoryRepository maximumLegalRateHistoryRepository;
 
     @Transactional
     @Override
@@ -105,14 +150,26 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             validateInputDates(command);
 
             final Fund fund = findFundByIdIfProvided(command.longValueOfParameterNamed("fundId"));
-
+            final Long interestRateId = command.longValueOfParameterNamed("interestRateId");
+            final InterestRate interestRate = this.interestRateRepository.findById(interestRateId)
+                    .orElseThrow(() -> new InterestRateException(interestRateId));
+            if (!interestRate.isActive()) {
+                throw new InterestRateException(interestRateId);
+            }
             final String loanTransactionProcessingStrategyCode = command.stringValueOfParameterNamed("transactionProcessingStrategyCode");
 
             final String currencyCode = command.stringValueOfParameterNamed("currencyCode");
             final List<Charge> charges = assembleListOfProductCharges(command, currencyCode);
             final List<Rate> rates = assembleListOfProductRates(command);
+
+            String loanScheduleProcessingType = command.stringValueOfParameterNamed(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE);
             final List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules = advancedPaymentJsonParser
                     .assembleLoanProductPaymentAllocationRules(command, loanTransactionProcessingStrategyCode);
+            if (LoanScheduleProcessingType.HORIZONTAL.name().equals(loanScheduleProcessingType)
+                    && AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
+                            .equals(loanTransactionProcessingStrategyCode)) {
+                this.fromApiJsonDeserializer.checkGroupingOfAllocationRules(loanProductPaymentAllocationRules);
+            }
             final List<LoanProductCreditAllocationRule> loanProductCreditAllocationRules = creditAllocationsJsonParser
                     .assembleLoanProductCreditAllocationRules(command, loanTransactionProcessingStrategyCode);
             FloatingRate floatingRate = null;
@@ -120,18 +177,53 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                 floatingRate = this.floatingRateRepository
                         .findOneWithNotFoundDetection(command.longValueOfParameterNamed("floatingRatesId"));
             }
+            final CodeValue productType = findProductTypeByIdIfProvided(
+                    command.longValueOfParameterNamed(LoanProductConstants.PRODUCT_TYPE));
             final LoanProduct loanProduct = LoanProduct.assembleFromJson(fund, loanTransactionProcessingStrategyCode, charges, command,
-                    this.aprCalculator, floatingRate, rates, loanProductPaymentAllocationRules, loanProductCreditAllocationRules);
+                    floatingRate, rates, loanProductPaymentAllocationRules, loanProductCreditAllocationRules, interestRate);
+            this.validateMaximumInterestRate(loanProduct);
             loanProduct.updateLoanProductInRelatedClasses();
             loanProduct.setTransactionProcessingStrategyName(
                     loanRepaymentScheduleTransactionProcessorFactory.determineProcessor(loanTransactionProcessingStrategyCode).getName());
+            if (productType != null && LoanProductType.SUMAS_VEHICULOS.getCode().equals(productType.getLabel())) {
+                final boolean useOtherLoansCupo = command
+                        .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME);
+                loanProduct.setUseOtherLoansCupo(useOtherLoansCupo);
+            }
+            loanProduct.setProductType(productType);
 
             if (command.parameterExists("delinquencyBucketId")) {
                 loanProduct
                         .setDelinquencyBucket(findDelinquencyBucketIdIfProvided(command.longValueOfParameterNamed("delinquencyBucketId")));
             }
 
-            this.loanProductRepository.saveAndFlush(loanProduct);
+            populateProductCustomAllowance(command, loanProduct);
+            loanProduct.setInterestRate(interestRate);
+
+            if (command.parameterExists("repaymentChannels")) {
+                final List<Channel> repaymentChannels = assembleListOfRepaymentChannels(command);
+                loanProduct.setRepaymentChannels(repaymentChannels);
+            }
+
+            if (command.parameterExists(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME)) {
+                final boolean isPurchaseCharge = command
+                        .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME);
+                if (isPurchaseCharge) {
+                    final Long voluntaryInsuranceId = command
+                            .longValueOfParameterNamed(LoanProductConstants.VOLUNTARY_INSURANCE_ID_PARAM_NAME);
+                    final Charge voluntaryInsuranceCharge = this.chargeRepository.findOneWithNotFoundDetection(voluntaryInsuranceId);
+                    ChargeCalculationType chargeCalculationType = ChargeCalculationType
+                            .fromInt(voluntaryInsuranceCharge.getChargeCalculation());
+                    if (!chargeCalculationType.isVoluntaryInsurance()) {
+                        throw new GeneralPlatformDomainRuleException("error.msg.loanproduct.voluntary.insurance.charge.invalid",
+                                "Loan charge must be of type Voluntary Insurance", voluntaryInsuranceId);
+                    }
+                    loanProduct.setVoluntaryInsuranceCharge(voluntaryInsuranceCharge);
+                }
+                loanProduct.setIsPurChaseCharge(isPurchaseCharge);
+            }
+
+            this.loanProductRepository.save(loanProduct);
 
             // save accounting mappings
             this.accountMappingWritePlatformService.createLoanProductToGLAccountMapping(loanProduct.getId(), command);
@@ -159,6 +251,138 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
 
     }
 
+    private void populateProductCustomAllowance(JsonCommand command, LoanProduct loanProduct) {
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_CREATE_OR_DISBURSE_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_CREATE_OR_DISBURSE_PARAM_NAME);
+            loanProduct.setCustomAllowCreateOrDisburse(newValue);
+        }
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_CREATE_OR_DISBURSE_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_CREATE_OR_DISBURSE_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowCreateOrDisburseSms(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_COLLECTIONS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_COLLECTIONS_PARAM_NAME);
+            loanProduct.setCustomAllowCollections(newValue);
+        }
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_COLLECTIONS_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_COLLECTIONS_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowCollectionsSms(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_CREDIT_NOTE_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_CREDIT_NOTE_PARAM_NAME);
+            loanProduct.setCustomAllowCreditNote(newValue);
+        }
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_CREDIT_NOTE_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_CREDIT_NOTE_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowCreditNoteSms(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_DEBIT_NOTE_PARAM_NAME)) {
+            final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_DEBIT_NOTE_PARAM_NAME);
+            loanProduct.setCustomAllowDebitNote(newValue);
+        }
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_DEBIT_NOTE_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_DEBIT_NOTE_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowDebitNoteSms(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_FORGIVENESS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_FORGIVENESS_PARAM_NAME);
+            loanProduct.setCustomAllowForgiveness(newValue);
+        }
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_FORGIVENESS_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_FORGIVENESS_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowForgivenessSms(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_PARAM_NAME);
+            loanProduct.setCustomAllowReversalCancellation(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowReversalCancellationSms(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_REFERIDO_PARAM_NAME)) {
+            final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_REFERIDO_PARAM_NAME);
+            loanProduct.setCustomAllowReferido(newValue);
+        }
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_REFERIDO_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_REFERIDO_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowReferidoSms(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_REFINANCE_PARAM_NAME)) {
+            final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_REFINANCE_PARAM_NAME);
+            loanProduct.setCustomAllowRefinance(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_REFINANCE_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_REFINANCE_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowRefinanceSms(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_RESTRUCTURE_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_RESTRUCTURE_PARAM_NAME);
+            loanProduct.setCustomAllowRestructure(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_RESTRUCTURE_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_RESTRUCTURE_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowRestructureSms(newValue);
+        }
+
+        this.loanProductRepository.saveAndFlush(loanProduct);
+
+        JsonArray jsonArraySubChannelLoanProductMapper = command.arrayOfParameterNamed("subChannelLoanProductMapper");
+        Gson gson = new Gson();
+        Type listType = new TypeToken<List<SubChannelLoanProductData>>() {}.getType();
+        List<SubChannelLoanProductData> dataList = gson.fromJson(jsonArraySubChannelLoanProductMapper, listType);
+
+        // Retrieve the list with current mapping
+        List<SubChannelLoanProductData> subChannelLoanProductDataList = subChannelLoanProductReadWritePlatformService
+                .findAllByProductId(loanProduct.getId());
+
+        // Exclude the ones that are not in the new list
+        subChannelLoanProductRepository.findByLoanProductId(loanProduct.getId()).forEach(subChannelLoanProduct -> {
+            if (Objects.nonNull(dataList)) {
+                if (Boolean.FALSE.equals(loanProduct.getCustomAllowCollections())
+                        || dataList.stream().noneMatch(data -> data.getSubChannelId().equals(subChannelLoanProduct.getSubChannelId()))) {
+                    subChannelLoanProductRepository.delete(subChannelLoanProduct);
+                }
+            }
+        });
+
+        // Add new ones (negative ids)
+        if (Objects.nonNull(dataList)) {
+            dataList.stream().filter(data -> data.getId() < 0).forEach(data -> {
+                SubChannelLoanProduct subChannelLoanProduct = SubChannelLoanProduct.builder().loanProductId(loanProduct.getId())
+                        .subChannelId(data.getSubChannelId()).build();
+                subChannelLoanProductRepository.save(subChannelLoanProduct);
+            });
+        }
+
+    }
+
     private Fund findFundByIdIfProvided(final Long fundId) {
         Fund fund = null;
         if (fundId != null) {
@@ -174,6 +398,14 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                     .orElseThrow(() -> new FundNotFoundException(delinquencyBucketId));
         }
         return delinquencyBucket;
+    }
+
+    private CodeValue findProductTypeByIdIfProvided(final Long productTypeId) {
+        CodeValue productType = null;
+        if (productTypeId != null) {
+            productType = this.codeValueRepository.findOneWithNotFoundDetection(productTypeId);
+        }
+        return productType;
     }
 
     @Transactional
@@ -202,10 +434,47 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
 
             final Map<String, Object> changes = product.update(command, this.aprCalculator, floatingRate);
 
+            if (command.parameterExists("interestRateId")) {
+                final Long interestRateId = command.longValueOfParameterNamed("interestRateId");
+                final InterestRate interestRate = this.interestRateRepository.findById(interestRateId)
+                        .orElseThrow(() -> new InterestRateException(interestRateId));
+                product.setInterestRate(interestRate);
+                final BigDecimal currentRate = interestRate.getCurrentRate();
+                final PeriodFrequencyType interestFrequencyType = PeriodFrequencyType.YEARS;
+                product.loanProductMinMaxConstraints().setMinNominalInterestRatePerPeriod(currentRate);
+                product.loanProductMinMaxConstraints().setMaxNominalInterestRatePerPeriod(currentRate);
+                product.getLoanProductRelatedDetail().setNominalInterestRatePerPeriod(currentRate);
+                product.getLoanProductRelatedDetail().setAnnualNominalInterestRate(currentRate);
+                product.getLoanProductRelatedDetail().updateInterestPeriodFrequencyType(interestFrequencyType);
+            }
+
             if (changes.containsKey("fundId")) {
                 final Long fundId = (Long) changes.get("fundId");
                 final Fund fund = findFundByIdIfProvided(fundId);
                 product.update(fund);
+            }
+
+            if (changes.containsKey("repaymentChannels")) {
+                final List<Channel> repaymentChannels = assembleListOfRepaymentChannels(command);
+                final boolean updated = product.updateChannels(repaymentChannels);
+                if (!updated) {
+                    changes.remove("repaymentChannels");
+                }
+            }
+
+            if (changes.containsKey(LoanProductConstants.PRODUCT_TYPE)) {
+                final Long parameterTypeId = (Long) changes.get(LoanProductConstants.PRODUCT_TYPE);
+                final CodeValue productType = this.codeValueRepository.findOneWithNotFoundDetection(parameterTypeId);
+                product.setProductType(productType);
+            }
+
+            if (changes.containsKey(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME)) {
+                final CodeValue productTypeValue = product.getProductType();
+                if (productTypeValue != null && LoanProductType.SUMAS_VEHICULOS.getCode().equals(productTypeValue.getLabel())) {
+                    final boolean useOtherLoansCupo = command
+                            .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME);
+                    product.setUseOtherLoansCupo(useOtherLoansCupo);
+                }
             }
 
             if (changes.containsKey("delinquencyBucketId")) {
@@ -231,6 +500,13 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             if (changes.containsKey("paymentAllocation")) {
                 final List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules = advancedPaymentJsonParser
                         .assembleLoanProductPaymentAllocationRules(command, product.getTransactionProcessingStrategyCode());
+                String loanScheduleProcessingType = command.stringValueOfParameterNamed(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE);
+                String transactionProcessingStrategyCode = product.getTransactionProcessingStrategyCode();
+                if (LoanScheduleProcessingType.HORIZONTAL.name().equals(loanScheduleProcessingType)
+                        && AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY
+                                .equals(transactionProcessingStrategyCode)) {
+                    this.fromApiJsonDeserializer.checkGroupingOfAllocationRules(loanProductPaymentAllocationRules);
+                }
                 loanProductPaymentAllocationRules.forEach(lppar -> lppar.setLoanProduct(product));
                 final boolean updated = loanProductPaymentAllocationRuleMerger.updateProductPaymentAllocationRules(product,
                         loanProductPaymentAllocationRules);
@@ -263,6 +539,30 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                     changes.remove(LoanProductConstants.RATES_PARAM_NAME);
                 }
             }
+            this.validateMaximumInterestRate(product);
+
+            populateProductCustomAllowance(command, product);
+
+            if (command.parameterExists(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME)) {
+                final boolean isPurchaseCharge = command
+                        .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME);
+                if (isPurchaseCharge) {
+                    final Long voluntaryInsuranceId = command
+                            .longValueOfParameterNamed(LoanProductConstants.VOLUNTARY_INSURANCE_ID_PARAM_NAME);
+                    final Charge voluntaryInsuranceCharge = this.chargeRepository.findOneWithNotFoundDetection(voluntaryInsuranceId);
+                    ChargeCalculationType chargeCalculationType = ChargeCalculationType
+                            .fromInt(voluntaryInsuranceCharge.getChargeCalculation());
+                    if (!chargeCalculationType.isVoluntaryInsurance()) {
+                        throw new GeneralPlatformDomainRuleException("error.msg.loanproduct.voluntary.insurance.charge.invalid",
+                                "Loan charge must be of type Voluntary Insurance", voluntaryInsuranceId);
+                    }
+                    product.setVoluntaryInsuranceCharge(voluntaryInsuranceCharge);
+                } else {
+                    product.setVoluntaryInsuranceCharge(null);
+                }
+                product.setIsPurChaseCharge(isPurchaseCharge);
+                changes.put(LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME, isPurchaseCharge);
+            }
 
             if (!changes.isEmpty()) {
                 product.validateLoanProductPreSave();
@@ -284,6 +584,166 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             return CommandProcessingResult.empty();
         }
 
+    }
+
+    private void validateMaximumInterestRate(final LoanProduct loanProduct) {
+        final BigDecimal maxNominalInterestRatePerPeriod = loanProduct.getMaxNominalInterestRatePerPeriod();
+        final BigDecimal minNominalInterestRatePerPeriod = loanProduct.getMinNominalInterestRatePerPeriod();
+        final BigDecimal nominalInterestRatePerPeriod = loanProduct.getNominalInterestRatePerPeriod();
+        final PeriodFrequencyType interestPeriodFrequencyType = loanProduct.getInterestPeriodFrequencyType();
+        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
+                .retrieveMaximumCreditRateConfigurationData();
+        switch (interestPeriodFrequencyType) {
+            case MONTHS -> {
+                final BigDecimal monthlyNominalRate = maximumCreditRateConfigurationData.getMonthlyNominalRate();
+                if (maxNominalInterestRatePerPeriod != null && maxNominalInterestRatePerPeriod.compareTo(monthlyNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.max.nominal.interest.rate.per.period",
+                            "Maximum nominal interest rate per period must be less than or equal to maximum legal rate for monthly interest period frequency",
+                            "maxNominalInterestRatePerPeriod", maxNominalInterestRatePerPeriod, monthlyNominalRate);
+                }
+                if (minNominalInterestRatePerPeriod != null && minNominalInterestRatePerPeriod.compareTo(monthlyNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.min.nominal.interest.rate.per.period",
+                            "Minimum nominal interest rate per period must be greater than or equal to maximum legal rate  for monthly interest period frequency",
+                            "minNominalInterestRatePerPeriod", minNominalInterestRatePerPeriod, monthlyNominalRate);
+                }
+                if (nominalInterestRatePerPeriod != null && nominalInterestRatePerPeriod.compareTo(monthlyNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.nominal.interest.rate.per.period",
+                            "Nominal interest rate per period must be greater than or equal to maximum legal rate  for monthly interest period frequency",
+                            "nominalInterestRatePerPeriod", nominalInterestRatePerPeriod, monthlyNominalRate);
+                }
+            }
+
+            case YEARS -> {
+                final BigDecimal annualNominalRate = maximumCreditRateConfigurationData.getAnnualNominalRate();
+                if (maxNominalInterestRatePerPeriod != null && maxNominalInterestRatePerPeriod.compareTo(annualNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.max.nominal.interest.rate.per.period",
+                            "Maximum nominal interest rate per period must be less than or equal to maximum legal rate for monthly interest period frequency",
+                            "maxNominalInterestRatePerPeriod", maxNominalInterestRatePerPeriod, annualNominalRate);
+                }
+                if (minNominalInterestRatePerPeriod != null && minNominalInterestRatePerPeriod.compareTo(annualNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.min.nominal.interest.rate.per.period",
+                            "Minimum nominal interest rate per period must be greater than or equal to maximum legal rate  for monthly interest period frequency",
+                            "minNominalInterestRatePerPeriod", minNominalInterestRatePerPeriod, annualNominalRate);
+                }
+                if (nominalInterestRatePerPeriod != null && nominalInterestRatePerPeriod.compareTo(annualNominalRate) > 0) {
+                    throw new PlatformDataIntegrityException("error.msg.loanproduct.nominal.interest.rate.per.period",
+                            "Nominal interest rate per period must be greater than or equal to maximum legal rate  for monthly interest period frequency",
+                            "nominalInterestRatePerPeriod", nominalInterestRatePerPeriod, annualNominalRate);
+                }
+            }
+        }
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult updateMaximumRate(final JsonCommand command) {
+
+        try {
+            final AppUser appliedBy = this.context.authenticatedUser();
+            final List<MaximumCreditRateConfiguration> maximumCreditRateConfigurations = this.maximumRateRepository.findAll();
+            if (CollectionUtils.isEmpty(maximumCreditRateConfigurations)) {
+                throw new MaximumLegalRateExceptions();
+            }
+            final MaximumCreditRateConfiguration maximumCreditRateConfiguration = maximumCreditRateConfigurations.get(0);
+            final MaximumLegalRateHistory maximumLegalRateHistory = MaximumLegalRateHistory.createNew(maximumCreditRateConfiguration);
+            final Long id = maximumCreditRateConfiguration.getId();
+            this.fromApiJsonDeserializer.validateMaximumRateForUpdate(command);
+            final BigDecimal eaRate = command.bigDecimalValueOfParameterNamed("eaRate");
+            final Map<String, Object> changes = maximumCreditRateConfiguration.update(command);
+            final BigDecimal annualNominalRate = maximumCreditRateConfiguration.getAnnualNominalRate();
+            final SearchParameters searchParameters = SearchParameters.builder().currentRate(annualNominalRate).build();
+            List<InterestRateData> interestRateDataList = this.interestRateReadPlatformService.retrieveBySearchParams(searchParameters);
+            if (CollectionUtils.isNotEmpty(interestRateDataList)) {
+                throw new GeneralPlatformDomainRuleException("error.msg.interest.rates.exist.above.this.rate",
+                        "The change cannot be made since there is interest rates above the new rate, you must first modify the rates",
+                        annualNominalRate);
+            }
+            maximumCreditRateConfiguration.setAppliedBy(appliedBy);
+            this.maximumRateRepository.saveAndFlush(maximumCreditRateConfiguration);
+            maximumLegalRateHistoryRepository.saveAndFlush(maximumLegalRateHistory);
+            return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(id).withEaRate(eaRate).with(changes)
+                    .build();
+        } catch (final DataIntegrityViolationException | JpaSystemException dve) {
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.resourceResult(-1L);
+        } catch (final PersistenceException dve) {
+            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
+            handleDataIntegrityIssues(command, throwable, dve);
+            return CommandProcessingResult.empty();
+        }
+
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult updateAdvanceQuota(final JsonCommand command) {
+        try {
+            final AppUser modifiedBy = this.context.authenticatedUser();
+            final List<AdvanceQuotaConfiguration> advanceQuotaConfigurations = this.advanceQuotaRepository.findAll();
+            if (CollectionUtils.isEmpty(advanceQuotaConfigurations)) {
+                throw new AdvanceQuotaExceptions();
+            }
+            final AdvanceQuotaConfiguration advanceQuotaConfiguration = advanceQuotaConfigurations.get(0);
+            final Long id = advanceQuotaConfiguration.getId();
+            this.fromApiJsonDeserializer.validateAdvanceQuotaForUpdate(command);
+            final Map<String, Object> changes = advanceQuotaConfiguration.update(command);
+            advanceQuotaConfiguration.setModifiedBy(modifiedBy);
+            advanceQuotaConfiguration.setModifiedOnDate(DateUtils.getLocalDateOfTenant());
+            final ClientCupoMapper rowMapper = new ClientCupoMapper();
+            final String sql = "SELECT " + rowMapper.schema();
+            List<ClientCupoData> resultList = this.jdbcTemplate.query(sql, rowMapper, new Object[] {});
+            final List<Long> clientIDs = new ArrayList<>();
+            if (CollectionUtils.isNotEmpty(resultList)) {
+                final BigDecimal percentageValue = advanceQuotaConfiguration.getPercentageValue();
+                for (ClientCupoData clientCupoData : resultList) {
+                    final BigDecimal maximumAvailableCupo = percentageValue.multiply(clientCupoData.getCupoAmount())
+                            .divide(BigDecimal.valueOf(100L), MoneyHelper.getRoundingMode());
+                    if (clientCupoData.getTotalOutstandingAmount().compareTo(maximumAvailableCupo) > 0) {
+                        clientIDs.add(clientCupoData.getClientId());
+                    }
+                }
+            }
+            if (!clientIDs.isEmpty()) {
+                throw new AdvanceQuotaExceptions(clientIDs);
+            }
+            this.advanceQuotaRepository.saveAndFlush(advanceQuotaConfiguration);
+            return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(id).with(changes).build();
+
+        } catch (final DataIntegrityViolationException | JpaSystemException dve) {
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.resourceResult(-1L);
+        } catch (final PersistenceException dve) {
+            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
+            handleDataIntegrityIssues(command, throwable, dve);
+            return CommandProcessingResult.empty();
+        }
+
+    }
+
+    private static final class ClientCupoMapper implements RowMapper<ClientCupoData> {
+
+        public String schema() {
+            return """
+                        mc.id AS clientId,
+                        COALESCE(SUM(ml.principal_outstanding_derived), 0) AS "totalOutstandingAmount",
+                        COALESCE(ccp."Cupo aprobado", cce."Cupo") AS cupo
+                        FROM m_loan ml
+                        INNER JOIN m_client mc ON mc.id = ml.client_id
+                        INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                        LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
+                        LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+                        WHERE ml.loan_status_id = 300 AND mpl.is_advance = TRUE
+                        GROUP BY mc.id, ccp."Cupo aprobado", cce."Cupo"
+                    """;
+        }
+
+        @Override
+        public ClientCupoData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
+            final Long clientId = JdbcSupport.getLong(rs, "clientId");
+            final BigDecimal totalOutstandingAmount = rs.getBigDecimal("totalOutstandingAmount");
+            final BigDecimal cupo = rs.getBigDecimal("cupo");
+            return new ClientCupoData(clientId, totalOutstandingAmount, cupo);
+        }
     }
 
     private boolean anyChangeInCriticalFloatingRateLinkedParams(JsonCommand command, LoanProduct product) {
@@ -329,6 +789,32 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
         return charges;
     }
 
+    private List<Channel> assembleListOfRepaymentChannels(final JsonCommand command) {
+        final List<Channel> repaymentChannels = new ArrayList<>();
+        if (command.parameterExists("repaymentChannels")) {
+            final JsonArray channelsArray = command.arrayOfParameterNamed("repaymentChannels");
+            if (channelsArray != null) {
+                for (int i = 0; i < channelsArray.size(); i++) {
+                    final JsonObject jsonObject = channelsArray.get(i).getAsJsonObject();
+                    if (jsonObject.has("id")) {
+                        final Long channelId = jsonObject.get("id").getAsLong();
+                        final Channel repaymentChannel = this.channelRepository.findById(channelId)
+                                .orElseThrow(() -> new ChannelNotFoundException(channelId));
+                        if (!repaymentChannel.getActive()) {
+                            throw new GeneralPlatformDomainRuleException("error.msg.channel.inactive", "Channel is inactive.", channelId);
+                        }
+                        if (!ChannelType.REPAYMENT.getValue().equals(repaymentChannel.getChannelType())) {
+                            throw new GeneralPlatformDomainRuleException("error.msg.channel.not.repayment",
+                                    "Channel is not a repayment channel.", channelId);
+                        }
+                        repaymentChannels.add(repaymentChannel);
+                    }
+                }
+            }
+        }
+        return repaymentChannels;
+    }
+
     private List<Rate> assembleListOfProductRates(final JsonCommand command) {
 
         final List<Rate> rates = new ArrayList<>();
@@ -355,12 +841,13 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
      * Guaranteed to throw an exception no matter what the data integrity issue is.
      */
     private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
+
         if (realCause.getMessage().contains("'external_id'")) {
 
             final String externalId = command.stringValueOfParameterNamed("externalId");
             throw new PlatformDataIntegrityException("error.msg.product.loan.duplicate.externalId",
                     "Loan Product with externalId `" + externalId + "` already exists", "externalId", externalId, realCause);
-        } else if (realCause.getMessage().contains("'unq_name'")) {
+        } else if (realCause.getMessage().contains("'unq_name'") || realCause.getMessage().contains("m_product_loan_name_key")) {
 
             final String name = command.stringValueOfParameterNamed("name");
             throw new PlatformDataIntegrityException("error.msg.product.loan.duplicate.name",

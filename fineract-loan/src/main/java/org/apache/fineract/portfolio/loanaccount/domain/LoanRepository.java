@@ -28,6 +28,7 @@ import org.apache.fineract.cob.data.LoanIdAndLastClosedBusinessDate;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -67,6 +68,8 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
 
     String FIND_ACTIVE_LOANS_PRODUCT_IDS_BY_GROUP = "Select loan.loanProduct.id from Loan loan where "
             + "loan.group.id = :groupId and loan.loanStatus = :loanStatus and loan.client.id is NULL group by loan.loanProduct.id";
+
+    String FIND_ALL_ACTIVE_LOANS = "select loan.id from Loan loan where loan.loanStatus = 300";
 
     String DOES_CLIENT_HAVE_NON_CLOSED_LOANS = "select case when (count (loan) > 0) then 'true' else 'false' end from Loan loan where loan.client.id = :clientId and loan.loanStatus in (100,200,300,303,304,700)";
 
@@ -149,6 +152,17 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     @Query("select loan from Loan loan where loan.group.id = :groupId and loan.client.id is null")
     List<Loan> findByGroupId(@Param("groupId") Long groupId);
 
+    @Query("select loan from Loan loan where loan.loanStatus = 300 and "
+            + "not exists (select transaction from LoanTransaction transaction "
+            + "where transaction.loan = loan and transaction.typeOf = 10 and transaction.dateOf = :localDate and transaction.dailyAccrual= true )")
+    List<Loan> findActiveLoansWithNotYetPostedAccrual(@Param("localDate") LocalDate localDate);
+
+    @Query("select loan from Loan loan where loan.loanStatus = 300")
+    List<Loan> findActiveLoans();
+
+    @Query("select loan from Loan loan where loan.loanStatus = 300 and loan.client.id = :clientId")
+    List<Loan> findActiveLoansByClientId(@Param("clientId") Long clientId);
+
     @Query("select loan from Loan loan where loan.glim.id = :glimId")
     List<Loan> findByGlimId(@Param("glimId") Long glimId);
 
@@ -227,4 +241,16 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
 
     @Query(FIND_ALL_LOAN_IDS_BY_STATUS_ID)
     List<Long> findLoanIdByStatusId(@Param("statusId") Integer statusId);
+
+    @Modifying
+    @Query("update Loan l set l.excludedForInsuranceClaim = null")
+    void removeLoanInsuranceExclusion();
+
+    @Modifying
+    @Query("update Loan l set l.excludedForAvalClaim = null")
+    void removeLoanAvalExclusion();
+
+    @Modifying
+    @Query("update Loan l set l.excludedForCastigadoClaim = null")
+    void removeLoanCastigadoExclusion();
 }

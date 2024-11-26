@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -13,7 +14,6 @@ import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformS
 import org.apache.fineract.custom.infrastructure.bulkimport.data.CustomGlobalEntityType;
 import org.apache.fineract.custom.infrastructure.bulkimport.enumerator.ClientAllyTemplatePopulateImportEnum;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyData;
-import org.apache.fineract.infrastructure.bulkimport.constants.StaffConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.data.Count;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler;
@@ -26,6 +26,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.tika.utils.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,8 +35,6 @@ import org.springframework.stereotype.Service;
 public class ClientAllyImportHandler implements ImportHandler {
 
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
-    private String dateFormat = "dd MMMM yyyy";
-    private String locale = "en";
 
     @Autowired
     public ClientAllyImportHandler(final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
@@ -43,9 +42,7 @@ public class ClientAllyImportHandler implements ImportHandler {
     }
 
     @Override
-    public Count process(final Workbook workbook, final String locale, final String dateFormat) {
-        this.dateFormat = dateFormat;
-        this.locale = locale;
+    public Count process(final Workbook workbook, final String locale, final String dateFormat, Map<String, Object> importAttributes) {
         List<ClientAllyData> dtoList = readExcelFile(workbook, locale, dateFormat);
         return importEntity(workbook, dtoList, dateFormat);
     }
@@ -83,6 +80,8 @@ public class ClientAllyImportHandler implements ImportHandler {
 
         if (StringUtils.EMPTY.equalsIgnoreCase(ammendedValidationMessages.toString())) {
 
+            String settledComissionAsString = getSettledComissionAsString(row);
+
             ret = ClientAllyData.builder()
                     .companyName(ImportHandlerUtils.readAsString(ClientAllyTemplatePopulateImportEnum.COMPANY_NAME.getColumnIndex(), row)) //
                     .nit(ImportHandlerUtils.readAsString(ClientAllyTemplatePopulateImportEnum.NIT.getColumnIndex(), row)) //
@@ -95,14 +94,14 @@ public class ClientAllyImportHandler implements ImportHandler {
                     .applyCupoMaxSell(ImportHandlerUtils
                             .readAsBoolean(ClientAllyTemplatePopulateImportEnum.APPLY_CUPO_MAX_SELL.getColumnIndex(), row)) //
                     .cupoMaxSell(ImportHandlerUtils.readAsInt(ClientAllyTemplatePopulateImportEnum.CUPO_MAX_SELL.getColumnIndex(), row)) //
-                    .settledComission(BigDecimal.valueOf(
-                            ImportHandlerUtils.readAsDouble(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row))) //
+                    .settledComission(new BigDecimal(settledComissionAsString)) //
                     .buyEnabled(ImportHandlerUtils.readAsBoolean(ClientAllyTemplatePopulateImportEnum.BUY_ENABLED.getColumnIndex(), row)) //
                     .collectionEnabled(
                             ImportHandlerUtils.readAsBoolean(ClientAllyTemplatePopulateImportEnum.COLLECTION_ENABLED.getColumnIndex(), row)) //
                     .bankEntityCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyTemplatePopulateImportEnum.BANK_ENTITY_ID)) //
                     .accountTypeCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyTemplatePopulateImportEnum.ACCOUNT_TYPE_ID)) //
-                    .accountNumber(ImportHandlerUtils.readAsLong(ClientAllyTemplatePopulateImportEnum.ACCOUNT_NUMBER.getColumnIndex(), row)) //
+                    .accountNumber(ImportHandlerUtils
+                            .readAsString(ClientAllyTemplatePopulateImportEnum.ACCOUNT_NUMBER.getColumnIndex(), row).toString()) //
                     .taxProfileCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyTemplatePopulateImportEnum.TAX_PROFILE_ID)) //
                     .stateCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyTemplatePopulateImportEnum.STATE_ID)) //
                     .build();
@@ -145,12 +144,23 @@ public class ClientAllyImportHandler implements ImportHandler {
                             + ClientAllyTemplatePopulateImportEnum.APPLY_CUPO_MAX_SELL.getColumnName() + " es verdadero; ");
         }
 
-        BigDecimal settledComission = BigDecimal
-                .valueOf(ImportHandlerUtils.readAsDouble(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row));
+        BigDecimal settledComission = new BigDecimal(getSettledComissionAsString(row));
         if (Objects.nonNull(settledComission) && settledComission.compareTo(BigDecimal.valueOf(99.99)) > 0) {
-            ammenedEValidationMessages.append("La " + ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnName()
-                    + " no debe ser major que 99.99; ");
+            ammenedEValidationMessages.append(
+                    "La " + ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnName() + " no debe ser major que 99.99; ");
         }
+    }
+
+    @NotNull
+    private String getSettledComissionAsString(Row row) {
+        String settledComissionAsString = ImportHandlerUtils
+                .readAsString(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row);
+        return fixUpDecimalSeparator(settledComissionAsString);
+    }
+
+    @NotNull
+    private String fixUpDecimalSeparator(String settledComissionAsString) {
+        return settledComissionAsString.replace(",", ".");
     }
 
     private void validateTypeAndCasting(StringBuilder ammendedValidationMessages, ClientAllyTemplatePopulateImportEnum currEnum,
@@ -202,7 +212,11 @@ public class ClientAllyImportHandler implements ImportHandler {
                 try {
                     Double.valueOf(representation);
                 } catch (NumberFormatException e) {
-                    ammendedValidationMessages.append(currEnum.getColumnName()).append(" debe ser un valor Double (ex 138.6547). ");
+                    try {
+                        Double.valueOf(fixUpDecimalSeparator(representation));
+                    } catch (NumberFormatException ex) {
+                        ammendedValidationMessages.append(currEnum.getColumnName()).append(" debe ser un valor Double (ex 138.6547). ");
+                    }
                 }
             } else {
                 // TODO Not supported

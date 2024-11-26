@@ -20,10 +20,15 @@ package org.apache.fineract.portfolio.client.service;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.List;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
+import org.apache.fineract.portfolio.client.data.ClientAvailableCupoFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.client.data.ClientMaximumLoanArrearsData;
 
 public interface ClientReadPlatformService {
 
@@ -61,5 +66,15 @@ public interface ClientReadPlatformService {
     LocalDate retrieveClientTransferProposalDate(Long clientId);
 
     Long retrieveClientIdByExternalId(ExternalId externalId);
+
+    List<ClientAdditionalFieldsData> retrieveAdditionalFieldsData(CodeValueData idType, String idValue);
+
+    ClientAdditionalFieldsData retrieveClientAdditionalData(Long clientId);
+
+    List<ClientAvailableCupoFieldsData> retriveClientAvailableCupo(String nitId);
+
+    List<ClientData> retrieveByIdNumber(String idNumber);
+
+    ClientMaximumLoanArrearsData retrieveClientMaximumLoanArrearsData(String clientId);
 
 }

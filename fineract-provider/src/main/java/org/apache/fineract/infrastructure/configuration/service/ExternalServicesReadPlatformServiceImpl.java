@@ -56,6 +56,14 @@ public class ExternalServicesReadPlatformServiceImpl implements ExternalServices
                 serviceNameToUse = ExternalServicesConstants.NOTIFICATION_SERVICE_NAME;
             break;
 
+            case "CUSTOM_CHARGE_HONORARIO_PROVIDER":
+                serviceNameToUse = ExternalServicesConstants.CUSTOM_CHARGE_HONORARIO_SERVICE_NAME;
+            break;
+
+            case "MASIVIAN_SERVICE":
+                serviceNameToUse = ExternalServicesConstants.MASIVIAN_SERVICE_NAME;
+            break;
+
             default:
                 throw new ExternalServiceConfigurationNotFoundException(serviceName);
         }

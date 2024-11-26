@@ -31,6 +31,12 @@ apply plugin: 'se.thinkcode.cucumber-runner'
 check.dependsOn('cucumber')
 
 compileJava.doLast {
+    repositories {
+        mavenCentral()
+        jcenter()
+        google()
+        maven { url 'https://plugins.gradle.org/m2/' }
+    }
     def mainSS = sourceSets.main
     def source = mainSS.java.classesDirectory.get()
     copy {
@@ -224,6 +230,8 @@ bootRun {
     dependencies {
         implementation 'org.mariadb.jdbc:mariadb-java-client'
         implementation 'org.postgresql:postgresql'
+        implementation 'org.apache.groovy:groovy-jsr223:4.0.22'
+        implementation 'org.graalvm.js:js:22.3.0'
     }
 }
 
@@ -247,6 +255,22 @@ jib {
             platform {
                 architecture = System.getProperty("os.arch").equals("aarch64")?"arm64":"amd64"
                 os = 'linux'
+            }
+        }
+    }
+    extraDirectories {
+        paths {
+            path {
+                from = 'ff4j'
+                into = '/.fineract/ff4j'
+            }
+            path {
+                from = 'pentahoReports'
+                into = '/root/.mifosx/pentahoReports'
+            }
+            path {
+                from = 'pentahoReportsPostgres'
+                into = '/root/.mifosx/pentahoReportsPostgres'
             }
         }
     }

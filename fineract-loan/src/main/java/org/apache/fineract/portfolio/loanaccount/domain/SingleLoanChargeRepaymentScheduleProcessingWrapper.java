@@ -40,12 +40,14 @@ public class SingleLoanChargeRepaymentScheduleProcessingWrapper {
         for (final LoanRepaymentScheduleInstallment installment : repaymentPeriods) {
             totalInterest = totalInterest.plus(installment.getInterestCharged(currency));
             totalPrincipal = totalPrincipal.plus(installment.getPrincipal(currency));
+            totalPrincipal = totalPrincipal.plus(installment.getAdvancePrincipalAmount());
         }
         LocalDate startDate = disbursementDate;
         int firstNormalInstallmentNumber = LoanRepaymentScheduleProcessingWrapper.fetchFirstNormalInstallmentNumber(repaymentPeriods);
         for (final LoanRepaymentScheduleInstallment period : repaymentPeriods) {
 
             if (!period.isDownPayment()) {
+                totalPrincipal = totalPrincipal.minus(period.getAdvancePrincipalAmount());
                 boolean isFirstNonDownPaymentPeriod = period.getInstallmentNumber().equals(firstNormalInstallmentNumber);
 
                 final Money feeChargesDueForRepaymentPeriod = feeChargesDueWithin(startDate, period.getDueDate(), loanCharge, currency,
@@ -80,14 +82,18 @@ public class SingleLoanChargeRepaymentScheduleProcessingWrapper {
         if (loanCharge.isFeeCharge() && !loanCharge.isDueAtDisbursement()) {
             boolean isDue = loanChargeIsDue(periodStart, periodEnd, isFirstPeriod, loanCharge);
             if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
-                return Money.of(monetaryCurrency, getInstallmentFee(monetaryCurrency, period, loanCharge));
+                if (loanCharge.isCustomFeeChargeApplicableOnInstallment(period.getInstallmentNumber())) {
+                    return Money.of(monetaryCurrency, loanCharge.calculateCustomFeeChargeToInstallment(period.getInstallmentNumber()));
+                } else {
+                    return Money.of(monetaryCurrency, getInstallmentFee(monetaryCurrency, period, loanCharge));
+                }
             } else if (loanCharge.isOverdueInstallmentCharge() && isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
                 return Money.of(monetaryCurrency, loanCharge.chargeAmount());
             } else if (isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
                 BigDecimal amount = BigDecimal.ZERO;
-                if (loanCharge.getChargeCalculation().isPercentageOfAmountAndInterest()) {
+                if (loanCharge.getChargeCalculation().isPercentageOfInstallmentPrincipalAndInterest()) {
                     amount = amount.add(totalPrincipal.getAmount()).add(totalInterest.getAmount());
-                } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
+                } else if (loanCharge.getChargeCalculation().isPercentageOfInstallmentInterest()) {
                     amount = amount.add(totalInterest.getAmount());
                 } else {
                     // If charge type is specified due date and loan is
@@ -163,16 +169,27 @@ public class SingleLoanChargeRepaymentScheduleProcessingWrapper {
             boolean isInstallmentChargeApplicable, boolean isFirstPeriod) {
 
         if (loanCharge.isPenaltyCharge()) {
-            boolean isDue = loanChargeIsDue(periodStart, periodEnd, isFirstPeriod, loanCharge);
+            boolean isDue = false;
+            if (loanCharge.getCharge().getFeeInterval() == null) {
+                isDue = loanChargeIsDue(periodStart, periodEnd, isFirstPeriod, loanCharge);
+            } else {
+                if (loanCharge.getOverdueInstallmentCharge().installment().getInstallmentNumber().equals(period.getInstallmentNumber())) {
+                    // This condition should only be true when charge frequency is daily because charges calculated
+                    // after installment due date are added to
+                    // next installment. This condition will make sure that charges are added to the correct
+                    // installment.
+                    isDue = true;
+                }
+            }
             if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
                 return Money.of(currency, getInstallmentFee(currency, period, loanCharge));
             } else if (loanCharge.isOverdueInstallmentCharge() && isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
                 return Money.of(currency, loanCharge.chargeAmount());
             } else if (isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
                 BigDecimal amount = BigDecimal.ZERO;
-                if (loanCharge.getChargeCalculation().isPercentageOfAmountAndInterest()) {
+                if (loanCharge.getChargeCalculation().isPercentageOfInstallmentPrincipalAndInterest()) {
                     amount = amount.add(totalPrincipal.getAmount()).add(totalInterest.getAmount());
-                } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
+                } else if (loanCharge.getChargeCalculation().isPercentageOfInstallmentInterest()) {
                     amount = amount.add(totalInterest.getAmount());
                 } else {
                     amount = amount.add(totalPrincipal.getAmount());
@@ -200,10 +217,10 @@ public class SingleLoanChargeRepaymentScheduleProcessingWrapper {
     @NotNull
     private BigDecimal getBaseAmount(MonetaryCurrency monetaryCurrency, LoanRepaymentScheduleInstallment period, LoanCharge loanCharge,
             BigDecimal amount) {
-        if (loanCharge.getChargeCalculation().isPercentageOfAmountAndInterest()) {
+        if (loanCharge.getChargeCalculation().isPercentageOfInstallmentPrincipalAndInterest()) {
             amount = amount.add(period.getPrincipal(monetaryCurrency).getAmount())
                     .add(period.getInterestCharged(monetaryCurrency).getAmount());
-        } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
+        } else if (loanCharge.getChargeCalculation().isPercentageOfInstallmentInterest()) {
             amount = amount.add(period.getInterestCharged(monetaryCurrency).getAmount());
         } else {
             amount = amount.add(period.getPrincipal(monetaryCurrency).getAmount());

@@ -263,4 +263,14 @@ public class LoanRepositoryWrapper {
         return repository.findLoanIdByStatusId(statusId);
     }
 
+    public void removeLoanExclusion(String claimType) {
+        if (claimType.equals("insurance")) {
+            repository.removeLoanInsuranceExclusion();
+        } else if (claimType.equals("guarantor")) {
+            repository.removeLoanAvalExclusion();
+        } else {
+            repository.removeLoanCastigadoExclusion();
+        }
+    }
+
 }

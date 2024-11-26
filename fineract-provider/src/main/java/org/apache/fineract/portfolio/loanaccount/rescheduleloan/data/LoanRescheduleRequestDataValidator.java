@@ -32,9 +32,11 @@ import java.util.Map;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
@@ -60,7 +62,8 @@ public class LoanRescheduleRequestDataValidator {
                     RescheduleLoansApiConstants.rescheduleReasonIdParamName, RescheduleLoansApiConstants.rescheduleReasonCommentParamName,
                     RescheduleLoansApiConstants.submittedOnDateParamName, RescheduleLoansApiConstants.loanIdParamName,
                     RescheduleLoansApiConstants.adjustedDueDateParamName, RescheduleLoansApiConstants.recalculateInterestParamName,
-                    RescheduleLoansApiConstants.endDateParamName, RescheduleLoansApiConstants.emiParamName));
+                    RescheduleLoansApiConstants.endDateParamName, RescheduleLoansApiConstants.emiParamName,
+                    RescheduleLoansApiConstants.rediferirTermsParamName));
 
     private static final Set<String> REJECT_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(RescheduleLoansApiConstants.localeParamName, RescheduleLoansApiConstants.dateFormatParamName,
@@ -68,7 +71,7 @@ public class LoanRescheduleRequestDataValidator {
 
     private static final Set<String> APPROVE_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(RescheduleLoansApiConstants.localeParamName, RescheduleLoansApiConstants.dateFormatParamName,
-                    RescheduleLoansApiConstants.approvedOnDateParam));
+                    RescheduleLoansApiConstants.approvedOnDateParam, "isJobTriggered"));
 
     /**
      * Validates the request to create a new loan reschedule entry
@@ -149,7 +152,7 @@ public class LoanRescheduleRequestDataValidator {
             dataValidatorBuilder.reset().parameter(RescheduleLoansApiConstants.emiParamName).value(emi).notNull().positiveAmount();
 
             if (endDate != null) {
-                LoanRepaymentScheduleInstallment endInstallment = loan.getRepaymentScheduleInstallment(endDate);
+                LoanRepaymentScheduleInstallment endInstallment = loan.getInstallmentByScheduleFromDate(endDate);
 
                 if (endInstallment == null) {
                     dataValidatorBuilder.reset().parameter(RescheduleLoansApiConstants.endDateParamName)
@@ -179,20 +182,16 @@ public class LoanRescheduleRequestDataValidator {
         }
         LoanRepaymentScheduleInstallment installment = null;
         if (rescheduleFromDate != null) {
-            installment = loan.getRepaymentScheduleInstallment(rescheduleFromDate);
-
+            installment = loan.getInstallmentByScheduleFromDate(rescheduleFromDate);
             if (installment == null) {
                 dataValidatorBuilder.reset().parameter(RescheduleLoansApiConstants.rescheduleFromDateParamName)
                         .failWithCode("repayment.schedule.installment.does.not.exist", "Repayment schedule installment does not exist");
             }
-
             if (installment != null && installment.isObligationsMet()) {
                 dataValidatorBuilder.reset().parameter(RescheduleLoansApiConstants.rescheduleFromDateParamName)
                         .failWithCode("repayment.schedule.installment.obligation.met", "Repayment schedule installment obligation met");
             }
-
         }
-
         if (loan.isMultiDisburmentLoan()) {
             if (!loan.loanProduct().isDisallowExpectedDisbursements()) {
                 dataValidatorBuilder.reset().failWithCodeNoParameterAddedToErrorCode(
@@ -213,7 +212,8 @@ public class LoanRescheduleRequestDataValidator {
             LocalDate rescheduleFromDate = installment.getFromDate();
             Collection<LoanCharge> charges = loan.getLoanCharges();
             for (LoanCharge loanCharge : charges) {
-                if (loanCharge.isOverdueInstallmentCharge() && DateUtils.isAfter(loanCharge.getDueLocalDate(), rescheduleFromDate)) {
+                if (loanCharge.isOverdueInstallmentCharge() && DateUtils.isAfter(loanCharge.getDueLocalDate(), rescheduleFromDate)
+                        && loanCharge.isActive()) {
                     dataValidatorBuilder.failWithCodeNoParameterAddedToErrorCode("not.allowed.due.to.overdue.charges");
                     break;
                 }
@@ -272,7 +272,7 @@ public class LoanRescheduleRequestDataValidator {
             }
 
             if (rescheduleFromDate != null) {
-                installment = loan.getRepaymentScheduleInstallment(rescheduleFromDate);
+                installment = loan.getInstallmentByScheduleFromDate(rescheduleFromDate);
 
                 if (installment == null) {
                     dataValidatorBuilder.reset().failWithCodeNoParameterAddedToErrorCode(
@@ -336,6 +336,19 @@ public class LoanRescheduleRequestDataValidator {
 
         if (!dataValidationErrors.isEmpty()) {
             throw new PlatformApiDataValidationException(dataValidationErrors);
+        }
+    }
+
+    public void validateRescheduleLoanCharge(Loan loan, GlobalConfigurationProperty globalConfigurationProperty, int rediferidoNumber) {
+        Set<LoanCharge> charges = loan.getActiveCharges();
+        final Long maximumRediferralValue = globalConfigurationProperty.getValue();
+        for (final LoanCharge loanCharge : charges) {
+            if (loanCharge.getChargeCalculation().isMandatoryInsuranceCharge()) {
+                if (globalConfigurationProperty.isEnabled() && rediferidoNumber > maximumRediferralValue) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.exceed.max.allowed.in.6.months",
+                            "Rediferir exceed max allowed in 6 months", rediferidoNumber);
+                }
+            }
         }
     }
 }

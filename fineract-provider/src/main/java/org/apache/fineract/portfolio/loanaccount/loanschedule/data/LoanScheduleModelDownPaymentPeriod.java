@@ -62,6 +62,11 @@ public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleMod
     }
 
     @Override
+    public boolean isTotalGracePeriod() {
+        return false;
+    }
+
+    @Override
     public Integer periodNumber() {
         return this.periodNumber;
     }
@@ -144,5 +149,57 @@ public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleMod
     @Override
     public void setRescheduleInterestPortion(BigDecimal rescheduleInterestPortion) {
 
+    }
+
+    @Override
+    public BigDecimal getTotalHonorariosCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalHonorariosCharged(BigDecimal totalHonorariosCharged) {}
+
+    @Override
+    public BigDecimal getTotalAvalCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalAvalCharged(BigDecimal totalAvalCharged) {}
+
+    @Override
+    public BigDecimal getTotalVoluntaryInsuranceCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalVoluntaryInsuranceCharged(BigDecimal totalVoluntaryInsuranceCharged) {}
+
+    @Override
+    public BigDecimal getTotalMandatoryInsuranceCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged) {}
+
+    @Override
+    public boolean recalculateEMIForInstallment() {
+        return false;
+    }
+
+    @Override
+    public void setRecalculateEMIForInstallment(boolean recalculateEMIForInstallment) {
+        return;
+    }
+
+    @Override
+    public BigDecimal advancePrincipalAmountForInstallment() {
+        return null;
+    }
+
+    @Override
+    public void setAdvancePrincipalAmountForInstallment(BigDecimal advancePrincipalAmountForInstallment) {
+        return;
     }
 }

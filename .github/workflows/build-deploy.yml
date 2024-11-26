@@ -1,4 +1,4 @@
-name: Sumas DEV CI
+name: Entreamigos fiter CI/CD
 on: [push]
 jobs:
   integration-tests:
@@ -43,13 +43,14 @@ jobs:
           ./gradlew wrapper --version
           ./gradlew dropPGDB -PdbName=$FINERACT_DEFAULT_TENANTDB_NAME -PdbUserName=$FINERACT_HIKARI_USERNAME -PdbUserPassword=$FINERACT_HIKARI_PASSWORD -PjdbcURL=$FINERACT_HIKARI_JDBC_URL
           ./gradlew createPGDB -PdbName=$FINERACT_DEFAULT_TENANTDB_NAME -PdbUserName=$FINERACT_HIKARI_USERNAME -PdbUserPassword=$FINERACT_HIKARI_PASSWORD -PjdbcURL=$FINERACT_HIKARI_JDBC_URL
+          ./gradlew spotlessCheck
           ./gradlew --no-daemon --console=plain :fineract-provider:bootRun -q -x rat -x compileTestJava -x test --info & curl --connect-timeout 5 --retry 120 --retry-delay 5 --retry-connrefused -k https://localhost:8443/fineract-provider/actuator/health
       - name: Run Integration Tests
         run: |
           ./gradlew --no-daemon --console=plain :integration-tests:cleanTest :integration-tests:test -PcargoDisabled --info
           ./gradlew --stop
   continuous-integration:
-    if: github.ref == 'refs/heads/fiter/sumas/dev'
+    if: github.ref == 'refs/heads/fiter/entreamigos/dev'
     needs: [integration-tests]
     runs-on: ubuntu-latest
     steps:
@@ -86,8 +87,8 @@ jobs:
           ECR_REPOSITORY: latam-backend
           IMAGE_TAG: ${{ steps.commit.outputs.short }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:sumas_$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:sumas_$IMAGE_TAG
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:entreamigos_$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:entreamigos_$IMAGE_TAG
 
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:sumas_latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:sumas_latest
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:entreamigos_latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:entreamigos_latest

@@ -40,6 +40,10 @@ public interface LoanApiConstants {
     String chargesParameterName = "charges";
     String loanIdTobeApproved = "loanId";
     String postDatedChecks = "postDatedChecks";
+    String chargeExpireDate = "expdate";
+    String isEndorsed = "isEndorsed";
+    String insuranceName = "insuranceName";
+    String insuranceId = "insuranceId";
 
     String approvedLoanAmountParameterName = "approvedLoanAmount";
     String approvedOnDateParameterName = "approvedOnDate";
@@ -91,6 +95,7 @@ public interface LoanApiConstants {
     String createStandingInstructionAtDisbursementParameterName = "createStandingInstructionAtDisbursement";
     String daysInYearTypeParameterName = "daysInYearType";
     String daysInMonthTypeParameterName = "daysInMonthType";
+    String AllYID = "allyId";
 
     String MULTIDISBURSE_DETAILS_PARAMNAME = "multiDisburseDetails";
     String EMI_AMOUNT_VARIATIONS_PARAMNAME = "emiAmountVariations";
@@ -165,6 +170,7 @@ public interface LoanApiConstants {
 
     String TRANSACTION_AMOUNT_PARAMNAME = "transactionAmount";
     String PAYMENT_TYPE_PARAMNAME = "paymentTypeId";
+    String INTEREST_RATE_POINTS = "interestRatePoints";
     String FRAUD_ATTRIBUTE_NAME = "fraud";
 
     // Commands
@@ -173,4 +179,21 @@ public interface LoanApiConstants {
 
     // Data Validator names
     String LOAN_FRAUD_DATAVALIDATOR_PREFIX = "loans.fraud";
+
+    String CHANNEL_NAME = "channelName";
+    String CHANNEL_ID = "channelId";
+    String CHANNEL_DESCRIPTION = "channelDescription";
+    String POINT_OF_SALES_NAME = "pointOfSalesName";
+    String CHANNEL_HASH = "channelHash";
+    String POINT_OF_SALE_CODE = "pointOfSaleCode";
+    String CLIENT_ID_NUMBER = "clientIdNumber";
+    String DISCOUNT_VALUE = "valorDescuento";
+    String DISCOUNT_TRANSFER_VALUE = "valorGiro";
+
+    String GLOBAL_CONFIG_MAX_RESTRUCTURE = "Dias de mora maximo para reestructurar";
+    String GLOBAL_CONFIG_MAX_ARREARS_REDEFER = "Dias de mora maximo para rediferi";
+    String GLOBAL_CONFIG_MAX_RESTRUCTURE_WITHIN_6_MONTHS = "Reestructuraciones permitidas dentro de 6 meses";
+    String GLOBAL_CONFIG_COMPENSATION_ALERT_EMAIL = "Correo Alerta por Compensacion";
+    String GLOBAL_CONFIG_MIN_DAYS_WRITEOFF = "Dias de mora mínimos castigar cartera";
+    String GLOBAL_CONFIG_MIN_DAYS_CLAIM = "Dias de mora mínimos para reclamar";
 }

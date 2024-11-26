@@ -203,7 +203,7 @@ public class EntityDatatableChecksWritePlatformServiceImpl implements EntityData
             final JsonArray datatableDatas) {
         final AppUser user = this.context.authenticatedUser();
         boolean isMakerCheckerEnabled = false;
-        if (datatableDatas != null && datatableDatas.size() > 0) {
+        if (datatableDatas != null && !datatableDatas.isEmpty()) {
             for (JsonElement element : datatableDatas) {
                 final String datatableName = this.fromApiJsonHelper.extractStringNamed("registeredTableName", element);
                 final JsonObject datatableData = this.fromApiJsonHelper.extractJsonObjectNamed("data", element);

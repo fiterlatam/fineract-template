@@ -18,8 +18,11 @@
  */
 package org.apache.fineract.portfolio.client.service;
 
+import java.time.LocalDate;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.useradministration.domain.AppUser;
 
 public interface ClientWritePlatformService {
 
@@ -35,6 +38,10 @@ public interface ClientWritePlatformService {
 
     CommandProcessingResult closeClient(Long clientId, JsonCommand command);
 
+    CommandProcessingResult blockClient(Long clientId, JsonCommand command);
+
+    CommandProcessingResult undoBlockClient(Long clientId, JsonCommand command);
+
     CommandProcessingResult assignClientStaff(Long clientId, JsonCommand command);
 
     CommandProcessingResult updateDefaultSavingsAccount(Long clientId, JsonCommand command);
@@ -48,5 +55,16 @@ public interface ClientWritePlatformService {
     CommandProcessingResult undoRejection(Long entityId, JsonCommand command);
 
     CommandProcessingResult undoWithdrawal(Long entityId, JsonCommand command);
+
+    CommandProcessingResult blockListOfClients(Long clientId, JsonCommand command);
+
+    void blockClientWithInActiveLoan(Long clientId, String blockingReasonSettingId, String comment, boolean withException);
+
+    CommandProcessingResult unblockClientMassively(JsonCommand command);
+
+    void unblockClientBlockingReason(AppUser currentUser, Client client, LocalDate unblockDate, Long blockingReasonId,
+            String unblockComment);
+
+    void unblockClientBlockingReason(Long clientId, LocalDate unblockDate, String blockingReasonName, String unblockComment);
 
 }

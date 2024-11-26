@@ -30,4 +30,5 @@ public interface LoanScheduleCalculationPlatformService {
 
     LoanScheduleData generateLoanScheduleForVariableInstallmentRequest(Long loanId, String json);
 
+    void getFeeChargesDetail(LoanScheduleData loanScheduleData, Long loanId);
 }

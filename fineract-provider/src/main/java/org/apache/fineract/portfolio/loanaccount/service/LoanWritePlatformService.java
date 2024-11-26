@@ -20,15 +20,18 @@ package org.apache.fineract.portfolio.loanaccount.service;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.portfolio.calendar.domain.Calendar;
 import org.apache.fineract.portfolio.calendar.domain.CalendarInstance;
 import org.apache.fineract.portfolio.collectionsheet.command.CollectionSheetBulkDisbursalCommand;
 import org.apache.fineract.portfolio.collectionsheet.command.CollectionSheetBulkRepaymentCommand;
+import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
@@ -59,6 +62,8 @@ public interface LoanWritePlatformService {
     CommandProcessingResult waiveInterestOnLoan(Long loanId, JsonCommand command);
 
     CommandProcessingResult writeOff(Long loanId, JsonCommand command);
+
+    CommandProcessingResult specialWriteOff(Long loanId, JsonCommand command);
 
     CommandProcessingResult closeLoan(Long loanId, JsonCommand command);
 
@@ -99,6 +104,8 @@ public interface LoanWritePlatformService {
 
     CommandProcessingResult forecloseLoan(Long loanId, JsonCommand command);
 
+    CommandProcessingResult cancelLoan(Long loanId, JsonCommand command);
+
     CommandProcessingResult disburseGLIMLoan(Long loanId, JsonCommand command);
 
     CommandProcessingResult undoGLIMLoanDisbursal(Long loanId, JsonCommand command);
@@ -115,4 +122,24 @@ public interface LoanWritePlatformService {
 
     @Transactional
     CommandProcessingResult undoChargeOff(JsonCommand command);
+
+    void recalculateInterestForMaximumLegalRate() throws JobExecutionException;
+
+    void recalculateInterestRate(Loan loan);
+
+    void persistDailyAccrual(LocalDate localDate);
+
+    void persistInstallmentalChargeAccrual(LocalDate localDate);
+
+    void cancelDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds);
+
+    void temporarySuspendDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultInsuranceIds);
+
+    CommandProcessingResult cancelInsurance(JsonCommand command, boolean isVoluntaryInsurance);
+
+    @Transactional
+    CommandProcessingResult excludeLoanFromReclaim(Long loanId, JsonCommand command);
+
+    @Transactional
+    CommandProcessingResult claimLoan(Long loanId, JsonCommand command);
 }

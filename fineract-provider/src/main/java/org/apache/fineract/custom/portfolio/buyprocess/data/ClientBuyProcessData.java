@@ -37,7 +37,9 @@ public class ClientBuyProcessData {
     private Long id;
     private Long channelId;
     private Long clientId;
+    private String clientDocumentId;
     private Long pointOfSalesId;
+    private String pointOfSalesCode;
     private Long productId;
     private Long creditId;
     private LocalDate requestedDate;
@@ -48,4 +50,11 @@ public class ClientBuyProcessData {
     private String ipDetails;
     private Integer status;
     private String errorMessage;
+    public Long codigoSeguro;
+    public Long cedulaSeguroVoluntario;
+    private String channelHash;
+    public boolean isSaleOfInsuranceOrAssistance;
+    private transient Integer rowIndex;
+    private String dateFormat;
+    private String locale;
 }

@@ -206,6 +206,13 @@ public abstract class AbstractProgressiveLoanScheduleGenerator implements LoanSc
     }
 
     @Override
+    public LoanScheduleDTO rescheduleNextInstallmentsForProgressiveLoans(final MathContext mc,
+            final LoanApplicationTerms loanApplicationTerms, Loan loan, final HolidayDetailDTO holidayDetailDTO,
+            final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor, final LocalDate rescheduleFrom) {
+        return null;
+    }
+
+    @Override
     public LoanRepaymentScheduleInstallment calculatePrepaymentAmount(MonetaryCurrency currency, LocalDate onDate,
             LoanApplicationTerms loanApplicationTerms, MathContext mc, Loan loan, HolidayDetailDTO holidayDetailDTO,
             LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor) {
@@ -437,10 +444,10 @@ public abstract class AbstractProgressiveLoanScheduleGenerator implements LoanSc
             final LoanCharge loanCharge, final MathContext mc) {
         if (loanCharge.getChargeCalculation().isPercentageBased()) {
             BigDecimal amount = BigDecimal.ZERO;
-            if (loanCharge.getChargeCalculation().isPercentageOfAmountAndInterest()) {
+            if (loanCharge.getChargeCalculation().isPercentageOfInstallmentPrincipalAndInterest()) {
                 amount = amount.add(principalInterestForThisPeriod.principal().getAmount())
                         .add(principalInterestForThisPeriod.interest().getAmount());
-            } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
+            } else if (loanCharge.getChargeCalculation().isPercentageOfInstallmentInterest()) {
                 amount = amount.add(principalInterestForThisPeriod.interest().getAmount());
             } else {
                 amount = amount.add(principalInterestForThisPeriod.principal().getAmount());
@@ -456,9 +463,9 @@ public abstract class AbstractProgressiveLoanScheduleGenerator implements LoanSc
     private Money calculateSpecificDueDateChargeWithPercentage(final Money principalDisbursed,
             final Money totalInterestChargedForFullLoanTerm, Money cumulative, final LoanCharge loanCharge, final MathContext mc) {
         BigDecimal amount = BigDecimal.ZERO;
-        if (loanCharge.getChargeCalculation().isPercentageOfAmountAndInterest()) {
+        if (loanCharge.getChargeCalculation().isPercentageOfInstallmentPrincipalAndInterest()) {
             amount = amount.add(principalDisbursed.getAmount()).add(totalInterestChargedForFullLoanTerm.getAmount());
-        } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
+        } else if (loanCharge.getChargeCalculation().isPercentageOfInstallmentInterest()) {
             amount = amount.add(totalInterestChargedForFullLoanTerm.getAmount());
         } else {
             amount = amount.add(principalDisbursed.getAmount());
@@ -559,8 +566,8 @@ public abstract class AbstractProgressiveLoanScheduleGenerator implements LoanSc
     private Set<LoanCharge> separateTotalCompoundingPercentageCharges(final Set<LoanCharge> loanCharges) {
         Set<LoanCharge> interestCharges = new HashSet<>();
         for (final LoanCharge loanCharge : loanCharges) {
-            if (loanCharge.isSpecifiedDueDate() && (loanCharge.getChargeCalculation().isPercentageOfInterest()
-                    || loanCharge.getChargeCalculation().isPercentageOfAmountAndInterest())) {
+            if (loanCharge.isSpecifiedDueDate() && (loanCharge.getChargeCalculation().isPercentageOfInstallmentInterest()
+                    || loanCharge.getChargeCalculation().isPercentageOfInstallmentPrincipalAndInterest())) {
                 interestCharges.add(loanCharge);
             }
         }

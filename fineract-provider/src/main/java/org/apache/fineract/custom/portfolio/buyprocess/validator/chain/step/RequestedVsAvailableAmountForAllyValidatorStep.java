@@ -3,9 +3,9 @@ package org.apache.fineract.custom.portfolio.buyprocess.validator.chain.step;
 import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelMessageRepository;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSales;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
-import org.apache.fineract.custom.portfolio.buyprocess.domain.ChannelMessageRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
 import org.apache.fineract.custom.portfolio.buyprocess.enumerator.ClientBuyProcessValidatorEnum;
 import org.apache.fineract.custom.portfolio.buyprocess.validator.chain.BuyProcessAbstractStepProcessor;
@@ -59,7 +59,7 @@ public class RequestedVsAvailableAmountForAllyValidatorStep extends BuyProcessAb
             StringBuilder sqlBuilder = new StringBuilder();
 
             sqlBuilder.append("select ");
-            sqlBuilder.append("     SUM(ml.total_outstanding_derived) as totalOutstandingDerived ");
+            sqlBuilder.append("     SUM(ml.principal_outstanding_derived) as totalOutstandingDerived ");
             sqlBuilder.append("from  ");
             sqlBuilder.append("     custom.c_client_ally_point_of_sales ccaposForAllyPOSList ");
             sqlBuilder.append("join custom.c_client_buy_process buyProcessByAlly ");
@@ -78,12 +78,13 @@ public class RequestedVsAvailableAmountForAllyValidatorStep extends BuyProcessAb
             sqlBuilder.append("             and ccbp.status = 200 ");
             sqlBuilder.append("		) ");
             sqlBuilder.append("and ccaposForAllyPOSList.client_ally_id = ? ");
+            sqlBuilder.append("and DATE_PART('year',ml.disbursedon_date) = DATE_PART('year', CURRENT_DATE) ");
+            sqlBuilder.append("and DATE_PART('month',disbursedon_date) = DATE_PART('month', CURRENT_DATE) ");
             sqlBuilder.append("and ml.loan_status_id = 300 ");
             sqlBuilder.append("and buyProcessByAlly.status = 200 ");
 
             usedAmount = this.jdbcTemplate.queryForObject(sqlBuilder.toString(), BigDecimal.class, currEntity.getAllyId(),
                     currEntity.getAllyId());
-            ;
             if (Objects.isNull(usedAmount)) {
                 usedAmount = BigDecimal.ZERO;
             }
@@ -94,10 +95,6 @@ public class RequestedVsAvailableAmountForAllyValidatorStep extends BuyProcessAb
             if (availableAmount.compareTo(clientBuyProcess.getAmount()) < 0) {
                 ammendErrorMessage(stepProcessorEnum, clientBuyProcess);
             }
-
-        } else {
-
-            ammendErrorMessage(stepProcessorEnum, clientBuyProcess);
         }
     }
 }

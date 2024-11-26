@@ -74,6 +74,11 @@ public final class LoanScheduleModelDisbursementPeriod implements LoanScheduleMo
     }
 
     @Override
+    public boolean isTotalGracePeriod() {
+        return false;
+    }
+
+    @Override
     public Integer periodNumber() {
         return null;
     }
@@ -150,6 +155,66 @@ public final class LoanScheduleModelDisbursementPeriod implements LoanScheduleMo
 
     @Override
     public void setRescheduleInterestPortion(BigDecimal rescheduleInterestPortion) {
+        return;
+    }
+
+    @Override
+    public BigDecimal getTotalHonorariosCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalHonorariosCharged(BigDecimal totalHonorariosCharged) {
+        totalHonorariosCharged = BigDecimal.ZERO;
+    }
+
+    @Override
+    public BigDecimal getTotalAvalCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalAvalCharged(BigDecimal totalAvalCharged) {
+        totalAvalCharged = BigDecimal.ZERO;
+    }
+
+    @Override
+    public BigDecimal getTotalVoluntaryInsuranceCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalVoluntaryInsuranceCharged(BigDecimal totalVoluntaryInsuranceCharged) {
+        totalVoluntaryInsuranceCharged = BigDecimal.ZERO;
+    }
+
+    @Override
+    public BigDecimal getTotalMandatoryInsuranceCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged) {
+        totalMandatoryInsuranceCharged = BigDecimal.ZERO;
+    }
+
+    @Override
+    public boolean recalculateEMIForInstallment() {
+        return false;
+    }
+
+    @Override
+    public void setRecalculateEMIForInstallment(boolean recalculateEMIForInstallment) {
+        return;
+    }
+
+    @Override
+    public BigDecimal advancePrincipalAmountForInstallment() {
+        return null;
+    }
+
+    @Override
+    public void setAdvancePrincipalAmountForInstallment(BigDecimal advancePrincipalAmountForInstallment) {
         return;
     }
 }

@@ -18,7 +18,11 @@
  */
 package org.apache.fineract.custom.portfolio.ally.domain;
 
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface ClientAllyRepository extends JpaRepository<ClientAlly, Long>, JpaSpecificationExecutor<ClientAlly> {}
+public interface ClientAllyRepository extends JpaRepository<ClientAlly, Long>, JpaSpecificationExecutor<ClientAlly> {
+
+    Optional<ClientAlly> findByNit(String nit);
+}

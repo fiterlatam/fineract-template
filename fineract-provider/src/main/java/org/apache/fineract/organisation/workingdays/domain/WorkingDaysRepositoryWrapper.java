@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.organisation.workingdays.domain;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
 import java.util.List;
 import org.apache.fineract.organisation.workingdays.exception.WorkingDaysNotFoundException;
@@ -34,6 +36,8 @@ import org.springframework.stereotype.Service;
 public class WorkingDaysRepositoryWrapper {
 
     private final WorkingDaysRepository repository;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     public WorkingDaysRepositoryWrapper(final WorkingDaysRepository repository) {
@@ -64,5 +68,9 @@ public class WorkingDaysRepositoryWrapper {
     public boolean isWorkingDay(LocalDate transactionDate) {
         final WorkingDays workingDays = findOne();
         return WorkingDaysUtil.isWorkingDay(workingDays, transactionDate);
+    }
+
+    public void detach(WorkingDays workingDays) {
+        entityManager.detach(workingDays);
     }
 }

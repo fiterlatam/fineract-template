@@ -25,6 +25,8 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
@@ -178,9 +180,20 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
 
     private List<LoanAccountSummaryData> retrieveLoanAccountDetails(final String loanwhereClause, final Object[] inputs) {
         final LoanAccountSummaryDataMapper rm = new LoanAccountSummaryDataMapper();
-        final String sql = "select " + rm.loanAccountSummarySchema() + loanwhereClause;
+        final String sql = "select " + rm.loanAccountSummarySchema() + loanwhereClause + "  order by l.account_no  ";
         this.columnValidator.validateSqlInjection(rm.loanAccountSummarySchema(), loanwhereClause);
         return this.jdbcTemplate.query(sql, rm, inputs); // NOSONAR
+    }
+
+    @Override
+    public Collection<LoanAccountSummaryData> retrieveClientActiveLoanAccountSummaryByConfig(Long clientId, String maxReestructurar,
+            String maxRediferir) {
+        final LoanAccountSummaryDataMapper rm = new LoanAccountSummaryDataMapper();
+        final String sql = "select " + rm.loanAccountSummarySchema()
+                + " where l.client_id = ? and l.loan_status_id = 300 and (COALESCE(la.overdue_since_date_derived,l.maturedon_date) + interval '"
+                + maxReestructurar + " day' >= CURRENT_DATE and COALESCE(la.overdue_since_date_derived,l.maturedon_date) + interval '"
+                + maxRediferir + " day' <= CURRENT_DATE)";
+        return this.jdbcTemplate.query(sql, rm, new Object[] { clientId });
     }
 
     /**
@@ -472,6 +485,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
                     .append(" la.overdue_since_date_derived as overdueSinceDate, ")
                     .append(" l.writtenoffon_date as writtenOffOnDate, l.maturedon_date as actualMaturityDate, l.expected_maturedon_date as expectedMaturityDate, ")
                     .append(" l.charged_off_on_date as chargedOffOnDate, cobu.username as chargedOffByUsername, ")
+                    .append(" brs.name_of_reason as blockStatusName,brs.id as blockStatusId, brs.priority as blockStatusPriority, brs.level as blockStatusLevel, ")
                     .append(" cobu.firstname as chargedOffByFirstname, cobu.lastname as chargedOffByLastname ").append(" from m_loan l ")
                     .append("LEFT JOIN m_product_loan AS lp ON lp.id = l.product_id")
                     .append(" left join m_appuser sbu on sbu.id = l.created_by")
@@ -482,7 +496,8 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
                     .append(" left join m_appuser cbu on cbu.id = l.closedon_userid")
                     .append(" left join m_appuser cobu on cobu.id = l.charged_off_by_userid")
                     .append(" left join m_loan_arrears_aging la on la.loan_id = l.id")
-                    .append(" left join glim_accounts glim on glim.id=l.glim_id");
+                    .append(" left join glim_accounts glim on glim.id=l.glim_id")
+                    .append(" left join m_blocking_reason_setting brs on brs.id = l.block_status_id ");
 
             return accountsSummary.toString();
         }
@@ -552,6 +567,14 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
 
             Boolean inArrears = (overdueSinceDate != null);
 
+            final String blockStatusName = rs.getString("blockStatusName");
+            BlockingReasonsData blockStatusData = null;
+
+            if (!StringUtils.isEmpty(blockStatusName)) {
+                blockStatusData = BlockingReasonsData.builder().id(rs.getLong("blockStatusId")).nameOfReason(blockStatusName)
+                        .level(rs.getString("blockStatusLevel")).priority(JdbcSupport.getInteger(rs, "blockStatusPriority")).build();
+            }
+
             final LoanApplicationTimelineData timeline = new LoanApplicationTimelineData(submittedOnDate, submittedByUsername,
                     submittedByFirstname, submittedByLastname, rejectedOnDate, rejectedByUsername, rejectedByFirstname, rejectedByLastname,
                     withdrawnOnDate, withdrawnByUsername, withdrawnByFirstname, withdrawnByLastname, approvedOnDate, approvedByUsername,
@@ -561,7 +584,8 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
                     chargedOffOnDate, chargedOffByUsername, chargedOffByFirstname, chargedOffByLastname);
 
             return new LoanAccountSummaryData(id, accountNo, parentAccountNumber, externalId, productId, loanProductName,
-                    shortLoanProductName, loanStatus, loanType, loanCycle, timeline, inArrears, originalLoan, loanBalance, amountPaid);
+                    shortLoanProductName, loanStatus, loanType, loanCycle, timeline, inArrears, originalLoan, loanBalance, amountPaid,
+                    blockStatusData);
         }
 
     }

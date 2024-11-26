@@ -97,7 +97,7 @@ public class ClientAllyPointOfSalesApiResource {
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String get(@Context final UriInfo uriInfo, @PathParam("parentId") @Parameter(description = "parentId") final Long parentId,
+    public String get(@PathParam("parentId") @Parameter(description = "parentId") final Long parentId,
             @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch) {
 
         this.context.authenticatedUser().validateHasReadPermission(ClientAllyPointOfSalesApiConstants.RESOURCE_NAME);
@@ -139,7 +139,7 @@ public class ClientAllyPointOfSalesApiResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
             @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = customBulkImportWorkbookService.importWorkbook(
-                CustomGlobalEntityType.CLIENT_ALLY_POINTS_OF_SALES.getAlias(), uploadedInputStream, fileDetail, locale, dateFormat);
+                CustomGlobalEntityType.CLIENT_ALLY_POINTS_OF_SALES.getAlias(), uploadedInputStream, fileDetail, locale, dateFormat, null);
         return toApiJsonSerializer.serialize(importDocumentId);
     }
 

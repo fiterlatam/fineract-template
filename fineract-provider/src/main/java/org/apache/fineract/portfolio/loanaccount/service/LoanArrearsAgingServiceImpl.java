@@ -18,18 +18,20 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
+import static org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler.BLOCKING_REASON_NAME;
+
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
@@ -50,13 +52,23 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.transaction
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanUndoWrittenOffBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanWaiveInterestBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
+import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
+import org.apache.fineract.portfolio.insurance.domain.*;
+import org.apache.fineract.portfolio.insurance.exception.InsuranceIncidentNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReason;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanSummary;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanBlockingReasonNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 
@@ -69,6 +81,13 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     private final JdbcTemplate jdbcTemplate;
     private final BusinessEventNotifierService businessEventNotifierService;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
+    private final ClientWritePlatformService clientWritePlatformService;
+    private final LoanBlockingReasonRepository loanBlockingReasonRepository;
+    private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
+    private final LoanRepository loanRepository;
+    private final PlatformSecurityContext context;
+    private final InsuranceIncidentRepository insuranceIncidentRepository;
+    private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
 
     @PostConstruct
     public void registerForNotification() {
@@ -110,9 +129,14 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             createInsertStatements(updateStatement, scheduleDate, count == 0);
             if (updateStatement.size() == 1) {
                 this.jdbcTemplate.update(updateStatement.get(0));
+                handleMoraAddition(loan);
+                handleBlockingCredit(loan);
             } else {
                 String deletestatement = "DELETE FROM m_loan_arrears_aging WHERE  loan_id=?";
-                this.jdbcTemplate.update(deletestatement, loan.getId()); // NOSONAR
+                this.jdbcTemplate.update(deletestatement, loan.getId());// NOSONAR
+                handleMoraRemoval(loan.getClientId());
+                handleUnBlockingCredit(loan);
+
             }
         }
     }
@@ -132,8 +156,12 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             if (updateStatement == null) {
                 String deletestatement = "DELETE FROM m_loan_arrears_aging WHERE  loan_id=?";
                 this.jdbcTemplate.update(deletestatement, loan.getId()); // NOSONAR
+                handleMoraRemoval(loan.getClientId());
+                handleUnBlockingCredit(loan);
             } else {
                 this.jdbcTemplate.update(updateStatement);
+                handleMoraAddition(loan);
+                handleBlockingCredit(loan);
             }
         }
     }
@@ -217,7 +245,11 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                     }
                 }
             }
-            if (principalOverdue.compareTo(BigDecimal.ZERO) > 0) {
+
+            final BigDecimal overDueAmountForArrearsConsideration = retrieveOverDueAmountForArrearsConsideration(loanId);
+            if (principalOverdue.compareTo(BigDecimal.ZERO) > 0
+                    && (overDueAmountForArrearsConsideration == null || overDueAmountForArrearsConsideration
+                            .compareTo(principalOverdue.add(interestOverdue).add(feeOverdue).add(penaltyOverdue)) < 1)) {
                 String sqlStatement = null;
                 if (isInsertStatement) {
                     sqlStatement = constructInsertStatement(loanId, principalOverdue, interestOverdue, feeOverdue, penaltyOverdue,
@@ -333,6 +365,15 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                 loanSchedulePeriodDataList.addAll(updatedPeriodData);
             }
         }
+    }
+
+    private BigDecimal retrieveOverDueAmountForArrearsConsideration(Long loanId) {
+        final String query = """
+                select mpl.overdue_amount_for_arrears from m_loan ml inner join m_product_loan mpl
+                on ml.product_id = mpl.id where m_loan.id = ?
+                """;
+        return jdbcTemplate.queryForObject(query, new Object[] { loanId }, new int[] { java.sql.Types.BIGINT },
+                (rs, rowNum) -> JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "overdue_amount_for_arrears"));
     }
 
     private static final class OriginalScheduleExtractor implements ResultSetExtractor<Map<Long, List<LoanSchedulePeriodData>>> {
@@ -536,4 +577,116 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             handleArrearsForLoan(loan);
         }
     }
+
+    private void handleMoraRemoval(final Long clientId) {
+        if (clientHasNoAdditionalLoanInArrears(clientId)) {
+            clientWritePlatformService.unblockClientBlockingReason(clientId, DateUtils.getLocalDateOfTenant(), BLOCKING_REASON_NAME,
+                    "Cliente desbloqueado por defecto");
+
+        }
+    }
+
+    private boolean clientHasNoAdditionalLoanInArrears(final Long clientId) {
+        final String sql = "SELECT COUNT(1) FROM m_loan_arrears_aging mlaa inner join m_loan ml on ml.id = mlaa.loan_id   inner join m_client mc on mc.id = ml.client_id  where ml.client_id = ?";
+        final Integer totalCount = this.jdbcTemplate.queryForObject(sql, Integer.class, clientId);
+        return totalCount == null || totalCount == 0;
+    }
+
+    private void handleMoraAddition(Loan loan) {
+        clientWritePlatformService.blockClientWithInActiveLoan(loan.getClientId(), BLOCKING_REASON_NAME, "Cliente bloqueado por defecto",
+                false);
+    }
+
+    private void handleBlockingCredit(Loan loan) {
+        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+                .getSingleBlockingReasonSettingByReason(BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
+
+        final Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository
+                .findExistingBlockingReason(loan.getId(), blockingReasonSetting.getId());
+        if (!existingBlockingReason.isPresent()) {
+            if (loan.getLoanCustomizationDetail().getBlockStatus() == null
+                    || loan.getLoanCustomizationDetail().getBlockStatus().getPriority() > blockingReasonSetting.getPriority()) {
+                loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
+            }
+            final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
+                    "Cliente bloqueado por defecto", DateUtils.getLocalDateOfTenant());
+            loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
+        }
+
+        createSuspensionRemovedNews(loan);
+    }
+
+    private void handleUnBlockingCredit(Loan loan) {
+        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+                .getSingleBlockingReasonSettingByReason(BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
+        Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository.findExistingBlockingReason(loan.getId(),
+                blockingReasonSetting.getId());
+
+        AppUser currentUser = context.authenticatedUser();
+
+        if (existingBlockingReason.isPresent()) {
+            LoanBlockingReason blockingReason = this.loanBlockingReasonRepository
+                    .findExistingBlockingReason(loan.getId(), blockingReasonSetting.getId())
+                    .orElseThrow(() -> new LoanBlockingReasonNotFoundException(loan.getId(), blockingReasonSetting.getId()));
+            blockingReason.setActive(false);
+            blockingReason.setDeactivatedBy(currentUser);
+            blockingReason.setUnblockComment("Cliente desbloqueado por defecto");
+            blockingReason.setDeactivatedOn(DateUtils.getLocalDateOfTenant());
+            loan.getLoanCustomizationDetail().setBlockStatus(null);
+            loanRepository.save(loan);
+            loanBlockingReasonRepository.saveAndFlush(blockingReason);
+        }
+        createSuspensionRemovedNews(loan);
+
+    }
+
+    private void createSuspensionRemovedNews(Loan loan) {
+        /// CREATE Salida de suspensión news if loan is in TEMPORARY_SUSPENSION_DUE_TO_DEFAULT novelty news status and
+        /// arrears less than 90 days
+        Integer daysInArrears = null;
+        try {
+            daysInArrears = this.jdbcTemplate.queryForObject(
+                    "select COALESCE(current_date - overdue_since_date_derived,0) aging_days from m_loan_arrears_aging mlaa where mlaa.loan_id =?",
+                    Integer.class, loan.getId());
+        } catch (final EmptyResultDataAccessException e) {
+            // not in arrears
+            daysInArrears = 0;
+        }
+        if (daysInArrears >= 90) {
+            return;
+        }
+        final LocalDate currentDate = DateUtils.getBusinessLocalDate();
+        InsuranceIncident incident = this.insuranceIncidentRepository.findByIncidentType(InsuranceIncidentType.SUSPENSION_REMOVED);
+        InsuranceIncident temporarySuspensionIncident = this.insuranceIncidentRepository
+                .findByIncidentType(InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT);
+        if (incident == null || (!incident.isMandatory() && !incident.isVoluntary())) {
+            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.SUSPENSION_REMOVED.name());
+        }
+        Optional<InsuranceIncidentNoveltyNews> lastSuspensionNewsOptional = this.insuranceIncidentNoveltyNewsRepository
+                .findLastSuspensionIfPresent(loan.getId(), incident.getId(), temporarySuspensionIncident.getId());
+        if (lastSuspensionNewsOptional.isPresent()) {
+            InsuranceIncidentNoveltyNews news = lastSuspensionNewsOptional.get();
+            if (news.getInsuranceIncident().getIncidentType().equals(InsuranceIncidentType.SUSPENSION_REMOVED)) {
+                // Do not add suspension news if loan is already in suspension
+                return;
+            }
+        }
+        Collection<LoanCharge> loanCharges = loan.getInsuranceChargesForNoveltyIncidentReporting(incident.isMandatory(),
+                incident.isVoluntary());
+        if (loanCharges != null && !loanCharges.isEmpty()) {
+            for (LoanCharge loanCharge : loanCharges) {
+                if (loanCharge.getAmountOutstanding(loan.getCurrency()).isGreaterThanZero()) {
+                    if ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
+                            || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
+                        BigDecimal cumulative = BigDecimal.ZERO;
+                        InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                                null, incident, currentDate, cumulative);
+
+                        this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+                    }
+                }
+            }
+        }
+    }
+
 }

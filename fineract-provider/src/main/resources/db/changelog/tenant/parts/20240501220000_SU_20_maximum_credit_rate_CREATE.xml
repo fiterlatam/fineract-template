@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="fineract" id="1">
+        <createTable schemaName="public" tableName="m_maximum_credit_rate_configuration">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="ea_rate" type="DECIMAL(10, 4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="annual_nominal_rate" type="DECIMAL(10, 4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="monthly_nominal_rate" type="DECIMAL(10, 4)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="daily_nominal_rate" type="DECIMAL(10, 4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="appliedon_date" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="appliedon_userid" type="BIGINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="fineract" id="2">
+        <addForeignKeyConstraint baseColumnNames="appliedon_userid"
+                                 baseTableName="m_maximum_credit_rate_configuration"
+                                 constraintName="FK_m_maximum_credit_rate_configuration_applied_by"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="RESTRICT"
+                                 onUpdate="RESTRICT"
+                                 referencedColumnNames="id"
+                                 referencedTableName="m_appuser"
+                                 validate="true"/>
+    </changeSet>
+    <changeSet author="fineract" id="3">
+        <insert tableName="m_permission">
+            <column name="grouping" value="organisation"/>
+            <column name="code" value="READ_MAXIMUM_CREDIT_RATE"/>
+            <column name="entity_name" value="MAXIMUM_CREDIT_RATE"/>
+            <column name="action_name" value="READ"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="organisation"/>
+            <column name="code" value="UPDATE_MAXIMUM_CREDIT_RATE"/>
+            <column name="entity_name" value="MAXIMUM_CREDIT_RATE"/>
+            <column name="action_name" value="UPDATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+    <changeSet author="fineract" id="4">
+        <insert tableName="m_maximum_credit_rate_configuration">
+            <column name="ea_rate" value="36.0000"/>
+            <column name="annual_nominal_rate" value="31.1500"/>
+            <column name="monthly_nominal_rate" value="2.5959"/>
+            <column name="daily_nominal_rate" value="0.0840"/>
+            <column name="appliedon_date" valueDate="${current_date}"/>
+            <column name="appliedon_userid" valueNumeric="1"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="5">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_maximum_credit_rate_configuration" columnName="current_interest_rate"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_maximum_credit_rate_configuration">
+            <column name="current_interest_rate" type="DECIMAL(10, 4)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="6">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_maximum_credit_rate_configuration" columnName="overdue_interest_rate"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_maximum_credit_rate_configuration">
+            <column name="overdue_interest_rate" type="DECIMAL(10, 4)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="7">
+        <sql>
+            <![CDATA[
+                UPDATE m_maximum_credit_rate_configuration SET current_interest_rate  = 2.5959, overdue_interest_rate = 2.5959 WHERE id IS NOT NULL;
+            ]]>
+        </sql>
+    </changeSet>
+    <changeSet author="fineract" id="8">
+        <insert tableName="job">
+            <column name="name" value="Recalculate Loan Interest After Maximum Legal Rate Change"/>
+            <column name="display_name" value="Recalculate Loan Interest After Maximum Legal Rate Change"/>
+            <column name="cron_expression" value="0 1 0 1/1 * ? *"/>
+            <column name="create_time" valueDate="${current_datetime}"/>
+            <column name="task_priority" valueNumeric="5"/>
+            <column name="group_name"/>
+            <column name="previous_run_start_time"/>
+            <column name="job_key" value="Recalculate Loan Interest After Maximum Legal Rate ChangeJobDetail1 _ DEFAULT"/>
+            <column name="initializing_errorlog"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="currently_running" valueBoolean="false"/>
+            <column name="updates_allowed" valueBoolean="true"/>
+            <column name="scheduler_group" valueNumeric="0"/>
+            <column name="is_misfired" valueBoolean="false"/>
+            <column name="node_id" valueNumeric="1"/>
+            <column name="is_mismatched_job" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="9">
+        <insert tableName="m_appuser_role">
+            <column name="appuser_id" valueNumeric="2"/>
+            <column name="role_id" valueNumeric="1"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="10">
+        <insert tableName="m_code_value">
+            <column name="code_id" valueComputed="(SELECT id FROM m_code WHERE code_name='LoanRescheduleReason')"/>
+            <column name="code_value" value="Recalcular la tasa de interés al máximo legal"/>
+            <column name="code_description" value="Recalcular la tasa de interés al máximo legal"/>
+            <column name="order_position" valueNumeric="1"/>
+            <column name="code_score" valueNumeric="1"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="is_mandatory" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="11">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_portfolio_command_source" columnName="ea_rate"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_portfolio_command_source">
+            <column name="ea_rate" type="DECIMAL(10, 4)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="12">
+        <createTable tableName="m_maximum_legal_rate_history">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="ea_rate" type="DECIMAL(10, 4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="annual_nominal_rate" type="DECIMAL(10, 4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="monthly_nominal_rate" type="DECIMAL(10, 4)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="daily_nominal_rate" type="DECIMAL(10, 4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="appliedon_date" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="appliedon_userid" type="BIGINT">
+                <constraints nullable="false" />
+            </column>
+            <column name="created_on_utc" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

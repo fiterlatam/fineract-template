@@ -23,18 +23,30 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformation;
+import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
+import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformation;
+import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformationRepository;
+import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeEntityData;
+import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeData;
+import org.apache.fineract.custom.portfolio.customcharge.data.CustomChargeTypeMapData;
+import org.apache.fineract.custom.portfolio.customcharge.exception.CustomChargeTypeMapNotFoundException;
+import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeEntityReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeMapReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeReadWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
@@ -42,15 +54,15 @@ import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeCannotBeAddedException;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeWithoutMandatoryFieldException;
+import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanChargeRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTrancheDisbursementCharge;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 @RequiredArgsConstructor
 public class LoanChargeAssembler {
@@ -60,12 +72,19 @@ public class LoanChargeAssembler {
     private final LoanChargeRepository loanChargeRepository;
     private final LoanProductRepository loanProductRepository;
     private final ExternalIdFactory externalIdFactory;
+    private final CustomChargeEntityReadWritePlatformService customChargeService;
+    private final CustomChargeTypeReadWritePlatformService customChargeTypeService;
+    private final CustomChargeTypeMapReadWritePlatformService customChargeTypeMapService;
+    private final JdbcTemplate jdbcTemplate;
+    private final ClientRepositoryWrapper clientRepositoryWrapper;
+    private final ClientAdditionalInformationRepository clientAdditionalInformationRepository;
+    private final IndividualAdditionalInformationRepository individualAdditionalInformationRepository;
 
     public Set<LoanCharge> fromParsedJson(final JsonElement element, List<LoanDisbursementDetails> disbursementDetails) {
         JsonArray jsonDisbursement = this.fromApiJsonHelper.extractJsonArrayNamed("disbursementData", element);
         List<Long> disbursementChargeIds = new ArrayList<>();
 
-        if (jsonDisbursement != null && jsonDisbursement.size() > 0) {
+        if (jsonDisbursement != null && !jsonDisbursement.isEmpty()) {
             for (int i = 0; i < jsonDisbursement.size(); i++) {
                 final JsonObject jsonObject = jsonDisbursement.get(i).getAsJsonObject();
                 if (jsonObject != null && jsonObject.getAsJsonPrimitive(LoanApiConstants.loanChargeIdParameterName) != null) {
@@ -85,7 +104,7 @@ public class LoanChargeAssembler {
             }
         }
 
-        final Set<LoanCharge> loanCharges = new HashSet<>();
+        final Set<LoanCharge> loanCharges = new LinkedHashSet<>();
         final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
         final Integer numberOfRepayments = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("numberOfRepayments", element);
         final Long productId = this.fromApiJsonHelper.extractLongNamed("productId", element);
@@ -106,10 +125,46 @@ public class LoanChargeAssembler {
 
                     final Long id = this.fromApiJsonHelper.extractLongNamed("id", loanChargeElement);
                     final Long chargeId = this.fromApiJsonHelper.extractLongNamed("chargeId", loanChargeElement);
-                    final BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed("amount", loanChargeElement, locale);
+                    BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed("amount", loanChargeElement, locale);
+                    Boolean isEndorsed = false;
+                    LocalDate expDate = null;
+                    String insuranceName = null;
+                    String insuranceId = null;
+                    if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.isEndorsed, loanChargeElement)) {
+                        isEndorsed = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isEndorsed, loanChargeElement);
+                    }
+
+                    if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.chargeExpireDate, loanChargeElement)) {
+                        String expdDateString = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.chargeExpireDate,
+                                loanChargeElement);
+                        if (expdDateString != null) {
+                            expDate = LocalDate.parse(expdDateString);
+                        }
+                    }
+                    if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.insuranceName, loanChargeElement)) {
+                        insuranceName = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.insuranceName, loanChargeElement);
+                    }
+                    if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.insuranceId, loanChargeElement)) {
+                        insuranceId = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.insuranceId, loanChargeElement);
+                    }
+                    // if loan product has grace on charge , apply to the
+                    Integer graceOnCharge = loanProduct.getLoanProductRelatedDetail().getGraceOnChargesPayment();
+                    Integer graceOnInterestPayment = this.fromApiJsonHelper
+                            .extractIntegerWithLocaleNamed(LoanApiConstants.graceOnInterestPaymentParameterName, element);
+                    Integer graceOnPrincipalPayment = this.fromApiJsonHelper
+                            .extractIntegerWithLocaleNamed(LoanApiConstants.graceOnPrincipalPaymentParameterName, element);
+
+                    boolean isTotalGrace = (graceOnCharge != null && graceOnInterestPayment != null && graceOnPrincipalPayment != null)
+                            && (graceOnCharge.equals(graceOnInterestPayment) && graceOnInterestPayment.equals(graceOnPrincipalPayment));
+
+                    Integer applicableFromInstallment = graceOnCharge != null ? graceOnCharge + 1 : 1;
+                    if (isTotalGrace) {
+                        applicableFromInstallment = 1;
+                    }
                     final Integer chargeTimeType = this.fromApiJsonHelper.extractIntegerNamed("chargeTimeType", loanChargeElement, locale);
                     final Integer chargeCalculationType = this.fromApiJsonHelper.extractIntegerNamed("chargeCalculationType",
                             loanChargeElement, locale);
+
                     final LocalDate dueDate = this.fromApiJsonHelper.extractLocalDateNamed("dueDate", loanChargeElement, dateFormat,
                             locale);
                     final Integer chargePaymentMode = this.fromApiJsonHelper.extractIntegerNamed("chargePaymentMode", loanChargeElement,
@@ -134,18 +189,41 @@ public class LoanChargeAssembler {
                         if (chargeCalculationType != null) {
                             chargeCalculation = ChargeCalculationType.fromInt(chargeCalculationType);
                         }
+
+                        boolean getPercentageAmountFromTable = chargeDefinition.isGetPercentageFromTable();
+                        if (getPercentageAmountFromTable || ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation())
+                                .equals(ChargeCalculationType.DISB_AVAL)) {
+                            ChargeCalculationType calculation = chargeCalculation;
+                            if (calculation == null) {
+                                calculation = ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation());
+                            }
+                            final String pointOfSaleCode = this.fromApiJsonHelper.extractStringNamed("pointOfSaleCode", element);
+
+                            String clientIdNumber = this.fromApiJsonHelper.extractStringNamed("clientIdNumber", element);
+                            if (clientIdNumber == null || clientIdNumber.isEmpty()) {
+                                Long clientId = this.fromApiJsonHelper.extractLongNamed("clientId", element);
+                                clientIdNumber = getClientIdentifier(clientId);
+
+                            }
+                            amount = getAmountPerentageFromCustomChargeTable(calculation, numberOfRepayments, pointOfSaleCode,
+                                    clientIdNumber);
+                        }
+
                         ChargePaymentMode chargePaymentModeEnum = null;
                         if (chargePaymentMode != null) {
                             chargePaymentModeEnum = ChargePaymentMode.fromInt(chargePaymentMode);
                         }
                         if (!isMultiDisbursal) {
                             final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
-                                    chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId);
+                                    chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
+                                    getPercentageAmountFromTable, applicableFromInstallment, expDate, isEndorsed, insuranceName,
+                                    insuranceId);
+
                             loanCharges.add(loanCharge);
                         } else {
                             if (topLevelJsonElement.has("disbursementData") && topLevelJsonElement.get("disbursementData").isJsonArray()) {
                                 final JsonArray disbursementArray = topLevelJsonElement.get("disbursementData").getAsJsonArray();
-                                if (disbursementArray.size() > 0) {
+                                if (!disbursementArray.isEmpty()) {
                                     JsonObject disbursementDataElement = disbursementArray.get(0).getAsJsonObject();
                                     expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed(
                                             LoanApiConstants.expectedDisbursementDateParameterName, disbursementDataElement, dateFormat,
@@ -159,7 +237,9 @@ public class LoanChargeAssembler {
                                     if (chargeDefinition.isPercentageOfApprovedAmount()
                                             && disbursementDetail.expectedDisbursementDateAsLocalDate().equals(expectedDisbursementDate)) {
                                         final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
-                                                chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId);
+                                                chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
+                                                getPercentageAmountFromTable, applicableFromInstallment, expDate, isEndorsed, insuranceName,
+                                                insuranceId);
                                         loanCharges.add(loanCharge);
                                         if (loanCharge.isTrancheDisbursementCharge()) {
                                             loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge,
@@ -171,7 +251,8 @@ public class LoanChargeAssembler {
                                             final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition,
                                                     disbursementDetail.principal(), amount, chargeTime, chargeCalculation,
                                                     disbursementDetail.expectedDisbursementDateAsLocalDate(), chargePaymentModeEnum,
-                                                    numberOfRepayments, externalId);
+                                                    numberOfRepayments, externalId, getPercentageAmountFromTable, applicableFromInstallment,
+                                                    expDate, isEndorsed, insuranceName, insuranceId);
                                             loanCharges.add(loanCharge);
                                             if (loanCharge.isTrancheDisbursementCharge()) {
                                                 loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge,
@@ -188,7 +269,8 @@ public class LoanChargeAssembler {
                                         final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, disbursementDetail.principal(),
                                                 amount, chargeTime, chargeCalculation,
                                                 disbursementDetail.expectedDisbursementDateAsLocalDate(), chargePaymentModeEnum,
-                                                numberOfRepayments, externalId);
+                                                numberOfRepayments, externalId, getPercentageAmountFromTable, applicableFromInstallment,
+                                                expDate, isEndorsed, insuranceName, insuranceId);
                                         loanCharges.add(loanCharge);
                                         loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge, disbursementDetail);
                                         loanCharge.updateLoanTrancheDisbursementCharge(loanTrancheDisbursementCharge);
@@ -196,7 +278,9 @@ public class LoanChargeAssembler {
                                 }
                             } else {
                                 final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
-                                        chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId);
+                                        chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
+                                        getPercentageAmountFromTable, applicableFromInstallment, expDate, isEndorsed, insuranceName,
+                                        insuranceId);
                                 loanCharges.add(loanCharge);
                             }
                         }
@@ -213,7 +297,11 @@ public class LoanChargeAssembler {
                 }
             }
         }
-
+        for (LoanCharge loanCharge : loanCharges) {
+            if (loanCharge.getApplicableFromInstallment() == null || loanCharge.getApplicableFromInstallment() == 1) {
+                loanCharge.setApplicableFromInstallment(1);
+            }
+        }
         return loanCharges;
     }
 
@@ -246,43 +334,128 @@ public class LoanChargeAssembler {
             throw new LoanChargeWithoutMandatoryFieldException("loanCharge", "dueDate", defaultUserMessage, chargeDefinition.getId(),
                     chargeDefinition.getName());
         }
-        return createNewFromJson(loan, chargeDefinition, command, dueDate);
+        return createNewFromJson(loan, chargeDefinition, command, dueDate, null, null);
     }
 
-    public LoanCharge createNewFromJson(final Loan loan, final Charge chargeDefinition, final JsonCommand command,
-            final LocalDate dueDate) {
+    public LoanCharge createNewFromJson(final Loan loan, final Charge chargeDefinition, final JsonCommand command, final LocalDate dueDate,
+            LoanRepaymentScheduleInstallment installment, Long numberOfPenaltyDays) {
         final Locale locale = command.extractLocale();
-        final BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount", locale);
+        BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount", locale);
 
         final ChargeTimeType chargeTime = null;
         final ChargeCalculationType chargeCalculation = null;
         final ChargePaymentMode chargePaymentMode = null;
         BigDecimal amountPercentageAppliedTo = BigDecimal.ZERO;
-        switch (ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation())) {
-            case PERCENT_OF_AMOUNT:
-                if (command.hasParameter("principal")) {
-                    amountPercentageAppliedTo = command.bigDecimalValueOfParameterNamed("principal");
-                } else {
-                    amountPercentageAppliedTo = loan.getPrincipal().getAmount();
+
+        ChargeCalculationType chargeCalculationType = ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation());
+        boolean getPercentageAmountFromTable = chargeDefinition.isGetPercentageFromTable()
+                || ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()).equals(ChargeCalculationType.DISB_AVAL);
+        if (getPercentageAmountFromTable) {
+            final LoanAccountData loanAccountExtras = getLoanExtras(loan.getId());
+            String pointOfSaleCode = null;
+            String clientIdNumber = null;
+            if (loanAccountExtras != null) {
+                pointOfSaleCode = loanAccountExtras.getPointOfSalesName();
+                clientIdNumber = loanAccountExtras.getClientIdNumber();
+            }
+            amount = getAmountPerentageFromCustomChargeTable(chargeCalculationType, loan.getNumberOfRepayments(), pointOfSaleCode,
+                    clientIdNumber);
+        }
+
+        // Ammend amount components as configred
+        if (chargeCalculationType.isFlat()) {
+            amountPercentageAppliedTo = amountPercentageAppliedTo.add(chargeDefinition.getAmount());
+        }
+
+        if (chargeCalculationType.isPercentageOfDisbursement()) {
+            if (chargeCalculationType.isCustomPercentageBasedDistributedCharge()) {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getPrincipal().getAmount());
+            } else {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getDisbursedAmount());
+            }
+        }
+
+        if (chargeCalculationType.isPercentageOfInstallmentPrincipal()) {
+            if (command.hasParameter("principal")) {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(command.bigDecimalValueOfParameterNamed("principal"));
+            } else {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getPrincipal().getAmount());
+            }
+        }
+
+        if (chargeCalculationType.isPercentageOfInstallmentInterest()) {
+            if (command.hasParameter("interest")) {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(command.bigDecimalValueOfParameterNamed("interest"));
+            } else {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getTotalInterest());
+            }
+        }
+
+        if (chargeCalculationType.isCustomPercentageOfOutstandingPrincipalCharge()) {
+            if (command.hasParameter("principal")) {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(command.bigDecimalValueOfParameterNamed("principal"));
+            } else {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getPrincipal().getAmount());
+            }
+        }
+
+        if (chargeDefinition.isPenalty()) {
+            amount = chargeDefinition.getInterestRate().getCurrentRate();
+            if (installment == null) {
+                amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getPrincipal().getAmount());
+            } else {
+                amountPercentageAppliedTo = BigDecimal.ZERO;
+                String chargeCalculationName = chargeCalculationType.name();
+                if (chargeCalculationName.contains("IPRIN")) {
+                    amountPercentageAppliedTo = amountPercentageAppliedTo
+                            .add(installment.getPrincipalOutstanding(loan.getCurrency()).getAmount());
                 }
-            break;
-            case PERCENT_OF_AMOUNT_AND_INTEREST:
-                if (command.hasParameter("principal") && command.hasParameter("interest")) {
-                    amountPercentageAppliedTo = command.bigDecimalValueOfParameterNamed("principal")
-                            .add(command.bigDecimalValueOfParameterNamed("interest"));
-                } else {
-                    amountPercentageAppliedTo = loan.getPrincipal().getAmount().add(loan.getTotalInterest());
+                if (chargeCalculationName.contains("SEGO")) {
+                    for (LoanCharge loanCharge : loan.getLoanCharges()) {
+                        if (loanCharge.isMandatoryInsurance()) {
+                            LoanInstallmentCharge loanInstallmentCharge = loanCharge
+                                    .getInstallmentLoanCharge(installment.getInstallmentNumber());
+                            amountPercentageAppliedTo = amountPercentageAppliedTo.add(loanInstallmentCharge.getAmountOutstanding());
+                        }
+                    }
                 }
-            break;
-            case PERCENT_OF_INTEREST:
-                if (command.hasParameter("interest")) {
-                    amountPercentageAppliedTo = command.bigDecimalValueOfParameterNamed("interest");
-                } else {
-                    amountPercentageAppliedTo = loan.getTotalInterest();
+                if (chargeCalculationName.contains("AVAL")) {
+                    for (LoanCharge loanCharge : loan.getLoanCharges()) {
+                        if (loanCharge.isAvalCharge()) {
+                            LoanInstallmentCharge loanInstallmentCharge = loanCharge
+                                    .getInstallmentLoanCharge(installment.getInstallmentNumber());
+                            amountPercentageAppliedTo = amountPercentageAppliedTo.add(loanInstallmentCharge.getAmountOutstanding());
+                        }
+                    }
                 }
-            break;
-            default:
-            break;
+                if (chargeCalculationName.contains("IINT")) {
+                    amountPercentageAppliedTo = amountPercentageAppliedTo
+                            .add(installment.getInterestOutstanding(loan.getCurrency()).getAmount());
+                }
+                if (chargeCalculationName.contains("SEGOVOLUNTARIO")) {
+                    for (LoanCharge loanCharge : loan.getLoanCharges()) {
+                        if (loanCharge.isVoluntaryInsurance()) {
+                            LoanInstallmentCharge loanInstallmentCharge = loanCharge
+                                    .getInstallmentLoanCharge(installment.getInstallmentNumber());
+                            amountPercentageAppliedTo = amountPercentageAppliedTo.add(loanInstallmentCharge.getAmountOutstanding());
+                        }
+                    }
+                }
+                if (chargeCalculationType.isPercentageOfAnotherCharge()) {
+                    for (LoanCharge parentCharge : loan.getCharges()) {
+                        if (parentCharge.getCharge().getId() != null && parentCharge.isPenaltyCharge()
+                                && parentCharge.getCharge().getId().equals(chargeDefinition.getParentChargeId())
+                                && parentCharge.getOverdueInstallmentCharge() != null
+                                && Objects.equals(parentCharge.getOverdueInstallmentCharge().installment().getInstallmentNumber(),
+                                        installment.getInstallmentNumber())) {
+                            amountPercentageAppliedTo = amountPercentageAppliedTo.add(parentCharge.amount());
+                            numberOfPenaltyDays = null;
+                            break;
+                        }
+                    }
+
+                }
+            }
         }
 
         BigDecimal loanCharge = BigDecimal.ZERO;
@@ -291,8 +464,13 @@ public class LoanChargeAssembler {
             if (percentage == null) {
                 percentage = chargeDefinition.getAmount();
             }
-            loanCharge = loan.calculatePerInstallmentChargeAmount(ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()),
-                    percentage);
+            if (chargeCalculationType.isCustomPercentageBasedDistributedCharge()) {
+                loanCharge = percentageOf(loan.getPrincipal().getAmount(), amount);
+            } else {
+                loanCharge = loan.calculatePerInstallmentChargeAmount(
+                        ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()), percentage, null,
+                        chargeDefinition.getParentChargeId());
+            }
         }
 
         // If charge type is specified due date and loan is multi disburment
@@ -304,13 +482,14 @@ public class LoanChargeAssembler {
             for (final LoanDisbursementDetails loanDisbursementDetails : loan.getDisbursementDetails()) {
                 if (!DateUtils.isAfter(loanDisbursementDetails.expectedDisbursementDate(), dueDate)) {
                     amountPercentageAppliedTo = amountPercentageAppliedTo.add(loanDisbursementDetails.principal());
+                    numberOfPenaltyDays = null;
                 }
             }
         }
 
         ExternalId externalId = externalIdFactory.createFromCommand(command, "externalId");
         return new LoanCharge(loan, chargeDefinition, amountPercentageAppliedTo, amount, chargeTime, chargeCalculation, dueDate,
-                chargePaymentMode, null, loanCharge, externalId);
+                chargePaymentMode, null, loanCharge, externalId, getPercentageAmountFromTable, numberOfPenaltyDays);
     }
 
     /*
@@ -318,8 +497,190 @@ public class LoanChargeAssembler {
      */
     public LoanCharge createNewWithoutLoan(final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
             final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
-            final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final ExternalId externalId) {
+            final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final ExternalId externalId,
+            boolean getPercentageAmountFromTable, Integer applicableFromInstallment, LocalDate expDate, Boolean isEndorsed,
+            String insuranceName, String insuranceId) {
+        // if applicableFromInstallment is not null and applicableFromInstallment is greater than one . it means number
+        // of repayments should be reduced for the charge calculation
+        Integer applicableNumberOfRepayments = numberOfRepayments;
+        if (applicableFromInstallment != null && applicableFromInstallment > 1) {
+            applicableNumberOfRepayments = numberOfRepayments - applicableFromInstallment + 1;
+        }
+
         return new LoanCharge(null, chargeDefinition, loanPrincipal, amount, chargeTime, chargeCalculation, dueDate, chargePaymentMode,
-                numberOfRepayments, BigDecimal.ZERO, externalId);
+                applicableNumberOfRepayments, BigDecimal.ZERO, externalId, getPercentageAmountFromTable, null, applicableFromInstallment,
+                expDate, isEndorsed, insuranceName, insuranceId);
     }
+
+    private BigDecimal percentageOf(final BigDecimal value, final BigDecimal percentage) {
+
+        BigDecimal percentageOf = BigDecimal.ZERO;
+
+        if (value.compareTo(BigDecimal.ZERO) > 0) {
+            final MathContext mc = MoneyHelper.getMathContext();
+            final BigDecimal multiplicand = percentage.divide(BigDecimal.valueOf(100L), mc);
+            percentageOf = value.multiply(multiplicand, mc);
+        }
+        return percentageOf;
+    }
+
+    private BigDecimal getAmountPerentageFromCustomChargeTable(final ChargeCalculationType type, final Integer numberOfInstallments,
+            final String pointOfSaleCode, final String clientIdNumber) {
+        BigDecimal percentage = BigDecimal.ZERO;
+        final List<CustomChargeEntityData> customChargeEntityDataList = this.customChargeService.findByIsExternalService(false);
+        for (CustomChargeEntityData entity : customChargeEntityDataList) {
+            if (isAllowedChargeCalculationType(type, entity)) {
+                boolean useVipClientMapping = isVipClient(clientIdNumber);
+                boolean useCommercePointOfSaleMapping = isCommercePointOfSale(pointOfSaleCode);
+                final List<CustomChargeTypeData> customChargeTypeDataList = customChargeTypeService.findAllByEntityId(entity.getId());
+                final List<CustomChargeTypeData> vipCustomChargeTypeDataList = customChargeTypeDataList.stream()
+                        .filter(data -> data.getName().equalsIgnoreCase("VIP")).toList();
+                final List<CustomChargeTypeData> commerceCustomChargeTypeDataList = customChargeTypeDataList.stream()
+                        .filter(data -> data.getName().equalsIgnoreCase("Commerce")).toList();
+                final List<CustomChargeTypeData> productCustomChargeTypeDataList = customChargeTypeDataList.stream()
+                        .filter(data -> data.getName().equalsIgnoreCase("Product")).toList();
+
+                final BigDecimal vipPercentage = calculateChargePercentageAmount(vipCustomChargeTypeDataList, numberOfInstallments);
+                final BigDecimal commercePointOfSalePercentage = calculateChargePercentageAmount(commerceCustomChargeTypeDataList,
+                        numberOfInstallments);
+                final BigDecimal productDefaultPercentage = calculateChargePercentageAmount(productCustomChargeTypeDataList,
+                        numberOfInstallments);
+
+                if (useCommercePointOfSaleMapping && useVipClientMapping) {
+                    if (vipPercentage.compareTo(BigDecimal.ZERO) > 0 && commercePointOfSalePercentage.compareTo(BigDecimal.ZERO) > 0) {
+                        percentage = vipPercentage.compareTo(commercePointOfSalePercentage) > 0 ? commercePointOfSalePercentage
+                                : vipPercentage;
+                    } else if (vipPercentage.compareTo(BigDecimal.ZERO) > 0) {
+                        percentage = vipPercentage;
+                    } else {
+                        percentage = commercePointOfSalePercentage;
+                    }
+                } else if (useCommercePointOfSaleMapping) {
+                    percentage = commercePointOfSalePercentage;
+                } else if (useVipClientMapping) {
+                    percentage = vipPercentage;
+                } else {
+                    percentage = productDefaultPercentage;
+                }
+            }
+            if (percentage.compareTo(BigDecimal.ZERO) > 0) {
+                break;
+            }
+        }
+        if (percentage.compareTo(BigDecimal.ZERO) == 0) {
+            throw new CustomChargeTypeMapNotFoundException(type);
+        }
+        return percentage;
+    }
+
+    private boolean isAllowedChargeCalculationType(final ChargeCalculationType chargeCalculationType,
+            final CustomChargeEntityData customChargeEntityData) {
+        return (customChargeEntityData.getName().equalsIgnoreCase("Insurance")
+                && chargeCalculationType.isPercentageBasedMandatoryInsurance())
+                || (customChargeEntityData.getName().equalsIgnoreCase("Insurance")
+                        && chargeCalculationType.isCustomPercentageOfOutstandingPrincipalCharge())
+                || (customChargeEntityData.getName().equalsIgnoreCase("Insurance") && chargeCalculationType.isVoluntaryInsurance())
+                || (customChargeEntityData.getName().equalsIgnoreCase("Term") && chargeCalculationType.isTermCharge())
+                || (customChargeEntityData.getName().equalsIgnoreCase("Aval") && chargeCalculationType.isPercentageOfAval());
+    }
+
+    private BigDecimal calculateChargePercentageAmount(final List<CustomChargeTypeData> customChargeTypeDataList,
+            final Integer installmentNumber) {
+        BigDecimal percentageAmount = BigDecimal.ZERO;
+        if (CollectionUtils.isNotEmpty(customChargeTypeDataList)) {
+            for (final CustomChargeTypeData customChargeTypeData : customChargeTypeDataList) {
+                final List<CustomChargeTypeMapData> customChargeTypeMapDataList = this.customChargeTypeMapService
+                        .findAllActive(customChargeTypeData.getId());
+                if (CollectionUtils.isNotEmpty(customChargeTypeMapDataList)) {
+                    final Optional<CustomChargeTypeMapData> customChargeTypeMapDataOptional = customChargeTypeMapDataList.stream()
+                            .filter(map -> map.getTerm().intValue() == installmentNumber).reduce((a, b) -> {
+                                throw new CustomChargeTypeMapNotFoundException("error.msg.customchargetypemap.id.multiple.values");
+                            });
+                    if (customChargeTypeMapDataOptional.isPresent()) {
+                        final CustomChargeTypeMapData customChargeTypeMapData = customChargeTypeMapDataOptional.get();
+                        percentageAmount = customChargeTypeMapData.getPercentage();
+                        break;
+                    }
+                }
+            }
+        }
+        return percentageAmount;
+    }
+
+    private boolean isCommercePointOfSale(final String pointOfSaleCode) {
+        if (StringUtils.isNotBlank(pointOfSaleCode)) {
+            final String sql = "SELECT COUNT(*) FROM custom.c_commerce_point_of_sale WHERE point_of_sale_code = ? ";
+            int pointOfSaleCount = ObjectUtils.defaultIfNull(jdbcTemplate.queryForObject(sql, Integer.class, pointOfSaleCode), 0);
+            return pointOfSaleCount > 0;
+        }
+        return false;
+    }
+
+    private boolean isVipClient(final String clientIdNumber) {
+        if (StringUtils.isNotBlank(clientIdNumber)) {
+            final String sql = "SELECT COUNT(*) FROM custom.c_vip_client WHERE client_id = ? ";
+            final int clientCount = ObjectUtils.defaultIfNull(jdbcTemplate.queryForObject(sql, Integer.class, clientIdNumber), 0);
+            return clientCount > 0;
+        }
+        return false;
+    }
+
+    private LoanAccountData getLoanExtras(final Long loanId) {
+        final String loanSQL = """
+                    SELECT
+                    	ccbp.client_id AS "clientId",
+                    	ccbp.loan_id AS "loanId",
+                    	ccapos.code AS "pointOfSaleCode",
+                    	COALESCE(cce."NIT",
+                    	ccp."Cedula") AS "clientIdNumber"
+                    FROM m_loan ml
+                    INNER JOIN m_client mc ON mc.id = ml.client_id
+                    LEFT JOIN custom.c_client_buy_process ccbp ON ccbp.loan_id = ml.id
+                    LEFT JOIN custom.c_client_ally_point_of_sales ccapos ON ccapos.id = ccbp.point_if_sales_id
+                    LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
+                    LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+                    WHERE ml.id = ?
+                """;
+        final List<LoanAccountData> loanAccounts = jdbcTemplate.query(loanSQL, resultSet -> {
+            final List<LoanAccountData> LoanAccountDataList = new ArrayList<>();
+            while (resultSet.next()) {
+                final Long loanAccountId = resultSet.getLong("loanId");
+                final Long clientId = resultSet.getLong("clientId");
+                final String pointOfSaleCode = resultSet.getString("pointOfSaleCode");
+                final String clientIdNumber = resultSet.getString("clientIdNumber");
+                final LoanAccountData loanAccountData = new LoanAccountData();
+                loanAccountData.setId(loanAccountId);
+                loanAccountData.setPointOfSalesName(pointOfSaleCode);
+                loanAccountData.setClientIdNumber(clientIdNumber);
+                loanAccountData.setClientId(clientId);
+            }
+            return LoanAccountDataList;
+        }, loanId);
+        return CollectionUtils.isNotEmpty(loanAccounts) ? loanAccounts.get(0) : null;
+    }
+
+    private String getClientIdentifier(Long clientId) {
+        String clientIdNumber = null;
+        Optional<Client> clientOptional = clientRepositoryWrapper.findById(clientId);
+        if (clientOptional.isPresent()) {
+            Client client = clientOptional.get();
+            if (client.isPerson()) {
+                Optional<IndividualAdditionalInformation> individualAdditionalInformationOptional = individualAdditionalInformationRepository
+                        .findByClientId(clientId);
+                if (individualAdditionalInformationOptional.isPresent()) {
+                    IndividualAdditionalInformation individualAdditionalInformation = individualAdditionalInformationOptional.get();
+                    clientIdNumber = individualAdditionalInformation.getCedula();
+                }
+            } else {
+                Optional<ClientAdditionalInformation> clientAdditionalInformationOptional = clientAdditionalInformationRepository
+                        .findByClientId(clientId);
+                if (clientAdditionalInformationOptional.isPresent()) {
+                    ClientAdditionalInformation clientAdditionalInformation = clientAdditionalInformationOptional.get();
+                    clientIdNumber = clientAdditionalInformation.getNit();
+                }
+            }
+        }
+        return clientIdNumber;
+    }
+
 }

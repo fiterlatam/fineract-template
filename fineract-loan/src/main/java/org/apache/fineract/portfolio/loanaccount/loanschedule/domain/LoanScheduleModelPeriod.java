@@ -33,6 +33,8 @@ public interface LoanScheduleModelPeriod {
 
     boolean isDownPaymentPeriod();
 
+    boolean isTotalGracePeriod();
+
     Integer periodNumber();
 
     LocalDate periodFromDate();
@@ -64,4 +66,28 @@ public interface LoanScheduleModelPeriod {
     BigDecimal rescheduleInterestPortion();
 
     void setRescheduleInterestPortion(BigDecimal rescheduleInterestPortion);
+
+    public BigDecimal getTotalHonorariosCharged();
+
+    public void setTotalHonorariosCharged(BigDecimal totalHonorariosCharged);
+
+    public BigDecimal getTotalAvalCharged();
+
+    public void setTotalAvalCharged(BigDecimal totalAvalCharged);
+
+    public BigDecimal getTotalVoluntaryInsuranceCharged();
+
+    public void setTotalVoluntaryInsuranceCharged(BigDecimal totalVoluntaryInsuranceCharged);
+
+    public BigDecimal getTotalMandatoryInsuranceCharged();
+
+    public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged);
+
+    public boolean recalculateEMIForInstallment();
+
+    public void setRecalculateEMIForInstallment(boolean recalculateEMIForInstallment);
+
+    public BigDecimal advancePrincipalAmountForInstallment();
+
+    public void setAdvancePrincipalAmountForInstallment(BigDecimal advancePrincipalAmountForInstallment);
 }

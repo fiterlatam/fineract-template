@@ -43,13 +43,17 @@ import jakarta.ws.rs.core.UriInfo;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.infrastructure.bulkimport.data.GlobalEntityType;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookPopulatorService;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookService;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
+import org.apache.fineract.infrastructure.clientblockingreasons.service.ManageBlockingReasonsReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.UploadRequest;
@@ -64,8 +68,12 @@ import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.accountdetails.data.AccountSummaryCollectionData;
 import org.apache.fineract.portfolio.accountdetails.service.AccountDetailsReadPlatformService;
+import org.apache.fineract.portfolio.client.data.ClientAvailableCupoFieldsData;
+import org.apache.fineract.portfolio.client.data.ClientBlockingReasonData;
 import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.client.data.ClientMaximumLoanArrearsData;
 import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
+import org.apache.fineract.portfolio.client.service.ClientBlockingReasonReadPlatformService;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.guarantor.data.ObligeeData;
 import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorReadPlatformService;
@@ -74,9 +82,11 @@ import org.apache.fineract.portfolio.savings.service.SavingsAccountReadPlatformS
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
 
 @Path("/v1/clients")
 @Component
+@Controller
 @Tag(name = "Client", description = "Clients are people and businesses that have applied (or may apply) to an MFI for loans.\n" + "\n"
         + "Clients can be created in Pending or straight into Active state.")
 @RequiredArgsConstructor
@@ -93,6 +103,8 @@ public class ClientsApiResource {
     private final BulkImportWorkbookService bulkImportWorkbookService;
     private final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService;
     private final GuarantorReadPlatformService guarantorReadPlatformService;
+    private final ManageBlockingReasonsReadPlatformService manageBlockingReasonsReadPlatformService;
+    private final ClientBlockingReasonReadPlatformService clientBlockingReasonReadPlatformService;
 
     @GET
     @Path("template")
@@ -103,16 +115,23 @@ public class ClientsApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientsApiResourceSwagger.GetClientsTemplateResponse.class))) })
     public String retrieveTemplate(@Context final UriInfo uriInfo,
+            @QueryParam("clientId") @Parameter(description = "clientId") final Long clientId,
             @Parameter(description = "officeId") @QueryParam("officeId") final Long officeId,
             @QueryParam("commandParam") @Parameter(description = "commandParam") final String commandParam,
             @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly) {
-
         context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
-
-        ClientData clientData = null;
+        ClientData clientData = new ClientData();
         context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
         if (CommandParameterUtil.is(commandParam, "close")) {
             clientData = clientReadPlatformService.retrieveAllNarrations(ClientApiConstants.CLIENT_CLOSURE_REASON);
+        } else if (CommandParameterUtil.is(commandParam, "block")) {
+            Collection<BlockingReasonsData> blockingReasonsDataOptions = this.manageBlockingReasonsReadPlatformService
+                    .retrieveAllBlockingReasons("CLIENT");
+            clientData.setBlockingReasonsDataOptions(blockingReasonsDataOptions);
+        } else if (CommandParameterUtil.is(commandParam, "undoBlock")) {
+            Collection<BlockingReasonsData> blockingReasonsDataOptions = this.manageBlockingReasonsReadPlatformService
+                    .retrieveClientBlockingReasons("CLIENT", clientId);
+            clientData.setBlockingReasonsDataOptions(blockingReasonsDataOptions);
         } else if (CommandParameterUtil.is(commandParam, "acceptTransfer")) {
             clientData = clientReadPlatformService.retrieveAllNarrations(ClientApiConstants.CLIENT_CLOSURE_REASON);
         } else if (CommandParameterUtil.is(commandParam, "reject")) {
@@ -293,7 +312,51 @@ public class ClientsApiResource {
             @FormDataParam("file") InputStream uploadedInputStream, @FormDataParam("file") FormDataContentDisposition fileDetail,
             @FormDataParam("locale") final String locale, @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = bulkImportWorkbookService.importWorkbook(legalFormType, uploadedInputStream, fileDetail, locale,
+                dateFormat, new HashMap<>(0));
+        return toApiJsonSerializer.serialize(importDocumentId);
+    }
+
+    @GET
+    @Path("cupoincrements/downloadtemplate")
+    @Produces("application/vnd.ms-excel")
+    public Response getClientCupoIncrementTemplate(@QueryParam("officeId") final Long officeId, @QueryParam("staffId") final Long staffId,
+            @QueryParam("dateFormat") final String dateFormat) {
+        return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.CLIENT_CUPO_INCREMENTS.toString(), officeId, staffId,
                 dateFormat);
+    }
+
+    @POST
+    @Path("cupoincrements/uploadtemplate")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @RequestBody(description = "Upload client template", content = {
+            @Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = @Schema(implementation = UploadRequest.class)) })
+    public String postClientCupoIncrementTemplate(@FormDataParam("file") final InputStream uploadedInputStream,
+            @FormDataParam("file") final FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
+            @FormDataParam("dateFormat") final String dateFormat) {
+        final Long importDocumentId = bulkImportWorkbookService.importWorkbook(GlobalEntityType.CLIENT_CUPO_INCREMENTS.toString(),
+                uploadedInputStream, fileDetail, locale, dateFormat, new HashMap<>(0));
+        return toApiJsonSerializer.serialize(importDocumentId);
+    }
+
+    @GET
+    @Path("cupodecrements/downloadtemplate")
+    @Produces("application/vnd.ms-excel")
+    public Response getClientCupoDecrementTemplate(@QueryParam("officeId") final Long officeId, @QueryParam("staffId") final Long staffId,
+            @QueryParam("dateFormat") final String dateFormat) {
+        return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.CLIENT_CUPO_DECREMENTS.toString(), officeId, staffId,
+                dateFormat);
+    }
+
+    @POST
+    @Path("cupodecrements/uploadtemplate")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @RequestBody(description = "Upload client template", content = {
+            @Content(mediaType = MediaType.MULTIPART_FORM_DATA, schema = @Schema(implementation = UploadRequest.class)) })
+    public String postClientCupoDecrementTemplate(@FormDataParam("file") final InputStream uploadedInputStream,
+            @FormDataParam("file") final FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
+            @FormDataParam("dateFormat") final String dateFormat) {
+        final Long importDocumentId = bulkImportWorkbookService.importWorkbook(GlobalEntityType.CLIENT_CUPO_DECREMENTS.toString(),
+                uploadedInputStream, fileDetail, locale, dateFormat, new HashMap<>(0));
         return toApiJsonSerializer.serialize(importDocumentId);
     }
 
@@ -317,6 +380,45 @@ public class ClientsApiResource {
             @ApiResponse(responseCode = "400", description = "Bad Request") })
     public String retrieveTransferTemplate(@PathParam("clientId") final Long clientId, @Context final UriInfo uriInfo) {
         return retrieveClientTransferTemplate(clientId, null);
+    }
+
+    @GET
+    @Path("{clientId}/clientblockingreason")
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve client blocking reason", description = "Retrieve client blocking reason")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientsApiResourceSwagger.GetClientBlockingReasonResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request") })
+    public String retrieveClientBlockingReasonData(@PathParam("clientId") final Long clientId) {
+        return retrieveClientBlockingReason(clientId);
+    }
+
+    @POST
+    @Path("clientblockingreason/unblock")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Undo block client with blocking reason", description = "Undo block client with blocking reason")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
+    public String unblockClientWithBlockingReason(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        final CommandWrapper commandRequest = new CommandWrapperBuilder() //
+                .unblockClientWithBlockingReason() //
+                .withJson(apiRequestBodyAsJson) //
+                .build(); //
+
+        final CommandProcessingResult result = commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return toApiJsonSerializer.serialize(result);
+    }
+
+    @GET
+    @Path("clientblockingreason/{blockingReasonId}")
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve all client with blocking reason", description = "Retrieve all client with blocking reason")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientsApiResourceSwagger.GetClientBlockingReasonResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request") })
+    public String retrieveAllClientWithBlockingReasonData(@PathParam("blockingReasonId") final Long blockingReasonId) {
+        return retrieveAllClientWithBlockingReason(blockingReasonId);
     }
 
     @GET
@@ -439,6 +541,23 @@ public class ClientsApiResource {
         return retrieveClientTransferTemplate(null, externalId);
     }
 
+    @GET
+    @Path("availablecupo/{nitId}")
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve client with available cupo", description = "Retrieve client with available cupo using the client NIT/Id")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientsApiResourceSwagger.GetClientAvailableCupoResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Bad Request") })
+    public String retriveClientAvailableCupo(@PathParam("nitId") final String nitId, @Context final UriInfo uriInfo) {
+        return retriveClientAvailableCupo(nitId);
+    }
+
+    @GET
+    @Path("availablecupo")
+    public String retriveClientAvailableCupo(@Context final UriInfo uriInfo) {
+        throw new ClientNotFoundException("Cedula/NIT necesario para obtener el cupo disponible");
+    }
+
     public String retrieveAll(final UriInfo uriInfo, final Long officeId, final String externalId, final String displayName,
             final String firstname, final String lastname, final String status, final String hierarchy, final Integer offset,
             final Integer limit, final String orderBy, final String sortOrder, final Boolean orphansOnly, final boolean isSelfUser) {
@@ -452,6 +571,7 @@ public class ClientsApiResource {
 
     private ClientData retrieveClientData(final Long clientId, final boolean staffInSelectedOfficeOnly, final boolean isTemplate) {
         ClientData clientData = clientReadPlatformService.retrieveOne(clientId);
+        final String secondLastname = clientData.getSecondLastname();
         if (isTemplate) {
             final ClientData templateData = clientReadPlatformService.retrieveTemplate(clientData.getOfficeId(), staffInSelectedOfficeOnly);
             clientData = ClientData.templateOnTop(clientData, templateData);
@@ -460,6 +580,7 @@ public class ClientsApiResource {
                 clientData = ClientData.templateWithSavingAccountOptions(clientData, savingAccountOptions);
             }
         }
+        clientData.setSecondLastname(secondLastname);
         return clientData;
     }
 
@@ -507,15 +628,32 @@ public class ClientsApiResource {
             commandRequest = builder.undoRejection(clientId).build();
         } else if (CommandParameterUtil.is(commandParam, "undoWithdrawal")) {
             commandRequest = builder.undoWithdrawal(clientId).build();
+        } else if (CommandParameterUtil.is(commandParam, "block")) {
+            commandRequest = builder.blockClient(clientId, "block").build();
+        } else if (CommandParameterUtil.is(commandParam, "undoBlock")) {
+            commandRequest = builder.undoBlockClient(clientId).build();
         }
 
         if (commandRequest == null) {
             throw new UnrecognizedQueryParamException("command", commandParam,
                     new Object[] { "activate", "unassignStaff", "assignStaff", "close", "proposeTransfer", "withdrawTransfer",
-                            "acceptTransfer", "rejectTransfer", "updateSavingsAccount", "reject", "withdraw", "reactivate" });
+                            "acceptTransfer", "rejectTransfer", "updateSavingsAccount", "reject", "withdraw", "reactivate", "block",
+                            "undoBlock" });
         }
 
         return commandRequest;
+    }
+
+    // create new GET method to retrieve maximum loan arrears days for a client
+    @GET
+    @Path("{clientId}/max-arrears-days")
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve client maximum loan arrears days", description = "Retrieve client maximum loan arrears days")
+    public String retrieveClientMaxArrearsDays(@PathParam("clientId") final String clientId) {
+        context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
+        final ClientMaximumLoanArrearsData clientMaximumLoanArrearsData = clientReadPlatformService
+                .retrieveClientMaximumLoanArrearsData(clientId);
+        return toApiJsonSerializer.serialize(clientMaximumLoanArrearsData);
     }
 
     private String retrieveClient(Long clientId, final String externalId, final boolean staffInSelectedOfficeOnly, final UriInfo uriInfo) {
@@ -596,4 +734,23 @@ public class ClientsApiResource {
         return toApiJsonSerializer.serialize(transferDate);
     }
 
+    private String retrieveClientBlockingReason(Long clientId) {
+        context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
+        final Collection<ClientBlockingReasonData> clientBlockingReasonData = clientBlockingReasonReadPlatformService
+                .retrieveClientBlockingReason(clientId);
+        return toApiJsonSerializer.serialize(clientBlockingReasonData);
+    }
+
+    private String retrieveAllClientWithBlockingReason(Long blockingReasonId) {
+        context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
+        final Collection<ClientBlockingReasonData> clientBlockingReasonData = clientBlockingReasonReadPlatformService
+                .retrieveAllClientWithBlockingReason(blockingReasonId);
+        return toApiJsonSerializer.serialize(clientBlockingReasonData);
+    }
+
+    private String retriveClientAvailableCupo(String nitId) {
+        context.authenticatedUser().validateHasReadPermission(ClientApiConstants.CLIENT_RESOURCE_NAME);
+        final List<ClientAvailableCupoFieldsData> cupoList = clientReadPlatformService.retriveClientAvailableCupo(nitId);
+        return this.toApiJsonSerializer.serialize(cupoList);
+    }
 }

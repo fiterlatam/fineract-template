@@ -118,7 +118,7 @@ public class ClientAllyDataValidator {
                 element);
         baseDataValidator.reset().parameter(ClientAllyApiConstants.accountTypeCodeValueIdParamName).value(accountTypeCodeValueId);
 
-        final Long accountNumber = this.fromApiJsonHelper.extractLongNamed(ClientAllyApiConstants.accountNumberParamName, element);
+        final String accountNumber = this.fromApiJsonHelper.extractStringNamed(ClientAllyApiConstants.accountNumberParamName, element);
         baseDataValidator.reset().parameter(ClientAllyApiConstants.accountNumberParamName).value(accountNumber);
 
         final Long taxProfileCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyApiConstants.taxProfileCodeValueIdParamName,
@@ -209,7 +209,7 @@ public class ClientAllyDataValidator {
                 element);
         baseDataValidator.reset().parameter(ClientAllyApiConstants.accountTypeCodeValueIdParamName).value(accountTypeCodeValueId);
 
-        final Long accountNumber = this.fromApiJsonHelper.extractLongNamed(ClientAllyApiConstants.accountNumberParamName, element);
+        final String accountNumber = this.fromApiJsonHelper.extractStringNamed(ClientAllyApiConstants.accountNumberParamName, element);
         baseDataValidator.reset().parameter(ClientAllyApiConstants.accountNumberParamName).value(accountNumber);
 
         final Long taxProfileCodeValueId = this.fromApiJsonHelper.extractLongNamed(ClientAllyApiConstants.taxProfileCodeValueIdParamName,

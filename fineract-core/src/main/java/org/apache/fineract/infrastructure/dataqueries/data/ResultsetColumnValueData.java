@@ -28,11 +28,11 @@ public class ResultsetColumnValueData implements Serializable {
     private final int id;
     private final String value;
     @SuppressWarnings("unused")
-    private final Integer score;
+    private final String score;
 
     private final Integer parentId;
 
-    public ResultsetColumnValueData(final Integer id, final String value, final Integer score, final Integer parentId) {
+    public ResultsetColumnValueData(final Integer id, final String value, final String score, final Integer parentId) {
         this.id = id;
         this.value = value;
         this.score = score;

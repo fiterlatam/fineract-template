@@ -1,6 +1,6 @@
 package org.apache.fineract.custom.portfolio.buyprocess.validator.chain.step;
 
-import org.apache.fineract.custom.portfolio.buyprocess.domain.ChannelMessageRepository;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelMessageRepository;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
 import org.apache.fineract.custom.portfolio.buyprocess.enumerator.ClientBuyProcessValidatorEnum;
 import org.apache.fineract.custom.portfolio.buyprocess.validator.chain.BuyProcessAbstractStepProcessor;

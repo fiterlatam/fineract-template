@@ -18,14 +18,23 @@
  */
 package org.apache.fineract.portfolio.client.service;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import jakarta.persistence.PersistenceException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -33,9 +42,14 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandProcessingService;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
+import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormat;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
+import org.apache.fineract.infrastructure.clientblockingreasons.exception.BlockReasonSettingNotFoundException;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -44,6 +58,7 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -62,9 +77,14 @@ import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.organisation.staff.domain.StaffRepositoryWrapper;
 import org.apache.fineract.portfolio.address.service.AddressWritePlatformService;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
+import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientDataValidator;
 import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
 import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.domain.ClientBlockList;
+import org.apache.fineract.portfolio.client.domain.ClientBlockListRepository;
+import org.apache.fineract.portfolio.client.domain.ClientBlockingReason;
+import org.apache.fineract.portfolio.client.domain.ClientBlockingReasonRepositoryWrapper;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.client.domain.ClientNonPerson;
 import org.apache.fineract.portfolio.client.domain.ClientNonPersonRepositoryWrapper;
@@ -74,14 +94,16 @@ import org.apache.fineract.portfolio.client.domain.LegalForm;
 import org.apache.fineract.portfolio.client.exception.ClientActiveForUpdateException;
 import org.apache.fineract.portfolio.client.exception.ClientHasNoStaffException;
 import org.apache.fineract.portfolio.client.exception.ClientMustBePendingToBeDeletedException;
+import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
 import org.apache.fineract.portfolio.client.exception.InvalidClientSavingProductException;
 import org.apache.fineract.portfolio.client.exception.InvalidClientStateTransitionException;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepository;
 import org.apache.fineract.portfolio.group.exception.GroupMemberCountNotInPermissibleRangeException;
 import org.apache.fineract.portfolio.group.exception.GroupNotFoundException;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.insurance.domain.*;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanBlockingReasonNotFoundException;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountDataDTO;
@@ -124,6 +146,15 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     private final BusinessEventNotifierService businessEventNotifierService;
     private final EntityDatatableChecksWritePlatformService entityDatatableChecksWritePlatformService;
     private final ExternalIdFactory externalIdFactory;
+    private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
+    private final ClientBlockingReasonRepositoryWrapper clientBlockingReasonRepositoryWrapper;
+    private final ClientBlockListRepository clientBlockListRepository;
+    private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final ClientReadPlatformService clientReadPlatformService;
+    private final LoanBlockingReasonRepository loanBlockingReasonRepository;
+    private final LoanRepository loanRepository;
+    private final InsuranceIncidentRepository insuranceIncidentRepository;
+    private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
 
     @Transactional
     @Override
@@ -254,6 +285,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final String firstname = command.stringValueOfParameterNamed(ClientApiConstants.firstnameParamName);
             final String middlename = command.stringValueOfParameterNamed(ClientApiConstants.middlenameParamName);
             final String lastname = command.stringValueOfParameterNamed(ClientApiConstants.lastnameParamName);
+            final String secondLastname = command.stringValueOfParameterNamed(ClientApiConstants.secondLastnameParamName);
             final String fullname = command.stringValueOfParameterNamed(ClientApiConstants.fullnameParamName);
             final boolean isStaff = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isStaffParamName);
             final LocalDate dataOfBirth = command.localDateValueOfParameterNamed(ClientApiConstants.dateOfBirthParamName);
@@ -287,7 +319,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                     lastname, fullname, activationDate, officeJoiningDate, externalId, mobileNo, emailAddress, staff, submittedOnDate,
                     savingsProductId, savingsAccountId, dataOfBirth, gender, clientType, clientClassification, legalForm.getValue(),
                     isStaff);
-
+            newClient.setSecondLastname(secondLastname);
             this.clientRepository.saveAndFlush(newClient);
             boolean rollbackTransaction = false;
             if (newClient.isActive()) {
@@ -324,9 +356,76 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             }
 
             if (command.parameterExists(ClientApiConstants.datatables)) {
-                this.entityDatatableChecksWritePlatformService.saveDatatables(StatusEnum.CREATE.getCode().longValue(),
-                        EntityTables.CLIENT.getName(), newClient.getId(), null,
-                        command.arrayOfParameterNamed(ClientApiConstants.datatables));
+
+                try {
+                    this.entityDatatableChecksWritePlatformService.saveDatatables(StatusEnum.CREATE.getCode().longValue(),
+                            EntityTables.CLIENT.getName(), newClient.getId(), null,
+                            command.arrayOfParameterNamed(ClientApiConstants.datatables));
+                } catch (PlatformDataIntegrityException e) {
+                    final Throwable realCause = e.getCause();
+                    final String exceptionMessage = e.getMessage();
+                    final String realCauseMessage = realCause != null ? realCause.getMessage() : exceptionMessage;
+                    log.error("Error occurred: " + realCauseMessage, realCauseMessage);
+                    if (realCauseMessage
+                            .contains("ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_empresas_nit\"")
+                            || exceptionMessage.contains(
+                                    "ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_empresas_nit\"")) {
+                        final JsonArray datatables = command.arrayOfParameterNamed(ClientApiConstants.datatables);
+                        String nit = getNitString(datatables);
+                        throw new GeneralPlatformDomainRuleException("error.msg.entity.datatable.check.duplicate.entry.nit.already.exist",
+                                "Duplicate entry exist with the provided NIT", nit);
+                    } else if (realCauseMessage
+                            .contains("ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_personax_Cedula\"")
+                            || exceptionMessage.contains(
+                                    "ERROR: duplicate key value violates unique constraint \"unique_campos_cliente_personax_Cedula\"")) {
+                        final JsonArray datatables = command.arrayOfParameterNamed(ClientApiConstants.datatables);
+                        String cedula = getCedulaString(datatables);
+                        throw new GeneralPlatformDomainRuleException(
+                                "error.msg.entity.datatable.check.duplicate.entry.cedula.already.exist",
+                                "Duplicate entry exist with the provided Cedula", cedula);
+                    }
+                    throw e;
+                }
+                final Long clientId = newClient.getId();
+                final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
+                        .retrieveClientAdditionalData(clientId);
+                if (loanAdditionalFieldsData != null) {
+                    String idType;
+                    String idNumber;
+                    if (LegalForm.PERSON.getValue().equals(newClient.getLegalForm())) {
+                        idNumber = loanAdditionalFieldsData.getCedula();
+                        idType = "CEDULA";
+                    } else {
+                        idNumber = loanAdditionalFieldsData.getNit();
+                        idType = "NIT";
+                        if (StringUtils.isNotBlank(loanAdditionalFieldsData.getTipo())) {
+                            idType = loanAdditionalFieldsData.getTipo().toUpperCase();
+                        }
+                    }
+                    Optional<ClientBlockList> optionalBlockedClient = this.clientBlockListRepository.findByIdNumberAndIdType(idNumber,
+                            idType);
+                    if (optionalBlockedClient.isPresent()) {
+                        JsonObject jsonObject = new JsonObject();
+                        jsonObject.addProperty("blockedOnDate", command.stringValueOfParameterNamed("submittedOnDate"));
+                        jsonObject.addProperty("dateFormat", command.dateFormat());
+                        jsonObject.addProperty("locale", command.locale());
+                        final Optional<BlockingReasonSetting> listasDeControlBlockingReason = blockingReasonSettingsRepositoryWrapper
+                                .getBlockingReasonSettingByReason("LISTAS DE CONTROL", "CLIENT").stream().findFirst();
+                        if (listasDeControlBlockingReason.isPresent()) {
+                            final BlockingReasonSetting blockingReasonSetting = listasDeControlBlockingReason.get();
+                            jsonObject.addProperty("blockingReasonId", blockingReasonSetting.getId());
+                            jsonObject.addProperty("blockingComment", blockingReasonSetting.getDescription());
+                            final String payload = jsonObject.toString();
+                            final CommandWrapper commandRequest = new CommandWrapperBuilder().blockClient(clientId, "blockList")
+                                    .withJson(payload).build();
+                            try {
+                                commandsSourceWritePlatformService.logCommandSource(commandRequest);
+                            } catch (Exception ex) {
+                                log.error("Error in blocking a client", ex);
+                            }
+                        }
+                    }
+                }
             }
 
             legalForm = LegalForm.fromInt(newClient.getLegalForm());
@@ -356,6 +455,48 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             handleDataIntegrityIssues(command, throwable, dve);
             return CommandProcessingResult.empty();
         }
+    }
+
+    public static String getNitString(JsonArray datatables) {
+        String nit = "";
+        if (datatables != null && !datatables.isEmpty()) {
+            for (JsonElement datatable : datatables) {
+                JsonObject datatableObject = datatable.getAsJsonObject();
+                if (datatableObject.has("data")) {
+                    final JsonElement data = datatableObject.get("data");
+                    if (data.isJsonObject()) {
+                        JsonObject dataObject = data.getAsJsonObject();
+                        if (dataObject.has("NIT")) {
+                            nit = dataObject.get("NIT").getAsString();
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        return nit;
+    }
+
+    public static String getCedulaString(JsonArray datatables) {
+        String nit = "";
+        if (datatables != null && !datatables.isEmpty()) {
+            for (JsonElement datatable : datatables) {
+                JsonObject datatableObject = datatable.getAsJsonObject();
+                if (datatableObject.has("data")) {
+                    final JsonElement data = datatableObject.get("data");
+                    if (data.isJsonObject()) {
+                        JsonObject dataObject = data.getAsJsonObject();
+                        if (dataObject.has("Cedula")) {
+                            nit = dataObject.get("Cedula").getAsString();
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        return nit;
     }
 
     /**
@@ -463,6 +604,12 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.lastnameParamName);
                 changes.put(ClientApiConstants.lastnameParamName, newValue);
                 clientForUpdate.setLastname(StringUtils.defaultIfEmpty(newValue, null));
+            }
+
+            if (command.isChangeInStringParameterNamed(ClientApiConstants.secondLastnameParamName, clientForUpdate.getSecondLastname())) {
+                final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.secondLastnameParamName);
+                changes.put(ClientApiConstants.secondLastnameParamName, newValue);
+                clientForUpdate.setSecondLastname(StringUtils.defaultIfEmpty(newValue, null));
             }
 
             if (command.isChangeInStringParameterNamed(ClientApiConstants.fullnameParamName, clientForUpdate.getFullname())) {
@@ -897,6 +1044,112 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         }
     }
 
+    @Transactional
+    @Override
+    public CommandProcessingResult blockClient(final Long clientId, final JsonCommand command) {
+        try {
+            final AppUser currentUser = this.context.authenticatedUser();
+            this.fromApiJsonDeserializer.validateBlock(command);
+            final Client client = this.clientRepository.findOneWithNotFoundDetection(clientId);
+            final LocalDate blockedOnDate = command.localDateValueOfParameterNamed(ClientApiConstants.blockedOnDateParamName);
+            final Long blockingReasonId = command.longValueOfParameterNamed(ClientApiConstants.blockingReasonIdParamName);
+            final String blockingComment = command.stringValueOfParameterNamed(ClientApiConstants.blockingCommentParamName);
+            final BlockingReasonSetting blockingReason = this.blockingReasonSettingsRepositoryWrapper
+                    .findOneWithNotFoundDetection(blockingReasonId);
+
+            final ClientBlockingReason clientBlockingReason = blockClient(client, blockedOnDate, blockingComment, blockingReason,
+                    currentUser);
+            // Death ... Block all active loans
+            if (blockingReason.getNameOfReason().equals("FALLECIMIENTO")) {
+                List<Loan> activeLoans = this.loanRepository.findActiveLoansByClientId(clientId);
+                BlockingReasonSetting loanBlockingReasonSetting = this.blockingReasonSettingsRepositoryWrapper
+                        .getSingleBlockingReasonSettingByReason("FALLECIMIENTO", BlockLevel.CREDIT.toString());
+
+                InsuranceIncident incident = this.insuranceIncidentRepository.findByIncidentType(InsuranceIncidentType.DEATH_CANCELLATION);
+
+                for (Loan loan : activeLoans) {
+                    final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, loanBlockingReasonSetting,
+                            "FALLECIMIENTO", DateUtils.getLocalDateOfTenant());
+                    loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
+                    loan.getLoanCustomizationDetail().setBlockStatus(loanBlockingReasonSetting);
+                    this.loanRepository.saveAndFlush(loan);
+
+                    for (LoanCharge loanCharge : loan.getInsuranceChargesForNoveltyIncidentReporting(incident.isMandatory(),
+                            incident.isVoluntary())) {
+                        if ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
+                                || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
+                            if (loanCharge.getAmountOutstanding(loan.getCurrency()).isGreaterThanZero()) {
+                                InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan,
+                                        loanCharge, 0, incident, loan.getClosedOnDate(), BigDecimal.ZERO);
+                                this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return new CommandProcessingResultBuilder() //
+                    .withCommandId(command.commandId()) //
+                    .withClientId(clientId) //
+                    .withEntityId(clientBlockingReason.getId()) //
+                    .withEntityExternalId(client.getExternalId()) //
+                    .build();
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }
+    }
+
+    private ClientBlockingReason blockClient(final Client client, LocalDate blockedOnDate, String blockingComment,
+            BlockingReasonSetting blockingReason, AppUser currentUser) {
+        if (client.isNotPending() && DateUtils.isAfter(client.getActivationDate(), blockedOnDate)) {
+            final String errorMessage = "The client blockedOnDate cannot be before the client ActivationDate.";
+            throw new InvalidClientStateTransitionException("block", "date.cannot.before.client.activation.date", errorMessage,
+                    blockedOnDate, client.getActivationDate());
+        }
+
+        ClientBlockingReason clientBlockingReason = ClientBlockingReason.instance(client.getId(), blockingReason.getId(),
+                currentUser.getId(), blockedOnDate, blockingComment, currentUser.getId());
+        this.clientBlockingReasonRepositoryWrapper.saveAndFlush(clientBlockingReason);
+
+        if (client.isBlocked() && client.getBlockingReason().getPriority() < blockingReason.getPriority()) {
+            client.block(blockingReason);
+        }
+
+        if (!client.isBlocked()) {
+            client.block(blockingReason);
+        }
+
+        this.clientRepository.saveAndFlush(client);
+
+        return clientBlockingReason;
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult undoBlockClient(final Long clientId, final JsonCommand command) {
+        try {
+            final AppUser currentUser = this.context.authenticatedUser();
+            this.fromApiJsonDeserializer.validateUndoBlock(command);
+            final Client client = this.clientRepository.findOneWithNotFoundDetection(clientId);
+            final LocalDate undoBlockedOnDate = command.localDateValueOfParameterNamed(ClientApiConstants.undoBlockedOnDateParamName);
+            final String undoBlockingComment = command.stringValueOfParameterNamed(ClientApiConstants.undoBlockingCommentParamName);
+            final Long blockingReasonId = command.longValueOfParameterNamed(ClientApiConstants.blockingReasonIdParamName);
+
+            unblockClientBlockingReason(currentUser, client, undoBlockedOnDate, blockingReasonId, undoBlockingComment);
+
+            return new CommandProcessingResultBuilder() //
+                    .withCommandId(command.commandId()) //
+                    .withClientId(clientId) //
+                    .withEntityId(blockingReasonId) //
+                    .withEntityExternalId(client.getExternalId()) //
+                    .build();
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }
+    }
+
     @Override
     public CommandProcessingResult updateDefaultSavingsAccount(final Long clientId, final JsonCommand command) {
 
@@ -1030,6 +1283,11 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         final Client client = this.clientRepository.findOneWithNotFoundDetection(entityId);
         final LocalDate reactivateDate = command.localDateValueOfParameterNamed(ClientApiConstants.reactivationDateParamName);
 
+        if (client.isClosed()) {
+            final String errorMessage = "Closed clients cannot reactivated.";
+            throw new InvalidClientStateTransitionException("reactivation", "on.closed.account", errorMessage);
+        }
+
         if (!client.isClosed()) {
             final String errorMessage = "only closed clients may be reactivated.";
             throw new InvalidClientStateTransitionException("reactivation", "on.nonclosed.account", errorMessage);
@@ -1101,5 +1359,237 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 .withEntityId(entityId) //
                 .withEntityExternalId(client.getExternalId()) //
                 .build();
+    }
+
+    @Override
+    public CommandProcessingResult blockListOfClients(Long clientId, JsonCommand command) {
+        try {
+            final AppUser currentUser = this.context.authenticatedUser();
+            final Optional<Client> optionalClient = this.clientRepository.findById(clientId);
+            Client client;
+
+            if (optionalClient.isPresent()) {
+                client = optionalClient.get();
+            } else {
+                throw new ClientNotFoundException("Cliente con id " + clientId + " no encontrada");
+            }
+
+            final LocalDate blockedOnDate = command.localDateValueOfParameterNamed(ClientApiConstants.blockedOnDateParamName);
+            final Long blockingReasonId = command.longValueOfParameterNamed(ClientApiConstants.blockingReasonIdParamName);
+            final String blockingComment = command.stringValueOfParameterNamed(ClientApiConstants.blockingCommentParamName);
+
+            final Optional<BlockingReasonSetting> blockingReasonOptional = this.blockingReasonSettingsRepositoryWrapper
+                    .findById(blockingReasonId);
+
+            BlockingReasonSetting blockingReason;
+            if (blockingReasonOptional.isPresent()) {
+                blockingReason = blockingReasonOptional.get();
+            } else {
+                throw new BlockReasonSettingNotFoundException("Razón de bloqueo con id " + blockingReasonId + " no encontrada");
+            }
+
+            if (client.isNotPending() && DateUtils.isAfter(client.getActivationDate(), blockedOnDate)) {
+                final String errorMessage = "El cliente bloqueadoOnDate no puede ser anterior al cliente ActivationDate.";
+                throw new InvalidClientStateTransitionException("block", "date.cannot.before.client.activation.date", errorMessage,
+                        blockedOnDate, client.getActivationDate());
+            }
+
+            final LegalForm legalForm = LegalForm.fromInt(client.getLegalForm());
+            entityDatatableChecksWritePlatformService.runTheCheck(clientId, EntityTables.CLIENT.getName(), StatusEnum.CLOSE.getCode(),
+                    EntityTables.CLIENT.getForeignKeyColumnNameOnDatatable(), legalForm.getLabel());
+
+            ClientBlockingReason clientBlockingReason = blockClient(client, blockedOnDate, blockingComment, blockingReason, currentUser);
+
+            return new CommandProcessingResultBuilder() //
+                    .withCommandId(command.commandId()) //
+                    .withClientId(clientId) //
+                    .withEntityId(clientBlockingReason.getId()) //
+                    .withEntityExternalId(client.getExternalId()) //
+                    .build();
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }
+    }
+
+    private void removeClientFromListasDeControl(final Optional<BlockingReasonSetting> listasDeControlBlockingReason,
+            final Long blockingReasonId, final Long clientId) {
+
+        if (listasDeControlBlockingReason.isPresent() && listasDeControlBlockingReason.get().getId().equals(blockingReasonId)) {
+            Optional<ClientBlockList> clientBlockingListItem = this.clientBlockListRepository.findByClientId(clientId);
+
+            clientBlockingListItem.ifPresent(clientBlockListRepository::delete);
+        }
+
+    }
+
+    @Transactional
+    @Override
+    public void blockClientWithInActiveLoan(final Long clientId, final String blockingReasonSetting, final String blockingComment,
+            final boolean withException) {
+        final AppUser currentUser = context.authenticatedUser();
+
+        final LocalDate blockedOnDate = DateUtils.getBusinessLocalDate();
+        final BlockingReasonSetting blockReasonSetting = blockingReasonSettingsRepositoryWrapper
+                .getSingleBlockingReasonSettingByReason(blockingReasonSetting, BlockLevel.CLIENT.toString());
+
+        final Optional<ClientBlockingReason> blockingReason = this.clientBlockingReasonRepositoryWrapper
+                .findClientBlockingReason(clientId, blockReasonSetting.getId()).stream().findFirst();
+
+        if (blockingReason.isPresent()) {
+            if (withException) {
+                throw new GeneralPlatformDomainRuleException("error.msg.client.blocking.reason.already.exists",
+                        "Client is already blocked with blocking reason");
+            }
+            return;
+        }
+
+        final Client client = clientRepository.findOneWithNotFoundDetection(clientId);
+
+        blockClient(client, blockedOnDate, blockingComment, blockReasonSetting, currentUser);
+
+    }
+
+    @Override
+    public void unblockClientBlockingReason(final AppUser currentUser, final Client client, final LocalDate unblockDate,
+            final Long blockingReasonId, final String unblockComment) {
+        final Optional<BlockingReasonSetting> listasDeControlBlockingReason = blockingReasonSettingsRepositoryWrapper
+                .getBlockingReasonSettingByReason("LISTAS DE CONTROL", "CLIENT").stream().findFirst();
+
+        List<ClientBlockingReason> clientBlockingReason = this.clientBlockingReasonRepositoryWrapper
+                .findClientBlockingReason(client.getId(), blockingReasonId);
+
+        if (!clientBlockingReason.isEmpty()) {
+            for (ClientBlockingReason item : clientBlockingReason) {
+                validateUnblockDate(item.getBlockDate(), unblockDate);
+                item.updateAfterUnblock(unblockDate, unblockComment, currentUser.getId());
+                clientBlockingReasonRepositoryWrapper.save(item);
+                removeClientFromListasDeControl(listasDeControlBlockingReason, item.getBlockingReasonId(), client.getId());
+            }
+        }
+
+        List<ClientBlockingReason> remainingClientBlockingReason = this.clientBlockingReasonRepositoryWrapper
+                .findClientBlockingReasonByClientId(client.getId());
+        if (remainingClientBlockingReason.isEmpty()) {
+            client.undoBlock();
+            this.clientRepository.saveAndFlush(client);
+        }
+    }
+
+    private void validateUnblockDate(final LocalDate blockDate, final LocalDate unblockDate) {
+        if (DateUtils.isAfter(blockDate, unblockDate)) {
+            final String errorMessage = "The client undoBlockedOnDate cannot be before the client blockedOnDate.";
+            throw new InvalidClientStateTransitionException("undoBlock", "date.cannot.before.client.blockedOnDate.date", errorMessage,
+                    unblockDate, blockDate);
+        }
+    }
+
+    @Transactional
+    @Override
+    public CommandProcessingResult unblockClientMassively(JsonCommand command) {
+        try {
+            final AppUser currentUser = this.context.authenticatedUser();
+            this.fromApiJsonDeserializer.validateUnblockClientMassively(command);
+
+            final LocalDate unblockDate = command.localDateValueOfParameterNamed("unblockDate");
+            final Long blockingReasonId = command.longValueOfParameterNamed("blockingReasonId");
+            final String unblockComment = command.stringValueOfParameterNamed("unblockComment");
+            final Set<String> clientIds = new HashSet<>(Arrays.asList(command.arrayValueOfParameterNamed("clientId")));
+            final BlockingReasonSetting blockingReason = this.blockingReasonSettingsRepositoryWrapper
+                    .findOneWithNotFoundDetection(blockingReasonId);
+
+            final Set<Long> clientIdsLong = new HashSet<>();
+            for (String str : clientIds) {
+                long number = Long.parseLong(str);
+                clientIdsLong.add(number);
+            }
+
+            final List<Client> clients = this.clientRepository.findAll(clientIdsLong);
+            for (Client client : clients) {
+                unblockClientBlockingReason(currentUser, client, unblockDate, blockingReasonId, unblockComment);
+                unblockCreaditLoanisPresent(currentUser, client, blockingReason.getNameOfReason(), unblockDate, unblockComment);
+            }
+
+            return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }
+
+    }
+
+    public void unblockCreaditLoanisPresent(final AppUser currentUser, final Client client, final String Reason,
+            final LocalDate unblockDate, final String unblockComment) {
+        final Optional<BlockingReasonSetting> listBlockingReasonCreaditClient = blockingReasonSettingsRepositoryWrapper
+                .getBlockingReasonSettingByReason(Reason, "CREDIT").stream().findFirst();
+        if (listBlockingReasonCreaditClient.isPresent()) {
+            final String[] loanBlockIds;
+            loanBlockIds = new String[] { "" + listBlockingReasonCreaditClient.get().getId() };
+            final List<Loan> allLoans = this.loanRepositoryWrapper.findLoanByClientId(client.getId());
+            for (Loan clientloan : allLoans) {
+                Optional<LoanBlockingReason> blockingReason = this.loanBlockingReasonRepository
+                        .findExistingBlockingReason(clientloan.getId(), listBlockingReasonCreaditClient.get().getId());
+                if (blockingReason.isPresent()) {
+                    LoanBlockingReason loanBlockingReason = this.loanBlockingReasonRepository
+                            .findExistingBlockingReason(clientloan.getId(), listBlockingReasonCreaditClient.get().getId())
+                            .orElseThrow(() -> new LoanBlockingReasonNotFoundException(clientloan.getId(),
+                                    listBlockingReasonCreaditClient.get().getId()));
+                    handleDelete(loanBlockingReason, unblockDate, currentUser, unblockComment);
+                    final BlockingReasonSetting blockingReasonSetting = clientloan.getLoanCustomizationDetail().getBlockStatus();
+                    if (blockingReasonSetting != null) {
+                        // Check if the loan is still blocked
+                        if (blockingReasonSetting.equals(loanBlockingReason.getBlockingReasonSetting())) {
+                            clientloan.getLoanCustomizationDetail().setBlockStatus(null);
+                        }
+                    }
+
+                    if (clientloan.getLoanCustomizationDetail().getBlockStatus() == null) {
+                        Collection<LoanBlockingReason> loanBlockingReasonCollection = this.loanBlockingReasonRepository
+                                .findAllActiveByLoanId(clientloan.getId());
+                        if (loanBlockingReasonCollection.size() > 0) {
+                            final Optional<LoanBlockingReason> highestPriorityReason = loanBlockingReasonCollection.stream()
+                                    .filter(LoanBlockingReason::isActive)
+                                    .sorted(Comparator.comparingInt(t -> t.getBlockingReasonSetting().getPriority())).findFirst();
+
+                            if (highestPriorityReason.isPresent()) {
+                                clientloan.getLoanCustomizationDetail()
+                                        .setBlockStatus(highestPriorityReason.get().getBlockingReasonSetting());
+                            }
+                        }
+                    }
+                    this.loanRepository.save(clientloan);
+                    this.loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
+                }
+
+            }
+
+        }
+    }
+
+    private void handleDelete(final LoanBlockingReason blockingReason, final LocalDate unblockDate, final AppUser currentUser,
+            final String comment) {
+        if (DateUtils.isAfter(blockingReason.getBlockDate(), unblockDate)) {
+            final String errorMessage = "The loan unblock date cannot be before the loan block date.";
+            throw new InvalidClientStateTransitionException("undoBlock", "date.cannot.before.loan.blockedOnDate.date", errorMessage,
+                    unblockDate, blockingReason.getBlockDate());
+        }
+        blockingReason.setActive(false);
+        blockingReason.setDeactivatedBy(currentUser);
+        blockingReason.setUnblockComment(comment);
+        blockingReason.setDeactivatedOn(unblockDate);
+    }
+
+    @Override
+    public void unblockClientBlockingReason(Long clientId, LocalDate unblockDate, String blockingReasonName, String unblockComment) {
+
+        final AppUser currentUser = context.authenticatedUser();
+
+        final BlockingReasonSetting blockReasonSetting = blockingReasonSettingsRepositoryWrapper
+                .getSingleBlockingReasonSettingByReason(blockingReasonName, BlockLevel.CLIENT.toString());
+
+        final Client client = clientRepository.findOneWithNotFoundDetection(clientId);
+
+        unblockClientBlockingReason(currentUser, client, unblockDate, blockReasonSetting.getId(), unblockComment);
+
     }
 }

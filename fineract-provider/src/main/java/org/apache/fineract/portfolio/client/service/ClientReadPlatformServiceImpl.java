@@ -1,24 +1,21 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements. See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.fineract.portfolio.client.service;
 
 import java.math.BigDecimal;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -29,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -50,6 +48,7 @@ import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksReadService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.office.service.OfficeReadPlatformService;
 import org.apache.fineract.organisation.staff.data.StaffData;
@@ -57,11 +56,7 @@ import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
 import org.apache.fineract.portfolio.address.data.AddressData;
 import org.apache.fineract.portfolio.address.service.AddressReadPlatformService;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
-import org.apache.fineract.portfolio.client.data.ClientCollateralManagementData;
-import org.apache.fineract.portfolio.client.data.ClientData;
-import org.apache.fineract.portfolio.client.data.ClientFamilyMembersData;
-import org.apache.fineract.portfolio.client.data.ClientNonPersonData;
-import org.apache.fineract.portfolio.client.data.ClientTimelineData;
+import org.apache.fineract.portfolio.client.data.*;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
@@ -72,11 +67,15 @@ import org.apache.fineract.portfolio.client.mapper.ClientMapper;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagementRepositoryWrapper;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
+import org.apache.fineract.portfolio.loanproduct.data.AdvanceQuotaConfigurationData;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
+import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.savings.data.SavingsProductData;
 import org.apache.fineract.portfolio.savings.service.SavingsProductReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -107,6 +106,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
     private final ConfigurationDomainService configurationDomainService;
     private final ClientRepositoryWrapper clientRepositoryWrapper;
     private final ClientMapper clientMapper;
+    private final LoanProductReadPlatformService loanProductReadPlatformService;
 
     @Override
     public ClientData retrieveTemplate(final Long officeId, final boolean staffInSelectedOfficeOnly) {
@@ -180,17 +180,11 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         final String userOfficeHierarchy = this.context.officeHierarchy();
         final String underHierarchySearchString = userOfficeHierarchy + "%";
         final String appUserID = String.valueOf(context.authenticatedUser().getId());
-
-        // if (searchParameters.isScopedByOfficeHierarchy()) {
-        // this.context.validateAccessRights(searchParameters.getHierarchy());
-        // underHierarchySearchString = searchParameters.getHierarchy() + "%";
-        // }
         List<Object> paramList = new ArrayList<>(Arrays.asList(underHierarchySearchString, underHierarchySearchString));
         final StringBuilder sqlBuilder = new StringBuilder(200);
         sqlBuilder.append("select " + sqlGenerator.calcFoundRows() + " ");
         sqlBuilder.append(this.clientToDataMapper.schema());
         sqlBuilder.append(" where (o.hierarchy like ? or transferToOffice.hierarchy like ?) ");
-
         if (searchParameters != null) {
             if (searchParameters.isSelfUser()) {
                 sqlBuilder.append(
@@ -198,7 +192,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                 paramList.add(appUserID);
             }
 
-            final String extraCriteria = buildSqlStringFromClientCriteria(this.clientToDataMapper.schema(), searchParameters, paramList);
+            final String extraCriteria = buildSqlStringFromClientCriteria(searchParameters, paramList);
 
             if (StringUtils.isNotBlank(extraCriteria)) {
                 sqlBuilder.append(" and (").append(extraCriteria).append(")");
@@ -225,7 +219,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), paramList.toArray(), this.clientToDataMapper);
     }
 
-    private String buildSqlStringFromClientCriteria(String schemaSql, final SearchParameters searchParameters, List<Object> paramList) {
+    private String buildSqlStringFromClientCriteria(final SearchParameters searchParameters, List<Object> paramList) {
 
         final Long officeId = searchParameters.getOfficeId();
         final String externalId = searchParameters.getExternalId();
@@ -246,8 +240,6 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         }
 
         if (displayName != null) {
-            // extraCriteria += " and concatcoalesce(c.firstname, ''),
-            // if(c.firstname > '',' ', '') , coalesce(c.lastname, '')) like "
             paramList.add("%" + displayName + "%");
             extraCriteria += " and c.display_name like ? ";
         }
@@ -276,6 +268,10 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             extraCriteria += " and c.id NOT IN (select client_id from m_group_client) ";
         }
 
+        if (searchParameters.isClientHasActiveLoans()) {
+            extraCriteria += " AND ((SELECT COUNT(*) FROM m_loan ml WHERE ml.loan_status_id = 300 AND ml.client_id = c.id) > 0) ";
+        }
+
         if (StringUtils.isNotBlank(extraCriteria)) {
             extraCriteria = extraCriteria.substring(4);
         }
@@ -289,7 +285,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final String hierarchySearchString = hierarchy + "%";
 
             final Client client = clientRepositoryWrapper.getClientByClientIdAndHierarchy(clientId, hierarchySearchString);
-            final ClientData clientData = clientMapper.map(client);
+            ClientData clientData = clientMapper.map(client);
 
             // Get client collaterals
             final Collection<ClientCollateralManagement> clientCollateralManagements = this.clientCollateralManagementRepositoryWrapper
@@ -311,7 +307,51 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final Collection<GroupGeneralData> parentGroups = this.jdbcTemplate.query(clientGroupsSql, this.clientGroupsMapper, // NOSONAR
                     clientId);
 
-            return ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet);
+            clientData = ClientData.setParentGroups(clientData, parentGroups, clientCollateralManagementDataSet);
+            clientData.setSecondLastname(client.getSecondLastname());
+
+            final ClientAdditionalFieldsData loanAdditionalFieldsData = this.retrieveClientAdditionalData(clientId);
+            final BigDecimal cupo = ObjectUtils.defaultIfNull(loanAdditionalFieldsData.getCupo(), BigDecimal.ZERO);
+            clientData.setCupoMaxAmount(cupo);
+            final String baseSQL = """
+                        SELECT
+                        	COALESCE(SUM(ml.principal_outstanding_derived),0) AS totalOutstandingPrincipalAmount
+                        FROM m_loan ml
+                        INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                        LEFT JOIN m_code_value mcv ON mcv.id = mpl.product_type
+                        WHERE ml.loan_status_id = 300 AND ml.client_id = ? AND mpl.use_other_loans_cupo = ?
+                    """;
+            BigDecimal totalOutstandingPrincipalAmount = ObjectUtils
+                    .defaultIfNull(this.jdbcTemplate.queryForObject(baseSQL, BigDecimal.class, clientId, false), BigDecimal.ZERO);
+            if (totalOutstandingPrincipalAmount.compareTo(BigDecimal.ZERO) < 0) {
+                totalOutstandingPrincipalAmount = totalOutstandingPrincipalAmount.abs();
+            }
+
+            final BigDecimal cupoBalance = cupo.subtract(totalOutstandingPrincipalAmount);
+            clientData.setCupoBalance(cupoBalance);
+            AdvanceQuotaConfigurationData advanceQuotaConfigurationData = this.loanProductReadPlatformService
+                    .retrieveAdvanceQuotaConfigurationData();
+            BigDecimal advanceCupoBalance = cupoBalance;
+            if (advanceQuotaConfigurationData.getEnabled()) {
+                final String advanceSQL = baseSQL + " AND mpl.is_advance = TRUE";
+                final BigDecimal advanceOutstandingPrincipalAmount = ObjectUtils
+                        .defaultIfNull(this.jdbcTemplate.queryForObject(advanceSQL, BigDecimal.class, clientId, false), BigDecimal.ZERO);
+                final BigDecimal percentageValue = advanceQuotaConfigurationData.getPercentageValue();
+                final BigDecimal advanceCupo = ObjectUtils.defaultIfNull(percentageValue, BigDecimal.ZERO).multiply(cupo)
+                        .divide(BigDecimal.valueOf(100), MoneyHelper.getRoundingMode());
+                advanceCupoBalance = advanceCupo.subtract(advanceOutstandingPrincipalAmount);
+            }
+            clientData.setAdvanceCupoBalance(advanceCupoBalance);
+            clientData.setIdNumber(ObjectUtils.defaultIfNull(loanAdditionalFieldsData.getNit(), loanAdditionalFieldsData.getCedula()));
+
+            final BigDecimal otherLoansCupo = loanAdditionalFieldsData.getOtherLoansCupo();
+            final String otherLoanSQL = baseSQL + " AND mcv.code_value = ? ";
+            final BigDecimal otherLoansOutstandingPrincipalAmount = ObjectUtils.defaultIfNull(this.jdbcTemplate.queryForObject(otherLoanSQL,
+                    BigDecimal.class, clientId, true, LoanProductType.SUMAS_VEHICULOS.getCode()), BigDecimal.ZERO);
+            final BigDecimal otherLoansCupoBalance = otherLoansCupo.subtract(otherLoansOutstandingPrincipalAmount);
+            clientData.setOtherLoansCupoBalance(otherLoansCupoBalance);
+            clientData.setOtherLoansCupo(otherLoansCupo);
+            return clientData;
 
         } catch (final EmptyResultDataAccessException e) {
             throw new ClientNotFoundException(clientId, e);
@@ -535,7 +575,6 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
                     clienttype, classification, legalForm, clientNonPerson, isStaff);
-
         }
     }
 
@@ -737,6 +776,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             builder.append("c.activation_date as activationDate, c.image_id as imageId, ");
             builder.append("c.staff_id as staffId, s.display_name as staffName, ");
             builder.append("c.default_savings_product as savingsProductId, sp.name as savingsProductName, ");
+            builder.append("c.blocking_reason_id as blockReasonId, ");
             builder.append("c.default_savings_account as savingsAccountId ");
             builder.append("from m_client c ");
             builder.append("join m_office o on o.id = c.office_id ");
@@ -766,7 +806,12 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
 
             final String accountNo = rs.getString("accountNo");
 
-            final Integer statusEnum = JdbcSupport.getInteger(rs, "statusEnum");
+            Integer statusEnum;
+            if (JdbcSupport.getIntegerDefaultToNullIfZero(rs, "blockReasonId") == null) {
+                statusEnum = JdbcSupport.getIntegerDefaultToNullIfZero(rs, "statusEnum");
+            } else {
+                statusEnum = ClientStatus.BLOCKED.getValue();
+            }
             final EnumOptionData status = ClientEnumerations.status(statusEnum);
 
             final Long subStatusId = JdbcSupport.getLong(rs, "subStatus");
@@ -854,8 +899,180 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender,
                     activationDate, imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId,
                     clienttype, classification, legalForm, clientNonPerson, isStaff);
-
         }
     }
 
+    @Override
+    public List<ClientAdditionalFieldsData> retrieveAdditionalFieldsData(final CodeValueData idType, final String idValue) {
+
+        final ClientAdditionalFieldsMapper mapper = new ClientAdditionalFieldsMapper();
+        final Long tipo = idType.getId();
+        final String tipoName = idType.getName().toLowerCase();
+
+        final String sql = "select " + mapper.schema() + """
+                        where (cce."NIT" = ? and cce."Tipo ID_cd_Tipo ID" =  ? ) or
+                        (ccp."Cedula" = ? and 'cedula' = ?)
+                """;
+
+        PreparedStatementCreator psc = (connection) -> {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setString(1, idValue);
+            ps.setLong(2, tipo);
+            ps.setString(3, idValue);
+            ps.setString(4, tipoName);
+
+            return ps;
+        };
+
+        return jdbcTemplate.query(psc, mapper);
+    }
+
+    @Override
+    public ClientAdditionalFieldsData retrieveClientAdditionalData(Long clientId) {
+        final ClientAdditionalFieldsMapper rowMapper = new ClientAdditionalFieldsMapper();
+        final String sql = "SELECT " + rowMapper.schema() + " WHERE mc.id = ? ";
+        final Object[] params = new Object[] { clientId };
+        final List<ClientAdditionalFieldsData> resultList = this.jdbcTemplate.query(sql, rowMapper, params);
+        if (!CollectionUtils.isEmpty(resultList)) {
+            final ClientAdditionalFieldsData clientAdditionalFieldsData = resultList.get(0);
+            String documentType;
+            if (clientAdditionalFieldsData.isPerson()) {
+                documentType = "CEDULA";
+            } else {
+                documentType = clientAdditionalFieldsData.getTipo() != null ? clientAdditionalFieldsData.getTipo().toUpperCase() : "NIT";
+            }
+            final LocalDate currentDate = DateUtils.getBusinessLocalDate();
+            final ClientTemporaryMapper clientTemporaryMapper = new ClientTemporaryMapper();
+            final String sqlTemporary = "SELECT " + clientTemporaryMapper.schema()
+                    + " WHERE mctm.client_id = ? AND mctm.document_type = ? AND (? BETWEEN mctm.start_date AND mctm.end_date) ";
+            final List<ClientCupoTemporaryData> clientCupoTemporaryData = this.jdbcTemplate.query(sqlTemporary, clientTemporaryMapper,
+                    clientId, documentType, currentDate);
+            if (!CollectionUtils.isEmpty(clientCupoTemporaryData)) {
+                clientAdditionalFieldsData.setCupo(clientCupoTemporaryData.get(0).getCupoMaxAmount());
+            }
+            return clientAdditionalFieldsData;
+        }
+        return new ClientAdditionalFieldsData();
+    }
+
+    public List<ClientAvailableCupoFieldsData> retriveClientAvailableCupo(String nitId) {
+        final ClientAvailableCupoFieldsMapper rowMapper = new ClientAvailableCupoFieldsMapper();
+        final String sql = "SELECT " + rowMapper.schema() + " WHERE ( cce.\"NIT\" = ? or ccp.\"Cedula\" = ? )";
+        final List<ClientAvailableCupoFieldsData> resultList = this.jdbcTemplate.query(sql, rowMapper, nitId, nitId);
+        if (!CollectionUtils.isEmpty(resultList)) {
+            for (final ClientAvailableCupoFieldsData clientFieldData : resultList) {
+                final ClientData clientData = this.retrieveOne(clientFieldData.getClientId());
+                clientFieldData.setCupo(clientData.getCupoMaxAmount());
+                clientFieldData.setAvailableCupo(clientData.getCupoBalance());
+                clientFieldData.setAvailableCupoAvance(clientData.getAdvanceCupoBalance());
+                clientFieldData.setCupoOtrosPrestamos(clientData.getOtherLoansCupo());
+                clientFieldData.setAvailableCupoOtrosPrestamos(clientData.getOtherLoansCupoBalance());
+            }
+        } else {
+            throw new ClientNotFoundException("No exite cliente con el NIT/Cedula : " + nitId, nitId);
+        }
+        return resultList;
+    }
+
+    @Override
+    public List<ClientData> retrieveByIdNumber(String idNumber) {
+        final String sql = """
+                SELECT mc.id AS clientId,
+                cce."NIT" AS nit,
+                tipo.code_value AS tipo,
+                ccp."Cedula" AS cedula
+                FROM m_client mc
+                LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
+                LEFT JOIN m_code_value tipo ON tipo.id = cce."Tipo ID_cd_Tipo ID"
+                LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+                WHERE cce."NIT" = ? OR ccp."Cedula" = ?
+                """;
+        return jdbcTemplate.query(sql, resultSet -> {
+            List<ClientData> clients = new ArrayList<>();
+            while (resultSet.next()) {
+                final Long clientId = resultSet.getLong("clientId");
+                ClientData clientData = new ClientData();
+                clientData.setId(clientId);
+                clients.add(clientData);
+            }
+            return clients;
+        }, idNumber, idNumber);
+    }
+
+    @Override
+    public ClientMaximumLoanArrearsData retrieveClientMaximumLoanArrearsData(String clientId) {
+        final ClientMaximumLoanArrearsMapper rowMapper = new ClientMaximumLoanArrearsMapper();
+        final String whereClause = """
+                WHERE ccp."Cedula" = ?
+                   OR cce."NIT" = ?
+                """;
+        final String sql = "SELECT " + rowMapper.schema() + whereClause + "GROUP BY mc.id LIMIT 1";
+        try {
+            return this.jdbcTemplate.queryForObject(sql, rowMapper, clientId, clientId);
+        } catch (final EmptyResultDataAccessException e) {
+            // return message in spanish if client not found
+            throw new ClientNotFoundException("No exite cliente con el NIT/Cedula : " + clientId);
+        }
+    }
+
+    private static final class ClientMaximumLoanArrearsMapper implements RowMapper<ClientMaximumLoanArrearsData> {
+
+        public String schema() {
+            return """
+                    COUNT(mlaa.loan_id) number_of_loans ,
+                    mc.id AS  client_id,
+                           MIN(mlaa.overdue_since_date_derived) maximum_overdue_since_date
+                    FROM m_loan_arrears_aging mlaa
+                             INNER JOIN m_loan ml
+                                        ON mlaa.loan_id = ml.id
+                             INNER JOIN m_client mc
+                                        ON mc.id = ml.client_id
+                             LEFT JOIN campos_cliente_persona ccp
+                                       ON ccp.client_id = mc.id
+                             LEFT JOIN campos_cliente_empresas cce
+                                       ON cce.client_id = mc.id
+                     """;
+        }
+
+        @Override
+        public ClientMaximumLoanArrearsData mapRow(ResultSet rs, int rowNum) throws SQLException {
+            final Long numberOfLoans = rs.getLong("number_of_loans");
+            final LocalDate maximumOverdueSinceDate = JdbcSupport.getLocalDate(rs, "maximum_overdue_since_date");
+            final Long numberOfDays = DateUtils.getDifferenceInDays(maximumOverdueSinceDate, DateUtils.getLocalDateOfTenant());
+            final Long clientId = rs.getLong("client_id");
+            return ClientMaximumLoanArrearsData.instance(clientId, numberOfDays, numberOfLoans);
+        }
+    }
+
+    public static final class ClientTemporaryMapper implements RowMapper<ClientCupoTemporaryData> {
+
+        public String schema() {
+            return """
+                       mctm.id AS id,
+                       mctm.client_id AS "clientId",
+                       mctm.document_type AS "documentType",
+                       mctm.is_increment AS "increment",
+                       mctm.cupo_max_amount AS "cupoMaxAmount",
+                       mctm.original_cupo_max_amount AS "originalCupoMaxAmount",
+                       mctm.start_date AS "startOnDate",
+                       mctm.end_date AS "endOnDate"
+                       FROM m_cupo_temporary_modification mctm
+                    """;
+        }
+
+        @Override
+        public ClientCupoTemporaryData mapRow(ResultSet rs, int rowNum) throws SQLException {
+            final Long id = rs.getLong("id");
+            final Long clientId = rs.getLong("clientId");
+            final String documentType = rs.getString("documentType");
+            final boolean increment = rs.getBoolean("increment");
+            final BigDecimal cupoMaxAmount = rs.getBigDecimal("cupoMaxAmount");
+            final BigDecimal originalCupoMaxAmount = rs.getBigDecimal("originalCupoMaxAmount");
+            final LocalDate startOnDate = JdbcSupport.getLocalDate(rs, "startOnDate");
+            final LocalDate endOnDate = JdbcSupport.getLocalDate(rs, "endOnDate");
+            return ClientCupoTemporaryData.builder().id(id).clientId(clientId).documentType(documentType).increment(increment)
+                    .cupoMaxAmount(cupoMaxAmount).originalCupoMaxAmount(originalCupoMaxAmount).startOnDate(startOnDate).endOnDate(endOnDate)
+                    .build();
+        }
+    }
 }

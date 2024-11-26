@@ -180,7 +180,7 @@ public class StaffApiResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
             @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = bulkImportWorkbookService.importWorkbook(GlobalEntityType.STAFF.toString(), uploadedInputStream,
-                fileDetail, locale, dateFormat);
+                fileDetail, locale, dateFormat, null);
         return toApiJsonSerializer.serialize(importDocumentId);
     }
 }

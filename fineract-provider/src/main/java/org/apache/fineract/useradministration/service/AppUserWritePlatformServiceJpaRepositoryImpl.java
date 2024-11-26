@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -306,6 +307,9 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             final AppUser user = this.appUserRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
             final String usuarioNombre = user.getUsername();
             final Long usuarioId = user.getId();
+            final Set<Role> userRoles = user.getRoles();
+            final String roleIDs = userRoles.stream().map(r -> String.valueOf(r.getId())).collect(Collectors.joining(", "));
+            final String roleNames = userRoles.stream().map(Role::getName).collect(Collectors.joining(", "));
             final String registroAnteriorJson = objectMapper.writeValueAsString(user);
             if (user.isDeleted()) {
                 throw new UserNotFoundException(userId);
@@ -313,8 +317,8 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             user.delete();
             this.appUserRepository.save(user);
             return new CommandProcessingResultBuilder().withEntityId(userId).withOfficeId(user.getOffice().getId())
-                    .withRegistroAnterior(registroAnteriorJson).withUsuarioNombre(usuarioNombre).withUsuarioId(usuarioId)
-                    .withUsuarioCreacionNombre(usuarioCreacionNombre).build();
+                    .withRegistroAnterior(registroAnteriorJson).withUsuarioNombre(usuarioNombre).withUsuarioId(usuarioId).withRolId(roleIDs)
+                    .withRolNombre(roleNames).withUsuarioCreacionNombre(usuarioCreacionNombre).build();
         } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException dve) {
             log.error("updateUser: JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException ",
                     dve);
@@ -353,9 +357,13 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             }
             this.appUserRepository.save(user);
             final String registroPosterior = objectMapper.writeValueAsString(user);
+            final Set<Role> userRoles = user.getRoles();
+            final String roleIDs = userRoles.stream().map(r -> String.valueOf(r.getId())).collect(Collectors.joining(", "));
+            final String roleNames = userRoles.stream().map(Role::getName).collect(Collectors.joining(", "));
             return new CommandProcessingResultBuilder().withEntityId(userId).withOfficeId(user.getOffice().getId())
                     .withRegistroAnterior(registroAnteriorJson).withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre)
-                    .withUsuarioId(usuarioId).withUsuarioCreacionNombre(usuarioCreacionNombre).build();
+                    .withRolId(roleIDs).withRolNombre(roleNames).withUsuarioId(usuarioId).withUsuarioCreacionNombre(usuarioCreacionNombre)
+                    .build();
         } catch (final DataIntegrityViolationException dve) {
             throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
         } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException dve) {
@@ -383,10 +391,14 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             final String registroAnteriorJson = objectMapper.writeValueAsString(user);
             user.activate();
             this.appUserRepository.save(user);
+            final Set<Role> userRoles = user.getRoles();
+            final String roleIDs = userRoles.stream().map(r -> String.valueOf(r.getId())).collect(Collectors.joining(", "));
+            final String roleNames = userRoles.stream().map(Role::getName).collect(Collectors.joining(", "));
             final String registroPosterior = objectMapper.writeValueAsString(user);
             return new CommandProcessingResultBuilder().withEntityId(userId).withOfficeId(user.getOffice().getId())
                     .withRegistroAnterior(registroAnteriorJson).withRegistroPosterior(registroPosterior).withUsuarioNombre(usuarioNombre)
-                    .withUsuarioId(usuarioId).withUsuarioCreacionNombre(usuarioCreacionNombre).build();
+                    .withRolId(roleIDs).withRolNombre(roleNames).withUsuarioId(usuarioId).withUsuarioCreacionNombre(usuarioCreacionNombre)
+                    .build();
         } catch (final DataIntegrityViolationException dve) {
             throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
         } catch (final JpaSystemException | PersistenceException | AuthenticationServiceException | JsonProcessingException dve) {
@@ -438,14 +450,14 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
     private RuntimeException handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
         // TODO: this needs to be fixed. The error condition should be independent from the underlying message and
         // naming of the constraint
-        if (realCause.getMessage().contains("username_org")) {
+        if (StringUtils.contains(realCause.getMessage(), "username_org")) {
             final String username = command.stringValueOfParameterNamed("username");
             final String defaultMessage = "User with username " + username + " already exists.";
             return new PlatformDataIntegrityException("error.msg.user.duplicate.username", defaultMessage, "username", username);
         }
         // TODO: this needs to be fixed. The error condition should be independent from the underlying message and
         // naming of the constraint
-        if (realCause.getMessage().contains("unique_self_client")) {
+        if (StringUtils.contains(realCause.getMessage(), "unique_self_client")) {
             return new PlatformDataIntegrityException("error.msg.user.self.service.user.already.exist",
                     "Self Service User Id is already created. Go to Admin->Users to edit or delete the self-service user.");
         }

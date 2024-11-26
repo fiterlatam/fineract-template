@@ -29,4 +29,6 @@ public interface ClientAllyPointOfSalesRepository
     Optional<ClientAllyPointOfSales> findAllyByPointOfSaleId(Long pointOfSaleId);
 
     List<ClientAllyPointOfSales> findAllPointOfSalesByAllyId(Long clientAllyId);
+
+    Optional<ClientAllyPointOfSales> findByCode(String code);
 }

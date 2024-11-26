@@ -27,10 +27,21 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
+import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReason;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanArrearsAgingService;
 import org.springframework.dao.DataAccessException;
@@ -46,9 +57,14 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class LoanArrearsAgeingUpdateHandler {
 
+    public static final String BLOCKING_REASON_NAME = BlockingReasonSettingEnum.CLIENT_MORA.getDatabaseString();
     private final JdbcTemplate jdbcTemplate;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final LoanArrearsAgingService loanArrearsAgingService;
+    private final ClientWritePlatformService clientWritePlatformService;
+    private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
+    private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final LoanBlockingReasonRepository loanBlockingReasonRepository;
 
     private void truncateLoanArrearsAgingDetails() {
         jdbcTemplate.execute("truncate table m_loan_arrears_aging");
@@ -74,6 +90,10 @@ public class LoanArrearsAgeingUpdateHandler {
             }
             log.debug("Records affected by updateLoanArrearsAgeingDetails: {}", result);
         }
+
+        handleBlockingAfterAreasAging();
+        handleUnBlockingAfterArrearsAging();
+        handleBlockingReasonCreadit();
     }
 
     public void updateLoanArrearsAgeingDetails(List<Long> loanIdsForUpdate) {
@@ -94,6 +114,10 @@ public class LoanArrearsAgeingUpdateHandler {
             recordsUpdatedWithOriginalSchedule = this.jdbcTemplate.batchUpdate(insertStatements.toArray(new String[0]));
 
         }
+
+        handleBlockingAfterAreasAging();
+        handleUnBlockingAfterArrearsAging();
+        handleBlockingReasonCreadit();
         if (log.isDebugEnabled()) {
             int result = 0;
             for (int recordWithoutOriginalSchedule : recordsUpdatedWithoutOriginalSchedule) {
@@ -119,31 +143,38 @@ public class LoanArrearsAgeingUpdateHandler {
         final String penaltyChargesOverdueCalculationSql = "SUM(COALESCE(mr.penalty_charges_amount, 0) - coalesce(mr.penalty_charges_writtenoff_derived, 0) - "
                 + "coalesce(mr.penalty_charges_waived_derived, 0) - coalesce(mr.penalty_charges_completed_derived, 0))";
 
+        final String amountsSummationQuery = "WITH overdue_amounts AS (SELECT mr.loan_id as loanId, " + principalOverdueCalculationSql
+                + " as principal_overdue, " + interestOverdueCalculationSql + " as interest_overdue, " + feeChargesOverdueCalculationSql
+                + " as fee_charges_overdue, " + penaltyChargesOverdueCalculationSql + " as penalty_charges_overdue, "
+                + " MIN(mr.duedate) AS overdue_since_date" + " FROM m_loan_repayment_schedule mr "
+                + " INNER JOIN m_loan ml ON ml.id = mr.loan_id " + " WHERE     mr.completed_derived IS FALSE AND mr.duedate < "
+                + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "COALESCE(ml.grace_on_arrears_ageing, 0)", "day")
+                + "    GROUP BY mr.loan_id) ";
+
+        insertSqlStatementBuilder.append(amountsSummationQuery);
         insertSqlStatementBuilder.append(
                 "INSERT INTO m_loan_arrears_aging(loan_id,principal_overdue_derived,interest_overdue_derived,fee_charges_overdue_derived,penalty_charges_overdue_derived,total_overdue_derived,overdue_since_date_derived)");
-        insertSqlStatementBuilder.append("select ml.id as loanId,");
-        insertSqlStatementBuilder.append(principalOverdueCalculationSql + " as principal_overdue_derived,");
-        insertSqlStatementBuilder.append(interestOverdueCalculationSql + " as interest_overdue_derived,");
-        insertSqlStatementBuilder.append(feeChargesOverdueCalculationSql + " as fee_charges_overdue_derived,");
-        insertSqlStatementBuilder.append(penaltyChargesOverdueCalculationSql + " as penalty_charges_overdue_derived,");
-        insertSqlStatementBuilder.append(principalOverdueCalculationSql + "+" + interestOverdueCalculationSql + "+");
-        insertSqlStatementBuilder
-                .append(feeChargesOverdueCalculationSql + "+" + penaltyChargesOverdueCalculationSql + " as total_overdue_derived,");
-        insertSqlStatementBuilder.append("MIN(mr.duedate) as overdue_since_date_derived ");
-        insertSqlStatementBuilder.append(" FROM m_loan ml ");
-        insertSqlStatementBuilder.append(" INNER JOIN m_loan_repayment_schedule mr on mr.loan_id = ml.id ");
-        insertSqlStatementBuilder.append(" left join m_product_loan_recalculation_details prd on prd.product_id = ml.product_id ");
-        insertSqlStatementBuilder.append(" WHERE ml.loan_status_id = 300 ");// active
+        insertSqlStatementBuilder.append("SELECT ml.id AS loanId,");
+        insertSqlStatementBuilder.append(" COALESCE(oa.principal_overdue, 0) AS principal_overdue_derived,");
+        insertSqlStatementBuilder.append(" COALESCE(oa.interest_overdue, 0) AS interest_overdue_derived,");
+        insertSqlStatementBuilder.append(" COALESCE(oa.fee_charges_overdue, 0) AS fee_charges_overdue_derived,");
+        insertSqlStatementBuilder.append(" COALESCE(oa.penalty_charges_overdue, 0) AS penalty_charges_overdue_derived,");
+        insertSqlStatementBuilder.append(
+                " COALESCE(oa.principal_overdue, 0) + COALESCE(oa.interest_overdue, 0) + COALESCE(oa.fee_charges_overdue, 0) + COALESCE(oa.penalty_charges_overdue, 0) AS total_overdue_derived,");
+        insertSqlStatementBuilder.append(" oa.overdue_since_date AS overdue_since_date_derived");
+        insertSqlStatementBuilder.append(" FROM m_loan ml");
+        insertSqlStatementBuilder.append(" INNER JOIN  overdue_amounts oa ON ml.id = oa.loanId");
+        insertSqlStatementBuilder.append(" INNER JOIN  m_product_loan mpl ON mpl.id = ml.product_id");
+        insertSqlStatementBuilder.append(" LEFT JOIN  m_product_loan_recalculation_details prd ON prd.product_id = ml.product_id");
+        insertSqlStatementBuilder.append(" WHERE  ml.loan_status_id = 300");
         if (!isForAllLoans) {
-            insertSqlStatementBuilder.append(" and ml.id IN (?)");
+            insertSqlStatementBuilder.append(" AND ml.id = ?");
         }
-        insertSqlStatementBuilder.append(" and mr.completed_derived is false ");
-        insertSqlStatementBuilder.append(" and mr.duedate < ")
-                .append(sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "COALESCE(ml.grace_on_arrears_ageing, 0)", "day"))
-                .append(" ");
-        insertSqlStatementBuilder
-                .append(" and (prd.arrears_based_on_original_schedule = false or prd.arrears_based_on_original_schedule is null) ");
-        insertSqlStatementBuilder.append(" GROUP BY ml.id");
+        insertSqlStatementBuilder.append(" and (prd.arrears_based_on_original_schedule = false");
+        insertSqlStatementBuilder.append(" or prd.arrears_based_on_original_schedule is null)");
+        insertSqlStatementBuilder.append(" AND (mpl.overdue_amount_for_arrears IS NULL OR mpl.overdue_amount_for_arrears <");
+        insertSqlStatementBuilder.append(
+                " COALESCE(oa.principal_overdue, 0) + COALESCE(oa.interest_overdue, 0) + COALESCE(oa.fee_charges_overdue, 0) + COALESCE(oa.penalty_charges_overdue, 0))");
         return insertSqlStatementBuilder.toString();
     }
 
@@ -161,6 +192,7 @@ public class LoanArrearsAgeingUpdateHandler {
             List<Map<String, Object>> loanSummary = getLoanSummary(loanIds);
             loanArrearsAgingService.updateScheduleWithPaidDetail(scheduleDate, loanSummary);
             loanArrearsAgingService.createInsertStatements(insertStatement, scheduleDate, true);
+
         }
 
         return insertStatement;
@@ -175,6 +207,7 @@ public class LoanArrearsAgeingUpdateHandler {
             List<Map<String, Object>> loanSummary = getLoanSummary(loanIds);
             loanArrearsAgingService.updateScheduleWithPaidDetail(scheduleDate, loanSummary);
             loanArrearsAgingService.createInsertStatements(insertStatement, scheduleDate, true);
+
         }
 
         return insertStatement;
@@ -229,9 +262,9 @@ public class LoanArrearsAgeingUpdateHandler {
             final StringBuilder scheduleDetail = new StringBuilder();
             scheduleDetail.append("select ml.id as loanId, mr.duedate as dueDate, mr.principal_amount as principalAmount, ");
             scheduleDetail.append(
-                    "mr.interest_amount as interestAmount, mr.fee_charges_amount as feeAmount, mr.penalty_charges_amount as penaltyAmount  ");
+                    "mr.interest_amount as interestAmount, mr.fee_charges_amount as feeAmount, mr.penalty_charges_amount as penaltyAmount, mpl.overdue_amount_for_arrears as overDueAmountForArrearsConsideration ");
             scheduleDetail.append("from m_loan ml  INNER JOIN m_loan_repayment_schedule_history mr on mr.loan_id = ml.id ");
-            scheduleDetail.append("where mr.duedate  < "
+            scheduleDetail.append(" inner join m_product_loan mpl on mpl.id = ml.product_id where mr.duedate  < "
                     + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "COALESCE(ml.grace_on_arrears_ageing, 0)", "day") + " and ");
             scheduleDetail.append("ml.id IN(:loanIds)").append(" and  mr.version = (");
             scheduleDetail.append("select max(lrs.version) from m_loan_repayment_schedule_history lrs where mr.loan_id = lrs.loan_id");
@@ -266,6 +299,78 @@ public class LoanArrearsAgeingUpdateHandler {
             return LoanSchedulePeriodData.repaymentOnlyPeriod(periodNumber, fromDate, dueDate, principalDue, principalOutstanding,
                     interestDueOnPrincipalOutstanding, feeChargesDueForPeriod, penaltyChargesDueForPeriod, totalDueForPeriod,
                     totalInstallmentAmount);
+
+        }
+    }
+
+    public void handleBlockingAfterAreasAging() {
+
+        final String query = """
+                    select distinct l.client_id from m_loan_arrears_aging mlaa
+                    inner join m_loan l on l.id = mlaa.loan_id
+                    left join m_client_blocking_reason mcbr
+                    on mcbr.client_id = l.client_id
+                    left join m_blocking_reason_setting mbrs
+                    on mbrs.id = mcbr.blocking_reason_id and mbrs.name_of_reason = ?
+                    where mbrs.id is null;
+                """;
+
+        final List<Long> clientIds = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
+
+        for (Long clientId : clientIds) {
+
+            clientWritePlatformService.blockClientWithInActiveLoan(clientId, BLOCKING_REASON_NAME, "Cliente bloqueado por defecto", false);
+        }
+
+    }
+
+    public void handleUnBlockingAfterArrearsAging() {
+
+        final String query = """
+                   SELECT DISTINCT mcbr.client_id
+                   FROM m_client_blocking_reason mcbr
+                   JOIN m_blocking_reason_setting mbrs ON mbrs.id = mcbr.blocking_reason_id
+                   AND mbrs.name_of_reason = ?
+                   WHERE mcbr.client_id NOT IN (
+                       SELECT DISTINCT client_id
+                       FROM m_loan_arrears_aging
+                   );
+                """;
+
+        final List<Long> clientIds = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
+        for (Long clientId : clientIds) {
+            clientWritePlatformService.unblockClientBlockingReason(clientId, DateUtils.getLocalDateOfTenant(), BLOCKING_REASON_NAME,
+                    "Cliente desbloqueado por defecto");
+        }
+
+    }
+
+    public void handleBlockingReasonCreadit() {
+        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+                .getSingleBlockingReasonSettingByReason(BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
+        final String query = """
+                    SELECT distinct mlaa.loan_id FROM m_loan_arrears_aging mlaa
+                    INNER JOIN m_loan l on l.id = mlaa.loan_id
+                    LEFT JOIN m_credit_blocking_reason  mcbr on mcbr.loan_id  = l.id
+                    LEFT join m_blocking_reason_setting mbrs
+                    on mbrs.id = mcbr.blocking_reason_id and mbrs.name_of_reason = ?
+                    ;
+                """;
+
+        final List<Long> loans = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
+        for (Long loanId : loans) {
+            final Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository.findExistingBlockingReason(loanId,
+                    blockingReasonSetting.getId());
+            if (!existingBlockingReason.isPresent()) {
+                final Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+                if (loan.getLoanCustomizationDetail().getBlockStatus() == null
+                        || loan.getLoanCustomizationDetail().getBlockStatus().getPriority() > blockingReasonSetting.getPriority()) {
+                    loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
+                }
+                final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
+                        "Cliente bloqueado por defecto", DateUtils.getLocalDateOfTenant());
+                loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
+            }
 
         }
     }

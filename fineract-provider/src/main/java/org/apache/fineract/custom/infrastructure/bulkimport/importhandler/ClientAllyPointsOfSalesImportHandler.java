@@ -1,6 +1,12 @@
 package org.apache.fineract.custom.infrastructure.bulkimport.importhandler;
 
 import com.google.gson.GsonBuilder;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
@@ -21,22 +27,15 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.tika.utils.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 @Service
 @Slf4j
 public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
 
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
-    private String dateFormat = "dd MMMM yyyy";
-    private String locale = "en";
 
     @Autowired
     public ClientAllyPointsOfSalesImportHandler(final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
@@ -44,9 +43,7 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
     }
 
     @Override
-    public Count process(final Workbook workbook, final String locale, final String dateFormat) {
-        this.dateFormat = dateFormat;
-        this.locale = locale;
+    public Count process(final Workbook workbook, final String locale, final String dateFormat, Map<String, Object> importAttributes) {
         List<ClientAllyPointOfSalesData> staffList = readExcelFile(workbook, locale, dateFormat);
         return importEntity(workbook, staffList, dateFormat);
     }
@@ -83,6 +80,8 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
 
         if (StringUtils.EMPTY.equalsIgnoreCase(ammendedValidationMessages.toString())) {
 
+            String settledComissionAsString = getSettledComissionAsString(row);
+
             ret = ClientAllyPointOfSalesData.builder()
                     .clientAllyId(readCodeValueIdFromName(workbook, row, ClientAllyPointOfSalesTemplatePopulateImportEnum.COMPANY_NAME_ID, //
                             CustomGlobalEntityType.CLIENT_ALLY.getCode())) //
@@ -96,8 +95,7 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
                             readCodeValueIdFromName(workbook, row, ClientAllyPointOfSalesTemplatePopulateImportEnum.CATEGORY_ID)) //
                     .segmentCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyPointOfSalesTemplatePopulateImportEnum.SEGMENT_ID)) //
                     .typeCodeValueId(readCodeValueIdFromName(workbook, row, ClientAllyPointOfSalesTemplatePopulateImportEnum.TYPE_ID)) //
-                    .settledComission(BigDecimal.valueOf(ImportHandlerUtils
-                            .readAsDouble(ClientAllyPointOfSalesTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row))) //
+                    .settledComission(new BigDecimal(settledComissionAsString)) //
                     .buyEnabled(ImportHandlerUtils
                             .readAsBoolean(ClientAllyPointOfSalesTemplatePopulateImportEnum.BUY_ENABLED.getColumnIndex(), row)) //
                     .collectionEnabled(ImportHandlerUtils
@@ -134,12 +132,23 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
             }
         }
 
-        BigDecimal settledComission = BigDecimal
-                .valueOf(ImportHandlerUtils.readAsDouble(ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row));
+        BigDecimal settledComission = new BigDecimal(getSettledComissionAsString(row));
         if (Objects.nonNull(settledComission) && settledComission.compareTo(BigDecimal.valueOf(99.99)) > 0) {
             ammenedEValidationMessages.append(
                     "El campo " + ClientAllyTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnName() + " no debe ser que 99.99; ");
         }
+    }
+
+    @NotNull
+    private String getSettledComissionAsString(Row row) {
+        String settledComissionAsString = ImportHandlerUtils
+                .readAsString(ClientAllyPointOfSalesTemplatePopulateImportEnum.SETTLED_COMISSION.getColumnIndex(), row);
+        return fixUpDecimalSeparator(settledComissionAsString);
+    }
+
+    @NotNull
+    private String fixUpDecimalSeparator(String settledComissionAsString) {
+        return settledComissionAsString.replace(",", ".");
     }
 
     private void validateTypeAndCasting(StringBuilder ammendedValidationMessages, ClientAllyPointOfSalesTemplatePopulateImportEnum currEnum,
@@ -195,7 +204,11 @@ public class ClientAllyPointsOfSalesImportHandler implements ImportHandler {
                 try {
                     Double.valueOf(representation);
                 } catch (NumberFormatException e) {
-                    ammendedValidationMessages.append(currEnum.getColumnName()).append(" debe ser un valor Double (ex 138.6547); ");
+                    try {
+                        Double.valueOf(fixUpDecimalSeparator(representation));
+                    } catch (NumberFormatException ex) {
+                        ammendedValidationMessages.append(currEnum.getColumnName()).append(" debe ser un valor Double (ex 138.6547). ");
+                    }
                 }
             } else {
                 // TODO Not supported

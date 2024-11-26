@@ -21,6 +21,7 @@ package org.apache.fineract.infrastructure.bulkimport.service;
 import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.Map;
 import org.apache.fineract.infrastructure.bulkimport.data.GlobalEntityType;
 import org.apache.fineract.infrastructure.bulkimport.data.ImportData;
 import org.apache.fineract.infrastructure.documentmanagement.data.DocumentData;
@@ -28,10 +29,12 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 public interface BulkImportWorkbookService {
 
-    Long importWorkbook(String entityType, InputStream inputStream, FormDataContentDisposition fileDetail, String locale,
-            String dateFormat);
+    Long importWorkbook(String entityType, InputStream inputStream, FormDataContentDisposition fileDetail, String locale, String dateFormat,
+            Map<String, Object> importAttributes);
 
     Collection<ImportData> getImports(GlobalEntityType type);
+
+    Collection<ImportData> getImports(GlobalEntityType type, String fileName);
 
     DocumentData getOutputTemplateLocation(String importDocumentId);
 

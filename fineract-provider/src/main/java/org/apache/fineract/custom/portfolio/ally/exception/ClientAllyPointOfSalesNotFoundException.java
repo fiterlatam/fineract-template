@@ -25,4 +25,8 @@ public class ClientAllyPointOfSalesNotFoundException extends AbstractPlatformRes
     public ClientAllyPointOfSalesNotFoundException() {
         super("error.msg.clientallypointofsales.id.invalid", "ClientAllyPointOfSales does not exist");
     }
+
+    public ClientAllyPointOfSalesNotFoundException(final Long id) {
+        super("error.msg.clientallypointofsales.id.invalid", "ClientAllyPointOfSales does not exist", id);
+    }
 }

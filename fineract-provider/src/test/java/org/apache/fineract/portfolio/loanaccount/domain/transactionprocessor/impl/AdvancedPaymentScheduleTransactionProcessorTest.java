@@ -139,13 +139,15 @@ class AdvancedPaymentScheduleTransactionProcessorTest {
         Mockito.when(charge.isDueForCollectionFromIncludingAndUpToAndIncluding(disbursementDate, installment.getDueDate()))
                 .thenReturn(true);
         Mockito.when(installment.getInstallmentNumber()).thenReturn(1);
-        Mockito.when(charge.updatePaidAmountBy(refEq(chargeAmountMoney), eq(1), refEq(zero))).thenReturn(chargeAmountMoney);
+        Mockito.when(loanTransaction.isWriteOff()).thenReturn(false);
+        Mockito.when(charge.updatePaidAmountBy(refEq(chargeAmountMoney), eq(1), refEq(zero), false)).thenReturn(chargeAmountMoney);
         Mockito.when(loanTransaction.isPenaltyPayment()).thenReturn(false);
+        Mockito.when(loanTransaction.isWriteOff()).thenReturn(false);
 
         underTest.processLatestTransaction(loanTransaction,
                 new TransactionCtx(currency, List.of(installment), Set.of(charge), new MoneyHolder(overpaidAmount)));
 
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), eq(chargeAmountMoney));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), eq(chargeAmountMoney), false);
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(zero), refEq(chargeAmountMoney), refEq(zero));
         assertEquals(zero.getAmount(), loanTransaction.getAmount(currency).minus(chargeAmountMoney).getAmount());
         assertEquals(0, chargeAmount.compareTo(installment.getFeeChargesCharged(currency).getAmount()));
@@ -183,14 +185,17 @@ class AdvancedPaymentScheduleTransactionProcessorTest {
         Mockito.when(loan.getDisbursementDate()).thenReturn(disbursementDate);
         Mockito.when(charge.isDueForCollectionFromIncludingAndUpToAndIncluding(disbursementDate, installment.getDueDate()))
                 .thenReturn(true);
+        Mockito.when(loanTransaction.isWriteOff()).thenReturn(false);
         Mockito.when(installment.getInstallmentNumber()).thenReturn(1);
-        Mockito.when(charge.updatePaidAmountBy(refEq(transactionAmountMoney), eq(1), refEq(zero))).thenReturn(transactionAmountMoney);
+        Mockito.when(charge.updatePaidAmountBy(refEq(transactionAmountMoney), eq(1), refEq(zero), loanTransaction.isWriteOff()))
+                .thenReturn(transactionAmountMoney);
         Mockito.when(loanTransaction.isPenaltyPayment()).thenReturn(false);
 
         underTest.processLatestTransaction(loanTransaction,
                 new TransactionCtx(currency, List.of(installment), Set.of(charge), new MoneyHolder(overpaidAmount)));
 
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), eq(transactionAmountMoney));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), eq(transactionAmountMoney),
+                loanTransaction.isWriteOff());
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(zero), refEq(transactionAmountMoney),
                 refEq(zero));
         assertEquals(zero.getAmount(), loanTransaction.getAmount(currency).minus(transactionAmountMoney).getAmount());
@@ -233,8 +238,10 @@ class AdvancedPaymentScheduleTransactionProcessorTest {
         Mockito.when(loan.getDisbursementDate()).thenReturn(disbursementDate);
         Mockito.when(charge.isDueForCollectionFromIncludingAndUpToAndIncluding(disbursementDate, installment.getDueDate()))
                 .thenReturn(true);
+        Mockito.when(loanTransaction.isWriteOff()).thenReturn(false);
         Mockito.when(installment.getInstallmentNumber()).thenReturn(1);
-        Mockito.when(charge.updatePaidAmountBy(refEq(chargeAmountMoney), eq(1), refEq(zero))).thenReturn(chargeAmountMoney);
+        Mockito.when(charge.updatePaidAmountBy(refEq(chargeAmountMoney), eq(1), refEq(zero), loanTransaction.isWriteOff()))
+                .thenReturn(chargeAmountMoney);
         Mockito.when(loanTransaction.isPenaltyPayment()).thenReturn(false);
         Mockito.when(loan.getPaymentAllocationRules()).thenReturn(List.of(loanPaymentAllocationRule));
         Mockito.when(loanPaymentAllocationRule.getTransactionType()).thenReturn(PaymentAllocationTransactionType.DEFAULT);
@@ -244,7 +251,8 @@ class AdvancedPaymentScheduleTransactionProcessorTest {
         underTest.processLatestTransaction(loanTransaction,
                 new TransactionCtx(currency, List.of(installment), Set.of(charge), new MoneyHolder(overpaidAmount)));
 
-        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), eq(chargeAmountMoney));
+        Mockito.verify(installment, Mockito.times(1)).payFeeChargesComponent(eq(transactionDate), eq(chargeAmountMoney),
+                loanTransaction.isWriteOff());
         Mockito.verify(loanTransaction, Mockito.times(1)).updateComponents(refEq(zero), refEq(zero), refEq(chargeAmountMoney), refEq(zero));
         assertEquals(0, BigDecimal.valueOf(20).compareTo(loanTransaction.getAmount(currency).minus(chargeAmountMoney).getAmount()));
         assertEquals(0, chargeAmount.compareTo(installment.getFeeChargesCharged(currency).getAmount()));
@@ -431,25 +439,25 @@ class AdvancedPaymentScheduleTransactionProcessorTest {
         Map<AllocationType, Money> result;
         MonetaryCurrency currency = mock(MonetaryCurrency.class);
 
-        result = underTest.calculateChargebackAllocationMap(allocationMap(50.0, 100.0, 200.0, 12.0), BigDecimal.valueOf(50.0),
-                List.of(PRINCIPAL, INTEREST, FEE, PENALTY), currency);
-        verify(allocationMap(50.0, 0, 0, 0), result);
+        result = underTest.calculateChargebackAllocationMap(allocationMap(50.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0),
+                BigDecimal.valueOf(50.0), List.of(PRINCIPAL, INTEREST, FEE, PENALTY), currency);
+        verify(allocationMap(50.0, 0, 0, 0, 0, 0, 0, 0), result);
 
-        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0), BigDecimal.valueOf(50.0),
-                List.of(PRINCIPAL, INTEREST, FEE, PENALTY), currency);
-        verify(allocationMap(40.0, 10, 0, 0), result);
+        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0),
+                BigDecimal.valueOf(50.0), List.of(PRINCIPAL, INTEREST, FEE, PENALTY), currency);
+        verify(allocationMap(40.0, 10, 0, 0, 0, 0, 0, 0), result);
 
-        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0), BigDecimal.valueOf(50.0),
-                List.of(PRINCIPAL, FEE, PENALTY, INTEREST), currency);
-        verify(allocationMap(40.0, 0, 10, 0), result);
+        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0),
+                BigDecimal.valueOf(50.0), List.of(PRINCIPAL, FEE, PENALTY, INTEREST), currency);
+        verify(allocationMap(40.0, 0, 10, 0, 0, 0, 0, 0), result);
 
-        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0), BigDecimal.valueOf(340.0),
-                List.of(PRINCIPAL, FEE, PENALTY, INTEREST), currency);
-        verify(allocationMap(40.0, 88.0, 200.0, 12.0), result);
+        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0),
+                BigDecimal.valueOf(340.0), List.of(PRINCIPAL, FEE, PENALTY, INTEREST), currency);
+        verify(allocationMap(40.0, 88.0, 200.0, 12.0, 0, 0, 0, 0), result);
 
-        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0), BigDecimal.valueOf(352.0),
-                List.of(PRINCIPAL, FEE, PENALTY, INTEREST), currency);
-        verify(allocationMap(40.0, 100.0, 200.0, 12.0), result);
+        result = underTest.calculateChargebackAllocationMap(allocationMap(40.0, 100.0, 200.0, 12.0, 200.0, 200, 40.0, 30.0),
+                BigDecimal.valueOf(352.0), List.of(PRINCIPAL, FEE, PENALTY, INTEREST), currency);
+        verify(allocationMap(40.0, 100.0, 200.0, 12.0, 0, 0, 0, 0), result);
     }
 
     private void verify(Map<AllocationType, BigDecimal> expected, Map<AllocationType, Money> actual) {
@@ -459,12 +467,17 @@ class AdvancedPaymentScheduleTransactionProcessorTest {
         });
     }
 
-    private Map<AllocationType, BigDecimal> allocationMap(double principal, double interest, double fee, double penalty) {
+    private Map<AllocationType, BigDecimal> allocationMap(double principal, double interest, double fee, double penalty, double fees,
+            double aval, double mandatoryInsurance, double voluntaryInsurance) {
         Map<AllocationType, BigDecimal> allocationMap = new HashMap<>();
         allocationMap.put(AllocationType.PRINCIPAL, BigDecimal.valueOf(principal));
         allocationMap.put(AllocationType.INTEREST, BigDecimal.valueOf(interest));
         allocationMap.put(AllocationType.FEE, BigDecimal.valueOf(fee));
         allocationMap.put(AllocationType.PENALTY, BigDecimal.valueOf(penalty));
+        allocationMap.put(AllocationType.FEES, BigDecimal.valueOf(fees));
+        allocationMap.put(AllocationType.AVAL, BigDecimal.valueOf(aval));
+        allocationMap.put(AllocationType.MANDATORY_INSURANCE, BigDecimal.valueOf(mandatoryInsurance));
+        allocationMap.put(AllocationType.VOLUNTARY_INSURANCE, BigDecimal.valueOf(voluntaryInsurance));
         return allocationMap;
     }
 

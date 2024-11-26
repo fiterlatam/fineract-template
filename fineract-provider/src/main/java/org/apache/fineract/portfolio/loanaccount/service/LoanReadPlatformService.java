@@ -29,17 +29,7 @@ import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.floatingrates.data.InterestRatePeriodData;
-import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanAssignorData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionRelationData;
-import org.apache.fineract.portfolio.loanaccount.data.PaidInAdvanceData;
-import org.apache.fineract.portfolio.loanaccount.data.RepaymentScheduleRelatedLoanData;
+import org.apache.fineract.portfolio.loanaccount.data.*;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
@@ -149,6 +139,8 @@ public interface LoanReadPlatformService {
 
     LoanTransactionData retrieveLoanForeclosureTemplate(Long loanId, LocalDate transactionDate);
 
+    LoanTransactionData retrieveLoanSpecialWriteOffTemplate(Long loanId);
+
     LoanAccountData retrieveLoanByLoanAccount(String loanAccountNumber);
 
     Long retrieveLoanIdByAccountNumber(String loanAccountNumber);
@@ -174,4 +166,23 @@ public interface LoanReadPlatformService {
     LoanAssignorData retrieveLoanAssignorDataById(Long loanAssignorId);
 
     void exportLoanDisbursementPDF(Long loanId, HttpServletResponse httpServletResponse) throws IOException;
+
+    void exportLoanSchedulePDF(LoanAccountData loanBasicDetails, String scheduleType, LoanScheduleData repaymentSchedule,
+            HttpServletResponse httpServletResponse) throws IOException;
+
+    Collection<Long> retrieveClientsWithLoansInActive(Long loanProductId, Integer inactivityPeriod);
+
+    Integer retrieveRediferidoNumber(Long loanId);
+
+    Integer retrieveRediferidoNumberLast6Months(Long loanId);
+
+    List<DefaultOrCancelInsuranceInstallmentData> getLoanDataWithDefaultOrCancelInsurance(Long loanId, Long insuranceCode, LocalDate date);
+
+    List<DefaultOrCancelInsuranceInstallmentData> getLoanDataWithDefaultMandatoryInsurance(Long numberOfDays);
+
+    List<DefaultOrCancelInsuranceInstallmentData> getLoanDataForSuspensionOfInsurance(Long numberOfDays);
+
+    List<LoanReclaimData> retrieveClaimTemplate(String claimType);
+
+    List<LoanReclaimData> retrieveExcludedTemplate(String claimType);
 }

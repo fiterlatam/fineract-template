@@ -46,6 +46,7 @@ import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.apache.fineract.portfolio.client.domain.ClientTransferDetails;
 import org.apache.fineract.portfolio.client.domain.ClientTransferDetailsRepositoryWrapper;
 import org.apache.fineract.portfolio.client.exception.ClientHasBeenClosedException;
+import org.apache.fineract.portfolio.client.exception.InvalidClientStateTransitionException;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.group.exception.ClientNotInGroupException;
@@ -281,6 +282,11 @@ public class TransferWritePlatformServiceJpaRepositoryImpl implements TransferWr
         final Long destinationOfficeId = jsonCommand.longValueOfParameterNamed(TransferApiConstants.destinationOfficeIdParamName);
         final Office office = this.officeRepository.findOneWithNotFoundDetection(destinationOfficeId);
         final Client client = this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
+
+        if (client.isClosed()) {
+            final String errorMessage = "Closed clients cannot be transferred.";
+            throw new InvalidClientStateTransitionException("proposeTransfer", "on.closed.account", errorMessage);
+        }
         if (client.getOffice().getId().equals(destinationOfficeId)) {
             throw new GeneralPlatformDomainRuleException(TransferApiConstants.transferClientToSameOfficeException,
                     TransferApiConstants.transferClientToSameOfficeExceptionMessage, office.getName());

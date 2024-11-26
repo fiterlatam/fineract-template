@@ -35,6 +35,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.fineract.portfolio.client.domain.Client;
 
 @Entity
 @Table(schema = "custom", name = "c_client_buy_process")
@@ -53,6 +54,9 @@ public class ClientBuyProcess {
 
     @Column(name = "channel_id", nullable = false)
     private Long channelId;
+
+    @Transient
+    private String channelName;
 
     @Transient
     private String channelHash;
@@ -96,13 +100,30 @@ public class ClientBuyProcess {
     @Column(name = "loan_id", nullable = true)
     private Long loanId;
 
+    @Column(name = "codigo_seguro", nullable = true)
+    private Long codigoSeguro;
+
+    @Column(name = "cedula_seguro_voluntario", nullable = true)
+    private Long cedulaSeguroVoluntario;
+
+    @Column(name = "interest_rate_points")
+    private Integer interestRatePoints;
+
     @Transient
     private LinkedHashMap<String, String> errorMessageHM = new LinkedHashMap<>();
 
-    public ClientBuyProcess(Long channelId, String channelHash, Long clientId, Long pointOfSalesId, Long productId, Long creditId,
-            LocalDate requestedDate, BigDecimal amount, Long term, LocalDateTime createdAt, Long createdBy, String ipDetails) {
+    @Transient
+    private Client client;
+
+    @Transient
+    private boolean isSaleOfInsuranceOrAssistance;
+
+    public ClientBuyProcess(Long channelId, String channelName, Long clientId, Long pointOfSalesId, Long productId, Long creditId,
+            LocalDate requestedDate, BigDecimal amount, Long term, LocalDateTime createdAt, Long createdBy, String ipDetails,
+            Long codigoSeguro, Long cedulaSeguroVoluntario) {
         this.channelId = channelId;
-        this.channelHash = channelHash;
+        this.channelName = channelName;
+        this.channelHash = null;
         this.clientId = clientId;
         this.pointOfSalesId = pointOfSalesId;
         this.productId = productId;
@@ -113,5 +134,27 @@ public class ClientBuyProcess {
         this.createdAt = createdAt;
         this.createdBy = createdBy;
         this.ipDetails = ipDetails;
+        this.codigoSeguro = codigoSeguro;
+        this.cedulaSeguroVoluntario = cedulaSeguroVoluntario;
+    }
+
+    public ClientBuyProcess(Long channelId, Long clientId, Long pointOfSalesId, Long productId, Long creditId, LocalDate requestedDate,
+            BigDecimal amount, Long term, LocalDateTime createdAt, Long createdBy, String ipDetails, Long codigoSeguro,
+            Long cedulaSeguroVoluntario, String channelHash) {
+        this.channelId = channelId;
+        this.channelName = null;
+        this.clientId = clientId;
+        this.channelHash = channelHash;
+        this.pointOfSalesId = pointOfSalesId;
+        this.productId = productId;
+        this.creditId = creditId;
+        this.requestedDate = requestedDate;
+        this.amount = amount;
+        this.term = term;
+        this.createdAt = createdAt;
+        this.createdBy = createdBy;
+        this.ipDetails = ipDetails;
+        this.codigoSeguro = codigoSeguro;
+        this.cedulaSeguroVoluntario = cedulaSeguroVoluntario;
     }
 }

@@ -64,30 +64,41 @@ public class CodeValue extends AbstractPersistableCustom {
     @Column(name = "is_mandatory")
     private boolean mandatory;
 
-    public static CodeValue createNew(final Code code, final String label, final int position, final String description,
+    @Column(name = "code_score")
+    private String score;
+
+    public static CodeValue createNew(final Code code, final String label, final int position, final String score, final String description,
             final boolean isActive, final boolean mandatory) {
         return new CodeValue().setCode(code).setLabel(StringUtils.defaultIfEmpty(label, null)).setPosition(position)
-                .setDescription(description).setActive(isActive).setMandatory(mandatory);
+                .setDescription(description).setActive(isActive).setMandatory(mandatory).setScore(score);
     }
 
     public static CodeValue fromJson(final Code code, final JsonCommand command) {
 
         final String label = command.stringValueOfParameterNamed(CodevalueJSONinputParams.NAME.getValue());
         Integer position = command.integerValueSansLocaleOfParameterNamed(CodevalueJSONinputParams.POSITION.getValue());
+        String score = command.stringValueOfParameterNamed(CodevalueJSONinputParams.SCORE.getValue());
         String description = command.stringValueOfParameterNamed(CodevalueJSONinputParams.DESCRIPTION.getValue());
         Boolean isActiveObj = command.booleanObjectValueOfParameterNamed(CodevalueJSONinputParams.IS_ACTIVE.getValue());
         boolean isActive = true;
+        String isScoreEmpty = null;
         if (isActiveObj != null) {
             isActive = isActiveObj;
         }
         if (position == null) {
             position = 0;
         }
+        if (score != null) {
+            if (score.isEmpty()) {
+                score = "0";
+            }
+            isScoreEmpty = score;
+        }
 
         Boolean mandatory = command.booleanPrimitiveValueOfParameterNamed(CodevalueJSONinputParams.IS_MANDATORY.getValue());
 
         return new CodeValue().setCode(code).setLabel(StringUtils.defaultIfEmpty(label, null)).setPosition(position)
-                .setDescription(description).setActive(isActive).setMandatory(mandatory);
+                .setDescription(description).setActive(isActive).setMandatory(mandatory).setScore(isScoreEmpty);
     }
 
     public Map<String, Object> update(final JsonCommand command) {
@@ -113,6 +124,16 @@ public class CodeValue extends AbstractPersistableCustom {
             final Integer newValue = command.integerValueSansLocaleOfParameterNamed(positionParamName);
             actualChanges.put(positionParamName, newValue);
             this.position = newValue;
+        }
+        final String scoreParamName = CodevalueJSONinputParams.SCORE.getValue();
+        if (command.isChangeInStringParameterNamed(scoreParamName, this.score)) {
+            final String newValue = command.stringValueOfParameterNamed(scoreParamName);
+            actualChanges.put(scoreParamName, newValue);
+            if (StringUtils.isEmpty(newValue)) {
+                this.score = "0";
+            } else {
+                this.score = newValue;
+            }
         }
 
         final String isActiveParamName = CodevalueJSONinputParams.IS_ACTIVE.getValue();

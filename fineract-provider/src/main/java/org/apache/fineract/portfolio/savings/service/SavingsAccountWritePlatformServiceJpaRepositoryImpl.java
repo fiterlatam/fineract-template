@@ -1379,7 +1379,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     }
 
     @Transactional
-    private SavingsAccountTransaction payCharge(final SavingsAccountCharge savingsAccountCharge, final LocalDate transactionDate,
+    protected SavingsAccountTransaction payCharge(final SavingsAccountCharge savingsAccountCharge, final LocalDate transactionDate,
             final BigDecimal amountPaid, final DateTimeFormatter formatter, final boolean backdatedTxnsAllowedTill) {
         final boolean isSavingsInterestPostingAtCurrentPeriodEnd = this.configurationDomainService
                 .isSavingsInterestPostingAtCurrentPeriodEnd();
@@ -1670,7 +1670,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
      *
      **/
     @Transactional
-    private void disableStandingInstructionsLinkedToClosedSavings(final SavingsAccount savingsAccount) {
+    protected void disableStandingInstructionsLinkedToClosedSavings(final SavingsAccount savingsAccount) {
         if (savingsAccount != null && savingsAccount.isClosed()) {
             final Integer standingInstructionStatus = StandingInstructionStatus.ACTIVE.getValue();
             final Collection<AccountTransferStandingInstruction> accountTransferStandingInstructions = this.standingInstructionRepository

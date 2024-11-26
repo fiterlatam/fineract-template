@@ -57,7 +57,16 @@ public enum JobName {
     SEND_ASYNCHRONOUS_EVENTS("Send Asynchronous Events"), //
     PURGE_EXTERNAL_EVENTS("Purge External Events"), //
     PURGE_PROCESSED_COMMANDS("Purge Processed Commands"), //
-    REACTIVATE_BLOCKED_APP_USERS("Reactivate Blocked App Users");
+    REACTIVATE_BLOCKED_APP_USERS("Reactivate Blocked App Users"), //
+    BLOCK_INACTIVE_CLIENTS("Block Inactive Clients"), //
+    LOAN_CUSTOM_CHARGE_HONORARIO_UPDATE("Loans - Custom Charge Honorario Update"), //
+    LIQUIDACION_DE_RECAUDOS("Liquidacion de Recaudos"), RECALCULATE_LOAN_INTEREST_AFTER_MAXIMUM_LEGAL_RATE_CHANGE(
+            "Recalculate Loan Interest After Maximum Legal Rate Change"), LIQUIDACION_DE_COMPRAS("Liquidacion de Compras"), COMPENSATION(
+                    "Compensation"), COMPENSATION_ALERT_EMAIL("Compensation Alert Email"), DAILY_LOAN_ACCRUAL("Devengo de Interés diario"), //
+    INSURANCE_CHARGE_CANCELLATION_DUE_TO_DEFAULT("Cancel Default Insurance Charges"), INSTALLMENT_LOAN_CHARGE_ACCRUAL(
+            "Devengo de seguro"), ARCHIVE_LOAN_HISTORY("Archivo de cartera"), //
+    INSURANCE_CHARGE_SUSPENSION_DUE_TO_DEFAULT("Suspension temporal por mora") // ;
+    ;
 
     private final String name;
 

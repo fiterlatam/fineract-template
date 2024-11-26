@@ -48,6 +48,8 @@ public class CommandWrapperBuilder {
     private String jobName;
     private String idempotencyKey;
 
+    private Long channelId;
+
     @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "TODO: fix this!")
     public CommandWrapper build() {
         return new CommandWrapper(this.officeId, this.groupId, this.clientId, this.loanId, this.savingsId, this.actionName, this.entityName,
@@ -74,6 +76,30 @@ public class CommandWrapperBuilder {
         this.entityName = "CREDITBUREAU_LOANPRODUCT_MAPPING";
         this.entityId = null;
         this.href = "/creditBureauConfiguration/template";
+        return this;
+    }
+
+    public CommandWrapperBuilder createLoanProductParameterization() {
+        this.actionName = "CREATE";
+        this.entityName = "LOANPRODUCTPARAMETERIZATION";
+        this.entityId = null;
+        this.href = "/loanproductparameterization";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateLoanProductParameterization(final Long parameterId) {
+        this.actionName = "UPDATE";
+        this.entityName = "LOANPRODUCTPARAMETERIZATION";
+        this.entityId = parameterId;
+        this.href = "/loanproductparameterization/" + parameterId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteLoanProductParameterization(final Long parameterId) {
+        this.actionName = "DELETE";
+        this.entityName = "LOANPRODUCTPARAMETERIZATION";
+        this.entityId = parameterId;
+        this.href = "/loanproductparameterization/" + parameterId;
         return this;
     }
 
@@ -540,6 +566,22 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder updateMaximumRate() {
+        this.actionName = "UPDATE";
+        this.entityName = "MAXIMUM_CREDIT_RATE";
+        this.entityId = null;
+        this.href = "/loanproducts/maximumCreditRate";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateAdvanceQuota() {
+        this.actionName = "UPDATE";
+        this.entityName = "ADVANCE_QUOTA";
+        this.entityId = null;
+        this.href = "/loanproducts/advanceQuotaConfiguration";
+        return this;
+    }
+
     public CommandWrapperBuilder updateLoanProduct(final Long productId) {
         this.actionName = "UPDATE";
         this.entityName = "LOANPRODUCT";
@@ -736,6 +778,24 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder blockClient(final Long clientId, String commandValue) {
+        this.actionName = "BLOCK";
+        this.entityName = "CLIENT";
+        this.entityId = clientId;
+        this.clientId = clientId;
+        this.href = "/clients/" + clientId + "?command=" + commandValue;
+        return this;
+    }
+
+    public CommandWrapperBuilder undoBlockClient(final Long clientId) {
+        this.actionName = "UNDOBLOCK";
+        this.entityName = "CLIENT";
+        this.entityId = clientId;
+        this.clientId = clientId;
+        this.href = "/clients/" + clientId + "?command=undoBlock";
+        return this;
+    }
+
     public CommandWrapperBuilder createDatatableEntry(final String datatable, final Long apptableId, final Long datatableId) {
         this.actionName = "CREATE";
         commonDatatableSettings(datatable, apptableId, datatableId);
@@ -894,6 +954,15 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder specialWriteOffLoanTransaction(final Long loanId) {
+        this.actionName = "SPECIAL_WRITEOFF";
+        this.entityName = "LOAN";
+        this.entityId = null;
+        this.loanId = loanId;
+        this.href = "/loans/" + loanId + "/transactions/template?command=special-write-off";
+        return this;
+    }
+
     public CommandWrapperBuilder undoWriteOffLoanTransaction(final Long loanId) {
         this.actionName = "UNDOWRITEOFF";
         this.entityName = "LOAN";
@@ -954,6 +1023,33 @@ public class CommandWrapperBuilder {
         this.entityId = null;
         this.loanId = loanId;
         this.href = "/loans/" + loanId + "/transactions?command=foreclosure";
+        return this;
+    }
+
+    public CommandWrapperBuilder loanCancel(final Long loanId) {
+        this.actionName = "ANULAR";
+        this.entityName = "LOAN";
+        this.entityId = loanId;
+        this.loanId = loanId;
+        this.href = "/loans/" + loanId + "/transactions?command=cancel-loan";
+        return this;
+    }
+
+    public CommandWrapperBuilder loanClaim(final Long loanId) {
+        this.actionName = "CLAIM";
+        this.entityName = "LOAN";
+        this.entityId = null;
+        this.loanId = loanId;
+        this.href = "/loans/" + loanId + "/transactions?command=claim";
+        return this;
+    }
+
+    public CommandWrapperBuilder loanWriteoffPunish(final Long loanId) {
+        this.actionName = "WRITEOFF_PUNISH";
+        this.entityName = "LOAN";
+        this.entityId = null;
+        this.loanId = loanId;
+        this.href = "/loans/reclaim/writeoff/" + loanId;
         return this;
     }
 
@@ -3060,6 +3156,22 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder updateInterestRate(final Long interestRate) {
+        this.actionName = "UPDATE";
+        this.entityName = "INTEREST_RATE";
+        this.entityId = interestRate;
+        this.href = "/interestRates/" + interestRate;
+        return this;
+    }
+
+    public CommandWrapperBuilder createInterestRate() {
+        this.actionName = "CREATE";
+        this.entityName = "INTEREST_RATE";
+        this.entityId = null;
+        this.href = "/interestRates";
+        return this;
+    }
+
     public CommandWrapperBuilder createScheduleExceptions(final Long loanId) {
         this.actionName = "CREATESCHEDULEEXCEPTIONS";
         this.entityName = "LOAN";
@@ -3733,6 +3845,242 @@ public class CommandWrapperBuilder {
         this.actionName = "CREATE";
         this.entityName = "CLIENTBUYPROCESS";
         this.href = "/clientbuyprocess";
+        return this;
+    }
+
+    public CommandWrapperBuilder createInsuranceIncident() {
+        this.actionName = "CREATE";
+        this.entityName = "INSURANCE_INCIDENT";
+        this.href = "/insurance-incidents";
+        return this;
+    }
+
+    public CommandWrapperBuilder addLoanCreditNote(Long loanId) {
+        this.actionName = "CREATE";
+        this.entityName = "LOAN_CREDIT_NOTE";
+        this.href = String.format("/loans/%s/credit-notes", loanId);
+        this.loanId = loanId;
+        this.entityId = loanId;
+        return this;
+    }
+
+    public CommandWrapperBuilder updateInsuranceIncident(final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "INSURANCE_INCIDENT";
+        this.entityId = id;
+        this.href = "/insurance-incidents/" + id;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteInsuranceIncident(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "INSURANCE_INCIDENT";
+        this.entityId = id;
+        this.href = "/insurance-incidents/" + id;
+        return this;
+    }
+
+    public CommandWrapperBuilder createBlockReasonSetting() {
+        this.actionName = "CREATE";
+        this.entityName = "BLOCKREASONSETTINGS";
+        this.href = "/createBlockReasonSettings";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateBlockReasonSetting(final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "BLOCKREASONSETTINGS";
+        this.entityId = id;
+        this.href = "/updateBlockReasonSetting/" + id;
+        return this;
+    }
+
+    public CommandWrapperBuilder disableBlockReasonSetting(final Long id) {
+        this.actionName = "DISABLE";
+        this.entityName = "BLOCKREASONSETTINGS";
+        this.entityId = id;
+        this.href = "/updateBlockReasonSetting/" + id;
+        return this;
+    }
+
+    public CommandWrapperBuilder enableBlockReasonSetting(final Long id) {
+        this.actionName = "ENABLE";
+        this.entityName = "BLOCKREASONSETTINGS";
+        this.entityId = id;
+        this.href = "/updateBlockReasonSetting/" + id;
+        return this;
+    }
+
+    public CommandWrapperBuilder createCustomChargeTypeMap() {
+        this.actionName = "CREATE";
+        this.entityName = "CUSTOMCHARGETYPEMAP";
+        this.href = "/customchargetypemap";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateCustomChargeTypeMap(final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "CUSTOMCHARGETYPEMAP";
+        this.href = "/v1/customchargeentities/map/" + id;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteCustomChargeTypeMap(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "CUSTOMCHARGETYPEMAP";
+        this.href = "/customchargetypemap/" + id;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder createCustomChargeHonorarioMap() {
+        this.actionName = "CREATE";
+        this.entityName = "CUSTOMCHARGEHONORARIOMAP";
+        this.href = "/customchargehonorariomap";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateCustomChargeHonorarioMap(final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "CUSTOMCHARGEHONORARIOMAP";
+        this.href = "/customchargehonorariomap/" + id;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteCustomChargeHonorarioMap(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "CUSTOMCHARGEHONORARIOMAP";
+        this.href = "/customchargehonorariomap/" + id;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteLoanBlockingReason(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "LOANBLOCKINGREASON";
+        this.href = id + "/loanblockingreason";
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder unblockClientWithBlockingReason() {
+        this.actionName = "UNBLOCKMASSIVELY";
+        this.entityName = "CLIENT";
+        this.entityId = null;
+        this.href = "/clientblockingreason/unblock";
+        return this;
+    }
+
+    public CommandWrapperBuilder unblockLoanWithBlockingReason() {
+        this.actionName = "UNBLOCKMASSIVELY";
+        this.entityName = "LOAN";
+        this.entityId = null;
+        this.href = "/loanblockingreason/unblock";
+        return this;
+    }
+
+    public CommandWrapperBuilder addLoanBlockingReason(final Long id) {
+        this.actionName = "CREATE";
+        this.entityName = "LOANBLOCKINGREASON";
+        this.href = id + "/loanblockingreason";
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder createSubChannelLoanProduct() {
+        this.actionName = "CREATE";
+        this.entityName = "SUBCHANNELLOANPRODUCT";
+        this.href = "/subchannelloanproduct";
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteSubChannelLoanProduct(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "SUBCHANNELLOANPRODUCT";
+        this.href = "/subchannelloanproduct/" + id;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder createChannel() {
+        this.actionName = "CREATE";
+        this.entityName = "CHANNEL";
+        this.href = "/channel";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateChannel(final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "CHANNEL";
+        this.href = "/channel/" + id;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteChannel(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "CHANNEL";
+        this.href = "/channel/" + id;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder createSubChannel(Long channelId) {
+        this.actionName = "CREATE";
+        this.entityName = "SUBCHANNEL";
+        this.entityId = channelId;
+        this.href = "/subchannel";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateSubChannel(Long channelId, final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "SUBCHANNEL";
+        this.href = "/subchannel/" + id;
+        this.entityId = channelId;
+        this.subentityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteSubChannel(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "SUBCHANNEL";
+        this.href = "/subchannel/" + id;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder updateClientAllyCompensation(final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "CLIENTALLYCOMPENSATION";
+        this.href = "/clientsallies/compensation/" + id;
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder cancelVoluntaryInsurance() {
+        this.actionName = "CANCELVOLUNTARYINSURANCE";
+        this.entityName = "LOAN";
+        this.entityId = null;
+        this.href = "/cancelinsurance/voluntary";
+        return this;
+    }
+
+    public CommandWrapperBuilder cancelInsuranceDueToBadSale() {
+        this.actionName = "CANCELINSURANCEBADSALE";
+        this.entityName = "LOAN";
+        this.entityId = null;
+        this.href = "/cancelinsurance/badsale";
+        return this;
+    }
+
+    public CommandWrapperBuilder excludeFromReclaim(final Long loanId) {
+        this.actionName = "RECLAIM_EXCLUDE";
+        this.entityName = "LOAN";
+        this.entityId = loanId;
+        this.href = "reclaim/exclude/" + loanId;
         return this;
     }
 }

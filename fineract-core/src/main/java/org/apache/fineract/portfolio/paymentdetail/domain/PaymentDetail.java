@@ -18,14 +18,12 @@
  */
 package org.apache.fineract.portfolio.paymentdetail.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import java.util.Map;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.portfolio.paymentdetail.PaymentDetailConstants;
@@ -35,8 +33,9 @@ import org.apache.fineract.portfolio.paymenttype.domain.PaymentType;
 
 @Entity
 @Getter
+@Setter
 @Table(name = "m_payment_detail")
-public final class PaymentDetail extends AbstractPersistableCustom {
+public class PaymentDetail extends AbstractPersistableCustom {
 
     @ManyToOne
     @JoinColumn(name = "payment_type_id", nullable = false)
@@ -57,9 +56,20 @@ public final class PaymentDetail extends AbstractPersistableCustom {
     @Column(name = "bank_number", length = 50)
     private String bankNumber;
 
-    PaymentDetail() {
+    @Column(name = "channel_hash", length = 5000)
+    private String channelHash;
 
-    }
+    @Column(name = "channel_id")
+    private Long channelId;
+
+    @Column(name = "point_of_sales_code")
+    private String pointOfSalesCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_bank_cv_id")
+    private CodeValue paymentBank;
+
+    public PaymentDetail() {}
 
     public static PaymentDetail generatePaymentDetail(final PaymentType paymentType, final JsonCommand command,
             final Map<String, Object> changes) {
@@ -68,6 +78,8 @@ public final class PaymentDetail extends AbstractPersistableCustom {
         final String routingCode = command.stringValueOfParameterNamed(PaymentDetailConstants.routingCodeParamName);
         final String receiptNumber = command.stringValueOfParameterNamed(PaymentDetailConstants.receiptNumberParamName);
         final String bankNumber = command.stringValueOfParameterNamed(PaymentDetailConstants.bankNumberParamName);
+        String channelHash = command.stringValueOfParameterNamed(PaymentDetailConstants.channelHashParamName);
+        final String pointOfSalesCode = command.stringValueOfParameterNamed(PaymentDetailConstants.pointOfSalesCodeParameterName);
 
         if (StringUtils.isNotBlank(accountNumber)) {
             changes.put(PaymentDetailConstants.accountNumberParamName, accountNumber);
@@ -84,9 +96,20 @@ public final class PaymentDetail extends AbstractPersistableCustom {
         if (StringUtils.isNotBlank(bankNumber)) {
             changes.put(PaymentDetailConstants.bankNumberParamName, bankNumber);
         }
+
+        if (StringUtils.isNotBlank(channelHash)) {
+            changes.put(PaymentDetailConstants.channelHashParamName, channelHash);
+        }
+
+        if (pointOfSalesCode != null) {
+            changes.put(PaymentDetailConstants.pointOfSalesCodeParameterName, pointOfSalesCode);
+        }
+
+        channelHash = (String) changes.get("channelHash");
         changes.put("paymentTypeId", paymentType.getId());
         final PaymentDetail paymentDetail = new PaymentDetail(paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
-                bankNumber);
+                bankNumber, channelHash, pointOfSalesCode);
+        paymentDetail.channelId = changes.get("channelId") != null ? Long.valueOf(changes.get("channelId").toString()) : null;
         return paymentDetail;
     }
 
@@ -103,6 +126,41 @@ public final class PaymentDetail extends AbstractPersistableCustom {
         this.routingCode = routingCode;
         this.receiptNumber = receiptNumber;
         this.bankNumber = bankNumber;
+    }
+
+    public static PaymentDetail instance(final PaymentType paymentType, final String accountNumber, final String checkNumber,
+            final String routingCode, final String receiptNumber, final String bankNumber, final String channelHash) {
+        return new PaymentDetail(paymentType, accountNumber, checkNumber, routingCode, receiptNumber, bankNumber, channelHash);
+    }
+
+    private PaymentDetail(final PaymentType paymentType, final String accountNumber, final String checkNumber, final String routingCode,
+            final String receiptNumber, final String bankNumber, final String channelHash) {
+        this.paymentType = paymentType;
+        this.accountNumber = accountNumber;
+        this.checkNumber = checkNumber;
+        this.routingCode = routingCode;
+        this.receiptNumber = receiptNumber;
+        this.bankNumber = bankNumber;
+        this.channelHash = channelHash;
+    }
+
+    public static PaymentDetail instance(final PaymentType paymentType, final String accountNumber, final String checkNumber,
+            final String routingCode, final String receiptNumber, final String bankNumber, final String channelHash,
+            final String pointOfSalesCode) {
+        return new PaymentDetail(paymentType, accountNumber, checkNumber, routingCode, receiptNumber, bankNumber, channelHash,
+                pointOfSalesCode);
+    }
+
+    private PaymentDetail(final PaymentType paymentType, final String accountNumber, final String checkNumber, final String routingCode,
+            final String receiptNumber, final String bankNumber, final String channelHash, final String pointOfSalesCode) {
+        this.paymentType = paymentType;
+        this.accountNumber = accountNumber;
+        this.checkNumber = checkNumber;
+        this.routingCode = routingCode;
+        this.receiptNumber = receiptNumber;
+        this.bankNumber = bankNumber;
+        this.channelHash = channelHash;
+        this.pointOfSalesCode = pointOfSalesCode;
     }
 
     public PaymentDetailData toData() {

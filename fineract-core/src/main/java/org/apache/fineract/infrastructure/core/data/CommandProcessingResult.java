@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.core.data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Map;
 import lombok.Getter;
 import lombok.ToString;
@@ -56,6 +57,7 @@ public class CommandProcessingResult implements Serializable {
     private String usuarioCreacionNombre;
     private Long usuarioId;
     private String rolId;
+    private BigDecimal eaRate;
 
     private CommandProcessingResult(final Long commandId, final Long officeId, final Long groupId, final Long clientId, final Long loanId,
             final Long savingsId, final String resourceIdentifier, final Long resourceId, final String transactionId,
@@ -197,5 +199,9 @@ public class CommandProcessingResult implements Serializable {
 
     public void setRolId(String rolId) {
         this.rolId = rolId;
+    }
+
+    public void setEaRate(BigDecimal eaRate) {
+        this.eaRate = eaRate;
     }
 }

@@ -49,6 +49,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
+import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.api.DateParam;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -60,6 +65,7 @@ import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSer
 import org.apache.fineract.infrastructure.core.service.CommandParameterUtil;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
@@ -82,7 +88,7 @@ public class LoanTransactionsApiResource {
     public static final String UNDO_CHARGE_OFF_COMMAND_VALUE = "undo-charge-off";
     public static final String DOWN_PAYMENT = "downPayment";
     private final Set<String> responseDataParameters = new HashSet<>(Arrays.asList("id", "type", "date", "currency", "amount", "externalId",
-            LoanApiConstants.REVERSAL_EXTERNAL_ID_PARAMNAME, LoanApiConstants.REVERSED_ON_DATE_PARAMNAME));
+            LoanApiConstants.REVERSAL_EXTERNAL_ID_PARAMNAME, LoanApiConstants.REVERSED_ON_DATE_PARAMNAME, LoanApiConstants.CHANNEL_HASH));
 
     private static final String RESOURCE_NAME_FOR_PERMISSIONS = "LOAN";
 
@@ -93,6 +99,8 @@ public class LoanTransactionsApiResource {
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final PaymentTypeReadPlatformService paymentTypeReadPlatformService;
     private final LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService;
+    private final ChannelReadWritePlatformService channelReadWritePlatformService;
+    private final CodeValueReadPlatformService codeValueReadPlatformService;
 
     @GET
     @Path("{loanId}/transactions/template")
@@ -430,6 +438,12 @@ public class LoanTransactionsApiResource {
         if (settings.isTemplate()) {
             final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
             transactionData = LoanTransactionData.templateOnTop(transactionData, paymentTypeOptions);
+            final SearchParameters channelSearchParameters = SearchParameters.builder().channelType(ChannelType.REPAYMENT.getValue())
+                    .active(true).build();
+            final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(channelSearchParameters);
+            final Collection<CodeValueData> bankOptions = codeValueReadPlatformService.retrieveCodeValuesByCode("Bancos");
+            transactionData.setChannelOptions(channelOptions);
+            transactionData.setBankOptions(bankOptions);
         }
 
         return this.toApiJsonSerializer.serialize(settings, transactionData, this.responseDataParameters);
@@ -457,6 +471,8 @@ public class LoanTransactionsApiResource {
             commandRequest = builder.waiveInterestPortionTransaction(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "writeoff")) {
             commandRequest = builder.writeOffLoanTransaction(resolvedLoanId).build();
+        } else if (CommandParameterUtil.is(commandParam, "special-write-off")) {
+            commandRequest = builder.specialWriteOffLoanTransaction(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "close-rescheduled")) {
             commandRequest = builder.closeLoanAsRescheduledTransaction(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "close")) {
@@ -469,6 +485,8 @@ public class LoanTransactionsApiResource {
             commandRequest = builder.refundLoanTransactionByCash(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "foreclosure")) {
             commandRequest = builder.loanForeclosure(resolvedLoanId).build();
+        } else if (CommandParameterUtil.is(commandParam, "cancel-loan")) {
+            commandRequest = builder.loanCancel(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "creditBalanceRefund")) {
             commandRequest = builder.creditBalanceRefund(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, CHARGE_OFF_COMMAND_VALUE)) {
@@ -477,6 +495,10 @@ public class LoanTransactionsApiResource {
             commandRequest = builder.undoChargeOff(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, DOWN_PAYMENT)) {
             commandRequest = builder.downPayment(resolvedLoanId).build();
+        } else if (CommandParameterUtil.is(commandParam, "claim")) {
+            commandRequest = builder.loanClaim(resolvedLoanId).build();
+        } else if (CommandParameterUtil.is(commandParam, "castigado")) {
+            commandRequest = builder.loanWriteoffPunish(resolvedLoanId).build();
         }
 
         if (commandRequest == null) {
@@ -548,6 +570,8 @@ public class LoanTransactionsApiResource {
                 transactionDate = transactionDateParam.getDate("transactionDate", dateFormat, locale);
             }
             transactionData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(resolvedLoanId, transactionDate);
+        } else if (CommandParameterUtil.is(commandParam, "special-write-off")) {
+            transactionData = this.loanReadPlatformService.retrieveLoanSpecialWriteOffTemplate(resolvedLoanId);
         } else if (CommandParameterUtil.is(commandParam, "creditBalanceRefund")) {
             transactionData = this.loanReadPlatformService.retrieveCreditBalanceRefundTemplate(resolvedLoanId);
         } else if (CommandParameterUtil.is(commandParam, CHARGE_OFF_COMMAND_VALUE)) {

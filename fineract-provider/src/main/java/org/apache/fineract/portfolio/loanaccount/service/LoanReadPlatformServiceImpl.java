@@ -46,11 +46,18 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
+import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
+import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
+import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
+import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepository;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
@@ -79,11 +86,15 @@ import org.apache.fineract.portfolio.calendar.domain.CalendarEntityType;
 import org.apache.fineract.portfolio.calendar.service.CalendarReadPlatformService;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
+import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.client.data.PointOfSalesData;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
+import org.apache.fineract.portfolio.client.domain.LegalForm;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.common.service.CommonEnumerations;
@@ -97,23 +108,7 @@ import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.data.GroupRoleData;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
-import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanApplicationTimelineData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanAssignorData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanInterestRecalculationData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanStatusEnumData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanSummaryData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionRelationData;
-import org.apache.fineract.portfolio.loanaccount.data.PaidInAdvanceData;
-import org.apache.fineract.portfolio.loanaccount.data.RepaymentScheduleRelatedLoanData;
-import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
+import org.apache.fineract.portfolio.loanaccount.data.*;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
@@ -133,6 +128,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleP
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.mapper.LoanTransactionRelationMapper;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
@@ -145,6 +141,8 @@ import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -164,6 +162,7 @@ import org.xhtmlrenderer.pdf.ITextRenderer;
 public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, LoanReadPlatformServiceCommon {
 
     private static final String ACCRUAL_ON_CHARGE_SUBMITTED_ON_DATE = "submitted-date";
+    private static final Logger log = LoggerFactory.getLogger(LoanReadPlatformServiceImpl.class);
     private final JdbcTemplate jdbcTemplate;
     private final PlatformSecurityContext context;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
@@ -192,7 +191,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     private final LoanTransactionRelationRepository loanTransactionRelationRepository;
     private final LoanTransactionRelationMapper loanTransactionRelationMapper;
     private final LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService;
-    private final SpringTemplateEngine templateEngine;
+    private final ChannelReadWritePlatformService channelReadWritePlatformService;
+    private final GlobalConfigurationRepository globalConfigurationRepository;
+    private final LoanScheduleHistoryReadPlatformService loanScheduleHistoryReadPlatformService;
 
     @Override
     public LoanAccountData retrieveOne(final Long loanId) {
@@ -210,7 +211,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
             sqlBuilder.append(" where l.id=? and ( o.hierarchy like ? or transferToOffice.hierarchy like ?)");
 
-            return this.jdbcTemplate.queryForObject(sqlBuilder.toString(), rm, loanId, hierarchySearchString, hierarchySearchString);
+            List<LoanAccountData> results = this.jdbcTemplate.query(sqlBuilder.toString(), rm, loanId, hierarchySearchString,
+                    hierarchySearchString);
+            if (results.isEmpty()) {
+                throw new LoanNotFoundException(loanId);
+            }
+            return results.get(0);
         } catch (final EmptyResultDataAccessException e) {
             throw new LoanNotFoundException(loanId, e);
         }
@@ -274,7 +280,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
             final LoanScheduleResultSetExtractor fullResultsetExtractor = new LoanScheduleResultSetExtractor(
                     repaymentScheduleRelatedLoanData, disbursementData, isInterestRecalculationEnabled, loanScheduleType);
-            final String sql = "select " + fullResultsetExtractor.schema() + " where ls.loan_id = ? order by ls.loan_id, ls.installment";
+            final String sql = "select " + fullResultsetExtractor.schema()
+                    + " where ls.loan_id = ? order by ls.loan_id, ls.installment, ls.duedate";
 
             return this.jdbcTemplate.query(sql, fullResultsetExtractor, loanId); // NOSONAR
         } catch (final EmptyResultDataAccessException e) {
@@ -322,7 +329,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final LoanMapper loanMapper = new LoanMapper(sqlGenerator, delinquencyReadPlatformService);
 
         final StringBuilder sqlBuilder = new StringBuilder(200);
-        sqlBuilder.append("select " + sqlGenerator.calcFoundRows() + " ");
+        sqlBuilder.append("select ").append(sqlGenerator.calcFoundRows()).append(" ");
         sqlBuilder.append(loanMapper.loanSchema());
 
         // TODO - for time being this will data scope list of loans returned to
@@ -453,16 +460,27 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     @Override
     public LoanTransactionData retrieveLoanTransactionTemplate(final Long loanId) {
-
         this.context.authenticatedUser();
-
         RepaymentTransactionTemplateMapper mapper = new RepaymentTransactionTemplateMapper(sqlGenerator);
         String sql = "select " + mapper.schema();
         LoanTransactionData loanTransactionData = this.jdbcTemplate.queryForObject(sql, mapper, // NOSONAR
                 LoanTransactionType.REPAYMENT.getValue(), LoanTransactionType.DOWN_PAYMENT.getValue(),
                 LoanTransactionType.REPAYMENT.getValue(), LoanTransactionType.DOWN_PAYMENT.getValue(), loanId, loanId);
         final Collection<PaymentTypeData> paymentOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
-        return LoanTransactionData.templateOnTop(loanTransactionData, paymentOptions);
+        final SearchParameters channelSearchParameters = SearchParameters.builder().channelType(ChannelType.REPAYMENT.getValue())
+                .active(true).build();
+        final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(channelSearchParameters);
+        final LoanTransactionData loanTransactionTemplate = LoanTransactionData.templateOnTop(loanTransactionData, paymentOptions);
+        final Collection<CodeValueData> bankOptions = codeValueReadPlatformService.retrieveCodeValuesByCode("Bancos");
+        loanTransactionTemplate.setChannelOptions(channelOptions);
+        loanTransactionTemplate.setBankOptions(bankOptions);
+
+        loanTransactionTemplate.setTransactionProcessingStrategyTypes(LoanScheduleProcessingType.getValuesAsEnumOptionDataList());
+        loanTransactionTemplate.setTransactionProcessingStrategy(loanTransactionData.getTransactionProcessingStrategy());
+        loanTransactionTemplate.setLoanScheduleType(loanTransactionData.getLoanScheduleType());
+        loanTransactionTemplate.setLoanProductType(loanTransactionData.getLoanProductType());
+
+        return loanTransactionTemplate;
     }
 
     @Override
@@ -489,6 +507,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final BigDecimal outstandingLoanBalance = loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount();
         final BigDecimal unrecognizedIncomePortion = null;
         BigDecimal adjustedChargeAmount = adjustPrepayInstallmentCharge(loan, onDate);
+        final Collection<CodeValueData> bankOptions = codeValueReadPlatformService.retrieveCodeValuesByCode("Bancos");
 
         return new LoanTransactionData(null, null, null, transactionType, null, currencyData, earliestUnpaidInstallmentDate,
                 loanRepaymentScheduleInstallment.getTotalOutstanding(currency).getAmount().subtract(adjustedChargeAmount),
@@ -496,7 +515,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 loanRepaymentScheduleInstallment.getInterestOutstanding(currency).getAmount(),
                 loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount().subtract(adjustedChargeAmount),
                 loanRepaymentScheduleInstallment.getPenaltyChargesOutstanding(currency).getAmount(), null, unrecognizedIncomePortion,
-                paymentOptions, ExternalId.empty(), null, null, outstandingLoanBalance, false, loanId, loan.getExternalId());
+                paymentOptions, ExternalId.empty(), null, null, outstandingLoanBalance, false, loanId, loan.getExternalId(), bankOptions);
     }
 
     private BigDecimal adjustPrepayInstallmentCharge(Loan loan, final LocalDate onDate) {
@@ -629,109 +648,256 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         }
 
         public String loanSchema() {
-            return "l.id as id, l.account_no as accountNo, l.external_id as externalId, l.fund_id as fundId, f.name as fundName,"
-                    + " l.loan_type_enum as loanType, l.loanpurpose_cv_id as loanPurposeId, cv.code_value as loanPurposeName,"
-                    + " lp.id as loanProductId, lp.name as loanProductName, lp.description as loanProductDescription,"
-                    + " lp.is_linked_to_floating_interest_rates as isLoanProductLinkedToFloatingRate, "
-                    + " lp.allow_variabe_installments as isvariableInstallmentsAllowed, "
-                    + " lp.allow_multiple_disbursals as multiDisburseLoan, lp.disallow_expected_disbursements as disallowExpectedDisbursements, "
-                    + " lp.can_define_fixed_emi_amount as canDefineInstallmentAmount,"
-                    + " c.id as clientId, c.account_no as clientAccountNo, c.display_name as clientName, c.office_id as clientOfficeId, c.external_id as clientExternalId,"
-                    + " g.id as groupId, g.account_no as groupAccountNo, g.display_name as groupName,"
-                    + " g.office_id as groupOfficeId, g.staff_id As groupStaffId , g.parent_id as groupParentId, (select mg.display_name from m_group mg where mg.id = g.parent_id) as centerName, "
-                    + " g.hierarchy As groupHierarchy , g.level_id as groupLevel, g.external_id As groupExternalId, "
-                    + " g.status_enum as statusEnum, g.activation_date as activationDate, "
-                    + " l.submittedon_date as submittedOnDate, sbu.username as submittedByUsername, sbu.firstname as submittedByFirstname, sbu.lastname as submittedByLastname,"
-                    + " l.rejectedon_date as rejectedOnDate, rbu.username as rejectedByUsername, rbu.firstname as rejectedByFirstname, rbu.lastname as rejectedByLastname,"
-                    + " l.withdrawnon_date as withdrawnOnDate, wbu.username as withdrawnByUsername, wbu.firstname as withdrawnByFirstname, wbu.lastname as withdrawnByLastname,"
-                    + " l.approvedon_date as approvedOnDate, abu.username as approvedByUsername, abu.firstname as approvedByFirstname, abu.lastname as approvedByLastname,"
-                    + " l.expected_disbursedon_date as expectedDisbursementDate, l.disbursedon_date as actualDisbursementDate, dbu.username as disbursedByUsername, dbu.firstname as disbursedByFirstname, dbu.lastname as disbursedByLastname,"
-                    + " l.closedon_date as closedOnDate, cbu.username as closedByUsername, cbu.firstname as closedByFirstname, cbu.lastname as closedByLastname, l.writtenoffon_date as writtenOffOnDate, "
-                    + " l.expected_firstrepaymenton_date as expectedFirstRepaymentOnDate, l.interest_calculated_from_date as interestChargedFromDate, l.maturedon_date as actualMaturityDate, l.expected_maturedon_date as expectedMaturityDate, "
-                    + " l.principal_amount_proposed as proposedPrincipal, l.principal_amount as principal, l.approved_principal as approvedPrincipal, l.net_disbursal_amount as netDisbursalAmount, l.arrearstolerance_amount as inArrearsTolerance, l.number_of_repayments as numberOfRepayments, l.repay_every as repaymentEvery,"
-                    + " l.grace_on_principal_periods as graceOnPrincipalPayment, l.recurring_moratorium_principal_periods as recurringMoratoriumOnPrincipalPeriods, l.grace_on_interest_periods as graceOnInterestPayment, l.grace_interest_free_periods as graceOnInterestCharged,l.grace_on_arrears_ageing as graceOnArrearsAgeing,"
-                    + " l.nominal_interest_rate_per_period as interestRatePerPeriod, l.annual_nominal_interest_rate as annualInterestRate, "
-                    + " l.repayment_period_frequency_enum as repaymentFrequencyType, l.interest_period_frequency_enum as interestRateFrequencyType, "
-                    + " l.term_frequency as termFrequency, l.term_period_frequency_enum as termPeriodFrequencyType, "
-                    + " l.amortization_method_enum as amortizationType, l.interest_method_enum as interestType, l.is_equal_amortization as isEqualAmortization, l.interest_calculated_in_period_enum as interestCalculationPeriodType,"
-                    + " l.fixed_principal_percentage_per_installment fixedPrincipalPercentagePerInstallment, "
-                    + " l.allow_partial_period_interest_calcualtion as allowPartialPeriodInterestCalcualtion,"
-                    + " l.loan_status_id as lifeCycleStatusId, l.loan_transaction_strategy_code as transactionStrategyCode, "
-                    + " l.loan_transaction_strategy_name as transactionStrategyName, l.enable_installment_level_delinquency as enableInstallmentLevelDelinquency, "
-                    + " l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, rc."
-                    + sqlGenerator.escape("name")
-                    + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, "
-                    + " l.loan_officer_id as loanOfficerId, s.display_name as loanOfficerName, l.loan_assignor_id as loanAssignorId, "
-                    + " l.principal_disbursed_derived as principalDisbursed, l.principal_repaid_derived as principalPaid,"
-                    + " l.principal_adjustments_derived as principalAdjustments, l.principal_writtenoff_derived as principalWrittenOff,"
-                    + " l.principal_outstanding_derived as principalOutstanding, l.interest_charged_derived as interestCharged,"
-                    + " l.interest_repaid_derived as interestPaid, l.interest_waived_derived as interestWaived,"
-                    + " l.interest_writtenoff_derived as interestWrittenOff, l.interest_outstanding_derived as interestOutstanding,"
-                    + " l.fee_charges_charged_derived as feeChargesCharged,"
-                    + " l.total_charges_due_at_disbursement_derived as feeChargesDueAtDisbursementCharged,"
-                    + " l.fee_charges_repaid_derived as feeChargesPaid, l.fee_charges_waived_derived as feeChargesWaived,"
-                    + " l.fee_charges_writtenoff_derived as feeChargesWrittenOff,"
-                    + " l.fee_charges_outstanding_derived as feeChargesOutstanding,"
-                    + " l.penalty_charges_charged_derived as penaltyChargesCharged,"
-                    + " l.penalty_charges_repaid_derived as penaltyChargesPaid,"
-                    + " l.penalty_charges_waived_derived as penaltyChargesWaived,"
-                    + " l.penalty_charges_writtenoff_derived as penaltyChargesWrittenOff,"
-                    + " l.penalty_charges_outstanding_derived as penaltyChargesOutstanding, "
-                    + " l.total_expected_repayment_derived as totalExpectedRepayment, l.total_repayment_derived as totalRepayment,"
-                    + " l.total_expected_costofloan_derived as totalExpectedCostOfLoan, l.total_costofloan_derived as totalCostOfLoan,"
-                    + " l.total_waived_derived as totalWaived, l.total_writtenoff_derived as totalWrittenOff,"
-                    + " l.writeoff_reason_cv_id as writeoffReasonId, codev.code_value as writeoffReason,"
-                    + " l.total_outstanding_derived as totalOutstanding, l.total_overpaid_derived as totalOverpaid,"
-                    + " l.fixed_emi_amount as fixedEmiAmount, l.max_outstanding_loan_balance as outstandingLoanBalance,"
-                    + " l.loan_sub_status_id as loanSubStatusId, la.principal_overdue_derived as principalOverdue, l.is_fraud as isFraud, "
-                    + " la.interest_overdue_derived as interestOverdue, la.fee_charges_overdue_derived as feeChargesOverdue,"
-                    + " la.penalty_charges_overdue_derived as penaltyChargesOverdue, la.total_overdue_derived as totalOverdue,"
-                    + " la.overdue_since_date_derived as overdueSinceDate, "
-                    + " l.sync_disbursement_with_meeting as syncDisbursementWithMeeting,"
-                    + " l.loan_counter as loanCounter, l.loan_product_counter as loanProductCounter,"
-                    + " l.is_npa as isNPA, l.days_in_month_enum as daysInMonth, l.days_in_year_enum as daysInYear, "
-                    + " l.interest_recalculation_enabled as isInterestRecalculationEnabled, "
-                    + " lir.id as lirId, lir.loan_id as loanId, lir.compound_type_enum as compoundType, lir.reschedule_strategy_enum as rescheduleStrategy, "
-                    + " lir.rest_frequency_type_enum as restFrequencyEnum, lir.rest_frequency_interval as restFrequencyInterval, "
-                    + " lir.rest_frequency_nth_day_enum as restFrequencyNthDayEnum, "
-                    + " lir.rest_frequency_weekday_enum as restFrequencyWeekDayEnum, "
-                    + " lir.rest_frequency_on_day as restFrequencyOnDay, "
-                    + " lir.compounding_frequency_type_enum as compoundingFrequencyEnum, lir.compounding_frequency_interval as compoundingInterval, "
-                    + " lir.compounding_frequency_nth_day_enum as compoundingFrequencyNthDayEnum, "
-                    + " lir.compounding_frequency_weekday_enum as compoundingFrequencyWeekDayEnum, "
-                    + " lir.compounding_frequency_on_day as compoundingFrequencyOnDay, "
-                    + " lir.is_compounding_to_be_posted_as_transaction as isCompoundingToBePostedAsTransaction, "
-                    + " lir.allow_compounding_on_eod as allowCompoundingOnEod, "
-                    + " l.is_floating_interest_rate as isFloatingInterestRate, "
-                    + " l.interest_rate_differential as interestRateDifferential, "
-                    + " l.create_standing_instruction_at_disbursement as createStandingInstructionAtDisbursement, "
-                    + " lpvi.minimum_gap as minimuminstallmentgap, lpvi.maximum_gap as maximuminstallmentgap, "
-                    + " lp.can_use_for_topup as canUseForTopup, l.is_topup as isTopup, topup.closure_loan_id as closureLoanId, "
-                    + " l.total_recovered_derived as totalRecovered, topuploan.account_no as closureLoanAccountNo, "
-                    + " topup.topup_amount as topupAmount, l.last_closed_business_date as lastClosedBusinessDate,l.overpaidon_date as overpaidOnDate, "
-                    + " l.is_charged_off as isChargedOff, l.charge_off_reason_cv_id as chargeOffReasonId, codec.code_value as chargeOffReason, l.charged_off_on_date as chargedOffOnDate, l.enable_down_payment as enableDownPayment, l.disbursed_amount_percentage_for_down_payment as disbursedAmountPercentageForDownPayment, l.enable_auto_repayment_for_down_payment as enableAutoRepaymentForDownPayment,"
-                    + " cobu.username as chargedOffByUsername, cobu.firstname as chargedOffByFirstname, cobu.lastname as chargedOffByLastname, l.loan_schedule_type as loanScheduleType, l.loan_schedule_processing_type as loanScheduleProcessingType "
-                    + " from m_loan l" //
-                    + " join m_product_loan lp on lp.id = l.product_id" //
-                    + " left join m_loan_recalculation_details lir on lir.loan_id = l.id join m_currency rc on rc."
-                    + sqlGenerator.escape("code") + " = l.currency_code" //
-                    + " left join m_client c on c.id = l.client_id" //
-                    + " left join m_group g on g.id = l.group_id" //
-                    + " left join m_loan_arrears_aging la on la.loan_id = l.id" //
-                    + " left join m_fund f on f.id = l.fund_id" //
-                    + " left join m_staff s on s.id = l.loan_officer_id" //
-                    + " left join m_appuser sbu on sbu.id = l.created_by left join m_appuser rbu on rbu.id = l.rejectedon_userid"
-                    + " left join m_appuser wbu on wbu.id = l.withdrawnon_userid"
-                    + " left join m_appuser abu on abu.id = l.approvedon_userid"
-                    + " left join m_appuser dbu on dbu.id = l.disbursedon_userid left join m_appuser cbu on cbu.id = l.closedon_userid"
-                    + " left join m_appuser cobu on cobu.id = l.charged_off_by_userid "
-                    + " left join m_code_value cv on cv.id = l.loanpurpose_cv_id"
-                    + " left join m_code_value codev on codev.id = l.writeoff_reason_cv_id"
-                    + " left join m_code_value codec on codec.id = l.charge_off_reason_cv_id"
-                    + " left join m_product_loan_variable_installment_config lpvi on lpvi.loan_product_id = l.product_id"
-                    + " left join m_loan_topup as topup on l.id = topup.loan_id"
-                    + " left join m_loan as topuploan on topuploan.id = topup.closure_loan_id ";
-
+            return """
+                    l.id AS id,
+                        l.account_no AS accountNo,
+                        l.interest_rate_points AS interestRatePoints,
+                        l.external_id AS externalId,
+                        l.fund_id AS fundId,
+                        f.name AS fundName,
+                        l.loan_type_enum AS loanType,
+                        l.loanpurpose_cv_id AS loanPurposeId,
+                        cv.code_value AS loanPurposeName,
+                        lp.id AS loanProductId,
+                        lp.name AS loanProductName,
+                        lp.description AS loanProductDescription,
+                        lp.is_linked_to_floating_interest_rates AS isLoanProductLinkedToFloatingRate,
+                        lp.allow_variabe_installments AS isVariableInstallmentsAllowed,
+                        lp.allow_multiple_disbursals AS multiDisburseLoan,
+                        lp.disallow_expected_disbursements AS disallowExpectedDisbursements,
+                        lp.can_define_fixed_emi_amount AS canDefineInstallmentAmount,
+                        c.id AS clientId,
+                        c.account_no AS clientAccountNo,
+                        c.display_name AS clientName,
+                        c.office_id AS clientOfficeId,
+                        c.external_id AS clientExternalId,
+                        g.id AS groupId,
+                        g.account_no AS groupAccountNo,
+                        g.display_name AS groupName,
+                        g.office_id AS groupOfficeId,
+                        g.staff_id AS groupStaffId,
+                        g.parent_id AS groupParentId,
+                        (SELECT mg.display_name FROM m_group mg WHERE mg.id = g.parent_id) AS centerName,
+                        g.hierarchy AS groupHierarchy,
+                        g.level_id AS groupLevel,
+                        g.external_id AS groupExternalId,
+                        g.status_enum AS statusEnum,
+                        g.activation_date AS activationDate,
+                        l.submittedon_date AS submittedOnDate,
+                        sbu.username AS submittedByUsername,
+                        sbu.firstname AS submittedByFirstname,
+                        sbu.lastname AS submittedByLastname,
+                        l.rejectedon_date AS rejectedOnDate,
+                        rbu.username AS rejectedByUsername,
+                        rbu.firstname AS rejectedByFirstname,
+                        rbu.lastname AS rejectedByLastname,
+                        l.withdrawnon_date AS withdrawnOnDate,
+                        wbu.username AS withdrawnByUsername,
+                        wbu.firstname AS withdrawnByFirstname,
+                        wbu.lastname AS withdrawnByLastname,
+                        l.approvedon_date AS approvedOnDate,
+                        abu.username AS approvedByUsername,
+                        abu.firstname AS approvedByFirstname,
+                        abu.lastname AS approvedByLastname,
+                        l.expected_disbursedon_date AS expectedDisbursementDate,
+                        l.disbursedon_date AS actualDisbursementDate,
+                        dbu.username AS disbursedByUsername,
+                        dbu.firstname AS disbursedByFirstname,
+                        dbu.lastname AS disbursedByLastname,
+                        l.closedon_date AS closedOnDate,
+                        cbu.username AS closedByUsername,
+                        cbu.firstname AS closedByFirstname,
+                        cbu.lastname AS closedByLastname,
+                        l.writtenoffon_date AS writtenOffOnDate,
+                        l.expected_firstrepaymenton_date AS expectedFirstRepaymentOnDate,
+                        l.interest_calculated_from_date AS interestChargedFromDate,
+                        l.maturedon_date AS actualMaturityDate,
+                        l.expected_maturedon_date AS expectedMaturityDate,
+                        l.principal_amount_proposed AS proposedPrincipal,
+                        l.principal_amount AS principal,
+                        l.approved_principal AS approvedPrincipal,
+                        l.net_disbursal_amount AS netDisbursalAmount,
+                        l.arrearstolerance_amount AS inArrearsTolerance,
+                        l.number_of_repayments AS numberOfRepayments,
+                        l.repay_every AS repaymentEvery,
+                        l.grace_on_principal_periods AS graceOnPrincipalPayment,
+                        l.recurring_moratorium_principal_periods AS recurringMoratoriumOnPrincipalPeriods,
+                        l.grace_on_interest_periods AS graceOnInterestPayment,
+                        l.grace_interest_free_periods AS graceOnInterestCharged,
+                        l.grace_on_arrears_ageing AS graceOnArrearsAgeing,
+                        l.nominal_interest_rate_per_period AS interestRatePerPeriod,
+                        l.annual_nominal_interest_rate AS annualInterestRate,
+                        l.repayment_period_frequency_enum AS repaymentFrequencyType,
+                        l.interest_period_frequency_enum AS interestRateFrequencyType,
+                        l.term_frequency AS termFrequency,
+                        l.term_period_frequency_enum AS termPeriodFrequencyType,
+                        l.amortization_method_enum AS amortizationType,
+                        l.interest_method_enum AS interestType,
+                        l.is_equal_amortization AS isEqualAmortization,
+                        l.interest_calculated_in_period_enum AS interestCalculationPeriodType,
+                        l.fixed_principal_percentage_per_installment AS fixedPrincipalPercentagePerInstallment,
+                        l.allow_partial_period_interest_calcualtion AS allowPartialPeriodInterestCalcualtion,
+                        l.loan_status_id AS lifeCycleStatusId,
+                        l.loan_transaction_strategy_code AS transactionStrategyCode,
+                        l.loan_transaction_strategy_name AS transactionStrategyName,
+                        l.enable_installment_level_delinquency AS enableInstallmentLevelDelinquency,
+                        l.currency_code AS currencyCode,
+                        l.currency_digits AS currencyDigits,
+                        l.currency_multiplesof AS inMultiplesOf,
+                        rc.name AS currencyName,
+                        rc.display_symbol AS currencyDisplaySymbol,
+                        rc.internationalized_name_code AS currencyNameCode,
+                        l.loan_officer_id AS loanOfficerId,
+                        s.display_name AS loanOfficerName,
+                        l.loan_assignor_id AS loanAssignorId,
+                        l.principal_disbursed_derived AS principalDisbursed,
+                        l.principal_repaid_derived AS principalPaid,
+                        l.principal_adjustments_derived AS principalAdjustments,
+                        l.principal_writtenoff_derived AS principalWrittenOff,
+                        l.principal_outstanding_derived AS principalOutstanding,
+                        l.interest_charged_derived AS interestCharged,
+                        l.interest_repaid_derived AS interestPaid,
+                        l.interest_waived_derived AS interestWaived,
+                        l.interest_writtenoff_derived AS interestWrittenOff,
+                        l.interest_outstanding_derived AS interestOutstanding,
+                        l.fee_charges_charged_derived AS feeChargesCharged,
+                        l.total_charges_due_at_disbursement_derived AS feeChargesDueAtDisbursementCharged,
+                        l.fee_charges_repaid_derived AS feeChargesPaid,
+                        l.fee_charges_waived_derived AS feeChargesWaived,
+                        l.fee_charges_writtenoff_derived AS feeChargesWrittenOff,
+                        l.fee_charges_outstanding_derived AS feeChargesOutstanding,
+                        l.penalty_charges_charged_derived AS penaltyChargesCharged,
+                        l.penalty_charges_repaid_derived AS penaltyChargesPaid,
+                        l.penalty_charges_waived_derived AS penaltyChargesWaived,
+                        l.penalty_charges_writtenoff_derived AS penaltyChargesWrittenOff,
+                        l.penalty_charges_outstanding_derived AS penaltyChargesOutstanding,
+                        l.total_expected_repayment_derived AS totalExpectedRepayment,
+                        l.total_repayment_derived AS totalRepayment,
+                        l.total_expected_costofloan_derived AS totalExpectedCostOfLoan,
+                        l.total_costofloan_derived AS totalCostOfLoan,
+                        l.total_waived_derived AS totalWaived,
+                        l.total_writtenoff_derived AS totalWrittenOff,
+                        l.writeoff_reason_cv_id AS writeoffReasonId,
+                        codev.code_value AS writeoffReason,
+                        l.total_outstanding_derived AS totalOutstanding,
+                        l.total_overpaid_derived AS totalOverpaid,
+                        l.fixed_emi_amount AS fixedEmiAmount,
+                        l.max_outstanding_loan_balance AS outstandingLoanBalance,
+                        l.loan_sub_status_id AS loanSubStatusId,
+                        la.principal_overdue_derived AS principalOverdue,
+                        l.is_fraud AS isFraud,
+                        la.interest_overdue_derived AS interestOverdue,
+                        la.fee_charges_overdue_derived AS feeChargesOverdue,
+                        la.penalty_charges_overdue_derived AS penaltyChargesOverdue,
+                        la.total_overdue_derived AS totalOverdue,
+                        la.overdue_since_date_derived AS overdueSinceDate,
+                        l.sync_disbursement_with_meeting AS syncDisbursementWithMeeting,
+                        l.loan_counter AS loanCounter,
+                        l.loan_product_counter AS loanProductCounter,
+                        l.is_npa AS isNPA,
+                        l.days_in_month_enum AS daysInMonth,
+                        l.days_in_year_enum AS daysInYear,
+                        l.interest_recalculation_enabled AS isInterestRecalculationEnabled,
+                        lir.id AS lirId,
+                        lir.loan_id AS loanId,
+                        lir.compound_type_enum AS compoundType,
+                        lir.reschedule_strategy_enum AS rescheduleStrategy,
+                        lir.rest_frequency_type_enum AS restFrequencyEnum,
+                        lir.rest_frequency_interval AS restFrequencyInterval,
+                        lir.rest_frequency_nth_day_enum AS restFrequencyNthDayEnum,
+                        lir.rest_frequency_weekday_enum AS restFrequencyWeekDayEnum,
+                        lir.rest_frequency_on_day AS restFrequencyOnDay,
+                        lir.compounding_frequency_type_enum AS compoundingFrequencyEnum,
+                        lir.compounding_frequency_interval AS compoundingInterval,
+                        lir.compounding_frequency_nth_day_enum AS compoundingFrequencyNthDayEnum,
+                        lir.compounding_frequency_weekday_enum AS compoundingFrequencyWeekDayEnum,
+                        lir.compounding_frequency_on_day AS compoundingFrequencyOnDay,
+                        lir.is_compounding_to_be_posted_as_transaction AS isCompoundingToBePostedAsTransaction,
+                        lir.allow_compounding_on_eod AS allowCompoundingOnEod,
+                        l.is_floating_interest_rate AS isFloatingInterestRate,
+                        l.interest_rate_differential AS interestRateDifferential,
+                        l.create_standing_instruction_at_disbursement AS createStandingInstructionAtDisbursement,
+                        lpvi.minimum_gap AS minimumInstallmentGap,
+                        lpvi.maximum_gap AS maximumInstallmentGap,
+                        lp.can_use_for_topup AS canUseForTopup,
+                        l.is_topup AS isTopup,
+                        topup.closure_loan_id AS closureLoanId,
+                        l.total_recovered_derived AS totalRecovered,
+                        topuploan.account_no AS closureLoanAccountNo,
+                        topup.topup_amount AS topupAmount,
+                        l.last_closed_business_date AS lastClosedBusinessDate,
+                        l.overpaidon_date AS overpaidOnDate,
+                        l.is_charged_off AS isChargedOff,
+                        l.charge_off_reason_cv_id AS chargeOffReasonId,
+                        codec.code_value AS chargeOffReason,
+                        l.charged_off_on_date AS chargedOffOnDate,
+                        l.enable_down_payment AS enableDownPayment,
+                        l.disbursed_amount_percentage_for_down_payment AS disbursedAmountPercentageForDownPayment,
+                        l.enable_auto_repayment_for_down_payment AS enableAutoRepaymentForDownPayment,
+                        cobu.username AS chargedOffByUsername,
+                        cobu.firstname AS chargedOffByFirstname,
+                        cobu.lastname AS chargedOffByLastname,
+                        l.loan_schedule_type AS loanScheduleType,
+                        l.loan_schedule_processing_type AS loanScheduleProcessingType,
+                        brs.name_of_reason AS blockStatusName,
+                        brs.id AS blockStatusId,
+                        brs.priority AS blockStatusPriority,
+                        brs.level AS blockStatusLevel,
+                        cch.name AS channel_name,
+                        cch.id AS channel_id,
+                        cch.description AS channel_description,
+                        cch.cedula_seguro_voluntario AS cedulaSeguroVoluntario,
+                        cch.codigo_seguro AS codigoSeguro,
+                        pos.name AS point_of_sales_name,
+                        pos.code AS point_of_sales_code,
+                        pos.client_ally_id AS allyId,
+                        l.valor_descuento,l.valor_giro
+                    FROM
+                        m_loan l
+                        JOIN m_product_loan lp ON lp.id = l.product_id
+                        LEFT JOIN m_loan_recalculation_details lir ON lir.loan_id = l.id
+                        JOIN m_currency rc ON rc.code = l.currency_code
+                        LEFT JOIN m_client c ON c.id = l.client_id
+                        LEFT JOIN m_group g ON g.id = l.group_id
+                        LEFT JOIN m_loan_arrears_aging la ON la.loan_id = l.id
+                        LEFT JOIN m_fund f ON f.id = l.fund_id
+                        LEFT JOIN m_staff s ON s.id = l.loan_officer_id
+                        LEFT JOIN m_appuser sbu ON sbu.id = l.created_by
+                        LEFT JOIN m_appuser rbu ON rbu.id = l.rejectedon_userid
+                        LEFT JOIN m_appuser wbu ON wbu.id = l.withdrawnon_userid
+                        LEFT JOIN m_appuser abu ON abu.id = l.approvedon_userid
+                        LEFT JOIN m_appuser dbu ON dbu.id = l.disbursedon_userid
+                        LEFT JOIN m_appuser cbu ON cbu.id = l.closedon_userid
+                        LEFT JOIN m_appuser cobu ON cobu.id = l.charged_off_by_userid
+                        LEFT JOIN m_code_value cv ON cv.id = l.loanpurpose_cv_id
+                        LEFT JOIN m_code_value codev ON codev.id = l.writeoff_reason_cv_id
+                        LEFT JOIN m_code_value codec ON codec.id = l.charge_off_reason_cv_id
+                        LEFT JOIN m_product_loan_variable_installment_config lpvi ON lpvi.loan_product_id = l.product_id
+                        LEFT JOIN m_loan_topup topup ON l.id = topup.loan_id
+                        LEFT JOIN m_loan topuploan ON topuploan.id = topup.closure_loan_id
+                        LEFT JOIN m_blocking_reason_setting brs ON brs.id = l.block_status_id
+                        LEFT JOIN (WITH cte AS (SELECT c.*,
+                                                      lpc.loan_id,
+                                                      lpc.cedula_seguro_voluntario,
+                                                      lpc.codigo_seguro,
+                                                      ROW_NUMBER() OVER (PARTITION BY lpc.loan_id ORDER BY c.id) AS rn
+                                               FROM  custom.c_client_buy_process lpc
+                                                        JOIN custom.c_channel c ON lpc.channel_id = c.id)
+                                  SELECT *
+                                  FROM cte
+                                  WHERE rn = 1)cch ON cch.loan_id = l.id
+                        LEFT JOIN (
+                            SELECT
+                                ps.name,
+                                ps.code,
+                                cbp.loan_id,
+                                ps.client_ally_id
+                            FROM
+                                custom.c_client_ally_point_of_sales ps
+                            JOIN custom.c_client_buy_process cbp ON cbp.point_if_sales_id = ps.id
+                            JOIN custom.c_client_ally cca on cca.id = ps.client_ally_id
+                        ) pos ON pos.loan_id = l.id
+                    """;
         }
 
         @Override
@@ -1062,6 +1228,21 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final LoanScheduleType loanScheduleType = LoanScheduleType.valueOf(loanScheduleTypeStr);
             final String loanScheduleProcessingTypeStr = rs.getString("loanScheduleProcessingType");
             final LoanScheduleProcessingType loanScheduleProcessingType = LoanScheduleProcessingType.valueOf(loanScheduleProcessingTypeStr);
+            final String blockStatusName = rs.getString("blockStatusName");
+            BlockingReasonsData blockStatusData = null;
+            final Long channelId = rs.getLong("channel_id");
+            final String channelName = Objects.toString(rs.getString("channel_name"), "Mifos");
+            final String channelDescription = rs.getString("channel_description");
+            final String pointOfSalesName = rs.getString("point_of_sales_name");
+            final String pointOfSalesCode = rs.getString("point_of_sales_code");
+            final Long allyId = rs.getLong("allyId");
+
+            if (!StringUtils.isEmpty(blockStatusName)) {
+                blockStatusData = BlockingReasonsData.builder().id(rs.getLong("blockStatusId")).nameOfReason(blockStatusName)
+                        .level(rs.getString("blockStatusLevel")).priority(JdbcSupport.getInteger(rs, "blockStatusPriority")).build();
+            }
+            BigDecimal valorDescuento = rs.getBigDecimal("valor_descuento");
+            BigDecimal valorGiro = rs.getBigDecimal("valor_giro");
 
             final LoanAccountData basicLoanDetails = LoanAccountData.basicLoanDetails(id, accountNo, status, externalId, clientId,
                     clientAccountNo, clientName, clientOfficeId, clientExternalId, groupData, loanType, loanProductId, loanProductName,
@@ -1080,8 +1261,24 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     closureLoanAccountNo, topupAmount, isEqualAmortization, fixedPrincipalPercentagePerInstallment, delinquencyRange,
                     disallowExpectedDisbursements, isFraud, lastClosedBusinessDate, overpaidOnDate, isChargedOff, enableDownPayment,
                     disbursedAmountPercentageForDownPayment, enableAutoRepaymentForDownPayment, enableInstallmentLevelDelinquency,
-                    loanScheduleType.asEnumOptionData(), loanScheduleProcessingType.asEnumOptionData());
+                    loanScheduleType.asEnumOptionData(), loanScheduleProcessingType.asEnumOptionData(), valorDescuento, valorGiro);
             basicLoanDetails.setLoanAssignorId(loanAssignorId);
+            basicLoanDetails.setBlockStatus(blockStatusData);
+            basicLoanDetails.setChannelDescription(channelDescription);
+            basicLoanDetails.setChannelId(channelId);
+            basicLoanDetails.setChannelName(channelName);
+            basicLoanDetails.setPointOfSalesName(pointOfSalesName);
+            basicLoanDetails.setPointOfSalesCode(pointOfSalesCode);
+            basicLoanDetails.setAllyId(allyId);
+            basicLoanDetails.setValorDescuento(valorDescuento);
+            basicLoanDetails.setValorGiro(valorGiro);
+            final Long interestRatePoints = JdbcSupport.getLong(rs, "interestRatePoints");
+            basicLoanDetails.setInterestRatePoints(interestRatePoints);
+
+            final Long codigoSeguro = JdbcSupport.getLong(rs, "codigoSeguro");
+            final Long cedulaSeguroVoluntario = JdbcSupport.getLong(rs, "cedulaSeguroVoluntario");
+            basicLoanDetails.setCodigoSeguro(codigoSeguro);
+            basicLoanDetails.setCedulaSeguroVoluntario(cedulaSeguroVoluntario);
             return basicLoanDetails;
 
         }
@@ -1163,7 +1360,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     + " ls.fee_charges_amount as feeChargesDue, ls.fee_charges_completed_derived as feeChargesPaid, ls.fee_charges_waived_derived as feeChargesWaived, ls.fee_charges_writtenoff_derived as feeChargesWrittenOff, "
                     + " ls.penalty_charges_amount as penaltyChargesDue, ls.penalty_charges_completed_derived as penaltyChargesPaid, ls.penalty_charges_waived_derived as penaltyChargesWaived, "
                     + " ls.penalty_charges_writtenoff_derived as penaltyChargesWrittenOff, ls.total_paid_in_advance_derived as totalPaidInAdvanceForPeriod, "
-                    + " ls.total_paid_late_derived as totalPaidLateForPeriod, ls.credits_amount as totalCredits, ls.is_down_payment isDownPayment "
+                    + " ls.total_paid_late_derived as totalPaidLateForPeriod, ls.credits_amount as totalCredits, ls.is_down_payment isDownPayment, ls.advance_principal_amount advancePrincipalAmount "
                     + " from m_loan_repayment_schedule ls ";
         }
 
@@ -1327,7 +1524,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 if (isAdditional) {
                     this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(principalDue);
                 }
-
+                BigDecimal advancePrincipalAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "advancePrincipalAmount");
+                this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.subtract(advancePrincipalAmount);
+                outstandingPrincipalBalanceOfLoan = outstandingPrincipalBalanceOfLoan.subtract(advancePrincipalAmount);
                 final boolean isDownPayment = rs.getBoolean("isDownPayment");
 
                 LoanSchedulePeriodData periodData;
@@ -1396,29 +1595,135 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         public String loanPaymentsSchema() {
 
-            return " tr.id as id, tr.transaction_type_enum as transactionType, tr.transaction_date as " + sqlGenerator.escape("date")
-                    + ", tr.amount as total, tr.principal_portion_derived as principal, tr.interest_portion_derived as interest, "
-                    + " tr.fee_charges_portion_derived as fees, tr.penalty_charges_portion_derived as penalties,  "
-                    + " tr.overpayment_portion_derived as overpayment, tr.outstanding_loan_balance_derived as outstandingLoanBalance, "
-                    + " tr.unrecognized_income_portion as unrecognizedIncome, tr.submitted_on_date as submittedOnDate, "
-                    + " tr.manually_adjusted_or_reversed as manuallyReversed, tr.reversal_external_id as reversalExternalId, tr.reversed_on_date as reversedOnDate, "
-                    + " pd.payment_type_id as paymentType,pd.account_number as accountNumber,pd.check_number as checkNumber, "
-                    + " pd.receipt_number as receiptNumber, pd.bank_number as bankNumber,pd.routing_code as routingCode, l.net_disbursal_amount as netDisbursalAmount,"
-                    + " l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, rc."
-                    + sqlGenerator.escape("name") + " as currencyName, l.id as loanId, l.external_id as externalLoanId, "
-                    + " rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, "
-                    + " pt.value as paymentTypeName, tr.external_id as externalId, tr.office_id as officeId, office.name as officeName, "
-                    + " fromtran.id as fromTransferId, fromtran.is_reversed as fromTransferReversed,"
-                    + " fromtran.transaction_date as fromTransferDate, fromtran.amount as fromTransferAmount,"
-                    + " fromtran.description as fromTransferDescription, "
-                    + " totran.id as toTransferId, totran.is_reversed as toTransferReversed, "
-                    + " totran.transaction_date as toTransferDate, totran.amount as toTransferAmount,"
-                    + " totran.description as toTransferDescription from m_loan l join m_loan_transaction tr on tr.loan_id = l.id "
-                    + " join m_currency rc on rc." + sqlGenerator.escape("code") + " = l.currency_code "
-                    + " left JOIN m_payment_detail pd ON tr.payment_detail_id = pd.id"
-                    + " left join m_payment_type pt on pd.payment_type_id = pt.id left join m_office office on office.id=tr.office_id"
-                    + " left join m_account_transfer_transaction fromtran on fromtran.from_loan_transaction_id = tr.id "
-                    + " left join m_account_transfer_transaction totran on totran.to_loan_transaction_id = tr.id ";
+            return """
+                        tr.id as id, tr.transaction_type_enum as transactionType, tr.transaction_date as %s ,
+                      tr.amount as total, tr.principal_portion_derived as principal, tr.interest_portion_derived as interest,
+                      tr.fee_charges_portion_derived as fees, tr.penalty_charges_portion_derived as penalties,
+                      tr.overpayment_portion_derived as overpayment, tr.outstanding_loan_balance_derived as outstandingLoanBalance,
+                      tr.unrecognized_income_portion as unrecognizedIncome, tr.submitted_on_date as submittedOnDate,
+                      tr.manually_adjusted_or_reversed as manuallyReversed, tr.reversal_external_id as reversalExternalId, tr.reversed_on_date as reversedOnDate,
+                      pd.payment_type_id as paymentType,pd.account_number as accountNumber,pd.check_number as checkNumber,
+                      pd.receipt_number as receiptNumber, pd.bank_number as bankNumber,pd.routing_code as routingCode, l.net_disbursal_amount as netDisbursalAmount,
+                      l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, rc.
+                      %s as currencyName, l.id as loanId, l.external_id as externalLoanId,
+                      rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode,
+                      pt.value as paymentTypeName, tr.external_id as externalId, tr.office_id as officeId, office.name as officeName,
+                      fromtran.id as fromTransferId, fromtran.is_reversed as fromTransferReversed,
+                      fromtran.transaction_date as fromTransferDate, fromtran.amount as fromTransferAmount,
+                      fromtran.description as fromTransferDescription,
+                      totran.id as toTransferId, totran.is_reversed as toTransferReversed,
+                      totran.transaction_date as toTransferDate, totran.amount as toTransferAmount, ch.name as channelName, pd.channel_hash as channelHash, bank.code_value AS bankName, bank.id AS bankId,
+                      totran.description as toTransferDescription,capos.id as pointOfSalesId,capos.name as pointOfSalesName, capos.code as pointOfSalesCode, capos.client_ally_id as clientAllyId,
+                    (COALESCE(mandatory_insurance.amount, 0) + COALESCE(vat_mandatory_insurance.amount, 0)) mandatory_insurance,
+                    (COALESCE(voluntary_insurance.amount, 0) + COALESCE(vat_voluntary_insurance.amount, 0)) voluntary_insurance,
+                    (COALESCE(hono.amount, 0) + COALESCE(vat_hono.amount, 0)) hono,
+                    (COALESCE(aval.amount, 0) + COALESCE(vat_aval.amount, 0)) aval,
+                    (COALESCE(penalty.amount, 0) + COALESCE(vat_penalty.amount, 0)) penalty,
+                    trcu.firstname as creator_firstname, trcu.lastname as creator_lastname, trmu.firstname as modifier_firstname, trmu.lastname as modifier_lastname
+                     from m_loan l
+                     join m_loan_transaction tr on tr.loan_id = l.id
+                      join m_currency rc on rc.%s = l.currency_code
+                      LEFT JOIN m_appuser trcu ON trcu.id = tr.created_by
+                      LEFT JOIN m_appuser trmu ON trmu.id = tr.last_modified_by
+                      left JOIN m_payment_detail pd ON tr.payment_detail_id = pd.id
+                      left join m_payment_type pt on pd.payment_type_id = pt.id left join m_office office on office.id=tr.office_id
+                      left join m_account_transfer_transaction fromtran on fromtran.from_loan_transaction_id = tr.id
+                      left join m_account_transfer_transaction totran on totran.to_loan_transaction_id = tr.id
+                      left join custom.c_channel ch on ch.id = pd.channel_id
+                      left join custom.c_client_ally_point_of_sales capos on capos.code = pd.point_of_sales_code
+                      left join m_code_value bank on bank.id = pd.payment_bank_cv_id
+                      left join (
+                                    select mlcpd.loan_transaction_id , sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    where mlc.charge_calculation_enum IN (468, 575, 231)
+                                group by mlcpd.loan_transaction_id
+                                ) mandatory_insurance on mandatory_insurance.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id, sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    join m_charge mc on mc.id = mlc.charge_id
+                                    join m_charge parent on parent.id = mc.parent_charge_id
+                                    where mc.charge_calculation_enum = 342
+                                    and parent.charge_calculation_enum IN (468, 575, 231)
+                                group by mlcpd.loan_transaction_id
+                                ) vat_mandatory_insurance on vat_mandatory_insurance.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id , sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    where mlc.charge_calculation_enum = 1034
+                                group by mlcpd.loan_transaction_id
+                                ) voluntary_insurance on voluntary_insurance.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id, sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    join m_charge mc on mc.id = mlc.charge_id
+                                    join m_charge parent on parent.id = mc.parent_charge_id
+                                    where mc.charge_calculation_enum = 342
+                                    and parent.charge_calculation_enum = 1034
+                                group by mlcpd.loan_transaction_id
+                                ) vat_voluntary_insurance on vat_voluntary_insurance.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id , sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    where mlc.charge_calculation_enum = 41
+                                group by mlcpd.loan_transaction_id
+                                ) aval on aval.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id, sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    join m_charge mc on mc.id = mlc.charge_id
+                                    join m_charge parent on parent.id = mc.parent_charge_id
+                                    where mc.charge_calculation_enum = 342
+                                    and parent.charge_calculation_enum = 41
+                                group by mlcpd.loan_transaction_id
+                                ) vat_aval on vat_aval.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id , sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    where mlc.charge_calculation_enum = 1009
+                                group by mlcpd.loan_transaction_id
+                                ) hono on hono.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id, sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    join m_charge mc on mc.id = mlc.charge_id
+                                    join m_charge parent on parent.id = mc.parent_charge_id
+                                    where mc.charge_calculation_enum = 342
+                                    and parent.charge_calculation_enum = 1009
+                                group by mlcpd.loan_transaction_id
+                                ) vat_hono on vat_hono.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id , sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    where mlc.is_penalty = true
+                                group by mlcpd.loan_transaction_id
+                                ) penalty on penalty.loan_transaction_id = tr.id
+                                left join (
+                                    select mlcpd.loan_transaction_id, sum(mlcpd.amount) amount from
+                                    m_loan_charge_paid_by mlcpd
+                                    join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
+                                    join m_charge mc on mc.id = mlc.charge_id
+                                    join m_charge parent on parent.id = mc.parent_charge_id
+                                    where mc.charge_calculation_enum = 342
+                                    and mc.is_penalty = true
+                                    and parent.charge_calculation_enum = 1009
+                                    and parent.is_penalty = true
+                                group by mlcpd.loan_transaction_id
+                                ) vat_penalty on vat_penalty.loan_transaction_id = tr.id
+
+
+
+                    """
+                    .formatted(sqlGenerator.escape("date"), sqlGenerator.escape("name"), sqlGenerator.escape("code"));
         }
 
         @Override
@@ -1454,8 +1759,20 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 final String routingCode = rs.getString("routingCode");
                 final String receiptNumber = rs.getString("receiptNumber");
                 final String bankNumber = rs.getString("bankNumber");
+                final String channelName = rs.getString("channelName");
+                final String channelHash = rs.getString("channelHash");
+                final Long pointOfSalesId = rs.getLong("pointOfSalesId");
+                final String pointOfSalesName = rs.getString("pointOfSalesName");
+                final String pointOfSalesCode = rs.getString("pointOfSalesCode");
+                final Long clientAllyId = rs.getLong("clientAllyId");
+                final PointOfSalesData pointOfSalesData = PointOfSalesData.instance(pointOfSalesId, pointOfSalesName, pointOfSalesCode,
+                        clientAllyId);
                 paymentDetailData = new PaymentDetailData(id, paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
-                        bankNumber);
+                        bankNumber, channelName, channelHash, pointOfSalesData);
+                final String bankName = rs.getString("BankName");
+                final Long bankId = rs.getLong("BankId");
+                paymentDetailData.setBankId(bankId);
+                paymentDetailData.setBankName(bankName);
             }
 
             final LocalDate date = JdbcSupport.getLocalDate(rs, "date");
@@ -1497,10 +1814,35 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         toTransferDescription, toTransferReversed);
             }
 
-            return new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData, currencyData, date, totalAmount,
-                    netDisbursalAmount, principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion, overPaymentPortion,
-                    unrecognizedIncomePortion, externalId, transfer, null, outstandingLoanBalance, submittedOnDate, manuallyReversed,
-                    reversalExternalId, reversedOnDate, loanId, externalLoanId);
+            final BigDecimal mandatoryInsurance = rs.getBigDecimal("mandatory_insurance");
+            final BigDecimal voluntaryInsurance = rs.getBigDecimal("voluntary_insurance");
+            final BigDecimal hono = rs.getBigDecimal("hono");
+            final BigDecimal aval = rs.getBigDecimal("aval");
+            final BigDecimal penalty = rs.getBigDecimal("penalty");
+            LoanChargePaidByData data = new LoanChargePaidByData(null, null, null, null, null, null);
+            data.setMandatoryInsurance(mandatoryInsurance);
+            data.setVoluntaryInsurance(voluntaryInsurance);
+            data.setAval(aval);
+            data.setHono(hono);
+            data.setPenalty(penalty);
+
+            // include name of creator and modifier
+            final String creatorFirstName = rs.getString("creator_firstname");
+            final String creatorLastName = rs.getString("creator_lastname");
+            final String modifierFirstName = rs.getString("modifier_firstname");
+            final String modifierLastName = rs.getString("modifier_lastname");
+
+            LoanTransactionData transactionData = new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData,
+                    currencyData, date, totalAmount, netDisbursalAmount, principalPortion, interestPortion, feeChargesPortion,
+                    penaltyChargesPortion, overPaymentPortion, unrecognizedIncomePortion, externalId, transfer, null,
+                    outstandingLoanBalance, submittedOnDate, manuallyReversed, reversalExternalId, reversedOnDate, loanId, externalLoanId);
+            transactionData.setLoanChargePaidBySummary(data);
+            transactionData.setCreatedByFirstname(creatorFirstName);
+            transactionData.setCreatedByLastname(creatorLastName);
+            transactionData.setLastModifiedByFirstname(modifierFirstName);
+            transactionData.setLastModifiedByLastname(modifierLastName);
+
+            return transactionData;
         }
     }
 
@@ -1556,7 +1898,20 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         Collection<LoanAccountSummaryData> activeLoanOptions = null;
         if (loanProduct.isCanUseForTopup() && clientId != null) {
-            activeLoanOptions = this.accountDetailsReadPlatformService.retrieveClientActiveLoanAccountSummary(clientId);
+            Optional<GlobalConfigurationProperty> maxReestructurar = this.globalConfigurationRepository
+                    .findByName(LoanApiConstants.GLOBAL_CONFIG_MAX_RESTRUCTURE);
+            Optional<GlobalConfigurationProperty> Rediferir = this.globalConfigurationRepository
+                    .findByName(LoanApiConstants.GLOBAL_CONFIG_MAX_ARREARS_REDEFER);
+            String maxReestructura = "0";
+            String maxRediferir = "0";
+            if (maxReestructurar.isPresent()) {
+                maxReestructura = Long.toString(maxReestructurar.get().getValue());
+            }
+            if (Rediferir.isPresent()) {
+                maxRediferir = Long.toString(Rediferir.get().getValue());
+            }
+            activeLoanOptions = this.accountDetailsReadPlatformService.retrieveClientActiveLoanAccountSummaryByConfig(clientId,
+                    maxReestructura, maxRediferir);
         } else if (loanProduct.isCanUseForTopup() && groupId != null) {
             activeLoanOptions = this.accountDetailsReadPlatformService.retrieveGroupActiveLoanAccountSummary(groupId);
         }
@@ -1570,14 +1925,14 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     @Override
     public LoanAccountData retrieveClientDetailsTemplate(final Long clientId) {
-
         this.context.authenticatedUser();
-
         final ClientData clientAccount = this.clientReadPlatformService.retrieveOne(clientId);
         final LocalDate expectedDisbursementDate = DateUtils.getBusinessLocalDate();
+        final LoanAccountData loanAccountData = LoanAccountData.clientDefaults(clientAccount.getId(), clientAccount.getAccountNo(),
+                clientAccount.getDisplayName(), clientAccount.getOfficeId(), clientAccount.getExternalId(), expectedDisbursementDate);
+        loanAccountData.setClientIdNumber(clientAccount.getIdNumber());
+        return loanAccountData;
 
-        return LoanAccountData.clientDefaults(clientAccount.getId(), clientAccount.getAccountNo(), clientAccount.getDisplayName(),
-                clientAccount.getOfficeId(), clientAccount.getExternalId(), expectedDisbursementDate);
     }
 
     @Override
@@ -1651,7 +2006,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 .append(" where " + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "?", "day") + " > ls.duedate ")
                 .append(" and ls.completed_derived <> true and mc.charge_applies_to_enum =1 ")
                 .append(" and ls.recalculated_interest_component <> true ")
-                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ");
+                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 and ml.id = (select max(id) from m_loan)");
 
         if (backdatePenalties) {
             return this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod);
@@ -2197,6 +2552,31 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         return TRUE.equals(this.jdbcTemplate.queryForObject(sql, Boolean.class, loanId));
     }
 
+    @Override
+    public Integer retrieveRediferidoNumber(final Long loanId) {
+        final String sql = """
+                SELECT COUNT(*)
+                FROM m_loan_reschedule_request mlrr
+                INNER JOIN m_loan_reschedule_request_term_variations_mapping mlrrtvm ON mlrrtvm.loan_reschedule_request_id = mlrr.id
+                INNER JOIN m_loan_term_variations mltv ON mltv.id = mlrrtvm.loan_term_variations_id
+                WHERE mlrr.loan_id = ? AND mlrr.status_enum = 200 AND mltv.term_type = 11 AND mltv.is_active = TRUE AND mltv.decimal_value > 0
+                """;
+        return ObjectUtils.defaultIfNull(this.jdbcTemplate.queryForObject(sql, Integer.class, loanId), 0);
+    }
+
+    @Override
+    public Integer retrieveRediferidoNumberLast6Months(Long loanId) {
+        final String sql = """
+                SELECT COUNT(*)
+                FROM m_loan_reschedule_request mlrr
+                INNER JOIN m_loan_reschedule_request_term_variations_mapping mlrrtvm ON mlrrtvm.loan_reschedule_request_id = mlrr.id
+                INNER JOIN m_loan_term_variations mltv ON mltv.id = mlrrtvm.loan_term_variations_id
+                WHERE mlrr.loan_id = ? AND mlrr.status_enum = 200 AND mltv.term_type = 11 AND mltv.is_active = TRUE AND mltv.decimal_value > 0
+                AND mlrr.approved_on_date >= CURRENT_DATE - INTERVAL '6 months'
+                """;
+        return ObjectUtils.defaultIfNull(this.jdbcTemplate.queryForObject(sql, Integer.class, loanId), 0);
+    }
+
     private static final class LoanTransactionDerivedComponentMapper implements RowMapper<LoanTransactionData> {
 
         private final DatabaseSpecificSQLGenerator sqlGenerator;
@@ -2456,7 +2836,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     @Override
     public LoanTransactionData retrieveLoanForeclosureTemplate(final Long loanId, final LocalDate transactionDate) {
         this.context.authenticatedUser();
-
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId, true);
         loan.validateForForeclosure(transactionDate);
         final MonetaryCurrency currency = loan.getCurrency();
@@ -2482,6 +2861,36 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount(),
                 loanRepaymentScheduleInstallment.getPenaltyChargesOutstanding(currency).getAmount(), null, unrecognizedIncomePortion,
                 paymentTypeOptions, ExternalId.empty(), null, null, outstandingLoanBalance, isReversed, loanId, loan.getExternalId());
+    }
+
+    @Override
+    public LoanTransactionData retrieveLoanSpecialWriteOffTemplate(final Long loanId) {
+        final List<CodeValueData> writeOffReasonOptions = new ArrayList<>(
+                this.codeValueReadPlatformService.retrieveCodeValuesByCode(LoanApiConstants.WRITEOFFREASONS));
+        this.context.authenticatedUser();
+        final LocalDate transactionDate = DateUtils.getBusinessLocalDate();
+        final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId, true);
+        final MonetaryCurrency currency = loan.getCurrency();
+        final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepository.findOneWithNotFoundDetection(currency);
+        final CurrencyData currencyData = applicationCurrency.toData();
+        final LocalDate earliestUnpaidInstallmentDate = DateUtils.getBusinessLocalDate();
+        final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanSpecialWriteOffDetail(transactionDate);
+        BigDecimal unrecognizedIncomePortion = null;
+        final LoanTransactionEnumData transactionType = LoanEnumerations.transactionType(LoanTransactionType.WRITEOFF);
+        final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
+        final BigDecimal outstandingLoanBalance = loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount();
+        final boolean isReversed = false;
+        final Money outStandingAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(currency);
+        final LoanTransactionData loanTransactionData = new LoanTransactionData(null, null, null, transactionType, null, currencyData,
+                earliestUnpaidInstallmentDate, outStandingAmount.getAmount(), loan.getNetDisbursalAmount(),
+                loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount(),
+                loanRepaymentScheduleInstallment.getInterestOutstanding(currency).getAmount(),
+                loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount(),
+                loanRepaymentScheduleInstallment.getPenaltyChargesOutstanding(currency).getAmount(), null, unrecognizedIncomePortion,
+                paymentTypeOptions, ExternalId.empty(), null, null, outstandingLoanBalance, isReversed, loanId, loan.getExternalId());
+        loanTransactionData.setWriteOffReasonOptions(writeOffReasonOptions);
+        loanTransactionData.setCurrentOutstandingLoanCharges(loanRepaymentScheduleInstallment.getCurrentOutstandingLoanCharges());
+        return loanTransactionData;
     }
 
     private static final class CurrencyMapper implements RowMapper<CurrencyData> {
@@ -2528,8 +2937,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             sqlBuilder.append(
                     "l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, l.net_disbursal_amount as netDisbursalAmount, ");
             sqlBuilder.append("rc." + sqlGenerator.escape("name")
-                    + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode ");
+                    + " as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, ");
+            sqlBuilder.append(" l.loan_schedule_type, l.loan_schedule_processing_type, mcv.code_value as loanProductType ");
             sqlBuilder.append("FROM m_loan l ");
+            sqlBuilder.append("JOIN m_product_loan mpl on mpl.id = l.product_id ");
+            sqlBuilder.append("JOIN m_code_value mcv on mcv.id = mpl.product_type ");
             sqlBuilder.append("JOIN m_currency rc on rc." + sqlGenerator.escape("code") + " = l.currency_code ");
             sqlBuilder.append("JOIN m_loan_repayment_schedule ls ON ls.loan_id = l.id AND ls.completed_derived = false ");
             sqlBuilder.append(
@@ -2561,9 +2973,17 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final PaymentDetailData paymentDetailData = null;
             final AccountTransferData transfer = null;
             final BigDecimal fixedEmiAmount = null;
-            return new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData, currencyData, date, totalDue,
-                    netDisbursalAmount, principalPortion, interestDue, feeDue, penaltyDue, overPaymentPortion, ExternalId.empty(), transfer,
-                    fixedEmiAmount, outstandingLoanBalance, unrecognizedIncomePortion, manuallyReversed, loanId, ExternalId.empty());
+            String loanScheduleType = rs.getString("loan_schedule_type");
+            String loanScheduleProcessingType = rs.getString("loan_schedule_processing_type");
+            String loanProductType = rs.getString("loanProductType");
+            LoanTransactionData transactionData = new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData,
+                    currencyData, date, totalDue, netDisbursalAmount, principalPortion, interestDue, feeDue, penaltyDue, overPaymentPortion,
+                    ExternalId.empty(), transfer, fixedEmiAmount, outstandingLoanBalance, unrecognizedIncomePortion, manuallyReversed,
+                    loanId, ExternalId.empty());
+            transactionData.setTransactionProcessingStrategy(loanScheduleProcessingType);
+            transactionData.setLoanScheduleType(loanScheduleType);
+            transactionData.setLoanProductType(loanProductType);
+            return transactionData;
         }
 
     }
@@ -2664,22 +3084,43 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final LoanAssignorMapper rowMapper = new LoanAssignorMapper();
         final String sql = "SELECT " + rowMapper.schema() + " AND mc.id = ? ";
         final Object[] params = new Object[] { currentUserHierarchy, loanAssignorId };
-        return this.jdbcTemplate.queryForObject(sql, rowMapper, params);
+        final List<LoanAssignorData> resultList = this.jdbcTemplate.query(sql, rowMapper, params);
+        if (!CollectionUtils.isEmpty(resultList)) {
+            return resultList.get(0);
+        }
+        return new LoanAssignorData();
     }
 
     @Override
     public void exportLoanDisbursementPDF(Long loanId, HttpServletResponse httpServletResponse) throws DocumentException, IOException {
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+        final BigDecimal valorDescuento = loan.getValorDescuento();
+        final BigDecimal valorGiro = loan.getValorGiro();
+        String valorDescuentoAmountString = "";
+        String valorGiroAmountString = "";
+        boolean showDiscountFields = false;
+        if (valorDescuento != null && valorDescuento.compareTo(BigDecimal.ZERO) > 0) {
+            valorDescuentoAmountString = Money.of(loan.getCurrency(), valorDescuento).toString();
+            valorGiroAmountString = Money.of(loan.getCurrency(), valorGiro).toString();
+            showDiscountFields = true;
+        }
+
         final Client loanClient = loan.getClient();
-        String clientFullName = "N/A";
-        String clientNit = "N/A";
-        if (loanClient != null) {
+        final Integer legalFormId = loanClient.getLegalForm();
+        final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
+                .retrieveClientAdditionalData(loanClient.getId());
+        final String nit = loanAdditionalFieldsData.getNit();
+        final String cedula = loanAdditionalFieldsData.getCedula();
+        String clientFullName;
+        String clientNit;
+        if (LegalForm.PERSON.getValue().equals(legalFormId)) {
+            clientNit = cedula;
             final String lastName = loan.getClient().getLastname();
             final String firstName = loan.getClient().getFirstname();
             clientFullName = firstName + " " + lastName;
-            if (loanClient.getExternalId() != null && !loanClient.getExternalId().isEmpty()) {
-                clientNit = loanClient.getExternalId().getValue();
-            }
+        } else {
+            clientFullName = loanClient.getFullname();
+            clientNit = nit;
         }
         final LocalDate disbursementDate = loan.getDisbursementDate();
         final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy").withLocale(Locale.forLanguageTag("es-ES"));
@@ -2714,6 +3155,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         variables.put("loanAssignorNit", loanAssignorNit);
         variables.put("generatedOnDateTime", generatedOnDateTime);
         variables.put("generatedByUsername", this.context.authenticatedUser().getDisplayName());
+        variables.put("valorDescuento", valorDescuentoAmountString);
+        variables.put("valorGiro", valorGiroAmountString);
+        variables.put("showDiscountFields", showDiscountFields);
         final org.thymeleaf.context.Context thymeleafContext = new org.thymeleaf.context.Context(Locale.forLanguageTag("es-ES"), variables);
         ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
         templateResolver.setPrefix("templates/");
@@ -2723,7 +3167,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         templateResolver.setTemplateMode(TemplateMode.HTML);
         templateResolver.setOrder(0);
         templateResolver.setCheckExistence(true);
-        final TemplateEngine thymeleafTemplateEngine = new TemplateEngine();
+        final TemplateEngine thymeleafTemplateEngine = new SpringTemplateEngine();
         thymeleafTemplateEngine.setTemplateResolver(templateResolver);
         final String html = thymeleafTemplateEngine.process("LoanDisbursementReport", thymeleafContext);
         final ITextRenderer renderer = new ITextRenderer();
@@ -2736,5 +3180,710 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final OutputStream outputStream = httpServletResponse.getOutputStream();
         renderer.createPDF(outputStream);
         outputStream.close();
+    }
+
+    @Override
+    public void exportLoanSchedulePDF(LoanAccountData loanBasicDetails, String scheduleType, LoanScheduleData repaymentSchedule,
+            HttpServletResponse httpServletResponse) throws DocumentException, IOException {
+
+        boolean isRepaymentSchedule = scheduleType.equalsIgnoreCase("repayment");
+        final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
+                .retrieveClientAdditionalData(loanBasicDetails.getClientId());
+        final String nit = loanAdditionalFieldsData.getNit();
+        final String cedula = loanAdditionalFieldsData.getCedula();
+        String clientFullName = loanBasicDetails.getClientName();
+        String clientNit = Objects.toString(nit, cedula);
+        LoanApplicationTimelineData timeline = loanBasicDetails.getTimeline();
+        final LocalDate disbursementDate = timeline.getDisbursementDate() != null ? timeline.getActualDisbursementDate()
+                : timeline.getExpectedDisbursementDate();
+        final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy").withLocale(Locale.forLanguageTag("es-ES"));
+        final String disbursementDateString = disbursementDate != null ? disbursementDate.format(dateFormatter) : "N/A";
+        final BigDecimal disbursementAmount = loanBasicDetails.getNetDisbursalAmount();
+
+        final String disbursementAmountString = Money.of(loanBasicDetails.getCurrency(), disbursementAmount).toString();
+
+        final Map<String, String> amortizationTypes = Map.of("Equal installments", "Pagos de cuotas iguales - Sistema Francés",
+                "Equal principal payments", "Pagos de capital iguales - Sistema Aleman", "Capital at end",
+                "Capital al final - Sistema Americano");
+        String templateName;
+        String fileType;
+        String reportTitle;
+        String amortizationType = amortizationTypes.getOrDefault(loanBasicDetails.getAmortizationType().getValue(), "");
+        String settlementSystem = "";
+        if (StringUtils.isNotBlank(amortizationType)) {
+            // get the second part of the hyphen . e.g Sistema Frances
+            settlementSystem = amortizationType.substring(amortizationType.indexOf("-") + 1).trim();
+        }
+
+        if (isRepaymentSchedule) {
+            templateName = "LoanRepaymentScheduleReport";
+            fileType = "Reported_calendario_de_pago";
+            reportTitle = "Calendario de Pagos";
+        } else {
+            templateName = "LoanOriginalScheduleReport";
+            reportTitle = "Calendario Original";
+            fileType = "Reported_calendario_de_original";
+        }
+        String loanRate = convertInterestRateToDailyRateAndMonthlyRate(loanBasicDetails.getInterestRatePerPeriod().doubleValue());
+
+        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy MMMM dd HH:mm:ss")
+                .withLocale(Locale.forLanguageTag("es-ES"));
+        final String generatedOnDateTime = DateUtils.getLocalDateTimeOfTenant().format(dateTimeFormatter);
+        final Map<String, Object> variables = new HashMap<>();
+        variables.put("clientFullName", clientFullName);
+        variables.put("clientNit", clientNit);
+        variables.put("disbursementDate", disbursementDateString);
+        variables.put("reportTitle", reportTitle);
+        variables.put("disbursementAmount", disbursementAmountString);
+        variables.put("generatedOnDateTime", generatedOnDateTime);
+        variables.put("generatedByUsername", this.context.authenticatedUser().getDisplayName());
+        variables.put("originalScheduleDetails", repaymentSchedule);
+        variables.put("loanRate", loanRate);
+        variables.put("settlementSystem", settlementSystem);
+        final org.thymeleaf.context.Context thymeleafContext = new org.thymeleaf.context.Context(Locale.forLanguageTag("es-ES"), variables);
+        ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+        Locale.setDefault(new Locale("es", "ES"));
+        templateResolver.setPrefix("templates/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setCharacterEncoding("UTF-8");
+        templateResolver.setCacheable(false);
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setOrder(0);
+        templateResolver.setCheckExistence(true);
+        final TemplateEngine thymeleafTemplateEngine = new SpringTemplateEngine();
+        thymeleafTemplateEngine.setTemplateResolver(templateResolver);
+
+        final String html = thymeleafTemplateEngine.process(templateName, thymeleafContext);
+        final ITextRenderer renderer = new ITextRenderer();
+        renderer.setDocumentFromString(html);
+        renderer.layout();
+
+        final String filename = fileType + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".pdf";
+        httpServletResponse.setContentType("application/pdf");
+        httpServletResponse.setHeader("Content-Disposition", "inline; filename=" + filename);
+        httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+        final OutputStream outputStream = httpServletResponse.getOutputStream();
+        renderer.createPDF(outputStream);
+        outputStream.close();
+    }
+
+    @Override
+    public Collection<Long> retrieveClientsWithLoansInActive(Long loanProductId, Integer inactivityPeriod) {
+
+        final String query = """
+                select distinct c.id  from m_client c
+                inner join m_loan l on l.client_id = c.id
+                inner join m_product_loan p on p.id = l.product_id
+                where l.loan_status_id in ( 100,200,300,303,304 )\s
+                and c.id not in (
+                	select cbr.client_id from m_client_blocking_reason cbr inner join\s
+                	m_blocking_reason_setting mbrs on mbrs.id = cbr.blocking_reason_id and\s
+                	mbrs.name_of_reason = 'INACTIVIDAD'
+                )
+                and p.id = ? and (DATE_PART('year', ?::date) * 12 + DATE_PART('month', ?::date) - DATE_PART('year', COALESCE(l.last_activity_date, CURRENT_DATE)) * 12 - DATE_PART('month', COALESCE(l.last_activity_date, CURRENT_DATE))) >= ?
+                """;
+
+        final LocalDate currentDate = DateUtils.getBusinessLocalDate();
+
+        return this.jdbcTemplate.queryForList(query, Long.class, loanProductId, currentDate, currentDate, inactivityPeriod);
+    }
+
+    private static final class DefaultInsuranceMapper implements RowMapper<DefaultOrCancelInsuranceInstallmentData> {
+
+        public String schema() {
+            return """
+                    ml.id loanId, min(mlrs.installment) installment, mlc.id loanChargeId
+                        from
+                            m_loan ml
+                            join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id and mlrs.completed_derived = false
+                            join m_loan_charge mlc on mlc.loan_id = ml.id and mlc.charge_calculation_enum = 1034
+                             join m_loan_installment_charge mlic on mlic.loan_charge_id = mlc.id and mlic.loan_schedule_id = mlrs.id
+                             join m_charge mc on mc.id = mlc.charge_id
+                        where
+                            ml.loan_status_id = 300
+                            and mlc.amount_outstanding_derived > 0
+                            and mlc.default_from_installment is null
+                            and mlic.amount_outstanding_derived > 0
+                    """;
+        }
+
+        public String suspensionSchema() {
+            return """
+                    distinct ml.id loanId, min(mlrs.installment) installment, mlc.id loanChargeId
+                    from
+                    m_loan ml
+                    join m_loan_arrears_aging mlaa on mlaa.loan_id = ml.id
+                    join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id and mlrs.completed_derived = false
+                    join m_loan_charge mlc on mlc.loan_id = ml.id
+                    join m_loan_installment_charge mlic on mlic.loan_charge_id = mlc.id and mlic.loan_schedule_id = mlrs.id
+                    join m_charge mc on mc.id = mlc.charge_id
+                        where
+                            ml.loan_status_id = 300
+                            and mlc.amount_outstanding_derived > 0
+                    """;
+        }
+
+        @Override
+        public DefaultOrCancelInsuranceInstallmentData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
+            final Long loanId = JdbcSupport.getLong(rs, "loanId");
+            final Integer installment = JdbcSupport.getInteger(rs, "installment");
+            final Long loanChargeId = JdbcSupport.getLong(rs, "loanChargeId");
+
+            return new DefaultOrCancelInsuranceInstallmentData(loanId, loanChargeId, installment);
+        }
+    }
+
+    @Override
+    public List<DefaultOrCancelInsuranceInstallmentData> getLoanDataWithDefaultOrCancelInsurance(Long loanId, Long insuranceCode,
+            LocalDate date) {
+
+        final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
+        String sql = "SELECT " + rowMapper.schema();
+        Object[] params = null;
+        sql = sql + " and mc.charge_calculation_enum =  " + ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue();
+        if (loanId == null && insuranceCode == null) {
+            sql = sql + " and mlrs.duedate < CURRENT_DATE " + " and CURRENT_DATE - mlrs.duedate = 60 ";
+            params = new Object[] {};
+        } else if (insuranceCode == null) {
+            sql = sql + " and ml.id = ? ";
+            params = new Object[] { loanId };
+        } else {
+            sql = sql + " and ml.id = ? and mc.insurance_code = ? ";
+            params = new Object[] { loanId, insuranceCode };
+        }
+        if (date != null) {
+            sql = sql + " and mlrs.fromdate > ? ";
+            final int N = params.length;
+            params = Arrays.copyOf(params, N + 1);
+            params[N] = date;
+        }
+        sql = sql + " group by ml.id, mlc.id order by ml.id";
+
+        return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
+    }
+
+    @Override
+    public List<DefaultOrCancelInsuranceInstallmentData> getLoanDataWithDefaultMandatoryInsurance(Long numberOfDays) {
+
+        final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
+        String sql = "SELECT " + rowMapper.suspensionSchema();
+        Object[] params = new Object[] { numberOfDays };
+        sql = sql + " and (CURRENT_DATE - mlaa.overdue_since_date_derived) >= ? " + " group by ml.id, mlc.id order by ml.id";
+
+        return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
+    }
+
+    @Override
+    public List<DefaultOrCancelInsuranceInstallmentData> getLoanDataForSuspensionOfInsurance(Long numberOfDays) {
+
+        final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
+        String sql = "SELECT " + rowMapper.schema();
+        Object[] params = new Object[] { numberOfDays };
+        Integer[] codes = { ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue(), ChargeCalculationType.FLAT_SEGO.getValue(),
+                ChargeCalculationType.OPRIN_SEGO.getValue(), ChargeCalculationType.DISB_SEGO.getValue() };
+        sql = sql + " and mc.charge_calculation_enum in (" + Arrays.toString(codes).replaceAll("\\[|\\]", "") + ") ";
+        sql = sql + " and mlrs.duedate < CURRENT_DATE " + " and CURRENT_DATE - mlrs.duedate = ?" + " group by ml.id, mlc.id order by ml.id";
+
+        return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
+    }
+
+    private String convertInterestRateToDailyRateAndMonthlyRate(double interestRate) {
+        // Convert the annual rate to a decimal form
+        double annualRateDecimal = interestRate / 100.0;
+
+        // Calculate the daily rate
+        double dailyRate = annualRateDecimal / 365 * 100.0; // Assuming 365 days in a year
+
+        // Calculate the monthly nominal rate
+        double monthlyNominalRate = annualRateDecimal / 12 * 100.0; // Corrected calculation
+
+        // Format the rates, removing decimal places for whole numbers
+        String formattedDailyRate = formatRate(dailyRate);
+        String formattedMonthlyRate = formatRate(monthlyNominalRate);
+
+        // Return in the format "Tasa pactada: % diario % mnv"
+        return String.format(" %s%% diario %s%% mnv", formattedDailyRate, formattedMonthlyRate);
+    }
+
+    // Helper method to format rates
+    private String formatRate(double rate) {
+        if (Math.abs(rate - Math.floor(rate)) < 0.000001) {
+            return String.format("%.0f", rate).replace(".", ",");
+        } else {
+            return String.format("%.2f", rate).replace(".", ",");
+        }
+    }
+
+    private static final class LoanReclaimMapper implements RowMapper<LoanReclaimData> {
+
+        public String loanReclaimSchemaForAval() {
+            return """
+                          ml.id loanId,
+                          	ml.account_no loanAccoutNumber,
+                          	mcl.display_name clientName,
+                          	mpl.name productName,
+                          	(CURRENT_DATE - mlaa.overdue_since_date_derived) as daysInArrears,
+                          	ml.principal_outstanding_derived outstandingPrincipal,
+                          	COALESCE(due_interest.intersetAmount,0) + COALESCE(overdue_interest.intersetAmount,0) outstandingInterest,
+                          	(COALESCE(insurance_chg.outstanding_amount,0) + COALESCE(vat_chg.outstanding_amount,0)) outstandingMandatoryInsuranceAmount,
+                          	(COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0)) AS outstandingAvalAmount,
+                          	(COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0)) AS outstandingOtherChargesAmount,
+                          	(COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0)) AS outstandingPenaltyAmount,
+                          	ml.principal_outstanding_derived +
+                          	COALESCE(due_interest.intersetAmount,0) + COALESCE(overdue_interest.intersetAmount,0) +
+                          	COALESCE(insurance_chg.outstanding_amount,0) + COALESCE(vat_chg.outstanding_amount,0) +
+                          	COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0) +
+                          	COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0) +
+                          	COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0) totalOutstandingAmount
+                          	from
+                          	m_loan ml
+                          	join m_product_loan mpl on mpl.id = ml.product_id
+                          	join m_client mcl on mcl.id = ml.client_id
+                          	join m_loan_arrears_aging mlaa on mlaa.loan_id = ml.id
+                          	left join (
+                          	    SELECT mlrs.loan_id,
+                          	    Round(mlrs.interest_amount / (duedate-fromdate) *  (current_date - fromdate)) as intersetAmount
+                          	    FROM m_loan_repayment_schedule mlrs
+                          	    WHERE duedate >= current_date and mlrs.completed_derived != true
+                          	    AND fromdate <= current_date
+                          	) due_interest on due_interest.loan_id = ml.id
+                          	left join (
+                          	    select mlrs.loan_id,sum(mlrs.interest_amount) as intersetAmount
+                          	    from m_loan_repayment_schedule mlrs
+                          	    where mlrs.completed_derived != true and duedate <= 		current_date group by loan_id
+                              ) overdue_interest on overdue_interest.loan_id = ml.id
+                          	LEFT join (
+                          		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                          	    inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
+                          	    inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                          	    and mlrs.completed_derived != true
+                          	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
+                          	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                          	    where mlc.charge_calculation_enum IN (468, 575, 231)
+                          	    group by mlc.loan_id
+                          	) insurance_chg ON insurance_chg.loan_id = ml.id
+                              LEFT JOIN (
+                              	SELECT sum(mlic.amount_outstanding_derived) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
+                                  inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
+                                  inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                  and mlrs.completed_derived != true
+                                  and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
+                                  and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                                  JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                  JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                  WHERE parent_charge.charge_calculation_enum IN (468, 575, 231)
+                                  group by mlc2.loan_id
+                          	) vat_chg  ON vat_chg.loan_id = ml.id
+                          	join (
+                          		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                          	    inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
+                          	    inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                          	    and mlrs.completed_derived != true
+                          	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
+                          	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                          	    where mlc.charge_calculation_enum = 41
+                          	    group by mlc.loan_id
+                          	) aval_chg ON aval_chg.loan_id = ml.id
+                          	LEFT JOIN (
+                          		SELECT sum(mlic.amount_outstanding_derived) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
+                                  inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
+                                  inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                  and mlrs.completed_derived != true
+                                  and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
+                                  and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                                  JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                  JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                  WHERE parent_charge.charge_calculation_enum = 41
+                                  group by mlc2.loan_id
+                          	) aval_vat_chg  ON aval_vat_chg.loan_id = ml.id
+                          	LEFT join (
+                          		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                          	    inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
+                          	    inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                          	    and mlrs.completed_derived != true
+                          	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
+                          	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                          	    where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41)
+                          	    group by mlc.loan_id
+                          	) other_chg ON other_chg.loan_id = ml.id
+                          	LEFT JOIN (
+                          	SELECT sum(mlic.amount_outstanding_derived) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
+                                  inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
+                                  inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                  and mlrs.completed_derived != true
+                                  and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
+                                  and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                                  JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                  JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                  WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231, 41)
+                                  group by mlc2.loan_id
+                          	) other_vat_chg  ON other_vat_chg.loan_id = ml.id
+                          	LEFT join (
+                          		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                                  inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
+                                  inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                  and mlrs.completed_derived != true
+                                  and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
+                                  and mlrs.duedate <= current_date
+                                  where mlc.is_penalty = true group by mlc.loan_id
+                          	) penalty_chg ON penalty_chg.loan_id = ml.id
+                          	LEFT JOIN (
+                          		SELECT sum(mlic.amount) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
+                                  inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
+                                  inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                  and mlrs.completed_derived != true
+                                  and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
+                                  and mlrs.duedate <= current_date
+                                  JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                  JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                  WHERE parent_charge.is_penalty = true group by mlc2.loan_id
+                          	) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
+                          WHERE
+                          	ml.loan_status_id = 300
+                          	and (CURRENT_DATE - mlaa.overdue_since_date_derived) > ?
+                    """;
+        }
+
+        public String loanReclaimSchemaForInsurance() {
+            return """
+                            ml.id loanId,
+                        	ml.account_no loanAccoutNumber,
+                        	mcl.display_name clientName,
+                        	mpl.name productName,
+                        	(CURRENT_DATE - mlaa.overdue_since_date_derived) as daysInArrears,
+                        	ml.principal_outstanding_derived outstandingPrincipal,
+                        	COALESCE(due_interest.intersetAmount,0) + COALESCE(overdue_interest.intersetAmount,0) outstandingInterest,
+                        	(COALESCE(insurance_chg.outstanding_amount,0) + COALESCE(vat_chg.outstanding_amount,0)) outstandingMandatoryInsuranceAmount,
+                        	(COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0)) AS outstandingAvalAmount,
+                        	(COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0)) AS outstandingOtherChargesAmount,
+                        	(COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0)) AS outstandingPenaltyAmount,
+                        	ml.principal_outstanding_derived +
+                        	COALESCE(due_interest.intersetAmount,0) + COALESCE(overdue_interest.intersetAmount,0) +
+                        	COALESCE(insurance_chg.outstanding_amount,0) + COALESCE(vat_chg.outstanding_amount,0) +
+                        	COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0) +
+                        	COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0) +
+                        	COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0) totalOutstandingAmount
+                        	from
+                        	m_loan ml
+                        	join m_product_loan mpl on mpl.id = ml.product_id
+                        	join m_client mcl on mcl.id = ml.client_id
+                        	join m_loan_arrears_aging mlaa on mlaa.loan_id = ml.id
+                        	left join (
+                        	    SELECT mlrs.loan_id,
+                        	    Round(mlrs.interest_amount / (duedate-fromdate) *  (current_date - fromdate)) as intersetAmount
+                        	    FROM m_loan_repayment_schedule mlrs
+                        	    WHERE duedate >= current_date and mlrs.completed_derived != true
+                        	    AND fromdate <= current_date
+                        	) due_interest on due_interest.loan_id = ml.id
+                        	left join (
+                        	    select mlrs.loan_id,sum(mlrs.interest_amount) as intersetAmount
+                        	    from m_loan_repayment_schedule mlrs
+                        	    where mlrs.completed_derived != true and duedate <= 		current_date group by loan_id
+                            ) overdue_interest on overdue_interest.loan_id = ml.id
+                        	join (
+                        		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                        	    inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
+                        	    inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                        	    and mlrs.completed_derived != true
+                        	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
+                        	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                        	    where mlc.charge_calculation_enum IN (468, 575, 231)
+                        	    group by mlc.loan_id
+                        	) insurance_chg ON insurance_chg.loan_id = ml.id
+                            LEFT JOIN (
+                            	SELECT sum(mlic.amount_outstanding_derived) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
+                                inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
+                                inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                and mlrs.completed_derived != true
+                                and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
+                                and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                                JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                WHERE parent_charge.charge_calculation_enum IN (468, 575, 231)
+                                group by mlc2.loan_id
+                        	) vat_chg  ON vat_chg.loan_id = ml.id
+                        	LEFT join (
+                        		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                        	    inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
+                        	    inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                        	    and mlrs.completed_derived != true
+                        	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
+                        	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                        	    where mlc.charge_calculation_enum = 41
+                        	    group by mlc.loan_id
+                        	) aval_chg ON aval_chg.loan_id = ml.id
+                        	LEFT JOIN (
+                        		SELECT sum(mlic.amount_outstanding_derived) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
+                                inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
+                                inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                and mlrs.completed_derived != true
+                                and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
+                                and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                                JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                WHERE parent_charge.charge_calculation_enum = 41
+                                group by mlc2.loan_id
+                        	) aval_vat_chg  ON aval_vat_chg.loan_id = ml.id
+                        	LEFT join (
+                        		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                        	    inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
+                        	    inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                        	    and mlrs.completed_derived != true
+                        	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
+                        	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                        	    where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41)
+                        	    group by mlc.loan_id
+                        	) other_chg ON other_chg.loan_id = ml.id
+                        	LEFT JOIN (
+                        	SELECT sum(mlic.amount_outstanding_derived) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
+                                inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
+                                inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                and mlrs.completed_derived != true
+                                and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
+                                and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                                JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231, 41)
+                                group by mlc2.loan_id
+                        	) other_vat_chg  ON other_vat_chg.loan_id = ml.id
+                        	LEFT join (
+                        		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                                inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
+                                inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                and mlrs.completed_derived != true
+                                and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
+                                and mlrs.duedate <= current_date
+                                where mlc.is_penalty = true group by mlc.loan_id
+                        	) penalty_chg ON penalty_chg.loan_id = ml.id
+                        	LEFT JOIN (
+                        		SELECT sum(mlic.amount) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
+                                inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
+                                inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                and mlrs.completed_derived != true
+                                and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
+                                and mlrs.duedate <= current_date
+                                JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                WHERE parent_charge.is_penalty = true group by mlc2.loan_id
+                        	) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
+                        WHERE
+                        	ml.loan_status_id = 300
+                        	and (CURRENT_DATE - mlaa.overdue_since_date_derived) > ?
+                    """;
+        }
+
+        public String loanReclaimSchemaForWriteoff() {
+            return """
+                            ml.id loanId,
+                        	ml.account_no loanAccoutNumber,
+                        	mcl.display_name clientName,
+                        	mpl.name productName,
+                        	(CURRENT_DATE - mlaa.overdue_since_date_derived) as daysInArrears,
+                        	ml.principal_outstanding_derived outstandingPrincipal,
+                        	COALESCE(due_interest.intersetAmount,0) + COALESCE(overdue_interest.intersetAmount,0) outstandingInterest,
+                        	(COALESCE(insurance_chg.outstanding_amount,0) + COALESCE(vat_chg.outstanding_amount,0)) outstandingMandatoryInsuranceAmount,
+                        	(COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0)) AS outstandingAvalAmount,
+                        	(COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0)) AS outstandingOtherChargesAmount,
+                        	(COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0)) AS outstandingPenaltyAmount,
+                        	ml.principal_outstanding_derived +
+                        	COALESCE(due_interest.intersetAmount,0) + COALESCE(overdue_interest.intersetAmount,0) +
+                        	COALESCE(insurance_chg.outstanding_amount,0) + COALESCE(vat_chg.outstanding_amount,0) +
+                        	COALESCE(aval_chg.outstanding_amount,0) + COALESCE(aval_vat_chg.outstanding_amount,0) +
+                        	COALESCE(other_chg.outstanding_amount,0) + COALESCE(other_vat_chg.outstanding_amount,0) +
+                        	COALESCE(penalty_chg.outstanding_amount,0) + COALESCE(penalty_vat_chg.outstanding_amount,0) totalOutstandingAmount
+                        	from
+                        	m_loan ml
+                        	join m_product_loan mpl on mpl.id = ml.product_id
+                        	join m_client mcl on mcl.id = ml.client_id
+                        	join m_loan_arrears_aging mlaa on mlaa.loan_id = ml.id
+                        	left join (
+                        	    SELECT mlrs.loan_id,
+                        	    Round(mlrs.interest_amount / (duedate-fromdate) *  (current_date - fromdate)) as intersetAmount
+                        	    FROM m_loan_repayment_schedule mlrs
+                        	    WHERE duedate >= current_date and mlrs.completed_derived != true
+                        	    AND fromdate <= current_date
+                        	) due_interest on due_interest.loan_id = ml.id
+                        	left join (
+                        	    select mlrs.loan_id,sum(mlrs.interest_amount) as intersetAmount
+                        	    from m_loan_repayment_schedule mlrs
+                        	    where mlrs.completed_derived != true and duedate <= 		current_date group by loan_id
+                            ) overdue_interest on overdue_interest.loan_id = ml.id
+                        	LEFT join (
+                        		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                        	    inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
+                        	    inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                        	    and mlrs.completed_derived != true
+                        	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
+                        	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                        	    where mlc.charge_calculation_enum IN (468, 575, 231)
+                        	    group by mlc.loan_id
+                        	) insurance_chg ON insurance_chg.loan_id = ml.id
+                            LEFT JOIN (
+                            	SELECT sum(mlic.amount_outstanding_derived) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
+                                inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
+                                inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                and mlrs.completed_derived != true
+                                and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
+                                and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                                JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                WHERE parent_charge.charge_calculation_enum IN (468, 575, 231)
+                                group by mlc2.loan_id
+                        	) vat_chg  ON vat_chg.loan_id = ml.id
+                        	LEFT join (
+                        		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                        	    inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
+                        	    inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                        	    and mlrs.completed_derived != true
+                        	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
+                        	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                        	    where mlc.charge_calculation_enum = 41
+                        	    group by mlc.loan_id
+                        	) aval_chg ON aval_chg.loan_id = ml.id
+                        	LEFT JOIN (
+                        		SELECT sum(mlic.amount_outstanding_derived) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
+                                inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
+                                inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                and mlrs.completed_derived != true
+                                and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
+                                and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                                JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                WHERE parent_charge.charge_calculation_enum = 41
+                                group by mlc2.loan_id
+                        	) aval_vat_chg  ON aval_vat_chg.loan_id = ml.id
+                        	LEFT join (
+                        		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                        	    inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
+                        	    inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                        	    and mlrs.completed_derived != true
+                        	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
+                        	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                        	    where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41)
+                        	    group by mlc.loan_id
+                        	) other_chg ON other_chg.loan_id = ml.id
+                        	LEFT JOIN (
+                        	SELECT sum(mlic.amount_outstanding_derived) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
+                                inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
+                                inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                and mlrs.completed_derived != true
+                                and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
+                                and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
+                                JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231, 41)
+                                group by mlc2.loan_id
+                        	) other_vat_chg  ON other_vat_chg.loan_id = ml.id
+                        	LEFT join (
+                        		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                                inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
+                                inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                and mlrs.completed_derived != true
+                                and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
+                                and mlrs.duedate <= current_date
+                                where mlc.is_penalty = true group by mlc.loan_id
+                        	) penalty_chg ON penalty_chg.loan_id = ml.id
+                        	LEFT JOIN (
+                        		SELECT sum(mlic.amount) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
+                                inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
+                                inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+                                and mlrs.completed_derived != true
+                                and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
+                                and mlrs.duedate <= current_date
+                                JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
+                                JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
+                                WHERE parent_charge.is_penalty = true group by mlc2.loan_id
+                        	) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
+                        WHERE
+                        	ml.loan_status_id = 300
+                        	and (CURRENT_DATE - mlaa.overdue_since_date_derived) > ?
+                    """;
+        }
+
+        @Override
+        public LoanReclaimData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+
+            final Long id = rs.getLong("loanId");
+            final String clientName = rs.getString("clientName");
+            final String accountNo = rs.getString("loanAccoutNumber");
+            final String loanProductName = rs.getString("productName");
+            final Long daysInArrears = JdbcSupport.getLongDefaultToNullIfZero(rs, "daysInArrears");
+            final BigDecimal outstandingPrincipal = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "outstandingPrincipal");
+            final BigDecimal outstandingInterest = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "outstandingInterest");
+            final BigDecimal outstandingMandatoryInsuranceAmount = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs,
+                    "outstandingMandatoryInsuranceAmount");
+            final BigDecimal outstandingAvalAmount = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "outstandingAvalAmount");
+            final BigDecimal outstandingOtherChargesAmount = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs,
+                    "outstandingOtherChargesAmount");
+            final BigDecimal outstandingPenaltyAmount = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "outstandingPenaltyAmount");
+            final BigDecimal totalOutstandingAmount = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "totalOutstandingAmount");
+
+            return new LoanReclaimData(id, clientName, accountNo, loanProductName, daysInArrears, outstandingPrincipal, outstandingInterest,
+                    outstandingAvalAmount, outstandingMandatoryInsuranceAmount, outstandingOtherChargesAmount, outstandingPenaltyAmount,
+                    totalOutstandingAmount);
+        }
+    }
+
+    @Override
+    public List<LoanReclaimData> retrieveClaimTemplate(String claimType) {
+
+        final AppUser currentUser = this.context.authenticatedUser();
+        final LoanReclaimMapper loanReclaimMapper = new LoanReclaimMapper();
+
+        final StringBuilder sqlBuilder = new StringBuilder(200);
+        if (claimType.equals("guarantor")) {
+            sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForAval());
+            sqlBuilder.append(" and ml.excluded_for_aval_claim is null ");
+        } else if (claimType.equals("insurance")) {
+            sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForInsurance());
+            sqlBuilder.append(" and ml.excluded_for_insurance_claim is null ");
+        } else {
+            sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForWriteoff());
+            sqlBuilder.append(" and ml.excluded_for_castigado_claim is null ");
+        }
+        sqlBuilder.append(" and ml.claim_type is null and ml.loan_schedule_type = 'PROGRESSIVE' ");
+
+        Long minimDaysToReclaim = 0L;
+        if (claimType.equals("guarantor") || claimType.equals("insurance")) {
+            minimDaysToReclaim = this.configurationDomainService.retriveMinimumDaysOfArrearsToClaim();
+        } else {
+            minimDaysToReclaim = this.configurationDomainService.retriveMinimumDaysOfArrearsToWriteOff();
+        }
+        final LocalDate currentDate = DateUtils.getBusinessLocalDate();
+        final Object[] objectArray = { minimDaysToReclaim };
+        List<LoanReclaimData> reclaimDataList = this.jdbcTemplate.query(sqlBuilder.toString(), objectArray, loanReclaimMapper);
+        return reclaimDataList;
+    }
+
+    @Override
+    public List<LoanReclaimData> retrieveExcludedTemplate(String claimType) {
+
+        final AppUser currentUser = this.context.authenticatedUser();
+        final String hierarchy = currentUser.getOffice().getHierarchy();
+        final String hierarchySearchString = hierarchy + "%";
+        final LoanReclaimMapper loanReclaimMapper = new LoanReclaimMapper();
+
+        final StringBuilder sqlBuilder = new StringBuilder(200);
+        if (claimType.equals("guarantor")) {
+            sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForAval());
+            sqlBuilder.append(" and ml.excluded_for_aval_claim = ? ");
+        } else if (claimType.equals("insurance")) {
+            sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForInsurance());
+            sqlBuilder.append(" and ml.excluded_for_insurance_claim = ? ");
+        } else {
+            sqlBuilder.append("select ").append(loanReclaimMapper.loanReclaimSchemaForWriteoff());
+            sqlBuilder.append(" and ml.excluded_for_castigado_claim = ? ");
+        }
+        sqlBuilder.append(" and ml.claim_type is null  and ml.loan_schedule_type = 'PROGRESSIVE'  ");
+
+        Long minimDaysToReclaim = 0L;
+        if (claimType.equals("guarantor") || claimType.equals("insurance")) {
+            minimDaysToReclaim = this.configurationDomainService.retriveMinimumDaysOfArrearsToClaim();
+        } else {
+            minimDaysToReclaim = this.configurationDomainService.retriveMinimumDaysOfArrearsToWriteOff();
+        }
+        final Object[] objectArray = { minimDaysToReclaim, claimType };
+
+        return this.jdbcTemplate.query(sqlBuilder.toString(), objectArray, loanReclaimMapper);
     }
 }

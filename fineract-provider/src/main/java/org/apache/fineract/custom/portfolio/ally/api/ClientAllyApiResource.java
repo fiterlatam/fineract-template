@@ -43,6 +43,7 @@ import org.apache.fineract.custom.infrastructure.bulkimport.data.CustomGlobalEnt
 import org.apache.fineract.custom.infrastructure.bulkimport.service.CustomBulkImportWorkbookPopulatorServiceImpl;
 import org.apache.fineract.custom.infrastructure.bulkimport.service.CustomBulkImportWorkbookServiceImpl;
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllyData;
+import org.apache.fineract.custom.portfolio.ally.domain.AllyCompensationRepository;
 import org.apache.fineract.custom.portfolio.ally.service.ClientAllyReadWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -88,8 +89,7 @@ public class ClientAllyApiResource {
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String get(@Context final UriInfo uriInfo,
-            @QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch) {
+    public String get(@QueryParam("sqlSearch") @Parameter(description = "sqlSearch") final String sqlSearch) {
         this.context.authenticatedUser().validateHasReadPermission(ClientAllyApiConstants.RESOURCE_NAME);
         return this.toApiJsonSerializer.serialize(this.service.findByName(sqlSearch));
     }
@@ -146,7 +146,7 @@ public class ClientAllyApiResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail, @FormDataParam("locale") final String locale,
             @FormDataParam("dateFormat") final String dateFormat) {
         final Long importDocumentId = customBulkImportWorkbookService.importWorkbook(CustomGlobalEntityType.CLIENT_ALLY.getAlias(),
-                uploadedInputStream, fileDetail, locale, dateFormat);
+                uploadedInputStream, fileDetail, locale, dateFormat, null);
         return toApiJsonSerializer.serialize(importDocumentId);
     }
 
@@ -184,6 +184,32 @@ public class ClientAllyApiResource {
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().deleteClientAlly(id).build();
 
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @Autowired
+    AllyCompensationRepository allyCompensationRepository;
+
+    @GET
+    @Path("/compensation")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String get(@Context final UriInfo uriInfo) {
+        this.context.authenticatedUser().validateHasReadPermission(ClientAllyApiConstants.RESOURCE_NAME);
+        return this.toApiJsonSerializer.serialize(this.allyCompensationRepository.findBySettlementStatus());
+    }
+
+    @POST
+    @Path("compensation/{id}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String updateCompensation(@PathParam("id") @Parameter(description = "id") final Long id,
+            @Parameter(hidden = true) final String jsonRequestBody) {
+
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().updateClientAllyCompensation(id).withJson(jsonRequestBody)
+                .build();
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
         return this.toApiJsonSerializer.serialize(result);

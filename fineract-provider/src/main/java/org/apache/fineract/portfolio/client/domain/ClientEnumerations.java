@@ -65,6 +65,9 @@ public final class ClientEnumerations {
                 optionData = new EnumOptionData(ClientStatus.TRANSFER_ON_HOLD.getValue().longValue(),
                         ClientStatus.TRANSFER_ON_HOLD.getCode(), "Transfer on hold");
             break;
+            case BLOCKED:
+                optionData = new EnumOptionData(ClientStatus.BLOCKED.getValue().longValue(), ClientStatus.BLOCKED.getCode(), "Blocked");
+            break;
         }
 
         return optionData;

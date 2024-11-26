@@ -30,7 +30,8 @@ public enum ClientStatus {
     ACTIVE(300, "clientStatusType.active"), //
     TRANSFER_IN_PROGRESS(303, "clientStatusType.transfer.in.progress"), //
     TRANSFER_ON_HOLD(304, "clientStatusType.transfer.on.hold"), //
-    CLOSED(600, "clientStatusType.closed"), REJECTED(700, "clientStatusType.rejected"), WITHDRAWN(800, "clientStatusType.withdraw");
+    CLOSED(600, "clientStatusType.closed"), REJECTED(700, "clientStatusType.rejected"), WITHDRAWN(800,
+            "clientStatusType.withdraw"), BLOCKED(900, "clientStatusType.blocked");
 
     private final Integer value;
     private final String code;
@@ -60,6 +61,9 @@ public enum ClientStatus {
             case 800:
                 enumeration = ClientStatus.WITHDRAWN;
             break;
+            case 900:
+                enumeration = ClientStatus.BLOCKED;
+            break;
 
         }
         return enumeration;
@@ -87,6 +91,8 @@ public enum ClientStatus {
             clientStatus = ClientStatus.TRANSFER_ON_HOLD;
         } else if (clientString.equalsIgnoreCase(ClientStatus.REJECTED.toString())) {
             clientStatus = ClientStatus.REJECTED;
+        } else if (clientString.equalsIgnoreCase(ClientStatus.BLOCKED.toString())) {
+            clientStatus = ClientStatus.BLOCKED;
         }
 
         return clientStatus;
@@ -119,6 +125,10 @@ public enum ClientStatus {
 
     public boolean isClosed() {
         return this.value.equals(ClientStatus.CLOSED.getValue());
+    }
+
+    public boolean isBlocked() {
+        return this.value.equals(ClientStatus.BLOCKED.getValue());
     }
 
     public boolean isRejected() {

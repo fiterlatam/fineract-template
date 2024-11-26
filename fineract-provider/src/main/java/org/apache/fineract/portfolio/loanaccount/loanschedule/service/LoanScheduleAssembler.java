@@ -38,6 +38,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -50,6 +51,7 @@ import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepos
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
+import org.apache.fineract.organisation.workingdays.api.WorkingDaysApiConstants;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDays;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
 import org.apache.fineract.organisation.workingdays.service.WorkingDaysUtil;
@@ -77,6 +79,9 @@ import org.apache.fineract.portfolio.floatingrates.exception.FloatingRateNotFoun
 import org.apache.fineract.portfolio.floatingrates.service.FloatingRatesReadPlatformService;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
+import org.apache.fineract.portfolio.interestrates.data.InterestRateHistoryData;
+import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
+import org.apache.fineract.portfolio.interestrates.service.InterestRateReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
@@ -115,12 +120,15 @@ import org.apache.fineract.portfolio.loanproduct.domain.RecalculationFrequencyTy
 import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class LoanScheduleAssembler {
 
+    private static final Logger log = LoggerFactory.getLogger(LoanScheduleAssembler.class);
     private final FromJsonHelper fromApiJsonHelper;
     private final LoanProductRepository loanProductRepository;
     private final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepository;
@@ -137,6 +145,7 @@ public class LoanScheduleAssembler {
     private final VariableLoanScheduleFromApiJsonValidator variableLoanScheduleFromApiJsonValidator;
     private final CalendarInstanceRepository calendarInstanceRepository;
     private final LoanUtilService loanUtilService;
+    private final InterestRateReadPlatformService interestRateReadPlatformService;
 
     @Autowired
     public LoanScheduleAssembler(final FromJsonHelper fromApiJsonHelper, final LoanProductRepository loanProductRepository,
@@ -148,7 +157,8 @@ public class LoanScheduleAssembler {
             final WorkingDaysRepositoryWrapper workingDaysRepository,
             final FloatingRatesReadPlatformService floatingRatesReadPlatformService,
             final VariableLoanScheduleFromApiJsonValidator variableLoanScheduleFromApiJsonValidator,
-            final CalendarInstanceRepository calendarInstanceRepository, final LoanUtilService loanUtilService) {
+            final CalendarInstanceRepository calendarInstanceRepository, final LoanUtilService loanUtilService,
+            final InterestRateReadPlatformService interestRateReadPlatformService) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.loanProductRepository = loanProductRepository;
         this.applicationCurrencyRepository = applicationCurrencyRepository;
@@ -165,6 +175,7 @@ public class LoanScheduleAssembler {
         this.variableLoanScheduleFromApiJsonValidator = variableLoanScheduleFromApiJsonValidator;
         this.calendarInstanceRepository = calendarInstanceRepository;
         this.loanUtilService = loanUtilService;
+        this.interestRateReadPlatformService = interestRateReadPlatformService;
     }
 
     public LoanApplicationTerms assembleLoanTerms(final JsonElement element) {
@@ -181,11 +192,11 @@ public class LoanScheduleAssembler {
         final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepository.findOneWithNotFoundDetection(currency);
 
         // loan terms
-        final Integer loanTermFrequency = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("loanTermFrequency", element);
+        Integer loanTermFrequency = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("loanTermFrequency", element);
         final Integer loanTermFrequencyType = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("loanTermFrequencyType", element);
         final PeriodFrequencyType loanTermPeriodFrequencyType = PeriodFrequencyType.fromInt(loanTermFrequencyType);
 
-        final Integer numberOfRepayments = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("numberOfRepayments", element);
+        Integer numberOfRepayments = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("numberOfRepayments", element);
         final Integer repaymentEvery = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("repaymentEvery", element);
         final Integer repaymentFrequencyType = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("repaymentFrequencyType", element);
         final PeriodFrequencyType repaymentPeriodFrequencyType = PeriodFrequencyType.fromInt(repaymentFrequencyType);
@@ -218,14 +229,44 @@ public class LoanScheduleAssembler {
             allowPartialPeriodInterestCalcualtion = loanProduct.getLoanProductRelatedDetail().isAllowPartialPeriodInterestCalcualtion();
         }
 
-        final BigDecimal interestRatePerPeriod = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("interestRatePerPeriod", element);
-        final PeriodFrequencyType interestRatePeriodFrequencyType = loanProduct.getInterestPeriodFrequencyType();
-
-        BigDecimal annualNominalInterestRate = BigDecimal.ZERO;
-        if (interestRatePerPeriod != null) {
-            annualNominalInterestRate = this.aprCalculator.calculateFrom(interestRatePeriodFrequencyType, interestRatePerPeriod,
-                    numberOfRepayments, repaymentEvery, repaymentPeriodFrequencyType);
+        final boolean requireInterestRatePoint = loanProduct.isRequirePoints();
+        Long interestRatePoints = null;
+        BigDecimal interestRatePerPeriod = BigDecimal.ZERO;
+        if (loanProduct.getInterestRate() != null) {
+            final InterestRate interestRate = loanProduct.getInterestRate();
+            if (!interestRate.isActive()) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.interest.rate.not.active",
+                        "The interest rate associated with this loan product is not active", interestRate.getId());
+            }
+            final Long interestRateId = interestRate.getId();
+            BigDecimal currentInterestRate = interestRate.getCurrentRate();
+            final LocalDate interestRateAppliedOnDate = interestRate.getAppliedOnDate();
+            final LocalDate expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed("expectedDisbursementDate", element);
+            if (DateUtils.isAfter(interestRateAppliedOnDate, expectedDisbursementDate)) {
+                final InterestRateHistoryData interestRateHistoryData = this.interestRateReadPlatformService
+                        .retrieveHistoryMatchingParams(interestRateId, expectedDisbursementDate);
+                if (interestRateHistoryData != null) {
+                    currentInterestRate = interestRateHistoryData.getCurrentRate();
+                } else {
+                    throw new GeneralPlatformDomainRuleException(
+                            "error.msg.loan.interest.rate.applied.on.date.not.found.that.matches.disbursement.date",
+                            "The provided disbursement date does not match available interest rate applied on date",
+                            expectedDisbursementDate);
+                }
+            }
+            interestRatePerPeriod = currentInterestRate;
+            if (requireInterestRatePoint) {
+                interestRatePoints = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.INTEREST_RATE_POINTS, element);
+                if (interestRatePoints == null) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.interestRatePoints.is.mandatory",
+                            "Interest rate points are mandatory for this loan product.");
+                }
+                interestRatePerPeriod = interestRatePerPeriod.add(BigDecimal.valueOf(interestRatePoints));
+            }
         }
+        final PeriodFrequencyType interestRatePeriodFrequencyType = PeriodFrequencyType.YEARS;
+
+        BigDecimal annualNominalInterestRate = interestRatePerPeriod;
 
         // disbursement details
         final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
@@ -314,12 +355,42 @@ public class LoanScheduleAssembler {
                     loanProduct.getMinimumDaysBetweenDisbursalAndFirstRepayment());
         }
 
+        boolean isInterestStartsAfterGracePeriod = loanProduct.isInterestStartsAfterGracePeriod();
+
         // grace details
         final Integer graceOnPrincipalPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnPrincipalPayment", element);
         final Integer recurringMoratoriumOnPrincipalPeriods = this.fromApiJsonHelper
                 .extractIntegerWithLocaleNamed("recurringMoratoriumOnPrincipalPeriods", element);
         final Integer graceOnInterestPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestPayment", element);
-        final Integer graceOnInterestCharged = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestCharged", element);
+        Integer graceOnChargesPayment = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnChargesPayment", element);
+        Integer graceOnInterestCharged = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("graceOnInterestCharged", element);
+        // if isInterestStartsAfterGracePeriod is true then graceOnInterestCharged should be equal to
+        // graceOnInterestPayment
+        if (isInterestStartsAfterGracePeriod) {
+            graceOnInterestCharged = graceOnInterestPayment;
+        }
+        // ensure that if graceOnChargesPayment is null , then set to product default
+        if (graceOnChargesPayment == null) {
+            graceOnChargesPayment = loanProduct.getLoanProductRelatedDetail().getGraceOnChargesPayment();
+        }
+        // If principal, interest, and charges have equal grace periods,
+        // extend the repayment schedule to include these grace period installments
+        boolean allGracesIncluded = graceOnPrincipalPayment != null && graceOnInterestPayment != null && graceOnChargesPayment != null;
+        boolean allGracesMatch = allGracesIncluded
+                && (graceOnPrincipalPayment.equals(graceOnInterestPayment) && graceOnPrincipalPayment.equals(graceOnChargesPayment));
+        if (allGracesMatch) {
+
+            // Check for potential integer overflow
+            if (numberOfRepayments <= Integer.MAX_VALUE - graceOnPrincipalPayment) {
+                numberOfRepayments += graceOnPrincipalPayment;
+                loanTermFrequency = numberOfRepayments;
+                log.info("new number of repayments after adding grace period: {}", numberOfRepayments);
+            } else {
+                // Handle overflow scenario - perhaps throw an exception or cap at max value
+                log.info("Potential integer overflow detected when adding grace period to number of repayments");
+            }
+        }
+
         final LocalDate interestChargedFromDate = this.fromApiJsonHelper.extractLocalDateNamed("interestChargedFromDate", element);
         final Boolean isInterestChargedFromDateSameAsDisbursalDateEnabled = this.configurationDomainService
                 .isInterestChargedFromDateSameAsDisbursementDate();
@@ -446,7 +517,9 @@ public class LoanScheduleAssembler {
             group = this.groupRepository.findOneWithNotFoundDetection(groupId);
             officeId = group.getOffice().getId();
         }
-        final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        isHolidayEnabled = loanProduct.enableHoliday(isHolidayEnabled);
+
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId, expectedDisbursementDate,
                 HolidayStatusType.ACTIVE.getValue());
         final WorkingDays workingDays = this.workingDaysRepository.findOne();
@@ -476,21 +549,28 @@ public class LoanScheduleAssembler {
             LoanScheduleProcessingType
                     .valueOf(this.fromApiJsonHelper.extractStringNamed(LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE, element));
         }
-        return LoanApplicationTerms.assembleFrom(applicationCurrency, loanTermFrequency, loanTermPeriodFrequencyType, numberOfRepayments,
-                repaymentEvery, repaymentPeriodFrequencyType, nthDay, weekDayType, amortizationMethod, interestMethod,
-                interestRatePerPeriod, interestRatePeriodFrequencyType, annualNominalInterestRate, interestCalculationPeriodMethod,
-                allowPartialPeriodInterestCalcualtion, principalMoney, expectedDisbursementDate, repaymentsStartingFromDate,
-                calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods,
-                graceOnInterestPayment, graceOnInterestCharged, interestChargedFromDate, inArrearsToleranceMoney,
-                loanProduct.isMultiDisburseLoan(), emiAmount, disbursementDatas, maxOutstandingBalance, graceOnArrearsAgeing,
-                daysInMonthType, daysInYearType, isInterestRecalculationEnabled, recalculationFrequencyType, restCalendarInstance,
-                compoundingMethod, compoundingCalendarInstance, compoundingFrequencyType, principalThresholdForLastInstalment,
-                installmentAmountInMultiplesOf, loanProduct.preCloseInterestCalculationStrategy(), calendar, BigDecimal.ZERO,
-                loanTermVariations, isInterestChargedFromDateSameAsDisbursalDateEnabled, numberOfDays, isSkipMeetingOnFirstDay, detailDTO,
-                allowCompoundingOnEod, isEqualAmortization, isInterestToBeRecoveredFirstWhenGreaterThanEMI,
-                fixedPrincipalPercentagePerInstallment, isPrincipalCompoundingDisabledForOverdueLoans, isDownPaymentEnabled,
-                disbursedAmountPercentageForDownPayment, isAutoRepaymentForDownPaymentEnabled, repaymentStartDateType, submittedOnDate,
-                loanScheduleType, loanScheduleProcessingType);
+        LoanApplicationTerms loanApplicationTerms = LoanApplicationTerms.assembleFrom(applicationCurrency, loanTermFrequency,
+                loanTermPeriodFrequencyType, numberOfRepayments, repaymentEvery, repaymentPeriodFrequencyType, nthDay, weekDayType,
+                amortizationMethod, interestMethod, interestRatePerPeriod, interestRatePoints, interestRatePeriodFrequencyType,
+                annualNominalInterestRate, interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, principalMoney,
+                expectedDisbursementDate, repaymentsStartingFromDate, calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment,
+                recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnChargesPayment, graceOnInterestCharged,
+                interestChargedFromDate, inArrearsToleranceMoney, loanProduct.isMultiDisburseLoan(), emiAmount, disbursementDatas,
+                maxOutstandingBalance, graceOnArrearsAgeing, daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
+                recalculationFrequencyType, restCalendarInstance, compoundingMethod, compoundingCalendarInstance, compoundingFrequencyType,
+                principalThresholdForLastInstalment, installmentAmountInMultiplesOf, loanProduct.preCloseInterestCalculationStrategy(),
+                calendar, BigDecimal.ZERO, loanTermVariations, isInterestChargedFromDateSameAsDisbursalDateEnabled, numberOfDays,
+                isSkipMeetingOnFirstDay, detailDTO, allowCompoundingOnEod, isEqualAmortization,
+                isInterestToBeRecoveredFirstWhenGreaterThanEMI, fixedPrincipalPercentagePerInstallment,
+                isPrincipalCompoundingDisabledForOverdueLoans, isDownPaymentEnabled, disbursedAmountPercentageForDownPayment,
+                isAutoRepaymentForDownPaymentEnabled, repaymentStartDateType, submittedOnDate, loanScheduleType,
+                loanScheduleProcessingType);
+
+        if (allGracesMatch) {
+            loanApplicationTerms.setNumberOfInstallmentsToIgnore(graceOnPrincipalPayment);
+        }
+
+        return loanApplicationTerms;
     }
 
     private CalendarInstance createCalendarForSameAsRepayment(final Integer repaymentEvery,
@@ -628,11 +708,14 @@ public class LoanScheduleAssembler {
         return loanApplicationTerms.toLoanProductRelatedDetail();
     }
 
-    public LoanScheduleModel assembleLoanScheduleFrom(final JsonElement element) {
+    public LoanScheduleModel assembleLoanScheduleFrom(final JsonElement element, final LoanProduct loanProduct) {
         // This method is getting called from calculate loan schedule.
         final LoanApplicationTerms loanApplicationTerms = assembleLoanTerms(element);
+        loanApplicationTerms.setExtendTermForMonthlyRepayment(loanProduct.getExtendTermForMonthlyRepayments());
         // Get holiday details
-        final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        isHolidayEnabled = loanProduct.enableHoliday(isHolidayEnabled);
+        final Integer loanProductRepaymentReschedulingType = loanProduct.getRepaymentReschedulingType();
 
         final Long clientId = this.fromApiJsonHelper.extractLongNamed("clientId", element);
         final Long groupId = this.fromApiJsonHelper.extractLongNamed("groupId", element);
@@ -652,6 +735,19 @@ public class LoanScheduleAssembler {
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId, expectedDisbursementDate,
                 HolidayStatusType.ACTIVE.getValue());
         final WorkingDays workingDays = this.workingDaysRepository.findOne();
+
+        if (loanProductRepaymentReschedulingType != null && loanProductRepaymentReschedulingType.equals(1)) {
+            this.workingDaysRepository.detach(workingDays);
+            workingDays.update(WorkingDaysApiConstants.RECURRENCE_WEEKLY_ALL_DAYS, 1);
+            isHolidayEnabled = false;
+        }
+
+        if (loanApplicationTerms.getAmortizationMethod().isCapitalAtEnd()) {
+            Integer principalGrace = loanApplicationTerms.getLoanTermFrequency() - 1;
+            loanApplicationTerms.updatePrincipalGrace(principalGrace);
+            loanApplicationTerms.setEqualAmortization(false);
+            loanApplicationTerms.setInterestMethod(InterestMethod.DECLINING_BALANCE);
+        }
 
         validateDisbursementDateIsOnNonWorkingDay(loanApplicationTerms.getExpectedDisbursementDate(), workingDays);
         validateDisbursementDateIsOnHoliday(loanApplicationTerms.getExpectedDisbursementDate(), isHolidayEnabled, holidays);
@@ -688,7 +784,9 @@ public class LoanScheduleAssembler {
                     loanApplicationTerms.getInterestMethod());
         }
 
-        return loanScheduleGenerator.generate(mc, loanApplicationTerms, loanCharges, detailDTO);
+        LoanScheduleModel loanScheduleModel = loanScheduleGenerator.generate(mc, loanApplicationTerms, loanCharges, detailDTO);
+        loanScheduleModel.setLoanApplicationTerms(loanApplicationTerms);
+        return loanScheduleModel;
     }
 
     public LoanScheduleModel assembleForInterestRecalculation(final LoanApplicationTerms loanApplicationTerms, final Long officeId,
@@ -696,7 +794,8 @@ public class LoanScheduleAssembler {
             final LocalDate rescheduleFrom) {
 
         final MathContext mc = MoneyHelper.getMathContext();
-        final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        isHolidayEnabled = loan.loanProduct().enableHoliday(isHolidayEnabled);
 
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId,
                 loanApplicationTerms.getExpectedDisbursementDate(), HolidayStatusType.ACTIVE.getValue());
@@ -717,7 +816,8 @@ public class LoanScheduleAssembler {
 
         final MathContext mc = MoneyHelper.getMathContext();
 
-        final boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        boolean isHolidayEnabled = this.configurationDomainService.isRescheduleRepaymentsOnHolidaysEnabled();
+        isHolidayEnabled = loan.loanProduct().enableHoliday(isHolidayEnabled);
         final List<Holiday> holidays = this.holidayRepository.findByOfficeIdAndGreaterThanDate(officeId,
                 loanApplicationTerms.getExpectedDisbursementDate(), HolidayStatusType.ACTIVE.getValue());
         final WorkingDays workingDays = this.workingDaysRepository.findOne();
