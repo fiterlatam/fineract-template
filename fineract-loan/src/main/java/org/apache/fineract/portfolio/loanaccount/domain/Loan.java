@@ -807,7 +807,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
                 // SU-444 => Generate accrual on installment start date
                 // if (installmentNumber > 1) {
-                //    installmentDate = installmentDate.plusDays(1);
+                // installmentDate = installmentDate.plusDays(1);
                 // }
                 // Accrual of first installment is generated at disbursal time. Ignore first installment here
                 if (installmentNumber == 1) {
@@ -3258,7 +3258,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         }
         // we don't want to immediately generate ccharges if the disbursedOn is today
-	// SU-444 generate charges from disbursement day
+        // SU-444 generate charges from disbursement day
         if (!installmentalCharges.isEmpty()) {
 
             handleChargeAppliedTransactionPerInstallment(installmentalCharges, disbursedOn);
@@ -5697,7 +5697,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (this.isAnulado && this.isAnuladoOnDisbursementDate) {
                 if (loanCharge.isCustomPercentageBasedOfAnotherCharge()) {
                     for (LoanCharge charge : this.getCharges()) {
-                        if (charge.getCharge().getId() != null && charge.getCharge().getId().equals(loanCharge.getCharge().getParentChargeId())) {
+                        if (charge.getCharge().getId() != null
+                                && charge.getCharge().getId().equals(loanCharge.getCharge().getParentChargeId())) {
                             if (!charge.isFlatHono()) {
                                 return loanChargePerInstallments;
                             }
@@ -7750,7 +7751,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 if (this.isAnulado && this.isAnuladoOnDisbursementDate) {
                     if (loanCharge.isCustomPercentageBasedOfAnotherCharge()) {
                         for (LoanCharge charge : charges) {
-                            if (charge.isFlatHono() && charge.getCharge().getId() != null && charge.getCharge().getId().equals(loanCharge.getCharge().getParentChargeId())) {
+                            if (charge.isFlatHono() && charge.getCharge().getId() != null
+                                    && charge.getCharge().getId().equals(loanCharge.getCharge().getParentChargeId())) {
                                 ivaHono = true;
                             }
                         }
@@ -7797,8 +7799,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Collection<LoanCharge> ivaCharges = loan.getLoanCharges().stream().filter(LoanCharge::isCustomPercentageBasedOfAnotherCharge)
                 .toList();
 
-        BigDecimal chargeAmount = honorariosCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
-                        lc -> Objects.equals(installmentNumber, lc.getInstallment().getInstallmentNumber()))
+        BigDecimal chargeAmount = honorariosCharges.stream().flatMap(lic -> lic.installmentCharges().stream())
+                .filter(lc -> Objects.equals(installmentNumber, lc.getInstallment().getInstallmentNumber()))
                 .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal honorariosTermChargeAmount = ivaCharges.stream()
                 .filter(lc -> honorariosCharges.stream()
@@ -7810,7 +7812,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         return Money.of(loan.getCurrency(), honorariosAmount);
     }
-
 
     public Integer getLoanSubStatus() {
         return this.loanSubStatus;

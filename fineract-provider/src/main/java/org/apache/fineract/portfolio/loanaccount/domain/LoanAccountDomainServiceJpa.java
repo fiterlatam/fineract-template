@@ -1302,7 +1302,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         for (LoanRepaymentScheduleInstallment repaymentScheduleInstallment : loan.getRepaymentScheduleInstallments()) {
 
             BigDecimal chargeAmount = honorariosCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
-                            lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal honorariosTermChargeAmount = ivaCharges.stream()
                     .filter(lc -> honorariosCharges.stream()
