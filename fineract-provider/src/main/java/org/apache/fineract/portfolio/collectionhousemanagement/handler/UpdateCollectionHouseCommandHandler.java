@@ -10,13 +10,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@CommandType(entity = "PRODUCTCOLLECTIONHOUSE", action = "CREATE")
-public class CreateCollectionHouse implements NewCommandSourceHandler {
+@CommandType(entity = "PRODUCTCOLLECTIONHOUSE", action = "UPDATE")
+public class UpdateCollectionHouseCommandHandler implements NewCommandSourceHandler {
 
     private final CollectionHouseReadWriteService collectionHouseConfigReadWriteServices;
 
     @Autowired
-    public CreateCollectionHouse(final CollectionHouseReadWriteService collectionHouseConfigReadWriteServices) {
+    public UpdateCollectionHouseCommandHandler(final CollectionHouseReadWriteService collectionHouseConfigReadWriteServices) {
         this.collectionHouseConfigReadWriteServices = collectionHouseConfigReadWriteServices;
     }
 
@@ -24,6 +24,6 @@ public class CreateCollectionHouse implements NewCommandSourceHandler {
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
 
-        return this.collectionHouseConfigReadWriteServices.createCollectionHouseConfig(command);
+        return this.collectionHouseConfigReadWriteServices.updateCollectionHouseConfig(command.entityId(), command);
     }
 }

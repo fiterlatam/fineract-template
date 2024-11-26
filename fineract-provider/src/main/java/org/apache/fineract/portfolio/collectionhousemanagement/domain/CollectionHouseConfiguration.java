@@ -29,14 +29,6 @@ public class CollectionHouseConfiguration extends AbstractAuditableWithUTCDateTi
     @Column(name = "collection_verification_code")
     private Integer collectionVerificationCode;
 
-    // public CollectionHouseConfiguration(String collectionName, String collectionNit, String collectionCode, Integer
-    // collectionVerificationCode) {
-    // this.collectionName = collectionName;
-    // this.collectionNit = collectionNit;
-    // this.collectionCode = collectionCode;
-    // this.collectionVerificationCode = collectionVerificationCode;
-    // }
-
     public CollectionHouseConfigParameterizationData toData() {
         return CollectionHouseConfigParameterizationData.instance(getId(), this.collectionName, this.collectionNit, this.collectionCode,
                 this.collectionVerificationCode);
