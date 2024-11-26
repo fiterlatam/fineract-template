@@ -4083,4 +4083,20 @@ public class CommandWrapperBuilder {
         this.href = "reclaim/exclude/" + loanId;
         return this;
     }
+
+    public CommandWrapperBuilder createCollectionHouse() {
+        this.actionName = "CREATE";
+        this.entityName = "PRODUCTCOLLECTIONHOUSE";
+        this.entityId = null;
+        this.href = "/collectionhousemanagement";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateCollectionHouse(final Long parameterId) {
+        this.actionName = "UPDATE";
+        this.entityName = "PRODUCTCOLLECTIONHOUSE";
+        this.entityId = parameterId;
+        this.href = "/collectionhousemanagement/" + parameterId;
+        return this;
+    }
 }
