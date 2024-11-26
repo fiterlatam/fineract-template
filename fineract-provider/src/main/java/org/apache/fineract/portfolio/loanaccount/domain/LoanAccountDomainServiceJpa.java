@@ -322,7 +322,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         } else {
             DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
             if (delinquencyRange != null) {
-                delinquencyValue = BigDecimal.valueOf(delinquencyRangeData.getPercentageValue());
+                delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
             }
         }
         // Step 1: Value of delinquent portion / (1 + (delinquency percentage * (1 + vat percentage)))
