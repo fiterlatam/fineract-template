@@ -38,6 +38,8 @@ public interface ConfigurationDomainService {
 
     boolean allowTransactionsOnNonWorkingDayEnabled();
 
+    boolean enableMonthlyInvoiceGenerationOnJobTrigger();
+
     boolean isConstraintApproachEnabledForDatatables();
 
     boolean isEhcacheEnabled();
