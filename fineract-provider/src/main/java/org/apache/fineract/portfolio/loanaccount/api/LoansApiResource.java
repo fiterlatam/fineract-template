@@ -895,7 +895,6 @@ public class LoansApiResource {
         LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(loanId);
         LoanScheduleData repaymentSchedule = null;
         Collection<DisbursementData> disbursementData = this.loanReadPlatformService.retrieveLoanDisbursementDetails(loanId);
-        ;
         final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData = loanBasicDetails.getTimeline().repaymentScheduleRelatedData(
                 loanBasicDetails.getCurrency(), loanBasicDetails.getPrincipal(), loanBasicDetails.getApprovedPrincipal(),
                 loanBasicDetails.getInArrearsTolerance(), loanBasicDetails.getFeeChargesAtDisbursementCharged());

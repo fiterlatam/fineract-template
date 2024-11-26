@@ -22,12 +22,14 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 
 /**
  * Immutable data object that represents a period of a loan schedule.
  *
  */
+@Setter
 @Getter
 public final class LoanSchedulePeriodData {
 
@@ -74,9 +76,25 @@ public final class LoanSchedulePeriodData {
     private final BigDecimal totalCredits;
     private final Boolean downPaymentPeriod;
     private BigDecimal mandatoryInsuranceDue = BigDecimal.ZERO;
+    private BigDecimal mandatoryInsurancePaid;
+    private BigDecimal mandatoryInsuranceWaived;
+    private BigDecimal mandatoryInsuranceWrittenOff;
+    private BigDecimal mandatoryInsuranceOutstanding;
     private BigDecimal voluntaryInsuranceDue = BigDecimal.ZERO;
+    private BigDecimal voluntaryInsurancePaid;
+    private BigDecimal voluntaryInsuranceWaived;
+    private BigDecimal voluntaryInsuranceWrittenOff;
+    private BigDecimal voluntaryInsuranceOutstanding;
     private BigDecimal avalDue = BigDecimal.ZERO;
+    private BigDecimal avalPaid;
+    private BigDecimal avalWaived;
+    private BigDecimal avalWrittenOff;
+    private BigDecimal avalOutstanding;
     private BigDecimal honorariosDue = BigDecimal.ZERO;
+    private BigDecimal honorariosPaid;
+    private BigDecimal honorariosWaived;
+    private BigDecimal honorariosWrittenOff;
+    private BigDecimal honorariosOutstanding;
 
     public static LoanSchedulePeriodData disbursementOnlyPeriod(final LocalDate disbursementDate, final BigDecimal principalDisbursed,
             final BigDecimal feeChargesDueAtTimeOfDisbursement, final boolean isDisbursed) {
@@ -487,40 +505,19 @@ public final class LoanSchedulePeriodData {
         return defaultToZeroIfNull(this.totalOutstandingForPeriod);
     }
 
-    public BigDecimal getMandatoryInsuranceDue() {
-        return mandatoryInsuranceDue;
+    public BigDecimal getMandatoryInsuranceOutstanding() {
+        return defaultToZeroIfNull(this.mandatoryInsuranceOutstanding);
     }
 
-    public void setMandatoryInsuranceDue(BigDecimal mandatoryInsuranceDue) {
-        this.mandatoryInsuranceDue = mandatoryInsuranceDue;
+    public BigDecimal getVoluntaryInsuranceOutstanding() {
+        return defaultToZeroIfNull(this.voluntaryInsuranceOutstanding);
     }
 
-    public BigDecimal getVoluntaryInsuranceDue() {
-        return voluntaryInsuranceDue;
+    public BigDecimal getAvalOutstanding() {
+        return defaultToZeroIfNull(this.avalOutstanding);
     }
 
-    public void setVoluntaryInsuranceDue(BigDecimal voluntaryInsuranceDue) {
-        this.voluntaryInsuranceDue = voluntaryInsuranceDue;
+    public BigDecimal getHonorariosOutstanding() {
+        return defaultToZeroIfNull(this.honorariosOutstanding);
     }
-
-    public BigDecimal getAvalDue() {
-        return avalDue;
-    }
-
-    public void setAvalDue(BigDecimal avalDue) {
-        this.avalDue = avalDue;
-    }
-
-    public BigDecimal getHonorariosDue() {
-        return honorariosDue;
-    }
-
-    public void setHonorariosDue(BigDecimal honorariosDue) {
-        this.honorariosDue = honorariosDue;
-    }
-
-    public Integer getPeriod() {
-        return this.period;
-    }
-
 }

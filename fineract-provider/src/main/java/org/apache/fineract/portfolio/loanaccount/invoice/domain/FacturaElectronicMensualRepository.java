@@ -16,20 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.delinquency.api;
+package org.apache.fineract.portfolio.loanaccount.invoice.domain;
 
-public final class DelinquencyApiConstants {
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-    private DelinquencyApiConstants() {
-
-    }
-
-    public static final String NAME_PARAM_NAME = "name";
-    public static final String CLASSIFICATION_PARAM_NAME = "classification";
-    public static final String RANGES_PARAM_NAME = "ranges";
-    public static final String MINIMUMAGEDAYS_PARAM_NAME = "minimumAgeDays";
-    public static final String MAXIMUMAGEDAYS_PARAM_NAME = "maximumAgeDays";
-    public static final String LOCALE_PARAM_NAME = "locale";
-    public static final String PERCENTAGEVALUE = "percentageValue";
+public interface FacturaElectronicMensualRepository
+        extends JpaRepository<FacturaElectronicaMensual, Long>, JpaSpecificationExecutor<FacturaElectronicaMensual> {
 
 }
