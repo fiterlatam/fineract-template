@@ -338,6 +338,9 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                         c.income_or_liability_account_id AS "glAccountId" ,
                         acc.name AS "glAccountName",
                         acc.gl_code AS "glCode",
+                        c.fee_receivable_gl_account_id AS "feeReceivableGlAccountId",
+                        acc2.name AS "feeReceivableGlAccountName",
+                        acc2.gl_code AS "feeReceivableGlCode",
                         tg.id AS "taxGroupId",
                         c.is_payment_type AS "isPaymentType",
                         pt.id AS "paymentTypeId",
@@ -365,6 +368,7 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                     FROM m_charge c
                     JOIN m_organisation_currency oc ON c.currency_code = oc.code
                     LEFT JOIN acc_gl_account acc ON acc.id = c.income_or_liability_account_id
+                    LEFT JOIN acc_gl_account acc2 on acc2.id = c.fee_receivable_gl_account_id
                     LEFT JOIN m_tax_group tg ON tg.id = c.tax_group_id
                     LEFT JOIN m_payment_type pt ON pt.id = c.payment_type_id
                     LEFT JOIN m_interest_rate mir ON mir.id = c.interest_rate_id
@@ -442,6 +446,16 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                 glAccountData = new GLAccountData().setId(glAccountId).setName(glAccountName).setGlCode(glCode);
             }
 
+            // extract fee receivable GL Account
+            final Long feeReceivableGlAccountId = JdbcSupport.getLong(rs, "feeReceivableGlAccountId");
+            final String feeReceivableGlAccountName = rs.getString("feeReceivableGlAccountName");
+            final String feeReceivableGlCode = rs.getString("feeReceivableGlCode");
+            GLAccountData feeReceivableGlAccountData = null;
+            if (feeReceivableGlAccountId != null) {
+                feeReceivableGlAccountData = new GLAccountData().setId(feeReceivableGlAccountId).setName(feeReceivableGlAccountName)
+                        .setGlCode(feeReceivableGlCode);
+            }
+
             final Long taxGroupId = JdbcSupport.getLong(rs, "taxGroupId");
             final String taxGroupName = rs.getString("taxGroupName");
             TaxGroupData taxGroupData = null;
@@ -502,8 +516,10 @@ public class ChargeReadPlatformServiceImpl implements ChargeReadPlatformService 
                         .appliedOnDate(interestRateAppliedOnDate).currentRate(interestRateCurrentRate).name(interestRateName).build();
                 chargeData.setInterestRate(interestRateData);
             }
+            if (feeReceivableGlAccountData != null) {
+                chargeData.setFeeReceivableAccount(feeReceivableGlAccountData);
+            }
             return chargeData;
-
         }
     }
 

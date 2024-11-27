@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.charge.service;
 
+import static org.apache.fineract.portfolio.charge.serialization.ChargeDefinitionCommandFromApiJsonDeserializer.FEE_RECEIVABLE_GL_ACCOUNT_ID;
+
 import jakarta.persistence.PersistenceException;
 import java.util.Collection;
 import java.util.Map;
@@ -83,12 +85,16 @@ public class ChargeWritePlatformServiceJpaRepositoryImpl implements ChargeWriteP
             this.context.authenticatedUser();
             this.fromApiJsonDeserializer.validateForCreate(command.json());
 
-            // Retrieve linked GLAccount for Client charges (if present)
             final Long glAccountId = command.longValueOfParameterNamed(ChargesApiConstants.glAccountIdParamName);
+            final Long feeReceivableGLAccountId = command.longValueOfParameterNamed(FEE_RECEIVABLE_GL_ACCOUNT_ID);
 
             GLAccount glAccount = null;
+            GLAccount feeReceivableAccount = null;
             if (glAccountId != null) {
                 glAccount = this.glAccountRepository.findOneWithNotFoundDetection(glAccountId);
+            }
+            if (feeReceivableGLAccountId != null) {
+                feeReceivableAccount = this.glAccountRepository.findOneWithNotFoundDetection(feeReceivableGLAccountId);
             }
 
             final Long taxGroupId = command.longValueOfParameterNamed(ChargesApiConstants.taxGroupIdParamName);
@@ -117,6 +123,7 @@ public class ChargeWritePlatformServiceJpaRepositoryImpl implements ChargeWriteP
 
             final Charge charge = Charge.fromJson(command, glAccount, taxGroup, paymentType);
             charge.setInterestRate(interestRate);
+            charge.setFeeReceivableAccount(feeReceivableAccount);
             charge.validateChargeIsSetupCorrectly();
             this.chargeRepository.saveAndFlush(charge);
 
@@ -184,6 +191,16 @@ public class ChargeWritePlatformServiceJpaRepositoryImpl implements ChargeWriteP
                     newIncomeAccount = this.glAccountRepository.findOneWithNotFoundDetection(newValue);
                 }
                 chargeForUpdate.setAccount(newIncomeAccount);
+            }
+
+            // Has fee receivable account Id been changed ?
+            if (changes.containsKey(FEE_RECEIVABLE_GL_ACCOUNT_ID)) {
+                final Long newValue = command.longValueOfParameterNamed(FEE_RECEIVABLE_GL_ACCOUNT_ID);
+                GLAccount newFeeReceivableAccount = null;
+                if (newValue != null) {
+                    newFeeReceivableAccount = this.glAccountRepository.findOneWithNotFoundDetection(newValue);
+                }
+                chargeForUpdate.setFeeReceivableAccount(newFeeReceivableAccount);
             }
 
             final String paymentTypeIdParamName = "paymentTypeId";
