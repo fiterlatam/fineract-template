@@ -54,7 +54,8 @@ public final class DisbursementData implements Comparable<DisbursementData> {
         return new DisbursementData(actualDisbursementDate, linkAccountId, rowIndex, locale, dateFormat, channelName);
     }
 
-    private DisbursementData(LocalDate actualDisbursementDate, String linkAccountId, Integer rowIndex, String locale, String dateFormat, String channelName) {
+    private DisbursementData(LocalDate actualDisbursementDate, String linkAccountId, Integer rowIndex, String locale, String dateFormat,
+            String channelName) {
         this.dateFormat = dateFormat;
         this.locale = locale;
         this.actualDisbursementDate = actualDisbursementDate;

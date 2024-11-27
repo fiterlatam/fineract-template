@@ -304,7 +304,7 @@ public class LoanAccountData {
             Integer graceOnInterestPayment, Integer graceOnInterestCharged, LocalDate interestChargedFromDate,
             LocalDate repaymentsStartingFromDate, Integer rowIndex, ExternalId externalId, Long groupId, Collection<LoanChargeData> charges,
             String linkAccountId, String locale, String dateFormat, List<LoanCollateralManagementData> loanCollateralManagementData,
-                                                           String nit, String code, String loanId, String cedula, boolean isMigratedLoan) {
+            String nit, String code, String loanId, String cedula, boolean isMigratedLoan) {
 
         return new LoanAccountData().setLoanType(loanTypeEnumOption).setClientId(clientId).setProductId(productId)
                 .setLoanOfficerId(loanOfficerId).setSubmittedOnDate(submittedOnDate).setFundId(fundId).setPrincipal(principal)
@@ -318,8 +318,8 @@ public class LoanAccountData {
                 .setGraceOnInterestCharged(graceOnInterestCharged).setInterestChargedFromDate(interestChargedFromDate)
                 .setRepaymentsStartingFromDate(repaymentsStartingFromDate).setRowIndex(rowIndex).setExternalId(externalId)
                 .setGroupId(groupId).setCharges(charges).setLinkAccountId(linkAccountId).setLocale(locale).setDateFormat(dateFormat)
-                .setCollateral(loanCollateralManagementData)
-                .setNit(nit).setCode(code).setNumeroCredito(loanId).setCedula(cedula).setMigratedLoan(isMigratedLoan);
+                .setCollateral(loanCollateralManagementData).setNit(nit).setCode(code).setNumeroCredito(loanId).setCedula(cedula)
+                .setMigratedLoan(isMigratedLoan);
     }
 
     public static LoanAccountData importInstanceGroup(EnumOptionData loanTypeEnumOption, Long groupIdforGroupLoan, Long productId,
