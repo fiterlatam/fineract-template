@@ -16,19 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanaccount.invoice.domain;
+package org.apache.fineract.infrastructure.event.business.domain.loan.transaction;
 
-import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 
-public interface FacturaElectronicMensualRepository
-        extends JpaRepository<FacturaElectronicaMensual, Long>, JpaSpecificationExecutor<FacturaElectronicaMensual> {
+public class LoanInvoiceGenerationPostBusinessEvent extends LoanTransactionBusinessEvent {
 
-    @Query("SELECT f FROM FacturaElectronicaMensual f WHERE f.id_cliente = :id_cliente AND f.tipo_prod = :tipo_prod ORDER BY f.createdDate, f.id")
-    List<FacturaElectronicaMensual> findById_clienteAndTipo_prod(@Param("id_cliente") String id_cliente,
-            @Param("tipo_prod") String tipo_prod);
+    private static final String TYPE = "LoanInvoiceGenerationPostBusinessEvent";
 
+    public LoanInvoiceGenerationPostBusinessEvent(LoanTransaction value) {
+        super(value);
+    }
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 }

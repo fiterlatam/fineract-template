@@ -99,6 +99,7 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.LoanBalance
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanChargebackTransactionBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanCloseAsRescheduleBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanCloseBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanCreditNoteBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanDebitNoteBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanDisbursalBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanInitiateTransferBusinessEvent;
@@ -117,6 +118,7 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.transaction
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanChargeOffPostBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanChargeOffPreBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanDisbursalTransactionBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanInvoiceGenerationPostBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanUndoChargeOffBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanUndoWrittenOffBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanWaiveInterestBusinessEvent;
@@ -195,7 +197,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepositor
 import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanIndividualMonitoringAccount;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagement;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
@@ -229,6 +230,12 @@ import org.apache.fineract.portfolio.loanaccount.exception.LoanTransactionNotFou
 import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementDataNotAllowedException;
 import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementDataRequiredException;
 import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorDomainService;
+import org.apache.fineract.portfolio.loanaccount.invoice.data.ClasificacionConceptosData;
+import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
+import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
+import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicaMensual;
+import org.apache.fineract.portfolio.loanaccount.invoice.domain.LoanDocumentConcept;
+import org.apache.fineract.portfolio.loanaccount.jobs.facturaelectronicamensual.FacturaElectronicaMensualTasklet;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
@@ -250,6 +257,9 @@ import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.loanproduct.exception.LinkedAccountRequiredException;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
+import org.apache.fineract.portfolio.loanproductparameterization.domain.LoanProductParameterization;
+import org.apache.fineract.portfolio.loanproductparameterization.domain.LoanProductParameterizationRepository;
+import org.apache.fineract.portfolio.loanproductparameterization.exception.LoanProductParameterizationNotFoundException;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
@@ -332,11 +342,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
     private final LoanScheduleGeneratorFactory loanScheduleFactory;
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
-    private final LoanBlockingReasonRepository blockingReasonRepository;
+    private final FacturaElectronicMensualRepository facturaElectronicMensualRepository;
+    private final LoanProductParameterizationRepository productParameterizationRepository;
 
     @PostConstruct
     public void registerForNotification() {
         businessEventNotifierService.addPostBusinessEventListener(LoanDisbursalBusinessEvent.class, new DisbursementEventListener());
+        businessEventNotifierService.addPostBusinessEventListener((LoanInvoiceGenerationPostBusinessEvent.class),
+                new LoanInvoiceGenerationPostBusinessEventListener());
+        businessEventNotifierService.addPostBusinessEventListener((LoanCreditNoteBusinessEvent.class),
+                new LoanCreditNoteGenerationPostBusinessEventListener());
     }
 
     @Transactional
@@ -3977,6 +3992,346 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 recalculateInterestRate(loan);
             }
         }
+    }
+
+    private final class LoanInvoiceGenerationPostBusinessEventListener
+            implements BusinessEventListener<LoanInvoiceGenerationPostBusinessEvent> {
+
+        @Override
+        public void onBusinessEvent(final LoanInvoiceGenerationPostBusinessEvent event) {
+            final LoanTransaction loanTransaction = event.get();
+            if (loanTransaction != null && loanTransaction.getTypeOf().isRepaymentType()) {
+                generateLoanTransactionDocument(loanTransaction);
+            }
+        }
+    }
+
+    private final class LoanCreditNoteGenerationPostBusinessEventListener implements BusinessEventListener<LoanCreditNoteBusinessEvent> {
+
+        @Override
+        public void onBusinessEvent(final LoanCreditNoteBusinessEvent event) {
+            final LoanTransaction loanTransaction = event.get();
+            if (loanTransaction != null) {
+                generateLoanTransactionDocument(loanTransaction);
+            }
+        }
+    }
+
+    private void generateLoanTransactionDocument(final LoanTransaction loanTransaction) {
+        final Long loanTransactionId = loanTransaction.getId();
+        final LoanTransactionType loanTransactionType = loanTransaction.getTypeOf();
+        final FacturaElectronicaMensualTasklet.LoanInvoiceMapper transactionMapper = new FacturaElectronicaMensualTasklet.LoanInvoiceMapper();
+        final String transactionSQL = "SELECT " + transactionMapper.transactionSchema()
+                + " WHERE mlt.\"transactionId\" = ? AND COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE, 0) > 90";
+        final List<LoanDocumentData> loanDocumentDataList = this.jdbcTemplate.query(transactionSQL, transactionMapper, loanTransactionId);
+        if (!loanDocumentDataList.isEmpty()) {
+            final LoanDocumentData loanDocumentData = loanDocumentDataList.get(0);
+            if (loanTransactionType.isRepaymentType()) {
+                loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
+            } else {
+                loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.CREDIT_NOTE);
+            }
+            processAndSaveLoanDocument(loanDocumentData);
+        }
+    }
+
+    @Override
+    public void processAndSaveLoanDocument(final LoanDocumentData loanDocumentData) {
+        final List<FacturaElectronicaMensual> facturaElectronicaMensuals = new ArrayList<>();
+        final FacturaElectronicaMensual facturaElectronicaMensual = loanDocumentData.toEntity();
+        final Integer itemsCount = loanDocumentData.getItemsCount();
+        facturaElectronicaMensual.setTotal_unidades(String.valueOf(itemsCount));
+        final BigDecimal interestPaid = loanDocumentData.getInterestPaid();
+        final BigDecimal penaltyChargesPaid = loanDocumentData.getPenaltyChargesPaid();
+        final BigDecimal mandatoryInsurancePaid = loanDocumentData.getMandatoryInsurancePaid();
+        final BigDecimal voluntaryInsurancePaid = loanDocumentData.getVoluntaryInsurancePaid();
+        final BigDecimal honorariosPaid = loanDocumentData.getHonorariosPaid();
+        final Long productTypeParamId = loanDocumentData.getProductTypeParamId();
+        final LoanProductParameterization loanProductParameterization = this.productParameterizationRepository.findById(productTypeParamId)
+                .orElseThrow(() -> new LoanProductParameterizationNotFoundException(productTypeParamId));
+        final Long rangeStartNumber = loanProductParameterization.getRangeStartNumber();
+        final Long invoiceCounter = loanProductParameterization.getInvoiceCounter();
+        final Long creditNoteCounter = loanProductParameterization.getCreditNoteCounter();
+        final Long rangeEndNumber = loanProductParameterization.getRangeEndNumber();
+        long documentNumber;
+        String documentNumberString;
+        Long currentCounter;
+        List<FacturaElectronicaMensual> invoicesToKnockOff = new ArrayList<>();
+        final LoanDocumentData.LoanDocumentType documentType = loanDocumentData.getDocumentType();
+        if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
+            currentCounter = ObjectUtils.defaultIfNull(creditNoteCounter, 0L) + 1L;
+            documentNumber = rangeStartNumber + currentCounter;
+            documentNumberString = "NC" + documentNumber;
+            loanProductParameterization.setCreditNoteCounter(currentCounter);
+            invoicesToKnockOff = this.facturaElectronicMensualRepository.findById_clienteAndTipo_prod(loanDocumentData.getClientIdNumber(),
+                    loanDocumentData.getProductTypeName());
+        } else {
+            currentCounter = ObjectUtils.defaultIfNull(invoiceCounter, 0L) + 1L;
+            documentNumber = rangeStartNumber + currentCounter;
+            documentNumberString = loanDocumentData.getBillingPrefix() + documentNumber;
+            loanProductParameterization.setInvoiceCounter(currentCounter);
+        }
+        if (currentCounter > rangeEndNumber) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.invoice.counter.exceeds.range.end.number",
+                    String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
+                            loanProductParameterization.getProductType()));
+        }
+        facturaElectronicaMensual.setNumero_doc(documentNumberString);
+        facturaElectronicaMensual.setNum_facafect(documentNumberString);
+        facturaElectronicaMensual.setId_mandante(null);
+        facturaElectronicaMensual.setDescripcion_mandante(null);
+        facturaElectronicaMensual.setCodigo_descuento("0");
+        facturaElectronicaMensual.setPorcentajedescuento(BigDecimal.ZERO);
+        facturaElectronicaMensual.setDescuento(BigDecimal.ZERO);
+        facturaElectronicaMensual.setPorcentaje_impuesto_item(BigDecimal.ZERO);
+        facturaElectronicaMensual.setImpuesto_item(BigDecimal.ZERO);
+        long itemPosition = 1L;
+        if (interestPaid.compareTo(BigDecimal.ZERO) > 0) {
+            final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.INT_CORRIENTE;
+            final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+            itemPosition = itemPosition + 1;
+            facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
+            facturaElectronicaMensualDuplicate.setCosto_total(interestPaid);
+            facturaElectronicaMensualDuplicate.setPrecio_unitario(interestPaid);
+            facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+            facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+            facturaElectronicaMensualDuplicate.setId_mandante(null);
+            facturaElectronicaMensualDuplicate.setDescripcion_mandante(null);
+            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
+            if (clasificacionConceptosData != null) {
+                if (!clasificacionConceptosData.isExcluido() && clasificacionConceptosData.isGravado()) {
+                    final BigDecimal tarifa = clasificacionConceptosData.getTarifa();
+                    final BigDecimal impuestoItem = interestPaid.multiply(tarifa).divide(BigDecimal.valueOf(100),
+                            MoneyHelper.getRoundingMode());
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(tarifa);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(impuestoItem);
+                } else {
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(null);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(BigDecimal.ZERO);
+                }
+                if (clasificacionConceptosData.isExento()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                } else if (clasificacionConceptosData.isExcluido()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(null);
+                } else if (clasificacionConceptosData.isGravado()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                }
+            }
+
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
+                if (!invoicesToKnockOff.isEmpty()) {
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals, interestPaid);
+                }
+            }
+        }
+        if (penaltyChargesPaid.compareTo(BigDecimal.ZERO) > 0) {
+            final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.INT_DE_MORA;
+            final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+            itemPosition = itemPosition + 1;
+            facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
+            facturaElectronicaMensualDuplicate.setCosto_total(penaltyChargesPaid);
+            facturaElectronicaMensualDuplicate.setPrecio_unitario(penaltyChargesPaid);
+            facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+            facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+            facturaElectronicaMensualDuplicate.setId_mandante(null);
+            facturaElectronicaMensualDuplicate.setDescripcion_mandante(null);
+            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
+            if (clasificacionConceptosData != null) {
+                if (!clasificacionConceptosData.isExcluido() && clasificacionConceptosData.isGravado()) {
+                    final BigDecimal tarifa = clasificacionConceptosData.getTarifa();
+                    final BigDecimal impuestoItem = penaltyChargesPaid.multiply(tarifa).divide(BigDecimal.valueOf(100),
+                            MoneyHelper.getRoundingMode());
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(tarifa);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(impuestoItem);
+                } else {
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(null);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(BigDecimal.ZERO);
+                }
+                if (clasificacionConceptosData.isExento()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                } else if (clasificacionConceptosData.isExcluido()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(null);
+                } else if (clasificacionConceptosData.isGravado()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                }
+            }
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
+                if (!invoicesToKnockOff.isEmpty()) {
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals,
+                            penaltyChargesPaid);
+                }
+            }
+        }
+        if (mandatoryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
+            final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.SEGURO_OBLIGATORIO;
+            final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+            itemPosition = itemPosition + 1;
+            facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
+            facturaElectronicaMensualDuplicate.setCosto_total(mandatoryInsurancePaid);
+            facturaElectronicaMensualDuplicate.setPrecio_unitario(mandatoryInsurancePaid);
+            facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+            facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
+            if (clasificacionConceptosData != null) {
+                final String idMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getMandatoryInsuranceCode() : null;
+                final String descripcionMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getMandatoryInsuranceName()
+                        : null;
+                facturaElectronicaMensualDuplicate.setId_mandante(idMandante);
+                facturaElectronicaMensualDuplicate.setDescripcion_mandante(descripcionMandante);
+                if (!clasificacionConceptosData.isExcluido() && clasificacionConceptosData.isGravado()) {
+                    final BigDecimal tarifa = clasificacionConceptosData.getTarifa();
+                    final BigDecimal impuestoItem = mandatoryInsurancePaid.multiply(tarifa).divide(BigDecimal.valueOf(100),
+                            MoneyHelper.getRoundingMode());
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(tarifa);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(impuestoItem);
+                } else {
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(null);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(BigDecimal.ZERO);
+                }
+                if (clasificacionConceptosData.isExento()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                } else if (clasificacionConceptosData.isExcluido()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(null);
+                } else if (clasificacionConceptosData.isGravado()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                }
+            }
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
+                if (!invoicesToKnockOff.isEmpty()) {
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals,
+                            mandatoryInsurancePaid);
+                }
+            }
+        }
+        if (voluntaryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
+            final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.SEGUROS_VOLUNTARIOS;
+            final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+            itemPosition = itemPosition + 1;
+            facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
+            facturaElectronicaMensualDuplicate.setCosto_total(voluntaryInsurancePaid);
+            facturaElectronicaMensualDuplicate.setPrecio_unitario(voluntaryInsurancePaid);
+            facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+            facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
+            if (clasificacionConceptosData != null) {
+                final String idMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getVoluntaryInsuranceCode() : null;
+                final String descripcionMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getVoluntaryInsuranceName()
+                        : null;
+                facturaElectronicaMensualDuplicate.setId_mandante(idMandante);
+                facturaElectronicaMensualDuplicate.setDescripcion_mandante(descripcionMandante);
+                if (clasificacionConceptosData.isExento()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                } else if (clasificacionConceptosData.isExcluido()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(null);
+                } else if (clasificacionConceptosData.isGravado()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                }
+            }
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
+                if (!invoicesToKnockOff.isEmpty()) {
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals,
+                            voluntaryInsurancePaid);
+                }
+            }
+        }
+        if (honorariosPaid.compareTo(BigDecimal.ZERO) > 0) {
+            final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.HONORARIOS;
+            final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+            itemPosition = itemPosition + 1;
+            facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
+            facturaElectronicaMensualDuplicate.setCosto_total(honorariosPaid);
+            facturaElectronicaMensualDuplicate.setPrecio_unitario(honorariosPaid);
+            facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+            facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
+            if (clasificacionConceptosData != null) {
+                if (!clasificacionConceptosData.isExcluido() && clasificacionConceptosData.isGravado()) {
+                    final BigDecimal tarifa = clasificacionConceptosData.getTarifa();
+                    final BigDecimal impuestoItem = honorariosPaid.multiply(tarifa).divide(BigDecimal.valueOf(100),
+                            MoneyHelper.getRoundingMode());
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(tarifa);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(impuestoItem);
+                } else {
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(null);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(BigDecimal.ZERO);
+                }
+                if (clasificacionConceptosData.isExento()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                } else if (clasificacionConceptosData.isExcluido()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(null);
+                } else if (clasificacionConceptosData.isGravado()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                }
+            }
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
+                if (!invoicesToKnockOff.isEmpty()) {
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals, honorariosPaid);
+                }
+            }
+
+        }
+        this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
+        this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
+    }
+
+    private void knockOffRecursively(final List<FacturaElectronicaMensual> invoicesToKnockOff,
+            final FacturaElectronicaMensual currentElectronicaMensual, final List<FacturaElectronicaMensual> facturaElectronicaMensuals,
+            BigDecimal remainingAmount) {
+        if (!invoicesToKnockOff.isEmpty()) {
+            for (final FacturaElectronicaMensual invoiceToKnockOff : invoicesToKnockOff) {
+                remainingAmount = remainingAmount.subtract(invoiceToKnockOff.getCosto_total());
+                if (remainingAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                    final String lastInvoiceNumber = invoiceToKnockOff.getNumero_doc();
+                    final LocalDate lastInvoiceDate = invoiceToKnockOff.getFecha_factura();
+                    currentElectronicaMensual.setNum_facafect(lastInvoiceNumber);
+                    currentElectronicaMensual.setFec_facafect(lastInvoiceDate);
+                    break;
+                } else {
+                    final FacturaElectronicaMensual knockOffCreditNote = currentElectronicaMensual.clone();
+                    knockOffCreditNote.setCosto_total(invoiceToKnockOff.getCosto_total());
+                    knockOffCreditNote.setPrecio_unitario(invoiceToKnockOff.getCosto_total());
+                    knockOffCreditNote.setNum_facafect(invoiceToKnockOff.getNumero_doc());
+                    knockOffCreditNote.setFec_facafect(invoiceToKnockOff.getFecha_factura());
+                    remainingAmount = remainingAmount.subtract(invoiceToKnockOff.getCosto_total());
+                    facturaElectronicaMensuals.add(knockOffCreditNote);
+                }
+            }
+        }
+    }
+
+    @Override
+    public ClasificacionConceptosData getClasificacionConceptosData(final String concepto) {
+        String sql = """
+                    SELECT
+                    	ccc.id AS id,
+                    	ccc.concepto AS concept,
+                    	ccc.mandato AS mandato,
+                    	ccc.excluido AS excluido,
+                    	ccc.exento AS exento,
+                    	ccc.gravado AS gravado,
+                    	ccc.norma AS norma,
+                    	ccc.tarifa AS tarifa
+                    FROM c_clasificacion_conceptos ccc
+                    WHERE ccc.concepto = ?
+                """;
+        final List<ClasificacionConceptosData> results = this.jdbcTemplate.query(sql, (rs, rowNum) -> {
+            final Long id = rs.getLong("id");
+            final String concept = rs.getString("concepto");
+            final boolean mandato = rs.getBoolean("mandato");
+            final boolean excluido = rs.getBoolean("excluido");
+            final boolean exento = rs.getBoolean("exento");
+            final boolean gravado = rs.getBoolean("gravado");
+            final String norma = rs.getString("norma");
+            final BigDecimal tarifa = rs.getBigDecimal("tarifa");
+            return ClasificacionConceptosData.builder().id(id).concepto(concept).mandato(mandato).excluido(excluido).exento(exento)
+                    .gravado(gravado).norma(norma).tarifa(tarifa).build();
+        });
+        return results.isEmpty() ? null : results.get(0);
     }
 
     @Override

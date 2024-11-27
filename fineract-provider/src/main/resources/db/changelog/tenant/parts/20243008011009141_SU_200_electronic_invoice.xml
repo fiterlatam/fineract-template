@@ -277,4 +277,95 @@
             <column name="description" value="Enable monthly invoice generation on manual job trigger"/>
         </insert>
     </changeSet>
+
+    <changeSet author="fineract" id="7">
+        <addColumn tableName="m_product_type_parameters">
+            <column name="invoice_counter" type="BIGINT"/>
+            <column name="credit_note_counter" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="7">
+        <insert tableName="m_external_event_configuration">
+            <column name="type" value="LoanInvoiceGenerationPostBusinessEvent"/>
+            <column name="enabled" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="8">
+        <createTable schemaName="public" tableName="c_clasificacion_conceptos">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column type="varchar(50)" name="concepto"/>
+            <column type="boolean" name="mandato"/>
+            <column type="boolean" name="excluido"/>
+            <column type="boolean" name="exento"/>
+            <column type="boolean" name="gravado"/>
+            <column type="varchar(255)" name="norma"/>
+            <column type="numeric(18,4)" name="tarifa"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="9" author="fineract">
+        <insert tableName="c_clasificacion_conceptos">
+            <column name="concepto" value="INT_CORRIENTE"/>
+            <column name="mandato" value="false"/>
+            <column name="excluido" value="true"/>
+            <column name="exento" value="false"/>
+            <column name="gravado" value="false"/>
+            <column name="norma" value="ART 476 ET No. 16"/>
+            <column name="tarifa" value="19.0000"/>
+        </insert>
+        <insert tableName="c_clasificacion_conceptos">
+            <column name="concepto" value="INT_DE_MORA"/>
+            <column name="mandato" value="false"/>
+            <column name="excluido" value="true"/>
+            <column name="exento" value="false"/>
+            <column name="gravado" value="false"/>
+            <column name="norma" value="ART 476 ET No. 16"/>
+            <column name="tarifa" value="19.0000"/>
+        </insert>
+        <insert tableName="c_clasificacion_conceptos">
+            <column name="concepto" value="SEGURO_OBLIGATORIO"/>
+            <column name="mandato" value="true"/>
+            <column name="excluido" value="true"/>
+            <column name="exento" value="false"/>
+            <column name="gravado" value="false"/>
+            <column name="norma" value="ART 427 ET"/>
+            <column name="tarifa" value="19.0000"/>
+        </insert>
+        <insert tableName="c_clasificacion_conceptos">
+            <column name="concepto" value="HONORARIOS"/>
+            <column name="mandato" value="true"/>
+            <column name="excluido" value="false"/>
+            <column name="exento" value="false"/>
+            <column name="gravado" value="true"/>
+            <column name="norma" value="NULL"/>
+            <column name="tarifa" value="19.0000"/>
+        </insert>
+        <insert tableName="c_clasificacion_conceptos">
+            <column name="concepto" value="SEGUROS_VOLUNTARIOS"/>
+            <column name="mandato" value="true"/>
+            <column name="excluido" value="false"/>
+            <column name="exento" value="false"/>
+            <column name="gravado" value="true"/>
+            <column name="norma" value="NULL"/>
+            <column name="tarifa" value="19.0000"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="10" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="c_facturacion_electronica" columnName="tipo_prod"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="c_facturacion_electronica">
+            <column name="tipo_prod" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
