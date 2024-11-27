@@ -511,14 +511,32 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Transient
     private boolean isAnuladoOnDisbursementDate;
 
+    // Columns for migrated loans
+    @Column(name = "is_migrated_loan", nullable = false)
+    private boolean isMigratedLoan = false;
+
+    @Column(name = "migrar_nit")
+    private String nit;
+
+    @Column(name = "migrar_code")
+    private String code;
+
+    @Column(name = "migrar_numerocredito")
+    private String numeroCredito;
+
+    @Column(name = "migrar_cli_nroid")
+    private String cedula;
+
+    ///////////////
+
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
-            final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
-            final String transactionProcessingStrategyCode, final LoanProductRelatedDetail loanRepaymentScheduleDetail,
-            final Set<LoanCharge> loanCharges, final Set<LoanCollateralManagement> collateral, final BigDecimal fixedEmiAmount,
-            final List<LoanDisbursementDetails> disbursementDetails, final BigDecimal maxOutstandingLoanBalance,
-            final Boolean createStandingInstructionAtDisbursement, final Boolean isFloatingInterestRate,
-            final BigDecimal interestRateDifferential, final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment,
-            final LoanCustomizationDetail loanAdditionalDetail) {
+                                                    final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
+                                                    final String transactionProcessingStrategyCode, final LoanProductRelatedDetail loanRepaymentScheduleDetail,
+                                                    final Set<LoanCharge> loanCharges, final Set<LoanCollateralManagement> collateral, final BigDecimal fixedEmiAmount,
+                                                    final List<LoanDisbursementDetails> disbursementDetails, final BigDecimal maxOutstandingLoanBalance,
+                                                    final Boolean createStandingInstructionAtDisbursement, final Boolean isFloatingInterestRate,
+                                                    final BigDecimal interestRateDifferential, final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment,
+                                                    final LoanCustomizationDetail loanAdditionalDetail) {
         return new Loan(accountNo, client, null, loanType, fund, officer, loanPurpose, transactionProcessingStrategyCode, loanProduct,
                 loanRepaymentScheduleDetail, null, loanCharges, collateral, null, fixedEmiAmount, disbursementDetails,
                 maxOutstandingLoanBalance, createStandingInstructionAtDisbursement, isFloatingInterestRate, interestRateDifferential, rates,
@@ -8214,5 +8232,45 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setAnuladoOnDisbursementDate(boolean anuladoOnDisbursementDate) {
         isAnuladoOnDisbursementDate = anuladoOnDisbursementDate;
+    }
+
+    public String cedula() {
+        return cedula;
+    }
+
+    public void setCedula(String cedula) {
+        this.cedula = cedula;
+    }
+
+    public String numeroCredito() {
+        return numeroCredito;
+    }
+
+    public void setNumeroCredito(String numeroCredito) {
+        this.numeroCredito = numeroCredito;
+    }
+
+    public String code() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String nit() {
+        return nit;
+    }
+
+    public void setNit(String nit) {
+        this.nit = nit;
+    }
+
+    public boolean isMigratedLoan() {
+        return isMigratedLoan;
+    }
+
+    public void setMigratedLoan(boolean migratedLoan) {
+        isMigratedLoan = migratedLoan;
     }
 }
