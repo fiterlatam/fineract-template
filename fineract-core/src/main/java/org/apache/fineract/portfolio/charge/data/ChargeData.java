@@ -67,6 +67,7 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
     private final BigDecimal maxCap;
     private final EnumOptionData feeFrequency;
     private final GLAccountData incomeOrLiabilityAccount;
+    private GLAccountData feeReceivableAccount;
     private final TaxGroupData taxGroup;
 
     // template attributes
@@ -163,6 +164,7 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
         ret.setChargeDataList(chargeDataList.stream().filter(notId -> notId.id.compareTo(charge.id) != 0).collect(Collectors.toList()));
         ret.setInterestRateOptions(template.getInterestRateOptions());
         ret.setInterestRate(charge.getInterestRate());
+        ret.setFeeReceivableAccount(charge.getFeeReceivableAccount());
 
         return ret;
     }

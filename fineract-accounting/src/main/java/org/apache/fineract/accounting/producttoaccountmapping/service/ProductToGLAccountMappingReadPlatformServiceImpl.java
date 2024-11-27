@@ -21,9 +21,12 @@ package org.apache.fineract.accounting.producttoaccountmapping.service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.accounting.common.AccountingConstants.AccrualAccountsForLoan;
 import org.apache.fineract.accounting.common.AccountingConstants.CashAccountsForLoan;
@@ -347,6 +350,7 @@ public class ProductToGLAccountMappingReadPlatformServiceImpl implements Product
         final List<Map<String, Object>> chargeToFundSourceMappingsList = this.jdbcTemplate.query(sql, rm, // NOSONAR
                 new Object[] { portfolioProductType.getValue(), loanProductId });
         List<ChargeToGLAccountMapper> chargeToGLAccountMappers = null;
+        Set<ChargeData> charges = new HashSet<>();
         for (final Map<String, Object> chargeToIncomeAccountMap : chargeToFundSourceMappingsList) {
             if (chargeToGLAccountMappers == null) {
                 chargeToGLAccountMappers = new ArrayList<>();
@@ -358,12 +362,38 @@ public class ProductToGLAccountMappingReadPlatformServiceImpl implements Product
             final Long chargeId = (Long) chargeToIncomeAccountMap.get("chargeId");
             final String chargeName = (String) chargeToIncomeAccountMap.get("chargeName");
             final Boolean penalty1 = (Boolean) chargeToIncomeAccountMap.get("penalty");
+            final Integer financialAccountType = (Integer) chargeToIncomeAccountMap.get("financialAccountType");
             final ChargeData chargeData = ChargeData.lookup(chargeId, chargeName, penalty1);
             final ChargeToGLAccountMapper chargeToGLAccountMapper = new ChargeToGLAccountMapper().setCharge(chargeData)
-                    .setIncomeAccount(gLAccountData);
+                    .setIncomeAccount(gLAccountData).setFinancialAccountType(financialAccountType);
             chargeToGLAccountMappers.add(chargeToGLAccountMapper);
+            charges.add(chargeData);
         }
+        chargeToGLAccountMappers = flattenChargeToAccountMappers(chargeToGLAccountMappers, charges);
         return chargeToGLAccountMappers;
+    }
+
+    private List<ChargeToGLAccountMapper> flattenChargeToAccountMappers(List<ChargeToGLAccountMapper> chargeToGLAccountMappers, Set<ChargeData> charges) {
+        List<ChargeToGLAccountMapper> flattenedChargeToGLAccountMappers = new ArrayList<>();
+        for(ChargeData charge : charges) {
+            ChargeToGLAccountMapper chargeToGLAccountMapper = new ChargeToGLAccountMapper();
+            Integer incomeType = charge.isPenalty() ? AccrualAccountsForLoan.INCOME_FROM_PENALTIES.getValue() : AccrualAccountsForLoan.INCOME_FROM_FEES.getValue();
+            Integer receivableType = charge.isPenalty() ? AccrualAccountsForLoan.PENALTIES_RECEIVABLE.getValue() : AccrualAccountsForLoan.FEES_RECEIVABLE.getValue();
+            GLAccountData incomeAccount = extractAccountFromMapper(chargeToGLAccountMappers, charge.getId(), incomeType);
+            GLAccountData receivableAccount = extractAccountFromMapper(chargeToGLAccountMappers, charge.getId(), receivableType);
+            chargeToGLAccountMapper.setCharge(charge).setIncomeAccount(incomeAccount).setReceivableAccount(receivableAccount);
+            flattenedChargeToGLAccountMappers.add(chargeToGLAccountMapper);
+        }
+        return flattenedChargeToGLAccountMappers;
+    }
+
+    private GLAccountData extractAccountFromMapper(List<ChargeToGLAccountMapper> chargeToGLAccountMappers, Long chargeId, Integer financialAccountType) {
+        for(ChargeToGLAccountMapper chargeToGLAccountMapper : chargeToGLAccountMappers) {
+            if(chargeToGLAccountMapper.getCharge().getId().equals(chargeId) && chargeToGLAccountMapper.getFinancialAccountType().equals(financialAccountType)) {
+                return chargeToGLAccountMapper.getIncomeAccount();
+            }
+        }
+        return null;
     }
 
     @Override

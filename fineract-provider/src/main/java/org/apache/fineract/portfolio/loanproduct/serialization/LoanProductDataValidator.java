@@ -138,6 +138,8 @@ public final class LoanProductDataValidator {
             LoanProductAccountingParams.PENALTIES_RECEIVABLE.getValue(),
             LoanProductAccountingParams.PAYMENT_CHANNEL_FUND_SOURCE_MAPPING.getValue(),
             LoanProductAccountingParams.FEE_INCOME_ACCOUNT_MAPPING.getValue(), LoanProductAccountingParams.INCOME_FROM_RECOVERY.getValue(),
+            LoanProductAccountingParams.FEE_FEE_RECEIVABLE_MAPPING.getValue(),
+            LoanProductAccountingParams.PENALTY_PENALTIES_RECEIVABLE_MAPPING.getValue(),
             LoanProductAccountingParams.PENALTY_INCOME_ACCOUNT_MAPPING.getValue(),
             LoanProductAccountingParams.CHARGE_OFF_FRAUD_EXPENSE.getValue(), LoanProductAccountingParams.CHARGE_OFF_EXPENSE.getValue(),
             LoanProductAccountingParams.INCOME_FROM_CHARGE_OFF_FEES.getValue(),
@@ -1930,7 +1932,7 @@ public final class LoanProductDataValidator {
     private void validateChargeToIncomeAccountMappings(final DataValidatorBuilder baseDataValidator, final JsonElement element) {
         // validate for both fee and penalty charges
         // TODO: This look faulty. Need to analyze this behaviour before changing
-        validateChargeToIncomeAccountMappings(baseDataValidator, element, true);
+        validateChargeToIncomeAccountMappings(baseDataValidator, element, false);
         validateChargeToIncomeAccountMappings(baseDataValidator, element, true);
     }
 

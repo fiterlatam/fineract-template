@@ -199,7 +199,12 @@ allprojects  {
             "**/build.gradle.mustache",
             "**/pom.mustache",
             "**/avro/**/*.java",
-            "**/org/apache/fineract/client/**/*.java"
+            "**/org/apache/fineract/client/**/*.java",
+            "**/changelog/**",
+            "**/org/apache/fineract/portfolio/**/*.java",
+            "**/org/apache/fineract/custom/**/*.java",
+            "**/org/apache/fineract/batch/**/*.java",
+            "**/org/apache/fineract/infrastructure/**/*.java",
         ])
         strictCheck true
     }
@@ -296,7 +301,20 @@ allprojects  {
             ".mailmap",
             '**/images/diag-*.svg',
             '**/*.avsc',
-            "**/generated/**/*MapperImpl.java"
+            "**/generated/**/*MapperImpl.java",
+            "**/changelog/**",
+            "**/org/apache/fineract/portfolio/**/*.java",
+            "**/org/apache/fineract/custom/**/*.java",
+            "**/org/apache/fineract/batch/**/*.java",
+            "**/org/apache/fineract/infrastructure/**/*.java",
+            //ignoring jar files
+            "**/thirdparty/**",
+            // Pentaho reports
+            "**/*.prpt",
+            "**/*.properties",
+            "**/*.PROPERTIES",
+            "**/pentahoReports/**",
+            "**/*.tpl"
         ]
     }
 }

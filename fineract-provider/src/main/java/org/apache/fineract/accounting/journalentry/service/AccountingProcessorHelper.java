@@ -66,6 +66,7 @@ import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.office.domain.OfficeRepository;
 import org.apache.fineract.portfolio.account.PortfolioAccountType;
 import org.apache.fineract.portfolio.account.service.AccountTransfersReadPlatformService;
+import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.client.domain.ClientTransaction;
 import org.apache.fineract.portfolio.client.domain.ClientTransactionRepository;
@@ -352,26 +353,25 @@ public class AccountingProcessorHelper {
             final String transactionId, final LocalDate transactionDate, final BigDecimal totalAmount, final Boolean isReversal,
             final List<ChargePaymentDTO> chargePaymentDTOs) {
 
-        GLAccount receivableAccount = getLinkedGLAccountForLoanCharges(loanProductId, accountTypeToBeDebited, null);
-        final Map<GLAccount, BigDecimal> creditDetailsMap = new LinkedHashMap<>();
+        final List<JournalEntryPair> entries = new ArrayList<>();
         for (final ChargePaymentDTO chargePaymentDTO : chargePaymentDTOs) {
             final Long chargeId = chargePaymentDTO.getChargeId();
             final GLAccount chargeSpecificAccount = getLinkedGLAccountForLoanCharges(loanProductId, accountTypeToBeCredited, chargeId);
+            final GLAccount chargeSpecificReceivableAccount = getLinkedReceivableGLAccountForLoanCharges(loanProductId,
+                    accountTypeToBeDebited, chargeId);
             BigDecimal chargeSpecificAmount = chargePaymentDTO.getAmount();
-
-            // adjust net credit amount if the account is already present in the
-            // map
-            if (creditDetailsMap.containsKey(chargeSpecificAccount)) {
-                final BigDecimal existingAmount = creditDetailsMap.get(chargeSpecificAccount);
-                chargeSpecificAmount = chargeSpecificAmount.add(existingAmount);
-            }
-            creditDetailsMap.put(chargeSpecificAccount, chargeSpecificAmount);
+            JournalEntryPair entry = new JournalEntryPair();
+            entry.incomeAccount = chargeSpecificAccount;
+            entry.receivableAccount = chargeSpecificReceivableAccount;
+            entry.amount = chargeSpecificAmount;
+            entries.add(entry);
         }
 
         BigDecimal totalCreditedAmount = BigDecimal.ZERO;
-        for (final Map.Entry<GLAccount, BigDecimal> entry : creditDetailsMap.entrySet()) {
-            final GLAccount account = entry.getKey();
-            final BigDecimal amount = entry.getValue();
+        for (JournalEntryPair entry : entries) {
+            final GLAccount account = entry.incomeAccount;
+            final GLAccount receivableAccount = entry.receivableAccount;
+            final BigDecimal amount = entry.amount;
             totalCreditedAmount = totalCreditedAmount.add(amount);
             if (isReversal) {
                 createDebitJournalEntryForLoan(office, currencyCode, account, loanId, transactionId, transactionDate, amount);
@@ -388,6 +388,13 @@ public class AccountingProcessorHelper {
                     "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction",
                     totalCreditedAmount, totalAmount);
         }
+    }
+
+    private static class JournalEntryPair {
+
+        public GLAccount receivableAccount;
+        public GLAccount incomeAccount;
+        public BigDecimal amount;
     }
 
     /**
@@ -1079,6 +1086,36 @@ public class AccountingProcessorHelper {
         // Vishwas TODO: remove this condition as it should always be true
         if (accountMappingTypeId == CashAccountsForLoan.INCOME_FROM_FEES.getValue()
                 || accountMappingTypeId == CashAccountsForLoan.INCOME_FROM_PENALTIES.getValue()) {
+            if (chargeId != null) {
+                Charge charge = chargeRepositoryWrapper.findOneWithNotFoundDetection(chargeId);
+                if (charge != null) {
+                    return charge.getAccount();
+                }
+            }
+            final ProductToGLAccountMapping chargeSpecificIncomeAccountMapping = this.accountMappingRepository
+                    .findProductIdAndProductTypeAndFinancialAccountTypeAndChargeId(loanProductId, PortfolioProductType.LOAN.getValue(),
+                            accountMappingTypeId, chargeId);
+            if (chargeSpecificIncomeAccountMapping != null) {
+                accountMapping = chargeSpecificIncomeAccountMapping;
+            }
+        }
+        return accountMapping.getGlAccount();
+    }
+
+    public GLAccount getLinkedReceivableGLAccountForLoanCharges(final Long loanProductId, final int accountMappingTypeId,
+            final Long chargeId) {
+        ProductToGLAccountMapping accountMapping = this.accountMappingRepository.findCoreProductToFinAccountMapping(loanProductId,
+                PortfolioProductType.LOAN.getValue(), accountMappingTypeId);
+
+        // Vishwas TODO: remove this condition as it should always be true
+        if (accountMappingTypeId == CashAccountsForLoan.FEES_RECEIVABLE.getValue()
+                || accountMappingTypeId == CashAccountsForLoan.PENALTIES_RECEIVABLE.getValue()) {
+            if (chargeId != null) {
+                Charge charge = chargeRepositoryWrapper.findOneWithNotFoundDetection(chargeId);
+                if (charge != null) {
+                    return charge.getFeeReceivableAccount();
+                }
+            }
             final ProductToGLAccountMapping chargeSpecificIncomeAccountMapping = this.accountMappingRepository
                     .findProductIdAndProductTypeAndFinancialAccountTypeAndChargeId(loanProductId, PortfolioProductType.LOAN.getValue(),
                             accountMappingTypeId, chargeId);

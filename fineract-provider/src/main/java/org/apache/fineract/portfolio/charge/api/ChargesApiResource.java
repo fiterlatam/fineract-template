@@ -64,7 +64,8 @@ public class ChargesApiResource {
             "active", "chargeAppliesTo", "chargeTimeType", "chargeCalculationType", "chargeCalculationTypeOptions",
             "chargeAppliesToOptions", "chargeTimeTypeOptions", "currencyOptions", "loanChargeCalculationTypeOptions",
             "loanChargeTimeTypeOptions", "savingsChargeCalculationTypeOptions", "savingsChargeTimeTypeOptions", "incomeAccount",
-            "clientChargeCalculationTypeOptions", "clientChargeTimeTypeOptions"));
+            "clientChargeCalculationTypeOptions", "clientChargeTimeTypeOptions", "incomeOrLiabilityAccountOptions", "assetAccountOptions",
+            "expenseAccountOptions"));
 
     private static final String RESOURCE_NAME_FOR_PERMISSIONS = "CHARGE";
 
