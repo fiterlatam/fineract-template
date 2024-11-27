@@ -7757,16 +7757,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                             }
                         }
                     }
-                    if (this.isAnulado && this.isAnuladoOnDisbursementDate && (!loanCharge.isFlatHono() && !ivaHono)) {
-                        // If loan is canceled on same day as disbursement then only charge hono charges
-                        this.clearLoanInstallmentChargesBeforeRegeneration(loanCharge);
-                        loanCharge.setAmount(loanCharge.getAmountPaid(currency).getAmount());
-                        loanCharge.setOutstandingAmount(BigDecimal.ZERO);
+                }
+                if (this.isAnulado && this.isAnuladoOnDisbursementDate && (!loanCharge.isFlatHono() && !ivaHono)) {
+                    // If loan is canceled on same day as disbursement then only charge hono charges
+                    this.clearLoanInstallmentChargesBeforeRegeneration(loanCharge);
+                    loanCharge.setAmount(loanCharge.getAmountPaid(currency).getAmount());
+                    loanCharge.setOutstandingAmount(BigDecimal.ZERO);
 
-                    } else {
-                        recalculateLoanCharge(loanCharge, penaltyWaitPeriod);
-                        loanCharge.updateWaivedAmount(currency);
-                    }
+                } else {
+                    recalculateLoanCharge(loanCharge, penaltyWaitPeriod);
+                    loanCharge.updateWaivedAmount(currency);
                 }
             }
         }
