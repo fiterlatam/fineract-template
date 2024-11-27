@@ -60,5 +60,13 @@ public interface ProductToGLAccountMappingRepository
     List<ProductToGLAccountMapping> findAllPenaltyToIncomeAccountMappings(@Param("productId") Long productId,
             @Param("productType") int productType);
 
+    @Query("select mapping from ProductToGLAccountMapping mapping where mapping.productId =:productId and mapping.productType =:productType and mapping.financialAccountType=22 and mapping.charge is not NULL")
+    List<ProductToGLAccountMapping> findAllFeeToFeeReceivableAccountMappings(@Param("productId") Long productId,
+            @Param("productType") int productType);
+
+    @Query("select mapping from ProductToGLAccountMapping mapping where mapping.productId =:productId and mapping.productType =:productType and mapping.financialAccountType=23 and mapping.charge is not NULL")
+    List<ProductToGLAccountMapping> findAllPenaltyToFeeReceivableAccountMappings(@Param("productId") Long productId,
+            @Param("productType") int productType);
+
     List<ProductToGLAccountMapping> findByProductIdAndProductType(Long productId, int productType);
 }

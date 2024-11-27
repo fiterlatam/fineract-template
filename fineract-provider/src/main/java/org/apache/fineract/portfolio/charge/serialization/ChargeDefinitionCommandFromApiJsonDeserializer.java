@@ -71,6 +71,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
     public static final String ENABLE_PAYMENT_TYPE = "enablePaymentType";
     public static final String PAYMENT_TYPE_ID = "paymentTypeId";
     public static final String CHARGE = "charge";
+    public static final String FEE_RECEIVABLE_GL_ACCOUNT_ID = "feeReceivableAccountId";
     /**
      * The parameters supported for this command.
      */
@@ -85,7 +86,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
             ChargesApiConstants.insurerNameParamName, ChargesApiConstants.insuranceCodeParamName,
             ChargesApiConstants.insurancePlanParamName, ChargesApiConstants.baseValueParamName, ChargesApiConstants.vatValueParamName,
             ChargesApiConstants.totalValueParamName, ChargesApiConstants.deadlineParamName, ChargesApiConstants.INTEREST_RATE_ID_PARAM_NAME,
-            ChargesApiConstants.GET_INTEREST_PERCENTAGE_FROM_TABLE, ChargesApiConstants.DAYS_IN_ARREARS));
+            ChargesApiConstants.GET_INTEREST_PERCENTAGE_FROM_TABLE, ChargesApiConstants.DAYS_IN_ARREARS, FEE_RECEIVABLE_GL_ACCOUNT_ID));
     private final FromJsonHelper fromApiJsonHelper;
 
     @Autowired

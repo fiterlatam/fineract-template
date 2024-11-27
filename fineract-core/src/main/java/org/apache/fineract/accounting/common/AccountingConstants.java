@@ -41,7 +41,8 @@ public final class AccountingConstants {
         INTEREST_ON_LOANS(3), //
         INCOME_FROM_FEES(4), //
         INCOME_FROM_PENALTIES(5), //
-        LOSSES_WRITTEN_OFF(6), //
+        LOSSES_WRITTEN_OFF(6), FEES_RECEIVABLE(8), //
+        PENALTIES_RECEIVABLE(9), //
         TRANSFERS_SUSPENSE(10), //
         OVERPAYMENT(11), //
         INCOME_FROM_RECOVERY(12), //
@@ -161,9 +162,12 @@ public final class AccountingConstants {
         PAYMENT_CHANNEL_FUND_SOURCE_MAPPING("paymentChannelToFundSourceMappings"), //
         PAYMENT_TYPE("paymentTypeId"), //
         FEE_INCOME_ACCOUNT_MAPPING("feeToIncomeAccountMappings"), //
+        FEE_FEE_RECEIVABLE_MAPPING("feeToFeeAccountMappings"), //
         PENALTY_INCOME_ACCOUNT_MAPPING("penaltyToIncomeAccountMappings"), //
+        PENALTY_PENALTIES_RECEIVABLE_MAPPING("penaltyToPenaltyAccountMappings"), //
         CHARGE_ID("chargeId"), //
         INCOME_ACCOUNT_ID("incomeAccountId"), //
+        FEE_RECEIVABLE_ACCOUNT_ID("feeReceivableAccountId"), //
         INCOME_FROM_RECOVERY("incomeFromRecoveryAccountId"), //
         INCOME_FROM_CHARGE_OFF_INTEREST("incomeFromChargeOffInterestAccountId"), //
         INCOME_FROM_CHARGE_OFF_FEES("incomeFromChargeOffFeesAccountId"), //

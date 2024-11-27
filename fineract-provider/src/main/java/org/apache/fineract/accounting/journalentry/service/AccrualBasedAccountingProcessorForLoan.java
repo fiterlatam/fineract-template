@@ -69,6 +69,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                     && !loanTransactionDTO.getTransactionType().isChargeAdjustment())
                     || loanTransactionDTO.getTransactionType().isRepaymentAtDisbursement()
                     || loanTransactionDTO.getTransactionType().isChargePayment()) {
+
                 createJournalEntriesForRepaymentsAndWriteOffs(loanDTO, loanTransactionDTO, office, false,
                         loanTransactionDTO.getTransactionType().isRepaymentAtDisbursement());
             }
@@ -843,13 +844,16 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                         AccrualAccountsForLoan.INCOME_FROM_FEES.getValue(), loanProductId, loanId, transactionId, transactionDate,
                         feesAmount, isReversal, loanTransactionDTO.getFeePayments());
             } else {
-                GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
-                        AccrualAccountsForLoan.FEES_RECEIVABLE.getValue(), paymentTypeId);
-                if (accountMap.containsKey(account)) {
-                    BigDecimal amount = accountMap.get(account).add(feesAmount);
-                    accountMap.put(account, amount);
-                } else {
-                    accountMap.put(account, feesAmount);
+                // Loop through all the fees and create a receivable for each
+                for (ChargePaymentDTO chargePaymentDTO : loanTransactionDTO.getFeePayments()) {
+                    GLAccount account = this.helper.getLinkedReceivableGLAccountForLoanCharges(loanProductId,
+                            AccrualAccountsForLoan.FEES_RECEIVABLE.getValue(), chargePaymentDTO.getChargeId());
+                    if (accountMap.containsKey(account)) {
+                        BigDecimal amount = accountMap.get(account).add(chargePaymentDTO.getAmount());
+                        accountMap.put(account, amount);
+                    } else {
+                        accountMap.put(account, chargePaymentDTO.getAmount());
+                    }
                 }
             }
             if (loanTransactionDTO.getTransactionType().isGoodwillCredit()) {

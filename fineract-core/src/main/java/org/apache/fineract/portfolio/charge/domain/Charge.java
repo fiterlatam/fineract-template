@@ -136,9 +136,17 @@ public class Charge extends AbstractPersistableCustom {
     @JoinColumn(name = "payment_type_id", nullable = false)
     private PaymentType paymentType;
 
+    @Getter
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "income_or_liability_account_id")
     private GLAccount account;
+
+    @Getter
+    @Setter
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fee_receivable_gl_account_id")
+    private GLAccount feeReceivableAccount;
 
     @ManyToOne
     @JoinColumn(name = "tax_group_id")
@@ -807,6 +815,11 @@ public class Charge extends AbstractPersistableCustom {
             actualChanges.put(ChargesApiConstants.glAccountIdParamName, newValue);
         }
 
+        if (command.isChangeInLongParameterNamed(ChargesApiConstants.feeReceivableAccountIdParamName, getFeeReceivableAccountId())) {
+            final Long newValue = command.longValueOfParameterNamed(ChargesApiConstants.feeReceivableAccountIdParamName);
+            actualChanges.put(ChargesApiConstants.feeReceivableAccountIdParamName, newValue);
+        }
+
         if (command.isChangeInLongParameterNamed(ChargesApiConstants.taxGroupIdParamName, getTaxGroupId())) {
             final Long newValue = command.longValueOfParameterNamed(ChargesApiConstants.taxGroupIdParamName);
             actualChanges.put(ChargesApiConstants.taxGroupIdParamName, newValue);
@@ -912,20 +925,19 @@ public class Charge extends AbstractPersistableCustom {
         return this.feeFrequency;
     }
 
-    public GLAccount getAccount() {
-        return this.account;
-    }
-
-    public void setAccount(GLAccount account) {
-        this.account = account;
-    }
-
     public Long getIncomeAccountId() {
         Long incomeAccountId = null;
         if (this.account != null) {
             incomeAccountId = this.account.getId();
         }
         return incomeAccountId;
+    }
+
+    public Long getFeeReceivableAccountId() {
+        if (this.feeReceivableAccount != null) {
+            return this.feeReceivableAccount.getId();
+        }
+        return null;
     }
 
     private Long getTaxGroupId() {

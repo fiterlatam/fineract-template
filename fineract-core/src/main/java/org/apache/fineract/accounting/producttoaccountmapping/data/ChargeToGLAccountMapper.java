@@ -35,4 +35,6 @@ public class ChargeToGLAccountMapper implements Serializable {
     private static final long serialVersionUID = 1L;
     private ChargeData charge;
     private GLAccountData incomeAccount;
+    private Integer financialAccountType;
+    private GLAccountData receivableAccount;
 }
