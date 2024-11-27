@@ -809,10 +809,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 // if (installmentNumber > 1) {
                 // installmentDate = installmentDate.plusDays(1);
                 // }
-                // Accrual of first installment is generated at disbursal time. Ignore first installment here
-                if (installmentNumber == 1) {
-                    continue;
-                }
 
                 applyInstallmentCharge(loanInstallmentCharge, installment, loanCharge, installmentDate);
             }
@@ -3257,7 +3253,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
 
         }
-        // we don't want to immediately generate ccharges if the disbursedOn is today
         // SU-444 generate charges from disbursement day
         if (!installmentalCharges.isEmpty()) {
 
