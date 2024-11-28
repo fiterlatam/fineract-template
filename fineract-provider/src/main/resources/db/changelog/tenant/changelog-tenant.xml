@@ -324,4 +324,5 @@
     <include file="parts/20243008011009141_SU_200_electronic_invoice.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009140_SU_316_add_column.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009141_SU_318_add_tabel_collection_house.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20242711011009135_SU_439_add_migration_columns_loan.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
