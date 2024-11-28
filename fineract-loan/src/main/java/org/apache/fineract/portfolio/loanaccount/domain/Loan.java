@@ -511,6 +511,24 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Transient
     private boolean isAnuladoOnDisbursementDate;
 
+    // Columns for migrated loans
+    @Column(name = "is_migrated_loan", nullable = false)
+    private boolean isMigratedLoan = false;
+
+    @Column(name = "migrar_nit")
+    private String nit;
+
+    @Column(name = "migrar_code")
+    private String code;
+
+    @Column(name = "migrar_numerocredito")
+    private String numeroCredito;
+
+    @Column(name = "migrar_cli_nroid")
+    private String cedula;
+
+    ///////////////
+
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
             final String transactionProcessingStrategyCode, final LoanProductRelatedDetail loanRepaymentScheduleDetail,
@@ -809,10 +827,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 // if (installmentNumber > 1) {
                 // installmentDate = installmentDate.plusDays(1);
                 // }
-                // Accrual of first installment is generated at disbursal time. Ignore first installment here
-                if (installmentNumber == 1) {
-                    continue;
-                }
 
                 applyInstallmentCharge(loanInstallmentCharge, installment, loanCharge, installmentDate);
             }
@@ -3257,7 +3271,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
 
         }
-        // we don't want to immediately generate ccharges if the disbursedOn is today
         // SU-444 generate charges from disbursement day
         if (!installmentalCharges.isEmpty()) {
 
@@ -8219,5 +8232,45 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setAnuladoOnDisbursementDate(boolean anuladoOnDisbursementDate) {
         isAnuladoOnDisbursementDate = anuladoOnDisbursementDate;
+    }
+
+    public String cedula() {
+        return cedula;
+    }
+
+    public void setCedula(String cedula) {
+        this.cedula = cedula;
+    }
+
+    public String numeroCredito() {
+        return numeroCredito;
+    }
+
+    public void setNumeroCredito(String numeroCredito) {
+        this.numeroCredito = numeroCredito;
+    }
+
+    public String code() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String nit() {
+        return nit;
+    }
+
+    public void setNit(String nit) {
+        this.nit = nit;
+    }
+
+    public boolean isMigratedLoan() {
+        return isMigratedLoan;
+    }
+
+    public void setMigratedLoan(boolean migratedLoan) {
+        isMigratedLoan = migratedLoan;
     }
 }

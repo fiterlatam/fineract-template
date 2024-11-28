@@ -285,14 +285,14 @@
         </addColumn>
     </changeSet>
 
-    <changeSet author="fineract" id="7">
+    <changeSet author="fineract" id="8">
         <insert tableName="m_external_event_configuration">
             <column name="type" value="LoanInvoiceGenerationPostBusinessEvent"/>
             <column name="enabled" valueBoolean="false"/>
         </insert>
     </changeSet>
 
-    <changeSet author="fineract" id="8">
+    <changeSet author="fineract" id="9">
         <createTable schemaName="public" tableName="c_clasificacion_conceptos">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true"/>
@@ -307,7 +307,7 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="9" author="fineract">
+    <changeSet id="10" author="fineract">
         <insert tableName="c_clasificacion_conceptos">
             <column name="concepto" value="INT_CORRIENTE"/>
             <column name="mandato" value="false"/>
@@ -355,7 +355,7 @@
         </insert>
     </changeSet>
 
-    <changeSet id="10" author="fineract">
+    <changeSet id="11" author="fineract">
         <preConditions onFail="MARK_RAN">
             <not>
                 <columnExists tableName="c_facturacion_electronica" columnName="tipo_prod"/>
@@ -363,9 +363,19 @@
         </preConditions>
         <addColumn tableName="c_facturacion_electronica">
             <column name="tipo_prod" type="varchar(100)">
-                <constraints nullable="false"/>
+                <constraints nullable="true"/>
             </column>
         </addColumn>
+    </changeSet>
+
+    <changeSet id="12" author="fineract">
+        <dropNotNullConstraint tableName="c_facturacion_electronica" columnName="impuesto" columnDataType="numeric(18, 4)"/>
+        <dropNotNullConstraint tableName="c_facturacion_electronica" columnName="porcentaje_impuesto_item" columnDataType="numeric(10, 3)"/>
+    </changeSet>
+
+    <changeSet id="13" author="fineract">
+        <dropNotNullConstraint tableName="c_facturacion_electronica" columnName="num_facafect" columnDataType="num_facafect"/>
+        <dropNotNullConstraint tableName="c_facturacion_electronica" columnName="fec_facafect" columnDataType="date"/>
     </changeSet>
 
 </databaseChangeLog>

@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.jobs.facturaelectronicamensual
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
+import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.apache.fineract.portfolio.loanproductparameterization.domain.LoanProductParameterizationRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -43,18 +44,20 @@ public class FacturaElectronicaMensualConfig {
     private final JdbcTemplate jdbcTemplate;
     private final LoanProductParameterizationRepository productParameterizationRepository;
     private final ConfigurationDomainService configurationDomainService;
+    private final LoanWritePlatformService loanWritePlatformService;
 
     @Autowired
     public FacturaElectronicaMensualConfig(final JobRepository jobRepository, final PlatformTransactionManager transactionManager,
             final FacturaElectronicMensualRepository facturaElectronicMensualRepository, final JdbcTemplate jdbcTemplate,
             final LoanProductParameterizationRepository productParameterizationRepository,
-            ConfigurationDomainService configurationDomainService) {
+            ConfigurationDomainService configurationDomainService, LoanWritePlatformService loanWritePlatformService) {
         this.jobRepository = jobRepository;
         this.transactionManager = transactionManager;
         this.facturaElectronicMensualRepository = facturaElectronicMensualRepository;
         this.jdbcTemplate = jdbcTemplate;
         this.productParameterizationRepository = productParameterizationRepository;
         this.configurationDomainService = configurationDomainService;
+        this.loanWritePlatformService = loanWritePlatformService;
     }
 
     @Bean
@@ -72,6 +75,6 @@ public class FacturaElectronicaMensualConfig {
     @Bean
     public FacturaElectronicaMensualTasklet facturaElectronicaMensualTaskletStepTasklet() {
         return new FacturaElectronicaMensualTasklet(facturaElectronicMensualRepository, jdbcTemplate, productParameterizationRepository,
-                configurationDomainService);
+                configurationDomainService, loanWritePlatformService);
     }
 }

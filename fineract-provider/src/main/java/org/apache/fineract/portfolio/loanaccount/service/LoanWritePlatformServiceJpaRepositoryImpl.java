@@ -30,6 +30,7 @@ import java.math.MathContext;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -4019,6 +4020,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     private void generateLoanTransactionDocument(final LoanTransaction loanTransaction) {
         final Long loanTransactionId = loanTransaction.getId();
+        final LocalDate transactionDate = loanTransaction.getTransactionDate();
+        final YearMonth yearMonth = YearMonth.from(transactionDate);
+        final LocalDate lastDayOfMonth = yearMonth.atEndOfMonth();
+        final LocalDate firstDayOfMonth = transactionDate.withDayOfMonth(1);
+        final LocalDate secondLastDayOfMonth = lastDayOfMonth.minusDays(1);
         final LoanTransactionType loanTransactionType = loanTransaction.getTypeOf();
         final FacturaElectronicaMensualTasklet.LoanInvoiceMapper transactionMapper = new FacturaElectronicaMensualTasklet.LoanInvoiceMapper();
         final String transactionSQL = "SELECT " + transactionMapper.transactionSchema()
@@ -4026,6 +4032,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final List<LoanDocumentData> loanDocumentDataList = this.jdbcTemplate.query(transactionSQL, transactionMapper, loanTransactionId);
         if (!loanDocumentDataList.isEmpty()) {
             final LoanDocumentData loanDocumentData = loanDocumentDataList.get(0);
+            loanDocumentData.setFirstDayOfMonth(firstDayOfMonth);
+            loanDocumentData.setSecondLastDayOfMonth(secondLastDayOfMonth);
+            loanDocumentData.setLastDayOfMonth(lastDayOfMonth);
             if (loanTransactionType.isRepaymentType()) {
                 loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
             } else {
@@ -4077,9 +4086,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             loanProductParameterization.getProductType()));
         }
         facturaElectronicaMensual.setNumero_doc(documentNumberString);
-        facturaElectronicaMensual.setNum_facafect(documentNumberString);
-        facturaElectronicaMensual.setId_mandante(null);
-        facturaElectronicaMensual.setDescripcion_mandante(null);
+        facturaElectronicaMensual.setReferencia(String.valueOf(documentNumber));
         facturaElectronicaMensual.setCodigo_descuento("0");
         facturaElectronicaMensual.setPorcentajedescuento(BigDecimal.ZERO);
         facturaElectronicaMensual.setDescuento(BigDecimal.ZERO);
@@ -4121,7 +4128,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
             if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
                 if (!invoicesToKnockOff.isEmpty()) {
-                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals, interestPaid);
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
                 }
             }
         }
@@ -4159,8 +4166,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
                 if (!invoicesToKnockOff.isEmpty()) {
-                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals,
-                            penaltyChargesPaid);
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
                 }
             }
         }
@@ -4201,8 +4207,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
                 if (!invoicesToKnockOff.isEmpty()) {
-                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals,
-                            mandatoryInsurancePaid);
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
                 }
             }
         }
@@ -4233,8 +4238,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
                 if (!invoicesToKnockOff.isEmpty()) {
-                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals,
-                            voluntaryInsurancePaid);
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
                 }
             }
         }
@@ -4270,7 +4274,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
                 if (!invoicesToKnockOff.isEmpty()) {
-                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals, honorariosPaid);
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
                 }
             }
 
@@ -4280,8 +4284,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     private void knockOffRecursively(final List<FacturaElectronicaMensual> invoicesToKnockOff,
-            final FacturaElectronicaMensual currentElectronicaMensual, final List<FacturaElectronicaMensual> facturaElectronicaMensuals,
-            BigDecimal remainingAmount) {
+            final FacturaElectronicaMensual currentElectronicaMensual, final List<FacturaElectronicaMensual> facturaElectronicaMensuals) {
+        BigDecimal remainingAmount = currentElectronicaMensual.getCosto_total();
         if (!invoicesToKnockOff.isEmpty()) {
             for (final FacturaElectronicaMensual invoiceToKnockOff : invoicesToKnockOff) {
                 remainingAmount = remainingAmount.subtract(invoiceToKnockOff.getCosto_total());
@@ -4293,8 +4297,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     break;
                 } else {
                     final FacturaElectronicaMensual knockOffCreditNote = currentElectronicaMensual.clone();
-                    knockOffCreditNote.setCosto_total(invoiceToKnockOff.getCosto_total());
-                    knockOffCreditNote.setPrecio_unitario(invoiceToKnockOff.getCosto_total());
+                    final BigDecimal amountToKnockOff = invoiceToKnockOff.getCosto_total();
+                    currentElectronicaMensual.setCosto_total(remainingAmount);
+                    knockOffCreditNote.setCosto_total(amountToKnockOff);
+                    knockOffCreditNote.setPrecio_unitario(amountToKnockOff);
                     knockOffCreditNote.setNum_facafect(invoiceToKnockOff.getNumero_doc());
                     knockOffCreditNote.setFec_facafect(invoiceToKnockOff.getFecha_factura());
                     remainingAmount = remainingAmount.subtract(invoiceToKnockOff.getCosto_total());
@@ -4309,7 +4315,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         String sql = """
                     SELECT
                     	ccc.id AS id,
-                    	ccc.concepto AS concept,
+                    	ccc.concepto AS concepto,
                     	ccc.mandato AS mandato,
                     	ccc.excluido AS excluido,
                     	ccc.exento AS exento,
@@ -4330,7 +4336,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final BigDecimal tarifa = rs.getBigDecimal("tarifa");
             return ClasificacionConceptosData.builder().id(id).concepto(concept).mandato(mandato).excluido(excluido).exento(exento)
                     .gravado(gravado).norma(norma).tarifa(tarifa).build();
-        });
+        }, concepto);
         return results.isEmpty() ? null : results.get(0);
     }
 

@@ -136,7 +136,6 @@ public class LoanDocumentData {
         facturaElectronicaMensual.setFecha_inicial(this.firstDayOfMonth);
         facturaElectronicaMensual.setFecha_final(this.lastDayOfMonth);
         facturaElectronicaMensual.setEst_fact("C");
-        facturaElectronicaMensual.setFec_facafect(businessLocalDate);
         facturaElectronicaMensual.setTotal_unidades(String.valueOf(this.itemsCount));
         facturaElectronicaMensual.setLogo(logo);
         if (LoanDocumentType.INVOICE.equals(this.documentType)) {
@@ -150,6 +149,7 @@ public class LoanDocumentData {
         // INFORMATION AT COMPANY LEVEL
         final String taxInformation = "RESPONSABLE DEL IVA.  No Somos Grandes Contribuyentes. Autorretenedores Renta según Resol. No. 04314 may 16 de 20028.  Auterretenedores especiales según Decreto No. 2201 dic 30 de 2016.  Autorretenedores de ICA según Resol. No. 202150186360 del 22 de dic de 2021 Medellín";
         facturaElectronicaMensual.setInf_tributaria(taxInformation);
+        facturaElectronicaMensual.setCantidad(BigDecimal.ONE);
         if (LegalForm.fromInt(this.clientLegalForm).isEntity()) {
             final String companyCountryCode = "CO";
             final String companyCountryName = "COLOMBIA";
