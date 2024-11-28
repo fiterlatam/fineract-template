@@ -35,6 +35,8 @@ import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceIn
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.loanaccount.invoice.data.ClasificacionConceptosData;
+import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface LoanWritePlatformService {
@@ -142,4 +144,8 @@ public interface LoanWritePlatformService {
 
     @Transactional
     CommandProcessingResult claimLoan(Long loanId, JsonCommand command);
+
+    void processAndSaveLoanDocument(LoanDocumentData loanDocumentData);
+
+    ClasificacionConceptosData getClasificacionConceptosData(String concepto);
 }
