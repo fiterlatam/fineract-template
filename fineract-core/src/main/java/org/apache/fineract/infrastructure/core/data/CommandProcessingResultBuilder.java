@@ -149,6 +149,11 @@ public class CommandProcessingResultBuilder {
         return this;
     }
 
+    public CommandProcessingResultBuilder withCollectionHouse(final List<Map<String, Object>> withCollectionHouse) {
+        this.collectionHouseUpdates = withCollectionHouse;
+        return this;
+    }
+
     public CommandProcessingResultBuilder setRollbackTransaction(final boolean rollbackTransaction) {
         this.rollbackTransaction |= rollbackTransaction;
         return this;

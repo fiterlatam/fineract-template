@@ -84,6 +84,33 @@ public class CommandProcessingResult implements Serializable {
         this.subResourceId = subResourceId;
         this.resourceExternalId = resourceExternalId;
         this.subResourceExternalId = subResourceExternalId;
+        this.collectionHouseUpdates = null;
+    }
+
+    public CommandProcessingResult(final Long commandId, final Long officeId, final Long groupId, final Long clientId, final Long loanId,
+            final Long savingsId, final String resourceIdentifier, final Long resourceId, final String transactionId,
+            final Map<String, Object> changes, final Long productId, final Long gsimId, final Long glimId,
+            final Map<String, Object> creditBureauReportData, Boolean rollbackTransaction, final Long subResourceId,
+            final ExternalId resourceExternalId, final ExternalId subResourceExternalId, List<Map<String, Object>> collectionHouseUpdates) {
+        this.commandId = commandId;
+        this.officeId = officeId;
+        this.groupId = groupId;
+        this.clientId = clientId;
+        this.loanId = loanId;
+        this.savingsId = savingsId;
+        this.resourceIdentifier = resourceIdentifier;
+        this.resourceId = resourceId;
+        this.changes = changes;
+        this.transactionId = transactionId;
+        this.productId = productId;
+        this.gsimId = gsimId;
+        this.glimId = glimId;
+        this.creditBureauReportData = creditBureauReportData;
+        this.rollbackTransaction = rollbackTransaction;
+        this.subResourceId = subResourceId;
+        this.resourceExternalId = resourceExternalId;
+        this.subResourceExternalId = subResourceExternalId;
+        this.collectionHouseUpdates = collectionHouseUpdates;
     }
 
     protected CommandProcessingResult(final Long resourceId, final Long officeId, final Long commandId, final Map<String, Object> changes,
@@ -120,6 +147,17 @@ public class CommandProcessingResult implements Serializable {
         return new CommandProcessingResult(commandId, officeId, groupId, clientId, loanId, savingsId, resourceIdentifier, entityId,
                 transactionId, changes, productId, gsimId, glimId, creditBureauReportData, rollbackTransaction, subResourceId,
                 resourceExternalId, subResourceExternalId);
+    }
+
+    public static CommandProcessingResult fromDetails(final Long commandId, final Long officeId, final Long groupId, final Long clientId,
+            final Long loanId, final Long savingsId, final String resourceIdentifier, final Long entityId, final Long gsimId,
+            final Long glimId, final Map<String, Object> creditBureauReportData, final String transactionId,
+            final Map<String, Object> changes, final Long productId, final Boolean rollbackTransaction, final Long subResourceId,
+            final ExternalId resourceExternalId, final ExternalId subResourceExternalId,
+            final List<Map<String, Object>> collectionHouseUpdates) {
+        return new CommandProcessingResult(commandId, officeId, groupId, clientId, loanId, savingsId, resourceIdentifier, entityId,
+                transactionId, changes, productId, gsimId, glimId, creditBureauReportData, rollbackTransaction, subResourceId,
+                resourceExternalId, subResourceExternalId, collectionHouseUpdates);
     }
 
     public static CommandProcessingResult commandOnlyResult(final Long commandId) {
