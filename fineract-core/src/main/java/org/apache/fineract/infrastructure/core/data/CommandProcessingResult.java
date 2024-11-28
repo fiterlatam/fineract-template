@@ -20,6 +20,7 @@ package org.apache.fineract.infrastructure.core.data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.ToString;
@@ -58,6 +59,7 @@ public class CommandProcessingResult implements Serializable {
     private Long usuarioId;
     private String rolId;
     private BigDecimal eaRate;
+    private final List<Map<String, Object>> collectionHouseUpdates;
 
     private CommandProcessingResult(final Long commandId, final Long officeId, final Long groupId, final Long clientId, final Long loanId,
             final Long savingsId, final String resourceIdentifier, final Long resourceId, final String transactionId,

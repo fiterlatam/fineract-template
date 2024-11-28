@@ -253,6 +253,38 @@ public final class ExternalServicesConstants {
         }
     }
 
+    public enum CollectionHouseHistoryJSONinputParams {
+
+        COLLECTION_HOUSE_URL("COLLECTION_HOUSE_URL"), COLLECTION_HOUSE_API_KEY("COLLECTION_HOUSE_API_KEY");
+
+        private final String value;
+
+        CollectionHouseHistoryJSONinputParams(final String value) {
+            this.value = value;
+        }
+
+        private static final Set<String> values = new HashSet<>();
+
+        static {
+            for (final CollectionHouseHistoryJSONinputParams type : CollectionHouseHistoryJSONinputParams.values()) {
+                values.add(type.value);
+            }
+        }
+
+        public static Set<String> getAllValues() {
+            return values;
+        }
+
+        @Override
+        public String toString() {
+            return name().toString().replaceAll("_", " ");
+        }
+
+        public String getValue() {
+            return this.value;
+        }
+    }
+
     @Getter
     public enum MasivianJSONinputParams {
 

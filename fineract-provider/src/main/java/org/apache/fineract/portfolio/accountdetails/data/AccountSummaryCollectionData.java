@@ -103,4 +103,8 @@ public class AccountSummaryCollectionData {
         }
         return returnCollection;
     }
+
+    public Collection<LoanAccountSummaryData> getLoanAccounts() {
+        return loanAccounts;
+    }
 }
