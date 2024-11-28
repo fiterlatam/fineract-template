@@ -232,7 +232,10 @@ public class LoanScheduleAssembler {
         final boolean requireInterestRatePoint = loanProduct.isRequirePoints();
         Long interestRatePoints = null;
         BigDecimal interestRatePerPeriod = BigDecimal.ZERO;
-        boolean isMigratedLoan = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, element);
+        Boolean isMigratedLoan = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, element);
+        if (isMigratedLoan == null) {
+            isMigratedLoan = Boolean.FALSE;
+        }
         if (loanProduct.getInterestRate() != null && !isMigratedLoan) {
             final InterestRate interestRate = loanProduct.getInterestRate();
             if (!interestRate.isActive()) {
