@@ -4645,6 +4645,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return LoanStatus.fromInt(this.loanStatus);
     }
 
+    public void closeLoan() {
+        this.loanStatus = LoanStatus.CLOSED_OBLIGATIONS_MET.getValue();
+        this.closedOnDate = DateUtils.getLocalDateOfTenant();
+    }
+
     public Integer getPlainStatus() {
         return this.loanStatus;
     }
