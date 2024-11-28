@@ -4099,4 +4099,12 @@ public class CommandWrapperBuilder {
         this.href = "/collectionhousemanagement/" + parameterId;
         return this;
     }
+
+    public CommandWrapperBuilder createCollectionHouseHistory() {
+        this.actionName = "CREATE";
+        this.entityName = "COLLECTIONHOUSEHISTORY";
+        this.entityId = null;
+        this.href = "/collectionhousehistory";
+        return this;
+    }
 }

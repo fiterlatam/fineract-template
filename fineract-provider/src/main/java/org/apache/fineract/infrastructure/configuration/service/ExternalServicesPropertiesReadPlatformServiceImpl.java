@@ -225,6 +225,10 @@ public class ExternalServicesPropertiesReadPlatformServiceImpl implements Extern
                 serviceNameToUse = ExternalServicesConstants.MASIVIAN_SERVICE_NAME;
             break;
 
+            case "COLLECTION_HOUSE_HISTORY_PROVIDER":
+                serviceNameToUse = ExternalServicesConstants.COLLECTION_HOUSE_HISTORY_PROVIDER_SERVICE_NAME;
+            break;
+
             default:
                 throw new ExternalServiceConfigurationNotFoundException(serviceName);
         }
