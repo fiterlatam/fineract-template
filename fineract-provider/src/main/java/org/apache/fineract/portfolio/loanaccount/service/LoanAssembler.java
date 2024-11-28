@@ -364,6 +364,21 @@ public class LoanAssembler {
 
         BigDecimal valorDescuento = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("valorDescuento", element);
         loanApplication.updateValorDescuento(valorDescuento);
+
+        /// Migrated loan details
+        boolean isMigratedLoan = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, element);
+        if (isMigratedLoan) {
+            String nit = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.MIGRAR_NIT, element);
+            String code = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.MIGRAR_CODE, element);
+            String creditNumber = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.MIGRAR_NUMERO_CREDITO, element);
+            String cedula = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.MIGRAR_CEDULA, element);
+            loanApplication.setNit(nit);
+            loanApplication.setCode(code);
+            loanApplication.setNumeroCredito(creditNumber);
+            loanApplication.setCedula(cedula);
+            loanApplication.setMigratedLoan(true);
+        }
+        ////////////
         return loanApplication;
     }
 

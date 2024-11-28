@@ -76,6 +76,10 @@ public final class LoanConstants {
     public static final int LOAN_COLLATERAL_QUANTITY = 48;// AW
     public static final int CHARGE_AMOUNT_TYPE_1 = 49;// AX
     public static final int CHARGE_AMOUNT_TYPE_2 = 50;// AY
+    public static final int NIT = 51;// AY
+    public static final int CODE = 52;// AY
+    public static final int LOAN_ID = 53;// AY
+    public static final int CEDULA = 54;// AY
 
     public static final String LOAN_TYPE_INDIVIDUAL = "Individual";
     public static final String LOAN_TYPE_GROUP = "Group";
