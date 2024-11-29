@@ -45,10 +45,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.client.domain.ClientRepository;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.exception.InstallmentNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformService;
@@ -167,11 +164,33 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
                             .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
                     for (LoanRepaymentScheduleInstallment inst : installments) {
                         if (inst.getInstallmentNumber().equals(entity.getLoanInstallmentNr())) {
+                            Optional<LoanCharge> loanCharges = curr.getActiveCharges().stream()
+                                    .filter(charge -> charge.isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios())
+                                    .findFirst();
                             if (inst.isObligationsMet()) {
                                 // Cannot throw exception here as it will rollback everything including any new fee rows
                                 // throw new LoanInstallmentAlreadyPaidException(loanId, inst.getInstallmentNumber());
                                 insallmentAlreadyPaid = true;
+                                if (loanCharges.isPresent()) {
+                                    LoanCharge loanCharge = loanCharges.get();
+                                    LoanInstallmentCharge installmentCharge = loanCharge
+                                            .getInstallmentLoanCharge(inst.getInstallmentNumber());
+                                    if (installmentCharge.isPaid()) {
+                                        insallmentAlreadyPaid = true;
+                                        break;
+                                    }
+                                }
                                 break;
+                            } else {
+                                if (loanCharges.isPresent()) {
+                                    LoanCharge loanCharge = loanCharges.get();
+                                    LoanInstallmentCharge installmentCharge = loanCharge
+                                            .getInstallmentLoanCharge(inst.getInstallmentNumber());
+                                    if (installmentCharge.isPaid()) {
+                                        insallmentAlreadyPaid = true;
+                                        break;
+                                    }
+                                }
                             }
 
                         }
@@ -207,9 +226,13 @@ public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements Cus
                         for (LoanCharge loanCharge : loanToUpdate.getCharges()) {
                             if (loanCharge.getChargeCalculation().isFlatHono()) {
                                 Set<CustomChargeHonorarioMap> maps = loanCharge.getCustomChargeHonorarioMaps();
+
                                 for (CustomChargeHonorarioMap map : maps) {
+                                    LoanInstallmentCharge installmentCharge = loanCharge
+                                            .getInstallmentLoanCharge(map.getLoanInstallmentNr());
                                     if (entityOpt.isPresent()) {
-                                        if (map.getLoanInstallmentNr().equals(current.getLoanInstallmentNr())) {
+                                        if (map.getLoanInstallmentNr().equals(current.getLoanInstallmentNr())
+                                                || installmentCharge.isPaid()) {
                                             removeList.add(map);
                                             break;
                                         }

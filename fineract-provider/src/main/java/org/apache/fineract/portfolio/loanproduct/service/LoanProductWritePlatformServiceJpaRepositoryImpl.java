@@ -252,35 +252,103 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     }
 
     private void populateProductCustomAllowance(JsonCommand command, LoanProduct loanProduct) {
-        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_CREATE_OR_DISBUSE_PARAM_NAME)) {
-            Boolean res = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_CREATE_OR_DISBUSE_PARAM_NAME);
-            loanProduct.setCustomAllowCreateOrDisburse(res);
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_CREATE_OR_DISBURSE_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_CREATE_OR_DISBURSE_PARAM_NAME);
+            loanProduct.setCustomAllowCreateOrDisburse(newValue);
+        }
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_CREATE_OR_DISBURSE_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_CREATE_OR_DISBURSE_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowCreateOrDisburseSms(newValue);
         }
 
         if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_COLLECTIONS_PARAM_NAME)) {
-            Boolean res = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_COLLECTIONS_PARAM_NAME);
-            loanProduct.setCustomAllowCollections(res);
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_COLLECTIONS_PARAM_NAME);
+            loanProduct.setCustomAllowCollections(newValue);
+        }
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_COLLECTIONS_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_COLLECTIONS_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowCollectionsSms(newValue);
         }
 
         if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_CREDIT_NOTE_PARAM_NAME)) {
-            Boolean res = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_CREDIT_NOTE_PARAM_NAME);
-            loanProduct.setCustomAllowCreditNote(res);
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_CREDIT_NOTE_PARAM_NAME);
+            loanProduct.setCustomAllowCreditNote(newValue);
+        }
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_CREDIT_NOTE_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_CREDIT_NOTE_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowCreditNoteSms(newValue);
         }
 
         if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_DEBIT_NOTE_PARAM_NAME)) {
-            Boolean res = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_DEBIT_NOTE_PARAM_NAME);
-            loanProduct.setCustomAllowDebitNote(res);
+            final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_DEBIT_NOTE_PARAM_NAME);
+            loanProduct.setCustomAllowDebitNote(newValue);
+        }
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_DEBIT_NOTE_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_DEBIT_NOTE_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowDebitNoteSms(newValue);
         }
 
         if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_FORGIVENESS_PARAM_NAME)) {
-            Boolean res = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_FORGIVENESS_PARAM_NAME);
-            loanProduct.setCustomAllowForgiveness(res);
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_FORGIVENESS_PARAM_NAME);
+            loanProduct.setCustomAllowForgiveness(newValue);
+        }
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_FORGIVENESS_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_FORGIVENESS_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowForgivenessSms(newValue);
         }
 
         if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_PARAM_NAME)) {
-            Boolean res = command
+            final Boolean newValue = command
                     .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_PARAM_NAME);
-            loanProduct.setCustomAllowReversalCancellation(res);
+            loanProduct.setCustomAllowReversalCancellation(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_REVERSAL_OR_CANCELATION_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowReversalCancellationSms(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_REFERIDO_PARAM_NAME)) {
+            final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_REFERIDO_PARAM_NAME);
+            loanProduct.setCustomAllowReferido(newValue);
+        }
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_REFERIDO_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_REFERIDO_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowReferidoSms(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_REFINANCE_PARAM_NAME)) {
+            final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_REFINANCE_PARAM_NAME);
+            loanProduct.setCustomAllowRefinance(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_REFINANCE_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_REFINANCE_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowRefinanceSms(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_RESTRUCTURE_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_RESTRUCTURE_PARAM_NAME);
+            loanProduct.setCustomAllowRestructure(newValue);
+        }
+
+        if (command.parameterExists(LoanProductConstants.CUSTOM_ALLOW_RESTRUCTURE_SMS_PARAM_NAME)) {
+            final Boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.CUSTOM_ALLOW_RESTRUCTURE_SMS_PARAM_NAME);
+            loanProduct.setCustomAllowRestructureSms(newValue);
         }
 
         this.loanProductRepository.saveAndFlush(loanProduct);

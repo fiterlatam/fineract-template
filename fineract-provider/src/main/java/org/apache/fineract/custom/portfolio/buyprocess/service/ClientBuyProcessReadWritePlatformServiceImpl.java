@@ -47,10 +47,13 @@ import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSe
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanBuyBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.data.ChargeInsuranceDetailData;
@@ -59,10 +62,13 @@ import org.apache.fineract.portfolio.charge.domain.ChargeInsuranceType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
+import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -83,13 +89,16 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
     private final LoanProductRepository loanProductRepository;
     private final ChargeReadPlatformService chargeReadPlatformService;
     private final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository;
+    private final BusinessEventNotifierService businessEventNotifierService;
+    private final LoanRepositoryWrapper loanRepository;
 
     @Autowired
     public ClientBuyProcessReadWritePlatformServiceImpl(JdbcTemplate jdbcTemplate, final ClientBuyProcessDataValidator validatorClass,
             final PlatformSecurityContext context, LoanWritePlatformService loanWritePlatformService, FromJsonHelper fromApiJsonHelper,
             LoanApplicationWritePlatformService loanApplicationWritePlatformService, ClientBuyProcessRepository clientBuyProcessRepository,
             LoanProductRepository loanProductRepository, ChargeReadPlatformService chargeReadPlatformService,
-            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository) {
+            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository, BusinessEventNotifierService businessEventNotifierService,
+            LoanRepositoryWrapper loanRepository) {
         this.jdbcTemplate = jdbcTemplate;
         this.validatorClass = validatorClass;
         this.context = context;
@@ -100,6 +109,8 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
         this.loanProductRepository = loanProductRepository;
         this.chargeReadPlatformService = chargeReadPlatformService;
         this.clientAllyPointOfSalesRepository = clientAllyPointOfSalesRepository;
+        this.businessEventNotifierService = businessEventNotifierService;
+        this.loanRepository = loanRepository;
     }
 
     @Override
@@ -122,9 +133,17 @@ public class ClientBuyProcessReadWritePlatformServiceImpl implements ClientBuyPr
         try {
             this.context.authenticatedUser();
             final ClientBuyProcess entity = this.validatorClass.validateForCreate(command.json(), clientBuyProcessRepository);
+            final LoanProduct loanProduct = this.loanProductRepository.findById(entity.getProductId())
+                    .orElseThrow(() -> new LoanProductNotFoundException(entity.getProductId()));
+            if (!loanProduct.getCustomAllowCreateOrDisburse()) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.product.not.allowed.create.or.disburse",
+                        "El producto de préstamo con identificador " + entity.getProductId() + " no permite crear ni desembolsar");
+            }
             // Create Loan and disburse
             createApproveAndDisburseLoan(entity);
             clientBuyProcessRepository.saveAndFlush(entity);
+            final Loan loan = this.loanRepository.findOneWithNotFoundDetection(entity.getLoanId());
+            this.businessEventNotifierService.notifyPostBusinessEvent(new LoanBuyBusinessEvent(loan));
             return new CommandProcessingResultBuilder().withEntityId(entity.getId()).withLoanId(entity.getLoanId()).build();
         } catch (final JpaSystemException | DataIntegrityViolationException | PersistenceException dve) {
             handleDataIntegrityIssues(dve);

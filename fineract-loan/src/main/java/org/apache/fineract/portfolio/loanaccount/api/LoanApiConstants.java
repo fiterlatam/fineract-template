@@ -40,6 +40,10 @@ public interface LoanApiConstants {
     String chargesParameterName = "charges";
     String loanIdTobeApproved = "loanId";
     String postDatedChecks = "postDatedChecks";
+    String chargeExpireDate = "expdate";
+    String isEndorsed = "isEndorsed";
+    String insuranceName = "insuranceName";
+    String insuranceId = "insuranceId";
 
     String approvedLoanAmountParameterName = "approvedLoanAmount";
     String approvedOnDateParameterName = "approvedOnDate";
@@ -192,4 +196,9 @@ public interface LoanApiConstants {
     String GLOBAL_CONFIG_COMPENSATION_ALERT_EMAIL = "Correo Alerta por Compensacion";
     String GLOBAL_CONFIG_MIN_DAYS_WRITEOFF = "Dias de mora mínimos castigar cartera";
     String GLOBAL_CONFIG_MIN_DAYS_CLAIM = "Dias de mora mínimos para reclamar";
+    String MIGRAR_NIT = "nit";
+    String MIGRAR_CODE = "code";
+    String MIGRAR_NUMERO_CREDITO = "numeroCredito";
+    String MIGRAR_CEDULA = "cedula";
+    String IS_MIGRAR_LOAN = "isMigratedLoan";
 }

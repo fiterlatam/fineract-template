@@ -379,4 +379,16 @@ public class LoanInstallmentCharge extends AbstractPersistableCustom implements 
             this.loancharge.adjustChargeAmount(adjustedAmount);
         }
     }
+
+    public BigDecimal getAmountPaid() {
+        return amountPaid != null ? amountPaid : BigDecimal.ZERO;
+    }
+
+    public BigDecimal getAmountWaived() {
+        return amountWaived != null ? amountWaived : BigDecimal.ZERO;
+    }
+
+    public BigDecimal getAmountWrittenOff() {
+        return amountWrittenOff != null ? amountWrittenOff : BigDecimal.ZERO;
+    }
 }

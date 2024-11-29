@@ -19,13 +19,10 @@
 package org.apache.fineract.portfolio.delinquency.data;
 
 import java.io.Serializable;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 @ToString
-@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 public class DelinquencyRangeData implements Serializable {
@@ -34,9 +31,31 @@ public class DelinquencyRangeData implements Serializable {
     private String classification;
     private Integer minimumAgeDays;
     private Integer maximumAgeDays;
+    private Integer percentageValue;
+
+    public DelinquencyRangeData(Long id, String classification, Integer minimumAgeDays, Integer maximumAgeDays) {
+        this.id = id;
+        this.classification = classification;
+        this.minimumAgeDays = minimumAgeDays;
+        this.maximumAgeDays = maximumAgeDays;
+        this.percentageValue = null;
+    }
+
+    public DelinquencyRangeData(Long id, String classification, Integer minimumAgeDays, Integer maximumAgeDays, Integer percentageValue) {
+        this.id = id;
+        this.classification = classification;
+        this.minimumAgeDays = minimumAgeDays;
+        this.maximumAgeDays = maximumAgeDays;
+        this.percentageValue = percentageValue;
+    }
 
     public static DelinquencyRangeData instance(String classification, Integer minimumAgeDays, Integer maximumAgeDays) {
         return new DelinquencyRangeData(null, classification, minimumAgeDays, maximumAgeDays);
+    }
+
+    public static DelinquencyRangeData instance(String classification, Integer minimumAgeDays, Integer maximumAgeDays,
+            Integer percentageValue) {
+        return new DelinquencyRangeData(null, classification, minimumAgeDays, maximumAgeDays, percentageValue);
     }
 
     public static DelinquencyRangeData reference(Long id) {

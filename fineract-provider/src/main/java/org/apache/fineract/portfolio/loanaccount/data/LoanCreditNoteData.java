@@ -21,9 +21,11 @@ public class LoanCreditNoteData {
     private BigDecimal honorarios;
     private BigDecimal aval;
     private BigDecimal insurance;
+    private BigDecimal mandatoryInsurance;
     private BigDecimal capital;
     private BigDecimal totalAmount;
     private Long documentId;
     private String documentName;
+    private Long transactionId;
 
 }

@@ -74,7 +74,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
                     + "lc.loan_id as loanId, c.currency_code as currencyCode, oc.name as currencyName, " //
                     + "date(coalesce(dd.disbursedon_date,dd.expected_disburse_date)) as disbursementDate, " //
                     + "oc.decimal_places as currencyDecimalPlaces, oc.currency_multiplesof as inMultiplesOf, oc.display_symbol as currencyDisplaySymbol, " //
-                    + "oc.internationalized_name_code as currencyNameCode, l.external_id as externalLoanId from m_charge c " //
+                    + "oc.internationalized_name_code as currencyNameCode, l.external_id as externalLoanId, lc.is_endorse as isEndorsed, lc.expire_date as expDate, lc.insurance_name as insuranceName,  lc.insurance_id as insuranceId from m_charge c " //
                     + "join m_organisation_currency oc on c.currency_code = oc.code join m_loan_charge lc on lc.charge_id = c.id " //
                     + "left join m_loan_tranche_disbursement_charge dc on dc.loan_charge_id=lc.id left join m_loan_disbursement_detail dd on dd.id=dc.disbursement_detail_id " //
                     + " join m_loan l on lc.loan_id = l.id";
@@ -131,10 +131,15 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
             final ExternalId externalId = ExternalIdFactory.produce(externalIdStr);
             final String externalLoanIdStr = rs.getString("externalLoanId");
             final ExternalId externalLoanId = ExternalIdFactory.produce(externalLoanIdStr);
+            final Boolean isEndorsed = rs.getBoolean("isEndorsed");
+            final String expDate = rs.getString("expDate");
+            final String insuranceName = rs.getString("insuranceName");
+            final String insuranceId = rs.getString("insuranceId");
 
             return new LoanChargeData(id, chargeId, name, currency, amount, amountPaid, amountWaived, amountWrittenOff, amountOutstanding,
                     chargeTimeType, submittedOnDate, dueAsOfDate, chargeCalculationType, percentageOf, amountPercentageAppliedTo, penalty,
-                    paymentMode, paid, waived, loanId, externalLoanId, minCap, maxCap, amountOrPercentage, null, externalId);
+                    paymentMode, paid, waived, loanId, externalLoanId, minCap, maxCap, amountOrPercentage, null, externalId, isEndorsed,
+                    expDate, insuranceName, insuranceId);
         }
     }
 
@@ -187,6 +192,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
         final LoanChargeMapper rm = new LoanChargeMapper();
         final String sql = "select " + rm.schema() + " where lc.loan_id=? AND lc.is_active = true"
                 + " order by coalesce(lc.due_for_collection_as_of_date,date(coalesce(dd.disbursedon_date,dd.expected_disburse_date))),lc.charge_time_enum ASC, lc.due_for_collection_as_of_date ASC, lc.is_penalty ASC";
+
         return this.jdbcTemplate.query(sql, rm, loanId); // NOSONAR
     }
 

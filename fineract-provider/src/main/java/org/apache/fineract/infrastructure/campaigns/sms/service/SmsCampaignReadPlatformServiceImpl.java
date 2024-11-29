@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,7 +114,11 @@ public class SmsCampaignReadPlatformServiceImpl implements SmsCampaignReadPlatfo
         }
         final Collection<SmsBusinessRulesData> businessRulesOptions = this.jdbcTemplate.query(sql, this.businessRuleMapper, // NOSONAR
                 reportType);
-        final Collection<SmsProviderData> smsProviderOptions = this.smsCampaignDropdownReadPlatformService.retrieveSmsProviders();
+        /*
+         * final Collection<SmsProviderData> smsProviderOptions =
+         * this.smsCampaignDropdownReadPlatformService.retrieveSmsProviders();
+         */
+        final Collection<SmsProviderData> smsProviderOptions = Collections.emptyList();
         final Collection<EnumOptionData> campaignTypeOptions = this.smsCampaignDropdownReadPlatformService.retrieveCampaignTypes();
         final Collection<EnumOptionData> campaignTriggerTypeOptions = this.smsCampaignDropdownReadPlatformService
                 .retrieveCampaignTriggerTypes();
