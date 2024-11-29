@@ -18,10 +18,17 @@
  */
 package org.apache.fineract.portfolio.loanaccount.invoice.domain;
 
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface FacturaElectronicMensualRepository
         extends JpaRepository<FacturaElectronicaMensual, Long>, JpaSpecificationExecutor<FacturaElectronicaMensual> {
+
+    @Query("SELECT f FROM FacturaElectronicaMensual f WHERE f.id_cliente = :id_cliente AND f.tipo_prod = :tipo_prod AND f.tip_doc = 'INVOIC' ORDER BY f.createdDate, f.id")
+    List<FacturaElectronicaMensual> findById_clienteAndTipo_prod(@Param("id_cliente") String id_cliente,
+            @Param("tipo_prod") String tipo_prod);
 
 }
