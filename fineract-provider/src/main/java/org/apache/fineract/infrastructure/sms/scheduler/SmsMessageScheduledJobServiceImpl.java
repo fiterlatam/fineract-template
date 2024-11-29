@@ -18,8 +18,8 @@
  */
 package org.apache.fineract.infrastructure.sms.scheduler;
 
+import com.google.gson.JsonObject;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -27,10 +27,9 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.fineract.infrastructure.campaigns.helper.SmsConfigUtils;
-import org.apache.fineract.infrastructure.campaigns.sms.constants.SmsCampaignConstants;
+import org.apache.fineract.infrastructure.campaigns.masivian.data.MasivianConfigurationData;
 import org.apache.fineract.infrastructure.campaigns.sms.domain.SmsCampaign;
-import org.apache.fineract.infrastructure.campaigns.sms.exception.ConnectionFailureException;
+import org.apache.fineract.infrastructure.configuration.service.ExternalServicesPropertiesReadPlatformService;
 import org.apache.fineract.infrastructure.core.config.TaskExecutorConstant;
 import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
@@ -42,10 +41,10 @@ import org.apache.fineract.infrastructure.sms.domain.SmsMessageStatusType;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -61,25 +60,37 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
 
     private final SmsMessageRepository smsMessageRepository;
     private final RestTemplate restTemplate = new RestTemplate();
-    private final SmsConfigUtils smsConfigUtils;
     private final NotificationSenderService notificationSenderService;
     @Qualifier(TaskExecutorConstant.DEFAULT_TASK_EXECUTOR_BEAN_NAME)
     private final ThreadPoolTaskExecutor taskExecutor;
+    private final ExternalServicesPropertiesReadPlatformService externalServicesReadPlatformService;
 
     @SuppressFBWarnings("SLF4J_SIGN_ONLY_FORMAT")
     private void connectAndSendToIntermediateServer(Collection<SmsMessageApiQueueResourceData> apiQueueResourceDatas) {
-        Map<String, Object> hostConfig = this.smsConfigUtils.getMessageGateWayRequestURI("sms",
-                SmsMessageApiQueueResourceData.toJsonString(apiQueueResourceDatas));
-        URI uri = (URI) hostConfig.get("uri");
-        HttpEntity<?> entity = (HttpEntity<?>) hostConfig.get("entity");
-        ResponseEntity<String> responseOne = restTemplate.exchange(uri, HttpMethod.POST, entity, new ParameterizedTypeReference<String>() {
-
-        });
-        if (responseOne != null) {
-            // String smsResponse = responseOne.getBody();
-            if (!responseOne.getStatusCode().equals(HttpStatus.ACCEPTED)) {
-                log.debug("{}", responseOne.getStatusCode().value());
-                throw new ConnectionFailureException(SmsCampaignConstants.SMS);
+        final MasivianConfigurationData masivianConfigurationData = this.externalServicesReadPlatformService.getMasivianConfiguration();
+        if (masivianConfigurationData.isSmsApiEnabled()) {
+            final String smsApiURL = masivianConfigurationData.getSmsApiUrl();
+            final String smsApiAuthorizationToken = masivianConfigurationData.getSmsAuthorization();
+            final HttpHeaders requestHeaders = new HttpHeaders();
+            requestHeaders.setContentType(MediaType.APPLICATION_JSON);
+            requestHeaders.setBasicAuth(smsApiAuthorizationToken);
+            for (final SmsMessageApiQueueResourceData apiQueueResourceData : apiQueueResourceDatas) {
+                final JsonObject requestBody = new JsonObject();
+                requestBody.addProperty("To", apiQueueResourceData.getMobileNumber());
+                requestBody.addProperty("text", apiQueueResourceData.getMessage());
+                final HttpEntity<String> requestEntity = new HttpEntity<>(requestBody.toString(), requestHeaders);
+                try {
+                    final ResponseEntity<String> response = restTemplate.exchange(smsApiURL, HttpMethod.POST, requestEntity, String.class);
+                    if (response.getStatusCode().is2xxSuccessful()) {
+                        log.info("SMS sent successfully to {} | Response: {}", apiQueueResourceData.getMobileNumber(), response.getBody());
+                    } else {
+                        log.error("Failed to send SMS to {} | Response: {}", apiQueueResourceData.getMobileNumber(), response.getBody());
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to send SMS message: {} to mobile: {}", apiQueueResourceData.getMessage(),
+                            apiQueueResourceData.getMobileNumber(), e);
+                    log.error("Error occurred.", e);
+                }
             }
         }
     }
@@ -107,7 +118,7 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
                             toSaveMessages.add(smsMessage);
                         }
                     }
-                    if (toSaveMessages.size() > 0) {
+                    if (!toSaveMessages.isEmpty()) {
                         this.smsMessageRepository.saveAll(toSaveMessages);
                         this.smsMessageRepository.flush();
                         this.taskExecutor.execute(new SmsTask(apiQueueResourceDatas, ThreadLocalContextUtil.getContext()));
@@ -115,7 +126,6 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
                     if (!toSendNotificationMessages.isEmpty()) {
                         this.notificationSenderService.sendNotification(toSendNotificationMessages);
                     }
-
                 }
             }
         } catch (Exception e) {
@@ -126,18 +136,21 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
     @Override
     public void sendTriggeredMessage(Collection<SmsMessage> smsMessages, long providerId) {
         try {
-            Collection<SmsMessageApiQueueResourceData> apiQueueResourceDatas = new ArrayList<>();
-            StringBuilder request = new StringBuilder();
-            for (SmsMessage smsMessage : smsMessages) {
-                SmsMessageApiQueueResourceData apiQueueResourceData = SmsMessageApiQueueResourceData.instance(smsMessage.getId(), null,
-                        null, null, smsMessage.getMobileNo(), smsMessage.getMessage(), providerId);
-                apiQueueResourceDatas.add(apiQueueResourceData);
-                smsMessage.setStatusType(SmsMessageStatusType.WAITING_FOR_DELIVERY_REPORT.getValue());
+            final MasivianConfigurationData masivianConfigurationData = this.externalServicesReadPlatformService.getMasivianConfiguration();
+            if (masivianConfigurationData != null && masivianConfigurationData.isSmsApiEnabled()) {
+                Collection<SmsMessageApiQueueResourceData> apiQueueResourceDatas = new ArrayList<>();
+                StringBuilder request = new StringBuilder();
+                for (SmsMessage smsMessage : smsMessages) {
+                    SmsMessageApiQueueResourceData apiQueueResourceData = SmsMessageApiQueueResourceData.instance(smsMessage.getId(), null,
+                            null, null, smsMessage.getMobileNo(), smsMessage.getMessage(), providerId);
+                    apiQueueResourceDatas.add(apiQueueResourceData);
+                    smsMessage.setStatusType(SmsMessageStatusType.WAITING_FOR_DELIVERY_REPORT.getValue());
+                }
+                this.smsMessageRepository.saveAll(smsMessages);
+                request.append(SmsMessageApiQueueResourceData.toJsonString(apiQueueResourceDatas));
+                log.debug("Sending triggered SMS to specific provider with request - {}", request);
+                this.taskExecutor.execute(new SmsTask(apiQueueResourceDatas, ThreadLocalContextUtil.getContext()));
             }
-            this.smsMessageRepository.saveAll(smsMessages);
-            request.append(SmsMessageApiQueueResourceData.toJsonString(apiQueueResourceDatas));
-            log.debug("Sending triggered SMS to specific provider with request - {}", request);
-            this.taskExecutor.execute(new SmsTask(apiQueueResourceDatas, ThreadLocalContextUtil.getContext()));
         } catch (Exception e) {
             log.error("Error occured.", e);
         }

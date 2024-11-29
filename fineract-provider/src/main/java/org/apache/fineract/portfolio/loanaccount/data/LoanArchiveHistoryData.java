@@ -63,5 +63,7 @@ public class LoanArchiveHistoryData {
     private Integer numeroDeReprogramaciones;
     private String departamento;
     private String estadoCuota;
-
+    private String celularReferencia;
+    private String referencia;
+    private String nitEmpresaAliada;
 }

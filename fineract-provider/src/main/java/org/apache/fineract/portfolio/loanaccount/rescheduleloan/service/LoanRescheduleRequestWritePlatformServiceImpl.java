@@ -46,6 +46,8 @@ import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRu
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanReferidoBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanRescheduleBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanRescheduledDueAdjustScheduleBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -92,6 +94,7 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.apache.fineract.portfolio.loanaccount.service.ReplayedTransactionBusinessEventService;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
@@ -421,6 +424,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
 
             final AppUser appUser = this.platformSecurityContext.authenticatedUser();
             final Map<String, Object> changes = new LinkedHashMap<>();
+            final Boolean isJobTriggered = jsonCommand.booleanPrimitiveValueOfParameterNamed("isJobTriggered");
 
             LocalDate approvedOnDate = jsonCommand.localDateValueOfParameterNamed("approvedOnDate");
             final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(jsonCommand.dateFormat())
@@ -432,6 +436,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             changes.put("approvedByUserId", appUser.getId());
             final LocalDate businessLocalDate = DateUtils.getBusinessLocalDate();
             Loan loan = loanRescheduleRequest.getLoan();
+            final LoanProduct loanProduct = loan.loanProduct();
             final List<Long> existingTransactionIds = new ArrayList<>(loan.findExistingTransactionIds());
             final List<Long> existingReversedTransactionIds = new ArrayList<>(loan.findExistingReversedTransactionIds());
 
@@ -485,6 +490,10 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 mapping.getLoanTermVariations().updateIsActive(true);
             }
             if (!rediferirVariations.isEmpty()) {
+                if (Boolean.FALSE.equals(isJobTriggered) && !loanProduct.getCustomAllowReferido()) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.not.allowed",
+                            "Rediferir is not allowed on this product");
+                }
                 final LoanTermVariations rediferirTermVariationValue = rediferirVariations.get(0);
                 final int rediferirPeriods = rediferirTermVariationValue.getTermValue().intValue();
                 final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
@@ -521,6 +530,13 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     this.loanRescheduleRequestRepository.saveAndFlush(loanRescheduleRequest);
                 }
             }
+            if (Boolean.FALSE.equals(isJobTriggered) && rediferirVariations.isEmpty()) {
+                if (!loanProduct.getCustomAllowRefinance()) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.not.allowed.on.product",
+                            "Reschedule is not allowed on this product");
+                }
+            }
+
             BigDecimal annualNominalInterestRate = null;
             final List<LoanTermVariationsData> loanTermVariations = new ArrayList<>();
             loan.constructLoanTermVariations(scheduleGeneratorDTO.getFloatingRateDTO(), annualNominalInterestRate, loanTermVariations);
@@ -599,11 +615,16 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
             loanAccrualTransactionBusinessEventService.raiseBusinessEventForAccrualTransactions(loan, existingTransactionIds);
             this.loanAccountDomainService.recalculateAccruals(loan, true);
-
-            final Boolean isJobTriggered = jsonCommand.booleanPrimitiveValueOfParameterNamed("isJobTriggered");
             if (loan.isTopup()) {
                 businessEventNotifierService
                         .notifyPostBusinessEvent(new LoanRescheduledDueAdjustScheduleBusinessEvent(loan, isJobTriggered));
+            }
+            if (Boolean.FALSE.equals(isJobTriggered)) {
+                if (!rediferirVariations.isEmpty()) {
+                    this.businessEventNotifierService.notifyPostBusinessEvent(new LoanReferidoBusinessEvent(loan));
+                } else {
+                    this.businessEventNotifierService.notifyPostBusinessEvent(new LoanRescheduleBusinessEvent(loan));
+                }
             }
             return new CommandProcessingResultBuilder().withCommandId(jsonCommand.commandId()).withEntityId(loanRescheduleRequestId)
                     .withLoanId(loanRescheduleRequest.getLoan().getId()).with(changes).withClientId(loan.getClientId())

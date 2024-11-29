@@ -21,9 +21,14 @@ package org.apache.fineract.portfolio.delinquency.domain;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface DelinquencyRangeRepository extends JpaRepository<DelinquencyRange, Long>, JpaSpecificationExecutor<DelinquencyRange> {
 
     Optional<DelinquencyRange> findByClassification(String classification);
+
+    @Query("select delinquencyRange from DelinquencyRange delinquencyRange where delinquencyRange.minimumAgeDays <= :range and delinquencyRange.maximumAgeDays >= :range")
+    Optional<DelinquencyRange> findByRange(@Param("range") Integer range);
 
 }

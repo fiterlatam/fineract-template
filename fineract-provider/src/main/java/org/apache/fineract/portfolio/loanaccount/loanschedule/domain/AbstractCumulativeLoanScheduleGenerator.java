@@ -3070,6 +3070,29 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                             advancePayments.add(new RecalculationDetail(loanTransaction.getTransactionDate(), loanTransaction));
                         }
                     }
+                    // Extra amount paid in advance
+                    if (outstandingBalance.isZero() || outstandingBalance.isLessThanZero()) {
+                        // Check outstandingBalance.isZero() in case customer pays exact amount equal to outstanding
+                        // balance
+                        // If overpaid in advance then add the last installment to keep track of advance payment amount
+                        outstandingBalanceAsPerRest = outstandingBalance.zero();
+                        outstandingBalance = outstandingBalance.zero();
+                        BigDecimal remainingLoanPrincipal = principalToBeScheduled.getAmount();
+                        for (LoanRepaymentScheduleInstallment inst : loan.getRepaymentScheduleInstallments()) {
+                            if (inst.getInstallmentNumber().intValue() < installment.getInstallmentNumber()) {
+                                remainingLoanPrincipal = remainingLoanPrincipal
+                                        .subtract(inst.getPrincipal(loanApplicationTerms.getCurrency()).getAmount()
+                                                .subtract(inst.getAdvancePrincipalAmount()));
+                            }
+                        }
+                        installment.setPrincipal(remainingLoanPrincipal);
+                        installment.setInterestCharged(BigDecimal.ZERO);
+                        installment.setFeeChargesCharged(BigDecimal.ZERO);
+                        installment.setPenaltyCharges(BigDecimal.ZERO);
+                        installment.setRecalculatedInterestComponent(true);
+                        installment.getInstallmentCharges().clear();
+                        newRepaymentScheduleInstallments.add(installment);
+                    }
                     ////
                     break;
                 }
@@ -3262,7 +3285,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     .plus(totalPenaltyChargesCharged);
 
             // for partial schedule generation
-            if (!newRepaymentScheduleInstallments.isEmpty() && totalCumulativeInterest.isGreaterThanZero()) {
+            if (!newRepaymentScheduleInstallments.isEmpty()) {
                 Money totalOutstandingInterestPaymentDueToGrace = Money.zero(currency);
                 loanScheduleParams = LoanScheduleParams.createLoanScheduleParamsForPartialUpdate(periodNumber, instalmentNumber,
                         loanTermInDays, periodStartDate, actualRepaymentDate, totalCumulativePrincipal, totalCumulativeInterest,
@@ -3341,7 +3364,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             MonetaryCurrency currency) {
         List<LoanRepaymentScheduleInstallment> newRepaymentScheduleInstallments = new ArrayList<>();
         for (LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
-            if (DateUtils.isBefore(installment.getFromDate(), rescheduleFrom)) {
+            if (DateUtils.isOnOrBefore(installment.getFromDate(), rescheduleFrom)) {
                 newRepaymentScheduleInstallments.add(installment);
             } else {
                 // Check if there is any installment having advance payment then add the installment to calculate

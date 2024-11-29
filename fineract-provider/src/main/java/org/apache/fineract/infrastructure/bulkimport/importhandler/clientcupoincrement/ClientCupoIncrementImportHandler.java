@@ -125,6 +125,7 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
         final Sheet clientCupoIncrementSheet = workbook.getSheet(TemplatePopulateImportConstants.CLIENT_CUPO_INCREMENT_SHEET_NAME);
         int successCount = 0;
         int errorCount = 0;
+        ArrayList<String> errMesg;
         String errorMessage;
         final GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(dateFormat, locale));
@@ -201,12 +202,32 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
                 final Long clientId = client.getClientId();
                 final String clientName = client.getClientName();
                 final EnumOptionData clientStatus = client.getStatus();
-                final BigDecimal previousMaximumCupoAmount = client.getCupo();
+                BigDecimal previousMaximumCupoAmount = client.getCupo();
+                BigDecimal totalOutstandingPrincipalAmount = client.getTotalOutstandingPrincipalAmount();
+
                 clientCupoIncrementSheet.getRow(clientCupoIncrementData.getRowIndex())
                         .createCell(ClientCupoIncrementConstants.CLIENT_NAME_COL).setCellValue(clientName);
                 clientCupoIncrementSheet.getRow(clientCupoIncrementData.getRowIndex())
                         .createCell(ClientCupoIncrementConstants.PREVIOUS_MAXIMUM_CUPO_AMOUNT_COL)
                         .setCellValue(previousMaximumCupoAmount.doubleValue());
+
+                if (totalOutstandingPrincipalAmount.compareTo(BigDecimal.ZERO) < 0) {
+                    totalOutstandingPrincipalAmount = totalOutstandingPrincipalAmount.abs();
+                    previousMaximumCupoAmount = previousMaximumCupoAmount.subtract(totalOutstandingPrincipalAmount);
+                }
+                if (totalOutstandingPrincipalAmount.compareTo(previousMaximumCupoAmount) > 0) {
+                    if (maximumCupoAmount.compareTo(totalOutstandingPrincipalAmount) < 0) {
+                        errorCount++;
+                        errorMessage = "No puede modificarse ya que el nuevo cupo que sugiere es menor al actual "
+                                + totalOutstandingPrincipalAmount;
+                        ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(), errorMessage,
+                                ClientCupoIncrementConstants.STATUS_COL);
+                        clientCupoIncrementSheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL,
+                                TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
+                        continue;
+                    }
+                }
+
                 if (maximumCupoAmount.compareTo(previousMaximumCupoAmount) < 0) {
                     errorCount++;
                     errorMessage = "No puede modificarse ya que el nuevo cupo que sugiere es menor al actual";
@@ -216,6 +237,7 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
                             TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
                     continue;
                 }
+
                 if (!ClientStatus.ACTIVE.getValue().equals(clientStatus.getId().intValue())) {
                     errorCount++;
                     errorMessage = "El cliente NO esta activo, no puede ejectuarse el cambio de cupo";
@@ -281,15 +303,17 @@ public class ClientCupoIncrementImportHandler implements ImportHandler {
                     } else {
                         sql = "UPDATE campos_cliente_empresas SET \"Cupo\" = ? WHERE client_id = ? AND \"NIT\" = ?";
                     }
-                    final int affectedRows = jdbcTemplate.update(sql, maximumCupoAmount, clientId, documentNumber);
-                    if (affectedRows == 0) {
-                        errorCount++;
-                        errorMessage = "No se pudo modificar el cupo";
-                        ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(), errorMessage,
-                                ClientCupoIncrementConstants.STATUS_COL);
-                        clientCupoIncrementSheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL,
-                                TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
-                        continue;
+                    if (maximumCupoAmount.compareTo(previousMaximumCupoAmount) < 0) {
+                        final int affectedRows = jdbcTemplate.update(sql, maximumCupoAmount, clientId, documentNumber);
+                        if (affectedRows == 0) {
+                            errorCount++;
+                            errorMessage = "No se pudo modificar el cupo";
+                            ImportHandlerUtils.writeErrorMessage(clientCupoIncrementSheet, clientCupoIncrementData.getRowIndex(),
+                                    errorMessage, ClientCupoIncrementConstants.STATUS_COL);
+                            clientCupoIncrementSheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL,
+                                    TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
+                            continue;
+                        }
                     }
                 }
                 final Cell statusCell = clientCupoIncrementSheet.getRow(clientCupoIncrementData.getRowIndex())

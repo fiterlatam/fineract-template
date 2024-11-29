@@ -538,11 +538,32 @@ public class LoanProductsApiResource {
                 workingDays.getRepaymentReschedulingType(), productTypeOptions);
 
         ret.setCustomAllowCreateOrDisburse(productData.getCustomAllowCreateOrDisburse());
+        ret.setCustomAllowCreateOrDisburseSms(productData.getCustomAllowCreateOrDisburseSms());
+
         ret.setCustomAllowCollections(productData.getCustomAllowCollections());
+        ret.setCustomAllowCollectionsSms(productData.getCustomAllowCollectionsSms());
+
         ret.setCustomAllowCreditNote(productData.getCustomAllowCreditNote());
+        ret.setCustomAllowCreditNoteSms(productData.getCustomAllowCreditNoteSms());
+
         ret.setCustomAllowDebitNote(productData.getCustomAllowDebitNote());
+        ret.setCustomAllowDebitNoteSms(productData.getCustomAllowDebitNoteSms());
+
         ret.setCustomAllowForgiveness(productData.getCustomAllowForgiveness());
+        ret.setCustomAllowForgivenessSms(productData.getCustomAllowForgivenessSms());
+
         ret.setCustomAllowReversalCancellation(productData.getCustomAllowReversalCancellation());
+        ret.setCustomAllowReversalCancellationSms(productData.getCustomAllowReversalCancellationSms());
+
+        ret.setCustomAllowRefinance(productData.getCustomAllowRefinance());
+        ret.setCustomAllowRefinanceSms(productData.getCustomAllowRefinanceSms());
+
+        ret.setCustomAllowRestructure(productData.getCustomAllowRestructure());
+        ret.setCustomAllowRestructureSms(productData.getCustomAllowRestructureSms());
+
+        ret.setCustomAllowReferido(productData.getCustomAllowReferido());
+        ret.setCustomAllowReferidoSms(productData.getCustomAllowReferidoSms());
+
         ret.setInterestStartsAfterGracePeriod(productData.isInterestStartsAfterGracePeriod());
 
         final SearchParameters searchParameters = SearchParameters.builder().active(true)

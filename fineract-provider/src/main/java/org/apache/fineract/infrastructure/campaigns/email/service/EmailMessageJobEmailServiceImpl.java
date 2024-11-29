@@ -58,7 +58,12 @@ public final class EmailMessageJobEmailServiceImpl implements EmailMessageJobEma
             MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
 
             mimeMessageHelper.setFrom(smtpCredentialsData.getFromEmail());
-            mimeMessageHelper.setTo(emailMessageWithAttachmentData.getTo());
+            // if recipient is a list of recipients use the multiple to
+            if (emailMessageWithAttachmentData.getRecipients() != null && !emailMessageWithAttachmentData.getRecipients().isEmpty()) {
+                mimeMessageHelper.setTo(emailMessageWithAttachmentData.getRecipients().toArray(new String[0]));
+            } else {
+                mimeMessageHelper.setTo(emailMessageWithAttachmentData.getTo());
+            }
             mimeMessageHelper.setText(emailMessageWithAttachmentData.getText(), true);
             mimeMessageHelper.setSubject(emailMessageWithAttachmentData.getSubject());
             final List<File> attachments = emailMessageWithAttachmentData.getAttachments();

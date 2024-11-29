@@ -252,23 +252,51 @@ public class LoanProductData implements Serializable {
 
     @lombok.Setter
     private boolean advance;
+
     @Setter
     private Boolean customAllowCreateOrDisburse;
+    @Setter
+    private Boolean customAllowCreateOrDisburseSms;
 
     @Setter
     private Boolean customAllowCollections;
+    @Setter
+    private Boolean customAllowCollectionsSms;
 
     @Setter
     private Boolean customAllowDebitNote;
+    @Setter
+    private Boolean customAllowDebitNoteSms;
 
     @Setter
     private Boolean customAllowCreditNote;
+    @Setter
+    private Boolean customAllowCreditNoteSms;
 
     @Setter
     private Boolean customAllowForgiveness;
+    @Setter
+    private Boolean customAllowForgivenessSms;
 
     @Setter
     private Boolean customAllowReversalCancellation;
+    @Setter
+    private Boolean customAllowReversalCancellationSms;
+
+    @Setter
+    private Boolean customAllowReferido;
+    @Setter
+    private Boolean customAllowReferidoSms;
+
+    @Setter
+    private Boolean customAllowRefinance;
+    @Setter
+    private Boolean customAllowRefinanceSms;
+
+    @Setter
+    private Boolean customAllowRestructure;
+    @Setter
+    private Boolean customAllowRestructureSms;
 
     @Setter
     private List<SubChannelLoanProductData> customCollectionsSubChannelList;

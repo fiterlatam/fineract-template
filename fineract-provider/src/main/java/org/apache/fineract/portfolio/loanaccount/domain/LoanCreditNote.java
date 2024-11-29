@@ -46,11 +46,17 @@ public class LoanCreditNote extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "insurance", scale = 6, precision = 19)
     private BigDecimal insurance;
 
+    @Column(name = "mandatory_insurance", scale = 6, precision = 19)
+    private BigDecimal mandatoryInsurance;
+
     @Column(name = "capital", scale = 6, precision = 19)
     private BigDecimal capital;
 
     @Column(name = "total_amount", scale = 6, precision = 19, nullable = false)
     private BigDecimal totalAmount;
+
+    @Column(name = "transaction_id", nullable = false)
+    private Long transactionId;
 
     public LoanCreditNoteData toData() {
         Long documentId = null;
@@ -60,6 +66,26 @@ public class LoanCreditNote extends AbstractAuditableWithUTCDateTimeCustom {
             documentName = this.document.getName();
         }
         return new LoanCreditNoteData(this.getId(), loan.getId(), this.creditNoteDate, this.arrearInterest, this.currentInterest,
-                this.honorarios, this.aval, this.insurance, this.capital, this.totalAmount, documentId, documentName);
+                this.honorarios, this.aval, this.insurance, this.mandatoryInsurance, this.capital, this.totalAmount, documentId,
+                documentName, this.transactionId);
+    }
+
+    public void calculateTotalAmount() {
+        this.totalAmount = this.arrearInterest.add(this.currentInterest).add(this.honorarios).add(this.aval).add(this.insurance)
+                .add(this.capital).add(this.mandatoryInsurance);
+    }
+
+    public boolean includesCharges() {
+        return this.honorarios.compareTo(BigDecimal.ZERO) > 0 || this.aval.compareTo(BigDecimal.ZERO) > 0
+                || this.insurance.compareTo(BigDecimal.ZERO) > 0 || this.mandatoryInsurance.compareTo(BigDecimal.ZERO) > 0
+                || this.arrearInterest.compareTo(BigDecimal.ZERO) > 0;
+    }
+
+    public void resetCharges() {
+        this.honorarios = BigDecimal.ZERO;
+        this.aval = BigDecimal.ZERO;
+        this.insurance = BigDecimal.ZERO;
+        this.mandatoryInsurance = BigDecimal.ZERO;
+        this.arrearInterest = BigDecimal.ZERO;
     }
 }

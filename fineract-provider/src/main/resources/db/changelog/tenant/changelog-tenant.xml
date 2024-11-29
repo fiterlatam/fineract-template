@@ -303,5 +303,26 @@
     <include file="parts/20243008011009131_SU_419_update_transaltion_filter_on_translation.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009132_SU_421_add_other_loan_cupo.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240529122200_SU_402_loan-credit-notes.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240529122200_SU_402_loan-credit-notes-transaction.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241031220000_SU_420_insurance_incident_addition.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240529122200_SU_402_loan-credit-notes-1.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009132_SU_433_update_report_de_prestamos_reclamados.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009133_SU_205_Masivian_Services.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009134_SU_433_update_report_de_prestamos_reclamados.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009134_SU_178_add_column_endorsed.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009135_SU_178_add_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009135_SU_178_update_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240529122200_SU_198_loan-product-parameters.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009135_SU_178_add_column_loan_charge.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009136_SU_178_update_report_polizas_endosadas.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20241112011009115_SU_442_add_columns_for_reclaim_exclusion.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009140_SU_441_add_field.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009140_SU_441_update_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20242708011009113_SU-199_invoice_job.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009141_SU_441_update_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240529122200_SU_198_loan-product-parameters-1.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009141_SU_200_electronic_invoice.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009140_SU_316_add_column.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009141_SU_318_add_tabel_collection_house.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20242711011009135_SU_439_add_migration_columns_loan.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
