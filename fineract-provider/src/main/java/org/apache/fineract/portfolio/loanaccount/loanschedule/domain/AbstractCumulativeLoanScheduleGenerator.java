@@ -203,6 +203,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         boolean isLastInstallmentPeriod = false;
         Integer numberOfInstallmentsToIgnore = loanApplicationTerms.getNumberOfInstallmentsToIgnore();
         while (!scheduleParams.getOutstandingBalance().isZero() || !scheduleParams.getDisburseDetailMap().isEmpty()) {
+            // In some cases outstanding balance becomes less than zero and above condition still holds valid
+            if (scheduleParams.getOutstandingBalance().isLessThanZero()) {
+                break;
+            }
             LocalDate previousRepaymentDate = scheduleParams.getActualRepaymentDate();
             scheduleParams.setActualRepaymentDate(getScheduledDateGenerator()
                     .generateNextRepaymentDate(scheduleParams.getActualRepaymentDate(), loanApplicationTerms, isFirstRepayment));
