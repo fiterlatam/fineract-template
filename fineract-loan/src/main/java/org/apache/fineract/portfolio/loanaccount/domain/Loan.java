@@ -1561,14 +1561,17 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 existingCharges.forEach(c -> c.setInstallment(installment));
                 existingInstallment.getInstallmentCharges().clear();
 
-                if (installment.getId() == null && installment.getAdvancePrincipalAmount() != null && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
-                    // Sometimes advanced paid installment does not get deleted because of these mappings and two installments with same number appear
+                if (installment.getId() == null && installment.getAdvancePrincipalAmount() != null
+                        && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
+                    // Sometimes advanced paid installment does not get deleted because of these mappings and two
+                    // installments with same number appear
 
                     List<LoanTransaction> transactions = this.getLoanTransactions();
                     for (LoanTransaction loanTransaction : transactions) {
                         if (loanTransaction.isPaymentTransaction()
                                 && loanTransaction.hasPaidInstallmentInAdvance(installment.getInstallmentNumber())) {
-                            Set<LoanTransactionToRepaymentScheduleMapping> existingMappings = loanTransaction.getLoanTransactionToRepaymentScheduleMappings();
+                            Set<LoanTransactionToRepaymentScheduleMapping> existingMappings = loanTransaction
+                                    .getLoanTransactionToRepaymentScheduleMappings();
                             installment.getLoanTransactionToRepaymentScheduleMappings().addAll(existingMappings);
                             existingMappings.forEach(c -> c.setInstallment(installment));
                         }
