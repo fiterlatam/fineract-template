@@ -33,7 +33,7 @@ import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectroni
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class LoanInvoiceData {
+public class LoanDocumentData {
 
     /** Client fields */
     private Long loanId;
@@ -76,21 +76,21 @@ public class LoanInvoiceData {
     private LoanDocumentType documentType;
 
     /** Document fields */
-    private Long creditNoteCount;
     private LocalDate lastDayOfMonth;
     private LocalDate firstDayOfMonth;
     private LocalDate secondLastDayOfMonth;
 
-    /** Loan outstanding amount fields */
-    private BigDecimal outstandingPrincipal;
-    private BigDecimal currentInterest;
-    private BigDecimal overdueInterest;
-    private BigDecimal outstandingPenalty;
-    private BigDecimal outstandingMandatoryInsurance;
-    private BigDecimal outstandingVoluntaryInsurance;
-    private BigDecimal outstandingAval;
-    private BigDecimal outstandingHonorarios;
-    private BigDecimal totalOutstanding;
+    /** Loan Paid amount fields */
+    private BigDecimal interestPaid;
+    private BigDecimal mandatoryInsurancePaid;
+    private BigDecimal voluntaryInsurancePaid;
+    private BigDecimal honorariosPaid;
+    private BigDecimal penaltyChargesPaid;
+    private BigDecimal totalPaid;
+    private String voluntaryInsuranceCode;
+    private String mandatoryInsuranceCode;
+    private String voluntaryInsuranceName;
+    private String mandatoryInsuranceName;
     private Integer loansCount;
     private Integer itemsCount;
 
@@ -98,28 +98,19 @@ public class LoanInvoiceData {
         final FacturaElectronicaMensual facturaElectronicaMensual = new FacturaElectronicaMensual();
         final LocalDate businessLocalDate = DateUtils.getBusinessLocalDate();
         int conceptCount = 0;
-        if (this.outstandingPrincipal.compareTo(BigDecimal.ZERO) > 0) {
+        if (this.interestPaid.compareTo(BigDecimal.ZERO) > 0) {
             conceptCount++;
         }
-        if (this.currentInterest.compareTo(BigDecimal.ZERO) > 0) {
+        if (this.mandatoryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
             conceptCount++;
         }
-        if (this.overdueInterest.compareTo(BigDecimal.ZERO) > 0) {
+        if (this.voluntaryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
             conceptCount++;
         }
-        if (this.outstandingPenalty.compareTo(BigDecimal.ZERO) > 0) {
+        if (this.honorariosPaid.compareTo(BigDecimal.ZERO) > 0) {
             conceptCount++;
         }
-        if (this.outstandingMandatoryInsurance.compareTo(BigDecimal.ZERO) > 0) {
-            conceptCount++;
-        }
-        if (this.outstandingVoluntaryInsurance.compareTo(BigDecimal.ZERO) > 0) {
-            conceptCount++;
-        }
-        if (this.outstandingAval.compareTo(BigDecimal.ZERO) > 0) {
-            conceptCount++;
-        }
-        if (this.outstandingHonorarios.compareTo(BigDecimal.ZERO) > 0) {
+        if (this.penaltyChargesPaid.compareTo(BigDecimal.ZERO) > 0) {
             conceptCount++;
         }
         this.itemsCount = conceptCount;
@@ -137,22 +128,7 @@ public class LoanInvoiceData {
 
         // INFORMATION AT INVOICE LEVEL
         final String logo = "3";
-        LoanDocumentType tipoDoc;
-        String tipoFactura;
-        if ("Ajuste".equalsIgnoreCase(this.loanProductName)) {
-            tipoDoc = LoanDocumentType.DEBIT_NOTE;
-            tipoFactura = "9";
-        } else if (this.creditNoteCount > 0) {
-            tipoDoc = LoanDocumentType.CREDIT_NOTE;
-            tipoFactura = "8";
-        } else {
-            tipoDoc = LoanDocumentType.INVOICE;
-            tipoFactura = "1";
-        }
-        this.documentType = tipoDoc;
-        facturaElectronicaMensual.setTip_doc(tipoDoc.code);
         facturaElectronicaMensual.setFecha_factura(businessLocalDate);
-        facturaElectronicaMensual.setTipo_factura(tipoFactura);
         facturaElectronicaMensual.setMoneda("COP");
         facturaElectronicaMensual.setForma_pago("1");
         facturaElectronicaMensual.setMedio_pago("31");
@@ -160,13 +136,20 @@ public class LoanInvoiceData {
         facturaElectronicaMensual.setFecha_inicial(this.firstDayOfMonth);
         facturaElectronicaMensual.setFecha_final(this.lastDayOfMonth);
         facturaElectronicaMensual.setEst_fact("C");
-        facturaElectronicaMensual.setFec_facafect(businessLocalDate);
         facturaElectronicaMensual.setTotal_unidades(String.valueOf(this.itemsCount));
         facturaElectronicaMensual.setLogo(logo);
+        if (LoanDocumentType.INVOICE.equals(this.documentType)) {
+            facturaElectronicaMensual.setTipo_factura("1");
+            facturaElectronicaMensual.setTip_doc(LoanDocumentType.INVOICE.getCode());
+        } else {
+            facturaElectronicaMensual.setTipo_factura("9");
+            facturaElectronicaMensual.setTip_doc(LoanDocumentType.CREDIT_NOTE.getCode());
+        }
 
         // INFORMATION AT COMPANY LEVEL
         final String taxInformation = "RESPONSABLE DEL IVA.  No Somos Grandes Contribuyentes. Autorretenedores Renta según Resol. No. 04314 may 16 de 20028.  Auterretenedores especiales según Decreto No. 2201 dic 30 de 2016.  Autorretenedores de ICA según Resol. No. 202150186360 del 22 de dic de 2021 Medellín";
         facturaElectronicaMensual.setInf_tributaria(taxInformation);
+        facturaElectronicaMensual.setCantidad(BigDecimal.ONE);
         if (LegalForm.fromInt(this.clientLegalForm).isEntity()) {
             final String companyCountryCode = "CO";
             final String companyCountryName = "COLOMBIA";
@@ -216,55 +199,12 @@ public class LoanInvoiceData {
         facturaElectronicaMensual.setPorcentaje_impuesto(BigDecimal.ZERO);
         facturaElectronicaMensual.setImpuesto(BigDecimal.ZERO);
         facturaElectronicaMensual.setNota2("Estos valores corresponden a los cobros asociados a tu crédito: " + this.productTypeName);
+        facturaElectronicaMensual.setTipo_prod(this.productTypeName);
 
-        facturaElectronicaMensual.setPor_dto(this.outstandingPrincipal);
-        facturaElectronicaMensual.setVal_dto(this.outstandingPrincipal);
-        facturaElectronicaMensual.setTotal(this.outstandingPrincipal);
+        facturaElectronicaMensual.setPor_dto(this.totalPaid);
+        facturaElectronicaMensual.setVal_dto(this.totalPaid);
+        facturaElectronicaMensual.setTotal(this.totalPaid);
         return facturaElectronicaMensual;
-    }
-
-    private BigDecimal defaultToZeroIfNull(final BigDecimal possibleNullValue) {
-        BigDecimal value = BigDecimal.ZERO;
-        if (possibleNullValue != null) {
-            value = possibleNullValue;
-        }
-        return value;
-    }
-
-    public BigDecimal getOutstandingPrincipal() {
-        return defaultToZeroIfNull(this.outstandingPrincipal);
-    }
-
-    public BigDecimal getCurrentInterest() {
-        return defaultToZeroIfNull(this.currentInterest);
-    }
-
-    public BigDecimal getOverdueInterest() {
-        return defaultToZeroIfNull(this.overdueInterest);
-    }
-
-    public BigDecimal getOutstandingPenalty() {
-        return defaultToZeroIfNull(this.outstandingPenalty);
-    }
-
-    public BigDecimal getOutstandingMandatoryInsurance() {
-        return defaultToZeroIfNull(this.outstandingMandatoryInsurance);
-    }
-
-    public BigDecimal getOutstandingVoluntaryInsurance() {
-        return defaultToZeroIfNull(this.outstandingVoluntaryInsurance);
-    }
-
-    public BigDecimal getOutstandingAval() {
-        return defaultToZeroIfNull(this.outstandingAval);
-    }
-
-    public BigDecimal getOutstandingHonorarios() {
-        return defaultToZeroIfNull(this.outstandingHonorarios);
-    }
-
-    public BigDecimal getTotalOutstanding() {
-        return defaultToZeroIfNull(this.totalOutstanding);
     }
 
     @AllArgsConstructor

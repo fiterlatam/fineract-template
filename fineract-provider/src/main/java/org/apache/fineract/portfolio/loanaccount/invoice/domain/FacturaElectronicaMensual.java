@@ -243,6 +243,9 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
     @Column(name = "tip_factexport")
     private BigDecimal tip_factexport;
 
+    @Column(name = "tipo_prod")
+    private String tipo_prod;
+
     @Override
     public FacturaElectronicaMensual clone() {
         try {

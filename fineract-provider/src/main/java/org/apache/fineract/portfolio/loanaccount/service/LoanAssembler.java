@@ -366,7 +366,10 @@ public class LoanAssembler {
         loanApplication.updateValorDescuento(valorDescuento);
 
         /// Migrated loan details
-        boolean isMigratedLoan = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, element);
+        Boolean isMigratedLoan = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, element);
+        if (isMigratedLoan == null) {
+            isMigratedLoan = Boolean.FALSE;
+        }
         if (isMigratedLoan) {
             String nit = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.MIGRAR_NIT, element);
             String code = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.MIGRAR_CODE, element);
