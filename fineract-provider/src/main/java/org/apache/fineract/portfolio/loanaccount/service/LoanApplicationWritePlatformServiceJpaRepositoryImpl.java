@@ -244,7 +244,13 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 isTopUp = this.fromJsonHelper.extractBooleanNamed("isTopup", command.parsedJson());
             }
             if (!isTopUp && !isAjuste) {
-                this.fromApiJsonDeserializer.validateClientBlockingList(entityId);
+                Boolean isMigratedLoan = this.fromJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, command.parsedJson());
+                if (isMigratedLoan == null) {
+                    isMigratedLoan = Boolean.FALSE;
+                }
+                if (!isMigratedLoan) {
+                    this.fromApiJsonDeserializer.validateClientBlockingList(entityId);
+                }
             }
             boolean isMeetingMandatoryForJLGLoans = configurationDomainService.isMeetingMandatoryForJLGLoans();
 
