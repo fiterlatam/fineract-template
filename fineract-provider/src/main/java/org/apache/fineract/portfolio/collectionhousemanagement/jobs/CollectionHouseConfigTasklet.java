@@ -33,7 +33,6 @@ public class CollectionHouseConfigTasklet implements Tasklet {
             // Fetch all collection house history records
             List<ColletionHouseHistory> collectionHouseHistoryList = collectionHouseHistoryReadWriteService.findAllCollectionHouseHistory();
 
-            // Prepare a JSON array for the updates
             JsonArray updatesArray = new JsonArray();
             for (ColletionHouseHistory colletionHouseHistory : collectionHouseHistoryList) {
                 JsonObject jsonObject = new JsonObject();
@@ -43,14 +42,11 @@ public class CollectionHouseConfigTasklet implements Tasklet {
                 updatesArray.add(jsonObject);
             }
 
-            // Wrap the JSON array into a JsonCommand and execute the createCollectionHouseHistory command
             JsonObject jsonCommandData = new JsonObject();
             jsonCommandData.add("collectionHouseUpdates", updatesArray);
 
-            CommandWrapper commandRequest = new CommandWrapperBuilder().createCollectionHouseHistory() // Ensure this
-                                                                                                       // matches your
-                                                                                                       // API command
-                                                                                                       // name
+            CommandWrapper commandRequest = new CommandWrapperBuilder().createCollectionHouseHistory()
+
                     .withJson(jsonCommandData.toString()).build();
 
             commandsSourceWritePlatformService.logCommandSource(commandRequest);
