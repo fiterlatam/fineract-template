@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.loanaccount.jobs.applychargetooverdueloani
 
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
+import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.springframework.batch.core.Job;
@@ -46,6 +47,8 @@ public class ApplyChargeToOverdueLoanInstallmentConfig {
     private LoanReadPlatformService loanReadPlatformService;
     @Autowired
     private LoanChargeWritePlatformService loanChargeWritePlatformService;
+    @Autowired
+    private ChargeRepositoryWrapper chargeRepository;
 
     @Bean
     protected Step applyChargeToOverdueLoanInstallmentStep() {
@@ -62,6 +65,6 @@ public class ApplyChargeToOverdueLoanInstallmentConfig {
     @Bean
     public ApplyChargeToOverdueLoanInstallmentTasklet applyChargeToOverdueLoanInstallmentTasklet() {
         return new ApplyChargeToOverdueLoanInstallmentTasklet(configurationDomainService, loanReadPlatformService,
-                loanChargeWritePlatformService);
+                loanChargeWritePlatformService, chargeRepository);
     }
 }
