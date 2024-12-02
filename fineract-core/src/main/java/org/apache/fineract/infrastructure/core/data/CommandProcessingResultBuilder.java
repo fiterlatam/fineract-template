@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.core.data;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 
@@ -41,6 +42,7 @@ public class CommandProcessingResultBuilder {
     private String transactionId;
     private Map<String, Object> changes;
     private Map<String, Object> creditBureauReportData;
+    private List<Map<String, Object>> collectionHouseUpdates;
     private Long productId;
     private boolean rollbackTransaction = false;
     private ExternalId entityExternalId = ExternalId.empty();
@@ -60,7 +62,7 @@ public class CommandProcessingResultBuilder {
         CommandProcessingResult commandProcessingResult = CommandProcessingResult.fromDetails(this.commandId, this.officeId, this.groupId,
                 this.clientId, this.loanId, this.savingsId, this.resourceIdentifier, this.entityId, this.gsimId, this.glimId,
                 this.creditBureauReportData, this.transactionId, this.changes, this.productId, this.rollbackTransaction, this.subEntityId,
-                this.entityExternalId, this.subEntityExternalId);
+                this.entityExternalId, this.subEntityExternalId, this.collectionHouseUpdates);
         commandProcessingResult.setRegistroAnterior(this.registroAnterior);
         commandProcessingResult.setRegistroPosterior(this.registroPosterior);
         commandProcessingResult.setUsuarioNombre(this.usuarioNombre);
@@ -144,6 +146,11 @@ public class CommandProcessingResultBuilder {
 
     public CommandProcessingResultBuilder withCreditReport(final Map<String, Object> withCreditReport) {
         this.creditBureauReportData = withCreditReport;
+        return this;
+    }
+
+    public CommandProcessingResultBuilder withCollectionHouse(final List<Map<String, Object>> withCollectionHouse) {
+        this.collectionHouseUpdates = withCollectionHouse;
         return this;
     }
 
