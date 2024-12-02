@@ -770,7 +770,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                         feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
                                 feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
                         updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
-                                installmentCharge.getLoanCharge());
+                                vatCharge.getLoanCharge());
                         transactionAmountRemaining = transactionAmountRemaining.minus(feePortionOfTransaction);
                         loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
                         break;
@@ -836,7 +836,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                         feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
                                 feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
                         updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
-                                installmentCharge.getLoanCharge());
+                                vatCharge.getLoanCharge());
                         loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
                     }
                 }
