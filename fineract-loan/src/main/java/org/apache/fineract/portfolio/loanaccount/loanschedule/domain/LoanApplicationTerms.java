@@ -1291,9 +1291,11 @@ public final class LoanApplicationTerms {
 
             final Integer periodsRemaining = calculateNumberOfRemainingPrincipalPaymentPeriods(this.actualNumberOfRepayments,
                     periodsElapsed);
-
-            double installmentAmount = FinanicalFunctions.pmt(periodicInterestRate.doubleValue(), periodsRemaining.doubleValue(),
-                    principalDouble, futureValue, false);
+            double installmentAmount = balance.getAmount().doubleValue();
+            if (periodsRemaining > 0) {
+                installmentAmount = FinanicalFunctions.pmt(periodicInterestRate.doubleValue(), periodsRemaining.doubleValue(),
+                        principalDouble, futureValue, false);
+            }
 
             if (this.installmentAmountInMultiplesOf != null) {
                 installmentAmount = Money.roundToMultiplesOf(installmentAmount, this.installmentAmountInMultiplesOf);
