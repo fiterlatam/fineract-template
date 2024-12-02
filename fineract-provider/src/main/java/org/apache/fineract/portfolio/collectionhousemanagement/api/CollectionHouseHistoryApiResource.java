@@ -1,0 +1,53 @@
+package org.apache.fineract.portfolio.collectionhousemanagement.api;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import org.apache.fineract.commands.domain.CommandWrapper;
+import org.apache.fineract.commands.service.CommandWrapperBuilder;
+import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.custom.portfolio.externalcharge.honoratio.data.CustomChargeHonorarioMapData;
+import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
+@Path("/v1/collectionhousehistory")
+@Component
+@Scope("singleton")
+public class CollectionHouseHistoryApiResource {
+
+    private static final String COLLECTION_HOUSE_PERMISSIONS = "COLLECTION_HOUSE";
+    private final DefaultToApiJsonSerializer<CustomChargeHonorarioMapData> toApiJsonSerializer;
+    private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final PlatformSecurityContext context;
+    private final ApiRequestParameterHelper apiRequestParameterHelper;
+
+    @Autowired
+    public CollectionHouseHistoryApiResource(DefaultToApiJsonSerializer<CustomChargeHonorarioMapData> toApiJsonSerializer,
+            PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, PlatformSecurityContext context,
+            ApiRequestParameterHelper apiRequestParameterHelper) {
+        this.toApiJsonSerializer = toApiJsonSerializer;
+        this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+        this.context = context;
+        this.apiRequestParameterHelper = apiRequestParameterHelper;
+    }
+
+    @POST
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String createCollectionHouse(final String apiRequestBodyAsJson) {
+        this.context.authenticatedUser().validateHasReadPermission(COLLECTION_HOUSE_PERMISSIONS);
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().createCollectionHouseHistory().withJson(apiRequestBodyAsJson)
+                .build();
+        final CommandProcessingResult commandProcessingResult = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return this.toApiJsonSerializer.serialize(commandProcessingResult);
+    }
+
+}
