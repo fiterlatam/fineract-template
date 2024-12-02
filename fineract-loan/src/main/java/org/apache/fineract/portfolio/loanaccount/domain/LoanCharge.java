@@ -320,14 +320,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 final RoundingMode roundingMode = RoundingMode.HALF_UP;
                 final MathContext mc = MoneyHelper.getMathContext();
                 // Get one day of interest
-                if (this.getCharge().getParentChargeId() == null) {
-                    // Penalty Charge
-                    this.percentage = chargeAmount.divide(BigDecimal.valueOf(365), mc).setScale(5, roundingMode);
-                } else {
-                    // VAT charge
-                    this.percentage = chargeAmount;
-                }
-
+                this.percentage = chargeAmount.divide(BigDecimal.valueOf(365), mc).setScale(5, roundingMode);
                 this.amountPercentageAppliedTo = amountPercentageAppliedTo;
                 if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
                     loanCharge = percentageOf(this.amountPercentageAppliedTo);

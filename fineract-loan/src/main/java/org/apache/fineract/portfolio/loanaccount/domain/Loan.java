@@ -7578,6 +7578,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money feeForCurrentPeriod = installment.getFeeChargesCharged(getCurrency());
         Money feeAccountedForCurrentPeriod = installment.getFeeChargesWaived(getCurrency())
                 .plus(installment.getFeeChargesPaid(getCurrency())).plus(installment.getFeeChargesWrittenOff(getCurrency()));
+
+        // SU-446 Since penalty calculation for an installment is changed and penaltis till date are accumulated and charged.
+        // Below code is no longer valid as the charge amount has already been charged
+        /*
         for (LoanCharge loanCharge : this.charges) {
             if (loanCharge.isActive() && !loanCharge.isDueAtDisbursement()) {
                 boolean isDue = isFirstNormalInstallment
@@ -7592,6 +7596,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             }
         }
+        */
 
         Money[] balances = new Money[6];
         balances[0] = interestForCurrentPeriod;
