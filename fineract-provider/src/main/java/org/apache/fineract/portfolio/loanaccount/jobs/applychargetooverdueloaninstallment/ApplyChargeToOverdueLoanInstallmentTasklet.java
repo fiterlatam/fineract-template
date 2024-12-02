@@ -30,6 +30,8 @@ import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
+import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
@@ -45,6 +47,7 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
     private final ConfigurationDomainService configurationDomainService;
     private final LoanReadPlatformService loanReadPlatformService;
     private final LoanChargeWritePlatformService loanChargeWritePlatformService;
+    private final ChargeRepositoryWrapper chargeRepository;
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
@@ -56,12 +59,28 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
         if (!overdueLoanScheduledInstallments.isEmpty()) {
             final Map<Long, Collection<OverdueLoanScheduleData>> overdueScheduleData = new HashMap<>();
             for (final OverdueLoanScheduleData overdueInstallment : overdueLoanScheduledInstallments) {
-                if (overdueScheduleData.containsKey(overdueInstallment.getLoanId())) {
-                    overdueScheduleData.get(overdueInstallment.getLoanId()).add(overdueInstallment);
-                } else {
-                    Collection<OverdueLoanScheduleData> loanData = new ArrayList<>();
-                    loanData.add(overdueInstallment);
-                    overdueScheduleData.put(overdueInstallment.getLoanId(), loanData);
+                final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(overdueInstallment.getChargeId());
+                if (chargeDefinition.getParentChargeId() == null) {
+                    if (overdueScheduleData.containsKey(overdueInstallment.getLoanId())) {
+                        overdueScheduleData.get(overdueInstallment.getLoanId()).add(overdueInstallment);
+                    } else {
+                        Collection<OverdueLoanScheduleData> loanData = new ArrayList<>();
+                        loanData.add(overdueInstallment);
+                        overdueScheduleData.put(overdueInstallment.getLoanId(), loanData);
+                    }
+                }
+            }
+
+            for (final OverdueLoanScheduleData overdueInstallment : overdueLoanScheduledInstallments) {
+                final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(overdueInstallment.getChargeId());
+                if (chargeDefinition.getParentChargeId() != null) {
+                    if (overdueScheduleData.containsKey(overdueInstallment.getLoanId())) {
+                        overdueScheduleData.get(overdueInstallment.getLoanId()).add(overdueInstallment);
+                    } else {
+                        Collection<OverdueLoanScheduleData> loanData = new ArrayList<>();
+                        loanData.add(overdueInstallment);
+                        overdueScheduleData.put(overdueInstallment.getLoanId(), loanData);
+                    }
                 }
             }
 
