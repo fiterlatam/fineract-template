@@ -451,7 +451,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
                 Money midPeriodInterestRate = midPrincipalInterestForThisPeriod.interest().add(totalMidPeriodInterestRates);
 
-                Money interestPrincipal = midPeriodInterestRate.add(midPrincipalInterestForThisPeriod.principal());
+                final Money midPeriodPrincipal = midPrincipalInterestForThisPeriod.principal();
 
                 /*
                  * End mind interest calculation Start End interest Calculation
@@ -465,10 +465,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         accruedInterestByAdvancePmt);
 
                 final Money periodEndInterestRate = endPrincipalInterestForThisPeriod.interest();
-
                 final Money totalInterestRate = midPeriodInterestRate.add(periodEndInterestRate);
-
-                final Money totalPrincipal = interestPrincipal.minus(totalInterestRate);
+                final Money periodEndPrincipal = endPrincipalInterestForThisPeriod.principal();
+                final Money totalPrincipal = midPeriodPrincipal.isGreaterThan(periodEndPrincipal) ? midPeriodPrincipal : periodEndPrincipal;
 
                 /*
                  * End Calc for end Insterst
