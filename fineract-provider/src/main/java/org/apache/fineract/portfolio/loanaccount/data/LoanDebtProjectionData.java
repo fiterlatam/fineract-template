@@ -27,7 +27,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LoanDebtProjectionData {
 
-    private Integer diasDeMoraProyectados; // projectedOverdueDays;
+    private Long diasDeMoraProyectados; // projectedOverdueDays;
 
     private OverdueBalanceDetails saldoVencidoDiscriminado; // overdueBalanceDetails;
 
@@ -43,6 +43,10 @@ public class LoanDebtProjectionData {
         private BigDecimal saldoVencidoIntMora; // overdueInterestBalance;
 
         private BigDecimal saldoVencidoHonorario; // overdueFeesBalance;
+
+        public BigDecimal getTotal() {
+            return saldoVencidoCuotas.add(saldoVencidoIntMora).add(saldoVencidoHonorario);
+        }
     }
 
     @Getter

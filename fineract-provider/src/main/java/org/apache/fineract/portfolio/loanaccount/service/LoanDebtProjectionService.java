@@ -29,8 +29,10 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -38,80 +40,122 @@ public class LoanDebtProjectionService {
 
     private final LoanRepositoryWrapper loanRepositoryWrapper;
 
-    public LoanDebtProjectionData calculateDebtProjection(Long loanId, String projectionDate, String dateFormat) {
-        // Calculate the debt projection for a loan
-        // just mockup first to test
-        Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+    public LoanDebtProjectionData calculateDebtProjection( Long loanId, String projectionDate, String dateFormat) {
+        // Find the loan and validate
+        Loan loan = validateLoanForProjection(loanId);
         LocalDate projectedFutureDate = DateUtils.parseLocalDate(projectionDate, dateFormat);
-        final MonetaryCurrency currency = loan.getCurrency();
 
-        // fetch all repayment schedules that have not be fully paid and will be overdue on the projection date
-        List<LoanRepaymentScheduleInstallment> overdueInstallments = loan.getRepaymentScheduleInstallments().stream()
-                .filter(installment -> installment.isOverdueOn(projectedFutureDate))
-                .filter(installment -> installment.isNotFullyPaidOff())
-                .toList();
+        // Get overdue and future installments
+        List<LoanRepaymentScheduleInstallment> overdueInstallments = getOverdueInstallments(loan, projectedFutureDate);
+        List<LoanRepaymentScheduleInstallment> futureInstallments = getFutureInstallments(loan, projectedFutureDate);
 
+        // Calculate projected overdue days
+        Long projectedOverdueDays = calculateProjectedOverdueDays(overdueInstallments);
 
-        // early return if no overdue installments
-        if (overdueInstallments.isEmpty()) {
-            return new LoanDebtProjectionData(0, new LoanDebtProjectionData.OverdueBalanceDetails(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO), new LoanDebtProjectionData.TotalBalanceDetails(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
-        }
+        // Calculate discriminated past due balance
+        LoanDebtProjectionData.OverdueBalanceDetails overdueBalanceDetails = calculateDiscriminatedPastDueBalance(
+                overdueInstallments, loan.getCurrency());
 
+        // Calculate total balance details
+        LoanDebtProjectionData.TotalBalanceDetails totalBalanceDetails = calculateTotalBalanceDetails(
+                loan, projectedFutureDate, overdueBalanceDetails, futureInstallments);
 
-        validateLoanForProjection(loan);
-        // Calculate Overdue Balance Details
-        LoanDebtProjectionData.OverdueBalanceDetails overdueDetails = calculateOverdueBalanceDetails(loan, projectedFutureDate);
-
-        // Calculate Total Balance Details
-        LoanDebtProjectionData.TotalBalanceDetails totalDetails = calculateTotalBalanceDetails(loan, projectedFutureDate, overdueDetails);
-
-        // Calculate Projected Overdue Days
-        Integer projectedOverdueDays = calculateProjectedOverdueDays(loan, projectedFutureDate);
-
-        return new LoanDebtProjectionData(projectedOverdueDays, overdueDetails, totalDetails);
+        return new LoanDebtProjectionData(
+                projectedOverdueDays,
+                overdueBalanceDetails,
+                totalBalanceDetails
+        );
     }
 
+    private Loan validateLoanForProjection(Long loanId) {
+        Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
 
-
-
-    private void validateLoanForProjection(Loan loan) {
-       // validate that loan is active and not closed
+        // Validate loan is active
         if (loan.isClosed()) {
-            throw new GeneralPlatformDomainRuleException("error.msg.loan.is.closed", "Loan is closed and cannot be projected", loan.getId());
+            throw new GeneralPlatformDomainRuleException(
+                    "error.msg.loan.is.closed",
+                    "Loan is closed and cannot be projected",
+                    loan.getId()
+            );
         }
+
+        return loan;
     }
 
+    private List<LoanRepaymentScheduleInstallment> getOverdueInstallments(Loan loan, LocalDate projectedFutureDate) {
+        return loan.getRepaymentScheduleInstallments().stream()
+                .filter(installment ->
+                        installment.getDueDate().isBefore(projectedFutureDate) ||
+                        installment.getDueDate().equals(projectedFutureDate))
+                .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
+                .toList();
+    }
 
-    private BigDecimal calculateOverdueInstallmentBalance(
-            List<LoanRepaymentScheduleInstallment> overdueInstallments
+    private List<LoanRepaymentScheduleInstallment> getFutureInstallments(Loan loan, LocalDate projectedFutureDate) {
+        return loan.getRepaymentScheduleInstallments().stream()
+                .filter(installment ->
+                        installment.getDueDate().isAfter(LocalDate.now()) &&
+                        installment.getDueDate().isBefore(projectedFutureDate))
+                .toList();
+    }
+
+    private LoanDebtProjectionData.OverdueBalanceDetails calculateDiscriminatedPastDueBalance(
+            List<LoanRepaymentScheduleInstallment> overdueInstallments,
+            MonetaryCurrency currency
     ) {
+        if (overdueInstallments.isEmpty()) {
+            return new LoanDebtProjectionData.OverdueBalanceDetails(
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO
+            );
+        }
 
-        MonetaryCurrency currency = overdueInstallments.get(0).getLoan().getCurrency();
-        return overdueInstallments.stream()
-                .map(installment -> {
-                    // Sum principal, interest, and other mandatory components
-                    return installment.getPrincipal(currency)
-                            .add(installment.getInterestCharged(currency))
-                            .add(installment.getFeeChargesCharged(currency))
-                            .add(installment.getPenaltyChargesCharged(currency));
-                })
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // Calculate Past Due Installment Balance
+        BigDecimal pastDueInstallmentBalance = overdueInstallments.stream()
+                .map(installment ->
+                        installment.getPrincipal(currency)
+                                .add(installment.getInterestCharged(currency))
+                                .add(installment.getFeeChargesCharged(currency))
+                                .add(installment.getPenaltyChargesCharged(currency)).getAmount()
+                )
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
 
+        // Calculate Delinquency Interest
+        BigDecimal delinquencyInterest = overdueInstallments.stream()
+                .map(installment -> installment.getPenaltyChargesCharged(currency).getAmount())
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
 
+        // Calculate Fee
+        BigDecimal fee = overdueInstallments.stream()
+                .map(installment -> installment.getFeeChargesCharged(currency).getAmount())
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
 
+        return new LoanDebtProjectionData.OverdueBalanceDetails(
+                pastDueInstallmentBalance,
+                delinquencyInterest,
+                fee
+        );
     }
 
     private LoanDebtProjectionData.TotalBalanceDetails calculateTotalBalanceDetails(
             Loan loan,
-            LocalDate projectionDate,
-            LoanDebtProjectionData.OverdueBalanceDetails overdueDetails
+            LocalDate projectedFutureDate,
+            LoanDebtProjectionData.OverdueBalanceDetails overdueDetails,
+            List<LoanRepaymentScheduleInstallment> futureInstallments
     ) {
         // Calculate Future Balance
-        BigDecimal futureBalance = calculateFutureBalance(loan, projectionDate);
+        BigDecimal futureBalance = calculateFutureBalance(loan, projectedFutureDate, futureInstallments);
 
-        // Calculate Total Balances
+        // Calculate Total Overdue Balance
         BigDecimal totalOverdueBalance = calculateTotalOverdueBalance(overdueDetails);
-        BigDecimal totalBalance = totalOverdueBalance.add(futureBalance);
+
+        // Calculate Total Balance
+        BigDecimal totalBalance = totalOverdueBalance.add(futureBalance)
+                .setScale(2, RoundingMode.HALF_UP);
 
         return new LoanDebtProjectionData.TotalBalanceDetails(
                 totalOverdueBalance,
@@ -120,21 +164,48 @@ public class LoanDebtProjectionService {
         );
     }
 
+    private BigDecimal calculateFutureBalance(
+            Loan loan,
+            LocalDate projectedFutureDate,
+            List<LoanRepaymentScheduleInstallment> futureInstallments
+    ) {
+        // Calculate principal balance from last due date
+        BigDecimal principalBalance = calculatePrincipalBalance(loan);
 
+        // Calculate current interest for additional days
+        BigDecimal currentInterest = loan.getLoanSummary().getTotalInterestCharged();
 
-    private Integer calculateProjectedOverdueDays(Loan loan, LocalDate projectionDate) {
-        // Implementation depends on Fineract's LoanRepaymentScheduleInstallment
-        return loan.getLoanRepaymentScheduleInstallments().stream()
-                .filter(installment ->
-                        installment.getDueDate().isBefore(projectionDate) ||
-                        installment.getDueDate().equals(projectionDate)
-                )
-                .map(installment ->
-                        installment.getDueDate().until(projectionDate).getDays()
-                )
-                .reduce(Integer::sum)
-                .orElse(0);
+        return principalBalance.add(currentInterest)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
+    private BigDecimal calculatePrincipalBalance(Loan loan) {
+        // Implement logic to calculate remaining principal balance
+        return loan.getLoanSummary().getTotalOutstanding();
+    }
 
+    private BigDecimal calculateCurrentInterest(
+            Loan loan,
+            LocalDate lastRepaymentDate,
+            LocalDate projectedFutureDate
+    ) {
+        // Implement logic to calculate interest for additional days
+        return BigDecimal.ZERO;
+    }
+
+    private BigDecimal calculateTotalOverdueBalance(LoanDebtProjectionData.OverdueBalanceDetails overdueDetails) {
+        return overdueDetails.getTotal();
+    }
+
+    private Long calculateProjectedOverdueDays(List<LoanRepaymentScheduleInstallment> overdueInstallments) {
+        if (overdueInstallments.isEmpty()) {
+            return 0L;
+        }
+
+        return overdueInstallments.stream()
+                .map(LoanRepaymentScheduleInstallment::getDueDate)
+                .map(dueDate -> DateUtils.getDifferenceInDays(LocalDate.now(), dueDate))
+                .max(Long::compareTo)
+                .orElse(0L);
+    }
 }
