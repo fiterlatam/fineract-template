@@ -110,8 +110,8 @@ import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.data.EconomicSectorData;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.client.service.EconomicActivityReadPlatformService;
-import org.apache.fineract.portfolio.collateralmanagement.data.LoanCollateralResponseData;
-import org.apache.fineract.portfolio.collateralmanagement.service.LoanCollateralManagementReadPlatformService;
+import org.apache.fineract.portfolio.collateral.data.CollateralData;
+import org.apache.fineract.portfolio.collateral.service.CollateralReadPlatformService;
 import org.apache.fineract.portfolio.cupo.data.CupoData;
 import org.apache.fineract.portfolio.cupo.domain.CupoStatus;
 import org.apache.fineract.portfolio.cupo.service.CupoReadService;
@@ -131,7 +131,6 @@ import org.apache.fineract.portfolio.loanaccount.data.GroupLoanAdditionalData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanCollateralManagementData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.PaidInAdvanceData;
@@ -284,7 +283,7 @@ public class LoansApiResource {
     private final ConfigurationDomainService configurationDomainService;
     private final DefaultToApiJsonSerializer<GlimRepaymentTemplate> glimTemplateToApiJsonSerializer;
     private final GLIMAccountInfoReadPlatformService glimAccountInfoReadPlatformService;
-    private final LoanCollateralManagementReadPlatformService loanCollateralManagementReadPlatformService;
+    private final CollateralReadPlatformService collateralReadPlatformService;
     private final CupoReadService cupoReadService;
     private final AppUserReadPlatformService appUserReadPlatformService;
     private final AgencyReadPlatformServiceImpl agencyReadPlatformService;
@@ -316,7 +315,7 @@ public class LoansApiResource {
             final ConfigurationDomainService configurationDomainService,
             final DefaultToApiJsonSerializer<GlimRepaymentTemplate> glimTemplateToApiJsonSerializer,
             final GLIMAccountInfoReadPlatformService glimAccountInfoReadPlatformService,
-            final LoanCollateralManagementReadPlatformService loanCollateralManagementReadPlatformService,
+            final CollateralReadPlatformService collateralReadPlatformService,
             final CupoReadService cupoReadService, AppUserReadPlatformService appUserReadPlatformService,
             EconomicActivityReadPlatformService economicActivityReadPlatformService,
             AgencyReadPlatformServiceImpl agencyReadPlatformService, CenterReadPlatformServiceImpl centerReadPlatformService) {
@@ -350,7 +349,7 @@ public class LoansApiResource {
         this.configurationDomainService = configurationDomainService;
         this.glimTemplateToApiJsonSerializer = glimTemplateToApiJsonSerializer;
         this.glimAccountInfoReadPlatformService = glimAccountInfoReadPlatformService;
-        this.loanCollateralManagementReadPlatformService = loanCollateralManagementReadPlatformService;
+        this.collateralReadPlatformService = collateralReadPlatformService;
         this.cupoReadService = cupoReadService;
         this.clientReadPlatformService = clientReadPlatformService;
         this.ageLimitValidationJsonSerializer = ageLimitValidationJsonSerializer;
@@ -715,8 +714,7 @@ public class LoansApiResource {
         CupoData linkedCupo = this.accountAssociationsReadPlatformService.retrieveLinkedCupo(loanId);
         Collection<DisbursementData> disbursementData = null;
         Collection<LoanTermVariationsData> emiAmountVariations = null;
-        Collection<LoanCollateralResponseData> loanCollateralManagements = null;
-        Collection<LoanCollateralManagementData> loanCollateralManagementData = new ArrayList<>();
+        Collection<CollateralData> collateralData = null;
         CollectionData collectionData = CollectionData.template();
 
         final Set<String> mandatoryResponseParameters = new HashSet<>();
@@ -803,13 +801,8 @@ public class LoansApiResource {
 
             if (associationParameters.contains(DataTableApiConstant.collateralAssociateParamName)) {
                 mandatoryResponseParameters.add(DataTableApiConstant.collateralAssociateParamName);
-                loanCollateralManagements = this.loanCollateralManagementReadPlatformService.getLoanCollateralResponseDataList(loanId);
-                for (LoanCollateralResponseData loanCollateralManagement : loanCollateralManagements) {
-                    loanCollateralManagementData.add(loanCollateralManagement.toCommand());
-                }
-                if (CollectionUtils.isEmpty(loanCollateralManagements)) {
-                    loanCollateralManagements = null;
-                }
+                collateralData = this.collateralReadPlatformService.retrieveCollaterals(loanId);
+
             }
 
             if (associationParameters.contains(DataTableApiConstant.meetingAssociateParamName)) {
@@ -941,7 +934,7 @@ public class LoansApiResource {
         }
 
         final LoanAccountData loanAccount = LoanAccountData.associationsAndTemplate(loanBasicDetails, repaymentSchedule, loanRepayments,
-                charges, loanCollateralManagementData, guarantors, meeting, productOptions, loanTermFrequencyTypeOptions,
+                charges, collateralData, guarantors, meeting, productOptions, loanTermFrequencyTypeOptions,
                 repaymentFrequencyTypeOptions, repaymentFrequencyNthDayTypeOptions, repaymentFrequencyDayOfWeekTypeOptions,
                 repaymentStrategyOptions, interestRateFrequencyTypeOptions, amortizationTypeOptions, interestTypeOptions,
                 interestCalculationPeriodTypeOptions, fundOptions, chargeOptions, chargeTemplate, allowedLoanOfficers, loanPurposeOptions,
