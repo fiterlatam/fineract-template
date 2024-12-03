@@ -658,7 +658,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         updateInstallmentCharges();
     }
 
-    public void updateInstallmentChargesHono(Integer numberOfRepayment, Boolean isUpdate) {
+    public void updateInstallmentChargesHono(Integer numberOfRepayment) {
         final Collection<LoanInstallmentCharge> remove = new HashSet<>();
         final List<LoanInstallmentCharge> newChargeInstallments = this.loan.generateInstallmentLoanCharges(this);
         MonetaryCurrency currency = this.loan.getCurrency();
@@ -683,19 +683,6 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                             && newLoanInstallmentCharge.getInstallment().getInstallmentNumber() != numberOfRepayment) {
                         newLoanInstallmentCharge.setAmount(BigDecimal.ZERO);
                         newLoanInstallmentCharge.setIpaid(false);
-
-                        BigDecimal lasInstalmenttCharge = loanRepaymentScheduleInstallment.getFeeChargesCharged(currency).getAmount();
-                        BigDecimal lastFeePortion = chargePerInstallment.getAmount();
-                        BigDecimal newFeePortion = lasInstalmenttCharge.subtract(lastFeePortion);
-                        if (isUpdate) {
-                            chargePerInstallment.getRepaymentInstallment().updateChargePortion(Money.of(currency, newFeePortion),
-                                    loanRepaymentScheduleInstallment.getFeeChargesWaived(currency),
-                                    loanRepaymentScheduleInstallment.getFeeChargesWrittenOff(currency),
-                                    loanRepaymentScheduleInstallment.getPenaltyChargesCharged(currency),
-                                    loanRepaymentScheduleInstallment.getPenaltyChargesWaived(currency),
-                                    loanRepaymentScheduleInstallment.getPenaltyChargesWrittenOff(currency));
-                        }
-
                     }
                 }
                 chargePerInstallment.copyFrom(newLoanInstallmentCharge);

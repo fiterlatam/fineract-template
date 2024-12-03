@@ -173,7 +173,9 @@ public class LoanChargeAssembler {
                     final ExternalId externalId = externalIdFactory.create(externalIdStr);
                     if (id == null) {
                         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
-
+                        if (chargeDefinition.isFlatHono()) {
+                            amount = BigDecimal.ZERO;
+                        }
                         if (chargeDefinition.isOverdueInstallment()) {
 
                             final String defaultUserMessage = "Installment charge cannot be added to the loan.";

@@ -248,7 +248,12 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 .filter(charge -> charge.isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios()).findFirst();
         if (charges.isPresent() && isUpdateHono) {
             LoanCharge charge = charges.get();
-            charge.updateInstallmentChargesHono(numberOfRepayment, isUpdateHono);
+            charge.updateInstallmentChargesHono(numberOfRepayment);
+        }
+        if (charges.isPresent()) {
+            for (LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : loanRepaymentScheduleInstallments) {
+                updateRepaymentInstalmentCharge(loanRepaymentScheduleInstallment, repaymentTransactionType);
+            }
         }
 
         saveLoanTransactionWithDataIntegrityViolationChecks(newRepaymentTransaction);
@@ -324,6 +329,40 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         setStatusToCanceledOnClosedLoan(loan, transactionDate);
 
         return newRepaymentTransaction;
+    }
+
+    private void updateRepaymentInstalmentCharge(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
+            LoanTransactionType loanTransactionType) {
+
+        Set<LoanInstallmentCharge> installmentCharges = loanRepaymentScheduleInstallment.getInstallmentCharges();
+        MonetaryCurrency currency = loanRepaymentScheduleInstallment.getLoan().getCurrency();
+        BigDecimal feeChargePortion = BigDecimal.ZERO;
+
+        for (LoanInstallmentCharge installmentCharge : installmentCharges) {
+            BigDecimal feePortion = BigDecimal.ZERO;
+            BigDecimal feeHono = BigDecimal.ZERO;
+            if (installmentCharge.getLoanCharge().isFlatHono()) {
+                if (installmentCharge.getAmountPaid().compareTo(BigDecimal.ZERO) == 0) {
+                    feeHono = BigDecimal.ZERO;
+                } else {
+                    feeHono = installmentCharge.getAmount();
+                }
+                feePortion = BigDecimal.ZERO;
+            } else {
+                feePortion = installmentCharge.getAmount();
+            }
+
+            feeChargePortion = feePortion.add(feeHono);
+
+        }
+
+        loanRepaymentScheduleInstallment.updateChargePortion(Money.of(currency, feeChargePortion),
+                loanRepaymentScheduleInstallment.getFeeChargesWaived(currency),
+                loanRepaymentScheduleInstallment.getFeeChargesWrittenOff(currency),
+                loanRepaymentScheduleInstallment.getPenaltyChargesCharged(currency),
+                loanRepaymentScheduleInstallment.getPenaltyChargesWaived(currency),
+                loanRepaymentScheduleInstallment.getPenaltyChargesWrittenOff(currency));
+
     }
 
     private void updateCalculationHonoLoanChargeOverDueVat(BigDecimal repaymentAmount,
