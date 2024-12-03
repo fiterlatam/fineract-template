@@ -35,9 +35,19 @@ import java.util.Random;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.constants.CustomChargeHonorarioMapApiConstants;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.data.CustomChargeHonorarioMapData;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
+import org.apache.fineract.portfolio.delinquency.data.DelinquencyRangeData;
+import org.apache.fineract.portfolio.delinquency.domain.DelinquencyRange;
+import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -51,6 +61,9 @@ public class CustomChargeHonorarioMapMockApiResource {
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final PlatformSecurityContext context;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
+    private final LoanRepository loanRepository;
+    private final ConfigurationDomainService configurationDomainService;
+    private final DelinquencyReadPlatformService delinquencyReadPlatformService;
 
     @Autowired
     public CustomChargeHonorarioMapMockApiResource(final DefaultToApiJsonSerializer<CustomChargeHonorarioMapData> toApiJsonSerializer,
@@ -60,6 +73,9 @@ public class CustomChargeHonorarioMapMockApiResource {
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.context = context;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
+        this.loanRepository = loanRepository;
+        this.configurationDomainService = configurationDomainService;
+        this.delinquencyReadPlatformService = delinquencyReadPlatformService;
     }
 
     @GET
@@ -83,7 +99,7 @@ public class CustomChargeHonorarioMapMockApiResource {
         List<Map<String, Object>> jsonList = new ArrayList<>();
 
         // Generate Random Data for each installment
-        for (int i = 1; i <= 4; i++) {
+        Optional<Loan> loans = loanRepository.findById(loanId);
 
             double feeBaseAmount, feeVatAmount, feeTotalAmount;
             if (i < 4) {
@@ -91,11 +107,10 @@ public class CustomChargeHonorarioMapMockApiResource {
                 feeVatAmount = 10;
                 feeTotalAmount = 100;
             } else {
-                do {
-                    feeBaseAmount = (Math.random() * (120 - 100) + 100);
-                    feeVatAmount = (Math.random() * (80 - 10) + 10);
-                    feeTotalAmount = feeBaseAmount + feeVatAmount;
-                } while (feeTotalAmount <= 100 || feeTotalAmount >= 200);
+                DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
+                if (delinquencyRange != null) {
+                    delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
+                }
             }
 
             // Create JSON payload
