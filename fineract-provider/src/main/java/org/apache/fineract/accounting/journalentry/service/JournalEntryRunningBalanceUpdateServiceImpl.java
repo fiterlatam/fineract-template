@@ -106,21 +106,21 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
         Map<Long, Map<Long, BigDecimal>> officesRunningBalance = new HashMap<>();
 
         final String organizationRunningBalanceQuery = """
-                    WITH latest_entries AS (
-                        SELECT account_id, MAX(entry_date) AS max_entry_date, MAX(id) AS max_id
-                        FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY account_id
-                    )
-
                     SELECT
-                    je.organization_running_balance AS runningBalance,
-                    je.account_id AS accountId
-                    FROM acc_gl_journal_entry je
-                    INNER JOIN latest_entries le ON je.account_id = le.account_id AND je.entry_date = le.max_entry_date
-                    AND je.id = le.max_id ORDER BY je.entry_date DESC LIMIT 10000;
+                    	je.organization_running_balance AS runningBalance,
+                    	je.account_id AS accountId 
+                    FROM
+                    	acc_gl_journal_entry je
+                    	INNER JOIN ( SELECT max( id ) AS id FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY account_id, entry_date ) je2 ON je2.id = je.id 
+                    	INNER JOIN ( SELECT max( entry_date ) AS entrydt FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY account_id ) je3 ON je.entry_date = je3.entrydt 
+                    GROUP BY
+                    	je.id 
+                    ORDER BY
+                    	je.entry_date DESC LIMIT 10000;
                 """;
 
         List<Map<String, Object>> list = jdbcTemplate.queryForList(organizationRunningBalanceQuery, // NOSONAR
-                entityDate);
+                entityDate, entityDate);
 
         list.forEach(entry -> {
             Long accountId = Long.parseLong(entry.get("accountId").toString());
@@ -128,20 +128,22 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
         });
 
         final String offlineRunningBalanceQuery = """
-                    WITH latest_entries AS (
-                        SELECT office_id, account_id, MAX(entry_date) AS max_entry_date, MAX(id) AS max_id
-                        FROM acc_gl_journal_entry WHERE entry_date < ?
-                        GROUP BY office_id, account_id
-                    )
-
-                    SELECT je.office_running_balance AS runningBalance, je.account_id AS accountId, je.office_id AS officeId
-                    FROM acc_gl_journal_entry je
-                    INNER JOIN latest_entries le ON je.office_id = le.office_id AND je.account_id = le.account_id
-                    AND je.entry_date = le.max_entry_date AND je.id = le.max_id ORDER BY je.entry_date DESC LIMIT 10000;
+                    SELECT
+                     	je.office_running_balance AS runningBalance,
+                     	je.account_id AS accountId,
+                     	je.office_id AS officeId 
+                    FROM
+                     	acc_gl_journal_entry je
+                     	INNER JOIN ( SELECT max( id ) AS id FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY office_id, account_id, entry_date ) je2 ON je2.id = je.id
+                     	INNER JOIN ( SELECT max( entry_date ) AS entrydt FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY office_id, account_id ) je3 ON je.entry_date = je3.entrydt 
+                    GROUP BY
+                     	je.id 
+                    ORDER BY
+                     	je.entry_date DESC LIMIT 10000;
                 """;
 
         List<Map<String, Object>> officesRunningBalanceList = jdbcTemplate.queryForList(offlineRunningBalanceQuery, // NOSONAR
-                entityDate);
+                entityDate, entityDate);
 
         officesRunningBalanceList.forEach(entry -> {
             Long accountId = Long.parseLong(entry.get("accountId").toString());
