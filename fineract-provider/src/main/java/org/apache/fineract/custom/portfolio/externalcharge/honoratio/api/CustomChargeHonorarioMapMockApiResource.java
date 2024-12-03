@@ -27,11 +27,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.math.BigDecimal;
+import java.util.*;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.constants.CustomChargeHonorarioMapApiConstants;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.data.CustomChargeHonorarioMapData;
@@ -68,7 +65,8 @@ public class CustomChargeHonorarioMapMockApiResource {
     @Autowired
     public CustomChargeHonorarioMapMockApiResource(final DefaultToApiJsonSerializer<CustomChargeHonorarioMapData> toApiJsonSerializer,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, final PlatformSecurityContext context,
-            final ApiRequestParameterHelper apiRequestParameterHelper) {
+            final ApiRequestParameterHelper apiRequestParameterHelper, LoanRepository loanRepository,
+            ConfigurationDomainService configurationDomainService, DelinquencyReadPlatformService delinquencyReadPlatformService) {
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.context = context;
@@ -101,11 +99,16 @@ public class CustomChargeHonorarioMapMockApiResource {
         // Generate Random Data for each installment
         Optional<Loan> loans = loanRepository.findById(loanId);
 
-            double feeBaseAmount, feeVatAmount, feeTotalAmount;
-            if (i < 4) {
-                feeBaseAmount = 90;
-                feeVatAmount = 10;
-                feeTotalAmount = 100;
+        if (loans.isPresent()) {
+            Loan loan = loans.get();
+            Integer ageOverdue = loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
+            BigDecimal delinquencyValue = BigDecimal.ZERO;
+            Integer vatConfig = configurationDomainService.retriveIvaConfiguration();
+            BigDecimal vatPercentage = BigDecimal.valueOf(vatConfig).divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
+            MonetaryCurrency currency = loan.getCurrency();
+            DelinquencyRangeData delinquencyRangeData = delinquencyReadPlatformService.retrieveCurrentDelinquencyTag(loan.getId());
+            if (delinquencyRangeData != null) {
+                delinquencyValue = BigDecimal.valueOf(delinquencyRangeData.getPercentageValue());
             } else {
                 DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
                 if (delinquencyRange != null) {
@@ -113,18 +116,60 @@ public class CustomChargeHonorarioMapMockApiResource {
                 }
             }
 
-            // Create JSON payload
-            Map<String, Object> jsonMap = new HashMap<>();
-            jsonMap.put("loanId", loanId);
-            jsonMap.put("nit", nit);
-            jsonMap.put("loanInstallmentNr", i);
-            jsonMap.put("feeTotalAmount", String.format("%.4f", feeTotalAmount));
-            jsonMap.put("feeBaseAmount", String.format("%.4f", feeBaseAmount));
-            jsonMap.put("feeVatAmount", String.format("%.4f", feeVatAmount));
-            jsonMap.put("dateFormat", "dd/MM/yyyy");
-            jsonMap.put("locale", "en");
+            BigDecimal deliquncyrange = delinquencyValue.divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
 
-            jsonList.add(jsonMap);
+            if (ageOverdue > 0) {
+                List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
+                for (LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : loanRepaymentScheduleInstallments) {
+                    BigDecimal feeBaseAmount = BigDecimal.ZERO;
+                    BigDecimal feeVatAmount = BigDecimal.ZERO;
+                    BigDecimal feeTotalAmount = BigDecimal.ZERO;
+                    Map<String, Object> jsonMap = new HashMap<>();
+
+                    if (LocalDate.now().isAfter(loanRepaymentScheduleInstallment.getDueDate())
+                            && !loanRepaymentScheduleInstallment.isObligationsMet()) {
+                        BigDecimal paidAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(currency).getAmount();
+
+                        BigDecimal delinquentPortion = paidAmount.divide(
+                                BigDecimal.ONE.add(deliquncyrange.multiply(BigDecimal.ONE.add(vatPercentage))), 2,
+                                MoneyHelper.getRoundingMode());
+
+                        BigDecimal feewithTax = delinquentPortion.multiply(deliquncyrange.multiply(BigDecimal.ONE.add(vatPercentage)))
+                                .setScale(2, MoneyHelper.getRoundingMode());
+                        BigDecimal feeBasis = feewithTax.divide(BigDecimal.ONE.add(vatPercentage), 2, MoneyHelper.getRoundingMode());
+
+                        BigDecimal feeVat = feewithTax.subtract(feeBasis).setScale(2, MoneyHelper.getRoundingMode());
+                        BigDecimal feeHono = feeVat.add(feeBasis).setScale(0, MoneyHelper.getRoundingMode());
+
+                        feeBaseAmount = feeBasis;
+                        feeVatAmount = feeVat;
+                        feeTotalAmount = feeHono;
+
+                    }
+
+                    jsonMap.put("loanId", loanId);
+                    jsonMap.put("nit", nit);
+                    jsonMap.put("loanInstallmentNr", loanRepaymentScheduleInstallment.getInstallmentNumber());
+                    if (feeTotalAmount.compareTo(BigDecimal.ZERO) == 0) {
+                        jsonMap.put("feeTotalAmount", "0.00");
+                    } else {
+                        jsonMap.put("feeTotalAmount", String.format("%.2f", feeTotalAmount));
+                    }
+                    if (feeBaseAmount.compareTo(BigDecimal.ZERO) == 0) {
+                        jsonMap.put("feeBaseAmount", "0.00");
+                    } else {
+                        jsonMap.put("feeBaseAmount", String.format("%.2f", feeBaseAmount));
+                    }
+                    if (feeVatAmount.compareTo(BigDecimal.ZERO) == 0) {
+                        jsonMap.put("feeVatAmount", "0.00");
+                    } else {
+                        jsonMap.put("feeVatAmount", String.format("%.2f", feeVatAmount));
+                    }
+                    jsonMap.put("dateFormat", "dd/MM/yyyy");
+                    jsonMap.put("locale", "en");
+                    jsonList.add(jsonMap);
+                }
+            }
         }
 
         return jsonList;
