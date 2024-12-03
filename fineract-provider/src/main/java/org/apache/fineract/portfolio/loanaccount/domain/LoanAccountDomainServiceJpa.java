@@ -221,11 +221,20 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom,
                 holidayDetailDto);
         List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
+        Integer numberOfRepayment = 0;
+        Boolean isUpdateHono = true;
         if (loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()) > 0) {
             for (LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : loanRepaymentScheduleInstallments) {
-                if (loanRepaymentScheduleInstallment.isOverdueOn(transactionDate) && !loanRepaymentScheduleInstallment.isObligationsMet()) {
+                if (loanRepaymentScheduleInstallment.isOverdueOn(transactionDate) && !loanRepaymentScheduleInstallment.isObligationsMet()
+                        && !loanRepaymentScheduleInstallment.isPartlyPaid()) {
 
+                    numberOfRepayment = loanRepaymentScheduleInstallment.getInstallmentNumber();
                     updateCalculationHonoLoanChargeOverDueVat(repaymentAmount.getAmount(), loanRepaymentScheduleInstallment);
+                    break;
+                }
+                if (loanRepaymentScheduleInstallment.isPartlyPaid()) {
+                    numberOfRepayment = loanRepaymentScheduleInstallment.getInstallmentNumber();
+                    isUpdateHono = false;
                     break;
                 }
             }
@@ -234,6 +243,13 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final ChangedTransactionDetail changedTransactionDetail = loan.makeRepayment(newRepaymentTransaction,
                 defaultLoanLifecycleStateMachine, existingTransactionIds, existingReversedTransactionIds, isRecoveryRepayment,
                 scheduleGeneratorDTO, isHolidayValidationDone);
+
+        Optional<LoanCharge> charges = loan.getLoanCharges().stream()
+                .filter(charge -> charge.isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios()).findFirst();
+        if (charges.isPresent() && isUpdateHono) {
+            LoanCharge charge = charges.get();
+            charge.updateInstallmentChargesHono(numberOfRepayment, isUpdateHono);
+        }
 
         saveLoanTransactionWithDataIntegrityViolationChecks(newRepaymentTransaction);
 
@@ -348,32 +364,32 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
         if (charges.isPresent()) {
             LoanCharge chargeHono = charges.get();
-            chargeHono.setInstallmentChargeAmount(chargeHono.chargeAmount().subtract(feeHono));
-            BigDecimal lastFeeScheduleCharge = loanRepaymentScheduleInstallment.getFeeChargesCharged(currency)
-                    .getAmountDefaultedToNullIfZero();
-            loanRepaymentScheduleInstallment.setFeeChargesCharged(lastFeeScheduleCharge.subtract(feeHono));
-            chargeHono.resetAndUpdateInstallmentCharges();
-            Optional<CustomChargeHonorarioMap> honoMap = chargeHono.getCustomChargeHonorarioMaps().stream()
-                    .filter(customChargeHonorarioMap -> customChargeHonorarioMap.getLoanInstallmentNr() == loanRepaymentScheduleInstallment
-                            .getInstallmentNumber() && !loanRepaymentScheduleInstallment.isObligationsMet())
-                    .findFirst();
             LoanInstallmentCharge installmentCharge = chargeHono
                     .getInstallmentLoanCharge(loanRepaymentScheduleInstallment.getInstallmentNumber());
-            if (!honoMap.isEmpty()) {
-                if (!installmentCharge.isPaid()) {
-                    CustomChargeHonorarioMap honorarioMap = honoMap.get();
-                    honorarioMap.setFeeBaseAmount(feeBasis);
-                    honorarioMap.setFeeTotalAmount(feeHono);
-                    honorarioMap.setFeeVatAmount(feeVat);
-                    honorarioMap.setUpdatedBy(this.platformSecurityContext.authenticatedUser().getId());
-                    honorarioMap.setUpdatedAt(DateUtils.getLocalDateTimeOfTenant());
-                    honorarioMap.setLoanChargeId(chargeHono.getId());
-                }
+
+            if (!installmentCharge.isPaid()) {
+                Optional<CustomChargeHonorarioMap> customChargeHonorarioMaps = chargeHono.getCustomChargeHonorarioMaps().stream()
+                        .filter(customChargeHonorarioMap -> customChargeHonorarioMap
+                                .getLoanInstallmentNr() == loanRepaymentScheduleInstallment.getInstallmentNumber()
+                                && !loanRepaymentScheduleInstallment.isObligationsMet())
+                        .findFirst();
+                //
+                CustomChargeHonorarioMap newCustomChargeHonorarioMap = new CustomChargeHonorarioMap();
+                newCustomChargeHonorarioMap.setNit("120843958");
+                newCustomChargeHonorarioMap.setLoanId(loan.getId());
+                newCustomChargeHonorarioMap.setLoanInstallmentNr(loanRepaymentScheduleInstallment.getInstallmentNumber());
+                newCustomChargeHonorarioMap.setFeeBaseAmount(feeBasis);
+                newCustomChargeHonorarioMap.setFeeTotalAmount(feeHono);
+                newCustomChargeHonorarioMap.setFeeVatAmount(feeVat);
+                newCustomChargeHonorarioMap.setCreatedBy(this.platformSecurityContext.authenticatedUser().getId());
+                newCustomChargeHonorarioMap.setCreatedAt(DateUtils.getLocalDateTimeOfTenant());
+                newCustomChargeHonorarioMap.setLoanChargeId(chargeHono.getId());
+                customChargeHonorarioMapRepository.saveAndFlush(newCustomChargeHonorarioMap);
+                chargeHono.update(feeHono, null, loanRepaymentScheduleInstallment.getInstallmentNumber());
+                loan.updateLoanScheduleAfterCustomChargeApplied();
+                saveLoanWithDataIntegrityViolationChecks(loan);
 
             }
-            loan.updateLoanDerivedFields();
-            loan.updateLoanScheduleAfterCustomChargeApplied();
-            saveLoanWithDataIntegrityViolationChecks(loan);
 
         }
 
