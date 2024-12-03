@@ -56,9 +56,11 @@ public class ExternalServiceWritePlatformServiceJpaRepositoryImpl implements Ext
         // TODO Auto-generated method stub
         this.context.authenticatedUser();
         this.fromApiJsonDeserializer.validateForUpdate(command.json(), externalServiceName);
+        System.out.println("name " + externalServiceName);
         Set<String> keyName = this.fromApiJsonDeserializer.getNameKeys(command.json());
         ExternalServicesData external = this.readPlatformService.getExternalServiceDetailsByServiceName(externalServiceName);
         Long externalServiceId = external.getId();
+        System.out.println("id " + external.getId());
         Iterator<String> it = keyName.iterator();
         Map<String, Object> changesList = new LinkedHashMap<>();
         while (it.hasNext()) {
