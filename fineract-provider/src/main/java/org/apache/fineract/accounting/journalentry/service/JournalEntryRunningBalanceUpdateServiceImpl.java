@@ -108,13 +108,13 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
         final String organizationRunningBalanceQuery = """
                     SELECT
                     	je.organization_running_balance AS runningBalance,
-                    	je.account_id AS accountId 
+                    	je.account_id AS accountId
                     FROM
                     	acc_gl_journal_entry je
-                    	INNER JOIN ( SELECT max( id ) AS id FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY account_id, entry_date ) je2 ON je2.id = je.id 
-                    	INNER JOIN ( SELECT max( entry_date ) AS entrydt FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY account_id ) je3 ON je.entry_date = je3.entrydt 
+                    	INNER JOIN ( SELECT max( id ) AS id FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY account_id, entry_date ) je2 ON je2.id = je.id
+                    	INNER JOIN ( SELECT max( entry_date ) AS entrydt FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY account_id ) je3 ON je.entry_date = je3.entrydt
                     GROUP BY
-                    	je.id 
+                    	je.id
                     ORDER BY
                     	je.entry_date DESC LIMIT 10000;
                 """;
@@ -131,13 +131,13 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
                     SELECT
                      	je.office_running_balance AS runningBalance,
                      	je.account_id AS accountId,
-                     	je.office_id AS officeId 
+                     	je.office_id AS officeId
                     FROM
                      	acc_gl_journal_entry je
                      	INNER JOIN ( SELECT max( id ) AS id FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY office_id, account_id, entry_date ) je2 ON je2.id = je.id
-                     	INNER JOIN ( SELECT max( entry_date ) AS entrydt FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY office_id, account_id ) je3 ON je.entry_date = je3.entrydt 
+                     	INNER JOIN ( SELECT max( entry_date ) AS entrydt FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY office_id, account_id ) je3 ON je.entry_date = je3.entrydt
                     GROUP BY
-                     	je.id 
+                     	je.id
                     ORDER BY
                      	je.entry_date DESC LIMIT 10000;
                 """;

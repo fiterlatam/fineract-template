@@ -1773,24 +1773,24 @@ public final class LoanAccountData {
      * Used to combine the associations and template data on top of exist loan account data
      */
     public static LoanAccountData associationsAndTemplate(final LoanAccountData acc, final LoanScheduleData repaymentSchedule,
-                                                          final Collection<LoanTransactionData> transactions, final Collection<LoanChargeData> charges,
-                                                          final Collection<CollateralData> collateral, final Collection<GuarantorData> guarantors,
-                                                          final CalendarData calendarData, final Collection<LoanProductData> productOptions,
-                                                          final Collection<EnumOptionData> termFrequencyTypeOptions, final Collection<EnumOptionData> repaymentFrequencyTypeOptions,
-                                                          final Collection<EnumOptionData> repaymentFrequencyNthDayTypeOptions,
-                                                          final Collection<EnumOptionData> repaymentFrequencyDayOfWeekTypeOptions,
-                                                          final Collection<TransactionProcessingStrategyData> transactionProcessingStrategyOptions,
-                                                          final Collection<EnumOptionData> interestRateFrequencyTypeOptions, final Collection<EnumOptionData> amortizationTypeOptions,
-                                                          final Collection<EnumOptionData> interestTypeOptions, final Collection<EnumOptionData> interestCalculationPeriodTypeOptions,
-                                                          final Collection<FundData> fundOptions, final Collection<ChargeData> chargeOptions, final ChargeData chargeTemplate,
-                                                          final Collection<StaffData> loanOfficerOptions, final Collection<CodeValueData> loanPurposeOptions,
-                                                          final Collection<CodeValueData> loanCollateralOptions, final Collection<CalendarData> calendarOptions,
-                                                          final Collection<NoteData> notes, final Collection<PortfolioAccountData> accountLinkingOptions,
-                                                          final PortfolioAccountData linkedAccount, final Collection<DisbursementData> disbursementDetails,
-                                                          final Collection<LoanTermVariationsData> emiAmountVariations, final Collection<ChargeData> overdueCharges,
-                                                          final PaidInAdvanceData paidInAdvance, Collection<InterestRatePeriodData> interestRatesPeriods,
-                                                          final Collection<LoanAccountSummaryData> clientActiveLoanOptions, final List<RateData> rates, final Boolean isRatesEnabled,
-                                                          final CollectionData delinquent) {
+            final Collection<LoanTransactionData> transactions, final Collection<LoanChargeData> charges,
+            final Collection<CollateralData> collateral, final Collection<GuarantorData> guarantors, final CalendarData calendarData,
+            final Collection<LoanProductData> productOptions, final Collection<EnumOptionData> termFrequencyTypeOptions,
+            final Collection<EnumOptionData> repaymentFrequencyTypeOptions,
+            final Collection<EnumOptionData> repaymentFrequencyNthDayTypeOptions,
+            final Collection<EnumOptionData> repaymentFrequencyDayOfWeekTypeOptions,
+            final Collection<TransactionProcessingStrategyData> transactionProcessingStrategyOptions,
+            final Collection<EnumOptionData> interestRateFrequencyTypeOptions, final Collection<EnumOptionData> amortizationTypeOptions,
+            final Collection<EnumOptionData> interestTypeOptions, final Collection<EnumOptionData> interestCalculationPeriodTypeOptions,
+            final Collection<FundData> fundOptions, final Collection<ChargeData> chargeOptions, final ChargeData chargeTemplate,
+            final Collection<StaffData> loanOfficerOptions, final Collection<CodeValueData> loanPurposeOptions,
+            final Collection<CodeValueData> loanCollateralOptions, final Collection<CalendarData> calendarOptions,
+            final Collection<NoteData> notes, final Collection<PortfolioAccountData> accountLinkingOptions,
+            final PortfolioAccountData linkedAccount, final Collection<DisbursementData> disbursementDetails,
+            final Collection<LoanTermVariationsData> emiAmountVariations, final Collection<ChargeData> overdueCharges,
+            final PaidInAdvanceData paidInAdvance, Collection<InterestRatePeriodData> interestRatesPeriods,
+            final Collection<LoanAccountSummaryData> clientActiveLoanOptions, final List<RateData> rates, final Boolean isRatesEnabled,
+            final CollectionData delinquent) {
         LoanProductConfigurableAttributes loanProductConfigurableAttributes = null;
         if (acc.product != null) {
             loanProductConfigurableAttributes = acc.product.getloanProductConfigurableAttributes();

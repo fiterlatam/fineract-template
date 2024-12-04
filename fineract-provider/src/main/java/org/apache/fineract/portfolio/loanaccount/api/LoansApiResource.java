@@ -315,9 +315,8 @@ public class LoansApiResource {
             final ConfigurationDomainService configurationDomainService,
             final DefaultToApiJsonSerializer<GlimRepaymentTemplate> glimTemplateToApiJsonSerializer,
             final GLIMAccountInfoReadPlatformService glimAccountInfoReadPlatformService,
-            final CollateralReadPlatformService collateralReadPlatformService,
-            final CupoReadService cupoReadService, AppUserReadPlatformService appUserReadPlatformService,
-            EconomicActivityReadPlatformService economicActivityReadPlatformService,
+            final CollateralReadPlatformService collateralReadPlatformService, final CupoReadService cupoReadService,
+            AppUserReadPlatformService appUserReadPlatformService, EconomicActivityReadPlatformService economicActivityReadPlatformService,
             AgencyReadPlatformServiceImpl agencyReadPlatformService, CenterReadPlatformServiceImpl centerReadPlatformService) {
         this.context = context;
         this.loanReadPlatformService = loanReadPlatformService;
@@ -934,13 +933,12 @@ public class LoansApiResource {
         }
 
         final LoanAccountData loanAccount = LoanAccountData.associationsAndTemplate(loanBasicDetails, repaymentSchedule, loanRepayments,
-                charges, collateralData, guarantors, meeting, productOptions, loanTermFrequencyTypeOptions,
-                repaymentFrequencyTypeOptions, repaymentFrequencyNthDayTypeOptions, repaymentFrequencyDayOfWeekTypeOptions,
-                repaymentStrategyOptions, interestRateFrequencyTypeOptions, amortizationTypeOptions, interestTypeOptions,
-                interestCalculationPeriodTypeOptions, fundOptions, chargeOptions, chargeTemplate, allowedLoanOfficers, loanPurposeOptions,
-                loanCollateralOptions, calendarOptions, notes, accountLinkingOptions, linkedAccount, disbursementData, emiAmountVariations,
-                overdueCharges, paidInAdvanceTemplate, interestRatesPeriods, clientActiveLoanOptions, rates, isRatesEnabled,
-                collectionData);
+                charges, collateralData, guarantors, meeting, productOptions, loanTermFrequencyTypeOptions, repaymentFrequencyTypeOptions,
+                repaymentFrequencyNthDayTypeOptions, repaymentFrequencyDayOfWeekTypeOptions, repaymentStrategyOptions,
+                interestRateFrequencyTypeOptions, amortizationTypeOptions, interestTypeOptions, interestCalculationPeriodTypeOptions,
+                fundOptions, chargeOptions, chargeTemplate, allowedLoanOfficers, loanPurposeOptions, loanCollateralOptions, calendarOptions,
+                notes, accountLinkingOptions, linkedAccount, disbursementData, emiAmountVariations, overdueCharges, paidInAdvanceTemplate,
+                interestRatesPeriods, clientActiveLoanOptions, rates, isRatesEnabled, collectionData);
         loanAccount.setLinkedCupo(linkedCupo);
         loanAccount.setCupoLinkingOptions(cupoLinkingOptions);
         loanAccount.setPrequalificationId(prequalificationId);
