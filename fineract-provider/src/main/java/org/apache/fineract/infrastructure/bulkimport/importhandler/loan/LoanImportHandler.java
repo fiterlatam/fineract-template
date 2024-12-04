@@ -41,16 +41,15 @@ import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrappe
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
+import org.apache.fineract.portfolio.collateral.data.CollateralData;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanCollateralManagementData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.exception.InvalidAmountOfCollateralQuantity;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
@@ -350,17 +349,7 @@ public class LoanImportHandler implements ImportHandler {
             }
         }
 
-        List<LoanCollateralManagementData> loanCollateralManagementData = new ArrayList<>();
-
-        if (collateralId != null) {
-            if (ImportHandlerUtils.readAsDouble(LoanConstants.LOAN_COLLATERAL_QUANTITY, row) != null) {
-                loanCollateralManagementData.add(new LoanCollateralManagementData(collateralId,
-                        BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.LOAN_COLLATERAL_QUANTITY, row)), null, null,
-                        null));
-            } else {
-                throw new InvalidAmountOfCollateralQuantity(null);
-            }
-        }
+        List<CollateralData> loanCollateralManagementData = new ArrayList<>();
 
         statuses.add(status);
 
