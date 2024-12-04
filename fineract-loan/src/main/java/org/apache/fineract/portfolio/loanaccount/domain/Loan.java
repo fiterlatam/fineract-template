@@ -2860,7 +2860,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     }
 
-    private BigDecimal calculateDailyInterestForDate(LocalDate date, List<LoanRepaymentScheduleInstallment> installments) {
+    public BigDecimal calculateDailyInterestForDate(LocalDate date, List<LoanRepaymentScheduleInstallment> installments) {
         for (LoanRepaymentScheduleInstallment installment : installments) {
             if (!date.isBefore(installment.getFromDate()) && !date.isAfter(installment.getDueDate())) {
                 long daysInPeriod = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));

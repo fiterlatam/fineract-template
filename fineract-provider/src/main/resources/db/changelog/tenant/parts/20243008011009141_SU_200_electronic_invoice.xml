@@ -378,4 +378,21 @@
         <dropNotNullConstraint tableName="c_facturacion_electronica" columnName="fec_facafect" columnDataType="date"/>
     </changeSet>
 
+    <changeSet id="14" author="fineract">
+        <addColumn tableName="m_loan_term_variations">
+            <column name="created_by" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_on_utc" type="DATETIME">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_modified_by" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_modified_on_utc" type="DATETIME">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
