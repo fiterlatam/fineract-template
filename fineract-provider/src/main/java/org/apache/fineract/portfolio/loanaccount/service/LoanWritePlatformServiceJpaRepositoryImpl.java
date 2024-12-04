@@ -25,6 +25,27 @@ import com.google.gson.JsonObject;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.annotation.PostConstruct;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -261,28 +282,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -4441,14 +4440,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
             BigDecimal dailyAccrualInterest = null;
+            Integer accrualInstallmentNumber = null;
             Money principalLoanBalanceOutstanding = loan.getPrincipal();
             for (final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : repaymentScheduleInstallments) {
                 if (!transactionDate.isBefore(loanRepaymentScheduleInstallment.getFromDate())
                         && !transactionDate.isAfter(loanRepaymentScheduleInstallment.getDueDate())) {
+                    final BigDecimal totalAccruedInterestForInstallment = loan
+                            .getAccruedInterestForInstallment(loanRepaymentScheduleInstallment.getInstallmentNumber());
                     long daysInPeriod = Math.toIntExact(ChronoUnit.DAYS.between(loanRepaymentScheduleInstallment.getFromDate(),
                             loanRepaymentScheduleInstallment.getDueDate()));
                     Money interestForInstallment = loanRepaymentScheduleInstallment.getInterestCharged(currency);
-                    BigDecimal dailyInterest;
                     // Adjust interest on the last day of the period to make up the difference
                     if (transactionDate.equals(loanRepaymentScheduleInstallment.getDueDate())) {
                         // if the amount is whole number when divided across the days in the period, then do same for
@@ -4456,15 +4457,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         // day
                         if (interestForInstallment.getAmount().remainder(BigDecimal.valueOf(daysInPeriod))
                                 .compareTo(BigDecimal.ZERO) == 0) {
-                            dailyInterest = interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2,
+                            dailyAccrualInterest = interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2,
                                     RoundingMode.HALF_UP);
                         } else {
-                            BigDecimal totalAccruedInterest = loanRepaymentScheduleInstallment.getAccruedInterest(currency).getAmount();
                             // This will ensure no rounding differences remain
-                            dailyInterest = interestForInstallment.getAmount().subtract(totalAccruedInterest);
+                            if (interestForInstallment.getAmount().compareTo(totalAccruedInterestForInstallment) > 0) {
+                                dailyAccrualInterest = interestForInstallment.getAmount().subtract(totalAccruedInterestForInstallment);
+                            } else {
+                                dailyAccrualInterest = BigDecimal.ZERO;
+                            }
                         }
                     } else {
-                        dailyInterest = interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2,
+                        dailyAccrualInterest = interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2,
                                 RoundingMode.HALF_UP);
                         final ScheduleGeneratorDTO scheduleGeneratorDTO = loanUtilService.buildScheduleGeneratorDTO(loan, null);
                         final LoanApplicationTerms loanApplicationTerms = loan.constructLoanApplicationTerms(scheduleGeneratorDTO);
@@ -4475,13 +4479,19 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             if (interestRatesFromInstallment != null && !interestRatesFromInstallment.isEmpty()) {
                                 LocalDate periodStartDate = loanRepaymentScheduleInstallment.getFromDate();
                                 LocalDate periodEndDate = transactionDate;
-                                interestRatesFromInstallment = interestRatesFromInstallment.stream().filter(interestRateVariation -> !DateUtils.isAfter(interestRateVariation.getTermVariationApplicableFrom(), periodEndDate)).toList();
-                                final List<LoanTermVariationsData> sortedInterestRatesFromInstallment = interestRatesFromInstallment.stream()
-                                        .sorted(Comparator.comparing(LoanTermVariationsData::getLastModifiedDate, Comparator.nullsLast(Comparator.reverseOrder())))
+                                final LocalDate periodEndDateFinal = periodEndDate;
+                                interestRatesFromInstallment = interestRatesFromInstallment.stream()
+                                        .filter(interestRateVariation -> !DateUtils
+                                                .isAfter(interestRateVariation.getTermVariationApplicableFrom(), periodEndDateFinal))
                                         .toList();
-                                if(CollectionUtils.isNotEmpty(sortedInterestRatesFromInstallment)){
+                                final List<LoanTermVariationsData> sortedInterestRatesFromInstallment = interestRatesFromInstallment
+                                        .stream().sorted(Comparator.comparing(LoanTermVariationsData::getLastModifiedDate,
+                                                Comparator.nullsLast(Comparator.reverseOrder())))
+                                        .toList();
+                                if (CollectionUtils.isNotEmpty(sortedInterestRatesFromInstallment)) {
                                     final LoanTermVariationsData interestRateFromInstallment = sortedInterestRatesFromInstallment.get(0);
-                                    final LocalDate termVariationApplicableFromDate = interestRateFromInstallment.getTermVariationApplicableFrom();
+                                    final LocalDate termVariationApplicableFromDate = interestRateFromInstallment
+                                            .getTermVariationApplicableFrom();
                                     final BigDecimal interestRate = interestRateFromInstallment.getDecimalValue();
                                     if (DateUtils.isAfter(termVariationApplicableFromDate, periodStartDate)) {
                                         periodStartDate = termVariationApplicableFromDate;
@@ -4491,18 +4501,23 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                 final LoanScheduleGenerator loanScheduleGenerator = this.loanScheduleFactory
                                         .create(loanApplicationTerms.getLoanScheduleType(), loanApplicationTerms.getInterestMethod());
                                 final int periodNumber = loanRepaymentScheduleInstallment.getInstallmentNumber();
+                                if (DateUtils.isEqual(periodStartDate, periodEndDate)) {
+                                    periodEndDate = periodEndDate.plusDays(1);
+                                }
                                 final PrincipalInterest principalInterest = loanScheduleGenerator.calculatePrincipalInterestComponents(
                                         principalLoanBalanceOutstanding, loanApplicationTerms, periodNumber, periodStartDate,
                                         periodEndDate);
                                 final int daysDifference = Math.toIntExact(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
-                                dailyInterest = principalInterest.interest().getAmount().divide(BigDecimal.valueOf(daysDifference), 2,
-                                        RoundingMode.HALF_UP);
+                                dailyAccrualInterest = principalInterest.interest().getAmount().divide(BigDecimal.valueOf(daysDifference),
+                                        2, RoundingMode.HALF_UP);
                             }
                         }
                     }
                     // Accumulate the daily interest to the installment's accrued interest
-                    dailyAccrualInterest = dailyInterest.setScale(0, RoundingMode.DOWN);
-                    loanRepaymentScheduleInstallment.addAccruedInterest(Money.of(currency, dailyAccrualInterest));
+                    dailyAccrualInterest = dailyAccrualInterest.setScale(0, RoundingMode.DOWN);
+                    final BigDecimal accruedInterest = totalAccruedInterestForInstallment.add(dailyAccrualInterest);
+                    loanRepaymentScheduleInstallment.setInterestAccrued(accruedInterest);
+                    accrualInstallmentNumber = loanRepaymentScheduleInstallment.getInstallmentNumber();
                     break;
                 }
                 principalLoanBalanceOutstanding = principalLoanBalanceOutstanding
@@ -4512,7 +4527,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             if (dailyAccrualInterest != null && dailyAccrualInterest.compareTo(BigDecimal.ZERO) > 0) {
                 final Money dailyInterestMoney = Money.of(currency, dailyAccrualInterest);
                 final LoanTransaction dailyAccrualTransaction = LoanTransaction.accrueDailyInterest(loan.getOffice(), loan,
-                        dailyInterestMoney, transactionDate, externalIdentifier);
+                        dailyInterestMoney, transactionDate, externalIdentifier, accrualInstallmentNumber);
                 loan.addLoanTransaction(dailyAccrualTransaction);
                 loan.setInterestAccruedTill(transactionDate);
             }

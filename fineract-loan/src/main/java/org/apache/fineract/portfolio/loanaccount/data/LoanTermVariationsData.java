@@ -21,7 +21,6 @@ package org.apache.fineract.portfolio.loanaccount.data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;

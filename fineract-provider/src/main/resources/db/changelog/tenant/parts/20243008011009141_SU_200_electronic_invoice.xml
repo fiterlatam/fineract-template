@@ -395,4 +395,12 @@
         </addColumn>
     </changeSet>
 
+    <changeSet id="15" author="fineract">
+        <addColumn tableName="m_loan_transaction">
+            <column defaultValueComputed="NULL" name="installment_number" type="SMALLINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

@@ -28,9 +28,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
-import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
 
@@ -117,8 +115,8 @@ public class LoanTermVariations extends AbstractAuditableWithUTCDateTimeCustom {
 
     public LoanTermVariationsData toData() {
         final EnumOptionData type = LoanEnumerations.loanVariationType(this.termType);
-        final LoanTermVariationsData loanTermVariationsData = new LoanTermVariationsData(getId(), type, this.termApplicableFrom, this.decimalValue, this.dateValue,
-                this.isSpecificToInstallment);
+        final LoanTermVariationsData loanTermVariationsData = new LoanTermVariationsData(getId(), type, this.termApplicableFrom,
+                this.decimalValue, this.dateValue, this.isSpecificToInstallment);
         loanTermVariationsData.setLastModifiedDate(this.getLastModifiedDate().orElse(null));
         loanTermVariationsData.setCreatedDate(this.getCreatedDate().orElse(null));
         return loanTermVariationsData;
