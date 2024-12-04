@@ -592,7 +592,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
 
             return new LoanAccountSummaryData(id, accountNo, parentAccountNumber, externalId, productId, loanProductName,
                     shortLoanProductName, loanStatus, loanType, loanCycle, timeline, inArrears, originalLoan, loanBalance, amountPaid,
-                    blockStatusData, pointOfSalesCode);
+                    blockStatusData, pointOfSalesName);
         }
 
     }
