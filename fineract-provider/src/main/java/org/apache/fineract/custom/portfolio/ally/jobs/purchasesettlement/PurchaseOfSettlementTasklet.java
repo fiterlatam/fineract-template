@@ -85,6 +85,8 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                     case "DIARIA":
                         if (period.isBefore(now.minusDays(1))) {
                             period = now;
+                        } else if (period.isEqual(now)) {
+                            period = now;
                         } else {
                             period = period.plusDays(1);
                         }
