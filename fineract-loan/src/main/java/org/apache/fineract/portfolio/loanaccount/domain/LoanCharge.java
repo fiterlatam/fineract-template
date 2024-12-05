@@ -678,7 +678,6 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 LoanInstallmentCharge newLoanInstallmentCharge = loanChargePerInstallmentArray[index++];
                 newLoanInstallmentCharge.getInstallment().getInstallmentCharges().remove(newLoanInstallmentCharge);
                 if (newLoanInstallmentCharge.getLoanCharge().isFlatHono()) {
-                    LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = chargePerInstallment.getRepaymentInstallment();
                     if (!chargePerInstallment.isPaid()
                             && newLoanInstallmentCharge.getInstallment().getInstallmentNumber() != numberOfRepayment) {
                         newLoanInstallmentCharge.setAmount(BigDecimal.ZERO);
