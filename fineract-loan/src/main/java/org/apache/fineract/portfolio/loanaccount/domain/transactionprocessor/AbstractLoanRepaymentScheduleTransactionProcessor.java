@@ -721,7 +721,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
             if (!loanTransaction.getLoanChargesPaid().isEmpty()) {
                 long count = loanTransaction.getLoanChargesPaid().stream()
                         .filter(p -> Objects.equals(p.getLoanCharge().getId(), unpaidCharge.getId())
-                                && p.getInstallmentNumber().equals(installmentNumber))
+                                && Objects.equals(p.getInstallmentNumber(), installmentNumber))
                         .count();
                 if (count > 0) {
                     amountRemaining = amountRemaining.minus(amountPaidTowardsCharge);
