@@ -221,11 +221,19 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom,
                 holidayDetailDto);
         List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
+        Integer numberOfRepayment = 0;
+        Boolean isUpdateHono = true;
         if (loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()) > 0) {
             for (LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : loanRepaymentScheduleInstallments) {
-                if (loanRepaymentScheduleInstallment.isOverdueOn(transactionDate) && !loanRepaymentScheduleInstallment.isObligationsMet()) {
+                if (loanRepaymentScheduleInstallment.isOverdueOn(transactionDate) && !loanRepaymentScheduleInstallment.isObligationsMet()
+                        && !loanRepaymentScheduleInstallment.isPartlyPaid()) {
 
+                    numberOfRepayment = loanRepaymentScheduleInstallment.getInstallmentNumber();
                     updateCalculationHonoLoanChargeOverDueVat(repaymentAmount.getAmount(), loanRepaymentScheduleInstallment);
+                    break;
+                }
+                if (loanRepaymentScheduleInstallment.isPartlyPaid()) {
+                    numberOfRepayment = loanRepaymentScheduleInstallment.getInstallmentNumber();
                     break;
                 }
             }
@@ -234,6 +242,18 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final ChangedTransactionDetail changedTransactionDetail = loan.makeRepayment(newRepaymentTransaction,
                 defaultLoanLifecycleStateMachine, existingTransactionIds, existingReversedTransactionIds, isRecoveryRepayment,
                 scheduleGeneratorDTO, isHolidayValidationDone);
+
+        Optional<LoanCharge> charges = loan.getLoanCharges().stream()
+                .filter(charge -> charge.isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios()).findFirst();
+        if (charges.isPresent()) {
+            LoanCharge charge = charges.get();
+            charge.updateInstallmentChargesHono(numberOfRepayment);
+        }
+        if (charges.isPresent()) {
+            for (LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : loanRepaymentScheduleInstallments) {
+                updateRepaymentInstalmentCharge(loanRepaymentScheduleInstallment, numberOfRepayment);
+            }
+        }
 
         saveLoanTransactionWithDataIntegrityViolationChecks(newRepaymentTransaction);
 
@@ -306,8 +326,29 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         }
 
         setStatusToCanceledOnClosedLoan(loan, transactionDate);
-
         return newRepaymentTransaction;
+    }
+
+    private void updateRepaymentInstalmentCharge(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
+            Integer numberOfRepayment) {
+        if (loanRepaymentScheduleInstallment.getInstallmentNumber() != numberOfRepayment) {
+            MonetaryCurrency currency = loanRepaymentScheduleInstallment.getLoan().getCurrency();
+            BigDecimal feeChargePortion = BigDecimal.ZERO;
+            Collection<LoanCharge> loanCharges = loanRepaymentScheduleInstallment.getLoan().getLoanCharges();
+            for (LoanCharge loanCharge : loanCharges) {
+                LoanInstallmentCharge installmentCharge = loanCharge
+                        .getInstallmentLoanCharge(loanRepaymentScheduleInstallment.getInstallmentNumber());
+                feeChargePortion = feeChargePortion.add(installmentCharge.getAmount());
+            }
+
+            loanRepaymentScheduleInstallment.updateChargePortion(Money.of(currency, feeChargePortion),
+                    loanRepaymentScheduleInstallment.getFeeChargesWaived(currency),
+                    loanRepaymentScheduleInstallment.getFeeChargesWrittenOff(currency),
+                    loanRepaymentScheduleInstallment.getPenaltyChargesCharged(currency),
+                    loanRepaymentScheduleInstallment.getPenaltyChargesWaived(currency),
+                    loanRepaymentScheduleInstallment.getPenaltyChargesWrittenOff(currency));
+
+        }
     }
 
     private void updateCalculationHonoLoanChargeOverDueVat(BigDecimal repaymentAmount,
@@ -327,6 +368,16 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
             }
         }
+        Loan loan = loanRepaymentScheduleInstallment.getLoan();
+        Optional<LoanCharge> charges = loan.getActiveCharges().stream()
+                .filter(charge -> charge.getChargeCalculation().isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios())
+                .findFirst();
+        BigDecimal chargeFeeHono = BigDecimal.ZERO;
+        if (charges.isPresent()) {
+            chargeFeeHono = charges.get().getAmount(currency).getAmount();
+            // repaymentAmount = repaymentAmount.subtract(chargeFeeHono);
+        }
+
         // Step 1: Value of delinquent portion / (1 + (delinquency percentage * (1 + vat percentage)))
         BigDecimal deliquncyrange = delinquencyValue.divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
         BigDecimal delinquentPortion = repaymentAmount
@@ -341,39 +392,35 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         BigDecimal feeVat = feewithTax.subtract(feeBasis).setScale(2, MoneyHelper.getRoundingMode());
         BigDecimal feeHono = feeVat.add(feeBasis).setScale(0, MoneyHelper.getRoundingMode());
         // End Calculate
-        Loan loan = loanRepaymentScheduleInstallment.getLoan();
-        Optional<LoanCharge> charges = loan.getActiveCharges().stream()
-                .filter(charge -> charge.getChargeCalculation().isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios())
-                .findFirst();
 
         if (charges.isPresent()) {
             LoanCharge chargeHono = charges.get();
-            chargeHono.setInstallmentChargeAmount(chargeHono.chargeAmount().subtract(feeHono));
-            BigDecimal lastFeeScheduleCharge = loanRepaymentScheduleInstallment.getFeeChargesCharged(currency)
-                    .getAmountDefaultedToNullIfZero();
-            loanRepaymentScheduleInstallment.setFeeChargesCharged(lastFeeScheduleCharge.subtract(feeHono));
-            chargeHono.resetAndUpdateInstallmentCharges();
-            Optional<CustomChargeHonorarioMap> honoMap = chargeHono.getCustomChargeHonorarioMaps().stream()
-                    .filter(customChargeHonorarioMap -> customChargeHonorarioMap.getLoanInstallmentNr() == loanRepaymentScheduleInstallment
-                            .getInstallmentNumber() && !loanRepaymentScheduleInstallment.isObligationsMet())
-                    .findFirst();
             LoanInstallmentCharge installmentCharge = chargeHono
                     .getInstallmentLoanCharge(loanRepaymentScheduleInstallment.getInstallmentNumber());
-            if (!honoMap.isEmpty()) {
-                if (!installmentCharge.isPaid()) {
-                    CustomChargeHonorarioMap honorarioMap = honoMap.get();
-                    honorarioMap.setFeeBaseAmount(feeBasis);
-                    honorarioMap.setFeeTotalAmount(feeHono);
-                    honorarioMap.setFeeVatAmount(feeVat);
-                    honorarioMap.setUpdatedBy(this.platformSecurityContext.authenticatedUser().getId());
-                    honorarioMap.setUpdatedAt(DateUtils.getLocalDateTimeOfTenant());
-                    honorarioMap.setLoanChargeId(chargeHono.getId());
-                }
+
+            if (!installmentCharge.isPaid()) {
+                Optional<CustomChargeHonorarioMap> customChargeHonorarioMaps = chargeHono.getCustomChargeHonorarioMaps().stream()
+                        .filter(customChargeHonorarioMap -> customChargeHonorarioMap
+                                .getLoanInstallmentNr() == loanRepaymentScheduleInstallment.getInstallmentNumber()
+                                && !loanRepaymentScheduleInstallment.isObligationsMet())
+                        .findFirst();
+                //
+                CustomChargeHonorarioMap newCustomChargeHonorarioMap = new CustomChargeHonorarioMap();
+                newCustomChargeHonorarioMap.setNit("120843958");
+                newCustomChargeHonorarioMap.setLoanId(loan.getId());
+                newCustomChargeHonorarioMap.setLoanInstallmentNr(loanRepaymentScheduleInstallment.getInstallmentNumber());
+                newCustomChargeHonorarioMap.setFeeBaseAmount(feeBasis);
+                newCustomChargeHonorarioMap.setFeeTotalAmount(feeHono);
+                newCustomChargeHonorarioMap.setFeeVatAmount(feeVat);
+                newCustomChargeHonorarioMap.setCreatedBy(this.platformSecurityContext.authenticatedUser().getId());
+                newCustomChargeHonorarioMap.setCreatedAt(DateUtils.getLocalDateTimeOfTenant());
+                newCustomChargeHonorarioMap.setLoanChargeId(chargeHono.getId());
+                customChargeHonorarioMapRepository.saveAndFlush(newCustomChargeHonorarioMap);
+                chargeHono.update(feeHono, null, loanRepaymentScheduleInstallment.getInstallmentNumber());
+                loan.updateLoanScheduleAfterCustomChargeApplied();
+                saveLoanWithDataIntegrityViolationChecks(loan);
 
             }
-            loan.updateLoanDerivedFields();
-            loan.updateLoanScheduleAfterCustomChargeApplied();
-            saveLoanWithDataIntegrityViolationChecks(loan);
 
         }
 
