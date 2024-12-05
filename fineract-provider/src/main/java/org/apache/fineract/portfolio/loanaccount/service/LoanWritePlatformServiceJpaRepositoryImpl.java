@@ -1242,7 +1242,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final LoanStatus loanStatus = loan.getStatus();
         final boolean isBankChannel = channelData.getName().equalsIgnoreCase("Bancos")
                 || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
-        if (loanStatus.isOverpaid() && !isBankChannel) {
+        BigDecimal totalOutstanding = loan.getLoanSummary().getTotalOutstanding();
+
+        // we also want to validate that the repayment amount is not greater than the outstanding amount
+
+        if ((loanStatus.isOverpaid() && !isBankChannel) || (transactionAmount.compareTo(totalOutstanding) > 0 && !isBankChannel)) {
             final String totalOverpaid = Money.of(loan.getCurrency(), loan.getTotalOverpaid()).toString();
             throw new GeneralPlatformDomainRuleException("error.msg.loan.channel.repayment.is.greater.than.outstanding.amount",
                     String.format("Repayment rejected for this channel! Repayment amount is greater than the outstanding amount by %s",
