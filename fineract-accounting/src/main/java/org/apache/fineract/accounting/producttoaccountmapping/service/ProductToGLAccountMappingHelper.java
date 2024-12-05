@@ -261,6 +261,7 @@ public class ProductToGLAccountMappingHelper {
                 final Long chargeId = jsonObject.get(LoanProductAccountingParams.CHARGE_ID.getValue()).getAsLong();
                 final Long incomeAccountId = jsonObject.get(LoanProductAccountingParams.INCOME_ACCOUNT_ID.getValue()).getAsLong();
                 final Long feeAccountId = jsonObject.get(LoanProductAccountingParams.RECEIVABLE_ACCOUNT_ID.getValue()).getAsLong();
+
                 inputChargeToIncomeAccountMap.put(chargeId, incomeAccountId);
                 inputChargeToFeeReceivableAccountMap.put(chargeId, feeAccountId);
             }
