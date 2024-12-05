@@ -168,6 +168,7 @@ public final class AccountingConstants {
         CHARGE_ID("chargeId"), //
         INCOME_ACCOUNT_ID("incomeAccountId"), //
         FEE_RECEIVABLE_ACCOUNT_ID("feeReceivableAccountId"), //
+        RECEIVABLE_ACCOUNT_ID("receivableAccountId"),
         INCOME_FROM_RECOVERY("incomeFromRecoveryAccountId"), //
         INCOME_FROM_CHARGE_OFF_INTEREST("incomeFromChargeOffInterestAccountId"), //
         INCOME_FROM_CHARGE_OFF_FEES("incomeFromChargeOffFeesAccountId"), //
@@ -176,7 +177,11 @@ public final class AccountingConstants {
         INCOME_FROM_CHARGE_OFF_PENALTY("incomeFromChargeOffPenaltyAccountId"), //
         INCOME_FROM_GOODWILL_CREDIT_INTEREST("incomeFromGoodwillCreditInterestAccountId"), //
         INCOME_FROM_GOODWILL_CREDIT_FEES("incomeFromGoodwillCreditFeesAccountId"), //
-        INCOME_FROM_GOODWILL_CREDIT_PENALTY("incomeFromGoodwillCreditPenaltyAccountId"); //
+        INCOME_FROM_GOODWILL_CREDIT_PENALTY("incomeFromGoodwillCreditPenaltyAccountId"),
+        CREDIT_NOTE_CREDIT("creditNoteCreditAccountId"),
+        CREDIT_NOTE_DEBIT("creditNoteDebitAccountId"),
+        DEBIT_NOTE_CREDIT("debitNoteCreditAccountId"),
+        DEBIT_NOTE_DEBIT("debitNoteDebitAccountId");
 
         private final String value;
 
