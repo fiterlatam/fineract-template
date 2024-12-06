@@ -105,7 +105,7 @@ public class LoanChargeAssembler {
         }
 
         final Set<LoanCharge> loanCharges = new LinkedHashSet<>();
-        final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
+        BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
         final Integer numberOfRepayments = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("numberOfRepayments", element);
         final Long productId = this.fromApiJsonHelper.extractLongNamed("productId", element);
         final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
@@ -227,6 +227,16 @@ public class LoanChargeAssembler {
                         }
 
                         if (!isMultiDisbursal) {
+                            if (chargeDefinition.isPercentageOfAnotherCharge()) {
+                                final Charge parentCharge = this.chargeRepository.findOneWithNotFoundDetection(chargeDefinition.getParentChargeId());
+                                if (parentCharge.isAvalChargeFlatForMigration()) {
+                                    for (LoanCharge loanCharge : loanCharges) {
+                                        if (loanCharge.getCharge().getId().equals(chargeDefinition.getParentChargeId())) {
+                                            principal = loanCharge.amountOrPercentage();
+                                        }
+                                    }
+                                }
+                            }
                             final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                     chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
                                     getPercentageAmountFromTable, applicableFromInstallment, expDate, isEndorsed, insuranceName,
