@@ -497,6 +497,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 case FLAT_AMOUNT:
                 case FLAT_SEGOVOLUNTARIO:
                 case FLAT_SEGO:
+                case FLAT_AVAL:
                     if (isInstalmentFee()) {
                         if (numberOfRepayments == null) {
                             numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
@@ -1508,6 +1509,17 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             BigDecimal computedAmount = LoanCharge.percentageOf(outstandingBalance.getAmount(), this.percentage);
             BigDecimal finalAmount = computedAmount.divide(installmentCount, 0, RoundingMode.HALF_UP);
             customAmout = customAmout.add(finalAmount);
+        } else if (this.isVoluntaryInsurance() || this.isAvalChargeFlatForMigration()) {
+            BigDecimal chargeAmount = BigDecimal.ZERO;
+            if (this.installmentCharges().isEmpty()) {
+                chargeAmount = this.amountOrPercentage;
+            } else {
+                final LoanInstallmentCharge installmentCharge = this.getInstallmentLoanCharge(installmentNumber);
+                if (installmentCharge != null) {
+                    chargeAmount = installmentCharge.getAmount();
+                }
+            }
+            customAmout = customAmout.add(chargeAmount);
         }
         return customAmout;
     }
@@ -1537,7 +1549,12 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isAvalCharge() {
         // Charge is distributed among the installments
-        return getChargeCalculation().isPercentageOfAval();
+        return getChargeCalculation().isPercentageOfAval() || getChargeCalculation().isFlatAvalForMigration();
+    }
+
+    public boolean isAvalChargeFlatForMigration() {
+        // Charge is distributed among the installments
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isFlatAvalForMigration();
     }
 
     public boolean isMandatoryInsurance() {

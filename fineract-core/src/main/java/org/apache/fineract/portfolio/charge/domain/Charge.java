@@ -433,6 +433,11 @@ public class Charge extends AbstractPersistableCustom {
         return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfAval();
     }
 
+    public boolean isAvalChargeFlatForMigration() {
+        // Charge is distributed among the installments
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isFlatAvalForMigration();
+    }
+
     public boolean isMandatoryInsurance() {
         // Charge is distributed among the installments
         return ChargeCalculationType.fromInt(this.chargeCalculation).isMandatoryInsuranceCharge();
@@ -1048,6 +1053,9 @@ public class Charge extends AbstractPersistableCustom {
             } else if (this.isFlatHono()) {
                 verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(),
                         ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex(), null, null, null);
+            } else if (this.isAvalChargeFlatForMigration()) {
+                verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
+                        ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(), null, null, null);
             } else {
                 throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
                         this.getName());
