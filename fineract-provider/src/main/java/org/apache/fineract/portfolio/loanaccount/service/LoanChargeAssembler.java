@@ -228,7 +228,8 @@ public class LoanChargeAssembler {
 
                         if (!isMultiDisbursal) {
                             if (chargeDefinition.isPercentageOfAnotherCharge()) {
-                                final Charge parentCharge = this.chargeRepository.findOneWithNotFoundDetection(chargeDefinition.getParentChargeId());
+                                final Charge parentCharge = this.chargeRepository
+                                        .findOneWithNotFoundDetection(chargeDefinition.getParentChargeId());
                                 if (parentCharge.isAvalChargeFlatForMigration()) {
                                     for (LoanCharge loanCharge : loanCharges) {
                                         if (loanCharge.getCharge().getId().equals(chargeDefinition.getParentChargeId())) {
