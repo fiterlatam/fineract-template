@@ -173,6 +173,16 @@ public class LoanChargeAssembler {
                     final ExternalId externalId = externalIdFactory.create(externalIdStr);
                     if (id == null) {
                         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
+
+                        Boolean isMigratedLoan = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, element);
+                        if (isMigratedLoan == null) {
+                            isMigratedLoan = Boolean.FALSE;
+                        }
+                        if (!isMigratedLoan && chargeDefinition.isAvalChargeFlatForMigration()) {
+                            final String defaultUserMessage = "Selected Aval Charge is to be used only for migrated loans.";
+                            throw new LoanChargeCannotBeAddedException("loanCharge", "aval.charge", defaultUserMessage, null,
+                                    chargeDefinition.getName());
+                        }
                         if (chargeDefinition.isFlatHono()) {
                             amount = BigDecimal.ZERO;
                         }
@@ -193,8 +203,8 @@ public class LoanChargeAssembler {
                         }
 
                         boolean getPercentageAmountFromTable = chargeDefinition.isGetPercentageFromTable();
-                        if (getPercentageAmountFromTable || ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation())
-                                .equals(ChargeCalculationType.DISB_AVAL)) {
+                        if (!isMigratedLoan && (getPercentageAmountFromTable || ChargeCalculationType
+                                .fromInt(chargeDefinition.getChargeCalculation()).equals(ChargeCalculationType.DISB_AVAL))) {
                             ChargeCalculationType calculation = chargeCalculation;
                             if (calculation == null) {
                                 calculation = ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation());
