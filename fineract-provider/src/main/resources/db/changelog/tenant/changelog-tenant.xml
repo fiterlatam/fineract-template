@@ -326,4 +326,5 @@
     <include file="parts/20243008011009141_SU_318_add_tabel_collection_house.xml" relativeToChangelogFile="true"/>
     <include file="parts/20242711011009135_SU_439_add_migration_columns_loan.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009148_SU_319_add_table_collection_house_history.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20243008011009148_SU_432_update-job-run.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
