@@ -659,6 +659,75 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         updateInstallmentCharges();
     }
 
+    public void updateInstallmentChargesHono(Integer numberOfRepayment) {
+        final Collection<LoanInstallmentCharge> remove = new HashSet<>();
+        final List<LoanInstallmentCharge> newChargeInstallments = this.loan.generateInstallmentLoanCharges(this);
+        MonetaryCurrency currency = this.loan.getCurrency();
+        int index = 0;
+        final List<LoanInstallmentCharge> oldChargeInstallments = new ArrayList<>();
+        if (this.loanInstallmentCharge != null && !this.loanInstallmentCharge.isEmpty()) {
+            oldChargeInstallments.addAll(this.loanInstallmentCharge);
+        }
+        Collections.sort(oldChargeInstallments);
+        final LoanInstallmentCharge[] loanChargePerInstallmentArray = newChargeInstallments
+                .toArray(new LoanInstallmentCharge[newChargeInstallments.size()]);
+        for (final LoanInstallmentCharge chargePerInstallment : oldChargeInstallments) {
+            if (index == loanChargePerInstallmentArray.length) {
+                remove.add(chargePerInstallment);
+                chargePerInstallment.getInstallment().getInstallmentCharges().remove(chargePerInstallment);
+            } else {
+                LoanInstallmentCharge newLoanInstallmentCharge = loanChargePerInstallmentArray[index++];
+                newLoanInstallmentCharge.getInstallment().getInstallmentCharges().remove(newLoanInstallmentCharge);
+                if (newLoanInstallmentCharge.getLoanCharge().isFlatHono()) {
+                    if (!chargePerInstallment.isPaid()
+                            && newLoanInstallmentCharge.getInstallment().getInstallmentNumber() != numberOfRepayment) {
+                        newLoanInstallmentCharge.setAmount(BigDecimal.ZERO);
+                        newLoanInstallmentCharge.setIpaid(false);
+                    }
+                }
+                chargePerInstallment.copyFrom(newLoanInstallmentCharge);
+
+            }
+        }
+        this.loanInstallmentCharge.removeAll(remove);
+        while (index < loanChargePerInstallmentArray.length) {
+            this.loanInstallmentCharge.add(loanChargePerInstallmentArray[index++]);
+        }
+
+        Money amount = Money.zero(this.loan.getCurrency());
+        // adjust decimal difference in amount that comes due to division of Charge amount with number of repayments
+        if ((isCustomFlatDistributedCharge()) && this.charge.isInstallmentFee()) {
+            int i = 1;
+            for (LoanInstallmentCharge charge : this.loanInstallmentCharge) {
+                if (i == this.loanInstallmentCharge.size()) {
+                    amount = amount.plus(charge.getAmount());
+                    if (amount.getAmount().compareTo(this.amount) != 0) {
+                        if (amount.getAmount().compareTo(this.amount) < 0) {
+                            BigDecimal difference = this.amount.subtract(amount.getAmount());
+                            charge.setAmount(charge.getAmount().add(difference));
+                        }
+                        if (amount.getAmount().compareTo(this.amount) > 0) {
+                            BigDecimal difference = amount.getAmount().subtract(this.amount);
+                            charge.setAmount(charge.getAmount().subtract(difference));
+                        }
+                        charge.setAmountOutstanding(charge.getAmount());
+                        amount = Money.of(amount.getCurrency(), this.amount);
+                    }
+                } else {
+                    amount = amount.plus(charge.getAmount());
+                }
+                i++;
+            }
+        } else {
+            for (LoanInstallmentCharge charge : this.loanInstallmentCharge) {
+                amount = amount.plus(charge.getAmount());
+            }
+        }
+        this.amount = amount.getAmount();
+        this.amountOutstanding = calculateOutstanding();
+
+    }
+
     private void updateInstallmentCharges() {
         final Collection<LoanInstallmentCharge> remove = new HashSet<>();
         final List<LoanInstallmentCharge> newChargeInstallments = this.loan.generateInstallmentLoanCharges(this);

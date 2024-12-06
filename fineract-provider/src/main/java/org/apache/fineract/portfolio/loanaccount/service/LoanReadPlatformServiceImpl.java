@@ -52,6 +52,7 @@ import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -70,10 +71,7 @@ import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecific
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
-import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
-import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
-import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
-import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.organisation.monetary.domain.*;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
 import org.apache.fineract.portfolio.account.data.AccountTransferData;
@@ -99,6 +97,7 @@ import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.common.service.CommonEnumerations;
 import org.apache.fineract.portfolio.delinquency.data.DelinquencyRangeData;
+import org.apache.fineract.portfolio.delinquency.domain.DelinquencyRange;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
 import org.apache.fineract.portfolio.floatingrates.data.InterestRatePeriodData;
 import org.apache.fineract.portfolio.floatingrates.service.FloatingRatesReadPlatformService;
@@ -109,18 +108,7 @@ import org.apache.fineract.portfolio.group.data.GroupRoleData;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.*;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanSubStatus;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariationType;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelation;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanTransactionNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
@@ -469,9 +457,39 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final Collection<PaymentTypeData> paymentOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
         final SearchParameters channelSearchParameters = SearchParameters.builder().channelType(ChannelType.REPAYMENT.getValue())
                 .active(true).build();
+
+        Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+        Boolean isCalculate = false;
+        Boolean isHasCustomHonoraioMap = loan.getActiveCharges().stream()
+                .anyMatch(charge -> charge.getChargeCalculation().isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios());
+        Optional<LoanCharge> loanCharge = loan.getActiveCharges().stream()
+                .filter(chg -> chg.isFlatHono() || chg.getChargeCalculation().isPercentageOfHonorarios()).findFirst();
+        if (loanCharge.isPresent()) {
+            isCalculate = true;
+            Set<CustomChargeHonorarioMap> customChargeHonorarioMaps = loanCharge.get().getCustomChargeHonorarioMaps();
+            if (!customChargeHonorarioMaps.isEmpty()) {
+                isCalculate = false;
+            }
+        }
+        Integer ageOverdue = loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
+        DelinquencyRangeData delinquencyRangeData = delinquencyReadPlatformService.retrieveCurrentDelinquencyTag(loan.getId());
+        BigDecimal delinquencyValue = BigDecimal.ZERO;
+        if (delinquencyRangeData != null) {
+            delinquencyValue = BigDecimal.valueOf(delinquencyRangeData.getPercentageValue());
+        } else {
+            DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
+            if (delinquencyRange != null) {
+                delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
+            }
+        }
+        BigDecimal deliquncyrange = delinquencyValue.divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
+        Integer vatConfig = configurationDomainService.retriveIvaConfiguration();
+        BigDecimal vatPercentage = BigDecimal.valueOf(vatConfig).divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
+
         final List<ChannelData> channelOptions = channelReadWritePlatformService.findBySearchParam(channelSearchParameters);
         final LoanTransactionData loanTransactionTemplate = LoanTransactionData.templateOnTop(loanTransactionData, paymentOptions);
         final Collection<CodeValueData> bankOptions = codeValueReadPlatformService.retrieveCodeValuesByCode("Bancos");
+
         loanTransactionTemplate.setChannelOptions(channelOptions);
         loanTransactionTemplate.setBankOptions(bankOptions);
 
@@ -479,6 +497,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         loanTransactionTemplate.setTransactionProcessingStrategy(loanTransactionData.getTransactionProcessingStrategy());
         loanTransactionTemplate.setLoanScheduleType(loanTransactionData.getLoanScheduleType());
         loanTransactionTemplate.setLoanProductType(loanTransactionData.getLoanProductType());
+
+        loanTransactionTemplate.setDeliquencyPercentage(deliquncyrange);
+        loanTransactionTemplate.setAgeOfOverdue(ageOverdue);
+        loanTransactionTemplate.setIvaPercentage(vatPercentage);
+        loanTransactionTemplate.setHaveHono(isHasCustomHonoraioMap);
+        loanTransactionTemplate.setIsCalculate(isCalculate);
 
         return loanTransactionTemplate;
     }

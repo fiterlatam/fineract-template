@@ -48,7 +48,7 @@ public class LoanDebtProjectionService {
         List<LoanRepaymentScheduleInstallment> futureInstallments = getFutureInstallments(loan, projectedFutureDate);
 
         // Calculate projected overdue days
-        Long projectedOverdueDays = calculateProjectedOverdueDays(overdueInstallments);
+        Long projectedOverdueDays = calculateProjectedOverdueDays(overdueInstallments, projectedFutureDate);
 
         // Calculate discriminated past due balance
         LoanDebtProjectionData.OverdueBalanceDetails overdueBalanceDetails = calculateDiscriminatedPastDueBalance(overdueInstallments,
@@ -152,12 +152,11 @@ public class LoanDebtProjectionService {
         return overdueDetails.getTotal();
     }
 
-    private Long calculateProjectedOverdueDays(List<LoanRepaymentScheduleInstallment> overdueInstallments) {
+    private Long calculateProjectedOverdueDays(List<LoanRepaymentScheduleInstallment> overdueInstallments, LocalDate projectedFutureDate) {
         if (overdueInstallments.isEmpty()) {
             return 0L;
         }
-        LocalDate currentDate = DateUtils.getLocalDateOfTenant();
         return overdueInstallments.stream().map(LoanRepaymentScheduleInstallment::getDueDate)
-                .map(dueDate -> DateUtils.getDifferenceInDays(currentDate, dueDate)).max(Long::compareTo).orElse(0L);
+                .map(dueDate -> DateUtils.getDifferenceInDays(projectedFutureDate, dueDate)).max(Long::compareTo).orElse(0L);
     }
 }

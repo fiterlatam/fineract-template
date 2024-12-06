@@ -49,11 +49,11 @@ public class LoanTransactionData {
     private final LocalDate date;
     private final CurrencyData currency;
     private final PaymentDetailData paymentDetailData;
-    private final BigDecimal amount;
+    private BigDecimal amount;
     private final BigDecimal netDisbursalAmount;
     private final BigDecimal principalPortion;
     private final BigDecimal interestPortion;
-    private final BigDecimal feeChargesPortion;
+    private BigDecimal feeChargesPortion;
     private final BigDecimal penaltyChargesPortion;
     private final BigDecimal overpaymentPortion;
     private final BigDecimal unrecognizedIncomePortion;
@@ -106,6 +106,11 @@ public class LoanTransactionData {
     private String loanProductType;
     private String clientIdNumber;
     List<LoanChargeData> currentOutstandingLoanCharges;
+    private BigDecimal deliquencyPercentage;
+    private Integer ageOfOverdue;
+    private BigDecimal ivaPercentage;
+    private Boolean haveHono;
+    private Boolean isCalculate;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {
@@ -462,4 +467,5 @@ public class LoanTransactionData {
     public void setLoanChargePaidBySummary(LoanChargePaidByData loanChargePaidBySummary) {
         this.loanChargePaidBySummary = loanChargePaidBySummary;
     }
+
 }

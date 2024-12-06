@@ -38,6 +38,7 @@ import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.workingdays.data.AdjustedDateDetailsDTO;
 import org.apache.fineract.organisation.workingdays.domain.RepaymentRescheduleType;
 import org.apache.fineract.portfolio.calendar.domain.CalendarInstance;
@@ -381,11 +382,84 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             ////////////
 
             if (!isMidTermRescheduling || isSameInterestRates) {
-                principalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
-                        interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
-                        totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
-                        periodNumber, mc, principalVariation, compoundingMap, periodStartDateApplicableForInterest, periodEndDate,
-                        interestRates, accruedInterestByAdvancePmt);
+                LocalDate nextDates = rescheduleFromDate;
+                LocalDate startDate = null;
+                BigDecimal currentInterst = null;
+                if (!loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment().isEmpty()) {
+                    List<LoanTermVariationsData> list = loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment();
+                    ListIterator<LoanTermVariationsData> iterator = list.listIterator();
+                    int prevIndex = 0;
+
+                    while (iterator.hasNext()) {
+                        int index = iterator.nextIndex();
+                        int nextIndex = prevIndex + 1;
+                        LoanTermVariationsData midInterst = iterator.next();
+                        LocalDate currentDates = midInterst.getTermVariationApplicableFrom();
+                        currentInterst = midInterst.getDecimalValue();
+                        if (index == list.size() - 1) {
+                            nextIndex = index;
+                        }
+                        nextDates = list.get(nextIndex).getTermVariationApplicableFrom();
+                        if (iterator.hasNext()) {
+                            nextDates = list.get(index + 1).getTermVariationApplicableFrom();
+                            currentInterst = list.get(index + 1).getDecimalValue();
+                        }
+                        if (startDate == null) {
+                            startDate = currentDates;
+
+                        } else {
+                            if (!iterator.hasPrevious()) {
+                                startDate = currentDates;
+                            } else {
+                                startDate = list.get(index - 1).getTermVariationApplicableFrom();
+                                currentInterst = list.get(index - 1).getDecimalValue();
+                            }
+                        }
+                        prevIndex = nextIndex;
+                    }
+                }
+
+                if (nextDates != null && nextDates.isAfter(periodStartDateApplicableForInterest) && nextDates.isBefore(periodEndDate)) {
+                    BigDecimal totalMidPeriodInterestRates = BigDecimal.ZERO;
+
+                    loanApplicationTerms.setAnnualNominalInterestRate(currentInterst);
+                    PrincipalInterest midPrincipalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
+                            interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
+                            totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
+                            periodNumber, mc, principalVariation, compoundingMap, periodStartDateApplicableForInterest, nextDates,
+                            interestRates, accruedInterestByAdvancePmt);
+                    Money midPeriodInterestRate = midPrincipalInterestForThisPeriod.interest().add(totalMidPeriodInterestRates);
+
+                    final Money midPeriodPrincipal = midPrincipalInterestForThisPeriod.principal();
+                    Money interestPrincipal = midPeriodInterestRate.add(midPrincipalInterestForThisPeriod.principal());
+
+                    loanApplicationTerms.setAnnualNominalInterestRate(annualNominalInterestRate);
+                    PrincipalInterest endPrincipalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
+                            interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
+                            totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
+                            periodNumber, mc, principalVariation, compoundingMap, nextDates, periodEndDate, interestRates,
+                            accruedInterestByAdvancePmt);
+
+                    final Money periodEndInterestRate = endPrincipalInterestForThisPeriod.interest();
+                    final Money totalInterestRate = midPeriodInterestRate.add(periodEndInterestRate);
+                    final Money periodEndPrincipal = endPrincipalInterestForThisPeriod.principal();
+
+                    Money totalPrincipal;
+                    if (midPeriodPrincipal.isEqualTo(periodEndPrincipal)) {
+                        totalPrincipal = midPeriodPrincipal;
+                    } else {
+                        totalPrincipal = interestPrincipal.minus(totalInterestRate);
+                    }
+                    principalInterestForThisPeriod = new PrincipalInterest(totalPrincipal, totalInterestRate,
+                            endPrincipalInterestForThisPeriod.interestPaymentDueToGrace());
+                } else {
+
+                    principalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
+                            interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
+                            totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
+                            periodNumber, mc, principalVariation, compoundingMap, periodStartDateApplicableForInterest, periodEndDate,
+                            interestRates, accruedInterestByAdvancePmt);
+                }
 
             } else {
                 Money totalMidPeriodInterestRates = Money.zero(currency);
@@ -3659,4 +3733,16 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             int periodNumber, MathContext mc, TreeMap<LocalDate, Money> principalVariation, Map<LocalDate, Money> compoundingMap,
             LocalDate periodStartDate, LocalDate periodEndDate, Collection<LoanTermVariationsData> termVariations,
             Money accruedInterestForAdvancePmt);
+
+    @Override
+    public PrincipalInterest calculatePrincipalInterestComponents(final Money outstandingBalance,
+            final LoanApplicationTerms loanApplicationTerms, final int periodNumber, final LocalDate periodStartDate,
+            final LocalDate periodEndDate) {
+        final MathContext mc = MoneyHelper.getMathContext();
+        final PaymentPeriodsInOneYearCalculator calculator = getPaymentPeriodsInOneYearCalculator();
+        final BigDecimal interestCalculationGraceOnRepaymentPeriodFraction = BigDecimal.ZERO;
+        final Money cumulatingInterestPaymentDueToGrace = outstandingBalance.zero();
+        return loanApplicationTerms.calculateTotalInterestForPeriod(calculator, interestCalculationGraceOnRepaymentPeriodFraction,
+                periodNumber, mc, cumulatingInterestPaymentDueToGrace, outstandingBalance, periodStartDate, periodEndDate);
+    }
 }

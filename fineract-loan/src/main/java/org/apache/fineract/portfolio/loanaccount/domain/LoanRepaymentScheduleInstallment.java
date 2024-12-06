@@ -1625,6 +1625,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.interestAccrued = defaultToZeroIfNull(this.interestAccrued).add(interestAccrued.getAmount());
     }
 
+    public void setInterestAccrued(BigDecimal interestAccrued) {
+        this.interestAccrued = interestAccrued;
+    }
+
     public Money getAccruedInterest(MonetaryCurrency currency) {
         return Money.of(currency, this.interestAccrued);
     }

@@ -33,6 +33,7 @@ import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.workingdays.data.AdjustedDateDetailsDTO;
 import org.apache.fineract.portfolio.calendar.domain.CalendarInstance;
 import org.apache.fineract.portfolio.calendar.service.CalendarUtils;
@@ -609,5 +610,17 @@ public abstract class AbstractProgressiveLoanScheduleGenerator implements LoanSc
         }
 
         return new LoanTermVariationParams(skipPeriod, recalculateAmounts, modifiedScheduledDueDate, variationsData);
+    }
+
+    @Override
+    public PrincipalInterest calculatePrincipalInterestComponents(final Money outstandingBalance,
+            final LoanApplicationTerms loanApplicationTerms, final int periodNumber, final LocalDate periodStartDate,
+            final LocalDate periodEndDate) {
+        final MathContext mc = MoneyHelper.getMathContext();
+        final PaymentPeriodsInOneYearCalculator calculator = getPaymentPeriodsInOneYearCalculator();
+        final BigDecimal interestCalculationGraceOnRepaymentPeriodFraction = BigDecimal.ZERO;
+        final Money cumulatingInterestPaymentDueToGrace = outstandingBalance.zero();
+        return loanApplicationTerms.calculateTotalInterestForPeriod(calculator, interestCalculationGraceOnRepaymentPeriodFraction,
+                periodNumber, mc, cumulatingInterestPaymentDueToGrace, outstandingBalance, periodStartDate, periodEndDate);
     }
 }
