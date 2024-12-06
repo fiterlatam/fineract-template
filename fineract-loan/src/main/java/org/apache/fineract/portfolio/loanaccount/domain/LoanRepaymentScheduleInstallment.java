@@ -730,19 +730,33 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     }
 
-    public Money payAvalChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
+    public Money payAvalChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
 
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
-        Money loanChargePaidByPortion = Money.zero(currency);
         Money feePortionOfTransaction = Money.zero(currency);
+        Money loanChargePaidByPortion = Money.zero(currency);
         if (transactionAmountRemaining.isZero()) {
             return feePortionOfTransaction;
         }
         for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
             if (installmentCharge.getLoanCharge().isAvalCharge()) {
+
+                for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                    if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
+                            vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
+                        feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
+                                feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
+                        updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
+                                vatCharge.getLoanCharge());
+                        transactionAmountRemaining = transactionAmountRemaining.minus(feePortionOfTransaction);
+                        loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
+                        break;
+                    }
+                }
                 feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
                         feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
+
                 updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
                         installmentCharge.getLoanCharge());
                 loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);

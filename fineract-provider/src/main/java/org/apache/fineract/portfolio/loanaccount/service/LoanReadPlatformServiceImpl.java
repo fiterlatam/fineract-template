@@ -1672,7 +1672,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                     select mlcpd.loan_transaction_id , sum(mlcpd.amount) amount from
                                     m_loan_charge_paid_by mlcpd
                                     join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
-                                    where mlc.charge_calculation_enum = 41
+                                    where mlc.charge_calculation_enum in (41, 286)
                                 group by mlcpd.loan_transaction_id
                                 ) aval on aval.loan_transaction_id = tr.id
                                 left join (
@@ -1682,7 +1682,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                     join m_charge mc on mc.id = mlc.charge_id
                                     join m_charge parent on parent.id = mc.parent_charge_id
                                     where mc.charge_calculation_enum = 342
-                                    and parent.charge_calculation_enum = 41
+                                    and parent.charge_calculation_enum in (41, 286)
                                 group by mlcpd.loan_transaction_id
                                 ) vat_aval on vat_aval.loan_transaction_id = tr.id
                                 left join (
@@ -3487,7 +3487,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                           	    and mlrs.completed_derived != true
                           	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
                           	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
-                          	    where mlc.charge_calculation_enum = 41
+                          	    where mlc.charge_calculation_enum in (41, 286)
                           	    group by mlc.loan_id
                           	) aval_chg ON aval_chg.loan_id = ml.id
                           	LEFT JOIN (
@@ -3499,7 +3499,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                   and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
                                   JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
                                   JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                                  WHERE parent_charge.charge_calculation_enum = 41
+                                  WHERE parent_charge.charge_calculation_enum in (41, 286)
                                   group by mlc2.loan_id
                           	) aval_vat_chg  ON aval_vat_chg.loan_id = ml.id
                           	LEFT join (
@@ -3509,7 +3509,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                           	    and mlrs.completed_derived != true
                           	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
                           	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
-                          	    where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41)
+                          	    where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41, 286)
                           	    group by mlc.loan_id
                           	) other_chg ON other_chg.loan_id = ml.id
                           	LEFT JOIN (
@@ -3521,7 +3521,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                   and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
                                   JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
                                   JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                                  WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231, 41)
+                                  WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231, 41, 286)
                                   group by mlc2.loan_id
                           	) other_vat_chg  ON other_vat_chg.loan_id = ml.id
                           	LEFT join (
@@ -3615,7 +3615,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         	    and mlrs.completed_derived != true
                         	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
                         	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
-                        	    where mlc.charge_calculation_enum = 41
+                        	    where mlc.charge_calculation_enum in (41, 286)
                         	    group by mlc.loan_id
                         	) aval_chg ON aval_chg.loan_id = ml.id
                         	LEFT JOIN (
@@ -3627,7 +3627,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                 and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
                                 JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
                                 JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                                WHERE parent_charge.charge_calculation_enum = 41
+                                WHERE parent_charge.charge_calculation_enum in (41, 286)
                                 group by mlc2.loan_id
                         	) aval_vat_chg  ON aval_vat_chg.loan_id = ml.id
                         	LEFT join (
@@ -3637,7 +3637,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         	    and mlrs.completed_derived != true
                         	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
                         	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
-                        	    where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41)
+                        	    where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41, 286)
                         	    group by mlc.loan_id
                         	) other_chg ON other_chg.loan_id = ml.id
                         	LEFT JOIN (
@@ -3649,7 +3649,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                 and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
                                 JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
                                 JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                                WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231, 41)
+                                WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231, 41, 286)
                                 group by mlc2.loan_id
                         	) other_vat_chg  ON other_vat_chg.loan_id = ml.id
                         	LEFT join (
@@ -3743,7 +3743,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         	    and mlrs.completed_derived != true
                         	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
                         	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
-                        	    where mlc.charge_calculation_enum = 41
+                        	    where mlc.charge_calculation_enum in (41, 286)
                         	    group by mlc.loan_id
                         	) aval_chg ON aval_chg.loan_id = ml.id
                         	LEFT JOIN (
@@ -3755,7 +3755,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                 and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
                                 JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
                                 JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                                WHERE parent_charge.charge_calculation_enum = 41
+                                WHERE parent_charge.charge_calculation_enum in (41, 286)
                                 group by mlc2.loan_id
                         	) aval_vat_chg  ON aval_vat_chg.loan_id = ml.id
                         	LEFT join (
@@ -3765,7 +3765,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         	    and mlrs.completed_derived != true
                         	    and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
                         	    and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
-                        	    where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41)
+                        	    where mlc.charge_calculation_enum NOT IN (468, 575, 231, 342, 41, 286)
                         	    group by mlc.loan_id
                         	) other_chg ON other_chg.loan_id = ml.id
                         	LEFT JOIN (
@@ -3777,7 +3777,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                 and (mlrs.duedate <= current_date or (mlrs.duedate >= current_date and mlrs.fromdate <= current_date))
                                 JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
                                 JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                                WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231, 41)
+                                WHERE parent_charge.charge_calculation_enum NOT IN (468, 575, 231, 41, 286)
                                 group by mlc2.loan_id
                         	) other_vat_chg  ON other_vat_chg.loan_id = ml.id
                         	LEFT join (
