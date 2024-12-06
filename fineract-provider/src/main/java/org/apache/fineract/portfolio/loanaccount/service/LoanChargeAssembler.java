@@ -203,8 +203,8 @@ public class LoanChargeAssembler {
                         }
 
                         boolean getPercentageAmountFromTable = chargeDefinition.isGetPercentageFromTable();
-                        if (!isMigratedLoan && (getPercentageAmountFromTable || ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation())
-                                .equals(ChargeCalculationType.DISB_AVAL))) {
+                        if (!isMigratedLoan && (getPercentageAmountFromTable || ChargeCalculationType
+                                .fromInt(chargeDefinition.getChargeCalculation()).equals(ChargeCalculationType.DISB_AVAL))) {
                             ChargeCalculationType calculation = chargeCalculation;
                             if (calculation == null) {
                                 calculation = ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation());
