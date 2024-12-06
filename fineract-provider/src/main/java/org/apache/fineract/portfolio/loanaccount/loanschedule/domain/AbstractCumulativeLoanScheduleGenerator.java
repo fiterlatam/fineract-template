@@ -384,7 +384,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             if (!isMidTermRescheduling || isSameInterestRates) {
                 LocalDate nextDates = rescheduleFromDate;
                 LocalDate startDate = null;
-                BigDecimal currentInterst = null;
+                BigDecimal currentInterst = BigDecimal.ZERO;
                 if (!loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment().isEmpty()) {
                     List<LoanTermVariationsData> list = loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment();
                     ListIterator<LoanTermVariationsData> iterator = list.listIterator();
@@ -419,7 +419,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     }
                 }
 
-                if (nextDates != null && nextDates.isAfter(periodStartDateApplicableForInterest) && nextDates.isBefore(periodEndDate)) {
+                if (nextDates != null && nextDates.isAfter(periodStartDateApplicableForInterest) && nextDates.isBefore(periodEndDate)
+                        && currentInterst.compareTo(BigDecimal.ZERO) == 1) {
                     BigDecimal totalMidPeriodInterestRates = BigDecimal.ZERO;
 
                     loanApplicationTerms.setAnnualNominalInterestRate(currentInterst);
