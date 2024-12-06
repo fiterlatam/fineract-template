@@ -321,8 +321,7 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
             BigDecimal voluntaryInsurancePaid = voluntaryInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
                     lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal voluntaryInsuranceWaived = voluntaryInsurancePaid = voluntaryInsuranceCharges.stream()
-                    .flatMap(lic -> lic.installmentCharges().stream())
+            BigDecimal voluntaryInsuranceWaived = voluntaryInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream())
                     .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
                             lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmountWaived).reduce(BigDecimal.ZERO, BigDecimal::add);
