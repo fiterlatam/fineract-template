@@ -49,11 +49,11 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
                     + "       CASE WHEN mc.legal_form_enum = 2 THEN 'NIT' ELSE 'Cédula' END AS tipo_documento,\n"
                     + "       COALESCE(ccp.\"Direccion\",cce.\"Direccion\") AS direction, \n"
                     + "       COALESCE(ccp.\"Ciudad_cd_Ciudad\",cce.\"Ciudad_cd_Ciudad\") as ciudad, \n"
-                    + "       cce.\"Departamento_cd_Departamento\" as departamento,\n" + "       mcbr.name_of_reason AS creaditBlock, \n"
-                    + "       ccp.\"Referencia\"AS referencia,\n" + "       ccp.\"Media de ingresos\" AS media_de_ingreso,  \n"
-                    + "       ccp.\"Nombre empresa\" AS nombre_empresa, \n" + "       caps.client_ally_id,\n"
-                    + "       ca.nit as nit_empresa_aliada,\n" + "       caps.name as point_of_sale_name,\n"
-                    + "       ccp.\"Parentesco_cd_Parentesco\" AS parentesco,\n"
+                    + "       COALESCE(cce.\"Departamento_cd_Departamento\",(select id from m_code_value where code_id =40 and code_score = mcv.departement_id)) as departamento,\n"
+                    + "       mcbr.name_of_reason AS creaditBlock, \n" + "       ccp.\"Referencia\"AS referencia,\n"
+                    + "       ccp.\"Media de ingresos\" AS media_de_ingreso,  \n" + "       ccp.\"Nombre empresa\" AS nombre_empresa, \n"
+                    + "       caps.client_ally_id,\n" + "       ca.nit as nit_empresa_aliada,\n"
+                    + "       caps.name as point_of_sale_name,\n" + "       ccp.\"Parentesco_cd_Parentesco\" AS parentesco,\n"
                     + "       mc.created_on_utc, ccp.\"Estado Civil_cd_Estado civil\" as estado_civil, \n"
                     + "       ml.disbursedon_date, \n" + "       mc.date_of_birth,\n" + "       (SELECT code_value \n"
                     + "        FROM m_code_value \n"
@@ -66,8 +66,13 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
                     + "LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id\n"
                     + "LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id \n" + "LEFT JOIN (\n"
                     + "    SELECT loan_id, name_of_reason, priority\n" + "    FROM RankedCreaditReasons\n" + "    WHERE row_num = 1\n"
-                    + ") AS mcbr ON mcbr.loan_id = ml.id\n" + "WHERE total_outstanding_derived > 0  \n"
-                    + "  and loan_status_id NOT IN (500, 601, 602, 600)\n" + "ORDER BY mc.id, ml.id DESC;\n";
+                    + ") AS mcbr ON mcbr.loan_id = ml.id\n" + " LEFT JOIN (\n" + "SELECT id,CASE \n"
+                    + "        WHEN LEFT(LPAD(code_score::TEXT, 5, '0'), 2)::INTEGER < 10 THEN \n"
+                    + "            LEFT(LPAD(code_score::TEXT, 5, '0'), 2)::INTEGER::VARCHAR\n" + "        ELSE \n"
+                    + "            LEFT(LPAD(code_score::TEXT, 5, '0'), 2)\n" + "    END as departement_id\n"
+                    + "\tfrom  m_code_value  ciudad where ciudad.code_id =41\n" + "    ) mcv on mcv.id= ccp.\"Ciudad_cd_Ciudad\" "
+                    + "WHERE total_outstanding_derived > 0  \n" + "  and loan_status_id NOT IN (500, 601, 602, 600)\n"
+                    + "ORDER BY mc.id, ml.id DESC;\n";
         }
 
         @Override
