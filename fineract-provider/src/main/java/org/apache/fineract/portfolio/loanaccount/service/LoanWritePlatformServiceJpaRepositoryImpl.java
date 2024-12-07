@@ -1549,11 +1549,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
-
+        final int initialNumberOfRepayments = Optional.ofNullable(loan.getRepaymentScheduleInstallments()).orElse(new ArrayList<>()).size();
         final ChangedTransactionDetail changedTransactionDetail = loan.adjustExistingTransaction(newTransactionDetail,
                 defaultLoanLifecycleStateMachine, transactionToAdjust, existingTransactionIds, existingReversedTransactionIds,
                 scheduleGeneratorDTO, reversalTxnExternalId);
-
         boolean thereIsNewTransaction = newTransactionDetail.isGreaterThanZero(loan.getPrincipal().getCurrency());
         if (thereIsNewTransaction) {
             if (paymentDetail != null) {
@@ -1589,7 +1588,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
         }
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
-
+        final int newNumberOfRepayments = Optional.ofNullable(loan.getRepaymentScheduleInstallments()).orElse(new ArrayList<>()).size();
+        if (newNumberOfRepayments > initialNumberOfRepayments) {
+            loan.regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
+            loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+        }
         final String noteText = command.stringValueOfParameterNamed("note");
         if (StringUtils.isNotBlank(noteText)) {
             changes.put("note", noteText);

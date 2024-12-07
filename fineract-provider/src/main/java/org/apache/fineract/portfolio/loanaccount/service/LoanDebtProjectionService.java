@@ -157,6 +157,6 @@ public class LoanDebtProjectionService {
             return 0L;
         }
         return overdueInstallments.stream().map(LoanRepaymentScheduleInstallment::getDueDate)
-                .map(dueDate -> DateUtils.getDifferenceInDays(projectedFutureDate, dueDate)).max(Long::compareTo).orElse(0L);
+                .map(dueDate -> DateUtils.getDifferenceInDays(dueDate, projectedFutureDate)).max(Long::compareTo).orElse(0L);
     }
 }
