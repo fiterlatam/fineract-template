@@ -530,13 +530,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                                 if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.chargeExpireDate, loanChargeElement)) {
                                     String expddate = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.chargeExpireDate,
                                             loanChargeElement);
-                                    if (amount.compareTo(BigDecimal.ZERO) == 0 && !charge.isPercentageOfAnotherCharge()) {
-                                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
-                                                .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
-                                    } else {
-                                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
-                                                .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).ignoreIfNull();
-                                    }
+                                    baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                            .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
 
                                 }
                                 baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
@@ -1113,13 +1108,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                                 if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.chargeExpireDate, loanChargeElement)) {
                                     String expddate = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.chargeExpireDate,
                                             loanChargeElement);
-                                    if (amount.compareTo(BigDecimal.ZERO) == 0 && !charge.isPercentageOfAnotherCharge()) {
-                                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
-                                                .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
-                                    } else {
-                                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
-                                                .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).ignoreIfNull();
-                                    }
+                                    baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                            .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
                                 }
                                 baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
                                         .parameterAtIndexArray(LoanApiConstants.amountParameterName, i).value(amount).notNull();
