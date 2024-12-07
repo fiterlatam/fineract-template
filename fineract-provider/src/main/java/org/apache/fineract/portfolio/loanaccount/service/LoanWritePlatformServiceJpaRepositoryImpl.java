@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -3796,17 +3796,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     @Override
     public void recalculateInterestForMaximumLegalRate() throws JobExecutionException {
-        List<Throwable> exceptions = new ArrayList<>();
+        final List<Throwable> exceptions = new ArrayList<>();
         final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
                 .retrieveMaximumCreditRateConfigurationData();
         final LocalDate appliedOnDate = maximumCreditRateConfigurationData.getAppliedOnDate();
         final BigDecimal maximumLegalAnnualNominalRateValue = maximumCreditRateConfigurationData.getAnnualNominalRate();
         final LoanRescheduleMapper rm = new LoanRescheduleMapper();
         final String sql = "SELECT " + rm.schema();
-        final Object[] params = new Object[] { appliedOnDate, appliedOnDate, appliedOnDate, maximumLegalAnnualNominalRateValue };
-        List<LoanRescheduleData> loanLoanRescheduleDataList = this.jdbcTemplate.query(sql, rm, params);
+        final Object[] params = new Object[] { appliedOnDate, appliedOnDate, appliedOnDate, maximumLegalAnnualNominalRateValue,
+                maximumLegalAnnualNominalRateValue };
+        final List<LoanRescheduleData> loanLoanRescheduleDataList = this.jdbcTemplate.query(sql, rm, params);
         if (CollectionUtils.isNotEmpty(loanLoanRescheduleDataList)) {
-            final String locale = "en";
+            final String locale = "es";
             final String dateFormat = "dd MMMM yyyy";
             final String submittedOnDate = DateUtils.format(DateUtils.getBusinessLocalDate(), dateFormat, Locale.forLanguageTag(locale));
             LoanRescheduleRequestData loanRescheduleReasons = this.loanRescheduleRequestReadPlatformService
@@ -3823,7 +3824,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             rescheduleJsonObject.addProperty("locale", locale);
             rescheduleJsonObject.addProperty("rescheduleReasonId", rescheduleReasonId);
             rescheduleJsonObject.addProperty("submittedOnDate", submittedOnDate);
-            rescheduleJsonObject.addProperty("rescheduleReasonComment", "Recalcular la tasa de interés al máximo legal");
             rescheduleJsonObject.addProperty("adjustedDueDate", "");
             rescheduleJsonObject.addProperty("graceOnPrincipal", "");
             rescheduleJsonObject.addProperty("extraTerms", "");
@@ -3853,6 +3853,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final String rescheduleFromDateString = DateUtils.format(appliedOnDate, dateFormat, Locale.forLanguageTag(locale));
                 rescheduleJsonObject.addProperty("rescheduleFromDate", rescheduleFromDateString);
                 rescheduleJsonObject.addProperty("loanId", loanId);
+                final String rescheduleReasonComment = String.format(
+                        "Recalcular la tasa de interés al máximo legal: [Nueva tasa de interés: %s, Tasa máxima legal: %s, Fecha de reprogramación: %s]",
+                        newInterestRate, maximumLegalAnnualNominalRateValue, rescheduleFromDateString);
+                rescheduleJsonObject.addProperty("rescheduleReasonComment", rescheduleReasonComment);
                 final String rescheduleRequestBodyAsJson = rescheduleJsonObject.toString();
                 CommandWrapper commandWrapper = new CommandWrapperBuilder()
                         .createLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME).withJson(rescheduleRequestBodyAsJson).build();
@@ -3925,7 +3929,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             ORDER BY ltv.loan_id, ltv.id DESC
                         ) term_variation ON term_variation.loan_id = ml.id
                         WHERE ml.loan_status_id = 300 AND mlrs.duedate >= ? AND ml.is_charged_off = FALSE
-                        AND (CASE WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value ELSE ml.annual_nominal_interest_rate END) != ?
+                            AND (CASE
+                                WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value != ?
+                                WHEN term_variation.decimal_value IS NULL THEN ml.annual_nominal_interest_rate > ?
+                            END)
                         GROUP BY term_variation.loan_id, ml.annual_nominal_interest_rate, term_variation.decimal_value, ml.id
                         ORDER BY ml.id
                     """;
