@@ -2851,13 +2851,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = getRepaymentScheduleInstallments();
         for (LoanRepaymentScheduleInstallment repaymentScheduleInstallment : loanRepaymentScheduleInstallments) {
             if (!currentDate.isBefore(repaymentScheduleInstallment.getFromDate())
-                    && !currentDate.isAfter(repaymentScheduleInstallment.getDueDate())) {
+                    && !currentDate.isAfter(repaymentScheduleInstallment.getDueDate().minusDays(1))) {
                 long daysInPeriod = Math.toIntExact(
                         ChronoUnit.DAYS.between(repaymentScheduleInstallment.getFromDate(), repaymentScheduleInstallment.getDueDate()));
                 Money interestForInstallment = repaymentScheduleInstallment.getInterestCharged(getCurrency());
                 BigDecimal dailyInterest;
                 // Adjust interest on the last day of the period to make up the difference
-                if (currentDate.equals(repaymentScheduleInstallment.getDueDate())) {
+                if (currentDate.equals(repaymentScheduleInstallment.getDueDate().minusDays(1))) {
                     // if the amount is whole number when divided across the days in the period, then do same for last
                     // day
                     if (interestForInstallment.getAmount().remainder(BigDecimal.valueOf(daysInPeriod)).compareTo(BigDecimal.ZERO) == 0) {
