@@ -156,14 +156,20 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     public Long retrievePenaltyWaitPeriod() {
         final String propertyName = "penalty-wait-period";
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
-        return property.getValue();
+        if (property.isEnabled()) {
+            return property.getValue();
+        }
+        return 0L;
     }
 
     @Override
     public Long retrieveGraceOnPenaltyPostingPeriod() {
         final String propertyName = "grace-on-penalty-posting";
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
-        return property.getValue();
+        if (property.isEnabled()) {
+            return property.getValue();
+        }
+        return 0L;
     }
 
     @Override
