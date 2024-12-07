@@ -1049,13 +1049,21 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         Integer feeInterval = chargeDefinition.feeInterval();
         final ScheduledDateGenerator scheduledDateGenerator = new DefaultScheduledDateGenerator();
         Map<Integer, LocalDate> scheduleDates = new HashMap<>();
-        final Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
-        final Long penaltyPostingWaitPeriodValue = this.configurationDomainService.retrieveGraceOnPenaltyPostingPeriod();
+        Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
+        Long penaltyPostingWaitPeriodValue = this.configurationDomainService.retrieveGraceOnPenaltyPostingPeriod();
+        // we only want the grace period to be applied to the first installment
+        if (periodNumber > 1) {
+            penaltyPostingWaitPeriodValue = 0L;
+            penaltyWaitPeriodValue = 0L;
+
+        }
+
         final LocalDate dueDate = command.localDateValueOfParameterNamed("dueDate");
         long diff = penaltyWaitPeriodValue + 1 - penaltyPostingWaitPeriodValue;
         if (diff < 1) {
             diff = 1L;
         }
+
         LocalDate startDate = dueDate.plusDays(penaltyWaitPeriodValue + 1L);
         int frequencyNumber = 1;
         if (feeFrequency == null) {
