@@ -8,7 +8,11 @@ import org.apache.fineract.custom.portfolio.ally.data.AllySettlementCompansation
 import org.apache.fineract.custom.portfolio.ally.data.ClientAllySettlementData;
 import org.apache.fineract.custom.portfolio.ally.domain.AllyCompensation;
 import org.apache.fineract.custom.portfolio.ally.domain.AllyCompensationRepository;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAlly;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyRepository;
 import org.apache.fineract.custom.portfolio.ally.service.AllyCompensationReadWritePlatformService;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -19,11 +23,16 @@ public class CompensationOfSettlementTasklet implements Tasklet {
 
     private AllyCompensationReadWritePlatformService allyCompensationReadWritePlatformService;
     private AllyCompensationRepository allyCompensationRepository;
+    private ClientAllyRepository allyRepository;
+    private CodeValueRepository codeValueRepository;
 
     public CompensationOfSettlementTasklet(AllyCompensationReadWritePlatformService allyCompensationReadWritePlatformService,
-            AllyCompensationRepository allyCompensationRepository) {
+            AllyCompensationRepository allyCompensationRepository, ClientAllyRepository allyRepository,
+            CodeValueRepository codeValueRepository) {
         this.allyCompensationReadWritePlatformService = allyCompensationReadWritePlatformService;
         this.allyCompensationRepository = allyCompensationRepository;
+        this.allyRepository = allyRepository;
+        this.codeValueRepository = codeValueRepository;
     }
 
     @Override
@@ -48,11 +57,10 @@ public class CompensationOfSettlementTasklet implements Tasklet {
                 break;
                 case "QUINCENAL":
                     startDate = endDate.minusWeeks(2).plusDays(1);
-                    System.out.println(" QUINCENAL  " + startDate);
+
                 break;
                 case "MENSUAL":
                     startDate = endDate.minusMonths(1).plusDays(1);
-                    System.out.println(" MENSUAL  " + startDate);
                 break;
                 default:
                     startDate = endDate;
@@ -84,7 +92,7 @@ public class CompensationOfSettlementTasklet implements Tasklet {
                     allyCompensation.setAccountNumber(allySettlementCompansationData.get().getAccountNumber());
                     allyCompensation.setPurchaseAmount(allySettlementCompansationData.get().getPurchaseAmount());
                     allyCompensation.setCollectionAmount(allySettlementCompansationData.get().getCollectionAmount());
-                    allyCompensation.setComissionAmount(allySettlementCompansationData.get().getCollectionAmount());
+                    allyCompensation.setComissionAmount(allySettlementCompansationData.get().getComissionAmount());
                     allyCompensation.setVaComissionAmount(allySettlementCompansationData.get().getVaComissionAmount());
                     allyCompensation.setNetPurchaseAmount(allySettlementCompansationData.get().getNetPurchaseAmount());
                     allyCompensation.setNetOutstandingAmount(allySettlementCompansationData.get().getCompensationAmount());
@@ -97,7 +105,7 @@ public class CompensationOfSettlementTasklet implements Tasklet {
                         if (!exisiting.getSettlementStatus()) {
                             exisiting.setPurchaseAmount(allySettlementCompansationData.get().getPurchaseAmount());
                             exisiting.setCollectionAmount(allySettlementCompansationData.get().getCollectionAmount());
-                            exisiting.setComissionAmount(allySettlementCompansationData.get().getCollectionAmount());
+                            exisiting.setComissionAmount(allySettlementCompansationData.get().getComissionAmount());
                             exisiting.setVaComissionAmount(allySettlementCompansationData.get().getVaComissionAmount());
                             exisiting.setNetPurchaseAmount(allySettlementCompansationData.get().getNetPurchaseAmount());
                             exisiting.setNetOutstandingAmount(allySettlementCompansationData.get().getCompensationAmount());
@@ -105,11 +113,57 @@ public class CompensationOfSettlementTasklet implements Tasklet {
                             exisiting.setSettlementStatus(exisiting.getSettlementStatus());
                             allyCompensationRepository.save(exisiting);
                         }
+                    } else {
+                        this.getAllyCompensationCheck();
                     }
                 }
             }
         }
 
         return RepeatStatus.FINISHED;
+    }
+
+    public void getAllyCompensationCheck() {
+        List<AllyCompensation> compensations = allyCompensationRepository.findBySettlementStatus();
+        for (AllyCompensation allyCompensation : compensations) {
+            Optional<ClientAlly> clientAlly = allyRepository.findById(allyCompensation.getClientAllyId());
+
+            if (clientAlly.isPresent()) {
+                Optional<CodeValue> codeValue = codeValueRepository.findById(clientAlly.get().getLiquidationFrequencyCodeValueId());
+                if (codeValue.isPresent()) {
+                    CodeValue codeValue1 = codeValue.get();
+                    String frequency = codeValue1.getLabel();
+                    frequency = frequency.replaceAll("\\s", "");
+                    LocalDate startDate;
+                    LocalDate endDate = allyCompensation.getCompensationDate();
+                    switch (frequency.toUpperCase()) {
+                        case "SEMANAL":
+                            startDate = endDate.minusWeeks(1).plusDays(1);
+                            System.out.println("SEMANAL " + startDate);
+                        break;
+                        case "QUINCENAL":
+                            startDate = endDate.minusWeeks(2).plusDays(1);
+
+                        break;
+                        case "MENSUAL":
+                            startDate = endDate.minusMonths(1).plusDays(1);
+                        break;
+                        default:
+                            startDate = endDate;
+                    }
+
+                    Optional<AllySettlementCompansationCollectionData> allySettlementCompansationData = allyCompensationReadWritePlatformService
+                            .getCompensationSettlementByNit(allyCompensation.getNit(), startDate, endDate);
+                    if (allySettlementCompansationData.isPresent()) {
+                        allyCompensation.setStartDate(startDate);
+                        allyCompensation.setEndDate(endDate);
+                        allyCompensation.setComissionAmount(allySettlementCompansationData.get().getComissionAmount());
+                        allyCompensationRepository.save(allyCompensation);
+                    }
+                }
+
+            }
+
+        }
     }
 }
