@@ -95,7 +95,6 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
             } else {
                 period = now;
             }
-
             String worksday = workingDays.getRecurrence();
             String[] arrayworksday = worksday.split(";");
             String[] arrayweekdays = arrayworksday[2].split("BYDAY=");

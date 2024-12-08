@@ -171,7 +171,6 @@ public class CompensationOfSettlementTasklet implements Tasklet {
                         default:
                             startDate = endDate;
                     }
-
                     Optional<AllySettlementCompansationCollectionData> allySettlementCompansationData = allyCompensationReadWritePlatformService
                             .getCompensationSettlementByNit(allyCompensation.getNit(), startDate, endDate);
                     if (allySettlementCompansationData.isPresent()) {
