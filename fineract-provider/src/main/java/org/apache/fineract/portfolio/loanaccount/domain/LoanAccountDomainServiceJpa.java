@@ -337,7 +337,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             for (LoanCharge loanCharge : loanCharges) {
                 LoanInstallmentCharge installmentCharge = loanCharge
                         .getInstallmentLoanCharge(loanRepaymentScheduleInstallment.getInstallmentNumber());
-                feeChargePortion = feeChargePortion.add(installmentCharge.getAmount());
+                if (installmentCharge != null) {
+                    feeChargePortion = feeChargePortion.add(installmentCharge.getAmount());
+                }
+
             }
 
             loanRepaymentScheduleInstallment.updateChargePortion(Money.of(currency, feeChargePortion),

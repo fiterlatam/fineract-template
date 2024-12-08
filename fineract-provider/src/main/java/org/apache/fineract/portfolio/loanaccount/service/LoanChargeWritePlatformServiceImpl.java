@@ -1067,7 +1067,6 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         if (doesPenaltyExist) {
             penaltyPostingWaitPeriodValue = 0L;
             penaltyWaitPeriodValue = 0L;
-
         }
 
         final LocalDate dueDate = command.localDateValueOfParameterNamed("dueDate");
