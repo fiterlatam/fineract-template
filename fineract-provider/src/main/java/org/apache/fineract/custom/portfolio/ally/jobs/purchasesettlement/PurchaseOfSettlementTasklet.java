@@ -101,11 +101,6 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
             String[] arrayweekdays = arrayworksday[2].split("BYDAY=");
             String[] arrayCount = arrayweekdays[1].split(",");
             Integer countWokringDay = arrayCount.length - 1;
-            if (!WorkingDaysUtil.isWorkingDay(workingDays, period)) {
-                do {
-                    period = period.plusDays(1);
-                } while (period.getDayOfWeek().getValue() >= countWokringDay);
-            }
             isEqual = now.isEqual(period);
 
             if (isEqual) {
