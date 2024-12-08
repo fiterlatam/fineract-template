@@ -2040,6 +2040,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         // Only apply for duedate = yesterday (so that we don't apply
         // penalties on the duedate itself)
         sqlBuilder.append(" and ls.duedate >= " + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "(? + 1)", "day"));
+        // order by installment duedate
+        sqlBuilder.append(" order by ls.duedate");
 
         return this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, penaltyWaitPeriod);
     }
