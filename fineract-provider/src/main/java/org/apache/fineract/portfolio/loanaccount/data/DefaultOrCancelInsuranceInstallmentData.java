@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -12,6 +14,7 @@ public class DefaultOrCancelInsuranceInstallmentData {
     private Long loanId;
     private Long loanChargeId;
     private Integer installment;
+    private LocalDate suspensionDate;
 
     public Long loanId() {
         return loanId;
@@ -35,5 +38,13 @@ public class DefaultOrCancelInsuranceInstallmentData {
 
     public void setInstallment(Integer installment) {
         this.installment = installment;
+    }
+
+    public LocalDate suspensionDate() {
+        return suspensionDate;
+    }
+
+    public void setSuspensionDate(LocalDate suspensionDate) {
+        this.suspensionDate = suspensionDate;
     }
 }

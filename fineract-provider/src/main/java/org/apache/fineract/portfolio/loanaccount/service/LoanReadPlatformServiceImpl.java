@@ -3339,7 +3339,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         public String suspensionSchema() {
             return """
-                    distinct ml.id loanId, min(mlrs.installment) installment, mlc.id loanChargeId
+                    distinct ml.id loanId, min(mlrs.installment) installment, mlc.id loanChargeId, mlaa.overdue_since_date_derived overdue_date,
+                    ? suspension_period
                     from
                     m_loan ml
                     join m_loan_arrears_aging mlaa on mlaa.loan_id = ml.id
@@ -3358,8 +3359,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final Long loanId = JdbcSupport.getLong(rs, "loanId");
             final Integer installment = JdbcSupport.getInteger(rs, "installment");
             final Long loanChargeId = JdbcSupport.getLong(rs, "loanChargeId");
+            final LocalDate overDueDate = JdbcSupport.getLocalDate(rs, "overdue_date");
+            final Long suspensionPeriod = JdbcSupport.getLong(rs, "suspension_period");
 
-            return new DefaultOrCancelInsuranceInstallmentData(loanId, loanChargeId, installment);
+            return new DefaultOrCancelInsuranceInstallmentData(loanId, loanChargeId, installment, overDueDate.plusDays(suspensionPeriod));
         }
     }
 
@@ -3370,7 +3373,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
         String sql = "SELECT " + rowMapper.schema();
         Object[] params = null;
-        sql = sql + " and mc.charge_calculation_enum =  " + ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue();
+        // sql = sql + " and mc.charge_calculation_enum =  " + ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue();
         if (loanId == null && insuranceCode == null) {
             sql = sql + " and mlrs.duedate < CURRENT_DATE " + " and CURRENT_DATE - mlrs.duedate = 60 ";
             params = new Object[] {};
@@ -3397,8 +3400,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
         String sql = "SELECT " + rowMapper.suspensionSchema();
-        Object[] params = new Object[] { numberOfDays };
-        sql = sql + " and (CURRENT_DATE - mlaa.overdue_since_date_derived) >= ? " + " group by ml.id, mlc.id order by ml.id";
+        Object[] params = new Object[] { numberOfDays, numberOfDays };
+        sql = sql + " and (CURRENT_DATE - mlaa.overdue_since_date_derived) >= ? " + " group by ml.id, mlc.id, mlaa.overdue_since_date_derived order by ml.id";
 
         return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
     }
