@@ -3373,7 +3373,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
         String sql = "SELECT " + rowMapper.schema();
         Object[] params = null;
-        // sql = sql + " and mc.charge_calculation_enum =  " + ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue();
+        // sql = sql + " and mc.charge_calculation_enum = " + ChargeCalculationType.FLAT_SEGOVOLUNTARIO.getValue();
         if (loanId == null && insuranceCode == null) {
             sql = sql + " and mlrs.duedate < CURRENT_DATE " + " and CURRENT_DATE - mlrs.duedate = 60 ";
             params = new Object[] {};
@@ -3401,7 +3401,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
         String sql = "SELECT " + rowMapper.suspensionSchema();
         Object[] params = new Object[] { numberOfDays, numberOfDays };
-        sql = sql + " and (CURRENT_DATE - mlaa.overdue_since_date_derived) >= ? " + " group by ml.id, mlc.id, mlaa.overdue_since_date_derived order by ml.id";
+        sql = sql + " and (CURRENT_DATE - mlaa.overdue_since_date_derived) >= ? "
+                + " group by ml.id, mlc.id, mlaa.overdue_since_date_derived order by ml.id";
 
         return this.jdbcTemplate.query(sql, rowMapper, params); // NOSONAR
     }

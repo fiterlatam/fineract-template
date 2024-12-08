@@ -1942,7 +1942,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
         businessEventNotifierService.notifyPostBusinessEvent(new LoanWrittenOffPostBusinessEvent(writeOff));
 
-
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(writeOff.getId()) //
@@ -3537,27 +3536,22 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan,
                 loanRescheduleRequest);
 
-        /*List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
-                .getLoanDataWithDefaultOrCancelInsurance(loanId, null, transactionDate);
-        InsuranceIncident incident = this.insuranceIncidentRepository
-                .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
-        if (incident == null) {
-            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION.name());
-        }
-        for (DefaultOrCancelInsuranceInstallmentData data : cancelInsuranceInstallmentIds) {
-            LoanCharge loanCharge = null;
-            Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream()
-                    .filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
-            if (loanChargeOptional.isPresent()) {
-                loanCharge = loanChargeOptional.get();
-            }
-            BigDecimal cumulative = BigDecimal.ZERO;
-            cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, true);
-            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
-                    data.installment(), incident, transactionDate, cumulative);
-
-            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
-        }*/
+        /*
+         * List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
+         * .getLoanDataWithDefaultOrCancelInsurance(loanId, null, transactionDate); InsuranceIncident incident =
+         * this.insuranceIncidentRepository .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION); if
+         * (incident == null) { throw new
+         * InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION.name()); } for
+         * (DefaultOrCancelInsuranceInstallmentData data : cancelInsuranceInstallmentIds) { LoanCharge loanCharge =
+         * null; Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream() .filter(lc ->
+         * Objects.equals(lc.getId(), data.loanChargeId())).findFirst(); if (loanChargeOptional.isPresent()) {
+         * loanCharge = loanChargeOptional.get(); } BigDecimal cumulative = BigDecimal.ZERO; cumulative =
+         * processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, true); InsuranceIncidentNoveltyNews
+         * insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, data.installment(),
+         * incident, transactionDate, cumulative);
+         *
+         * this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews); }
+         */
         createCancellationNoveltyNews(loan, transactionDate);
 
         LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, externalId,
@@ -3595,26 +3589,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
         }
         this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan, null);
-        /*List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
-                .getLoanDataWithDefaultOrCancelInsurance(loanId, null, transactionDate);
-        InsuranceIncident incident = this.insuranceIncidentRepository
-                .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
-        if (incident == null) {
-            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION.name());
-        }
-        for (final DefaultOrCancelInsuranceInstallmentData data : cancelInsuranceInstallmentIds) {
-            LoanCharge loanCharge = null;
-            Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream()
-                    .filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
-            if (loanChargeOptional.isPresent()) {
-                loanCharge = loanChargeOptional.get();
-            }
-            BigDecimal cumulative = BigDecimal.ZERO;
-            cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, true);
-            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
-                    data.installment(), incident, transactionDate, cumulative);
-            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
-        }*/
+        /*
+         * List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
+         * .getLoanDataWithDefaultOrCancelInsurance(loanId, null, transactionDate); InsuranceIncident incident =
+         * this.insuranceIncidentRepository .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION); if
+         * (incident == null) { throw new
+         * InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION.name()); } for (final
+         * DefaultOrCancelInsuranceInstallmentData data : cancelInsuranceInstallmentIds) { LoanCharge loanCharge = null;
+         * Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream() .filter(lc ->
+         * Objects.equals(lc.getId(), data.loanChargeId())).findFirst(); if (loanChargeOptional.isPresent()) {
+         * loanCharge = loanChargeOptional.get(); } BigDecimal cumulative = BigDecimal.ZERO; cumulative =
+         * processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, true); InsuranceIncidentNoveltyNews
+         * insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, data.installment(),
+         * incident, transactionDate, cumulative);
+         * this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews); }
+         */
         createCancellationNoveltyNews(loan, transactionDate);
         if (transactionDate.equals(loan.getDisbursementDate())) {
             loan.setAnulado(true);
@@ -4652,8 +4641,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             if ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
                     || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
                 BigDecimal cumulative = BigDecimal.ZERO;
-                InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
-                        null, incident, data.suspensionDate(), cumulative);
+                InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, null,
+                        incident, data.suspensionDate(), cumulative);
 
                 this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
             }

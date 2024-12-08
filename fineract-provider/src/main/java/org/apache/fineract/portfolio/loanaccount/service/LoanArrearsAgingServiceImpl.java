@@ -56,7 +56,6 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
 import org.apache.fineract.portfolio.insurance.domain.*;
 import org.apache.fineract.portfolio.insurance.exception.InsuranceIncidentNotFoundException;
-import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReason;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
