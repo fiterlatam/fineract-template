@@ -1,5 +1,6 @@
 package org.apache.fineract.custom.portfolio.ally.jobs.compensationsettlement;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -80,7 +81,17 @@ public class CompensationOfSettlementTasklet implements Tasklet {
                         .findBynitAndDate(clientAllySettlementData.getNit(), startDate, endDate);
                 AllyCompensation allyCompensation = new AllyCompensation();
                 if (!compensationCheck.isPresent()) {
+                    Optional<ClientAlly> clientAlly = allyRepository.findById(allySettlementCompansationData.get().getClientAllyId());
+                    BigDecimal percentageCommission = BigDecimal.ZERO;
+                    BigDecimal vatCommissionAmount = BigDecimal.ZERO;
+                    if (clientAlly.isPresent()) {
+                        percentageCommission = clientAlly.get().getSettledComission().divide(BigDecimal.valueOf(100));
+                    }
 
+                    BigDecimal commissionAmount = allySettlementCompansationData.get().getPurchaseAmount();
+                    if (percentageCommission.compareTo(BigDecimal.ZERO) == 1) {
+                        vatCommissionAmount = commissionAmount.multiply(percentageCommission);
+                    }
                     allyCompensation.setCompensationDate(purchaseDate);
                     allyCompensation.setStartDate(startDate);
                     allyCompensation.setEndDate(endDate);
@@ -93,7 +104,7 @@ public class CompensationOfSettlementTasklet implements Tasklet {
                     allyCompensation.setPurchaseAmount(allySettlementCompansationData.get().getPurchaseAmount());
                     allyCompensation.setCollectionAmount(allySettlementCompansationData.get().getCollectionAmount());
                     allyCompensation.setComissionAmount(allySettlementCompansationData.get().getComissionAmount());
-                    allyCompensation.setVaComissionAmount(allySettlementCompansationData.get().getVaComissionAmount());
+                    allyCompensation.setVaComissionAmount(vatCommissionAmount);
                     allyCompensation.setNetPurchaseAmount(allySettlementCompansationData.get().getNetPurchaseAmount());
                     allyCompensation.setNetOutstandingAmount(allySettlementCompansationData.get().getCompensationAmount());
                     allyCompensation.setNetOutstandingAmount(allySettlementCompansationData.get().getCompensationAmount());
@@ -102,11 +113,21 @@ public class CompensationOfSettlementTasklet implements Tasklet {
                 } else {
                     AllyCompensation exisiting = compensationCheck.get();
                     if (exisiting.getSettlementStatus() != null) {
+                        Optional<ClientAlly> clientAlly = allyRepository.findById(allySettlementCompansationData.get().getClientAllyId());
+                        BigDecimal percentageCommission = BigDecimal.ZERO;
+                        BigDecimal vatCommissionAmount = BigDecimal.ZERO;
+                        if (clientAlly.isPresent()) {
+                            percentageCommission = clientAlly.get().getSettledComission().divide(BigDecimal.valueOf(100));
+                        }
+                        BigDecimal commissionAmount = allySettlementCompansationData.get().getPurchaseAmount();
+                        if (percentageCommission.compareTo(BigDecimal.ZERO) == 1) {
+                            vatCommissionAmount = commissionAmount.multiply(percentageCommission);
+                        }
                         if (!exisiting.getSettlementStatus()) {
                             exisiting.setPurchaseAmount(allySettlementCompansationData.get().getPurchaseAmount());
                             exisiting.setCollectionAmount(allySettlementCompansationData.get().getCollectionAmount());
                             exisiting.setComissionAmount(allySettlementCompansationData.get().getComissionAmount());
-                            exisiting.setVaComissionAmount(allySettlementCompansationData.get().getVaComissionAmount());
+                            exisiting.setVaComissionAmount(vatCommissionAmount);
                             exisiting.setNetPurchaseAmount(allySettlementCompansationData.get().getNetPurchaseAmount());
                             exisiting.setNetOutstandingAmount(allySettlementCompansationData.get().getCompensationAmount());
                             exisiting.setNetOutstandingAmount(allySettlementCompansationData.get().getCompensationAmount());
@@ -139,7 +160,6 @@ public class CompensationOfSettlementTasklet implements Tasklet {
                     switch (frequency.toUpperCase()) {
                         case "SEMANAL":
                             startDate = endDate.minusWeeks(1).plusDays(1);
-                            System.out.println("SEMANAL " + startDate);
                         break;
                         case "QUINCENAL":
                             startDate = endDate.minusWeeks(2).plusDays(1);
@@ -155,9 +175,21 @@ public class CompensationOfSettlementTasklet implements Tasklet {
                     Optional<AllySettlementCompansationCollectionData> allySettlementCompansationData = allyCompensationReadWritePlatformService
                             .getCompensationSettlementByNit(allyCompensation.getNit(), startDate, endDate);
                     if (allySettlementCompansationData.isPresent()) {
+                        BigDecimal percentageCommission = BigDecimal.ZERO;
+                        BigDecimal vatCommissionAmount = BigDecimal.ZERO;
+                        if (clientAlly.isPresent()) {
+                            percentageCommission = clientAlly.get().getSettledComission().divide(BigDecimal.valueOf(100));
+                        }
+                        if (clientAlly.get().getId() == 9) {
+                            System.out.println(" " + percentageCommission);
+                        }
+                        BigDecimal commissionAmount = allySettlementCompansationData.get().getPurchaseAmount();
+                        if (percentageCommission.compareTo(BigDecimal.ZERO) == 1) {
+                            vatCommissionAmount = commissionAmount.multiply(percentageCommission);
+                        }
                         allyCompensation.setStartDate(startDate);
                         allyCompensation.setEndDate(endDate);
-                        allyCompensation.setComissionAmount(allySettlementCompansationData.get().getComissionAmount());
+                        allyCompensation.setComissionAmount(vatCommissionAmount);
                         allyCompensationRepository.save(allyCompensation);
                     }
                 }
