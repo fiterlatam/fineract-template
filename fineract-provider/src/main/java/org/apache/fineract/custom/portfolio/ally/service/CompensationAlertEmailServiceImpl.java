@@ -31,8 +31,8 @@ public class CompensationAlertEmailServiceImpl implements CompensationAlertEmail
             JavaMailSenderImpl javaMailSenderImpl = new JavaMailSenderImpl();
             javaMailSenderImpl.setHost(smtpCredentialsData.getHost());
             javaMailSenderImpl.setPort(Integer.parseInt(smtpCredentialsData.getPort()));
-            javaMailSenderImpl.setUsername(smtpCredentialsData.getUsername());
-            javaMailSenderImpl.setPassword(smtpCredentialsData.getPassword());
+            // javaMailSenderImpl.setUsername(smtpCredentialsData.getUsername());
+            // javaMailSenderImpl.setPassword(smtpCredentialsData.getPassword());
             javaMailSenderImpl.setJavaMailProperties(this.getJavaMailProperties(smtpCredentialsData));
 
             MimeMessage mimeMessage = javaMailSenderImpl.createMimeMessage();
@@ -54,7 +54,7 @@ public class CompensationAlertEmailServiceImpl implements CompensationAlertEmail
         Properties properties = new Properties();
         properties.put("mail.smtp.starttls.enable", "true");
         properties.put("mail.transport.protocol", "smtp");
-        properties.put("mail.smtp.auth", "true");
+        properties.put("mail.smtp.auth", "false");
         properties.put("mail.smtp.ssl.trust", smtpCredentialsData.getHost());
         if (smtpCredentialsData.isUseTLS()) {
             if (smtpCredentialsData.getPort().equals("465")) {
