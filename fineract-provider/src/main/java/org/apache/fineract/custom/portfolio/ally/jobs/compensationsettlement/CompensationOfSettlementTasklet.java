@@ -92,6 +92,7 @@ public class CompensationOfSettlementTasklet implements Tasklet {
                     if (percentageCommission.compareTo(BigDecimal.ZERO) == 1) {
                         vatCommissionAmount = commissionAmount.multiply(percentageCommission);
                     }
+
                     allyCompensation.setCompensationDate(purchaseDate);
                     allyCompensation.setStartDate(startDate);
                     allyCompensation.setEndDate(endDate);
