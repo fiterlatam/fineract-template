@@ -8300,4 +8300,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public void setMigratedLoan(boolean migratedLoan) {
         isMigratedLoan = migratedLoan;
     }
+
+    public boolean hasPenaltiesInRepaymentSchedules() {
+        return this.getRepaymentScheduleInstallments().stream().anyMatch(LoanRepaymentScheduleInstallment::hasPenalties);
+    }
+
 }

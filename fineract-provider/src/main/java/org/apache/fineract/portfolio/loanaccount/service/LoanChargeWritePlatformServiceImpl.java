@@ -25,6 +25,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -736,7 +737,10 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
     @Transactional
     @Override
-    public void applyOverdueChargesForLoan(final Long loanId, Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList) {
+    public void applyOverdueChargesForLoan(final Long loanId, Collection<OverdueLoanScheduleData> overdueUnsortedLoanScheduleDataList) {
+        // order the overdueLoanScheduleDataList by period number
+        Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList = overdueUnsortedLoanScheduleDataList.stream()
+                .sorted(Comparator.comparing(OverdueLoanScheduleData::getPeriodNumber)).toList();
 
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         if (loan.isChargedOff()) {
@@ -749,6 +753,11 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         LocalDate recalculateFrom = DateUtils.getBusinessLocalDate();
         LocalDate lastChargeDate = null;
         for (final OverdueLoanScheduleData overdueInstallment : overdueLoanScheduleDataList) {
+
+            if (overdueInstallment.getPeriodNumber() < 1) {
+                log.warn("Graced periods(0) cannot be charged for penalty for loan with id: {}", loan.getId());
+                continue;
+            }
 
             // If installment is overdue but within charge´s grace period, don´t apply charge
             final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(overdueInstallment.getChargeId());
@@ -1051,8 +1060,11 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         Map<Integer, LocalDate> scheduleDates = new HashMap<>();
         Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
         Long penaltyPostingWaitPeriodValue = this.configurationDomainService.retrieveGraceOnPenaltyPostingPeriod();
-        // we only want the grace period to be applied to the first installment
-        if (periodNumber > 1) {
+
+        // we only want grace to be applied on the first installment to be overdue which coule be the first or any other
+        // so , we can just check if the loan has any penalty charged yet or not
+        boolean doesPenaltyExist = loan.hasPenaltiesInRepaymentSchedules();
+        if (doesPenaltyExist) {
             penaltyPostingWaitPeriodValue = 0L;
             penaltyWaitPeriodValue = 0L;
 
