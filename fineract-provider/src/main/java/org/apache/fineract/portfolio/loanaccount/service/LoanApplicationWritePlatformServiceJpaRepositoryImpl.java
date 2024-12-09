@@ -1590,7 +1590,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                                     + " should be after last transaction date of loan to be closed " + lastUserTransactionOnLoanToClose);
                 }
                 BigDecimal loanOutstanding = this.loanReadPlatformService
-                        .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose, expectedDisbursementDate).getAmount();
+                        .retrieveLoanForeclosureTemplate(loanIdToClose, expectedDisbursementDate, false).getAmount();
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
                 if (loanToClose.claimType() == null || !loanToClose.claimType().equals("castigado")) {
                     if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
