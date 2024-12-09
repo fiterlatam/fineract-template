@@ -40,6 +40,7 @@ class EmailService {
 
         this.properties = new Properties()
         this.properties.put("mail.smtp.host", config.host)
+        this.properties.put("mail.smtp.localhost", "smtp.fiter.io")
         this.properties.put("mail.smtp.auth", "false")
         this.properties.put("mail.smtp.starttls.enable", config.tls.toString())
         if(config.ssl) {

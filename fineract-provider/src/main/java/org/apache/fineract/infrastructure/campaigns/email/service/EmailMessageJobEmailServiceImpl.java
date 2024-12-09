@@ -86,6 +86,7 @@ public final class EmailMessageJobEmailServiceImpl implements EmailMessageJobEma
     private Properties getJavaMailProperties(SMTPCredentialsData smtpCredentialsData, Properties properties) {
         properties.put("mail.smtp.starttls.enable", "false");
         properties.put("mail.transport.protocol", "smtp");
+        properties.put("mail.smtp.localhost", "smtp.fiter.io");
         properties.put("mail.smtp.auth", "false");
         properties.put("mail.smtp.ssl.trust", smtpCredentialsData.getHost());
         if (smtpCredentialsData.isUseTLS()) {
