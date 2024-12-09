@@ -1088,7 +1088,7 @@ public class AccountingProcessorHelper {
                 || accountMappingTypeId == CashAccountsForLoan.INCOME_FROM_PENALTIES.getValue()) {
             if (chargeId != null) {
                 Charge charge = chargeRepositoryWrapper.findOneWithNotFoundDetection(chargeId);
-                if (charge != null) {
+                if (charge != null && charge.getAccount() != null) {
                     return charge.getAccount();
                 }
             }
@@ -1112,7 +1112,7 @@ public class AccountingProcessorHelper {
                 || accountMappingTypeId == CashAccountsForLoan.PENALTIES_RECEIVABLE.getValue()) {
             if (chargeId != null) {
                 Charge charge = chargeRepositoryWrapper.findOneWithNotFoundDetection(chargeId);
-                if (charge != null) {
+                if (charge != null && charge.getFeeReceivableAccount() != null) {
                     return charge.getFeeReceivableAccount();
                 }
             }
