@@ -4059,6 +4059,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.CREDIT_NOTE);
             }
             processAndSaveLoanDocument(loanDocumentData);
+            loanTransaction.suspend();
+            this.loanTransactionRepository.saveAndFlush(loanTransaction);
         }
     }
 

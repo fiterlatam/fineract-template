@@ -219,6 +219,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         INNER JOIN (
                         		SELECT
                         			mlt.loan_id AS "loanId",
+                        			mlt.is_suspended AS "isSuspended",
                         			SUM(COALESCE(mlt.interest_portion_derived, 0)) AS "interest",
                         			SUM(COALESCE(mandatory_insurance.amount, 0) + COALESCE(vat_mandatory_insurance.amount, 0)) AS "mandatoryInsurance",
                         			SUM(COALESCE(voluntary_insurance.amount, 0) + COALESCE(vat_voluntary_insurance.amount, 0)) AS "voluntaryInsurance",
@@ -369,7 +370,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         ) voluntary_insurance_code ON voluntary_insurance_code.loan_id = ml.id
                         WHERE ml.loan_status_id = 300
                             AND COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE, 0) < 90
-                            AND mlt."totalPaid" > 0
+                            AND mlt."totalPaid" > 0 AND mlt."isSuspended" = FALSE
                         ORDER BY mc.id, ml.id
                     """;
         }
@@ -428,6 +429,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         INNER JOIN (
                         		SELECT
                         			mlt.loan_id AS "loanId",
+                                    mlt.is_suspended AS "isSuspended",
                         			SUM(COALESCE(mlt.interest_portion_derived, 0)) AS "interest",
                         			SUM(COALESCE(mandatory_insurance.amount, 0) + COALESCE(vat_mandatory_insurance.amount, 0)) AS "mandatoryInsurance",
                         			SUM(COALESCE(voluntary_insurance.amount, 0) + COALESCE(vat_voluntary_insurance.amount, 0)) AS "voluntaryInsurance",
@@ -579,7 +581,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         ) voluntary_insurance_code ON voluntary_insurance_code.loan_id = ml.id
                         WHERE ml.loan_status_id = 300
                             AND COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE, 0) < 90
-                            AND mlt."totalPaid" > 0
+                            AND mlt."totalPaid" > 0 AND mlt."isSuspended" = FALSE
                         ORDER BY mc.id, ml.id
                     """;
         }
