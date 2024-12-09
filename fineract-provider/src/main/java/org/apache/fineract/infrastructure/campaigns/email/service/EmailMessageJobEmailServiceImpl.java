@@ -86,7 +86,7 @@ public final class EmailMessageJobEmailServiceImpl implements EmailMessageJobEma
     private Properties getJavaMailProperties(SMTPCredentialsData smtpCredentialsData, Properties properties) {
         properties.put("mail.smtp.starttls.enable", "true");
         properties.put("mail.transport.protocol", "smtp");
-        properties.put("mail.smtp.auth", "true");
+        properties.put("mail.smtp.auth", "false");
         properties.put("mail.smtp.ssl.trust", smtpCredentialsData.getHost());
         if (smtpCredentialsData.isUseTLS()) {
             // Needs to disable startTLS if the port is 465 in order to send the email successfully when using the
