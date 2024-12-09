@@ -43,7 +43,7 @@ class EmailService {
         this.properties.put("mail.smtp.auth", "false")
         this.properties.put("mail.smtp.starttls.enable", config.tls.toString())
         if(config.ssl) {
-            this.properties.put("mail.smtp.`port", "465")
+            this.properties.put("mail.smtp.port", "465")
             this.properties.put("mail.smtp.socketFactory.port", "465");
             this.properties.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
 
