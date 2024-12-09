@@ -95,6 +95,7 @@ import org.apache.fineract.portfolio.delinquency.service.DelinquencyWritePlatfor
 import org.apache.fineract.portfolio.delinquency.validator.LoanDelinquencyActionData;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
+import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleDelinquencyData;
@@ -238,6 +239,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             }
         }
 
+        final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loan.getId());
+        final Long daysInArrears = collectionData.getPastDueDays();
         final ChangedTransactionDetail changedTransactionDetail = loan.makeRepayment(newRepaymentTransaction,
                 defaultLoanLifecycleStateMachine, existingTransactionIds, existingReversedTransactionIds, isRecoveryRepayment,
                 scheduleGeneratorDTO, isHolidayValidationDone);
@@ -287,7 +290,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     isRecoveryRepayment, newRepaymentTransaction);
             businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
             businessEventNotifierService.notifyPostBusinessEvent(transactionRepaymentEvent);
-            businessEventNotifierService.notifyPostBusinessEvent(new LoanInvoiceGenerationPostBusinessEvent(newRepaymentTransaction));
+            if (daysInArrears >= 90) {
+                businessEventNotifierService.notifyPostBusinessEvent(new LoanInvoiceGenerationPostBusinessEvent(newRepaymentTransaction));
+            }
         }
 
         // disable all active standing orders linked to this loan if status
