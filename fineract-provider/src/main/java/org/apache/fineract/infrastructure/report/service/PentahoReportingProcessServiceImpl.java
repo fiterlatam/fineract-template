@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -126,14 +125,7 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
         }
 
         log.info("Processing report: {} with output type: {} and locale: {}", reportName, outputType, locale);
-        String reportPath;
-        if (!"en".equalsIgnoreCase(Objects.toString(locale, "en"))) {
-            reportPath = getReportPath() + reportName + "_" + locale.toString().toLowerCase() + ".prpt";
-        } else {
-            reportPath = getReportPath() + reportName + ".prpt";
-        }
-        var outPutInfo = "Report path: " + reportPath;
-        logger.debug("Report path: {}", outPutInfo);
+        final String reportPath = getReportPath() + reportName + ".prpt";
 
         // load report definition
         final var manager = new ResourceManager();
