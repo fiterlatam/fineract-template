@@ -25,13 +25,19 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
     <changeSet id="1" author="fineract">
         <preConditions onFail="MARK_RAN">
-            <not>
-                <tableExists tableName="Numeros_de_clientes"/>
-            </not>
+                <tableExists tableName="campos_cliente_empresas"/>
         </preConditions>
-        <createTable tableName="Numeros_de_clientes">
-            <column name="client_id" type="BIGINT">
-                <constraints nullable="false"/>
+        <addColumn tableName="campos_cliente_empresas">
+            <column name="Customer Identifier_cd_Tipo identificacion Representante Legal" type="int4" defaultValueNumeric="0"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="2" author="fineract">
+        <preConditions onFail="MARK_RAN">
+                <tableExists tableName="campos_cliente_persona"/>
+        </preConditions>
+        <addColumn tableName="campos_cliente_persona">
+            <column name="Customer Identifier_cd_Tipo identificacion" type="int4" defaultValueNumeric="0">
+                    <constraints nullable="false"/>
             </column>
             <column name="Telefono domicilio" type="VARCHAR(255)">
                 <constraints nullable="true"/>
@@ -39,22 +45,8 @@
             <column name="Numero Celular Secundario" type="VARCHAR(255)">
                 <constraints nullable="true"/>
             </column>
-            <column name="created_at" type="TIMESTAMP" />
-            <column name="updated_at" type="TIMESTAMP" />
-        </createTable>
-        <createIndex tableName="Numeros_de_clientes" indexName="idx_Numeros_de_clientes_client_data_table_client_id">
-            <column name="client_id"/>
-        </createIndex>
-        <addForeignKeyConstraint baseTableName="Numeros_de_clientes" baseColumnNames="client_id"
-                                 constraintName="fk_Numeros_de_clientes_client_data_table_client_id"
-                                 referencedTableName="m_client" referencedColumnNames="id"
-                                 onDelete="CASCADE" onUpdate="CASCADE"/>
+        </addColumn>
 
-        <insert tableName="x_registered_table">
-            <column name="registered_table_name" value="Numeros_de_clientes"/>
-            <column name="application_table_name" value="m_client"/>
-            <column name="entity_subtype" value="Person"/>
-            <column name="category" valueNumeric="100" />
-        </insert>
     </changeSet>
+
 </databaseChangeLog>
