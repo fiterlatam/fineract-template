@@ -319,4 +319,5 @@
     <include file="parts/20243008011009140_SU_441_add_field.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009140_SU_441_update_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009141_SU_441_update_report.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20241209011009141_EA_48_add_phone_data_datable.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
