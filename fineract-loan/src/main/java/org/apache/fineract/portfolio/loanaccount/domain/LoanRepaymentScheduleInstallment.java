@@ -1699,4 +1699,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                 && this.isRecalculatedInterestComponent();
     }
 
+    public boolean hasPenalties() {
+        return (this.penaltyCharges != null && this.penaltyCharges.compareTo(BigDecimal.ZERO) > 0) && !obligationsMet;
+    }
 }
