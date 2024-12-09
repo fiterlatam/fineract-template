@@ -1080,7 +1080,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                                 || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
                             if (loanCharge.getAmountOutstanding(loan.getCurrency()).isGreaterThanZero()) {
                                 InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan,
-                                        loanCharge, 0, incident, loan.getClosedOnDate(), BigDecimal.ZERO);
+                                        loanCharge, 0, incident, blockedOnDate, BigDecimal.ZERO);
                                 this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
                             }
                         }
