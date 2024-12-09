@@ -332,7 +332,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         				AND parent.is_penalty = TRUE
                         			GROUP BY mlcpd.loan_transaction_id
                         		) vat_penalty ON vat_penalty.loan_transaction_id = mlt.id
-                        		WHERE mlt.is_reversed = FALSE
+                        		WHERE mlt.is_reversed = FALSE AND mlt.occurred_on_suspended_account = FALSE
                         		AND mlt.transaction_type_enum = 2
                         		AND (mlt.transaction_date BETWEEN ? AND ?)
                         		GROUP BY mlt.loan_id
@@ -542,7 +542,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         			GROUP BY mlcpd.loan_transaction_id
                         		) vat_penalty ON vat_penalty.loan_transaction_id = mlt.id
                         		INNER JOIN m_loan_credit_note mlcn ON mlcn.transaction_id = mlt.id
-                        		WHERE mlt.is_reversed = FALSE
+                        		WHERE mlt.is_reversed = FALSE AND mlt.occurred_on_suspended_account = FALSE
                         		AND (mlt.transaction_type_enum = 6 AND mlt.is_special_writeoff = TRUE)
                         		AND (mlt.transaction_date BETWEEN ? AND ?)
                         		GROUP BY mlt.loan_id

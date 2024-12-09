@@ -4062,8 +4062,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final LocalDate secondLastDayOfMonth = lastDayOfMonth.minusDays(1);
         final LoanTransactionType loanTransactionType = loanTransaction.getTypeOf();
         final FacturaElectronicaMensualTasklet.LoanInvoiceMapper transactionMapper = new FacturaElectronicaMensualTasklet.LoanInvoiceMapper();
-        final String transactionSQL = "SELECT " + transactionMapper.transactionSchema()
-                + " WHERE mlt.\"transactionId\" = ? AND COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE, 0) > 90";
+        final String transactionSQL = "SELECT " + transactionMapper.transactionSchema() + " WHERE mlt.\"transactionId\" = ? ";
         final List<LoanDocumentData> loanDocumentDataList = this.jdbcTemplate.query(transactionSQL, transactionMapper, loanTransactionId);
         if (!loanDocumentDataList.isEmpty()) {
             final LoanDocumentData loanDocumentData = loanDocumentDataList.get(0);
@@ -4076,6 +4075,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.CREDIT_NOTE);
             }
             processAndSaveLoanDocument(loanDocumentData);
+            loanTransaction.markAsOccurredOnSuspendedAccount();
+            this.loanTransactionRepository.saveAndFlush(loanTransaction);
         }
     }
 

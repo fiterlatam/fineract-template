@@ -403,4 +403,12 @@
         </addColumn>
     </changeSet>
 
+    <changeSet id="16" author="fineract">
+        <addColumn tableName="m_loan_transaction">
+            <column name="occurred_on_suspended_account" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
