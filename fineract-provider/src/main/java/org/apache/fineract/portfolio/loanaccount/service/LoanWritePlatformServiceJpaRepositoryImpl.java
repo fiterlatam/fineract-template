@@ -1246,7 +1246,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final LoanStatus loanStatus = loan.getStatus();
         final boolean isBankChannel = channelData.getName().equalsIgnoreCase("Bancos")
                 || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
-        BigDecimal totalOutstanding = loan.getLoanSummary().getTotalOutstanding();
+        BigDecimal totalOutstanding = loan.getLoanSummary().getTotalExpectedRepayment();
 
         // we also want to validate that the repayment amount is not greater than the outstanding amount
 
