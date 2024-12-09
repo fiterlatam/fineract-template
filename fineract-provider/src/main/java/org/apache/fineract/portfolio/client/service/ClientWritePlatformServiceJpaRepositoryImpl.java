@@ -290,19 +290,18 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final boolean isStaff = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.isStaffParamName);
             final LocalDate dataOfBirth = command.localDateValueOfParameterNamed(ClientApiConstants.dateOfBirthParamName);
 
-            ClientStatus status = ClientStatus.PENDING;
-            boolean active = false;
-            if (command.hasParameter("active")) {
-                active = command.booleanPrimitiveValueOfParameterNamed(ClientApiConstants.activeParamName);
-            }
+            // EA-59 client has to have default active state
+            ClientStatus status = ClientStatus.ACTIVE;
+
+            boolean active = true;
 
             LocalDate activationDate = null;
             LocalDate officeJoiningDate = null;
-            if (active) {
-                status = ClientStatus.ACTIVE;
-                activationDate = command.localDateValueOfParameterNamed(ClientApiConstants.activationDateParamName);
-                officeJoiningDate = activationDate;
+            activationDate = command.localDateValueOfParameterNamed(ClientApiConstants.activationDateParamName);
+            if (activationDate == null) {
+                activationDate = DateUtils.getLocalDateOfTenant();
             }
+            officeJoiningDate = activationDate;
 
             LocalDate submittedOnDate = DateUtils.getBusinessLocalDate();
             if (command.hasParameter(ClientApiConstants.submittedOnDateParamName)) {
