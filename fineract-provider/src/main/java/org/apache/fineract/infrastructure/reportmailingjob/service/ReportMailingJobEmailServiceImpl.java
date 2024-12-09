@@ -92,7 +92,7 @@ public class ReportMailingJobEmailServiceImpl implements ReportMailingJobEmailSe
         Properties properties = new Properties();
 
         properties.setProperty("mail.smtp.auth", "false");
-        properties.setProperty("mail.smtp.starttls.enable", "true");
+        properties.setProperty("mail.smtp.starttls.enable", "false");
         properties.setProperty("mail.smtp.ssl.trust", this.getGmailSmtpServer(reportMailingJobConfigurationDataCollection));
 
         return properties;
