@@ -1239,23 +1239,26 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         boolean recalculateEMI = command.booleanPrimitiveValueOfParameterNamed("reduceInstallmentAmount");
         loan.setRecalculateEMI(recalculateEMI);
 
+        BigDecimal totalExpectedRepayment = loan.getLoanSummary().getTotalExpectedRepayment();
+        final LoanStatus loanStatus = loan.getStatus();
+        final boolean isBankChannel = channelData.getName().equalsIgnoreCase("Bancos")
+                || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
+
+        if ((transactionAmount.compareTo(totalExpectedRepayment) > 0 && !isBankChannel)) {
+            final String totalOverpaid = transactionAmount.subtract(totalExpectedRepayment).toString();
+            handleOverPaidException(totalOverpaid);
+        }
+
         LoanTransaction loanTransaction = this.loanAccountDomainService.makeRepayment(repaymentTransactionType, loan, transactionDate,
                 transactionAmount, paymentDetail, noteText, txnExternalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer,
                 holidayDetailDto, isHolidayValidationDone);
         loan = loanTransaction.getLoan();
-        final LoanStatus loanStatus = loan.getStatus();
-        final boolean isBankChannel = channelData.getName().equalsIgnoreCase("Bancos")
-                || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
-        BigDecimal totalOutstanding = loan.getLoanSummary().getTotalExpectedRepayment();
 
         // we also want to validate that the repayment amount is not greater than the outstanding amount
 
-        if ((loanStatus.isOverpaid() && !isBankChannel) || (transactionAmount.compareTo(totalOutstanding) > 0 && !isBankChannel)) {
+        if ((loanStatus.isOverpaid() && !isBankChannel)) {
             final String totalOverpaid = Money.of(loan.getCurrency(), loan.getTotalOverpaid()).toString();
-            throw new GeneralPlatformDomainRuleException("error.msg.loan.channel.repayment.is.greater.than.outstanding.amount",
-                    String.format("Repayment rejected for this channel! Repayment amount is greater than the outstanding amount by %s",
-                            totalOverpaid),
-                    totalOverpaid);
+            handleOverPaidException(totalOverpaid);
         }
 
         // Update loan transaction on repayment.
@@ -1288,6 +1291,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withGroupId(loan.getGroupId()) //
                 .with(changes) //
                 .build();
+    }
+
+    private static void handleOverPaidException(String totalOverpaid) {
+        throw new GeneralPlatformDomainRuleException("error.msg.loan.channel.repayment.is.greater.than.outstanding.amount",
+                String.format("Repayment rejected for this channel! Repayment amount is greater than the outstanding amount by %s",
+                        totalOverpaid),
+                totalOverpaid);
     }
 
     private void createCancellationNoveltyNews(Loan loan, LocalDate writeOffDate) {
@@ -1564,11 +1574,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
                 if (loanStatus.isOverpaid() && !isBankChannel) {
                     final String totalOverpaid = Money.of(loan.getCurrency(), loan.getTotalOverpaid()).toString();
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.channel.repayment.is.greater.than.outstanding.amount",
-                            String.format(
-                                    "Repayment rejected for this channel! Repayment amount is greater than the outstanding amount by %s",
-                                    totalOverpaid),
-                            totalOverpaid);
+                    handleOverPaidException(totalOverpaid);
                 }
             }
         }
