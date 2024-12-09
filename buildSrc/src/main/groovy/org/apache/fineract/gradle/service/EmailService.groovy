@@ -47,8 +47,10 @@ class EmailService {
             this.properties.put("mail.smtp.socketFactory.port", "465");
             this.properties.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
 
-        } else {
+        } else if (config.tls) {
             this.properties.put("mail.smtp.port", "587")
+        } else {
+            this.properties.put("mail.smtp.port", "25")
         }
     }
 

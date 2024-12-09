@@ -219,7 +219,6 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         INNER JOIN (
                         		SELECT
                         			mlt.loan_id AS "loanId",
-                        			mlt.is_suspended AS "isSuspended",
                         			SUM(COALESCE(mlt.interest_portion_derived, 0)) AS "interest",
                         			SUM(COALESCE(mandatory_insurance.amount, 0) + COALESCE(vat_mandatory_insurance.amount, 0)) AS "mandatoryInsurance",
                         			SUM(COALESCE(voluntary_insurance.amount, 0) + COALESCE(vat_voluntary_insurance.amount, 0)) AS "voluntaryInsurance",
@@ -333,7 +332,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         				AND parent.is_penalty = TRUE
                         			GROUP BY mlcpd.loan_transaction_id
                         		) vat_penalty ON vat_penalty.loan_transaction_id = mlt.id
-                        		WHERE mlt.is_reversed = FALSE
+                        		WHERE mlt.is_reversed = FALSE AND mlt.occurred_on_suspended_account = FALSE
                         		AND mlt.transaction_type_enum = 2
                         		AND (mlt.transaction_date BETWEEN ? AND ?)
                         		GROUP BY mlt.loan_id
@@ -370,7 +369,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         ) voluntary_insurance_code ON voluntary_insurance_code.loan_id = ml.id
                         WHERE ml.loan_status_id = 300
                             AND COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE, 0) < 90
-                            AND mlt."totalPaid" > 0 AND mlt."isSuspended" = FALSE
+                            AND mlt."totalPaid" > 0
                         ORDER BY mc.id, ml.id
                     """;
         }
@@ -429,7 +428,6 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         INNER JOIN (
                         		SELECT
                         			mlt.loan_id AS "loanId",
-                                    mlt.is_suspended AS "isSuspended",
                         			SUM(COALESCE(mlt.interest_portion_derived, 0)) AS "interest",
                         			SUM(COALESCE(mandatory_insurance.amount, 0) + COALESCE(vat_mandatory_insurance.amount, 0)) AS "mandatoryInsurance",
                         			SUM(COALESCE(voluntary_insurance.amount, 0) + COALESCE(vat_voluntary_insurance.amount, 0)) AS "voluntaryInsurance",
@@ -544,7 +542,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         			GROUP BY mlcpd.loan_transaction_id
                         		) vat_penalty ON vat_penalty.loan_transaction_id = mlt.id
                         		INNER JOIN m_loan_credit_note mlcn ON mlcn.transaction_id = mlt.id
-                        		WHERE mlt.is_reversed = FALSE
+                        		WHERE mlt.is_reversed = FALSE AND mlt.occurred_on_suspended_account = FALSE
                         		AND (mlt.transaction_type_enum = 6 AND mlt.is_special_writeoff = TRUE)
                         		AND (mlt.transaction_date BETWEEN ? AND ?)
                         		GROUP BY mlt.loan_id
@@ -581,7 +579,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         ) voluntary_insurance_code ON voluntary_insurance_code.loan_id = ml.id
                         WHERE ml.loan_status_id = 300
                             AND COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE, 0) < 90
-                            AND mlt."totalPaid" > 0 AND mlt."isSuspended" = FALSE
+                            AND mlt."totalPaid" > 0
                         ORDER BY mc.id, ml.id
                     """;
         }

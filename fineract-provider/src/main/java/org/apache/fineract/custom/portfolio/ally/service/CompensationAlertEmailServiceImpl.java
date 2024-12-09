@@ -52,15 +52,10 @@ public class CompensationAlertEmailServiceImpl implements CompensationAlertEmail
 
     private Properties getJavaMailProperties(SMTPCredentialsData smtpCredentialsData) {
         Properties properties = new Properties();
-        properties.put("mail.smtp.starttls.enable", "true");
+        properties.put("mail.smtp.starttls.enable", "false");
         properties.put("mail.transport.protocol", "smtp");
         properties.put("mail.smtp.auth", "false");
         properties.put("mail.smtp.ssl.trust", smtpCredentialsData.getHost());
-        if (smtpCredentialsData.isUseTLS()) {
-            if (smtpCredentialsData.getPort().equals("465")) {
-                properties.put("mail.smtp.starttls.enable", "false");
-            }
-        }
         return properties;
     }
 }

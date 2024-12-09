@@ -142,8 +142,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "installment_number")
     private Integer installmentNumber;
 
-    @Column(name = "is_suspended", nullable = false)
-    private boolean suspended;
+    @Column(name = "occurred_on_suspended_account", nullable = false)
+    private boolean occurredOnSuspendedAccount;
 
     // This property is added to process vertical payments horizontally for Past Due and Due installments.
     // Advance Payments will be handled through VerticalPayment Scheme
@@ -465,8 +465,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         this.reversalExternalId = reversalExternalId;
     }
 
-    public void suspend(){
-        this.suspended = true;
+    public void markAsOccurredOnSuspendedAccount() {
+        this.occurredOnSuspendedAccount = true;
     }
 
     public void resetDerivedComponents() {
