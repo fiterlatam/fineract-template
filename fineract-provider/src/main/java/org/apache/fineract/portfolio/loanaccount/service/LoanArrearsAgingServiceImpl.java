@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
@@ -88,7 +89,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     private final PlatformSecurityContext context;
     private final InsuranceIncidentRepository insuranceIncidentRepository;
     private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
-    private final LoanReadPlatformService loanReadPlatformService;
+    private final ConfigurationDomainService configurationDomainService;
 
     @PostConstruct
     public void registerForNotification() {
@@ -642,6 +643,10 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     }
 
     private void createSuspensionRemovedNews(Loan loan) {
+        Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
+        if (minimumDaysInArrearsToSuspendLoanAccount == null) {
+            minimumDaysInArrearsToSuspendLoanAccount = 90L;
+        }
         /// CREATE Salida de suspensión news if loan is in TEMPORARY_SUSPENSION_DUE_TO_DEFAULT novelty news status and
         /// arrears less than 90 days
         Integer daysInArrears = null;
@@ -653,7 +658,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             // not in arrears
             daysInArrears = 0;
         }
-        if (daysInArrears >= 90) {
+        if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
             // In case of transaction rollback, a loan can move again to suspension
             LocalDate date = null;
             try {
@@ -664,7 +669,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                 // not in arrears
             }
             if (date != null) {
-                temporarySuspendDefaultInsuranceCharges(loan, date.plusDays(90));
+                temporarySuspendDefaultInsuranceCharges(loan, date.plusDays(minimumDaysInArrearsToSuspendLoanAccount));
             }
             return;
         }

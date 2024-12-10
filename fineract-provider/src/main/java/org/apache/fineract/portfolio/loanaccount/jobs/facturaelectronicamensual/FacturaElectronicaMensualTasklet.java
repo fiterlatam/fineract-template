@@ -76,13 +76,17 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
         final LocalDate secondLastDayOfMonth = lastDayOfMonth.minusDays(1);
         final boolean enableMonthlyInvoiceGenerationOnJobTrigger = this.configurationDomainService
                 .enableMonthlyInvoiceGenerationOnJobTrigger();
+        Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
+        if (minimumDaysInArrearsToSuspendLoanAccount == null) {
+            minimumDaysInArrearsToSuspendLoanAccount = 90L;
+        }
         if (businessLocalDate.equals(secondLastDayOfMonth) || enableMonthlyInvoiceGenerationOnJobTrigger) {
             final List<LoanProductParameterization> loanProductParameterizations = this.productParameterizationRepository.findAll();
             final LoanInvoiceMapper loanInvoiceMapper = new LoanInvoiceMapper();
             final String invoiceQuery = "SELECT " + loanInvoiceMapper.invoiceSchema();
             final String creditNoteQuery = "SELECT " + loanInvoiceMapper.creditNoteSchema();
             final List<LoanDocumentData> loanInvoiceDataList = this.jdbcTemplate.query(invoiceQuery, loanInvoiceMapper, firstDayOfMonth,
-                    secondLastDayOfMonth);
+                    secondLastDayOfMonth, minimumDaysInArrearsToSuspendLoanAccount);
             final List<LoanDocumentData> groupedLoanInvoices = groupByClientIdAndProductType(loanInvoiceDataList);
             final List<FacturaElectronicaMensual> facturaElectronicaMensuals = new ArrayList<>();
             for (final LoanDocumentData groupedLoanInvoice : groupedLoanInvoices) {
@@ -92,7 +96,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
             this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
             this.productParameterizationRepository.saveAllAndFlush(loanProductParameterizations);
             final List<LoanDocumentData> loanCreditNoteDataList = this.jdbcTemplate.query(creditNoteQuery, loanInvoiceMapper,
-                    firstDayOfMonth, secondLastDayOfMonth);
+                    firstDayOfMonth, secondLastDayOfMonth, minimumDaysInArrearsToSuspendLoanAccount);
             final List<LoanDocumentData> groupedLoanCreditNotes = groupByClientIdAndProductType(loanCreditNoteDataList);
             for (final LoanDocumentData groupedLoanCreditNote : groupedLoanCreditNotes) {
                 groupedLoanCreditNote.setDocumentType(LoanDocumentData.LoanDocumentType.CREDIT_NOTE);
@@ -368,7 +372,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                           GROUP BY mlc.loan_id
                         ) voluntary_insurance_code ON voluntary_insurance_code.loan_id = ml.id
                         WHERE ml.loan_status_id = 300
-                            AND COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE, 0) < 90
+                            AND COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE, 0) < ?
                             AND mlt."totalPaid" > 0
                         ORDER BY mc.id, ml.id
                     """;
@@ -578,7 +582,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                           GROUP BY mlc.loan_id
                         ) voluntary_insurance_code ON voluntary_insurance_code.loan_id = ml.id
                         WHERE ml.loan_status_id = 300
-                            AND COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE, 0) < 90
+                            AND COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE, 0) < ?
                             AND mlt."totalPaid" > 0
                         ORDER BY mc.id, ml.id
                     """;
