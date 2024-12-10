@@ -29,6 +29,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.fineract.infrastructure.bulkimport.constants.ClientCupoDecrementConstants;
+import org.apache.fineract.infrastructure.bulkimport.constants.ClientCupoIncrementConstants;
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.bulkimport.data.Count;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.ImportHandler;
@@ -202,14 +203,25 @@ public class ClientCupoDecrementImportHandler implements ImportHandler {
                 final String clientName = client.getClientName();
                 final EnumOptionData clientStatus = client.getStatus();
                 final BigDecimal previousMaximumCupoAmount = client.getCupo();
+                final BigDecimal totalOutstandingPrincipalAmount = client.getTotalOutstandingPrincipalAmount();
                 clientCupDecrementSheet.getRow(clientCupoDecrementData.getRowIndex())
                         .createCell(ClientCupoDecrementConstants.CLIENT_NAME_COL).setCellValue(clientName);
                 clientCupDecrementSheet.getRow(clientCupoDecrementData.getRowIndex())
                         .createCell(ClientCupoDecrementConstants.PREVIOUS_MAXIMUM_CUPO_AMOUNT_COL)
                         .setCellValue(previousMaximumCupoAmount.doubleValue());
-                if (maximumCupoAmount.compareTo(previousMaximumCupoAmount) > 0) {
+                if (maximumCupoAmount.compareTo(totalOutstandingPrincipalAmount) < 0) {
                     errorCount++;
-                    errorMessage = "No puede modificarse ya que el nuevo cupo que sugiere es mayor al actual";
+                    errorMessage = "No se puede modificar ya que la nueva cuota sugerida es menor al capital pendiente actual:  "
+                            + totalOutstandingPrincipalAmount;
+                    ImportHandlerUtils.writeErrorMessage(clientCupDecrementSheet, clientCupoDecrementData.getRowIndex(), errorMessage,
+                            ClientCupoIncrementConstants.STATUS_COL);
+                    clientCupDecrementSheet.setColumnWidth(ClientCupoIncrementConstants.STATUS_COL,
+                            TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
+                    continue;
+                }
+                if (maximumCupoAmount.compareTo(previousMaximumCupoAmount) >= 0) {
+                    errorCount++;
+                    errorMessage = "No se puede modificar ya que la nueva cuota sugerida es mayor o igual a la actual.";
                     ImportHandlerUtils.writeErrorMessage(clientCupDecrementSheet, clientCupoDecrementData.getRowIndex(), errorMessage,
                             ClientCupoDecrementConstants.STATUS_COL);
                     clientCupDecrementSheet.setColumnWidth(ClientCupoDecrementConstants.STATUS_COL,
@@ -281,15 +293,17 @@ public class ClientCupoDecrementImportHandler implements ImportHandler {
                     } else {
                         sql = "UPDATE campos_cliente_empresas SET \"Cupo\" = ? WHERE client_id = ? AND \"NIT\" = ?";
                     }
-                    final int affectedRows = jdbcTemplate.update(sql, maximumCupoAmount, clientId, documentNumber);
-                    if (affectedRows == 0) {
-                        errorCount++;
-                        errorMessage = "No se pudo modificar el cupo";
-                        ImportHandlerUtils.writeErrorMessage(clientCupDecrementSheet, clientCupoDecrementData.getRowIndex(), errorMessage,
-                                ClientCupoDecrementConstants.STATUS_COL);
-                        clientCupDecrementSheet.setColumnWidth(ClientCupoDecrementConstants.STATUS_COL,
-                                TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
-                        continue;
+                    if (maximumCupoAmount.compareTo(previousMaximumCupoAmount) < 0) {
+                        final int affectedRows = jdbcTemplate.update(sql, maximumCupoAmount, clientId, documentNumber);
+                        if (affectedRows == 0) {
+                            errorCount++;
+                            errorMessage = "No se pudo modificar el cupo";
+                            ImportHandlerUtils.writeErrorMessage(clientCupDecrementSheet, clientCupoDecrementData.getRowIndex(),
+                                    errorMessage, ClientCupoDecrementConstants.STATUS_COL);
+                            clientCupDecrementSheet.setColumnWidth(ClientCupoDecrementConstants.STATUS_COL,
+                                    TemplatePopulateImportConstants.EXTRALARGE_COL_SIZE);
+                            continue;
+                        }
                     }
                 }
                 final Cell statusCell = clientCupDecrementSheet.getRow(clientCupoDecrementData.getRowIndex())
