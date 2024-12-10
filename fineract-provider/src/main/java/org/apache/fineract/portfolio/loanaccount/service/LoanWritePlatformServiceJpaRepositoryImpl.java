@@ -1842,6 +1842,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         this.loanChargeRepository.saveAndFlush(loanCharge);
 
+        // postJournalEntries(loanCharge);
         /**
          * we want to apply charge transactions only for those loans charges that are applied when a loan is active and
          * the loan product uses Upfront Accruals
