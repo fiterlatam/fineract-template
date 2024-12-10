@@ -330,4 +330,5 @@
     <include file="parts/20240507011009134_SU_477_update_reports_migration_aval_charge.xml" relativeToChangelogFile="true"/>
     <include file="parts/20243008011009142_SU_488_update_report._archivo.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241208121243_SU_485_client_death_blocking_reason.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202412101146000000_SU_462_c_client_ally_point_of_sales_UPDATE_CONSTRAINT.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
