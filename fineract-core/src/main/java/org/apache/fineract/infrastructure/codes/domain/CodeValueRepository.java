@@ -47,10 +47,10 @@ public interface CodeValueRepository extends JpaRepository<CodeValue, Long>, Jpa
                         LEFT(LPAD(code_score::TEXT, 5, '0'), 2)
                 END AS ciudadCoderScore
                 FROM m_code_value mcv2
-                WHERE code_id = 41
+                WHERE code_id = (select * from m_code mc where mc.code_name ='Ciudad')
             ) mv2
             ON mv2.ciudadCoderScore = mcv.code_score
-            WHERE mcv.code_id = 40 AND mv2.code_score = :codeScore
+            WHERE mcv.code_id = (select * from m_code mc where mc.code_name ='Departamento') AND mv2.code_score = :codeScore
             """, nativeQuery = true)
     Optional<CodeValue> findCiudadAndDepartamentoData(@Param("codeScore") String codeScore);
 }
