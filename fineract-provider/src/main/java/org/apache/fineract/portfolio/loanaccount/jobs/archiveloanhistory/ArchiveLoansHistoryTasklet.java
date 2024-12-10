@@ -10,12 +10,14 @@ import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
+import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanArchiveHistoryData;
 import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanArchiveHistoryReadWritePlatformService;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanCustomizationDetail;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -206,9 +208,43 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                                 actividadLaboral = actividadLaboralCode.getLabel();
                             }
                         }
+
+                        if (actividadLaboral.equals("PENSIONADO")) {
+                            if (dataLoan.getCiudadPuntoCredito() != null) {
+                                Optional<CodeValue> getDepartamento = codeValueRepository
+                                        .findById(Long.valueOf(dataLoan.getCiudadPuntoCredito()));
+                                if (getDepartamento.isPresent()) {
+                                    CodeValue departamento = getDepartamento.get();
+                                    String departamentoScore = departamento.getScore();
+                                    Optional<CodeValue> personalDepartemento = codeValueRepository
+                                            .findCiudadAndDepartamentoData(departamentoScore);
+                                    if (personalDepartemento.isPresent()) {
+                                        departamentoCity = personalDepartemento.get().getLabel();
+                                    }
+                                }
+                            }
+                        }
                         final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
                                 .fetchLoanForeclosureDetail(LocalDate.now());
                         BigDecimal creSaldo = loanRepaymentScheduleInstallment.getTotalOutstanding(loan.getCurrency()).getAmount();
+
+                        String creEstad = ClientStatus.fromInt(loan.getClient().getStatus()).name();
+                        if (loan.getLoanCustomizationDetail() != null) {
+                            LoanCustomizationDetail loanCustomizationDetail = loan.getLoanCustomizationDetail();
+                            if (loanCustomizationDetail.getBlockStatus() != null) {
+                                creEstad = "BLOCKING";
+                            }
+                        }
+
+                        String cuoEstado = dataLoan.getCuoEstado();
+                        if (cuoEstado == null || cuoEstado.equals("CASTIGO")) {
+                            cuoEstado = loan.getStatus().name();
+                        }
+
+                        String estadoCliente = dataLoan.getEstadoCliente();
+                        if (estadoCliente == null || estadoCliente.equals("CASTIGO")) {
+                            estadoCliente = ClientStatus.fromInt(loan.getClient().getStatus()).name();
+                        }
                         if (existingLoanArchive.isPresent()) {
 
                             LoanArchiveHistory existingEntry = existingLoanArchive.get();
@@ -217,7 +253,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             existingEntry.setSegundoNombre(dataLoan.getSegundoNombre());
                             existingEntry.setPrimerApellido(dataLoan.getPrimerApellido());
                             existingEntry.setSegundoApellido(dataLoan.getSegundoApellido());
-                            existingEntry.setEstadoCliente(dataLoan.getEstadoCliente());
+                            existingEntry.setEstadoCliente(estadoCliente);
                             existingEntry
                                     .setNumeroObligacion(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
                             existingEntry.setNitEmpresa("800139398");
@@ -257,10 +293,11 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             existingEntry.setCreSaldo(creSaldo);
                             existingEntry.setCuoSaldo(currentInstallment.getTotalOutstanding(loan.getCurrency()).getAmount());
                             existingEntry.setMontoInicial(loan.getApprovedPrincipal());
-                            existingEntry.setCuoEstado(dataLoan.getCuoEstado());
+                            existingEntry.setCuoEstado(cuoEstado);
                             if (dataLoan.getFechaNacimiento() != null) {
                                 existingEntry.setFechaNacimiento(LocalDate.parse(dataLoan.getFechaNacimiento()));
                             }
+
                             existingEntry.setEmpresa(ally);
                             existingEntry.setMarca(brand);
                             existingEntry.setCiudadPuntoCredito(cityPoinfsales);
@@ -272,6 +309,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             existingEntry.setParentescoFamiliar(parentescoFamiliar);
                             existingEntry.setEstadoCivil(estadoCivil);
                             existingEntry.setNitEmpresaAliada(dataLoan.getNitEmpresaAliada());
+                            existingEntry.setCreEstado(creEstad);
                             loanArchiveHistoryRepository.save(existingEntry);
                         } else {
                             LoanArchiveHistory loanArchiveHistory = new LoanArchiveHistory();
@@ -281,7 +319,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             loanArchiveHistory.setSegundoNombre(dataLoan.getSegundoNombre());
                             loanArchiveHistory.setPrimerApellido(dataLoan.getPrimerApellido());
                             loanArchiveHistory.setSegundoApellido(dataLoan.getSegundoApellido());
-                            loanArchiveHistory.setEstadoCliente(dataLoan.getEstadoCliente());
+                            loanArchiveHistory.setEstadoCliente(estadoCliente);
                             loanArchiveHistory
                                     .setNumeroObligacion(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
                             loanArchiveHistory.setNitEmpresa("800139398");
@@ -320,7 +358,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             loanArchiveHistory.setNumeroDeReprogramaciones(numberReschedule);
                             loanArchiveHistory.setCreSaldo(creSaldo);
                             loanArchiveHistory.setCuoSaldo(currentInstallment.getTotalOutstanding(loan.getCurrency()).getAmount());
-                            loanArchiveHistory.setCuoEstado(dataLoan.getCuoEstado());
+                            loanArchiveHistory.setCuoEstado(cuoEstado);
                             if (dataLoan.getFechaNacimiento() != null) {
                                 loanArchiveHistory.setFechaNacimiento(LocalDate.parse(dataLoan.getFechaNacimiento()));
                             }
@@ -334,6 +372,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             loanArchiveHistory.setTipoDocumento(dataLoan.getTipoDocumento());
                             loanArchiveHistory.setEstadoCivil(estadoCivil);
                             loanArchiveHistory.setNitEmpresaAliada(dataLoan.getNitEmpresaAliada());
+                            loanArchiveHistory.setCreEstado(creEstad);
                             loanArchiveHistoryRepository.save(loanArchiveHistory);
                         }
                         if (!currentInstallment.isObligationsMet()) {
