@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.jobs.suspensionduetodefaultCharges;
 
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
@@ -46,6 +47,9 @@ public class SuspensionDueToDefaultChargesConfig {
     @Autowired
     private LoanReadPlatformService loanReadPlatformService;
 
+    @Autowired
+    private ConfigurationDomainService configurationDomainService;
+
     @Bean
     protected Step suspensionDueToDefaultChargesStep() {
         return new StepBuilder(JobName.INSURANCE_CHARGE_SUSPENSION_DUE_TO_DEFAULT.name(), jobRepository)
@@ -60,6 +64,6 @@ public class SuspensionDueToDefaultChargesConfig {
 
     @Bean
     public SuspensionDueToDefaultChargesTasklet suspensionDueToDefaultChargesTasklet() {
-        return new SuspensionDueToDefaultChargesTasklet(loanWritePlatformService, loanReadPlatformService);
+        return new SuspensionDueToDefaultChargesTasklet(loanWritePlatformService, loanReadPlatformService, configurationDomainService);
     }
 }

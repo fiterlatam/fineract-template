@@ -566,6 +566,13 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     }
 
     @Override
+    public Long retriveMinimumDaysInArrearsToSuspendLoanAccount() {
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(
+                "Dias a partir de los cuales empezar a considerar suspendido");
+        return property.getValue();
+    }
+
+    @Override
     public Long retrieveInvoiceResolutionExpiryDays() {
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(INVOICE_RESOLUTION_EXPIRY);
         if (property.isEnabled()) {

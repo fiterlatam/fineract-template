@@ -298,71 +298,77 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
         }
     }
 
-    private void sendSmsForLoanRepayment(LoanTransaction loanTransaction) {
-        List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("Loan Repayment");
-        if (!smsCampaigns.isEmpty()) {
-            for (SmsCampaign smsCampaign : smsCampaigns) {
-                try {
-                    Loan loan = loanTransaction.getLoan();
-                    final Set<Client> groupClients = new HashSet<>();
-                    if (loan.hasInvalidLoanType()) {
-                        throw new InvalidLoanTypeException("Loan Type cannot be Invalid for the Triggered Sms Campaign");
-                    }
-                    if (loan.isGroupLoan()) {
-                        Group group = this.groupRepository.findById(loan.getGroupId())
-                                .orElseThrow(() -> new GroupNotFoundException(loan.getGroupId()));
-                        groupClients.addAll(group.getClientMembers());
-                    } else {
-                        groupClients.add(loan.client());
-                    }
-                    HashMap<String, String> campaignParams = new ObjectMapper().readValue(smsCampaign.getParamValue(),
-                            new TypeReference<>() {
+    private void sendSmsForLoanRepayment(final LoanTransaction loanTransaction) {
+        final Loan loan = loanTransaction.getLoan();
+        final LoanProduct loanProduct = loan.getLoanProduct();
+        if (loanProduct != null) {
+            if (loanProduct.getCustomAllowCollectionsSms()) {
+                final List<SmsCampaign> smsCampaigns = retrieveSmsCampaigns("Loan Repayment");
+                if (!smsCampaigns.isEmpty()) {
+                    for (SmsCampaign smsCampaign : smsCampaigns) {
+                        try {
+                            final Set<Client> groupClients = new HashSet<>();
+                            if (loan.hasInvalidLoanType()) {
+                                throw new InvalidLoanTypeException("Loan Type cannot be Invalid for the Triggered Sms Campaign");
+                            }
+                            if (loan.isGroupLoan()) {
+                                Group group = this.groupRepository.findById(loan.getGroupId())
+                                        .orElseThrow(() -> new GroupNotFoundException(loan.getGroupId()));
+                                groupClients.addAll(group.getClientMembers());
+                            } else {
+                                groupClients.add(loan.client());
+                            }
+                            HashMap<String, String> campaignParams = new ObjectMapper().readValue(smsCampaign.getParamValue(),
+                                    new TypeReference<>() {
 
-                            });
+                                    });
 
-                    if (!groupClients.isEmpty()) {
-                        for (Client client : groupClients) {
-                            HashMap<String, Object> smsParams = processRepaymentDataForSms(loanTransaction, client);
-                            for (Map.Entry<String, String> entry : campaignParams.entrySet()) {
-                                String value = entry.getValue();
-                                String spvalue = null;
-                                boolean spkeycheck = smsParams.containsKey(entry.getKey());
-                                if (spkeycheck) {
-                                    spvalue = smsParams.get(entry.getKey()).toString();
-                                }
-                                if (spkeycheck && !(value.equals("-1") || spvalue.equals(value))) {
-                                    if (entry.getKey().equals("officeId")) {
-                                        Long officeId = Long.valueOf(value);
-                                        Office campaignOffice = this.officeRepository.findById(Long.valueOf(value))
-                                                .orElseThrow(() -> new OfficeNotFoundException(officeId));
-                                        if (campaignOffice.doesNotHaveAnOfficeInHierarchyWithId(client.getOffice().getId())) {
-                                            throw new SmsRuntimeException("error.msg.no.office", "Office not found for the id");
+                            if (!groupClients.isEmpty()) {
+                                for (Client client : groupClients) {
+                                    HashMap<String, Object> smsParams = processRepaymentDataForSms(loanTransaction, client);
+                                    for (Map.Entry<String, String> entry : campaignParams.entrySet()) {
+                                        String value = entry.getValue();
+                                        String spvalue = null;
+                                        boolean spkeycheck = smsParams.containsKey(entry.getKey());
+                                        if (spkeycheck) {
+                                            spvalue = smsParams.get(entry.getKey()).toString();
                                         }
-                                    } else {
-                                        throw new SmsRuntimeException("error.msg.no.id.attribute", "Office Id attribute is notfound");
+                                        if (spkeycheck && !(value.equals("-1") || spvalue.equals(value))) {
+                                            if (entry.getKey().equals("officeId")) {
+                                                Long officeId = Long.valueOf(value);
+                                                Office campaignOffice = this.officeRepository.findById(Long.valueOf(value))
+                                                        .orElseThrow(() -> new OfficeNotFoundException(officeId));
+                                                if (campaignOffice.doesNotHaveAnOfficeInHierarchyWithId(client.getOffice().getId())) {
+                                                    throw new SmsRuntimeException("error.msg.no.office", "Office not found for the id");
+                                                }
+                                            } else {
+                                                throw new SmsRuntimeException("error.msg.no.id.attribute",
+                                                        "Office Id attribute is notfound");
+                                            }
+                                        }
+                                    }
+                                    String message = this.smsCampaignWritePlatformCommandHandler
+                                            .compileSmsTemplate(smsCampaign.getMessage(), smsCampaign.getCampaignName(), smsParams);
+                                    Object mobileNo = smsParams.get("mobileNo");
+                                    if (this.smsCampaignValidator.isValidNotificationOrSms(client, smsCampaign, mobileNo)) {
+                                        String mobileNumber = null;
+                                        if (mobileNo != null) {
+                                            mobileNumber = mobileNo.toString();
+                                        }
+                                        SmsMessage smsMessage = SmsMessage.pendingSms(null, null, client, null, message, mobileNumber,
+                                                smsCampaign, smsCampaign.isNotification());
+                                        Map<SmsCampaign, Collection<SmsMessage>> smsDataMap = new HashMap<>();
+                                        smsDataMap.put(smsCampaign, Collections.singletonList(smsMessage));
+                                        this.smsMessageScheduledJobService.sendTriggeredMessages(smsDataMap);
                                     }
                                 }
                             }
-                            String message = this.smsCampaignWritePlatformCommandHandler.compileSmsTemplate(smsCampaign.getMessage(),
-                                    smsCampaign.getCampaignName(), smsParams);
-                            Object mobileNo = smsParams.get("mobileNo");
-                            if (this.smsCampaignValidator.isValidNotificationOrSms(client, smsCampaign, mobileNo)) {
-                                String mobileNumber = null;
-                                if (mobileNo != null) {
-                                    mobileNumber = mobileNo.toString();
-                                }
-                                SmsMessage smsMessage = SmsMessage.pendingSms(null, null, client, null, message, mobileNumber, smsCampaign,
-                                        smsCampaign.isNotification());
-                                Map<SmsCampaign, Collection<SmsMessage>> smsDataMap = new HashMap<>();
-                                smsDataMap.put(smsCampaign, Collections.singletonList(smsMessage));
-                                this.smsMessageScheduledJobService.sendTriggeredMessages(smsDataMap);
-                            }
+                        } catch (final IOException e) {
+                            log.error("smsParams does not contain the key: ", e);
+                        } catch (final RuntimeException e) {
+                            log.debug("Client Office Id and SMS Campaign Office id doesn't match ", e);
                         }
                     }
-                } catch (final IOException e) {
-                    log.error("smsParams does not contain the key: ", e);
-                } catch (final RuntimeException e) {
-                    log.debug("Client Office Id and SMS Campaign Office id doesn't match ", e);
                 }
             }
         }

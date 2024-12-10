@@ -1184,6 +1184,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         final LoanProduct loanProduct = loan.loanProduct();
+        if (!loanProduct.getCustomAllowCollections()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.collection.not.allowed.on.this.product",
+                    "Collection is not allowed for this loan product", loanProduct.getName());
+        }
         final Long repaymentChannelId = command.longValueOfParameterNamed("repaymentChannelId");
         final boolean isImportedTransaction = command.booleanPrimitiveValueOfParameterNamed("isImportedTransaction");
         ChannelData channelData;
@@ -4134,7 +4138,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         facturaElectronicaMensual.setDescuento(BigDecimal.ZERO);
         facturaElectronicaMensual.setPorcentaje_impuesto_item(BigDecimal.ZERO);
         facturaElectronicaMensual.setImpuesto_item(BigDecimal.ZERO);
-        long itemPosition = 1L;
+        long itemPosition = 0L;
         if (interestPaid.compareTo(BigDecimal.ZERO) > 0) {
             final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.INT_CORRIENTE;
             final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
