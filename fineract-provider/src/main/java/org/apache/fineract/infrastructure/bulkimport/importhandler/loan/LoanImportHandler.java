@@ -322,21 +322,21 @@ public class LoanImportHandler implements ImportHandler {
         if (chargeTwoId != null) {
             if (ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_2, row) != null) {
                 if (!isMigratedLoan) {
-                EnumOptionData chargeTwoTimeTypeEnum = ImportHandlerUtils
-                        .getChargeTimeTypeEmun(workbook.getSheet(TemplatePopulateImportConstants.CHARGE_SHEET_NAME), chargeTwoName);
-                EnumOptionData chargeTwoAmountTypeEnum = ImportHandlerUtils
-                        .getChargeAmountTypeEnum(ImportHandlerUtils.readAsString(LoanConstants.CHARGE_AMOUNT_TYPE_2, row));
+                    EnumOptionData chargeTwoTimeTypeEnum = ImportHandlerUtils
+                            .getChargeTimeTypeEmun(workbook.getSheet(TemplatePopulateImportConstants.CHARGE_SHEET_NAME), chargeTwoName);
+                    EnumOptionData chargeTwoAmountTypeEnum = ImportHandlerUtils
+                            .getChargeAmountTypeEnum(ImportHandlerUtils.readAsString(LoanConstants.CHARGE_AMOUNT_TYPE_2, row));
 
-                BigDecimal chargeAmount;
-                BigDecimal amountOrPercentage = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_2, row));
-                if (chargeTwoTimeTypeEnum.getValue().equalsIgnoreCase("1")) {
-                    chargeAmount = amountOrPercentage;
-                } else {
-                    chargeAmount = LoanCharge.percentageOf(principal, amountOrPercentage);
-                }
+                    BigDecimal chargeAmount;
+                    BigDecimal amountOrPercentage = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_2, row));
+                    if (chargeTwoTimeTypeEnum.getValue().equalsIgnoreCase("1")) {
+                        chargeAmount = amountOrPercentage;
+                    } else {
+                        chargeAmount = LoanCharge.percentageOf(principal, amountOrPercentage);
+                    }
 
-                charges.add(new LoanChargeData(chargeTwoId, ImportHandlerUtils.readAsDate(LoanConstants.CHARGE_DUE_DATE_2, row),
-                        chargeAmount, chargeTwoAmountTypeEnum, chargeTwoTimeTypeEnum));
+                    charges.add(new LoanChargeData(chargeTwoId, ImportHandlerUtils.readAsDate(LoanConstants.CHARGE_DUE_DATE_2, row),
+                            chargeAmount, chargeTwoAmountTypeEnum, chargeTwoTimeTypeEnum));
                 } else {
                     BigDecimal amountOrPercentage = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_2, row));
                     charges.add(new LoanChargeData(chargeTwoId, amountOrPercentage));
