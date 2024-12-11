@@ -2264,14 +2264,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             actualChanges.put("status", LoanEnumerations.status(this.loanStatus));
 
             // only do below if status has changed in the 'approval' case
-            LocalDate approvedOn = command.localDateValueOfParameterNamed("approvedOnDate");
-            String approvedOnDateChange = command.stringValueOfParameterNamed("approvedOnDate");
+            LocalDate approvedOn = this.expectedDisbursementDate;
+            String approvedOnDateChange = this.expectedDisbursementDate.format(DateTimeFormatter.ofPattern(command.dateFormat()));
             if (approvedOn == null) {
                 approvedOn = command.localDateValueOfParameterNamed("eventDate");
                 approvedOnDateChange = command.stringValueOfParameterNamed("eventDate");
             }
 
-            LocalDate expecteddisbursementDate = command.localDateValueOfParameterNamed("expectedDisbursementDate");
+            LocalDate expecteddisbursementDate = this.expectedDisbursementDate;
 
             BigDecimal approvedLoanAmount = command.bigDecimalValueOfParameterNamed(LoanApiConstants.approvedLoanAmountParameterName);
             if (approvedLoanAmount != null) {
@@ -2319,7 +2319,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             this.approvedBy = currentUser;
             actualChanges.put("locale", command.locale());
             actualChanges.put("dateFormat", command.dateFormat());
-            actualChanges.put("approvedOnDate", approvedOnDateChange);
+            actualChanges.put("approvedOnDate", expecteddisbursementDate);
 
             final LocalDate submittalDate = this.submittedOnDate;
             if (approvedOn.isBefore(submittalDate)) {

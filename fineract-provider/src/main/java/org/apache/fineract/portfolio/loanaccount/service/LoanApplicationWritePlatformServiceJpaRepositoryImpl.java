@@ -2600,7 +2600,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
         final JsonArray disbursementDataArray = command.arrayOfParameterNamed(LoanApiConstants.disbursementDataParameterName);
 
-        expectedDisbursementDate = command.localDateValueOfParameterNamed(LoanApiConstants.disbursementDateParameterName);
+        expectedDisbursementDate = loan.getExpectedDisbursedOnLocalDate();
         if (expectedDisbursementDate == null) {
             expectedDisbursementDate = loan.getExpectedDisbursedOnLocalDate();
         }
@@ -2705,7 +2705,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             }
 
             // Post Journal Entry
-            final LocalDate approvedOnDate = command.localDateValueOfParameterNamed(LoanApiConstants.approvedOnDateParameterName);
+            final LocalDate approvedOnDate = loan.getDisbursementDate();
             final BigDecimal principal = command.bigDecimalValueOfParameterNamed(LoanApiConstants.approvedLoanAmountParameterName);
             BitaCoraMaster bitaCoraMaster = this.lumaAccountingProcessorForLoan
                     .createJournalEntry(LumaBitacoraTransactionTypeEnum.LOANS_APPROVAL, loan, approvedOnDate, principal);
