@@ -1706,4 +1706,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     public boolean isFullyGraced() {
         return installmentNumber == 0;
     }
+
+    public BigDecimal originalInterestChargedAmount() {
+        return originalInterestChargedAmount;
+    }
 }

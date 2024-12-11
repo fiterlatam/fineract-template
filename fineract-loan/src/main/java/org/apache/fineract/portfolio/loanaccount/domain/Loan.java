@@ -841,7 +841,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     private void applyInstallmentCharge(LoanInstallmentCharge loanInstallmentCharge, LoanRepaymentScheduleInstallment installment,
             final LoanCharge loanCharge, final LocalDate suppliedTransactionDate) {
-
+        if (loanInstallmentCharge == null) {
+            return;
+        }
         final Money chargeAmount = loanInstallmentCharge.getAmount(getCurrency());
         if (chargeAmount.isZero()) {
             return;
@@ -7579,8 +7581,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         int totalPeriodDays = Math.toIntExact(
                 ChronoUnit.DAYS.between(loanRepaymentScheduleInstallment.getFromDate(), loanRepaymentScheduleInstallment.getDueDate()));
         int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(loanRepaymentScheduleInstallment.getFromDate(), transactionDate));
-        Money interestForCurrentPeriod = Money.of(getCurrency(), BigDecimal.valueOf(calculateInterestForDays(totalPeriodDays,
-                loanRepaymentScheduleInstallment.getInterestCharged(currency).getAmount(), tillDays)));
+        BigDecimal interestCharged = loanRepaymentScheduleInstallment.getInterestCharged(getCurrency()).getAmount();
+        if (loanRepaymentScheduleInstallment.originalInterestChargedAmount() != null
+                && loanRepaymentScheduleInstallment.originalInterestChargedAmount().compareTo(BigDecimal.ZERO) > 0) {
+            interestCharged = loanRepaymentScheduleInstallment.originalInterestChargedAmount();
+        }
+        Money interestForCurrentPeriod = Money.of(getCurrency(),
+                BigDecimal.valueOf(calculateInterestForDays(totalPeriodDays, interestCharged, tillDays)));
         final Money interestAccountedForCurrentPeriod = loanRepaymentScheduleInstallment.getInterestWaived(currency)
                 .plus(loanRepaymentScheduleInstallment.getInterestPaid(currency))
                 .plus(loanRepaymentScheduleInstallment.getInterestWrittenOff(currency));
@@ -7801,6 +7808,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             if (!DateUtils.isAfter(transactionDate, installment.getDueDate())) {
                 totalPrincipal = totalPrincipal.plus(installment.getPrincipal(currency));
+                if (installment.getAdvancePrincipalAmount() != null
+                        && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
+                    totalPrincipal = totalPrincipal.add(installment.getAdvancePrincipalAmount());
+                }
                 newInstallments.remove(installment);
             }
         }
