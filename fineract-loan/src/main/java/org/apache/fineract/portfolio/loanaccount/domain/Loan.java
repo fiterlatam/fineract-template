@@ -7808,7 +7808,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             if (!DateUtils.isAfter(transactionDate, installment.getDueDate())) {
                 totalPrincipal = totalPrincipal.plus(installment.getPrincipal(currency));
-                if (installment.getAdvancePrincipalAmount() != null && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
+                if (installment.getAdvancePrincipalAmount() != null
+                        && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
                     totalPrincipal = totalPrincipal.add(installment.getAdvancePrincipalAmount());
                 }
                 newInstallments.remove(installment);
