@@ -152,6 +152,8 @@ public interface ConfigurationDomainService {
 
     Long retriveMinimumDaysOfArrearsToWriteOff();
 
+    Long retriveMinimumDaysInArrearsToSuspendLoanAccount();
+
     Long retrieveInvoiceResolutionExpiryDays();
 
     Long retrieveInvoiceThreshold();

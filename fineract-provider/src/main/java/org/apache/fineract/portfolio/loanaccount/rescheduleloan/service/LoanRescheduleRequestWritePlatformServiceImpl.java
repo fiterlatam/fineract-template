@@ -379,8 +379,9 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.periods.less.than.unpaid.installments",
                         "Rediferir periods less than unpaid installments", rediferirTerms);
             }
-
-            final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(transactionDate);
+            final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
+            final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(transactionDate,
+                    scheduleGeneratorDTO);
             final MonetaryCurrency currency = loan.getCurrency();
             final BigDecimal rediferirAmount = loanRepaymentScheduleInstallment.getRediferirAmount(currency).getAmount();
             if (!Money.of(currency, rediferirAmount).isGreaterThanZero()) {
@@ -496,8 +497,8 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 }
                 final LoanTermVariations rediferirTermVariationValue = rediferirVariations.get(0);
                 final int rediferirPeriods = rediferirTermVariationValue.getTermValue().intValue();
-                final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
-                        .fetchLoanForeclosureDetail(businessLocalDate);
+                final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(businessLocalDate,
+                        scheduleGeneratorDTO);
                 final MonetaryCurrency currency = loan.getCurrency();
                 final BigDecimal rediferirAmount = loanRepaymentScheduleInstallment.getRediferirAmount(currency).getAmount();
                 if (!Money.of(currency, rediferirAmount).isGreaterThanZero()) {
@@ -578,8 +579,8 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 final ExternalId txnExternalId = externalIdFactory.create();
                 final PaymentDetail paymentDetail = null;
                 final boolean isAccountTransfer = false;
-                final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
-                        .fetchLoanForeclosureDetail(businessLocalDate);
+                final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(businessLocalDate,
+                        scheduleGeneratorDTO);
                 final MonetaryCurrency currency = loan.getCurrency();
                 final BigDecimal rediferirAmount = loanRepaymentScheduleInstallment.getRediferirAmount(currency).getAmount();
                 final LoanTransaction newRepaymentTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.REPAYMENT,

@@ -4,7 +4,11 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -24,12 +28,14 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
-import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
-import org.apache.fineract.portfolio.loanaccount.domain.*;
+import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanEventApiJsonValidator;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
@@ -43,7 +49,6 @@ import org.springframework.stereotype.Service;
 public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffPunishService {
 
     private final JdbcTemplate jdbcTemplate;
-    private final PlatformSecurityContext context;
     private final LoanWritePlatformService loanWritePlatformService;
     private final FromJsonHelper fromApiJsonHelper;
     private final LoanApplicationWritePlatformService loanApplicationWritePlatformService;
@@ -51,12 +56,10 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
     private final LoanAssembler loanAssembler;
     private final ExternalIdFactory externalIdFactory;
     private final LoanEventApiJsonValidator loanEventApiJsonValidator;
-    private final LoanAccountDomainService loanAccountDomainService;
-    private final LoanReadPlatformService loanReadPlatformService;
     private final LoanRepositoryWrapper loanRepository;
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
-    private final LoanBlockingReasonRepository blockingReasonRepository;
     private final LoanBlockWritePlatformService loanBlockWritePlatformService;
+    private final LoanUtilService loanUtilService;
 
     @Override
     public CommandProcessingResult writeOffPunishLoan(final Long loanId, JsonCommand command) {
@@ -85,8 +88,9 @@ public class LoanWriteoffPunishServiceJpaRepositoryImpl implements LoanWriteoffP
         }
 
         LoanProduct castigadoProduct = castigadoProducts.get(0);
-
-        final LoanRepaymentScheduleInstallment foreCloseDetail = existingLoanApplication.fetchLoanForeclosureDetail(transactionDate);
+        final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(existingLoanApplication, null);
+        final LoanRepaymentScheduleInstallment foreCloseDetail = existingLoanApplication.fetchLoanForeclosureDetail(transactionDate,
+                scheduleGeneratorDTO);
         BigDecimal outstandingAmount = foreCloseDetail.getTotalOutstanding(existingLoanApplication.getCurrency()).getAmount();
         existingLoanApplication.setClaimType(claimType);
         existingLoanApplication.setClaimDate(transactionDate);

@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.jobs.suspensionduetodefaultCha
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
@@ -35,11 +36,16 @@ public class SuspensionDueToDefaultChargesTasklet implements Tasklet {
 
     private final LoanWritePlatformService loanWritePlatformService;
     private final LoanReadPlatformService loanReadPlatformService;
+    private final ConfigurationDomainService configurationDomainService;
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+        Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
+        if (minimumDaysInArrearsToSuspendLoanAccount == null) {
+            minimumDaysInArrearsToSuspendLoanAccount = 90L;
+        }
         List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds = this.loanReadPlatformService
-                .getLoanDataWithDefaultMandatoryInsurance(90L);
+                .getLoanDataWithDefaultMandatoryInsurance(minimumDaysInArrearsToSuspendLoanAccount);
         loanWritePlatformService.temporarySuspendDefaultInsuranceCharges(defaultLoanIds);
 
         return RepeatStatus.FINISHED;

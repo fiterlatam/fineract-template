@@ -411,4 +411,21 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="17">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM c_configuration WHERE name = 'Dias a partir de los cuales empezar a considerar suspendido'
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="c_configuration">
+            <column name="name" value="Dias a partir de los cuales empezar a considerar suspendido"/>
+            <column name="value" valueNumeric="90"/>
+            <column name="date_value"/>
+            <column name="string_value"/>
+            <column name="enabled" valueBoolean="true"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+            <column name="description" value="Days from which to start considering suspension"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>

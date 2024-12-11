@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.custom.infrastructure.core.service.CustomDateUtils;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
@@ -54,6 +55,7 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
     private final BusinessEventNotifierService businessEventNotifierService;
     private final LoanTransactionRepository loanTransactionRepository;
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
+    private final ConfigurationDomainService configurationDomainService;
 
     @Override
     public CommandProcessingResult addLoanCreditNote(Long loanId, JsonCommand command) {
@@ -70,7 +72,11 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
         final LoanCreditNote creditNote = this.assembleLoanCreditNote(loan, command);
         final LoanTransaction loanTransaction = this.loanTransactionRepository.findById(creditNote.getTransactionId())
                 .orElseThrow(() -> new LoanTransactionNotFoundException(creditNote.getTransactionId()));
-        if (daysInArrears >= 90) {
+        Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
+        if (minimumDaysInArrearsToSuspendLoanAccount == null) {
+            minimumDaysInArrearsToSuspendLoanAccount = 90L;
+        }
+        if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
             this.businessEventNotifierService.notifyPostBusinessEvent(new LoanCreditNoteBusinessEvent(loanTransaction));
         }
         return CommandProcessingResult.commandOnlyResult(creditNote.getId());

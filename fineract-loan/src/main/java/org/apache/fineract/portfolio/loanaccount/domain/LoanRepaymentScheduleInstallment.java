@@ -1703,6 +1703,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         return (this.penaltyCharges != null && this.penaltyCharges.compareTo(BigDecimal.ZERO) > 0) && !obligationsMet;
     }
 
+    public boolean isFullyGraced() {
+        return installmentNumber == 0;
+    }
+
     public BigDecimal originalInterestChargedAmount() {
         return originalInterestChargedAmount;
     }
