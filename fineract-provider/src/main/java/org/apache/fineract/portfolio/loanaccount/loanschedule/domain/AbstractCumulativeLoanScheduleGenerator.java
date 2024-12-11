@@ -3121,6 +3121,11 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             // This will create the recalculation details by applying the
             // transactions
             for (LoanRepaymentScheduleInstallment installment : processInstallmentsInstallments) {
+                if (installment.isFullyGraced()) {
+                    periods.add(createLoanScheduleModelDownPaymentPeriod(installment, outstandingBalance));
+                    newRepaymentScheduleInstallments.add(installment);
+                    continue;
+                }
                 if (installment.isDownPayment()) {
                     instalmentNumber++;
                     periods.add(createLoanScheduleModelDownPaymentPeriod(installment, outstandingBalance));
@@ -3398,7 +3403,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 loanScheduleParams);
 
         for (LoanScheduleModelPeriod loanScheduleModelPeriod : loanScheduleModel.getPeriods()) {
-            if (loanScheduleModelPeriod.isRepaymentPeriod() || loanScheduleModelPeriod.isDownPaymentPeriod()) {
+            if ((loanScheduleModelPeriod.isRepaymentPeriod() || loanScheduleModelPeriod.isDownPaymentPeriod())
+                    && !loanScheduleModelPeriod.isTotalGracePeriod()) {
                 // adding newly created repayment periods to installments
                 addLoanRepaymentScheduleInstallment(retainedInstallments, loanScheduleModelPeriod);
             }
