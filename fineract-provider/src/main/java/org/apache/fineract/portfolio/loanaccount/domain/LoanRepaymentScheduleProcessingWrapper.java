@@ -207,8 +207,11 @@ public class LoanRepaymentScheduleProcessingWrapper {
                     }
                     BigDecimal loanChargeAmt = amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100));
                     cumulative = cumulative.plus(loanChargeAmt);
-                } else if (loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)) {
-                    cumulative = cumulative.plus(loanCharge.amount());
+                } else {
+                    Integer chargeInstallmentNumber = loanCharge.getOverdueInstallmentCharge().getInstallment().getInstallmentNumber();
+                    if (chargeInstallmentNumber.equals(period.getInstallmentNumber())) {
+                        cumulative = cumulative.plus(loanCharge.getAmountWaived(currency));
+                    }
                 }
             }
         }
