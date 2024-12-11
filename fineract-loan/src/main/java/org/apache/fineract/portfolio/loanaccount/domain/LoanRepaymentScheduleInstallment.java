@@ -1702,4 +1702,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     public boolean hasPenalties() {
         return (this.penaltyCharges != null && this.penaltyCharges.compareTo(BigDecimal.ZERO) > 0) && !obligationsMet;
     }
+
+    public BigDecimal originalInterestChargedAmount() {
+        return originalInterestChargedAmount;
+    }
 }

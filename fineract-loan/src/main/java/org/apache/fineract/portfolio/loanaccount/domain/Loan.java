@@ -840,7 +840,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     private void applyInstallmentCharge(LoanInstallmentCharge loanInstallmentCharge, LoanRepaymentScheduleInstallment installment,
             final LoanCharge loanCharge, final LocalDate suppliedTransactionDate) {
-
+        if (loanInstallmentCharge == null) {
+            return;
+        }
         final Money chargeAmount = loanInstallmentCharge.getAmount(getCurrency());
         if (chargeAmount.isZero()) {
             return;
@@ -7573,8 +7575,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money penaltyAccoutedForCurrentPeriod = Money.zero(getCurrency());
         int totalPeriodDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
         int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), paymentDate));
+        BigDecimal interestCharged = installment.getInterestCharged(getCurrency()).getAmount();
+        if (installment.originalInterestChargedAmount() != null && installment.originalInterestChargedAmount().compareTo(BigDecimal.ZERO) > 0) {
+            interestCharged = installment.originalInterestChargedAmount();
+        }
         Money interestForCurrentPeriod = Money.of(getCurrency(), BigDecimal
-                .valueOf(calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency()).getAmount(), tillDays)));
+                .valueOf(calculateInterestForDays(totalPeriodDays,  interestCharged, tillDays)));
         Money interestAccountedForCurrentPeriod = installment.getInterestWaived(getCurrency())
                 .plus(installment.getInterestPaid(getCurrency())).plus(installment.getInterestWrittenOff(getCurrency()));
         Money feeForCurrentPeriod = installment.getFeeChargesCharged(getCurrency());
@@ -7745,6 +7751,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             if (!DateUtils.isAfter(transactionDate, installment.getDueDate())) {
                 totalPrincipal = totalPrincipal.plus(installment.getPrincipal(currency));
+                if (installment.getAdvancePrincipalAmount() != null && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
+                    totalPrincipal = totalPrincipal.add(installment.getAdvancePrincipalAmount());
+                }
                 newInstallments.remove(installment);
             }
         }
