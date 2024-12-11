@@ -581,8 +581,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             "Disbursal date of this loan application " + loan.getDisbursementDate()
                                     + " should be after last transaction date of loan to be closed " + lastUserTransactionOnLoanToClose);
                 }
-
-                final LoanRepaymentScheduleInstallment foreCloseDetail = loanToClose.fetchLoanForeclosureDetail(actualDisbursementDate);
+                final LoanRepaymentScheduleInstallment foreCloseDetail = loanToClose.fetchLoanForeclosureDetail(actualDisbursementDate,
+                        scheduleGeneratorDTO);
                 BigDecimal loanOutstanding = foreCloseDetail.getTotalOutstanding(loanToClose.getCurrency()).getAmount();
                 /*
                  * BigDecimal loanOutstanding = this.loanReadPlatformService
@@ -4542,9 +4542,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                 if (DateUtils.isEqual(periodStartDate, periodEndDate)) {
                                     periodEndDate = periodEndDate.plusDays(1);
                                 }
+                                final boolean ignoreCurrencyDigitsAfterDecimal = false;
                                 final PrincipalInterest principalInterest = loanScheduleGenerator.calculatePrincipalInterestComponents(
-                                        principalLoanBalanceOutstanding, loanApplicationTerms, periodNumber, periodStartDate,
-                                        periodEndDate);
+                                        principalLoanBalanceOutstanding, loanApplicationTerms, periodNumber, periodStartDate, periodEndDate,
+                                        ignoreCurrencyDigitsAfterDecimal);
                                 final int daysDifference = Math.toIntExact(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
                                 dailyAccrualInterest = principalInterest.interest().getAmount().divide(BigDecimal.valueOf(daysDifference),
                                         2, RoundingMode.HALF_UP);
