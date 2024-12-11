@@ -4414,7 +4414,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public Boolean isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct() {
         return isCashBasedAccountingEnabledOnLoanProduct() || isUpfrontAccrualAccountingEnabledOnLoanProduct()
-                || isAccountingDisabledOnLoanProduct();
+                || isAccountingDisabledOnLoanProduct() || isPeriodicAccrualAccountingEnabledOnLoanProduct();
     }
 
     public Boolean isPeriodicAccrualAccountingEnabledOnLoanProduct() {
