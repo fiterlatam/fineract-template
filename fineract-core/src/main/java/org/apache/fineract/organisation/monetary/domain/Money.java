@@ -396,6 +396,12 @@ public class Money implements Comparable<Money> {
         return monetaryCurrency();
     }
 
+    public void setCurrency(final MonetaryCurrency currency) {
+        this.currencyCode = currency.getCode();
+        this.currencyDigitsAfterDecimal = currency.getDigitsAfterDecimal();
+        this.inMultiplesOf = currency.getCurrencyInMultiplesOf();
+    }
+
     private MonetaryCurrency monetaryCurrency() {
         return new MonetaryCurrency(this.currencyCode, this.currencyDigitsAfterDecimal, this.inMultiplesOf);
     }

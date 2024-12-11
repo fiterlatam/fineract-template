@@ -7,6 +7,7 @@ import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatform
 import org.apache.fineract.portfolio.loanaccount.domain.LoanArchiveHistoryRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanArchiveHistoryReadWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -37,6 +38,8 @@ public class ArchiveLoansHistoryConfig {
     private ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository;
     @Autowired
     private CodeValueRepository codeValueRepository;
+    @Autowired
+    private LoanUtilService loanUtilService;
 
     @Bean
     protected Step archiveLoanHistoryStep() {
@@ -53,6 +56,6 @@ public class ArchiveLoansHistoryConfig {
     @Bean
     public ArchiveLoansHistoryTasklet archiveLoansHistoryTasklet() {
         return new ArchiveLoansHistoryTasklet(loanArchiveHistoryService, loanArchiveHistoryRepository, loanRepository,
-                delinquencyReadPlatformService, clientAllyPointOfSalesRepository, codeValueRepository);
+                delinquencyReadPlatformService, clientAllyPointOfSalesRepository, codeValueRepository, loanUtilService);
     }
 }
