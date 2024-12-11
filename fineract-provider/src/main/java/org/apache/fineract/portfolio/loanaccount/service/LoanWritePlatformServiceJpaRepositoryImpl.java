@@ -382,7 +382,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
         }
 
-        final LocalDate actualDisbursementDate = command.localDateValueOfParameterNamed("actualDisbursementDate");
+        final LocalDate actualDisbursementDate = loan.getDisbursementDate();
 
         // validate ActualDisbursement Date Against Expected Disbursement Date
         LoanProduct loanProduct = loan.loanProduct();
