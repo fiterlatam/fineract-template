@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import javax.persistence.PersistenceException;
 import org.apache.commons.lang3.ObjectUtils;
@@ -158,7 +157,6 @@ import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationTr
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRelatedDetail;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanTransactionProcessingStrategy;
@@ -2654,8 +2652,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
 
                 LocalDate deriveFirstRepaymentDate;
-                if (loan.getExpectedFirstRepaymentOnDate() != null
-                        && Objects.equals(loan.getLoanProduct().getOwnerType(), LoanProductOwnerType.INDIVIDUAL.getValue())) {
+                if (loan.getExpectedFirstRepaymentOnDate() != null) {
                     deriveFirstRepaymentDate = loan.getExpectedFirstRepaymentOnDate();
                 } else {
                     deriveFirstRepaymentDate = loanScheduleAssembler.deriveFirstRepaymentDate(loan, expectedDisbursementDate, calendar);
