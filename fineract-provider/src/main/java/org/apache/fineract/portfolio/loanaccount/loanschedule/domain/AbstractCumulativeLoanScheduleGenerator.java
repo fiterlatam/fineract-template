@@ -3114,6 +3114,11 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 processInstallmentsInstallments = fetchRetainedInstallmentsForProgressiveLoans(loan.getRepaymentScheduleInstallments(),
                         rescheduleFrom, currency);
             }
+            // if processed installements is empty , check for graced installments
+            if (processInstallmentsInstallments.isEmpty()) {
+                processInstallmentsInstallments = loan.getRepaymentScheduleInstallments().stream()
+                        .filter(LoanRepaymentScheduleInstallment::isFullyGraced).toList();
+            }
             final List<LoanRepaymentScheduleInstallment> newRepaymentScheduleInstallments = new ArrayList<>();
 
             // Block process the installment and creates the period if it falls
