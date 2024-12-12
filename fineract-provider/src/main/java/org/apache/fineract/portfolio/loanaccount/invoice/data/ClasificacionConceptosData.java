@@ -19,11 +19,17 @@
 package org.apache.fineract.portfolio.loanaccount.invoice.data;
 
 import java.math.BigDecimal;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import org.apache.fineract.portfolio.loanaccount.domain.ClasificacionConceptos;
 
 @Data
 @Builder
+@RequiredArgsConstructor
+@AllArgsConstructor
 public class ClasificacionConceptosData {
 
     private Long id;
@@ -34,4 +40,15 @@ public class ClasificacionConceptosData {
     private boolean gravado;
     private String norma;
     private BigDecimal tarifa;
+
+    public ClasificacionConceptosData(ClasificacionConceptos clasificacionConceptos) {
+        this.id = clasificacionConceptos.getId();
+        this.concepto = clasificacionConceptos.getConcepto();
+        this.mandato = clasificacionConceptos.isMandato();
+        this.excluido = clasificacionConceptos.isExcluido();
+        this.exento = clasificacionConceptos.isExento();
+        this.gravado = clasificacionConceptos.isGravado();
+        this.norma = clasificacionConceptos.getNorma();
+        this.tarifa = clasificacionConceptos.getTarifa();
+    }
 }
