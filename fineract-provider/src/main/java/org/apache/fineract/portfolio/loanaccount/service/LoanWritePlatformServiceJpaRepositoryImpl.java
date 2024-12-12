@@ -2046,9 +2046,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             } else {
                 transactionType = LoanTransactionType.WRITEOFF;
             }
-            writeOffTransaction = this.loanAccountDomainService.makeRepayment(transactionType, loan, transactionDate,
-                    totalWriteOffAmount, paymentDetail, noteText, externalId, isRecoveryRepayment, chargeRefundChargeType,
-                    isAccountTransfer, holidayDetailDto, isHolidayValidationDone);
+            writeOffTransaction = this.loanAccountDomainService.makeRepayment(transactionType, loan, transactionDate, totalWriteOffAmount,
+                    paymentDetail, noteText, externalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer, holidayDetailDto,
+                    isHolidayValidationDone);
         } else {
             final MonetaryCurrency currency = loan.getCurrency();
             final LoanRepaymentScheduleInstallment specialWriteOffInstallment = loan.fetchLoanSpecialWriteOffDetail(transactionDate);

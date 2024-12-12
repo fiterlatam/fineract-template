@@ -395,13 +395,13 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return new LoanTransaction(loan, office, LoanTransactionType.WRITEOFF, null, writeOffDate, externalId);
     }
 
-    public static LoanTransaction creditNote(final Loan loan, final Office office, final LocalDate writeOffDate, final ExternalId externalId,
-                                           final BigDecimal amount) {
+    public static LoanTransaction creditNote(final Loan loan, final Office office, final LocalDate writeOffDate,
+            final ExternalId externalId, final BigDecimal amount) {
         return new LoanTransaction(loan, office, LoanTransactionType.CREDIT_NOTE, amount, writeOffDate, externalId);
     }
 
     public static LoanTransaction creditNote(final Loan loan, final Office office, final LocalDate writeOffDate,
-                                           final ExternalId externalId) {
+            final ExternalId externalId) {
         return new LoanTransaction(loan, office, LoanTransactionType.CREDIT_NOTE, null, writeOffDate, externalId);
     }
 
