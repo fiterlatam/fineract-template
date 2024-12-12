@@ -3060,6 +3060,11 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 processInstallmentsInstallments = fetchRetainedInstallmentsForProgressiveLoans(loan.getRepaymentScheduleInstallments(),
                         rescheduleFrom, currency);
             }
+            // if processed installements is empty , check for graced installments
+            if (processInstallmentsInstallments.isEmpty()) {
+                processInstallmentsInstallments = loan.getRepaymentScheduleInstallments().stream()
+                        .filter(LoanRepaymentScheduleInstallment::isFullyGraced).toList();
+            }
             final List<LoanRepaymentScheduleInstallment> newRepaymentScheduleInstallments = new ArrayList<>();
 
             // Block process the installment and creates the period if it falls
@@ -3690,12 +3695,13 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     @Override
     public PrincipalInterest calculatePrincipalInterestComponents(final Money outstandingBalance,
             final LoanApplicationTerms loanApplicationTerms, final int periodNumber, final LocalDate periodStartDate,
-            final LocalDate periodEndDate) {
+            final LocalDate periodEndDate, boolean ignoreCurrencyDigitsAfterDecimal) {
         final MathContext mc = MoneyHelper.getMathContext();
         final PaymentPeriodsInOneYearCalculator calculator = getPaymentPeriodsInOneYearCalculator();
         final BigDecimal interestCalculationGraceOnRepaymentPeriodFraction = BigDecimal.ZERO;
         final Money cumulatingInterestPaymentDueToGrace = outstandingBalance.zero();
         return loanApplicationTerms.calculateTotalInterestForPeriod(calculator, interestCalculationGraceOnRepaymentPeriodFraction,
-                periodNumber, mc, cumulatingInterestPaymentDueToGrace, outstandingBalance, periodStartDate, periodEndDate);
+                periodNumber, mc, cumulatingInterestPaymentDueToGrace, outstandingBalance, periodStartDate, periodEndDate,
+                ignoreCurrencyDigitsAfterDecimal);
     }
 }

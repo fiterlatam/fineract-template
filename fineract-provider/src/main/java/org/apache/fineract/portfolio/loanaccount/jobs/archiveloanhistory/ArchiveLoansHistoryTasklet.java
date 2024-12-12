@@ -15,8 +15,10 @@ import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanArchiveHistoryData;
+import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanArchiveHistoryReadWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanCustomizationDetail;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -26,17 +28,19 @@ import org.springframework.batch.repeat.RepeatStatus;
 @Slf4j
 public class ArchiveLoansHistoryTasklet implements Tasklet {
 
-    private LoanArchiveHistoryReadWritePlatformService loanArchiveHistoryService;
-    private LoanArchiveHistoryRepository loanArchiveHistoryRepository;
-    private LoanRepositoryWrapper loanRepository;
-    private DelinquencyReadPlatformService delinquencyReadPlatformService;
-    private ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository;
-    private CodeValueRepository codeValueRepository;
+    private final LoanArchiveHistoryReadWritePlatformService loanArchiveHistoryService;
+    private final LoanArchiveHistoryRepository loanArchiveHistoryRepository;
+    private final LoanRepositoryWrapper loanRepository;
+    private final DelinquencyReadPlatformService delinquencyReadPlatformService;
+    private final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository;
+    private final CodeValueRepository codeValueRepository;
+    private final LoanUtilService loanUtilService;
 
     public ArchiveLoansHistoryTasklet(LoanArchiveHistoryReadWritePlatformService loanArchiveHistoryService,
             LoanArchiveHistoryRepository loanArchiveHistoryRepository, LoanRepositoryWrapper loanRepository,
             DelinquencyReadPlatformService delinquencyReadPlatformService,
-            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository, CodeValueRepository codeValueRepository) {
+            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository, CodeValueRepository codeValueRepository,
+            LoanUtilService loanUtilService) {
         this.loanArchiveHistoryService = loanArchiveHistoryService;
         this.loanArchiveHistoryRepository = loanArchiveHistoryRepository;
         this.loanRepository = loanRepository;
@@ -44,6 +48,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
         this.clientAllyPointOfSalesRepository = clientAllyPointOfSalesRepository;
         this.codeValueRepository = codeValueRepository;
 
+        this.loanUtilService = loanUtilService;
     }
 
     @Override
@@ -224,8 +229,9 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                                 }
                             }
                         }
+                        final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
                         final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
-                                .fetchLoanForeclosureDetail(LocalDate.now());
+                                .fetchLoanForeclosureDetail(LocalDate.now(), scheduleGeneratorDTO);
                         BigDecimal creSaldo = loanRepaymentScheduleInstallment.getTotalOutstanding(loan.getCurrency()).getAmount();
 
                         String creEstad = ClientStatus.fromInt(loan.getClient().getStatus()).name();
