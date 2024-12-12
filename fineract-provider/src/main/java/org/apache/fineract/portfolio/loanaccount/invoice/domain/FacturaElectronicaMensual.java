@@ -246,6 +246,9 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
     @Column(name = "tipo_prod")
     private String tipo_prod;
 
+    @Column(name = "loan_transaction_id")
+    private Long loan_transaction_id;
+
     @Override
     public FacturaElectronicaMensual clone() {
         try {

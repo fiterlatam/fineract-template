@@ -31,4 +31,7 @@ public interface FacturaElectronicMensualRepository
     List<FacturaElectronicaMensual> findById_clienteAndTipo_prod(@Param("id_cliente") String id_cliente,
             @Param("tipo_prod") String tipo_prod);
 
+    @Query("SELECT f FROM FacturaElectronicaMensual f WHERE f.loan_transaction_id = :loanTransactionId")
+    List<FacturaElectronicaMensual> findByLoanTransactionId(final Long loanTransactionId);
+
 }
