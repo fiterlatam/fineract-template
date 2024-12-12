@@ -428,4 +428,19 @@
         </insert>
     </changeSet>
 
+    <changeSet id="18" author="fineract">
+        <addColumn tableName="c_facturacion_electronica">
+            <column name="loan_transaction_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addForeignKeyConstraint baseTableName="c_facturacion_electronica"
+                                 baseColumnNames="loan_transaction_id"
+                                 constraintName="fk_facturacion_electronica_loan_transaction_id"
+                                 referencedTableName="m_loan_transaction"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
 </databaseChangeLog>
