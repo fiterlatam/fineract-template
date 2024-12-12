@@ -19,7 +19,6 @@
 package org.apache.fineract.portfolio.loanaccount.invoice.data;
 
 import java.math.BigDecimal;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
