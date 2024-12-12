@@ -1335,7 +1335,6 @@ public class CommandWrapperBuilder {
         return this;
     }
 
-
     public CommandWrapperBuilder createCodeValue(final Long codeId) {
         this.actionName = "CREATE";
         this.entityName = "CODEVALUE";

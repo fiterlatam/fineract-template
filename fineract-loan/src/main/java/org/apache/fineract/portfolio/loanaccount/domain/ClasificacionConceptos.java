@@ -22,12 +22,11 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
-
-import java.math.BigDecimal;
 
 @Getter
 @Setter
