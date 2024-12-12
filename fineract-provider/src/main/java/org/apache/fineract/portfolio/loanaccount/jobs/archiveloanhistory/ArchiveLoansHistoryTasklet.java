@@ -242,15 +242,14 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             }
                         }
 
-                        String cuoEstado = dataLoan.getCuoEstado();
-                        if (cuoEstado == null || cuoEstado.equals("CASTIGO")) {
-                            cuoEstado = loan.getStatus().name();
-                        }
+                        String estadoCuota = loan.getStatus().name();
+                        String cuoEstado = estadoCuota;
 
                         String estadoCliente = dataLoan.getEstadoCliente();
                         if (estadoCliente == null || estadoCliente.equals("CASTIGO")) {
                             estadoCliente = ClientStatus.fromInt(loan.getClient().getStatus()).name();
                         }
+
                         if (existingLoanArchive.isPresent()) {
 
                             LoanArchiveHistory existingEntry = existingLoanArchive.get();
@@ -307,7 +306,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             existingEntry.setEmpresa(ally);
                             existingEntry.setMarca(brand);
                             existingEntry.setCiudadPuntoCredito(cityPoinfsales);
-                            existingEntry.setEstadoCuota(dataLoan.getEstadoCuota());
+                            existingEntry.setEstadoCuota(estadoCuota);
                             existingEntry.setIvaInteresDeMora(BigDecimal.ZERO);
                             existingEntry.setFechaFinanciacion(loan.getDisbursementDate());
                             existingEntry.setPuntoDeVenta(pointOfSale);
@@ -371,7 +370,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             loanArchiveHistory.setEmpresa(ally);
                             loanArchiveHistory.setMarca(brand);
                             loanArchiveHistory.setCiudadPuntoCredito(cityPoinfsales);
-                            loanArchiveHistory.setEstadoCuota(dataLoan.getEstadoCuota());
+                            loanArchiveHistory.setEstadoCuota(estadoCuota);
                             loanArchiveHistory.setIvaInteresDeMora(BigDecimal.ZERO);
                             loanArchiveHistory.setFechaFinanciacion(loan.getDisbursementDate());
                             loanArchiveHistory.setPuntoDeVenta(pointOfSale);
