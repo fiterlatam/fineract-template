@@ -1312,6 +1312,29 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder createClasificacionConcepto() {
+        this.actionName = "CREATE";
+        this.entityName = "CLASIFICACION_CONCEPTO";
+        this.href = "/clasificacionconceptos";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateClasificacionConcepto(final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "CLASIFICACION_CONCEPTO";
+        this.href = "/clasificacionconceptos";
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteClasificacionConcepto(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "CLASIFICACION_CONCEPTO";
+        this.href = "/clasificacionconceptos";
+        this.entityId = id;
+        return this;
+    }
+
     public CommandWrapperBuilder createCodeValue(final Long codeId) {
         this.actionName = "CREATE";
         this.entityName = "CODEVALUE";
@@ -4081,6 +4104,30 @@ public class CommandWrapperBuilder {
         this.entityName = "LOAN";
         this.entityId = loanId;
         this.href = "reclaim/exclude/" + loanId;
+        return this;
+    }
+
+    public CommandWrapperBuilder createCollectionHouse() {
+        this.actionName = "CREATE";
+        this.entityName = "PRODUCTCOLLECTIONHOUSE";
+        this.entityId = null;
+        this.href = "/collectionhousemanagement";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateCollectionHouse(final Long parameterId) {
+        this.actionName = "UPDATE";
+        this.entityName = "PRODUCTCOLLECTIONHOUSE";
+        this.entityId = parameterId;
+        this.href = "/collectionhousemanagement/" + parameterId;
+        return this;
+    }
+
+    public CommandWrapperBuilder createCollectionHouseHistory() {
+        this.actionName = "CREATE";
+        this.entityName = "COLLECTIONHOUSEHISTORY";
+        this.entityId = null;
+        this.href = "/collectionhousehistory";
         return this;
     }
 }

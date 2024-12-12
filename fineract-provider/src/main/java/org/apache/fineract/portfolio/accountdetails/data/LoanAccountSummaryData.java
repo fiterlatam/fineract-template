@@ -49,14 +49,16 @@ public class LoanAccountSummaryData {
     private final BigDecimal loanBalance;
     private final BigDecimal amountPaid;
     private final BlockingReasonsData blockStatus;
+    private final String puntoDeVenta;
 
     public LoanAccountSummaryData(final Long id, final String accountNo, final String externalId, final Long productId,
             final String loanProductName, final String shortLoanProductName, final LoanStatusEnumData loanStatus,
             final EnumOptionData loanType, final Integer loanCycle, final LoanApplicationTimelineData timeline, final Boolean inArrears,
-            final BigDecimal originalLoan, final BigDecimal loanBalance, final BigDecimal amountPaid,
-            final BlockingReasonsData blockStatus) {
+            final BigDecimal originalLoan, final BigDecimal loanBalance, final BigDecimal amountPaid, final BlockingReasonsData blockStatus,
+            String puntoDeVenta) {
         this.id = id;
         this.accountNo = accountNo;
+        this.puntoDeVenta = puntoDeVenta;
         this.parentAccountNumber = null;
         this.externalId = externalId;
         this.productId = productId;

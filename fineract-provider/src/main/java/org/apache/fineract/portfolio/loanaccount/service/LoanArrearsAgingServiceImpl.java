@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
@@ -88,6 +89,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     private final PlatformSecurityContext context;
     private final InsuranceIncidentRepository insuranceIncidentRepository;
     private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
+    private final ConfigurationDomainService configurationDomainService;
 
     @PostConstruct
     public void registerForNotification() {
@@ -641,6 +643,10 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     }
 
     private void createSuspensionRemovedNews(Loan loan) {
+        Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
+        if (minimumDaysInArrearsToSuspendLoanAccount == null) {
+            minimumDaysInArrearsToSuspendLoanAccount = 90L;
+        }
         /// CREATE Salida de suspensión news if loan is in TEMPORARY_SUSPENSION_DUE_TO_DEFAULT novelty news status and
         /// arrears less than 90 days
         Integer daysInArrears = null;
@@ -652,7 +658,19 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             // not in arrears
             daysInArrears = 0;
         }
-        if (daysInArrears >= 90) {
+        if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
+            // In case of transaction rollback, a loan can move again to suspension
+            LocalDate date = null;
+            try {
+                date = this.jdbcTemplate.queryForObject(
+                        "select overdue_since_date_derived aging_days from m_loan_arrears_aging mlaa where mlaa.loan_id =?",
+                        LocalDate.class, loan.getId());
+            } catch (final EmptyResultDataAccessException e) {
+                // not in arrears
+            }
+            if (date != null) {
+                temporarySuspendDefaultInsuranceCharges(loan, date.plusDays(minimumDaysInArrearsToSuspendLoanAccount));
+            }
             return;
         }
         final LocalDate currentDate = DateUtils.getBusinessLocalDate();
@@ -670,9 +688,17 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                 // Do not add suspension news if loan is already in suspension
                 return;
             }
+        } else {
+            // Loan was never in arrears
+            return;
         }
         Collection<LoanCharge> loanCharges = loan.getInsuranceChargesForNoveltyIncidentReporting(incident.isMandatory(),
                 incident.isVoluntary());
+        LocalDate transactionDate = currentDate;
+        List<LoanTransaction> transactions = loan.retrieveListOfTransactionsPostDisbursementExcludeAccruals();
+        if (!transactions.isEmpty()) {
+            transactionDate = transactions.get(transactions.size() - 1).getTransactionDate();
+        }
         if (loanCharges != null && !loanCharges.isEmpty()) {
             for (LoanCharge loanCharge : loanCharges) {
                 if (loanCharge.getAmountOutstanding(loan.getCurrency()).isGreaterThanZero()) {
@@ -680,10 +706,43 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                             || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
                         BigDecimal cumulative = BigDecimal.ZERO;
                         InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
-                                null, incident, currentDate, cumulative);
+                                null, incident, transactionDate, cumulative);
 
                         this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
                     }
+                }
+            }
+        }
+    }
+
+    private void temporarySuspendDefaultInsuranceCharges(Loan loan, LocalDate suspensionDate) {
+        final LocalDate currentDate = DateUtils.getBusinessLocalDate();
+        InsuranceIncident incident = this.insuranceIncidentRepository
+                .findByIncidentType(InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT);
+        InsuranceIncident suspensionRemovedIncident = this.insuranceIncidentRepository
+                .findByIncidentType(InsuranceIncidentType.SUSPENSION_REMOVED);
+        if (incident == null || (!incident.isMandatory() && !incident.isVoluntary())) {
+            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT.name());
+        }
+
+        Optional<InsuranceIncidentNoveltyNews> lastSuspensionNewsOptional = this.insuranceIncidentNoveltyNewsRepository
+                .findLastSuspensionIfPresent(loan.getId(), incident.getId(), suspensionRemovedIncident.getId());
+        if (lastSuspensionNewsOptional.isPresent()) {
+            InsuranceIncidentNoveltyNews news = lastSuspensionNewsOptional.get();
+            if (news.getInsuranceIncident().getIncidentType().equals(InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT)) {
+                // Do not add suspension news if loan is already in suspension
+                return;
+            }
+        }
+        for (LoanCharge loanCharge : loan.getCharges()) {
+            if (loanCharge.getAmountOutstanding(loan.getCurrency()).isGreaterThanZero()) {
+                if ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
+                        || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
+                    BigDecimal cumulative = BigDecimal.ZERO;
+                    InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                            null, incident, suspensionDate, cumulative);
+
+                    this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
                 }
             }
         }

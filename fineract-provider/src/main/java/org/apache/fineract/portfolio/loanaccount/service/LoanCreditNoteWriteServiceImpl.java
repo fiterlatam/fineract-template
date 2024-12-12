@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.custom.infrastructure.core.service.CustomDateUtils;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
@@ -23,6 +24,8 @@ import org.apache.fineract.infrastructure.documentmanagement.domain.Document;
 import org.apache.fineract.infrastructure.documentmanagement.domain.DocumentRepository;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanCreditNoteBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
+import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.SpecialWriteOffPayload;
@@ -51,11 +54,15 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
     private final FromJsonHelper fromApiJsonHelper;
     private final BusinessEventNotifierService businessEventNotifierService;
     private final LoanTransactionRepository loanTransactionRepository;
+    private final DelinquencyReadPlatformService delinquencyReadPlatformService;
+    private final ConfigurationDomainService configurationDomainService;
 
     @Override
     public CommandProcessingResult addLoanCreditNote(Long loanId, JsonCommand command) {
         // first assemble the associated loan
         final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loan.getId());
+        final Long daysInArrears = collectionData.getPastDueDays();
         final LoanProduct loanProduct = loan.loanProduct();
         if (!loanProduct.getCustomAllowCreditNote()) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.credit.note.not.allowed",
@@ -65,7 +72,13 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
         final LoanCreditNote creditNote = this.assembleLoanCreditNote(loan, command);
         final LoanTransaction loanTransaction = this.loanTransactionRepository.findById(creditNote.getTransactionId())
                 .orElseThrow(() -> new LoanTransactionNotFoundException(creditNote.getTransactionId()));
-        this.businessEventNotifierService.notifyPostBusinessEvent(new LoanCreditNoteBusinessEvent(loanTransaction));
+        Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
+        if (minimumDaysInArrearsToSuspendLoanAccount == null) {
+            minimumDaysInArrearsToSuspendLoanAccount = 90L;
+        }
+        if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
+            this.businessEventNotifierService.notifyPostBusinessEvent(new LoanCreditNoteBusinessEvent(loanTransaction));
+        }
         return CommandProcessingResult.commandOnlyResult(creditNote.getId());
     }
 

@@ -20,12 +20,15 @@ package org.apache.fineract.portfolio.loanaccount.data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariationType;
 
 @Getter
+@Setter
 public class LoanTermVariationsData implements Comparable<LoanTermVariationsData> {
 
     private final Long id;
@@ -35,6 +38,8 @@ public class LoanTermVariationsData implements Comparable<LoanTermVariationsData
     private final LocalDate dateValue;
     private final boolean isSpecificToInstallment;
     private Boolean isProcessed;
+    private OffsetDateTime lastModifiedDate;
+    private OffsetDateTime createdDate;
 
     public LoanTermVariationsData(final Long id, final EnumOptionData termType, final LocalDate termVariationApplicableFrom,
             final BigDecimal decimalValue, final LocalDate dateValue, final boolean isSpecificToInstallment) {

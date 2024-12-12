@@ -1585,6 +1585,11 @@ public enum ChargeCalculationType {
                 && isPercentageOfDisbursement();
     }
 
+    public boolean isFlatAvalForMigration() {
+        return this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()) == '1' && this.equals(FLAT_AVAL)
+                && isFlat();
+    }
+
     public boolean isPercentageOfHonorarios() {
         return this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex()) == '1'
                 && this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex()) == '1';

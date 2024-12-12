@@ -477,7 +477,8 @@ configure(project.fineractJavaProjects) {
         errorprone "com.google.errorprone:error_prone_core:2.24.1"
     }
 
-    tasks.withType(JavaCompile) {
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
         options.errorprone {
             enabled = project.gradle.startParameter.taskNames.contains('build') || project.gradle.startParameter.taskNames.contains('check')
             disableWarningsInGeneratedCode = true

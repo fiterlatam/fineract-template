@@ -14,7 +14,6 @@ import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurati
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepository;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDays;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
-import org.apache.fineract.organisation.workingdays.service.WorkingDaysUtil;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -85,6 +84,8 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
                     case "DIARIA":
                         if (period.isBefore(now.minusDays(1))) {
                             period = now;
+                        } else if (period.isEqual(now)) {
+                            period = now;
                         } else {
                             period = period.plusDays(1);
                         }
@@ -93,17 +94,11 @@ public class PurchaseOfSettlementTasklet implements Tasklet {
             } else {
                 period = now;
             }
-
             String worksday = workingDays.getRecurrence();
             String[] arrayworksday = worksday.split(";");
             String[] arrayweekdays = arrayworksday[2].split("BYDAY=");
             String[] arrayCount = arrayweekdays[1].split(",");
             Integer countWokringDay = arrayCount.length - 1;
-            if (!WorkingDaysUtil.isWorkingDay(workingDays, period)) {
-                do {
-                    period = period.plusDays(1);
-                } while (period.getDayOfWeek().getValue() >= countWokringDay);
-            }
             isEqual = now.isEqual(period);
 
             if (isEqual) {

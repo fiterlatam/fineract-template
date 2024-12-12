@@ -167,4 +167,8 @@ public class LoanTransactionToRepaymentScheduleMapping extends AbstractPersistab
     public void setLoanTransaction(LoanTransaction loanTransaction) {
         this.loanTransaction = loanTransaction;
     }
+
+    public void setInstallment(LoanRepaymentScheduleInstallment installment) {
+        this.installment = installment;
+    }
 }
