@@ -58,7 +58,12 @@ public final class EmailMessageJobEmailServiceImpl implements EmailMessageJobEma
             MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
 
             mimeMessageHelper.setFrom(smtpCredentialsData.getFromEmail());
-            mimeMessageHelper.setTo(emailMessageWithAttachmentData.getTo());
+            // if recipient is a list of recipients use the multiple to
+            if (emailMessageWithAttachmentData.getRecipients() != null && !emailMessageWithAttachmentData.getRecipients().isEmpty()) {
+                mimeMessageHelper.setTo(emailMessageWithAttachmentData.getRecipients().toArray(new String[0]));
+            } else {
+                mimeMessageHelper.setTo(emailMessageWithAttachmentData.getTo());
+            }
             mimeMessageHelper.setText(emailMessageWithAttachmentData.getText(), true);
             mimeMessageHelper.setSubject(emailMessageWithAttachmentData.getSubject());
             final List<File> attachments = emailMessageWithAttachmentData.getAttachments();
@@ -79,9 +84,9 @@ public final class EmailMessageJobEmailServiceImpl implements EmailMessageJobEma
     }
 
     private Properties getJavaMailProperties(SMTPCredentialsData smtpCredentialsData, Properties properties) {
-        properties.put("mail.smtp.starttls.enable", "true");
+        properties.put("mail.smtp.starttls.enable", "false");
         properties.put("mail.transport.protocol", "smtp");
-        properties.put("mail.smtp.auth", "true");
+        properties.put("mail.smtp.auth", "false");
         properties.put("mail.smtp.ssl.trust", smtpCredentialsData.getHost());
         if (smtpCredentialsData.isUseTLS()) {
             // Needs to disable startTLS if the port is 465 in order to send the email successfully when using the

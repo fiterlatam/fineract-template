@@ -230,6 +230,10 @@ public class LoanInstallmentCharge extends AbstractPersistableCustom implements 
         return amountPaidOnThisCharge;
     }
 
+    public void updateInstalmentAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
     public Money getAmountWrittenOff(final MonetaryCurrency currency) {
         return Money.of(currency, this.amountWrittenOff);
     }
@@ -347,6 +351,10 @@ public class LoanInstallmentCharge extends AbstractPersistableCustom implements 
         this.amount = amount;
     }
 
+    public void setIpaid(boolean paid) {
+        this.paid = paid;
+    }
+
     public void setAmountOutstanding(BigDecimal amountOutstanding) {
         this.amountOutstanding = amountOutstanding;
     }
@@ -378,5 +386,17 @@ public class LoanInstallmentCharge extends AbstractPersistableCustom implements 
             this.paid = this.determineIfFullyPaid();
             this.loancharge.adjustChargeAmount(adjustedAmount);
         }
+    }
+
+    public BigDecimal getAmountPaid() {
+        return amountPaid != null ? amountPaid : BigDecimal.ZERO;
+    }
+
+    public BigDecimal getAmountWaived() {
+        return amountWaived != null ? amountWaived : BigDecimal.ZERO;
+    }
+
+    public BigDecimal getAmountWrittenOff() {
+        return amountWrittenOff != null ? amountWrittenOff : BigDecimal.ZERO;
     }
 }

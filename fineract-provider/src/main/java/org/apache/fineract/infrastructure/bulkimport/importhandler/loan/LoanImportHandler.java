@@ -128,7 +128,7 @@ public class LoanImportHandler implements ImportHandler {
         }
 
         if (disbursedDate != null) {
-            return DisbursementData.importInstance(disbursedDate, linkAccountId, row.getRowNum(), locale, dateFormat);
+            return DisbursementData.importInstance(disbursedDate, linkAccountId, row.getRowNum(), locale, dateFormat, "Mifos");
         }
         return null;
     }
@@ -286,23 +286,34 @@ public class LoanImportHandler implements ImportHandler {
 
         String linkAccountId = ImportHandlerUtils.readAsString(LoanConstants.LINK_ACCOUNT_ID, row);
 
+        String nit = ImportHandlerUtils.readAsString(LoanConstants.NIT, row);
+        String code = ImportHandlerUtils.readAsString(LoanConstants.CODE, row);
+        String loanId = ImportHandlerUtils.readAsString(LoanConstants.LOAN_ID, row);
+        String cedula = ImportHandlerUtils.readAsString(LoanConstants.CEDULA, row);
+
+        boolean isMigratedLoan = nit != null && code != null && loanId != null && cedula != null;
+
         if (chargeOneId != null) {
             if (ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_1, row) != null) {
-                EnumOptionData chargeOneTimeTypeEnum = ImportHandlerUtils
-                        .getChargeTimeTypeEmun(workbook.getSheet(TemplatePopulateImportConstants.CHARGE_SHEET_NAME), chargeOneName);
-                EnumOptionData chargeOneAmountTypeEnum = ImportHandlerUtils
-                        .getChargeAmountTypeEnum(ImportHandlerUtils.readAsString(LoanConstants.CHARGE_AMOUNT_TYPE_1, row));
+                if (!isMigratedLoan) {
+                    EnumOptionData chargeOneTimeTypeEnum = ImportHandlerUtils
+                            .getChargeTimeTypeEmun(workbook.getSheet(TemplatePopulateImportConstants.CHARGE_SHEET_NAME), chargeOneName);
+                    EnumOptionData chargeOneAmountTypeEnum = ImportHandlerUtils
+                            .getChargeAmountTypeEnum(ImportHandlerUtils.readAsString(LoanConstants.CHARGE_AMOUNT_TYPE_1, row));
 
-                BigDecimal chargeAmount;
-                BigDecimal amountOrPercentage = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_1, row));
-                if (chargeOneAmountTypeEnum.getValue().equalsIgnoreCase("1")) {
-                    chargeAmount = amountOrPercentage;
+                    BigDecimal chargeAmount;
+                    BigDecimal amountOrPercentage = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_1, row));
+                    if (chargeOneAmountTypeEnum.getValue().equalsIgnoreCase("1")) {
+                        chargeAmount = amountOrPercentage;
+                    } else {
+                        chargeAmount = LoanCharge.percentageOf(principal, amountOrPercentage);
+                    }
+                    charges.add(new LoanChargeData(chargeOneId, ImportHandlerUtils.readAsDate(LoanConstants.CHARGE_DUE_DATE_1, row),
+                            chargeAmount, chargeOneAmountTypeEnum, chargeOneTimeTypeEnum));
                 } else {
-                    chargeAmount = LoanCharge.percentageOf(principal, amountOrPercentage);
+                    BigDecimal amountOrPercentage = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_1, row));
+                    charges.add(new LoanChargeData(chargeOneId, amountOrPercentage));
                 }
-
-                charges.add(new LoanChargeData(chargeOneId, ImportHandlerUtils.readAsDate(LoanConstants.CHARGE_DUE_DATE_1, row),
-                        chargeAmount, chargeOneAmountTypeEnum, chargeOneTimeTypeEnum));
             } else {
                 charges.add(new LoanChargeData(chargeOneId, ImportHandlerUtils.readAsDate(LoanConstants.CHARGE_DUE_DATE_1, row), null));
             }
@@ -310,21 +321,26 @@ public class LoanImportHandler implements ImportHandler {
 
         if (chargeTwoId != null) {
             if (ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_2, row) != null) {
-                EnumOptionData chargeTwoTimeTypeEnum = ImportHandlerUtils
-                        .getChargeTimeTypeEmun(workbook.getSheet(TemplatePopulateImportConstants.CHARGE_SHEET_NAME), chargeTwoName);
-                EnumOptionData chargeTwoAmountTypeEnum = ImportHandlerUtils
-                        .getChargeAmountTypeEnum(ImportHandlerUtils.readAsString(LoanConstants.CHARGE_AMOUNT_TYPE_2, row));
+                if (!isMigratedLoan) {
+                    EnumOptionData chargeTwoTimeTypeEnum = ImportHandlerUtils
+                            .getChargeTimeTypeEmun(workbook.getSheet(TemplatePopulateImportConstants.CHARGE_SHEET_NAME), chargeTwoName);
+                    EnumOptionData chargeTwoAmountTypeEnum = ImportHandlerUtils
+                            .getChargeAmountTypeEnum(ImportHandlerUtils.readAsString(LoanConstants.CHARGE_AMOUNT_TYPE_2, row));
 
-                BigDecimal chargeAmount;
-                BigDecimal amountOrPercentage = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_2, row));
-                if (chargeTwoTimeTypeEnum.getValue().equalsIgnoreCase("1")) {
-                    chargeAmount = amountOrPercentage;
+                    BigDecimal chargeAmount;
+                    BigDecimal amountOrPercentage = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_2, row));
+                    if (chargeTwoTimeTypeEnum.getValue().equalsIgnoreCase("1")) {
+                        chargeAmount = amountOrPercentage;
+                    } else {
+                        chargeAmount = LoanCharge.percentageOf(principal, amountOrPercentage);
+                    }
+
+                    charges.add(new LoanChargeData(chargeTwoId, ImportHandlerUtils.readAsDate(LoanConstants.CHARGE_DUE_DATE_2, row),
+                            chargeAmount, chargeTwoAmountTypeEnum, chargeTwoTimeTypeEnum));
                 } else {
-                    chargeAmount = LoanCharge.percentageOf(principal, amountOrPercentage);
+                    BigDecimal amountOrPercentage = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_2, row));
+                    charges.add(new LoanChargeData(chargeTwoId, amountOrPercentage));
                 }
-
-                charges.add(new LoanChargeData(chargeTwoId, ImportHandlerUtils.readAsDate(LoanConstants.CHARGE_DUE_DATE_2, row),
-                        chargeAmount, chargeTwoAmountTypeEnum, chargeTwoTimeTypeEnum));
             } else {
                 charges.add(new LoanChargeData(chargeTwoId, ImportHandlerUtils.readAsDate(LoanConstants.CHARGE_DUE_DATE_2, row), null));
             }
@@ -353,7 +369,7 @@ public class LoanImportHandler implements ImportHandler {
                         nominalInterestRate, submittedOnDate, amortizationEnumOption, interestMethodEnum, interestCalculationPeriodEnum,
                         arrearsTolerance, repaymentStrategyCode, graceOnPrincipalPayment, graceOnInterestPayment, graceOnInterestCharged,
                         interestChargedFromDate, firstRepaymentOnDate, row.getRowNum(), externalId, null, charges, linkAccountId, locale,
-                        dateFormat, loanCollateralManagementData);
+                        dateFormat, loanCollateralManagementData, nit, code, loanId, cedula, isMigratedLoan);
             } else if (loanType.equals("jlg")) {
                 Long clientId = ImportHandlerUtils.getIdByName(workbook.getSheet(TemplatePopulateImportConstants.CLIENT_SHEET_NAME),
                         clientOrGroupName);
@@ -362,7 +378,7 @@ public class LoanImportHandler implements ImportHandler {
                         nominalInterestRate, submittedOnDate, amortizationEnumOption, interestMethodEnum, interestCalculationPeriodEnum,
                         arrearsTolerance, repaymentStrategyCode, graceOnPrincipalPayment, graceOnInterestPayment, graceOnInterestCharged,
                         interestChargedFromDate, firstRepaymentOnDate, row.getRowNum(), externalId, groupId, charges, linkAccountId, locale,
-                        dateFormat, null);
+                        dateFormat, null, nit, code, loanId, cedula, isMigratedLoan);
             } else {
                 Long groupIdforGroupLoan = ImportHandlerUtils
                         .getIdByName(workbook.getSheet(TemplatePopulateImportConstants.GROUP_SHEET_NAME), clientOrGroupName);
@@ -406,11 +422,11 @@ public class LoanImportHandler implements ImportHandler {
                 }
 
                 if (progressLevel <= 1 && approvalDates.get(i) != null) {
-                    progressLevel = importLoanApproval(approvalDates, result, i, dateFormat);
+                    progressLevel = importLoanApproval(approvalDates, result, i, dateFormat, loanId);
                 }
 
                 if (progressLevel <= 2 && disbursalDates.get(i) != null) {
-                    progressLevel = importDisbursalData(approvalDates, disbursalDates, result, i, dateFormat);
+                    progressLevel = importDisbursalData(approvalDates, disbursalDates, result, i, dateFormat, loanId);
                 }
 
                 if (loanRepayments.get(i) != null) {
@@ -479,7 +495,7 @@ public class LoanImportHandler implements ImportHandler {
     }
 
     private Integer importDisbursalData(final List<LoanApprovalData> approvalDates, final List<DisbursementData> disbursalDates,
-            final CommandProcessingResult result, final int rowIndex, final String dateFormat) {
+            final CommandProcessingResult result, final int rowIndex, final String dateFormat, String loanId) {
         if (approvalDates.get(rowIndex) != null && disbursalDates.get(rowIndex) != null) {
 
             DisbursementData disbusalData = disbursalDates.get(rowIndex);
@@ -496,7 +512,7 @@ public class LoanImportHandler implements ImportHandler {
             } else {
                 String payload = gsonBuilder.create().toJson(disbusalData);
                 final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                        .disburseLoanApplication(result.getLoanId()) //
+                        .disburseLoanApplication(result == null ? Long.parseLong(loanId) : result.getLoanId()) //
                         .withJson(payload) //
                         .build(); //
 
@@ -507,13 +523,13 @@ public class LoanImportHandler implements ImportHandler {
     }
 
     private Integer importLoanApproval(final List<LoanApprovalData> approvalDates, final CommandProcessingResult result, final int rowIndex,
-            final String dateFormat) {
+            final String dateFormat, String loanId) {
         if (approvalDates.get(rowIndex) != null) {
             GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
             gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(dateFormat));
             String payload = gsonBuilder.create().toJson(approvalDates.get(rowIndex));
             final CommandWrapper commandRequest = new CommandWrapperBuilder() //
-                    .approveLoanApplication(result.getLoanId()) //
+                    .approveLoanApplication(result == null ? Long.parseLong(loanId) : result.getLoanId()) //
                     .withJson(payload) //
                     .build(); //
 
@@ -527,10 +543,19 @@ public class LoanImportHandler implements ImportHandler {
         gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(dateFormat));
         gsonBuilder.registerTypeAdapter(EnumOptionData.class, new EnumOptionDataValueSerializer());
         JsonObject loanJsonOb = gsonBuilder.create().toJsonTree(loans.get(rowIndex)).getAsJsonObject();
+        LoanAccountData loan = loans.get(rowIndex);
+        if (loan.getFundId() == null || loan.getFundId() == 0) {
+            loanJsonOb.remove("fundId");
+        }
+        if (loan.getLoanOfficerId() == null || loan.getLoanOfficerId() == 0) {
+            loanJsonOb.remove("loanOfficerId");
+        }
+
         loanJsonOb.remove("isLoanProductLinkedToFloatingRate");
         loanJsonOb.remove("isInterestRecalculationEnabled");
         loanJsonOb.remove("isFloatingInterestRate");
         loanJsonOb.remove("isRatesEnabled");
+
         JsonArray chargesJsonAr = loanJsonOb.getAsJsonArray("charges");
         if (chargesJsonAr != null) {
             for (int i = 0; i < chargesJsonAr.size(); i++) {

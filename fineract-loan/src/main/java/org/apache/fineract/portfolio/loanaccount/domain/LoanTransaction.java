@@ -139,6 +139,12 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "claim_type")
     private String claimType;
 
+    @Column(name = "installment_number")
+    private Integer installmentNumber;
+
+    @Column(name = "occurred_on_suspended_account", nullable = false)
+    private boolean occurredOnSuspendedAccount;
+
     // This property is added to process vertical payments horizontally for Past Due and Due installments.
     // Advance Payments will be handled through VerticalPayment Scheme
     @Transient
@@ -248,9 +254,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public static LoanTransaction accrueDailyInterest(final Office office, final Loan loan, final Money amount,
-            final LocalDate interestAppliedDate, final ExternalId externalId) {
+            final LocalDate interestAppliedDate, final ExternalId externalId, final Integer installmentNumber) {
         LoanTransaction loanTransaction = accrueInterest(office, loan, amount, interestAppliedDate, externalId);
         loanTransaction.setDailyAccrual(true);
+        loanTransaction.setInstallmentNumber(installmentNumber);
         return loanTransaction;
     }
 
@@ -456,6 +463,14 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     public void reverse(final ExternalId reversalExternalId) {
         this.reverse();
         this.reversalExternalId = reversalExternalId;
+    }
+
+    public void markAsOccurredOnSuspendedAccount() {
+        this.occurredOnSuspendedAccount = true;
+    }
+
+    public boolean hasOccurredOnSuspendedAccount() {
+        return this.occurredOnSuspendedAccount;
     }
 
     public void resetDerivedComponents() {
@@ -1089,6 +1104,14 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
             return claimType.equalsIgnoreCase("guarantor");
     }
 
+    public Integer getInstallmentNumber() {
+        return this.installmentNumber;
+    }
+
+    public void setInstallmentNumber(Integer installmentNumber) {
+        this.installmentNumber = installmentNumber;
+    }
+
     public boolean doNotProcessAdvanceInstallments() {
         return doNotProcessAdvanceInstallments;
     }
@@ -1099,4 +1122,5 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     // TODO missing hashCode(), equals(Object obj), but probably OK as long as
     // this is never stored in a Collection.
+
 }
