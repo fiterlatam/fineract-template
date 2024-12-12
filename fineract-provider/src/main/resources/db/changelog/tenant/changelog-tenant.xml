@@ -332,6 +332,5 @@
     <include file="parts/20241208121243_SU_485_client_death_blocking_reason.xml" relativeToChangelogFile="true"/>
     <include file="parts/202412101146000000_SU_462_c_client_ally_point_of_sales_UPDATE_CONSTRAINT.xml" relativeToChangelogFile="true"/>
     <include file="parts/202412120000000100_SU_472_m_permission_INSERT_CLASIFICACION_CONCEPTO_permissions.xml" relativeToChangelogFile="true"/>
-    <include file="parts/20241209011009141_EA_48_add_phone_data_datable.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241209011009142_EA_49_tipo_identificacion.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
