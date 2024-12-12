@@ -93,6 +93,7 @@ public class LoanDocumentData {
     private String mandatoryInsuranceName;
     private Integer loansCount;
     private Integer itemsCount;
+    private Long loanTransactionId;
 
     public FacturaElectronicaMensual toEntity() {
         final FacturaElectronicaMensual facturaElectronicaMensual = new FacturaElectronicaMensual();
@@ -204,6 +205,7 @@ public class LoanDocumentData {
         facturaElectronicaMensual.setPor_dto(this.totalPaid);
         facturaElectronicaMensual.setVal_dto(this.totalPaid);
         facturaElectronicaMensual.setTotal(this.totalPaid);
+        facturaElectronicaMensual.setLoan_transaction_id(this.loanTransactionId);
         return facturaElectronicaMensual;
     }
 

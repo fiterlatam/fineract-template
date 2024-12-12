@@ -469,6 +469,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         this.occurredOnSuspendedAccount = true;
     }
 
+    public boolean hasOccurredOnSuspendedAccount() {
+        return this.occurredOnSuspendedAccount;
+    }
+
     public void resetDerivedComponents() {
         this.principalPortion = null;
         this.interestPortion = null;
