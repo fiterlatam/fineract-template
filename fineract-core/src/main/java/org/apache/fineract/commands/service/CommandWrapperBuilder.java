@@ -1312,6 +1312,29 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder createClasificacionConcepto() {
+        this.actionName = "CREATE";
+        this.entityName = "CLASIFICACION_CONCEPTO";
+        this.href = "/clasificacionconceptos";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateClasificacionConcepto(final Long id) {
+        this.actionName = "UPDATE";
+        this.entityName = "CLASIFICACION_CONCEPTO";
+        this.href = "/clasificacionconceptos";
+        this.entityId = id;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteClasificacionConcepto(final Long id) {
+        this.actionName = "DELETE";
+        this.entityName = "CLASIFICACION_CONCEPTO";
+        this.href = "/clasificacionconceptos";
+        this.entityId = id;
+        return this;
+    }
+
     public CommandWrapperBuilder createCodeValue(final Long codeId) {
         this.actionName = "CREATE";
         this.entityName = "CODEVALUE";
