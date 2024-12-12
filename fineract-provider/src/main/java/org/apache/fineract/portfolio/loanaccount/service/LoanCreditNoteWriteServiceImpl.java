@@ -3,6 +3,7 @@ package org.apache.fineract.portfolio.loanaccount.service;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,17 +25,14 @@ import org.apache.fineract.infrastructure.documentmanagement.domain.Document;
 import org.apache.fineract.infrastructure.documentmanagement.domain.DocumentRepository;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanCreditNoteBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
+import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.SpecialWriteOffPayload;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCreditNote;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCreditNoteRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanCreditNoteAmountCannotBeZeroException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanCreditNoteDateCannotBeFutureException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanTransactionNotFoundException;
@@ -159,7 +157,8 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
 
         SpecialWriteOffPayload specialWriteOffPayload = SpecialWriteOffPayload.builder().loanId(loan.getId())
                 .principalPortion(creditNote.getCapital()).interestPortion(creditNote.getCurrentInterest())
-                .totalWriteOffAmount(creditNote.getTotalAmount()).dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT).locale("es").build();
+                .totalWriteOffAmount(creditNote.getTotalAmount()).dateFormat(CustomDateUtils.SPANISH_DATE_FORMAT)
+                .locale("es").isCreditNote(true).build();
 
         if (!charges.isEmpty()) {
             specialWriteOffPayload.setCharges(charges);
@@ -200,8 +199,11 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                 LoanCharge insuranceCharge = loanCharges.stream().filter(loanCharge -> loanCharge.getCharge().isVoluntaryInsurance())
                         .findFirst().orElse(null);
                 if (insuranceCharge != null) {
+                    BigDecimal vatAmountToBePaid = BigDecimal.ZERO;
+                    vatAmountToBePaid = calculateVatAmount(loanCharges, insuranceCharge, insuranceCharge.amountOutstanding(), loan.getCurrency(), charges);
+                    BigDecimal chargeAmount = creditNote.getInsurance().subtract(vatAmountToBePaid);
                     charges.add(Map.of("chargeId", Objects.requireNonNull(insuranceCharge.getCharge().getId()), "writeOffAmount",
-                            creditNote.getInsurance()));
+                            chargeAmount));
                 } else {
                     creditNote.setInsurance(BigDecimal.ZERO);
                 }
@@ -216,8 +218,11 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                 log.info(" is charge present {}", insuranceCharge);
                 // check if insurance is present
                 if (insuranceCharge != null) {
+                    BigDecimal vatAmountToBePaid = BigDecimal.ZERO;
+                    vatAmountToBePaid = calculateVatAmount(loanCharges, insuranceCharge, insuranceCharge.amountOutstanding(), loan.getCurrency(), charges);
+                    BigDecimal chargeAmount = creditNote.getMandatoryInsurance().subtract(vatAmountToBePaid);
                     charges.add(Map.of("chargeId", Objects.requireNonNull(insuranceCharge.getCharge().getId()), "writeOffAmount",
-                            creditNote.getMandatoryInsurance()));
+                            chargeAmount));
                 } else {
                     creditNote.setMandatoryInsurance(BigDecimal.ZERO);
                 }
@@ -240,8 +245,11 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                 LoanCharge avalCharge = loanCharges.stream().filter(loanCharge -> loanCharge.getCharge().isAvalCharge()).findFirst()
                         .orElse(null);
                 if (avalCharge != null) {
+                    BigDecimal vatAmountToBePaid = BigDecimal.ZERO;
+                    vatAmountToBePaid = calculateVatAmount(loanCharges, avalCharge, avalCharge.amountOutstanding(), loan.getCurrency(), charges);
+                    BigDecimal chargeAmount = creditNote.getAval().subtract(vatAmountToBePaid);
                     charges.add(Map.of("chargeId", Objects.requireNonNull(avalCharge.getCharge().getId()), "writeOffAmount",
-                            creditNote.getAval()));
+                            chargeAmount));
                 } else {
                     creditNote.setAval(BigDecimal.ZERO);
                 }
@@ -252,5 +260,52 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
         }
         creditNote.calculateTotalAmount();
         return charges;
+    }
+
+    private BigDecimal percentageOf(BigDecimal amount, BigDecimal percentage, final RoundingMode roundingMode, MonetaryCurrency currency) {
+        final BigDecimal newAmount = amount.multiply(percentage).divide(BigDecimal.valueOf(100), roundingMode);
+        return Money.of(currency, newAmount).getAmount();
+    }
+
+    private BigDecimal calculateVatAmount(Collection<LoanCharge> loanCharges, LoanCharge parentCharge,
+                                          BigDecimal amount, MonetaryCurrency currency, List<Map<String, Object>> charges) {
+        BigDecimal vatAmount = BigDecimal.ZERO;
+        BigDecimal parentChargeAmount = BigDecimal.ZERO;
+        for (LoanInstallmentCharge installmentCharge : parentCharge.installmentCharges()) {
+            if (installmentCharge.isPaid()) {
+                continue;
+            } else {
+                parentChargeAmount = installmentCharge.getAmountOutstanding();
+                break;
+            }
+        }
+        for (LoanCharge vatCharge : loanCharges) {
+            if (Objects.equals(parentCharge.getCharge().getId(),
+                    vatCharge.getCharge().getParentChargeId())) {
+                BigDecimal outstandingVatAmount = BigDecimal.ZERO;
+                for (LoanInstallmentCharge installmentCharge : vatCharge.installmentCharges()) {
+                    if (installmentCharge.isPaid()) {
+                        continue;
+                    } else {
+                        outstandingVatAmount = installmentCharge.getAmountOutstanding();
+                        break;
+                    }
+                }
+                if (outstandingVatAmount.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal calculatedAmount = percentageOf(parentChargeAmount, vatCharge.amountOrPercentage(), RoundingMode.HALF_UP, currency);
+                    if (calculatedAmount.compareTo(outstandingVatAmount) < 0) {
+                        outstandingVatAmount = calculatedAmount;
+                    }
+                }
+                vatAmount = outstandingVatAmount;
+                if (vatAmount.compareTo(BigDecimal.ZERO) > 0) {
+                    charges.add(Map.of("chargeId", Objects.requireNonNull(vatCharge.getCharge().getId()), "writeOffAmount",
+                            vatAmount));
+                }
+                break;
+            }
+        }
+
+        return vatAmount;
     }
 }
