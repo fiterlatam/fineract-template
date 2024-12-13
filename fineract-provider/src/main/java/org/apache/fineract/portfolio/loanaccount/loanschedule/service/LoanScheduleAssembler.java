@@ -243,7 +243,14 @@ public class LoanScheduleAssembler {
                         "The interest rate associated with this loan product is not active", interestRate.getId());
             }
             final Long interestRateId = interestRate.getId();
-            BigDecimal currentInterestRate = interestRate.getCurrentRate();
+            BigDecimal currentInterestRate;
+            if (fromApiJsonHelper.parameterExists(LoanApiConstants.interestRatePerPeriodParameterName, element)) {
+                currentInterestRate = this.fromApiJsonHelper
+                        .extractBigDecimalWithLocaleNamed(LoanApiConstants.interestRatePerPeriodParameterName, element);
+            } else {
+                currentInterestRate = interestRate.getCurrentRate();
+            }
+
             final LocalDate interestRateAppliedOnDate = interestRate.getAppliedOnDate();
             final LocalDate expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed("expectedDisbursementDate", element);
             if (DateUtils.isAfter(interestRateAppliedOnDate, expectedDisbursementDate)) {

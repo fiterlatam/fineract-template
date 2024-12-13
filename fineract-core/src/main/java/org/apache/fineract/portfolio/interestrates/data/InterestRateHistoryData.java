@@ -41,4 +41,6 @@ public class InterestRateHistoryData {
     private String createdBy;
     private LocalDate createdDate;
     private EnumOptionData interestRateType;
+    private BigDecimal minRate;
+    private BigDecimal maxRate;
 }

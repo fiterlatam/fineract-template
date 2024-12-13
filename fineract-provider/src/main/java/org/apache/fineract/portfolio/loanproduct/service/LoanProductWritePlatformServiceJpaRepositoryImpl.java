@@ -441,8 +441,8 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                 product.setInterestRate(interestRate);
                 final BigDecimal currentRate = interestRate.getCurrentRate();
                 final PeriodFrequencyType interestFrequencyType = PeriodFrequencyType.YEARS;
-                product.loanProductMinMaxConstraints().setMinNominalInterestRatePerPeriod(currentRate);
-                product.loanProductMinMaxConstraints().setMaxNominalInterestRatePerPeriod(currentRate);
+                product.loanProductMinMaxConstraints().setMinNominalInterestRatePerPeriod(interestRate.getMinRate());
+                product.loanProductMinMaxConstraints().setMaxNominalInterestRatePerPeriod(interestRate.getMaxRate());
                 product.getLoanProductRelatedDetail().setNominalInterestRatePerPeriod(currentRate);
                 product.getLoanProductRelatedDetail().setAnnualNominalInterestRate(currentRate);
                 product.getLoanProductRelatedDetail().updateInterestPeriodFrequencyType(interestFrequencyType);
