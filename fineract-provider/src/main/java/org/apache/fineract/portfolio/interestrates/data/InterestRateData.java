@@ -37,6 +37,8 @@ public class InterestRateData {
     private Long id;
     private String name;
     private BigDecimal currentRate;
+    private BigDecimal minRate;
+    private BigDecimal maxRate;
     private LocalDate appliedOnDate;
     private Boolean active;
     private String createdBy;
@@ -46,4 +48,5 @@ public class InterestRateData {
     private EnumOptionData interestRateType;
     private List<EnumOptionData> interestRateTypeOptions;
     private MaximumCreditRateConfigurationData maximumCreditRateConfiguration;
+
 }
