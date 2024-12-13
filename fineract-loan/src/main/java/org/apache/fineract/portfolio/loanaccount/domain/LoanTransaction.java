@@ -395,6 +395,16 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return new LoanTransaction(loan, office, LoanTransactionType.WRITEOFF, null, writeOffDate, externalId);
     }
 
+    public static LoanTransaction creditNote(final Loan loan, final Office office, final LocalDate writeOffDate,
+            final ExternalId externalId, final BigDecimal amount) {
+        return new LoanTransaction(loan, office, LoanTransactionType.CREDIT_NOTE, amount, writeOffDate, externalId);
+    }
+
+    public static LoanTransaction creditNote(final Loan loan, final Office office, final LocalDate writeOffDate,
+            final ExternalId externalId) {
+        return new LoanTransaction(loan, office, LoanTransactionType.CREDIT_NOTE, null, writeOffDate, externalId);
+    }
+
     public static LoanTransaction chargeOff(final Loan loan, final LocalDate chargeOffDate, final ExternalId externalId) {
         BigDecimal principalPortion = loan.getLoanSummary().getTotalPrincipalOutstanding().compareTo(BigDecimal.ZERO) != 0
                 ? loan.getLoanSummary().getTotalPrincipalOutstanding()

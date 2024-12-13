@@ -2043,9 +2043,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final boolean isAccountTransfer = false;
             final HolidayDetailDTO holidayDetailDto = null;
             final boolean isHolidayValidationDone = false;
-            writeOffTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.WRITEOFF, loan, transactionDate,
-                    totalWriteOffAmount, paymentDetail, noteText, externalId, isRecoveryRepayment, chargeRefundChargeType,
-                    isAccountTransfer, holidayDetailDto, isHolidayValidationDone);
+            final boolean isCreditNote = command.booleanPrimitiveValueOfParameterNamed("isCreditNote");
+            LoanTransactionType transactionType = null;
+            if (isCreditNote) {
+                transactionType = LoanTransactionType.CREDIT_NOTE;
+            } else {
+                transactionType = LoanTransactionType.WRITEOFF;
+            }
+            writeOffTransaction = this.loanAccountDomainService.makeRepayment(transactionType, loan, transactionDate, totalWriteOffAmount,
+                    paymentDetail, noteText, externalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer, holidayDetailDto,
+                    isHolidayValidationDone);
         } else {
             final MonetaryCurrency currency = loan.getCurrency();
             final LoanRepaymentScheduleInstallment specialWriteOffInstallment = loan.fetchLoanSpecialWriteOffDetail(transactionDate);
@@ -2199,7 +2206,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
                 saveAndFlushLoanWithIntegrityChecks(loan);
             }
-            writeOffTransaction = loan.writeOff(loanRepaymentScheduleInstallmentData, transactionDate, externalId);
+            final boolean isCreditNote = command.booleanPrimitiveValueOfParameterNamed("isCreditNote");
+            writeOffTransaction = loan.writeOff(loanRepaymentScheduleInstallmentData, transactionDate, externalId, isCreditNote);
             currentScheduleInstallment.updateInterestCharged(interestToBeChargedAndWrittenOff.getAmount());
             loan.updateLoanSummaryDerivedFields();
             loan.getRepaymentScheduleInstallments().forEach(rp -> rp.checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency));

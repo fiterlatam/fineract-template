@@ -199,7 +199,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         Money unprocessed = Money.zero(ctx.getCurrency());
         switch (loanTransaction.getTypeOf()) {
             case DISBURSEMENT -> handleDisbursement(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getOverpaymentHolder());
-            case WRITEOFF ->
+            case WRITEOFF, CREDIT_NOTE ->
                 handleWriteOff(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges(), ctx.getOverpaymentHolder());
             case REFUND_FOR_ACTIVE_LOAN -> handleRefund(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges());
             case CHARGEBACK -> handleChargeback(loanTransaction, ctx);
