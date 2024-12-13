@@ -25,6 +25,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -3068,6 +3069,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 processInstallmentsInstallments = loan.getRepaymentScheduleInstallments().stream()
                         .filter(LoanRepaymentScheduleInstallment::isFullyGraced).toList();
             }
+            // we can sort processInstallmentsInstallments by due date
+            processInstallmentsInstallments = processInstallmentsInstallments.stream()
+                    .sorted(Comparator.comparing(LoanRepaymentScheduleInstallment::getDueDate)).toList();
             final List<LoanRepaymentScheduleInstallment> newRepaymentScheduleInstallments = new ArrayList<>();
 
             // Block process the installment and creates the period if it falls
@@ -3078,6 +3082,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 if (installment.isFullyGraced()) {
                     periods.add(createLoanScheduleModelDownPaymentPeriod(installment, outstandingBalance));
                     newRepaymentScheduleInstallments.add(installment);
+                    actualRepaymentDate = getScheduledDateGenerator().generateNextRepaymentDate(actualRepaymentDate, loanApplicationTerms,
+                            isFirstRepayment);
                     continue;
                 }
                 if (installment.isDownPayment()) {
