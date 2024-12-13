@@ -136,6 +136,7 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
 
     private void addAccrualTillSpecificDate(final LocalDate tilldate, final LoanScheduleAccrualData accrualData) throws Exception {
         LocalDate interestStartDate = accrualData.getFromDateAsLocaldate();
+
         if (accrualData.getInterestCalculatedFrom() != null
                 && accrualData.getFromDateAsLocaldate().isBefore(accrualData.getInterestCalculatedFrom())) {
             if (accrualData.getInterestCalculatedFrom().isBefore(accrualData.getDueDateAsLocaldate())) {
@@ -146,7 +147,24 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
         }
 
         int totalNumberOfDays = Math.toIntExact(ChronoUnit.DAYS.between(interestStartDate, accrualData.getDueDateAsLocaldate()));
-        LocalDate startDate = accrualData.getFromDateAsLocaldate();
+        double totalInterest = accrualData.getAccruableIncome().doubleValue();
+        double paidInterest = accrualData.getInterestCompletedIncome() != null ? accrualData.getInterestCompletedIncome().doubleValue() : 0.0;
+        double remainingInterest = totalInterest - paidInterest;
+
+        if (remainingInterest <= 0) {
+            return; // No remaining interest to accrue.
+        }
+
+        double interestPerDay = totalInterest / totalNumberOfDays;
+        int daysPaid = (int) Math.ceil(paidInterest / interestPerDay);
+
+        // Adjust start date based on paid days
+        LocalDate adjustedStartDate = interestStartDate.plusDays(daysPaid);
+        if (adjustedStartDate.isAfter(tilldate)) {
+            return; // No accrual needed as paid interest covers till the given date.
+        }
+
+        LocalDate startDate = adjustedStartDate;
         if (accrualData.getInterestCalculatedFrom() != null && startDate.isBefore(accrualData.getInterestCalculatedFrom())) {
             if (accrualData.getInterestCalculatedFrom().isBefore(tilldate)) {
                 startDate = accrualData.getInterestCalculatedFrom();
@@ -154,18 +172,20 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                 startDate = tilldate;
             }
         }
+
         int daysToBeAccrued = Math.toIntExact(ChronoUnit.DAYS.between(startDate, tilldate));
-        double interestPerDay = accrualData.getAccruableIncome().doubleValue() / totalNumberOfDays;
+        BigDecimal interestportion;
         BigDecimal amount = BigDecimal.ZERO;
-        BigDecimal interestportion = null;
         BigDecimal feeportion = accrualData.getDueDateFeeIncome();
         BigDecimal penaltyportion = accrualData.getDueDatePenaltyIncome();
-        if (daysToBeAccrued >= totalNumberOfDays) {
-            interestportion = accrualData.getAccruableIncome();
+
+        if (daysToBeAccrued >= totalNumberOfDays - daysPaid) {
+            interestportion = BigDecimal.valueOf(remainingInterest);
         } else {
-            double iterest = interestPerDay * daysToBeAccrued;
-            interestportion = BigDecimal.valueOf(iterest);
+            double interest = interestPerDay * daysToBeAccrued;
+            interestportion = BigDecimal.valueOf(interest);
         }
+
         interestportion = interestportion.setScale(accrualData.getCurrencyData().decimalPlaces(), MoneyHelper.getRoundingMode());
 
         BigDecimal totalAccInterest = accrualData.getAccruedInterestIncome();
@@ -183,6 +203,7 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                 interestportion = null;
             }
         }
+
         if (feeportion != null) {
             if (totalAccFee == null) {
                 totalAccFee = BigDecimal.ZERO;
@@ -206,11 +227,13 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                 penaltyportion = null;
             }
         }
+
         if (amount.compareTo(BigDecimal.ZERO) > 0) {
             addAccrualAccounting(accrualData, amount, interestportion, totalAccInterest, feeportion, totalAccFee, penaltyportion,
                     totalAccPenalty, tilldate);
         }
     }
+
 
     @Transactional
     public void addAccrualAccounting(LoanScheduleAccrualData scheduleAccrualData) throws Exception {
