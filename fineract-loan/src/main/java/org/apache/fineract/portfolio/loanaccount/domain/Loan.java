@@ -1554,8 +1554,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void updateLoanSchedule(final Collection<LoanRepaymentScheduleInstallment> installments) {
         List<LoanRepaymentScheduleInstallment> existingInstallments = new ArrayList<>(this.repaymentScheduleInstallments);
+        List<LoanRepaymentScheduleInstallment> scheduleInstallments = new ArrayList<>(installments);
+        if (installments.size() != existingInstallments.size()) {
+            // most likely graced installements are missing
+            // we need to add them back
+            List<LoanRepaymentScheduleInstallment> gracedInstallments = existingInstallments.stream()
+                    .filter(LoanRepaymentScheduleInstallment::isFullyGraced).toList();
+            scheduleInstallments.addAll(gracedInstallments);
+        }
         repaymentScheduleInstallments.clear();
-        for (final LoanRepaymentScheduleInstallment installment : installments) {
+        for (final LoanRepaymentScheduleInstallment installment : scheduleInstallments) {
             LoanRepaymentScheduleInstallment existingInstallment = findByInstallmentNumber(existingInstallments,
                     installment.getInstallmentNumber());
             final BigDecimal totalAccruedInterestForInstallment = this.getAccruedInterestForInstallment(installment.getInstallmentNumber());
