@@ -381,7 +381,7 @@ select distinct
 	'',
 	'',
 	'',
-	concat(tcm.nit, '-', tcm.code, '-', tcm.cre_numerocredito, '-', tcm.cli_nroid, npd_secuencia) as external_id,
+	tcm.external_id as external_id,
 	case
 		when cpc_monto_aval != null and cpc_monto_aval > 0 then 'Aval_Migrar'
 		else null
