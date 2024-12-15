@@ -113,8 +113,8 @@ public interface LoanAccountDomainService {
 
     FeeCalculationHonorario calculateFeeHonorario(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, BigDecimal repayment);
 
-    void updateCalculationHonoLoanChargeOverDueVat(BigDecimal repaymentAmount,
-            LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment);
+    FeeCalculationHonorario updateCalculationHonoLoanChargeOverDueVat(BigDecimal repaymentAmount,
+            LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, Integer installmentNumberToBeCharged);
 
     void updateRepaymentInstalmentCharge(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, Integer numberOfRepayment);
 

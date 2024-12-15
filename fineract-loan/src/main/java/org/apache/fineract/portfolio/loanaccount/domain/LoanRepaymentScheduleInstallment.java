@@ -411,6 +411,12 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             if (chargeType.equals("Honorarios")) {
                 if (installmentCharge.getLoanCharge().getChargeCalculation().isFlatHono()) {
                     amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                    for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                        if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
+                                vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
+                            amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                        }
+                    }
                 }
             } else if (chargeType.equals("Aval")) {
                 if (installmentCharge.getLoanCharge().isAvalCharge()) {

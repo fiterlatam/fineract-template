@@ -189,13 +189,7 @@ import org.apache.fineract.portfolio.insurance.exception.InsuranceIncidentNotFou
 import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.command.LoanUpdateCommand;
-import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceInstallmentData;
-import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
-import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsDataWrapper;
-import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
+import org.apache.fineract.portfolio.loanaccount.data.*;
 import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
 import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanIndividualMonitoringAccount;
@@ -1147,6 +1141,43 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     public CommandProcessingResult makeLoanRepayment(final LoanTransactionType repaymentTransactionType, final Long loanId,
             final JsonCommand command, final boolean isRecoveryRepayment) {
         final String chargeRefundChargeType = null;
+        // SU-516 Calculate the hono charge for repayment only
+        if (!isRecoveryRepayment) {
+            Loan loan = this.loanAssembler.assembleFrom(loanId);
+            Optional<LoanCharge> honoChargeOptional = loan.getLoanCharges().stream()
+                    .filter(LoanCharge::isFlatHono).findFirst();
+            if (honoChargeOptional.isPresent() && loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()) > 0) {
+                LoanCharge honoCharge = honoChargeOptional.get();
+                Optional<LoanCharge> vatChargeOptional = loan.getLoanCharges().stream()
+                        .filter(chg -> chg.isCustomPercentageBasedOfAnotherCharge() && chg.getCharge().getParentChargeId().equals(honoCharge.getCharge().getId())).findFirst();
+                final LocalDate transactionDate = command.localDateValueOfParameterNamed("transactionDate");
+                BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed("transactionAmount");
+                Money remainingAmount = Money.of(loan.getCurrency(), transactionAmount);
+                Integer installmentNumber = 0;
+                for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
+                    if (installment.isOverdueOn(transactionDate) && !installment.isObligationsMet()) {
+                        if (installmentNumber == 0) {
+                            installmentNumber = installment.getInstallmentNumber();
+                        }
+                        BigDecimal installmentOutstandingAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount();
+                        FeeCalculationHonorario fee = new FeeCalculationHonorario(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+                        if (remainingAmount.isGreaterThanZero() && remainingAmount.isGreaterThan(installment.getTotalOutstanding(loan.getCurrency()))) {
+                            fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(installmentOutstandingAmount, installment, installmentNumber);
+                            remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
+
+                        } else {
+                            fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(remainingAmount.getAmount(), installment, installmentNumber);
+                        }
+
+                        remainingAmount = remainingAmount.minus(fee.getFeeBasis());
+                        if (vatChargeOptional.isPresent()) {
+                            remainingAmount = remainingAmount.minus(fee.getFeeVat());
+                        }
+
+                    }
+                }
+            }
+        }
         return makeLoanRepaymentWithChargeRefundChargeType(repaymentTransactionType, loanId, command, isRecoveryRepayment,
                 chargeRefundChargeType);
     }
@@ -3556,19 +3587,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
         }
 
+        /// SU-516 Calculate Hono Charge
         Optional<LoanCharge> charges = loan.getLoanCharges().stream()
-                .filter(charge -> charge.isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios()).findFirst();
+                .filter(LoanCharge::isFlatHono).findFirst();
         if (charges.isPresent() && loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()) > 0) {
             for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
-                if (installment.isOverdueOn(transactionDate)) {
-                    this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(
-                            installment.getTotalOutstanding(loan.getCurrency()).getAmount(), installment);
-                    this.loanAccountDomainService.updateRepaymentInstalmentCharge(installment, installment.getInstallmentNumber());
-                    this.loanRepository.save(loan);
+                if (installment.isOverdueOn(transactionDate) && !installment.isObligationsMet()) {
+                    this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(installment.getTotalOutstanding(loan.getCurrency()).getAmount(), installment, 1);
                 }
             }
         }
-
+        //////
         this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan,
                 loanRescheduleRequest);
 

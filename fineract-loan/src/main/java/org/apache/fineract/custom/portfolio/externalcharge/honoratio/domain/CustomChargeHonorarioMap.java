@@ -77,6 +77,11 @@ public class CustomChargeHonorarioMap extends AbstractPersistableCustom {
     @Column(name = "loan_charge_id", nullable = true)
     private Long loanChargeId;
 
+    // This column is used to identify the batch inserted so that on transaction reversal the latest batch can be identified and removed from the table to
+    // recalculate the installment fee
+    @Column(name = "version", nullable = true)
+    private Long version;
+
     // @Column(name = "is_installment_already_paid")
     @Transient
     private boolean isInstallmentAlreadyPaid;

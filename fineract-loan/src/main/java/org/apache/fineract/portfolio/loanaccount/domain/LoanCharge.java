@@ -856,7 +856,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         final BigDecimal totalAccountedFor = amountPaidLocal.add(amountWaivedLocal).add(amountWrittenOffLocal);
-
+        // SU-516 recalculate and increase the amount of a closed hono charge
+        BigDecimal difference = this.amount.subtract(totalAccountedFor);
+        if (difference.compareTo(BigDecimal.ZERO) > 0 && this.isPaid()) {
+            this.paid = false;
+        }
         return this.amount.subtract(totalAccountedFor);
     }
 
@@ -1458,7 +1462,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         if (this.getChargeCalculation().isFlatHono() && !this.getCustomChargeHonorarioMaps().isEmpty()) {
             for (CustomChargeHonorarioMap customCharge : this.getCustomChargeHonorarioMaps()) {
                 if (customCharge.getLoanInstallmentNr().equals(installmentNumber)) {
-                    customAmout = customAmout.add(customCharge.getFeeTotalAmount());
+                    customAmout = customAmout.add(customCharge.getFeeBaseAmount());
                     break;
                 }
             }
@@ -1639,5 +1643,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void updateAmountOutstanding() {
         this.amountOutstanding = calculateOutstanding();
+    }
+
+    public void setCustomChargeHonorarioMaps(Set<CustomChargeHonorarioMap> customChargeHonorarioMaps) {
+        this.customChargeHonorarioMaps = customChargeHonorarioMaps;
     }
 }
