@@ -468,4 +468,8 @@ public class LoanTransactionData {
         this.loanChargePaidBySummary = loanChargePaidBySummary;
     }
 
+    public void updateFeeChargesPortion(BigDecimal amount) {
+        this.feeChargesPortion = this.feeChargesPortion.add(amount);
+    }
+
 }

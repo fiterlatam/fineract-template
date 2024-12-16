@@ -21,6 +21,7 @@ package org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -36,4 +37,11 @@ public interface CustomChargeHonorarioMapRepository
     @Query(FIND_BY_NIT_LOAN_INSTALLMENT_ACTIVE)
     Optional<CustomChargeHonorarioMap> findByNitLoanIdLoanInstallmentNr(@Param("nit") String nit, @Param("loanId") Long loanId,
             @Param("loanInstallmentNr") Integer loanInstallmentNr);
+
+    @Query("SELECT MAX(c.version) FROM CustomChargeHonorarioMap c WHERE c.loanId = :loanId")
+    Long getMaxVersionByLoan(@Param("loanId") Long loanId);
+
+    @Modifying
+    @Query("DELETE FROM CustomChargeHonorarioMap p WHERE p.loanId = :loanId and p.version = :version")
+    int deleteLatestVersionMapEntryOnReversal(@Param("loanId") Long loanId, @Param("version") Long version);
 }
