@@ -414,6 +414,12 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             if (chargeType.equals("Honorarios")) {
                 if (installmentCharge.getLoanCharge().getChargeCalculation().isFlatHono()) {
                     amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                    for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                        if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
+                                vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
+                            amount = amount.plus(getInstallmentChargeOutstandingAmount(currency, installmentCharge));
+                        }
+                    }
                 }
             } else if (chargeType.equals("Aval")) {
                 if (installmentCharge.getLoanCharge().isAvalCharge()) {
@@ -710,7 +716,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         return payHonorariosChargesComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction, null);
     }
 
-    public Money payHonorariosChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
+    public Money payHonorariosChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
 
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
@@ -721,7 +727,18 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
         for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
             if (installmentCharge.getLoanCharge().getChargeCalculation().isFlatHono()) {
-
+                for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                    if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
+                            vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
+                        feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
+                                feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
+                        updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
+                                vatCharge.getLoanCharge());
+                        transactionAmountRemaining = transactionAmountRemaining.minus(feePortionOfTransaction);
+                        loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
+                        break;
+                    }
+                }
                 feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
                         feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
                 updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
@@ -877,10 +894,12 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         Money feeChargePaid = Money.zero(currency);
         Money feeChargesDue = getInstallmentChargeOutstandingAmount(currency, installmentCharge);
         if (installmentCharge.getLoanCharge().isCustomPercentageBasedOfAnotherCharge()) {
-            Money percentageAmountToBePaid = transactionAmountRemaining.percentageOf(installmentCharge.getLoanCharge().amountOrPercentage(),
-                    RoundingMode.HALF_UP);
-            if (percentageAmountToBePaid.isLessThan(feeChargesDue)) {
-                feeChargesDue = Money.of(percentageAmountToBePaid.getCurrency(), percentageAmountToBePaid.getAmount());
+            if (!installmentCharge.getLoanCharge().isVatChargeOfHonoCharge()) {
+                Money percentageAmountToBePaid = transactionAmountRemaining
+                        .percentageOf(installmentCharge.getLoanCharge().amountOrPercentage(), RoundingMode.HALF_UP);
+                if (percentageAmountToBePaid.isLessThan(feeChargesDue)) {
+                    feeChargesDue = Money.of(percentageAmountToBePaid.getCurrency(), percentageAmountToBePaid.getAmount());
+                }
             }
         }
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(feeChargesDue)) {

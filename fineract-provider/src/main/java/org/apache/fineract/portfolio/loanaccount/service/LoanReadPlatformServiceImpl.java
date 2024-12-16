@@ -26,6 +26,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -231,11 +232,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     }
 
-    private FeeCalculationHonorario calculateFeeDetails(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment) {
+    private FeeCalculationHonorario calculateFeeDetails(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
+            BigDecimal repaymentAmount) {
         Integer ageOverdue = loanRepaymentScheduleInstallment.getLoan().getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
         BigDecimal delinquencyValue = BigDecimal.ZERO;
-        Loan loan = loanRepaymentScheduleInstallment.getLoan();
-        BigDecimal repaymentAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(loan.getCurrency()).getAmount();
         // Retrieve VAT configuration and percentage
         Integer vatConfig = configurationDomainService.retriveIvaConfiguration();
         BigDecimal vatPercentage = BigDecimal.valueOf(vatConfig).divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
@@ -252,31 +252,15 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             }
         }
 
-        // Adjust repayment amount if honorarium charges exist
-        Optional<LoanCharge> charges = loan.getActiveCharges().stream()
-                .filter(charge -> charge.getChargeCalculation().isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios())
-                .findFirst();
-
-        if (charges.isPresent()) {
-            Optional<CustomChargeHonorarioMap> customChargeHonorarioMaps = charges.get().getCustomChargeHonorarioMaps().stream()
-                    .filter(customChargeHonorarioMap -> customChargeHonorarioMap.getLoanInstallmentNr() == loanRepaymentScheduleInstallment
-                            .getInstallmentNumber() && !loanRepaymentScheduleInstallment.isObligationsMet())
-                    .findFirst();
-            if (customChargeHonorarioMaps.isPresent()) {
-                BigDecimal chargeFeeHono = customChargeHonorarioMaps.get().getFeeTotalAmount();
-                repaymentAmount = repaymentAmount.subtract(chargeFeeHono);
-            }
-        }
-
         // Calculate delinquent portion, fee with VAT, fee basis, and fee VAT
         BigDecimal delinquencyRate = delinquencyValue.divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
         BigDecimal delinquentPortion = repaymentAmount
                 .divide(BigDecimal.ONE.add(delinquencyRate.multiply(BigDecimal.ONE.add(vatPercentage))), 2, MoneyHelper.getRoundingMode());
-        BigDecimal feeWithTax = delinquentPortion.multiply(delinquencyRate.multiply(BigDecimal.ONE.add(vatPercentage))).setScale(2,
-                MoneyHelper.getRoundingMode());
-        BigDecimal feeBasis = feeWithTax.divide(BigDecimal.ONE.add(vatPercentage), 2, MoneyHelper.getRoundingMode());
-        BigDecimal feeVat = feeWithTax.subtract(feeBasis).setScale(2, MoneyHelper.getRoundingMode());
-        BigDecimal feeHono = feeVat.add(feeBasis).setScale(0, MoneyHelper.getRoundingMode());
+        BigDecimal feeWithTax = delinquentPortion.multiply(delinquencyRate.multiply(BigDecimal.ONE.add(vatPercentage))).setScale(0,
+                RoundingMode.HALF_UP);
+        BigDecimal feeBasis = feeWithTax.divide(BigDecimal.ONE.add(vatPercentage), 0, RoundingMode.HALF_UP);
+        BigDecimal feeVat = feeWithTax.subtract(feeBasis).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal feeHono = feeVat.add(feeBasis).setScale(0, RoundingMode.HALF_UP);
 
         // Return results as an object
         return new FeeCalculationHonorario(delinquentPortion, feeWithTax, feeBasis, feeVat, feeHono);
@@ -511,10 +495,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
         Boolean isCalculate = false;
-        Boolean isHasCustomHonoraioMap = loan.getActiveCharges().stream()
-                .anyMatch(charge -> charge.getChargeCalculation().isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios());
-        Optional<LoanCharge> loanCharge = loan.getActiveCharges().stream()
-                .filter(chg -> chg.isFlatHono() || chg.getChargeCalculation().isPercentageOfHonorarios()).findFirst();
+        Boolean isHasCustomHonoraioMap = loan.getActiveCharges().stream().anyMatch(charge -> charge.getChargeCalculation().isFlatHono());
+        Optional<LoanCharge> loanCharge = loan.getActiveCharges().stream().filter(LoanCharge::isFlatHono).findFirst();
         if (loanCharge.isPresent()) {
             isCalculate = true;
             Set<CustomChargeHonorarioMap> customChargeHonorarioMaps = loanCharge.get().getCustomChargeHonorarioMaps();
@@ -556,6 +538,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         loanTransactionTemplate.setIsCalculate(isCalculate);
 
         return loanTransactionTemplate;
+    }
+
+    @Override
+    public BigDecimal calculateHonorariosAmount(Long loanId, BigDecimal repaymentAmount) {
+        Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+        return calculateHonoChargeAmount(loan, DateUtils.getBusinessLocalDate(), repaymentAmount);
     }
 
     @Override
@@ -2936,22 +2924,16 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
         final BigDecimal outstandingLoanBalance = loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount();
         final Boolean isReversed = false;
-        BigDecimal feeHono = BigDecimal.ZERO;
-        Optional<LoanCharge> haveHonoCharge = loan.getActiveCharges().stream()
-                .filter(charge -> charge.isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios()).findFirst();
-        if (haveHonoCharge.isPresent() && loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()) > 0) {
-            List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = loan.getRepaymentScheduleInstallments().stream()
-                    .filter(installment -> installment.isOverdueOn(transactionDate)).toList();
-            for (LoanRepaymentScheduleInstallment installment : loanRepaymentScheduleInstallments) {
-                FeeCalculationHonorario feeCalculationHonorario = this.calculateFeeDetails(installment);
-                feeHono = feeHono.add(feeCalculationHonorario.getFeeHono());
 
-            }
+        BigDecimal feeHono = calculateHonoChargeAmount(loan, transactionDate,
+                loanRepaymentScheduleInstallment.getTotalOutstanding(currency).getAmount());
+        BigDecimal feeOutstanding = loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount();
+        BigDecimal totalOutStanding = loanRepaymentScheduleInstallment.getTotalOutstanding(currency).getAmount();
+
+        if (!isAnulado) {
+            feeOutstanding = feeOutstanding.add(feeHono);
+            totalOutStanding = totalOutStanding.add(feeHono);
         }
-
-        BigDecimal feeOutstanding = loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount().add(feeHono);
-        BigDecimal totalOutStanding = loanRepaymentScheduleInstallment.getTotalOutstanding(currency).getAmount().add(feeHono);
-
         return new LoanTransactionData(null, null, null, transactionType, null, currencyData, earliestUnpaidInstallmentDate,
                 totalOutStanding, loan.getNetDisbursalAmount(),
                 loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount(),
@@ -3986,5 +3968,39 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final Object[] objectArray = { minimDaysToReclaim, claimType };
 
         return this.jdbcTemplate.query(sqlBuilder.toString(), objectArray, loanReclaimMapper);
+    }
+
+    private BigDecimal calculateHonoChargeAmount(Loan loan, LocalDate transactionDate, BigDecimal repaymentAmount) {
+        BigDecimal feeHono = BigDecimal.ZERO;
+        Optional<LoanCharge> haveHonoCharge = loan.getActiveCharges().stream().filter(charge -> charge.isFlatHono()).findFirst();
+        if (haveHonoCharge.isPresent() && loan.getAgeOfOverdueDays(transactionDate) > 0) {
+            LoanCharge honoCharge = haveHonoCharge.get();
+            Optional<LoanCharge> vatHono = loan.getActiveCharges().stream().filter(charge -> charge.isCustomPercentageBasedOfAnotherCharge()
+                    && charge.getCharge().getParentChargeId().equals(honoCharge.getCharge().getId())).findFirst();
+            List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = loan.getRepaymentScheduleInstallments().stream()
+                    .filter(installment -> installment.isOverdueOn(transactionDate)).toList();
+
+            Money remainingAmount = Money.of(loan.getCurrency(), repaymentAmount);
+            for (LoanRepaymentScheduleInstallment installment : loanRepaymentScheduleInstallments) {
+                if (installment.isOverdueOn(transactionDate) && !installment.isObligationsMet()) {
+                    FeeCalculationHonorario feeCalculationHonorario = new FeeCalculationHonorario(BigDecimal.ZERO, BigDecimal.ZERO,
+                            BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+                    BigDecimal installmentOutstandingAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount();
+                    if (remainingAmount.isGreaterThanZero()
+                            && remainingAmount.isGreaterThanOrEqualTo(installment.getTotalOutstanding(loan.getCurrency()))) {
+                        feeCalculationHonorario = this.calculateFeeDetails(installment, installmentOutstandingAmount);
+                        remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
+                    } else {
+                        feeCalculationHonorario = this.calculateFeeDetails(installment, remainingAmount.getAmount());
+                    }
+                    feeHono = feeHono.add(feeCalculationHonorario.getFeeBasis());
+                    if (vatHono.isPresent()) {
+                        feeHono = feeHono.add((feeCalculationHonorario.getFeeVat()));
+                    }
+
+                }
+            }
+        }
+        return feeHono;
     }
 }

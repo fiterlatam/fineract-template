@@ -62,6 +62,8 @@ import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
+import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMapRepository;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
@@ -190,41 +192,8 @@ import org.apache.fineract.portfolio.insurance.exception.InsuranceIncidentNotFou
 import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.command.LoanUpdateCommand;
-import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
-import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceInstallmentData;
-import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
-import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsDataWrapper;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
-import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
-import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
-import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanIndividualMonitoringAccount;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagement;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanEvent;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanInstallmentCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallmentRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanSubStatus;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanSummaryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelation;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationTypeEnum;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.loanaccount.data.*;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.exception.DateMismatchException;
 import org.apache.fineract.portfolio.loanaccount.exception.ExceedingTrancheCountException;
 import org.apache.fineract.portfolio.loanaccount.exception.InvalidLoanTransactionTypeException;
@@ -353,6 +322,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
     private final FacturaElectronicMensualRepository facturaElectronicMensualRepository;
     private final LoanProductParameterizationRepository productParameterizationRepository;
+    private final CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
 
     @PostConstruct
@@ -1161,6 +1131,64 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     public CommandProcessingResult makeLoanRepayment(final LoanTransactionType repaymentTransactionType, final Long loanId,
             final JsonCommand command, final boolean isRecoveryRepayment) {
         final String chargeRefundChargeType = null;
+        // SU-516 Calculate the hono charge for repayment only
+        if (!isRecoveryRepayment) {
+            Loan loan = this.loanAssembler.assembleFrom(loanId);
+            Optional<LoanCharge> honoChargeOptional = loan.getLoanCharges().stream().filter(LoanCharge::isFlatHono).findFirst();
+            if (honoChargeOptional.isPresent() && loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()) > 0) {
+                LoanCharge honoCharge = honoChargeOptional.get();
+                Optional<LoanCharge> vatChargeOptional = loan.getLoanCharges().stream()
+                        .filter(chg -> chg.isCustomPercentageBasedOfAnotherCharge()
+                                && chg.getCharge().getParentChargeId().equals(honoCharge.getCharge().getId()))
+                        .findFirst();
+                final LocalDate transactionDate = command.localDateValueOfParameterNamed("transactionDate");
+                BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed("transactionAmount");
+                Money remainingAmount = Money.of(loan.getCurrency(), transactionAmount);
+                Integer installmentNumber = 0;
+                // increment the batch id which will be used to delete the rows from db table when a transaction is
+                // rollbacked. The rows with highest version will be roll backed
+                // because only the latest transaction can be reversed
+                Long version = 0L;
+                if (honoCharge.getCustomChargeHonorarioMaps() != null && !honoCharge.getCustomChargeHonorarioMaps().isEmpty()) {
+                    for (CustomChargeHonorarioMap map : honoCharge.getCustomChargeHonorarioMaps()) {
+                        if (map.getVersion() > version) {
+                            version = map.getVersion();
+                        }
+                    }
+                }
+                version = version + 1;
+                for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
+                    if (installment.isOverdueOn(transactionDate) && !installment.isObligationsMet()) {
+                        if (installmentNumber == 0) {
+                            installmentNumber = installment.getInstallmentNumber();
+                        }
+                        BigDecimal installmentOutstandingAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount();
+                        FeeCalculationHonorario fee = new FeeCalculationHonorario(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                                BigDecimal.ZERO, BigDecimal.ZERO);
+                        if (remainingAmount.isGreaterThanZero()
+                                && remainingAmount.isGreaterThanOrEqualTo(installment.getTotalOutstanding(loan.getCurrency()))) {
+                            fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(installmentOutstandingAmount,
+                                    installment, installmentNumber, version);
+                            remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
+
+                        } else {
+                            fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(remainingAmount.getAmount(),
+                                    installment, installmentNumber, version);
+                        }
+
+                        remainingAmount = remainingAmount.minus(fee.getFeeBasis());
+                        if (vatChargeOptional.isPresent()) {
+                            remainingAmount = remainingAmount.minus(fee.getFeeVat());
+                        }
+
+                        if (remainingAmount.isZero() || remainingAmount.isLessThanZero()) {
+                            break;
+                        }
+
+                    }
+                }
+            }
+        }
         return makeLoanRepaymentWithChargeRefundChargeType(repaymentTransactionType, loanId, command, isRecoveryRepayment,
                 chargeRefundChargeType);
     }
@@ -1503,6 +1531,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             throw new InvalidLoanTransactionTypeException("transaction", "error.msg.loan.transaction.update.not.allowed", errorMessage);
         }
 
+        // SU-516 if transaction has a hono charge paid then delete the latest version in hono charge map
+        for (LoanChargePaidBy chargePaidBy : transactionToAdjust.getLoanChargesPaid()) {
+            if (chargePaidBy.getLoanCharge().isFlatHono()) {
+                List<CustomChargeHonorarioMap> remove = new ArrayList<>();
+                Long versionToBeDeleted = customChargeHonorarioMapRepository.getMaxVersionByLoan(loanId);
+                for (CustomChargeHonorarioMap map : chargePaidBy.getLoanCharge().getCustomChargeHonorarioMaps()) {
+                    if (map.getVersion().equals(versionToBeDeleted)) {
+                        remove.add(map);
+                    }
+                }
+                remove.forEach(chargePaidBy.getLoanCharge().getCustomChargeHonorarioMaps()::remove);
+                customChargeHonorarioMapRepository.deleteLatestVersionMapEntryOnReversal(loanId, versionToBeDeleted);
+                break;
+            }
+        }
         // We don't need auto generation for reversal external id... if it is not provided, it remains null (empty)
         final String reversalExternalId = command.stringValueOfParameterNamedAllowingNull(LoanApiConstants.REVERSAL_EXTERNAL_ID_PARAMNAME);
         final ExternalId reversalTxnExternalId = ExternalIdFactory.produce(reversalExternalId);
@@ -3576,26 +3619,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
         }
 
-        Optional<LoanCharge> charges = loan.getLoanCharges().stream()
-                .filter(charge -> charge.isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios()).findFirst();
-        if (charges.isPresent() && loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()) > 0) {
-            for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
-                if (installment.isOverdueOn(transactionDate)) {
-                    this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(
-                            installment.getTotalOutstanding(loan.getCurrency()).getAmount(), installment);
-                    this.loanAccountDomainService.updateRepaymentInstalmentCharge(installment, installment.getInstallmentNumber());
-                    this.loanRepository.save(loan);
-                }
-            }
-        }
-
         this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan,
                 loanRescheduleRequest);
 
         createCancellationNoveltyNews(loan, transactionDate);
 
         LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, externalId,
-                changes);
+                changes, true);
 
         final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();
         return commandProcessingResultBuilder //
@@ -3650,7 +3680,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             loan.setAnuladoOnDisbursementDate(true);
         }
         final LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText,
-                externalId, changes);
+                externalId, changes, false);
         final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
                 BlockingReasonSettingEnum.CREDIT_ANULADO.getDatabaseString(), BlockLevel.CREDIT.toString());
         loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "Anulado", DateUtils.getLocalDateOfTenant());
@@ -3747,7 +3777,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             this.noteRepository.save(note);
         }
 
-        this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, txnExternalId, changes);
+        this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, txnExternalId, changes, false);
         final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
                 BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(), BlockLevel.CREDIT.toString());
         loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "CANCELADO", DateUtils.getLocalDateOfTenant());
