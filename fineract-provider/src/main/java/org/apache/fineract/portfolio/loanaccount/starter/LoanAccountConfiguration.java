@@ -451,7 +451,8 @@ public class LoanAccountConfiguration {
             InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository, LoanScheduleGeneratorFactory loanScheduleFactory,
             BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper,
             FacturaElectronicMensualRepository facturaElectronicMensualRepository,
-            LoanProductParameterizationRepository productParameterizationRepository, CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository) {
+            LoanProductParameterizationRepository productParameterizationRepository,
+            CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,

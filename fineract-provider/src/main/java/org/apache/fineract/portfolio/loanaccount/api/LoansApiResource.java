@@ -1519,10 +1519,9 @@ public class LoansApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansApprovalTemplateResponse.class))) })
     public BigDecimal calculateHonorariosAmount(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
-                                               @QueryParam("amount") @Parameter(description = "amount") final BigDecimal amount,
-                                               @Context final UriInfo uriInfo) {
+            @QueryParam("amount") @Parameter(description = "amount") final BigDecimal amount, @Context final UriInfo uriInfo) {
         this.context.authenticatedUser();
-        return this.loanReadPlatformService.calculateHonorariosAmount (loanId, amount);
+        return this.loanReadPlatformService.calculateHonorariosAmount(loanId, amount);
     }
 
 }

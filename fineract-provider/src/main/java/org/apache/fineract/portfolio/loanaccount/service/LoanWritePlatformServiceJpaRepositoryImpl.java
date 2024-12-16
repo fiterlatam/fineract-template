@@ -1123,17 +1123,19 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         // SU-516 Calculate the hono charge for repayment only
         if (!isRecoveryRepayment) {
             Loan loan = this.loanAssembler.assembleFrom(loanId);
-            Optional<LoanCharge> honoChargeOptional = loan.getLoanCharges().stream()
-                    .filter(LoanCharge::isFlatHono).findFirst();
+            Optional<LoanCharge> honoChargeOptional = loan.getLoanCharges().stream().filter(LoanCharge::isFlatHono).findFirst();
             if (honoChargeOptional.isPresent() && loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()) > 0) {
                 LoanCharge honoCharge = honoChargeOptional.get();
                 Optional<LoanCharge> vatChargeOptional = loan.getLoanCharges().stream()
-                        .filter(chg -> chg.isCustomPercentageBasedOfAnotherCharge() && chg.getCharge().getParentChargeId().equals(honoCharge.getCharge().getId())).findFirst();
+                        .filter(chg -> chg.isCustomPercentageBasedOfAnotherCharge()
+                                && chg.getCharge().getParentChargeId().equals(honoCharge.getCharge().getId()))
+                        .findFirst();
                 final LocalDate transactionDate = command.localDateValueOfParameterNamed("transactionDate");
                 BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed("transactionAmount");
                 Money remainingAmount = Money.of(loan.getCurrency(), transactionAmount);
                 Integer installmentNumber = 0;
-                // increment the batch id which will be used to delete the rows from db table when a transaction is rollbacked. The rows with highest version will be roll backed
+                // increment the batch id which will be used to delete the rows from db table when a transaction is
+                // rollbacked. The rows with highest version will be roll backed
                 // because only the latest transaction can be reversed
                 Long version = 0L;
                 if (honoCharge.getCustomChargeHonorarioMaps() != null && !honoCharge.getCustomChargeHonorarioMaps().isEmpty()) {
@@ -1150,13 +1152,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             installmentNumber = installment.getInstallmentNumber();
                         }
                         BigDecimal installmentOutstandingAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount();
-                        FeeCalculationHonorario fee = new FeeCalculationHonorario(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
-                        if (remainingAmount.isGreaterThanZero() && remainingAmount.isGreaterThanOrEqualTo(installment.getTotalOutstanding(loan.getCurrency()))) {
-                            fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(installmentOutstandingAmount, installment, installmentNumber, version);
+                        FeeCalculationHonorario fee = new FeeCalculationHonorario(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                                BigDecimal.ZERO, BigDecimal.ZERO);
+                        if (remainingAmount.isGreaterThanZero()
+                                && remainingAmount.isGreaterThanOrEqualTo(installment.getTotalOutstanding(loan.getCurrency()))) {
+                            fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(installmentOutstandingAmount,
+                                    installment, installmentNumber, version);
                             remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
 
                         } else {
-                            fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(remainingAmount.getAmount(), installment, installmentNumber, version);
+                            fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(remainingAmount.getAmount(),
+                                    installment, installmentNumber, version);
                         }
 
                         remainingAmount = remainingAmount.minus(fee.getFeeBasis());
@@ -3595,7 +3601,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         defaultUserMessage, transactionDate);
             }
         }
-
 
         this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan,
                 loanRescheduleRequest);
