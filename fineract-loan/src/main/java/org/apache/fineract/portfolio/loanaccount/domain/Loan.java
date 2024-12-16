@@ -791,7 +791,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     // just like handleChargeAppliedTransaction , create a new method to handle charges per installment using locan
     // charge installement
-    public void handleChargeAppliedTransactionPerInstallment(final List<LoanCharge> charges, final LocalDate suppliedTransactionDate) {
+    public void handleChargeAppliedTransactionPerInstallment(final List<LoanCharge> charges, final LocalDate suppliedTransactionDate,
+            final boolean hasOccurredOnSuspendedAccount) {
         for (LoanCharge loanCharge : charges) {
             validateLoanIsNotClosed(loanCharge);
             validateLoanChargeIsNotWaived(loanCharge);
@@ -3297,8 +3298,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
         // SU-444 generate charges from disbursement day
         if (!installmentalCharges.isEmpty()) {
-
-            handleChargeAppliedTransactionPerInstallment(installmentalCharges, disbursedOn);
+            final boolean hasOccurredOnSuspendedAccount = false;
+            handleChargeAppliedTransactionPerInstallment(installmentalCharges, disbursedOn, hasOccurredOnSuspendedAccount);
         }
 
         if (disbursentMoney.isGreaterThanZero()) {
@@ -3845,7 +3846,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return repaymentsOrWaivers;
     }
 
-    private List<LoanTransaction> retrieveListOfAccrualTransactions() {
+    public List<LoanTransaction> retrieveListOfAccrualTransactions() {
         final List<LoanTransaction> transactions = new ArrayList<>();
         for (final LoanTransaction transaction : this.loanTransactions) {
             if (transaction.isNotReversed() && transaction.isAccrual()) {
