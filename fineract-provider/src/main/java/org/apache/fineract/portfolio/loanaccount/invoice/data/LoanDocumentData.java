@@ -28,6 +28,7 @@ import lombok.NoArgsConstructor;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicaMensual;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 
 @Data
 @AllArgsConstructor
@@ -148,19 +149,17 @@ public class LoanDocumentData {
         }
 
         // INFORMATION AT COMPANY LEVEL
-        final String taxInformation = "RESPONSABLE DEL IVA.  No Somos Grandes Contribuyentes. Autorretenedores Renta según Resol. No. 04314 may 16 de 20028.  Auterretenedores especiales según Decreto No. 2201 dic 30 de 2016.  Autorretenedores de ICA según Resol. No. 202150186360 del 22 de dic de 2021 Medellín";
+        final String taxInformation = "RESPONSABLE DEL IVA.  No Somos Grandes Contribuyentes. Autorretenedores Renta según Resol. No. 04314 may 16 de 20028.  Auterretenedores especiales según Decreto No. 2201 dic 30 de 2016.  Autorretenedores de ICA según Resol. No. 202150186360 del 22 de dic de 2021 Medellín.";
         facturaElectronicaMensual.setInf_tributaria(taxInformation);
         facturaElectronicaMensual.setCantidad(BigDecimal.ONE);
         if (LegalForm.fromInt(this.clientLegalForm).isEntity()) {
             final String companyCountryCode = "CO";
             final String companyCountryName = "COLOMBIA";
-            facturaElectronicaMensual.setNit_emisor(this.companyNIT);
             if ("NIT".equalsIgnoreCase(this.companyDocType)) {
                 facturaElectronicaMensual.setTipo_docid("31");
             } else {
                 facturaElectronicaMensual.setTipo_docid("13");
             }
-            facturaElectronicaMensual.setNom_emisor(this.clientDisplayName);
             facturaElectronicaMensual.setCod_pais_tienda(companyCountryCode);
             facturaElectronicaMensual.setNom_pais_tienda(companyCountryName);
             facturaElectronicaMensual.setDep_tienda(this.companyDeptCode);
@@ -168,12 +167,9 @@ public class LoanDocumentData {
             facturaElectronicaMensual.setCod_mun_tienda("05001");
             facturaElectronicaMensual.setCiudad_tienda(this.companyCityName);
             facturaElectronicaMensual.setDireccion_tienda(this.companyAddress);
-            facturaElectronicaMensual.setNombre_tienda(this.clientDisplayName);
-            facturaElectronicaMensual.setTel_tienda(this.companyTelephone);
             facturaElectronicaMensual.setEmail_tienda(this.clientEmailAddress);
             facturaElectronicaMensual.setTipo_pers(1L);
             facturaElectronicaMensual.setCodigopostal(this.companyCityCode);
-            facturaElectronicaMensual.setTelefono(this.companyTelephone);
             facturaElectronicaMensual.setEmail(this.clientEmailAddress);
             facturaElectronicaMensual.setId_cliente(this.clientIdNumber);
             facturaElectronicaMensual.setNombre_cliente(this.clientDisplayName);
@@ -188,24 +184,31 @@ public class LoanDocumentData {
             facturaElectronicaMensual.setApellido_cliente(this.clientLastName);
             facturaElectronicaMensual.setDireccion(this.clientAddress);
             facturaElectronicaMensual.setCiudad(this.clientCityName);
-            facturaElectronicaMensual.setCodigopostal(this.clientCityCode);
-            facturaElectronicaMensual.setTelefono(this.clientTelephone);
             facturaElectronicaMensual.setEmail(this.clientEmailAddress);
         }
 
         // INFORMATION AT TAX LEVEL
         facturaElectronicaMensual.setIva_codigo("01");
         facturaElectronicaMensual.setIva_name("IVA");
-        facturaElectronicaMensual.setBase(BigDecimal.ZERO);
-        facturaElectronicaMensual.setPorcentaje_impuesto(BigDecimal.ZERO);
-        facturaElectronicaMensual.setImpuesto(BigDecimal.ZERO);
-        facturaElectronicaMensual.setNota2("Estos valores corresponden a los cobros asociados a tu crédito: " + this.productTypeName);
+        facturaElectronicaMensual.setBase(this.totalPaid);
+
+        if (LoanProductType.SUMAS_PAY.getCode().equals(this.productTypeName)) {
+            facturaElectronicaMensual.setNota2("Estos valores corresponden a los cobros asociados a tu Credito Sumas Pay.");
+        }
         facturaElectronicaMensual.setTipo_prod(this.productTypeName);
 
         facturaElectronicaMensual.setPor_dto(this.totalPaid);
         facturaElectronicaMensual.setVal_dto(this.totalPaid);
         facturaElectronicaMensual.setTotal(this.totalPaid);
         facturaElectronicaMensual.setLoan_transaction_id(this.loanTransactionId);
+        facturaElectronicaMensual.setTel_tienda("018000187373");
+        facturaElectronicaMensual.setTelefono(this.clientTelephone);
+
+        /** SU+ Constant Fields **/
+        facturaElectronicaMensual.setNit_emisor("800139398-6");
+        facturaElectronicaMensual.setNom_emisor("Intercrédito de Colombia S.A.S");
+        facturaElectronicaMensual.setNombre_tienda("Intercrédito de Colombia S.A.S");
+
         return facturaElectronicaMensual;
     }
 

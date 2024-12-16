@@ -22,6 +22,8 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -144,6 +146,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Column(name = "occurred_on_suspended_account", nullable = false)
     private boolean occurredOnSuspendedAccount;
+
+    @Setter
+    @Getter
+    @Column(name = "invoiced_by_transaction_id")
+    private Long invoicedByTransactionId;
 
     // This property is added to process vertical payments horizontally for Past Due and Due installments.
     // Advance Payments will be handled through VerticalPayment Scheme
@@ -481,6 +488,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean hasOccurredOnSuspendedAccount() {
         return this.occurredOnSuspendedAccount;
+    }
+
+    public void resetInvoicedByTransactionId() {
+        this.invoicedByTransactionId = null;
     }
 
     public void resetDerivedComponents() {

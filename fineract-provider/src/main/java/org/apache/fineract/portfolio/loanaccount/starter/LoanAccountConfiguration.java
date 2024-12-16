@@ -450,7 +450,8 @@ public class LoanAccountConfiguration {
             InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository, LoanScheduleGeneratorFactory loanScheduleFactory,
             BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper,
             FacturaElectronicMensualRepository facturaElectronicMensualRepository,
-            LoanProductParameterizationRepository productParameterizationRepository) {
+            LoanProductParameterizationRepository productParameterizationRepository,
+            DelinquencyReadPlatformService delinquencyReadPlatformService) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
@@ -468,7 +469,8 @@ public class LoanAccountConfiguration {
                 jdbcTemplate, commandsSourceWritePlatformService, loanRescheduleRequestReadPlatformService, clientReadPlatformService,
                 channelReadWritePlatformService, platformSecurityContext, globalConfigurationRepository, loanBlockWritePlatformService,
                 loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository, loanScheduleFactory,
-                blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository, productParameterizationRepository);
+                blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository, productParameterizationRepository,
+                delinquencyReadPlatformService);
     }
 
     @Bean

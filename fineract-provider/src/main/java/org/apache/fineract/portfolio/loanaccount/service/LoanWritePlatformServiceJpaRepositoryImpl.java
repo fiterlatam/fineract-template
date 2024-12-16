@@ -178,6 +178,7 @@ import org.apache.fineract.portfolio.collectionsheet.command.CollectionSheetBulk
 import org.apache.fineract.portfolio.collectionsheet.command.CollectionSheetBulkRepaymentCommand;
 import org.apache.fineract.portfolio.collectionsheet.command.SingleDisbursalCommand;
 import org.apache.fineract.portfolio.collectionsheet.command.SingleRepaymentCommand;
+import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
 import org.apache.fineract.portfolio.insurance.domain.InsuranceIncident;
@@ -189,12 +190,15 @@ import org.apache.fineract.portfolio.insurance.exception.InsuranceIncidentNotFou
 import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.command.LoanUpdateCommand;
+import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
+import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsDataWrapper;
+import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
 import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepository;
@@ -349,6 +353,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
     private final FacturaElectronicMensualRepository facturaElectronicMensualRepository;
     private final LoanProductParameterizationRepository productParameterizationRepository;
+    private final DelinquencyReadPlatformService delinquencyReadPlatformService;
 
     @PostConstruct
     public void registerForNotification() {
@@ -746,7 +751,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (loan.isTopup() && loan.getClientId() != null) {
             this.businessEventNotifierService.notifyPostBusinessEvent(new LoanTopUpBusinessEvent(loan));
         }
-
+        Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
+        if (minimumDaysInArrearsToSuspendLoanAccount == null) {
+            minimumDaysInArrearsToSuspendLoanAccount = 90L;
+        }
+        final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loan.getId());
+        final Long daysInArrears = collectionData.getPastDueDays();
+        if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
+            loan.retrieveListOfAccrualTransactions().forEach(LoanTransaction::markAsOccurredOnSuspendedAccount);
+            loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+        }
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(loan.getId()) //
@@ -1654,6 +1668,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final Long loanTransactionId = transactionToAdjust.getId();
             final List<FacturaElectronicaMensual> facturaElectronicMensuals = this.facturaElectronicMensualRepository
                     .findByLoanTransactionId(loanTransactionId);
+            final List<LoanTransaction> invoicedByTransactions = loan.getLoanTransactions().stream()
+                    .filter(ltx -> Objects.equals(loanTransactionId, ltx.getInvoicedByTransactionId())).toList();
+            if (CollectionUtils.isNotEmpty(invoicedByTransactions)) {
+                invoicedByTransactions.forEach(LoanTransaction::resetInvoicedByTransactionId);
+                this.loanTransactionRepository.saveAll(invoicedByTransactions);
+            }
             if (CollectionUtils.isNotEmpty(facturaElectronicMensuals)) {
                 this.facturaElectronicMensualRepository.deleteAll(facturaElectronicMensuals);
             }
@@ -4086,18 +4106,88 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final List<LoanDocumentData> loanDocumentDataList = this.jdbcTemplate.query(transactionSQL, transactionMapper, loanTransactionId);
         if (!loanDocumentDataList.isEmpty()) {
             final LoanDocumentData loanDocumentData = loanDocumentDataList.get(0);
-            loanDocumentData.setFirstDayOfMonth(firstDayOfMonth);
-            loanDocumentData.setSecondLastDayOfMonth(secondLastDayOfMonth);
-            loanDocumentData.setLastDayOfMonth(lastDayOfMonth);
-            loanDocumentData.setLoanTransactionId(loanTransactionId);
-            if (loanTransactionType.isRepaymentType()) {
-                loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
-            } else {
-                loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.CREDIT_NOTE);
+            final Loan loan = loanTransaction.getLoan();
+            BigDecimal interestPaidRemaining = loanDocumentData.getInterestPaid();
+            BigDecimal mandatoryInsurancePaidRemaining = loanDocumentData.getMandatoryInsurancePaid();
+            BigDecimal voluntaryInsurancePaidRemaining = loanDocumentData.getVoluntaryInsurancePaid();
+            BigDecimal honorariosPaidRemaining = loanDocumentData.getHonorariosPaid();
+            BigDecimal penaltyChargesPaidRemaining = loanDocumentData.getPenaltyChargesPaid();
+            final List<LoanTransactionData> invoicedByAccrualTransactionDataList = new ArrayList<>();
+            final List<LoanTransaction> invoicedByAccrualTransactionList = new ArrayList<>();
+            final List<LoanTransaction> accrualTransactions = loan.retrieveListOfAccrualTransactions().stream()
+                    .filter(ltx -> ltx.hasOccurredOnSuspendedAccount() && Objects.isNull(ltx.getInvoicedByTransactionId())).toList();
+            for (final LoanTransaction accrualTransaction : accrualTransactions) {
+                final LoanTransactionData loanTransactionData = loanReadPlatformService.retrieveLoanTransaction(loan.getId(),
+                        accrualTransaction.getId());
+                final LoanChargePaidByData loanChargePaidByData = loanTransactionData.getLoanChargePaidBySummary();
+                final BigDecimal interestPaid = loanTransactionData.getInterestPortion();
+                final BigDecimal penaltyChargesPaid = loanTransactionData.getPenaltyChargesPortion();
+                final BigDecimal mandatoryInsurancePaid = loanChargePaidByData.getMandatoryInsurance();
+                final BigDecimal voluntaryInsurancePaid = loanChargePaidByData.getVoluntaryInsurance();
+                final BigDecimal honorariosPaid = loanChargePaidByData.getHono();
+                if (interestPaidRemaining.compareTo(interestPaid) >= 0) {
+                    interestPaidRemaining = interestPaidRemaining.subtract(interestPaid);
+                } else {
+                    continue;
+                }
+                if (penaltyChargesPaidRemaining.compareTo(penaltyChargesPaid) >= 0) {
+                    penaltyChargesPaidRemaining = penaltyChargesPaidRemaining.subtract(penaltyChargesPaid);
+                } else {
+                    continue;
+                }
+                if (mandatoryInsurancePaidRemaining.compareTo(mandatoryInsurancePaid) >= 0) {
+                    mandatoryInsurancePaidRemaining = mandatoryInsurancePaidRemaining.subtract(mandatoryInsurancePaid);
+                } else {
+                    continue;
+                }
+                if (voluntaryInsurancePaidRemaining.compareTo(voluntaryInsurancePaid) >= 0) {
+                    voluntaryInsurancePaidRemaining = voluntaryInsurancePaidRemaining.subtract(voluntaryInsurancePaid);
+                } else {
+                    continue;
+                }
+                if (honorariosPaidRemaining.compareTo(honorariosPaid) >= 0) {
+                    honorariosPaidRemaining = honorariosPaidRemaining.subtract(honorariosPaid);
+                } else {
+                    continue;
+                }
+                invoicedByAccrualTransactionDataList.add(loanTransactionData);
+                invoicedByAccrualTransactionList.add(accrualTransaction);
             }
-            processAndSaveLoanDocument(loanDocumentData);
-            loanTransaction.markAsOccurredOnSuspendedAccount();
-            this.loanTransactionRepository.saveAndFlush(loanTransaction);
+
+            if (CollectionUtils.isNotEmpty(invoicedByAccrualTransactionDataList)) {
+                final BigDecimal interestPaid = invoicedByAccrualTransactionDataList.stream().map(LoanTransactionData::getInterestPortion)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                final BigDecimal mandatoryInsurancePaid = invoicedByAccrualTransactionDataList.stream()
+                        .map(loanTransactionData -> loanTransactionData.getLoanChargePaidBySummary().getMandatoryInsurance())
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                final BigDecimal voluntaryInsurancePaid = invoicedByAccrualTransactionDataList.stream()
+                        .map(loanTransactionData -> loanTransactionData.getLoanChargePaidBySummary().getVoluntaryInsurance())
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                final BigDecimal honorariosPaid = invoicedByAccrualTransactionDataList.stream()
+                        .map(loanTransactionData -> loanTransactionData.getLoanChargePaidBySummary().getHono())
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                final BigDecimal penaltyChargesPaid = invoicedByAccrualTransactionDataList.stream()
+                        .map(LoanTransactionData::getPenaltyChargesPortion).reduce(BigDecimal.ZERO, BigDecimal::add);
+                loanDocumentData.setInterestPaid(interestPaid);
+                loanDocumentData.setMandatoryInsurancePaid(mandatoryInsurancePaid);
+                loanDocumentData.setVoluntaryInsurancePaid(voluntaryInsurancePaid);
+                loanDocumentData.setHonorariosPaid(honorariosPaid);
+                loanDocumentData.setPenaltyChargesPaid(penaltyChargesPaid);
+                loanDocumentData.setFirstDayOfMonth(firstDayOfMonth);
+                loanDocumentData.setSecondLastDayOfMonth(secondLastDayOfMonth);
+                loanDocumentData.setLastDayOfMonth(lastDayOfMonth);
+                loanDocumentData.setLoanTransactionId(loanTransactionId);
+                if (loanTransactionType.isRepaymentType()) {
+                    loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
+                } else {
+                    loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.CREDIT_NOTE);
+                }
+                processAndSaveLoanDocument(loanDocumentData);
+                loanTransaction.markAsOccurredOnSuspendedAccount();
+                this.loanTransactionRepository.saveAndFlush(loanTransaction);
+                invoicedByAccrualTransactionList.forEach(ltx -> ltx.setInvoicedByTransactionId(loanTransactionId));
+                this.loanTransactionRepository.saveAll(invoicedByAccrualTransactionList);
+            }
         }
     }
 
@@ -4176,10 +4266,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
                 if (clasificacionConceptosData.isExento()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(BigDecimal.ZERO);
                 } else if (clasificacionConceptosData.isExcluido()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(null);
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(null);
                 } else if (clasificacionConceptosData.isGravado()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(clasificacionConceptosData.getTarifa());
                 }
             }
 
@@ -4215,10 +4308,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
                 if (clasificacionConceptosData.isExento()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(BigDecimal.ZERO);
                 } else if (clasificacionConceptosData.isExcluido()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(null);
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(null);
                 } else if (clasificacionConceptosData.isGravado()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(clasificacionConceptosData.getTarifa());
                 }
             }
             if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
@@ -4256,10 +4352,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
                 if (clasificacionConceptosData.isExento()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(BigDecimal.ZERO);
                 } else if (clasificacionConceptosData.isExcluido()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(null);
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(null);
                 } else if (clasificacionConceptosData.isGravado()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(clasificacionConceptosData.getTarifa());
                 }
             }
             if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
@@ -4287,10 +4386,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 facturaElectronicaMensualDuplicate.setDescripcion_mandante(descripcionMandante);
                 if (clasificacionConceptosData.isExento()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(BigDecimal.ZERO);
                 } else if (clasificacionConceptosData.isExcluido()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(null);
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(null);
                 } else if (clasificacionConceptosData.isGravado()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(clasificacionConceptosData.getTarifa());
                 }
             }
             if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
@@ -4323,10 +4425,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
                 if (clasificacionConceptosData.isExento()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(BigDecimal.ZERO);
                 } else if (clasificacionConceptosData.isExcluido()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(null);
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(null);
                 } else if (clasificacionConceptosData.isGravado()) {
                     facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto(clasificacionConceptosData.getTarifa());
                 }
             }
             if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
@@ -4491,6 +4596,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             BigDecimal dailyAccrualInterest = null;
             Integer accrualInstallmentNumber = null;
             Money principalLoanBalanceOutstanding = loan.getPrincipal();
+            final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loan.getId());
+            final Long daysInArrears = collectionData.getPastDueDays();
+            Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
+                    .retriveMinimumDaysInArrearsToSuspendLoanAccount();
+            if (minimumDaysInArrearsToSuspendLoanAccount == null) {
+                minimumDaysInArrearsToSuspendLoanAccount = 90L;
+            }
             for (final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : repaymentScheduleInstallments) {
                 if (!transactionDate.isBefore(loanRepaymentScheduleInstallment.getFromDate())
                         && !transactionDate.isAfter(loanRepaymentScheduleInstallment.getDueDate().minusDays(1))) {
@@ -4578,6 +4690,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final Money dailyInterestMoney = Money.of(currency, dailyAccrualInterest);
                 final LoanTransaction dailyAccrualTransaction = LoanTransaction.accrueDailyInterest(loan.getOffice(), loan,
                         dailyInterestMoney, transactionDate, externalIdentifier, accrualInstallmentNumber);
+                if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
+                    dailyAccrualTransaction.markAsOccurredOnSuspendedAccount();
+                }
                 loan.addLoanTransaction(dailyAccrualTransaction);
                 loan.setInterestAccruedTill(transactionDate);
             }
@@ -4592,7 +4707,15 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         activeLoans.forEach(loan -> {
             log.info("Persisting Installment charge accrual for loan: {}", loan.getId());
             List<LoanCharge> charges = filterInstallmentCharges(loan.getActiveCharges());
-            loan.handleChargeAppliedTransactionPerInstallment(charges, localDate);
+            Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
+                    .retriveMinimumDaysInArrearsToSuspendLoanAccount();
+            if (minimumDaysInArrearsToSuspendLoanAccount == null) {
+                minimumDaysInArrearsToSuspendLoanAccount = 90L;
+            }
+            final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loan.getId());
+            final Long daysInArrears = collectionData.getPastDueDays();
+            final boolean hasOccurredOnSuspendedAccount = daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount;
+            loan.handleChargeAppliedTransactionPerInstallment(charges, localDate, hasOccurredOnSuspendedAccount);
             loanRepository.saveAndFlush(loan);
             log.info("Installment  charge accrual persisted for loan: {}", loan.getId());
         });
