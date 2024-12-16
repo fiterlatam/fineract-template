@@ -594,7 +594,8 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     @Override
     public List<String> retrieveInvoiceJobNotificationEmails() {
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(INVOICE_NOTIFICATION_EMAILS);
-        if (property.isEnabled()) {
+        final String stringValue = property.getStringValue();
+        if (property.isEnabled() && StringUtils.isNotBlank(stringValue)) {
             return List.of(property.getStringValue().split(","));
         }
         return List.of();
