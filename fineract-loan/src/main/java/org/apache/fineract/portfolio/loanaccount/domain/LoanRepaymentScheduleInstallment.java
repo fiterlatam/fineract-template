@@ -169,9 +169,6 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     @Column(name = "original_interest_charged", nullable = true)
     private BigDecimal originalInterestChargedAmount;
 
-    @Column(name = "migrated_installment")
-    private boolean isMigratedInstallment;
-
     public LoanRepaymentScheduleInstallment() {
         this.installmentNumber = null;
         this.fromDate = null;
@@ -974,9 +971,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
         Money interestDue = Money.zero(currency);
 
-        if(this.isMigratedInstallment) {
-            interestDue = getInterestOutstanding(currency);
-        } else if (isOn(transactionDate, this.getDueDate())) {
+        if (isOn(transactionDate, this.getDueDate())) {
             interestDue = getInterestOutstanding(currency);
         } else if (isOnOrBetween(transactionDate) && getInterestOutstanding(currency).isGreaterThanZero()) {
             final RoundingMode roundingMode = RoundingMode.HALF_UP;
@@ -1077,7 +1072,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         //// Update installment interest charged if principal is fully paid during the accrual period and interest has
         //// also been recalculated and paid
         // Keep the original interest charged in case the transaction is rollbacked.
-        if (this.getLoan() != null && this.getLoan().isProgressiveLoan() && !this.isMigratedInstallment) {
+        if (this.getLoan() != null && this.getLoan().isProgressiveLoan()) {
             if (isOnOrBetween(transactionDate)) {
                 if (this.getPrincipalOutstanding(currency).isZero()
                         && (this.originalInterestChargedAmount == null || this.originalInterestChargedAmount.equals(BigDecimal.ZERO))
@@ -1714,9 +1709,5 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public BigDecimal originalInterestChargedAmount() {
         return originalInterestChargedAmount;
-    }
-
-    public boolean isMigratedInstallment() {
-        return isMigratedInstallment;
     }
 }
