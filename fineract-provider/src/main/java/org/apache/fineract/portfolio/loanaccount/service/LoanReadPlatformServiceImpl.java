@@ -1909,7 +1909,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             sqlBuilder.append(" and ls.duedate > :organisationStartDate ");
             paramMap.put("organisationStartDate", organisationStartDate);
         }
-        sqlBuilder.append("  AND loan.id=15868 order by loan.id,ls.duedate ");
+        sqlBuilder.append(" order by loan.id,ls.duedate ");
         paramMap.put("active", LoanStatus.ACTIVE.getValue());
         paramMap.put("type", AccountingRuleType.ACCRUAL_PERIODIC.getValue());
         paramMap.put("tillDate", tillDate);
