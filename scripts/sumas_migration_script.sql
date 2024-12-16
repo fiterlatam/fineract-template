@@ -432,4 +432,111 @@ from
 
 
 -- Set the original cupo value for client
-update campos_cliente_persona set "Cupo aprobado" = "Cupo solicitado" 
+update campos_cliente_persona set "Cupo aprobado" = "Cupo solicitado"
+
+
+----------------------------------- Loan Transactions ----------------------------------------------
+-- Update repayment schedule paid installments
+update m_loan_repayment_schedule
+set principal_completed_derived = principal_amount,
+	interest_completed_derived = interest_amount,
+	fee_charges_completed_derived = fee_charges_amount,
+	penalty_charges_completed_derived = penalty_charges_amount,
+	completed_derived = true,
+	obligations_met_on_date = tcm.cpc_fecha_pago_cuota
+from m_loan_repayment_schedule mlrs
+inner join m_loan ml on mlrs.loan_id = ml.id
+inner join tmp_creditos_migrar tcm on ml.external_id = tcm.external_id
+and tcm.cpc_fecha_pago_cuota is not null
+
+-- Alter loan_transaction add installment_id (we'll drop this after)
+alter table m_loan_transaction add column installment_id bigint;
+
+-- Insert transactions for completed installments
+INSERT INTO m_loan_transaction(
+	loan_id, office_id, payment_detail_id, is_reversed, external_id, installment_id, transaction_type_enum, transaction_date, amount, principal_portion_derived, interest_portion_derived, fee_charges_portion_derived, penalty_charges_portion_derived, outstanding_loan_balance_derived, submitted_on_date, created_by, last_modified_by, created_on_utc, last_modified_on_utc)
+select ml.id, mc.office_id, null, false, null, mlrs.id, 2, mlrs.obligations_met_on_date, coalesce(mlrs.principal_amount, 0) + coalesce(mlrs.interest_amount,0) + coalesce(mlrs.fee_charges_amount, 0) + coalesce(mlrs.penalty_charges_amount, 0),
+mlrs.principal_amount, mlrs.interest_amount, mlrs.fee_charges_amount, mlrs.penalty_charges_amount, null, mlrs.obligations_met_on_date, 1, 1, mlrs.obligations_met_on_date, mlrs.obligations_met_on_date
+from m_loan_repayment_schedule mlrs join m_loan ml on mlrs.loan_id = ml.id
+join m_client mc on ml.client_id = mc.id
+where mlrs.completed_derived = true
+order by mlrs.installment;
+
+-- Insert transaction to schedule mapping
+INSERT INTO m_loan_transaction_repayment_schedule_mapping(
+	loan_transaction_id, loan_repayment_schedule_id, amount, principal_portion_derived, interest_portion_derived, fee_charges_portion_derived, penalty_charges_portion_derived)
+select mlt.id, mlrs.id, mlt.amount, mlt.principal_portion_derived, mlt.interest_portion_derived, mlt.fee_charges_portion_derived, mlt.penalty_charges_portion_derived
+from m_loan_repayment_schedule mlrs join m_loan_transaction mlt on mlrs.id = mlt.installment_id
+where mlrs.completed_derived = true
+
+
+-- Update loan balance in transactions
+UPDATE m_loan_transaction lt
+SET outstanding_loan_balance_derived = (
+    SELECT ml.principal_disbursed_derived - COALESCE(SUM(lt2.principal_portion_derived), 0)
+    FROM m_loan ml
+    LEFT JOIN m_loan_transaction lt2 ON lt2.loan_id = ml.id
+    where ml.id = lt.loan_id and lt2.transaction_date <= lt.transaction_date
+    and lt2.transaction_type_enum = 2
+    group by ml.principal_disbursed_derived
+)
+where lt.outstanding_loan_balance_derived IS DISTINCT FROM (
+    SELECT ml.principal_disbursed_derived - COALESCE(SUM(lt2.principal_portion_derived), 0)
+    FROM m_loan ml
+    LEFT JOIN m_loan_transaction lt2 ON lt2.loan_id = lt.loan_id
+    WHERE ml.id = lt.loan_id
+    AND lt2.transaction_date <= lt.transaction_date
+    and lt2.transaction_type_enum = 2
+    group by ml.principal_disbursed_derived
+);
+
+-- update loan summary
+update
+	m_loan ml
+set
+	principal_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.principal_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.principal_completed_derived is not null
+		and mlrs.loan_id = ml.id
+),
+	interest_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.interest_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.interest_completed_derived is not null
+		and mlrs.loan_id = ml.id
+),
+	fee_charges_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.fee_charges_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.fee_charges_completed_derived is not null
+		and mlrs.loan_id = ml.id
+),
+	penalty_charges_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.penalty_charges_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.penalty_charges_completed_derived is not null
+		and mlrs.loan_id = ml.id
+),
+	principal_outstanding_derived = principal_disbursed_derived - principal_repaid_derived,
+	interest_outstanding_derived = interest_charged_derived - interest_repaid_derived,
+	fee_charges_outstanding_derived = fee_charges_charged_derived - fee_charges_repaid_derived,
+	penalty_charges_outstanding_derived = penalty_charges_charged_derived - penalty_charges_repaid_derived,
+	total_repayment_derived = principal_repaid_derived + interest_repaid_derived + fee_charges_repaid_derived + penalty_charges_repaid_derived,
+	total_outstanding_derived = principal_outstanding_derived + interest_outstanding_derived + fee_charges_outstanding_derived + penalty_charges_outstanding_derived
