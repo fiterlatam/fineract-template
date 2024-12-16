@@ -89,7 +89,7 @@ public interface LoanAccountDomainService {
     Loan saveLoanWithDataIntegrityViolationChecks(Loan loan);
 
     LoanTransaction foreCloseLoan(Loan loan, LocalDate foreClourseDate, String noteText, ExternalId externalId,
-            Map<String, Object> changes);
+            Map<String, Object> changes, boolean isForCloureAction);
 
     LoanTransaction claimLoan(Loan loan, LocalDate claimDate, ExternalId externalId, Map<String, Object> changes);
 
@@ -114,7 +114,7 @@ public interface LoanAccountDomainService {
     FeeCalculationHonorario calculateFeeHonorario(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, BigDecimal repayment);
 
     FeeCalculationHonorario updateCalculationHonoLoanChargeOverDueVat(BigDecimal repaymentAmount,
-            LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, Integer installmentNumberToBeCharged);
+            LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, Integer installmentNumberToBeCharged, Long version);
 
     void updateRepaymentInstalmentCharge(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, Integer numberOfRepayment);
 

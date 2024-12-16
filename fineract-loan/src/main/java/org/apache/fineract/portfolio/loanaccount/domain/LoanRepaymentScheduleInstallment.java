@@ -880,10 +880,12 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         Money feeChargePaid = Money.zero(currency);
         Money feeChargesDue = getInstallmentChargeOutstandingAmount(currency, installmentCharge);
         if (installmentCharge.getLoanCharge().isCustomPercentageBasedOfAnotherCharge()) {
-            Money percentageAmountToBePaid = transactionAmountRemaining.percentageOf(installmentCharge.getLoanCharge().amountOrPercentage(),
-                    RoundingMode.HALF_UP);
-            if (percentageAmountToBePaid.isLessThan(feeChargesDue)) {
-                feeChargesDue = Money.of(percentageAmountToBePaid.getCurrency(), percentageAmountToBePaid.getAmount());
+            if (!installmentCharge.getLoanCharge().isVatChargeOfHonoCharge()) {
+                Money percentageAmountToBePaid = transactionAmountRemaining.percentageOf(installmentCharge.getLoanCharge().amountOrPercentage(),
+                        RoundingMode.HALF_UP);
+                if (percentageAmountToBePaid.isLessThan(feeChargesDue)) {
+                    feeChargesDue = Money.of(percentageAmountToBePaid.getCurrency(), percentageAmountToBePaid.getAmount());
+                }
             }
         }
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(feeChargesDue)) {

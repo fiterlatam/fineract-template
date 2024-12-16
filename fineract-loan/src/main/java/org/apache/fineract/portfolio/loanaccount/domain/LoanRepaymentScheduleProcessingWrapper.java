@@ -225,6 +225,9 @@ public class LoanRepaymentScheduleProcessingWrapper {
     }
 
     private BigDecimal getInstallmentFee(MonetaryCurrency currency, LoanRepaymentScheduleInstallment period, LoanCharge loanCharge) {
+        if (loanCharge.isFlatHono()) {
+            return BigDecimal.ZERO;
+        }
         if (loanCharge.getChargeCalculation().isPercentageBased()) {
             BigDecimal amount = BigDecimal.ZERO;
             if (loanCharge.getChargeCalculation().isPercentageOfAnotherCharge()) {

@@ -5776,14 +5776,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     }
 
                     if (loanCharge.getChargeCalculation().isFlatHono() && !loanCharge.getCustomChargeHonorarioMaps().isEmpty()) {
+                        BigDecimal honoAmount = BigDecimal.ZERO;
                             for (CustomChargeHonorarioMap customCharge : loanCharge.getCustomChargeHonorarioMaps()) {
                                 if (customCharge.getLoanInstallmentNr().equals(installment.getInstallmentNumber())) {
-                                    amount = customCharge.getFeeBaseAmount();
-                                    break;
-                                } else {
-                                    amount = BigDecimal.ZERO;
+                                    honoAmount = honoAmount.add(customCharge.getFeeBaseAmount());
                                 }
                             }
+                            amount = honoAmount;
                     } else if (loanCharge.isFlatHono()) {
                         amount = BigDecimal.ZERO;
                     }
