@@ -1258,13 +1258,14 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                     if (transactionAmountUnprocessed.isGreaterThanZero()) {
                                         if (inAdvanceInstallment.isMigratedInstallment()) {
                                             // Process migrated installments as due or past due installments
-                                            Set<LoanCharge> inAdvanceInstallmentCharges = getLoanChargesOfInstallment(charges, inAdvanceInstallment,
-                                                    firstNormalInstallmentNumber);
+                                            Set<LoanCharge> inAdvanceInstallmentCharges = getLoanChargesOfInstallment(charges,
+                                                    inAdvanceInstallment, firstNormalInstallmentNumber);
                                             LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
                                                     transactionMappings, loanTransaction, inAdvanceInstallment, currency);
-                                            paidPortion = processPaymentAllocation(paymentAllocationType, inAdvanceInstallment, loanTransaction,
-                                                    transactionAmountUnprocessed, loanTransactionToRepaymentScheduleMapping, inAdvanceInstallmentCharges,
-                                                    balances, LoanRepaymentScheduleInstallment.PaymentAction.PAY);
+                                            paidPortion = processPaymentAllocation(paymentAllocationType, inAdvanceInstallment,
+                                                    loanTransaction, transactionAmountUnprocessed,
+                                                    loanTransactionToRepaymentScheduleMapping, inAdvanceInstallmentCharges, balances,
+                                                    LoanRepaymentScheduleInstallment.PaymentAction.PAY);
                                             transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
                                         }
                                         if (inAdvanceInstallment.isLastInstallment(installments)

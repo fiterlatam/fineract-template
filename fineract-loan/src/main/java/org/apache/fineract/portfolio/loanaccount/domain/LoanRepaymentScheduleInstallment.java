@@ -996,7 +996,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
         Money interestDue = Money.zero(currency);
 
-        if(this.isMigratedInstallment) {
+        if (this.isMigratedInstallment) {
             interestDue = getInterestOutstanding(currency);
         } else if (isOn(transactionDate, this.getDueDate())) {
             interestDue = getInterestOutstanding(currency);
