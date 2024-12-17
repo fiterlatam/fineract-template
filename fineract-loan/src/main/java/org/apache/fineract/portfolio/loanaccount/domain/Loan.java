@@ -2043,11 +2043,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         BigDecimal totalChargeAmt = BigDecimal.ZERO;
         if (!loanCharge.isOverdueInstallmentCharge()) {
             if (loanCharge.getChargeCalculation().isPercentageBased()) {
-                if (loanCharge.isOverdueInstallmentCharge()) {
-                    amount = calculateOverdueAmountPercentageAppliedTo(loanCharge, penaltyWaitPeriod);
-                } else {
-                    amount = calculateAmountPercentageAppliedTo(loanCharge);
-                }
+                amount = calculateAmountPercentageAppliedTo(loanCharge);
                 chargeAmt = loanCharge.getPercentage();
                 if (loanCharge.isInstalmentFee()) {
                     totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);

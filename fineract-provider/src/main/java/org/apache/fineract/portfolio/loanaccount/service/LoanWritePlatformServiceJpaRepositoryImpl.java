@@ -1718,13 +1718,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 this.facturaElectronicMensualRepository.deleteAll(facturaElectronicMensuals);
             }
         }
-
-        // if(!transactionId.equals(1L)){
-        // throw new GeneralPlatformDomainRuleException("error.msg.loan.transaction.update.not.allowed",
-        // "Loan transaction:" + transactionId + " update not allowed as loan transaction is linked to other
-        // transactions",
-        // transactionId);
-        // }
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(entityId) //
