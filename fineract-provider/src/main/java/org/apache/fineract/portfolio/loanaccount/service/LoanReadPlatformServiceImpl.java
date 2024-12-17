@@ -2069,9 +2069,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final StringBuilder sqlBuilder = new StringBuilder(400);
         sqlBuilder.append("select ").append(rm.schema())
                 .append(" where " + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "?", "day") + " > ls.duedate ")
-                .append(" and ls.completed_derived <> true and mc.charge_applies_to_enum =1 ")
+                .append(" and ls.completed_derived <> true and mc.charge_applies_to_enum = 1 ")
                 .append(" and ls.recalculated_interest_component <> true ")
-                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 and ml.id = (select max(id) from m_loan)");
+                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ");
 
         if (backdatePenalties) {
             return this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod);

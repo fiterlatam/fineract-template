@@ -1647,13 +1647,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled() || loan.isProgressiveLoan()) {
-            scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
+            scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
             loan.regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
             loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         }
-        scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
-        loan.regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
-        loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         final String noteText = command.stringValueOfParameterNamed("note");
         if (StringUtils.isNotBlank(noteText)) {
             changes.put("note", noteText);
