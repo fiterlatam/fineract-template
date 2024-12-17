@@ -1654,7 +1654,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isVatChargeOfHonoCharge() {
         for (LoanCharge parentCharge : this.loan.getCharges()) {
-            return parentCharge.isFlatHono() && parentCharge.getCharge().getId().equals(this.getCharge().getParentChargeId());
+            if (parentCharge.isFlatHono() && parentCharge.getCharge().getId().equals(this.getCharge().getParentChargeId())) {
+                return true;
+            }
         }
         return false;
     }
@@ -1664,7 +1666,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         for (LoanCharge parentCharge : this.loan.getCharges()) {
             if (parentCharge.isFlatHono() && parentCharge.getCharge().getId().equals(this.getCharge().getParentChargeId())) {
                 if (!parentCharge.getCustomChargeHonorarioMaps().isEmpty()) {
-                    for (CustomChargeHonorarioMap customCharge : this.getCustomChargeHonorarioMaps()) {
+                    for (CustomChargeHonorarioMap customCharge : parentCharge.getCustomChargeHonorarioMaps()) {
                         if (customCharge.getLoanInstallmentNr().equals(installmentNumber)) {
                             customAmout = customAmout.add(customCharge.getFeeVatAmount());
                         }
