@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
@@ -58,6 +59,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.MultiDis
 import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.ScheduleDateException;
 import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
 
+@Slf4j
 public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanScheduleGenerator {
 
     @Override
@@ -329,7 +331,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             final Money totalInterestDueForLoan = loanApplicationTerms.getTotalInterestDue();
             Money cumulatingInterestPaymentDueToGrace = scheduleParams.getTotalOutstandingInterestPaymentDueToGrace();
             Money outstandingBalance = scheduleParams.getOutstandingBalanceAsPerRest();
-            final int periodNumber = scheduleParams.getPeriodNumber();
+            int periodNumber = scheduleParams.getPeriodNumber();
             Integer ignoreInstallment = loanApplicationTerms.getNumberOfInstallmentsToIgnore();
             if (ignoreInstallment != null && ignoreInstallment < periodNumber) {
                 outstandingBalance = outstandingBalance.plus(cumulatingInterestPaymentDueToGrace);
@@ -381,14 +383,31 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 scheduleParams.advanceTransactions().clear();
             }
             ////////////
-
             if (!isMidTermRescheduling) {
-
-                principalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
-                        interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
-                        totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
-                        periodNumber, mc, principalVariation, compoundingMap, periodStartDateApplicableForInterest, periodEndDate,
-                        interestRates, accruedInterestByAdvancePmt);
+                log.info("Emi " + loanApplicationTerms.getFixedEmiAmount());
+                log.info("Annual Interest rate " + annualNominalInterestRate);
+                log.info("interest per period " + interestRatePerPeriod);
+                BigDecimal interst = adjustInterestRate(interestRatePerPeriod, annualNominalInterestRate, interestRatePerPeriod);
+                log.info("interest used " + interst + " in period number " + periodNumber + " " + periodStartDateApplicableForInterest);
+                if (annualNominalInterestRate.compareTo(BigDecimal.valueOf(100)) > 0) {
+                    loanApplicationTerms.setAnnualNominalInterestRate(annualNominalInterestRate);
+                    log.warn("annual interst more than " + 100 + "% in " + periodStartDateApplicableForInterest + " " + periodEndDate);
+                    PrincipalInterest anomaliPrincipalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
+                            interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
+                            totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
+                            periodNumber, mc, principalVariation, compoundingMap, rescheduleFromDate, periodEndDate, interestRates);
+                    Money totalPrincipal = anomaliPrincipalInterestForThisPeriod.principal();
+                    Money totalInterestRate = anomaliPrincipalInterestForThisPeriod.interest();
+                    principalInterestForThisPeriod = new PrincipalInterest(totalPrincipal, totalInterestRate,
+                            anomaliPrincipalInterestForThisPeriod.interestPaymentDueToGrace());
+                } else {
+                    loanApplicationTerms.setAnnualNominalInterestRate(interst);
+                    principalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
+                            interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
+                            totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
+                            periodNumber, mc, principalVariation, compoundingMap, periodStartDateApplicableForInterest, periodEndDate,
+                            interestRates, accruedInterestByAdvancePmt);
+                }
 
                 prevfixEmiAmout = loanApplicationTerms.getFixedEmiAmount();
             } else {
@@ -410,8 +429,11 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         endDate = (LocalDate) entry.get("nextDate");
                         currentInterst = (BigDecimal) entry.get("currentInterst");
                         nextDates = endDate;
-
+                        log.info("recalculate Interest rate in middle instalment");
                         BigDecimal interestRate = adjustInterestRate(currentInterst, interestRatePerPeriod, annualNominalInterestRate);
+                        log.info("start date " + startDate);
+                        log.info("end date " + startDate);
+                        log.info("Interest used " + interestRate);
                         if (currentInterst.compareTo(BigDecimal.ZERO) == 0) {
                             loanApplicationTerms.setAnnualNominalInterestRate(interestRatePerPeriod);
                         } else {
@@ -607,16 +629,20 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     public BigDecimal adjustInterestRate(BigDecimal currentInterest, BigDecimal interestPeriod, BigDecimal annualInterest) {
         // If the current interest rate decreases compared to the initial rate
         if (currentInterest.compareTo(interestPeriod) < 0) {
+            log.info("interest rate decreases compared to the initial rate " + currentInterest + " < " + interestPeriod);
             return currentInterest;
         }
 
         // If the current interest rate increases but is still below the maximum limit
         if (currentInterest.compareTo(interestPeriod) > 0 && currentInterest.compareTo(annualInterest) <= 0) {
+            log.info("current interest rate increases but is still below the maximum limit " + currentInterest + " < " + interestPeriod
+                    + " with max " + annualInterest);
             return currentInterest;
         }
 
         // If the current interest rate exceeds the maximum limit
         if (currentInterest.compareTo(annualInterest) > 0) {
+            log.info("current interest rate exceeds the maximum limit " + currentInterest + " " + annualInterest);
             return interestPeriod;
         }
 
@@ -639,7 +665,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             LoanTermVariationsData midInterst = iterator.next();
             currentInterst = midInterst.getDecimalValue();
             LocalDate currentDates = midInterst.getTermVariationApplicableFrom();
-            System.out.println("interst " + currentInterst);
             int nextIndex = (index == list.size() - 1) ? index : index + 1;
             nextDates = list.get(nextIndex).getTermVariationApplicableFrom();
 
