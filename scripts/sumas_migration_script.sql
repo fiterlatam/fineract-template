@@ -330,6 +330,14 @@ update m_product_loan set min_nominal_interest_rate_per_period = 10, max_nominal
 -- Update cupo amount to high value so that loans can be processed. Revert this limit back to the original limit
 update campos_cliente_persona set "Cupo aprobado" = 10000000;
 
+
+--- Indexes to speed up retrieval of records --
+ CREATE INDEX idx_cedula
+ON tmp_creditos_migrar(cli_nroid);
+
+ CREATE INDEX idx_cedula_campos_cliente_persona
+ON campos_cliente_persona("Cedula");
+
 ----------------------
 -- On uat 15k clients already have been assigned to office 2. So no need to execute this query on uat
 -- Took around 7 minutes on uat with 15k rows
@@ -424,11 +432,12 @@ from
  	where
  	mc.office_id = 2
  	-- and tcm.nit = '800069933' and code = '2655' and cre_numerocredito = 208 and cli_nroid = '92541184'
- 	order by tcm.cli_nroid, tcm.cre_fechafinancia;
- 	
+	order by tcm.cli_nroid, tcm.cre_fechafinancia
 	limit 5000 -- first 5k loans for first sheet
- 	 limit 5000 offset 5001 -- next5k loans for second sheet
- 	 limit 5000 offset 10001 -- next 5k loans for third sheet
+ --	 limit 5000 offset 5001 -- next5k loans for second sheet
+ --	 limit 5000 offset 10001 -- next 5k loans for third sheet
+ --	 limit 5000 offset 15001 -- next 5k loans for forth sheet
+ --	 limit 5000 offset 20001 -- next 5k loans for fifth sheet
 
 
 -- Set the original cupo value for client
@@ -437,17 +446,18 @@ update campos_cliente_persona set "Cupo aprobado" = "Cupo solicitado"
 
 ----------------------------------- Loan Transactions ----------------------------------------------
 -- Update repayment schedule paid installments
-update m_loan_repayment_schedule
-set principal_completed_derived = principal_amount,
-	interest_completed_derived = interest_amount,
-	fee_charges_completed_derived = fee_charges_amount,
-	penalty_charges_completed_derived = penalty_charges_amount,
+update m_loan_repayment_schedule mlrs
+set principal_completed_derived = mlrs.principal_amount,
+	interest_completed_derived = mlrs.interest_amount,
+	fee_charges_completed_derived = mlrs.fee_charges_amount,
+	penalty_charges_completed_derived = mlrs.penalty_charges_amount,
 	completed_derived = true,
 	obligations_met_on_date = tcm.cpc_fecha_pago_cuota
-from m_loan_repayment_schedule mlrs
-inner join m_loan ml on mlrs.loan_id = ml.id
+from m_loan ml
 inner join tmp_creditos_migrar tcm on ml.external_id = tcm.external_id
-and tcm.cpc_fecha_pago_cuota is not null
+where ml.id = mlrs.loan_id
+and mlrs.installment = tcm.cuo_nrocuota
+and tcm.cpc_fecha_pago_cuota is not null;
 
 -- Alter loan_transaction add installment_id (we'll drop this after)
 alter table m_loan_transaction add column installment_id bigint;
@@ -470,7 +480,7 @@ from m_loan_repayment_schedule mlrs join m_loan_transaction mlt on mlrs.id = mlt
 where mlrs.completed_derived = true
 
 
--- Update loan balance in transactions
+-- Update loan balance in transactions (took about 7 minutes for 25K loans)
 UPDATE m_loan_transaction lt
 SET outstanding_loan_balance_derived = (
     SELECT ml.principal_disbursed_derived - COALESCE(SUM(lt2.principal_portion_derived), 0)
@@ -533,10 +543,12 @@ set
 	where
 		mlrs.penalty_charges_completed_derived is not null
 		and mlrs.loan_id = ml.id
-),
-	principal_outstanding_derived = principal_disbursed_derived - principal_repaid_derived,
+);
+
+update m_loan
+set principal_outstanding_derived = principal_disbursed_derived - principal_repaid_derived,
 	interest_outstanding_derived = interest_charged_derived - interest_repaid_derived,
 	fee_charges_outstanding_derived = fee_charges_charged_derived - fee_charges_repaid_derived,
 	penalty_charges_outstanding_derived = penalty_charges_charged_derived - penalty_charges_repaid_derived,
 	total_repayment_derived = principal_repaid_derived + interest_repaid_derived + fee_charges_repaid_derived + penalty_charges_repaid_derived,
-	total_outstanding_derived = principal_outstanding_derived + interest_outstanding_derived + fee_charges_outstanding_derived + penalty_charges_outstanding_derived
+	total_outstanding_derived = principal_outstanding_derived + interest_outstanding_derived + fee_charges_outstanding_derived + penalty_charges_outstanding_derived;
