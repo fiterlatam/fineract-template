@@ -222,5 +222,5 @@ public class LoanDebtProjectionService {
 
         return penaltyAmount.setScale(2, RoundingMode.HALF_UP);
     }
-    
+
 }
