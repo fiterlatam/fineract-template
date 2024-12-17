@@ -222,8 +222,5 @@ public class LoanDebtProjectionService {
 
         return penaltyAmount.setScale(2, RoundingMode.HALF_UP);
     }
-
-    private Long calculateOverdueDays(LocalDate dueDate, LocalDate projectedFutureDate) {
-        return ChronoUnit.DAYS.between(dueDate, projectedFutureDate);
-    }
+    
 }
