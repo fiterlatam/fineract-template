@@ -234,7 +234,16 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     private FeeCalculationHonorario calculateFeeDetails(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
             BigDecimal repaymentAmount) {
-        Integer ageOverdue = loanRepaymentScheduleInstallment.getLoan().getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
+        // SU-529 Get maximum age of any of the client's loan
+        List<Loan> clientActiveLoans = this.loanRepositoryWrapper.findActiveLoansByClientId(loanRepaymentScheduleInstallment.getLoan().getClientId());
+        Integer ageOverdue = 0;
+        for (Loan loan : clientActiveLoans) {
+            int overdue = loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
+            if (overdue > ageOverdue) {
+                ageOverdue = overdue;
+            }
+        }
+
         BigDecimal delinquencyValue = BigDecimal.ZERO;
         // Retrieve VAT configuration and percentage
         Integer vatConfig = configurationDomainService.retriveIvaConfiguration();

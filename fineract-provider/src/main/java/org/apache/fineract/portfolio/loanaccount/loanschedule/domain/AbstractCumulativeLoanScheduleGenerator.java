@@ -2551,7 +2551,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         numberOfRepayments, outstandingBalance);
                 cumulative = cumulative.plus(calculatedAmount);
             } else {
-                if (loanCharge.defaultFromInstallment() != null && installmentNumber >= loanCharge.defaultFromInstallment()) {
+                if (loanCharge.isFlatHono()) {
+                    calculatedAmount = BigDecimal.ZERO;
+                } else if (loanCharge.defaultFromInstallment() != null && installmentNumber >= loanCharge.defaultFromInstallment()) {
                     calculatedAmount = BigDecimal.ZERO;
                 } else {
                     calculatedAmount = loanCharge.amountOrPercentage();
