@@ -760,7 +760,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             return feePortionOfTransaction;
         }
         for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
-            if (installmentCharge.getLoanCharge().isAvalCharge()) {
+            if (installmentCharge.getLoanCharge().isAvalCharge() || installmentCharge.getLoanCharge().isAvalChargeFlatForMigration()) {
 
                 for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
                     if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
@@ -894,7 +894,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         Money feeChargePaid = Money.zero(currency);
         Money feeChargesDue = getInstallmentChargeOutstandingAmount(currency, installmentCharge);
         if (installmentCharge.getLoanCharge().isCustomPercentageBasedOfAnotherCharge()) {
-            if (!installmentCharge.getLoanCharge().isVatChargeOfHonoCharge()) {
+            if (installmentCharge.getLoanCharge().isAvalChargeFlatForMigration() && this.isMigratedInstallment) {
+                // Pay charge of migrated installments in full
+                feeChargesDue = getInstallmentChargeOutstandingAmount(currency, installmentCharge);
+            } else if (!installmentCharge.getLoanCharge().isVatChargeOfHonoCharge()) {
                 Money percentageAmountToBePaid = transactionAmountRemaining
                         .percentageOf(installmentCharge.getLoanCharge().amountOrPercentage(), RoundingMode.HALF_UP);
                 if (percentageAmountToBePaid.isLessThan(feeChargesDue)) {
