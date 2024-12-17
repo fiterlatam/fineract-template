@@ -28,4 +28,8 @@ public interface LoanProductParameterizationWriteService {
     CommandProcessingResult updateProductParameterization(Long parameterId, JsonCommand command);
 
     CommandProcessingResult deleteProductParameterization(Long parameterId);
+
+    void sendInvoiceNumberingLimitNotification();
+
+    void sendIInvoiceResolutionExpiryNotification();
 }

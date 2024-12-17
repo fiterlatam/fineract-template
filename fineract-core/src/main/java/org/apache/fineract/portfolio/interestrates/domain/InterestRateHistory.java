@@ -45,6 +45,12 @@ public class InterestRateHistory extends AbstractPersistableCustom {
     @Column(name = AuditableFieldsConstants.CREATED_DATE_DB_FIELD)
     private OffsetDateTime createdDate;
 
+    @Column(name = "min_rate")
+    private BigDecimal minRate;
+
+    @Column(name = "max_rate")
+    private BigDecimal maxRate;
+
     public static InterestRateHistory createNew(final InterestRate interestRate) {
         final InterestRateHistory interestRateHistory = new InterestRateHistory();
         interestRateHistory.name = interestRate.getName();
@@ -53,6 +59,8 @@ public class InterestRateHistory extends AbstractPersistableCustom {
         interestRateHistory.interestRateTypeId = interestRate.getInterestRateTypeId();
         interestRateHistory.currentRate = interestRate.getCurrentRate();
         interestRateHistory.appliedOnDate = interestRate.getAppliedOnDate();
+        interestRateHistory.minRate = interestRate.getMinRate();
+        interestRateHistory.maxRate = interestRate.getMaxRate();
         interestRateHistory.createdBy = interestRate.getCreatedBy()
                 .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.interest.rate.history.createdBy.not.found",
                         "Created by not found", interestRate.getId()));

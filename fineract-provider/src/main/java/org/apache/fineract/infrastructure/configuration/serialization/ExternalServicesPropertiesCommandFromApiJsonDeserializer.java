@@ -45,6 +45,9 @@ public class ExternalServicesPropertiesCommandFromApiJsonDeserializer {
             .getAllValues();
     private static final Set<String> MASIVIAN_SERVICE_SUPPORTED_PARAMETERS = ExternalServicesConstants.MasivianJSONinputParams
             .getAllValues();
+
+    private static final Set<String> COLLECTION_HOUSE_HISTORY_PROVIDER_SUPPORTED_PARAMETERS = ExternalServicesConstants.CollectionHouseHistoryJSONinputParams
+            .getAllValues();
     private final FromJsonHelper fromApiJsonHelper;
 
     @Autowired
@@ -69,6 +72,8 @@ public class ExternalServicesPropertiesCommandFromApiJsonDeserializer {
                     CUSTOM_CHARGE_HONORARIO_PROVIDER_SUPPORTED_PARAMETERS);
             case "MASIVIAN_SERVICE" ->
                 this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, MASIVIAN_SERVICE_SUPPORTED_PARAMETERS);
+            case "COLLECTION_HOUSE_HISTORY_PROVIDER" -> this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json,
+                    COLLECTION_HOUSE_HISTORY_PROVIDER_SUPPORTED_PARAMETERS);
             default -> throw new ExternalServiceConfigurationNotFoundException(externalServiceName);
         }
 

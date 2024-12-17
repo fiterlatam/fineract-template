@@ -47,13 +47,15 @@ public final class DisbursementData implements Comparable<DisbursementData> {
     private String locale;
     private String note;
     private transient String linkAccountId;
+    private String channelName;
 
     public static DisbursementData importInstance(LocalDate actualDisbursementDate, String linkAccountId, Integer rowIndex, String locale,
-            String dateFormat) {
-        return new DisbursementData(actualDisbursementDate, linkAccountId, rowIndex, locale, dateFormat);
+            String dateFormat, String channelName) {
+        return new DisbursementData(actualDisbursementDate, linkAccountId, rowIndex, locale, dateFormat, channelName);
     }
 
-    private DisbursementData(LocalDate actualDisbursementDate, String linkAccountId, Integer rowIndex, String locale, String dateFormat) {
+    private DisbursementData(LocalDate actualDisbursementDate, String linkAccountId, Integer rowIndex, String locale, String dateFormat,
+            String channelName) {
         this.dateFormat = dateFormat;
         this.locale = locale;
         this.actualDisbursementDate = actualDisbursementDate;
@@ -67,6 +69,7 @@ public final class DisbursementData implements Comparable<DisbursementData> {
         this.chargeAmount = null;
         this.waivedChargeAmount = null;
         this.netDisbursalAmount = null;
+        this.channelName = channelName;
 
     }
 

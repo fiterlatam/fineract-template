@@ -47,10 +47,13 @@ public class InterestRateDataValidator {
     public static final String APPLIED_ON_DATE = "appliedOnDate";
     public static final String LOCALE = "locale";
     public static final String DATE_FORMAT = "dateFormat";
+    public static final String MIN_RATE = "minRate";
+    public static final String MAX_RATE = "maxRate";
+
     private static final Set<String> SUPPORTED_PARAMETERS_FOR_INTEREST_RATES = new HashSet<>(Arrays.asList(InterestRateDataValidator.NAME,
             InterestRateDataValidator.CURRENT_RATE, InterestRateDataValidator.ACTIVE, InterestRateDataValidator.INTEREST_RATE_TYPE_ID,
             InterestRateDataValidator.APPLIED_ON_DATE, InterestRateDataValidator.LOCALE, InterestRateDataValidator.INTEREST_RATE_TYPE_ID,
-            InterestRateDataValidator.DATE_FORMAT));
+            InterestRateDataValidator.DATE_FORMAT, MIN_RATE, MAX_RATE));
     private final FromJsonHelper fromApiJsonHelper;
 
     @Autowired
@@ -83,6 +86,18 @@ public class InterestRateDataValidator {
             baseDataValidator.reset().parameter(InterestRateDataValidator.APPLIED_ON_DATE).value(appliedOnDate)
                     .failWithCode("cannot.be.before.today");
         }
+
+        BigDecimal minRate = BigDecimal.ZERO;
+        if (fromApiJsonHelper.parameterExists(MIN_RATE, element)) {
+            minRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(MIN_RATE, element);
+            baseDataValidator.reset().parameter(MIN_RATE).value(minRate).notLessThanMin(BigDecimal.ZERO);
+        }
+
+        if (fromApiJsonHelper.parameterExists(MAX_RATE, element)) {
+            BigDecimal maxRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(MAX_RATE, element);
+            baseDataValidator.reset().parameter(MAX_RATE).value(maxRate).notLessThanMin(BigDecimal.ZERO).notLessThanMin(minRate);
+        }
+
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 

@@ -140,6 +140,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanSchedu
 import org.apache.fineract.portfolio.loanaccount.service.GLIMAccountInfoReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanBlockReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanDebtProjectionService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
@@ -288,6 +289,7 @@ public class LoansApiResource {
     private final DefaultToApiJsonSerializer<LoanDelinquencyTagHistoryData> jsonSerializerTagHistory;
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
     private final LoanBlockReadPlatformService loanBlockingReasonReadPlatformService;
+    private final LoanDebtProjectionService loanDebtProjectionService;
 
     @Autowired
     private SpringTemplateEngine templateEngine;
@@ -895,7 +897,6 @@ public class LoansApiResource {
         LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(loanId);
         LoanScheduleData repaymentSchedule = null;
         Collection<DisbursementData> disbursementData = this.loanReadPlatformService.retrieveLoanDisbursementDetails(loanId);
-        ;
         final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData = loanBasicDetails.getTimeline().repaymentScheduleRelatedData(
                 loanBasicDetails.getCurrency(), loanBasicDetails.getPrincipal(), loanBasicDetails.getApprovedPrincipal(),
                 loanBasicDetails.getInArrearsTolerance(), loanBasicDetails.getFeeChargesAtDisbursementCharged());
@@ -1493,4 +1494,21 @@ public class LoansApiResource {
 
         return toApiJsonSerializer.serialize(result);
     }
+
+    @GET()
+    @Path("/{loanId}/projections")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveDebtProjection(@PathParam("loanId") final Long loanId, @QueryParam("projectionDate") final String projectionDate,
+            @QueryParam("dateFormat") final String dateFormat, @Context final UriInfo uriInfo) {
+
+        // Verify user has permissions
+        this.context.authenticatedUser();
+
+        // Calculate projection
+        LoanDebtProjectionData projection = this.loanDebtProjectionService.calculateDebtProjection(loanId, projectionDate, dateFormat);
+
+        return this.toApiJsonSerializer.serialize(projection);
+    }
+
 }

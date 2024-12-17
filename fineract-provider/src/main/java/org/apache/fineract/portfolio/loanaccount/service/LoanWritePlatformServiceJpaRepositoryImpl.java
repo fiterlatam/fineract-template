@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,9 +27,11 @@ import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -99,6 +101,7 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.LoanBalance
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanChargebackTransactionBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanCloseAsRescheduleBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanCloseBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanCreditNoteBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanDebitNoteBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanDisbursalBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanInitiateTransferBusinessEvent;
@@ -117,6 +120,7 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.transaction
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanChargeOffPostBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanChargeOffPreBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanDisbursalTransactionBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanInvoiceGenerationPostBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanUndoChargeOffBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanUndoWrittenOffBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanWaiveInterestBusinessEvent;
@@ -189,13 +193,14 @@ import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceIn
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsDataWrapper;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
 import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanIndividualMonitoringAccount;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagement;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
@@ -229,6 +234,12 @@ import org.apache.fineract.portfolio.loanaccount.exception.LoanTransactionNotFou
 import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementDataNotAllowedException;
 import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementDataRequiredException;
 import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorDomainService;
+import org.apache.fineract.portfolio.loanaccount.invoice.data.ClasificacionConceptosData;
+import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
+import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
+import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicaMensual;
+import org.apache.fineract.portfolio.loanaccount.invoice.domain.LoanDocumentConcept;
+import org.apache.fineract.portfolio.loanaccount.jobs.facturaelectronicamensual.FacturaElectronicaMensualTasklet;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
@@ -236,6 +247,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanSchedul
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModelPeriod;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.PrincipalInterest;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.RescheduleLoansApiConstants;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.data.LoanRescheduleRequestData;
@@ -250,6 +262,9 @@ import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.loanproduct.exception.LinkedAccountRequiredException;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
+import org.apache.fineract.portfolio.loanproductparameterization.domain.LoanProductParameterization;
+import org.apache.fineract.portfolio.loanproductparameterization.domain.LoanProductParameterizationRepository;
+import org.apache.fineract.portfolio.loanproductparameterization.exception.LoanProductParameterizationNotFoundException;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
@@ -332,11 +347,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
     private final LoanScheduleGeneratorFactory loanScheduleFactory;
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
-    private final LoanBlockingReasonRepository blockingReasonRepository;
+    private final FacturaElectronicMensualRepository facturaElectronicMensualRepository;
+    private final LoanProductParameterizationRepository productParameterizationRepository;
 
     @PostConstruct
     public void registerForNotification() {
         businessEventNotifierService.addPostBusinessEventListener(LoanDisbursalBusinessEvent.class, new DisbursementEventListener());
+        businessEventNotifierService.addPostBusinessEventListener((LoanInvoiceGenerationPostBusinessEvent.class),
+                new LoanInvoiceGenerationPostBusinessEventListener());
+        businessEventNotifierService.addPostBusinessEventListener((LoanCreditNoteBusinessEvent.class),
+                new LoanCreditNoteGenerationPostBusinessEventListener());
     }
 
     @Transactional
@@ -561,8 +581,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             "Disbursal date of this loan application " + loan.getDisbursementDate()
                                     + " should be after last transaction date of loan to be closed " + lastUserTransactionOnLoanToClose);
                 }
-
-                final LoanRepaymentScheduleInstallment foreCloseDetail = loanToClose.fetchLoanForeclosureDetail(actualDisbursementDate);
+                final LoanRepaymentScheduleInstallment foreCloseDetail = loanToClose.fetchLoanForeclosureDetail(actualDisbursementDate,
+                        scheduleGeneratorDTO);
                 BigDecimal loanOutstanding = foreCloseDetail.getTotalOutstanding(loanToClose.getCurrency()).getAmount();
                 /*
                  * BigDecimal loanOutstanding = this.loanReadPlatformService
@@ -1164,6 +1184,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         final LoanProduct loanProduct = loan.loanProduct();
+        if (!loanProduct.getCustomAllowCollections()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.collection.not.allowed.on.this.product",
+                    "Collection is not allowed for this loan product", loanProduct.getName());
+        }
         final Long repaymentChannelId = command.longValueOfParameterNamed("repaymentChannelId");
         final boolean isImportedTransaction = command.booleanPrimitiveValueOfParameterNamed("isImportedTransaction");
         ChannelData channelData;
@@ -1219,19 +1243,26 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         boolean recalculateEMI = command.booleanPrimitiveValueOfParameterNamed("reduceInstallmentAmount");
         loan.setRecalculateEMI(recalculateEMI);
 
+        BigDecimal totalExpectedRepayment = loan.getLoanSummary().getTotalExpectedRepayment();
+        final LoanStatus loanStatus = loan.getStatus();
+        final boolean isBankChannel = channelData.getName().equalsIgnoreCase("Bancos")
+                || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
+
+        if ((transactionAmount.compareTo(totalExpectedRepayment) > 0 && !isBankChannel)) {
+            final String totalOverpaid = transactionAmount.subtract(totalExpectedRepayment).toString();
+            handleOverPaidException(totalOverpaid);
+        }
+
         LoanTransaction loanTransaction = this.loanAccountDomainService.makeRepayment(repaymentTransactionType, loan, transactionDate,
                 transactionAmount, paymentDetail, noteText, txnExternalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer,
                 holidayDetailDto, isHolidayValidationDone);
         loan = loanTransaction.getLoan();
-        final LoanStatus loanStatus = loan.getStatus();
-        final boolean isBankChannel = channelData.getName().equalsIgnoreCase("Bancos")
-                || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
-        if (loanStatus.isOverpaid() && !isBankChannel) {
+
+        // we also want to validate that the repayment amount is not greater than the outstanding amount
+
+        if ((loanStatus.isOverpaid() && !isBankChannel)) {
             final String totalOverpaid = Money.of(loan.getCurrency(), loan.getTotalOverpaid()).toString();
-            throw new GeneralPlatformDomainRuleException("error.msg.loan.channel.repayment.is.greater.than.outstanding.amount",
-                    String.format("Repayment rejected for this channel! Repayment amount is greater than the outstanding amount by %s",
-                            totalOverpaid),
-                    totalOverpaid);
+            handleOverPaidException(totalOverpaid);
         }
 
         // Update loan transaction on repayment.
@@ -1252,18 +1283,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         if (loan.getStatus().isClosed()) {
-            InsuranceIncident incident = this.insuranceIncidentRepository
-                    .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
-            if (incident != null) {
-                BigDecimal cumulative = BigDecimal.ZERO;
-                List<LoanCharge> loanCharges = loan.getLoanCharges().stream().filter(lc -> lc.getChargeCalculation().isVoluntaryInsurance())
-                        .toList();
-                for (LoanCharge loanCharge : loanCharges) {
-                    InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, 0,
-                            incident, loan.getClosedOnDate(), cumulative);
-                    this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
-                }
-            }
+            createCancellationNoveltyNews(loan, loan.getClosedOnDate());
         }
 
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()) //
@@ -1275,6 +1295,34 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withGroupId(loan.getGroupId()) //
                 .with(changes) //
                 .build();
+    }
+
+    private static void handleOverPaidException(String totalOverpaid) {
+        throw new GeneralPlatformDomainRuleException("error.msg.loan.channel.repayment.is.greater.than.outstanding.amount",
+                String.format("Repayment rejected for this channel! Repayment amount is greater than the outstanding amount by %s",
+                        totalOverpaid),
+                totalOverpaid);
+    }
+
+    private void createCancellationNoveltyNews(Loan loan, LocalDate writeOffDate) {
+        InsuranceIncident incident = this.insuranceIncidentRepository
+                .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
+        if (incident == null || (!incident.isMandatory() && !incident.isVoluntary())) {
+            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION.name());
+        }
+
+        for (LoanCharge loanCharge : loan.getCharges()) {
+            if (loanCharge.getAmountOutstanding(loan.getCurrency()).isGreaterThanZero()) {
+                if ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
+                        || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
+                    BigDecimal cumulative = BigDecimal.ZERO;
+                    InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                            null, incident, writeOffDate, cumulative);
+
+                    this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+                }
+            }
+        }
     }
 
     private ChannelData validateRepaymentChannel(final String channelName, final LoanProduct loanProduct) {
@@ -1388,18 +1436,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 transactionIds.add(loanTransaction.getId());
 
                 if (loan.getStatus().isClosed()) {
-                    InsuranceIncident incident = this.insuranceIncidentRepository
-                            .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
-                    if (incident != null) {
-                        BigDecimal cumulative = BigDecimal.ZERO;
-                        List<LoanCharge> loanCharges = loan.getLoanCharges().stream()
-                                .filter(lc -> lc.getChargeCalculation().isVoluntaryInsurance()).toList();
-                        for (LoanCharge loanCharge : loanCharges) {
-                            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan,
-                                    loanCharge, 0, incident, loan.getClosedOnDate(), cumulative);
-                            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
-                        }
-                    }
+                    createCancellationNoveltyNews(loan, loan.getClosedOnDate());
                 }
             }
         }
@@ -1441,13 +1478,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     "Loan transaction:" + transactionId + " update not allowed as loan transaction is linked to other transactions",
                     transactionId);
         }
-
-        if (transactionToAdjust.isSpecialWriteOff()) {
-            throw new GeneralPlatformDomainRuleException("error.msg.loan.transaction.update.not.allowed",
-                    "Loan transaction:" + transactionId + " update not allowed as loan transaction is a special write off transaction",
-                    transactionId);
-        }
-
         final LocalDate transactionDate = command.localDateValueOfParameterNamed("transactionDate");
         final BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed("transactionAmount");
         final ExternalId txnExternalId = externalIdFactory.createFromCommand(command, LoanApiConstants.externalIdParameterName);
@@ -1459,7 +1489,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             throw new InvalidLoanTransactionTypeException("transaction", "error.msg.loan.transaction.update.not.allowed", errorMessage);
         }
 
-        // We dont need auto generation for reversal external id... if it is not provided, it remains null (empty)
+        // We don't need auto generation for reversal external id... if it is not provided, it remains null (empty)
         final String reversalExternalId = command.stringValueOfParameterNamedAllowingNull(LoanApiConstants.REVERSAL_EXTERNAL_ID_PARAMNAME);
         final ExternalId reversalTxnExternalId = ExternalIdFactory.produce(reversalExternalId);
 
@@ -1525,11 +1555,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
-
         final ChangedTransactionDetail changedTransactionDetail = loan.adjustExistingTransaction(newTransactionDetail,
                 defaultLoanLifecycleStateMachine, transactionToAdjust, existingTransactionIds, existingReversedTransactionIds,
                 scheduleGeneratorDTO, reversalTxnExternalId);
-
         boolean thereIsNewTransaction = newTransactionDetail.isGreaterThanZero(loan.getPrincipal().getCurrency());
         if (thereIsNewTransaction) {
             if (paymentDetail != null) {
@@ -1542,11 +1570,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
                 if (loanStatus.isOverpaid() && !isBankChannel) {
                     final String totalOverpaid = Money.of(loan.getCurrency(), loan.getTotalOverpaid()).toString();
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.channel.repayment.is.greater.than.outstanding.amount",
-                            String.format(
-                                    "Repayment rejected for this channel! Repayment amount is greater than the outstanding amount by %s",
-                                    totalOverpaid),
-                            totalOverpaid);
+                    handleOverPaidException(totalOverpaid);
                 }
             }
         }
@@ -1565,7 +1589,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
         }
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
-
+        if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled() || loan.isProgressiveLoan()) {
+            scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
+            loan.regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
+            loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+        }
+        scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
+        loan.regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
+        loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         final String noteText = command.stringValueOfParameterNamed("note");
         if (StringUtils.isNotBlank(noteText)) {
             changes.put("note", noteText);
@@ -1617,6 +1648,15 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         businessEventNotifierService.notifyPostBusinessEvent(new LoanAdjustTransactionBusinessEvent(eventData));
         if (!isAdjustCommand) {
             this.businessEventNotifierService.notifyPostBusinessEvent(new LoanTxReversalBusinessEvent(transactionToAdjust));
+        }
+        final LocalDate previousTransactionDate = transactionToAdjust.getTransactionDate();
+        if (DateUtils.isEqual(previousTransactionDate, transactionDate) && transactionToAdjust.hasOccurredOnSuspendedAccount()) {
+            final Long loanTransactionId = transactionToAdjust.getId();
+            final List<FacturaElectronicaMensual> facturaElectronicMensuals = this.facturaElectronicMensualRepository
+                    .findByLoanTransactionId(loanTransactionId);
+            if (CollectionUtils.isNotEmpty(facturaElectronicMensuals)) {
+                this.facturaElectronicMensualRepository.deleteAll(facturaElectronicMensuals);
+            }
         }
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
@@ -1912,8 +1952,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         loanAccrualTransactionBusinessEventService.raiseBusinessEventForAccrualTransactions(loan, existingTransactionIds);
         loanAccountDomainService.recalculateAccruals(loan);
         loanAccountDomainService.setLoanDelinquencyTag(loan, DateUtils.getBusinessLocalDate());
+        createWriteOffNoveltyNews(loan, transactionDate);
         businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
         businessEventNotifierService.notifyPostBusinessEvent(new LoanWrittenOffPostBusinessEvent(writeOff));
+
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(writeOff.getId()) //
@@ -1923,6 +1965,27 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withGroupId(loan.getGroupId()) //
                 .withLoanId(loanId) //
                 .with(changes).build();
+    }
+
+    private void createWriteOffNoveltyNews(Loan loan, LocalDate writeOffDate) {
+        InsuranceIncident incident = this.insuranceIncidentRepository
+                .findByIncidentType(InsuranceIncidentType.PORTFOLIO_WRITE_OFF_CANCELLATION);
+        if (incident == null || (!incident.isMandatory() && !incident.isVoluntary())) {
+            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.PORTFOLIO_WRITE_OFF_CANCELLATION.name());
+        }
+
+        for (LoanCharge loanCharge : loan.getCharges()) {
+            if (loanCharge.getAmountOutstanding(loan.getCurrency()).isGreaterThanZero()) {
+                if ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
+                        || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
+                    BigDecimal cumulative = BigDecimal.ZERO;
+                    InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                            null, incident, writeOffDate, cumulative);
+
+                    this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+                }
+            }
+        }
     }
 
     @Transactional
@@ -3487,27 +3550,23 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan,
                 loanRescheduleRequest);
 
-        List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
-                .getLoanDataWithDefaultOrCancelInsurance(loanId, null, transactionDate);
-        InsuranceIncident incident = this.insuranceIncidentRepository
-                .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
-        if (incident == null) {
-            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION.name());
-        }
-        for (DefaultOrCancelInsuranceInstallmentData data : cancelInsuranceInstallmentIds) {
-            LoanCharge loanCharge = null;
-            Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream()
-                    .filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
-            if (loanChargeOptional.isPresent()) {
-                loanCharge = loanChargeOptional.get();
-            }
-            BigDecimal cumulative = BigDecimal.ZERO;
-            cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, true);
-            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
-                    data.installment(), incident, transactionDate, cumulative);
-
-            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
-        }
+        /*
+         * List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
+         * .getLoanDataWithDefaultOrCancelInsurance(loanId, null, transactionDate); InsuranceIncident incident =
+         * this.insuranceIncidentRepository .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION); if
+         * (incident == null) { throw new
+         * InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION.name()); } for
+         * (DefaultOrCancelInsuranceInstallmentData data : cancelInsuranceInstallmentIds) { LoanCharge loanCharge =
+         * null; Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream() .filter(lc ->
+         * Objects.equals(lc.getId(), data.loanChargeId())).findFirst(); if (loanChargeOptional.isPresent()) {
+         * loanCharge = loanChargeOptional.get(); } BigDecimal cumulative = BigDecimal.ZERO; cumulative =
+         * processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, true); InsuranceIncidentNoveltyNews
+         * insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, data.installment(),
+         * incident, transactionDate, cumulative);
+         *
+         * this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews); }
+         */
+        createCancellationNoveltyNews(loan, transactionDate);
 
         LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, externalId,
                 changes);
@@ -3544,25 +3603,25 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
         }
         this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan, null);
-        List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
-                .getLoanDataWithDefaultOrCancelInsurance(loanId, null, transactionDate);
-        InsuranceIncident incident = this.insuranceIncidentRepository
-                .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION);
-        if (incident == null) {
-            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION.name());
-        }
-        for (final DefaultOrCancelInsuranceInstallmentData data : cancelInsuranceInstallmentIds) {
-            LoanCharge loanCharge = null;
-            Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream()
-                    .filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
-            if (loanChargeOptional.isPresent()) {
-                loanCharge = loanChargeOptional.get();
-            }
-            BigDecimal cumulative = BigDecimal.ZERO;
-            cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, true);
-            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
-                    data.installment(), incident, transactionDate, cumulative);
-            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+        /*
+         * List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
+         * .getLoanDataWithDefaultOrCancelInsurance(loanId, null, transactionDate); InsuranceIncident incident =
+         * this.insuranceIncidentRepository .findByIncidentType(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION); if
+         * (incident == null) { throw new
+         * InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION.name()); } for (final
+         * DefaultOrCancelInsuranceInstallmentData data : cancelInsuranceInstallmentIds) { LoanCharge loanCharge = null;
+         * Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream() .filter(lc ->
+         * Objects.equals(lc.getId(), data.loanChargeId())).findFirst(); if (loanChargeOptional.isPresent()) {
+         * loanCharge = loanChargeOptional.get(); } BigDecimal cumulative = BigDecimal.ZERO; cumulative =
+         * processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, true); InsuranceIncidentNoveltyNews
+         * insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, data.installment(),
+         * incident, transactionDate, cumulative);
+         * this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews); }
+         */
+        createCancellationNoveltyNews(loan, transactionDate);
+        if (transactionDate.equals(loan.getDisbursementDate())) {
+            loan.setAnulado(true);
+            loan.setAnuladoOnDisbursementDate(true);
         }
         final LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText,
                 externalId, changes);
@@ -3612,17 +3671,39 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         checkIfProductAllowsCancelationOrReversal(loan);
 
-        businessEventNotifierService.notifyPreBusinessEvent(new LoanChargeOffPreBusinessEvent(loan));
+        loan.markAsChargedOff(transactionDate, currentUser, null);
 
-        if (command.hasParameter(LoanApiConstants.chargeOffReasonIdParamName)) {
-            Long chargeOffReasonId = command.longValueOfParameterNamed(LoanApiConstants.chargeOffReasonIdParamName);
-            CodeValue chargeOffReason = this.codeValueRepository
-                    .findOneByCodeNameAndIdWithNotFoundDetection(LoanApiConstants.CHARGE_OFF_REASONS, chargeOffReasonId);
-            changes.put(LoanApiConstants.chargeOffReasonIdParamName, chargeOffReasonId);
-            loan.markAsChargedOff(transactionDate, currentUser, chargeOffReason);
-        } else {
-            loan.markAsChargedOff(transactionDate, currentUser, null);
+        InsuranceIncidentType incidentType = InsuranceIncidentType.DEATH_CANCELLATION;
+        if (command.hasParameter("incidentTypeId")) {
+            Integer incidentTypeId = command.integerValueOfParameterNamed("incidentTypeId");
+            incidentType = InsuranceIncidentType.fromInt(incidentTypeId);
         }
+
+        this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan, null);
+        List<DefaultOrCancelInsuranceInstallmentData> cancelInsuranceInstallmentIds = this.loanReadPlatformService
+                .getLoanDataWithDefaultOrCancelInsurance(loanId, null, transactionDate);
+        InsuranceIncident incident = this.insuranceIncidentRepository.findByIncidentType(incidentType);
+        if (incident == null) {
+            throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEATH_CANCELLATION.name());
+        }
+        for (final DefaultOrCancelInsuranceInstallmentData data : cancelInsuranceInstallmentIds) {
+            LoanCharge loanCharge = null;
+            Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream()
+                    .filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
+            if (loanChargeOptional.isPresent()) {
+                loanCharge = loanChargeOptional.get();
+                if ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
+                        || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
+                    BigDecimal cumulative = BigDecimal.ZERO;
+                    cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, true);
+                    InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                            data.installment(), incident, transactionDate, cumulative);
+                    this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+                }
+            }
+        }
+
+        businessEventNotifierService.notifyPreBusinessEvent(new LoanChargeOffPreBusinessEvent(loan));
 
         final List<Long> existingTransactionIds = loan.findExistingTransactionIds();
         final List<Long> existingReversedTransactionIds = loan.findExistingReversedTransactionIds();
@@ -3639,6 +3720,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final Note note = Note.loanTransactionNote(loan, chargeOffTransaction, noteText);
             this.noteRepository.save(note);
         }
+
+        this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, txnExternalId, changes);
+        final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
+                BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(), BlockLevel.CREDIT.toString());
+        loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "CANCELADO", DateUtils.getLocalDateOfTenant());
 
         postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
         businessEventNotifierService.notifyPostBusinessEvent(new LoanChargeOffPostBusinessEvent(chargeOffTransaction));
@@ -3741,17 +3827,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     @Override
     public void recalculateInterestForMaximumLegalRate() throws JobExecutionException {
-        List<Throwable> exceptions = new ArrayList<>();
+        final List<Throwable> exceptions = new ArrayList<>();
         final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
                 .retrieveMaximumCreditRateConfigurationData();
         final LocalDate appliedOnDate = maximumCreditRateConfigurationData.getAppliedOnDate();
         final BigDecimal maximumLegalAnnualNominalRateValue = maximumCreditRateConfigurationData.getAnnualNominalRate();
         final LoanRescheduleMapper rm = new LoanRescheduleMapper();
         final String sql = "SELECT " + rm.schema();
-        final Object[] params = new Object[] { appliedOnDate, appliedOnDate, appliedOnDate, maximumLegalAnnualNominalRateValue };
-        List<LoanRescheduleData> loanLoanRescheduleDataList = this.jdbcTemplate.query(sql, rm, params);
+        final Object[] params = new Object[] { appliedOnDate, appliedOnDate, appliedOnDate, maximumLegalAnnualNominalRateValue,
+                maximumLegalAnnualNominalRateValue };
+        final List<LoanRescheduleData> loanLoanRescheduleDataList = this.jdbcTemplate.query(sql, rm, params);
         if (CollectionUtils.isNotEmpty(loanLoanRescheduleDataList)) {
-            final String locale = "en";
+            final String locale = "es";
             final String dateFormat = "dd MMMM yyyy";
             final String submittedOnDate = DateUtils.format(DateUtils.getBusinessLocalDate(), dateFormat, Locale.forLanguageTag(locale));
             LoanRescheduleRequestData loanRescheduleReasons = this.loanRescheduleRequestReadPlatformService
@@ -3768,7 +3855,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             rescheduleJsonObject.addProperty("locale", locale);
             rescheduleJsonObject.addProperty("rescheduleReasonId", rescheduleReasonId);
             rescheduleJsonObject.addProperty("submittedOnDate", submittedOnDate);
-            rescheduleJsonObject.addProperty("rescheduleReasonComment", "Recalcular la tasa de interés al máximo legal");
             rescheduleJsonObject.addProperty("adjustedDueDate", "");
             rescheduleJsonObject.addProperty("graceOnPrincipal", "");
             rescheduleJsonObject.addProperty("extraTerms", "");
@@ -3798,6 +3884,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final String rescheduleFromDateString = DateUtils.format(appliedOnDate, dateFormat, Locale.forLanguageTag(locale));
                 rescheduleJsonObject.addProperty("rescheduleFromDate", rescheduleFromDateString);
                 rescheduleJsonObject.addProperty("loanId", loanId);
+                final String rescheduleReasonComment = String.format(
+                        "Recalcular la tasa de interés al máximo legal: [Nueva tasa de interés: %s, Tasa máxima legal: %s, Fecha de reprogramación: %s]",
+                        newInterestRate, maximumLegalAnnualNominalRateValue, rescheduleFromDateString);
+                rescheduleJsonObject.addProperty("rescheduleReasonComment", rescheduleReasonComment);
                 final String rescheduleRequestBodyAsJson = rescheduleJsonObject.toString();
                 CommandWrapper commandWrapper = new CommandWrapperBuilder()
                         .createLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME).withJson(rescheduleRequestBodyAsJson).build();
@@ -3869,8 +3959,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             WHERE ltv.term_type = 10 AND ltv.is_active = TRUE AND ltv.applied_on_loan_status = 300 AND ltv.applicable_date >= ?
                             ORDER BY ltv.loan_id, ltv.id DESC
                         ) term_variation ON term_variation.loan_id = ml.id
-                        WHERE ml.loan_status_id = 300 AND mlrs.duedate >= ?
-                        AND (CASE WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value ELSE ml.annual_nominal_interest_rate END) != ?
+                        WHERE ml.loan_status_id = 300 AND mlrs.duedate >= ? AND ml.is_charged_off = FALSE
+                            AND (CASE
+                                WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value != ?
+                                WHEN term_variation.decimal_value IS NULL THEN ml.annual_nominal_interest_rate > ?
+                            END)
                         GROUP BY term_variation.loan_id, ml.annual_nominal_interest_rate, term_variation.decimal_value, ml.id
                         ORDER BY ml.id
                     """;
@@ -3949,6 +4042,353 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 recalculateInterestRate(loan);
             }
         }
+    }
+
+    private final class LoanInvoiceGenerationPostBusinessEventListener
+            implements BusinessEventListener<LoanInvoiceGenerationPostBusinessEvent> {
+
+        @Override
+        public void onBusinessEvent(final LoanInvoiceGenerationPostBusinessEvent event) {
+            final LoanTransaction loanTransaction = event.get();
+            if (loanTransaction != null && loanTransaction.getTypeOf().isRepaymentType()) {
+                generateLoanTransactionDocument(loanTransaction);
+            }
+        }
+    }
+
+    private final class LoanCreditNoteGenerationPostBusinessEventListener implements BusinessEventListener<LoanCreditNoteBusinessEvent> {
+
+        @Override
+        public void onBusinessEvent(final LoanCreditNoteBusinessEvent event) {
+            final LoanTransaction loanTransaction = event.get();
+            if (loanTransaction != null) {
+                generateLoanTransactionDocument(loanTransaction);
+            }
+        }
+    }
+
+    private void generateLoanTransactionDocument(final LoanTransaction loanTransaction) {
+        final Long loanTransactionId = loanTransaction.getId();
+        final LocalDate transactionDate = loanTransaction.getTransactionDate();
+        final YearMonth yearMonth = YearMonth.from(transactionDate);
+        final LocalDate lastDayOfMonth = yearMonth.atEndOfMonth();
+        final LocalDate firstDayOfMonth = transactionDate.withDayOfMonth(1);
+        final LocalDate secondLastDayOfMonth = lastDayOfMonth.minusDays(1);
+        final LoanTransactionType loanTransactionType = loanTransaction.getTypeOf();
+        final FacturaElectronicaMensualTasklet.LoanInvoiceMapper transactionMapper = new FacturaElectronicaMensualTasklet.LoanInvoiceMapper();
+        final String transactionSQL = "SELECT " + transactionMapper.transactionSchema() + " WHERE mlt.\"transactionId\" = ? ";
+        final List<LoanDocumentData> loanDocumentDataList = this.jdbcTemplate.query(transactionSQL, transactionMapper, loanTransactionId);
+        if (!loanDocumentDataList.isEmpty()) {
+            final LoanDocumentData loanDocumentData = loanDocumentDataList.get(0);
+            loanDocumentData.setFirstDayOfMonth(firstDayOfMonth);
+            loanDocumentData.setSecondLastDayOfMonth(secondLastDayOfMonth);
+            loanDocumentData.setLastDayOfMonth(lastDayOfMonth);
+            loanDocumentData.setLoanTransactionId(loanTransactionId);
+            if (loanTransactionType.isRepaymentType()) {
+                loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
+            } else {
+                loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.CREDIT_NOTE);
+            }
+            processAndSaveLoanDocument(loanDocumentData);
+            loanTransaction.markAsOccurredOnSuspendedAccount();
+            this.loanTransactionRepository.saveAndFlush(loanTransaction);
+        }
+    }
+
+    @Override
+    public void processAndSaveLoanDocument(final LoanDocumentData loanDocumentData) {
+        final List<FacturaElectronicaMensual> facturaElectronicaMensuals = new ArrayList<>();
+        final FacturaElectronicaMensual facturaElectronicaMensual = loanDocumentData.toEntity();
+        final Integer itemsCount = loanDocumentData.getItemsCount();
+        facturaElectronicaMensual.setTotal_unidades(String.valueOf(itemsCount));
+        final BigDecimal interestPaid = loanDocumentData.getInterestPaid();
+        final BigDecimal penaltyChargesPaid = loanDocumentData.getPenaltyChargesPaid();
+        final BigDecimal mandatoryInsurancePaid = loanDocumentData.getMandatoryInsurancePaid();
+        final BigDecimal voluntaryInsurancePaid = loanDocumentData.getVoluntaryInsurancePaid();
+        final BigDecimal honorariosPaid = loanDocumentData.getHonorariosPaid();
+        final Long productTypeParamId = loanDocumentData.getProductTypeParamId();
+        final LoanProductParameterization loanProductParameterization = this.productParameterizationRepository.findById(productTypeParamId)
+                .orElseThrow(() -> new LoanProductParameterizationNotFoundException(productTypeParamId));
+        final Long rangeStartNumber = loanProductParameterization.getRangeStartNumber();
+        final Long invoiceCounter = loanProductParameterization.getInvoiceCounter();
+        final Long creditNoteCounter = loanProductParameterization.getCreditNoteCounter();
+        final Long rangeEndNumber = loanProductParameterization.getRangeEndNumber();
+        long documentNumber;
+        String documentNumberString;
+        Long currentCounter;
+        List<FacturaElectronicaMensual> invoicesToKnockOff = new ArrayList<>();
+        final LoanDocumentData.LoanDocumentType documentType = loanDocumentData.getDocumentType();
+        if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
+            currentCounter = ObjectUtils.defaultIfNull(creditNoteCounter, 0L) + 1L;
+            documentNumber = rangeStartNumber + currentCounter;
+            documentNumberString = "NC" + documentNumber;
+            loanProductParameterization.setCreditNoteCounter(currentCounter);
+            invoicesToKnockOff = this.facturaElectronicMensualRepository.findById_clienteAndTipo_prod(loanDocumentData.getClientIdNumber(),
+                    loanDocumentData.getProductTypeName());
+        } else {
+            currentCounter = ObjectUtils.defaultIfNull(invoiceCounter, 0L) + 1L;
+            documentNumber = rangeStartNumber + currentCounter;
+            documentNumberString = loanDocumentData.getBillingPrefix() + documentNumber;
+            loanProductParameterization.setInvoiceCounter(currentCounter);
+        }
+        if (currentCounter > rangeEndNumber) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.invoice.counter.exceeds.range.end.number",
+                    String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
+                            loanProductParameterization.getProductType()));
+        }
+        facturaElectronicaMensual.setNumero_doc(documentNumberString);
+        facturaElectronicaMensual.setReferencia(String.valueOf(documentNumber));
+        facturaElectronicaMensual.setCodigo_descuento("0");
+        facturaElectronicaMensual.setPorcentajedescuento(BigDecimal.ZERO);
+        facturaElectronicaMensual.setDescuento(BigDecimal.ZERO);
+        facturaElectronicaMensual.setPorcentaje_impuesto_item(BigDecimal.ZERO);
+        facturaElectronicaMensual.setImpuesto_item(BigDecimal.ZERO);
+        long itemPosition = 0L;
+        if (interestPaid.compareTo(BigDecimal.ZERO) > 0) {
+            final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.INT_CORRIENTE;
+            final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+            itemPosition = itemPosition + 1;
+            facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
+            facturaElectronicaMensualDuplicate.setCosto_total(interestPaid);
+            facturaElectronicaMensualDuplicate.setPrecio_unitario(interestPaid);
+            facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+            facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+            facturaElectronicaMensualDuplicate.setId_mandante(null);
+            facturaElectronicaMensualDuplicate.setDescripcion_mandante(null);
+            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
+            if (clasificacionConceptosData != null) {
+                if (!clasificacionConceptosData.isExcluido() && clasificacionConceptosData.isGravado()) {
+                    final BigDecimal tarifa = clasificacionConceptosData.getTarifa();
+                    final BigDecimal impuestoItem = interestPaid.multiply(tarifa).divide(BigDecimal.valueOf(100),
+                            MoneyHelper.getRoundingMode());
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(tarifa);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(impuestoItem);
+                } else {
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(null);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(BigDecimal.ZERO);
+                }
+                if (clasificacionConceptosData.isExento()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                } else if (clasificacionConceptosData.isExcluido()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(null);
+                } else if (clasificacionConceptosData.isGravado()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                }
+            }
+
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
+                if (!invoicesToKnockOff.isEmpty()) {
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
+                }
+            }
+        }
+        if (penaltyChargesPaid.compareTo(BigDecimal.ZERO) > 0) {
+            final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.INT_DE_MORA;
+            final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+            itemPosition = itemPosition + 1;
+            facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
+            facturaElectronicaMensualDuplicate.setCosto_total(penaltyChargesPaid);
+            facturaElectronicaMensualDuplicate.setPrecio_unitario(penaltyChargesPaid);
+            facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+            facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+            facturaElectronicaMensualDuplicate.setId_mandante(null);
+            facturaElectronicaMensualDuplicate.setDescripcion_mandante(null);
+            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
+            if (clasificacionConceptosData != null) {
+                if (!clasificacionConceptosData.isExcluido() && clasificacionConceptosData.isGravado()) {
+                    final BigDecimal tarifa = clasificacionConceptosData.getTarifa();
+                    final BigDecimal impuestoItem = penaltyChargesPaid.multiply(tarifa).divide(BigDecimal.valueOf(100),
+                            MoneyHelper.getRoundingMode());
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(tarifa);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(impuestoItem);
+                } else {
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(null);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(BigDecimal.ZERO);
+                }
+                if (clasificacionConceptosData.isExento()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                } else if (clasificacionConceptosData.isExcluido()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(null);
+                } else if (clasificacionConceptosData.isGravado()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                }
+            }
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
+                if (!invoicesToKnockOff.isEmpty()) {
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
+                }
+            }
+        }
+        if (mandatoryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
+            final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.SEGURO_OBLIGATORIO;
+            final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+            itemPosition = itemPosition + 1;
+            facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
+            facturaElectronicaMensualDuplicate.setCosto_total(mandatoryInsurancePaid);
+            facturaElectronicaMensualDuplicate.setPrecio_unitario(mandatoryInsurancePaid);
+            facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+            facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
+            if (clasificacionConceptosData != null) {
+                final String idMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getMandatoryInsuranceCode() : null;
+                final String descripcionMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getMandatoryInsuranceName()
+                        : null;
+                facturaElectronicaMensualDuplicate.setId_mandante(idMandante);
+                facturaElectronicaMensualDuplicate.setDescripcion_mandante(descripcionMandante);
+                if (!clasificacionConceptosData.isExcluido() && clasificacionConceptosData.isGravado()) {
+                    final BigDecimal tarifa = clasificacionConceptosData.getTarifa();
+                    final BigDecimal impuestoItem = mandatoryInsurancePaid.multiply(tarifa).divide(BigDecimal.valueOf(100),
+                            MoneyHelper.getRoundingMode());
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(tarifa);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(impuestoItem);
+                } else {
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(null);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(BigDecimal.ZERO);
+                }
+                if (clasificacionConceptosData.isExento()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                } else if (clasificacionConceptosData.isExcluido()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(null);
+                } else if (clasificacionConceptosData.isGravado()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                }
+            }
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
+                if (!invoicesToKnockOff.isEmpty()) {
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
+                }
+            }
+        }
+        if (voluntaryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
+            final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.SEGUROS_VOLUNTARIOS;
+            final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+            itemPosition = itemPosition + 1;
+            facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
+            facturaElectronicaMensualDuplicate.setCosto_total(voluntaryInsurancePaid);
+            facturaElectronicaMensualDuplicate.setPrecio_unitario(voluntaryInsurancePaid);
+            facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+            facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
+            if (clasificacionConceptosData != null) {
+                final String idMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getVoluntaryInsuranceCode() : null;
+                final String descripcionMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getVoluntaryInsuranceName()
+                        : null;
+                facturaElectronicaMensualDuplicate.setId_mandante(idMandante);
+                facturaElectronicaMensualDuplicate.setDescripcion_mandante(descripcionMandante);
+                if (clasificacionConceptosData.isExento()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                } else if (clasificacionConceptosData.isExcluido()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(null);
+                } else if (clasificacionConceptosData.isGravado()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                }
+            }
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
+                if (!invoicesToKnockOff.isEmpty()) {
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
+                }
+            }
+        }
+        if (honorariosPaid.compareTo(BigDecimal.ZERO) > 0) {
+            final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.HONORARIOS;
+            final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+            itemPosition = itemPosition + 1;
+            facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
+            facturaElectronicaMensualDuplicate.setCosto_total(honorariosPaid);
+            facturaElectronicaMensualDuplicate.setPrecio_unitario(honorariosPaid);
+            facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+            facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
+            if (clasificacionConceptosData != null) {
+                if (!clasificacionConceptosData.isExcluido() && clasificacionConceptosData.isGravado()) {
+                    final BigDecimal tarifa = clasificacionConceptosData.getTarifa();
+                    final BigDecimal impuestoItem = honorariosPaid.multiply(tarifa).divide(BigDecimal.valueOf(100),
+                            MoneyHelper.getRoundingMode());
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(tarifa);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(impuestoItem);
+                } else {
+                    facturaElectronicaMensualDuplicate.setPorcentaje_impuesto_item(null);
+                    facturaElectronicaMensualDuplicate.setImpuesto_item(BigDecimal.ZERO);
+                }
+                if (clasificacionConceptosData.isExento()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(BigDecimal.ZERO);
+                } else if (clasificacionConceptosData.isExcluido()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(null);
+                } else if (clasificacionConceptosData.isGravado()) {
+                    facturaElectronicaMensualDuplicate.setImpuesto(clasificacionConceptosData.getTarifa());
+                }
+            }
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
+                if (!invoicesToKnockOff.isEmpty()) {
+                    knockOffRecursively(invoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
+                }
+            }
+
+        }
+        this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
+        this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
+    }
+
+    private void knockOffRecursively(final List<FacturaElectronicaMensual> invoicesToKnockOff,
+            final FacturaElectronicaMensual currentElectronicaMensual, final List<FacturaElectronicaMensual> facturaElectronicaMensuals) {
+        BigDecimal remainingAmount = currentElectronicaMensual.getCosto_total();
+        if (!invoicesToKnockOff.isEmpty()) {
+            for (final FacturaElectronicaMensual invoiceToKnockOff : invoicesToKnockOff) {
+                remainingAmount = remainingAmount.subtract(invoiceToKnockOff.getCosto_total());
+                if (remainingAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                    final String lastInvoiceNumber = invoiceToKnockOff.getNumero_doc();
+                    final LocalDate lastInvoiceDate = invoiceToKnockOff.getFecha_factura();
+                    currentElectronicaMensual.setNum_facafect(lastInvoiceNumber);
+                    currentElectronicaMensual.setFec_facafect(lastInvoiceDate);
+                    break;
+                } else {
+                    final FacturaElectronicaMensual knockOffCreditNote = currentElectronicaMensual.clone();
+                    final BigDecimal amountToKnockOff = invoiceToKnockOff.getCosto_total();
+                    currentElectronicaMensual.setCosto_total(remainingAmount);
+                    knockOffCreditNote.setCosto_total(amountToKnockOff);
+                    knockOffCreditNote.setPrecio_unitario(amountToKnockOff);
+                    knockOffCreditNote.setNum_facafect(invoiceToKnockOff.getNumero_doc());
+                    knockOffCreditNote.setFec_facafect(invoiceToKnockOff.getFecha_factura());
+                    remainingAmount = remainingAmount.subtract(invoiceToKnockOff.getCosto_total());
+                    facturaElectronicaMensuals.add(knockOffCreditNote);
+                }
+            }
+        }
+    }
+
+    @Override
+    public ClasificacionConceptosData getClasificacionConceptosData(final String concepto) {
+        String sql = """
+                    SELECT
+                    	ccc.id AS id,
+                    	ccc.concepto AS concepto,
+                    	ccc.mandato AS mandato,
+                    	ccc.excluido AS excluido,
+                    	ccc.exento AS exento,
+                    	ccc.gravado AS gravado,
+                    	ccc.norma AS norma,
+                    	ccc.tarifa AS tarifa
+                    FROM c_clasificacion_conceptos ccc
+                    WHERE ccc.concepto = ?
+                """;
+        final List<ClasificacionConceptosData> results = this.jdbcTemplate.query(sql, (rs, rowNum) -> {
+            final Long id = rs.getLong("id");
+            final String concept = rs.getString("concepto");
+            final boolean mandato = rs.getBoolean("mandato");
+            final boolean excluido = rs.getBoolean("excluido");
+            final boolean exento = rs.getBoolean("exento");
+            final boolean gravado = rs.getBoolean("gravado");
+            final String norma = rs.getString("norma");
+            final BigDecimal tarifa = rs.getBigDecimal("tarifa");
+            return ClasificacionConceptosData.builder().id(id).concepto(concept).mandato(mandato).excluido(excluido).exento(exento)
+                    .gravado(gravado).norma(norma).tarifa(tarifa).build();
+        }, concepto);
+        return results.isEmpty() ? null : results.get(0);
     }
 
     @Override
@@ -4032,15 +4472,113 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
     }
 
-    public void persistDailyAccrual(LocalDate localDate) {
-        List<Loan> loans = loanRepository.findActiveLoansWithNotYetPostedAccrual(localDate);
-        loans.forEach(loan -> {
+    public void persistDailyAccrual(final LocalDate transactionDate) {
+        final List<Loan> loans = loanRepository.findActiveLoansWithNotYetPostedAccrual(transactionDate);
+        for (final Loan loan : loans) {
+            final MonetaryCurrency currency = loan.getCurrency();
             log.info("Persisting daily accrual for loan: {}", loan.getId());
-            loan.applyDailyAccruals(localDate);
+            ExternalId externalIdentifier = ExternalId.empty();
+            if (TemporaryConfigurationServiceContainer.isExternalIdAutoGenerationEnabled()) {
+                externalIdentifier = ExternalId.generate();
+            }
+            final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
+            BigDecimal dailyAccrualInterest = null;
+            Integer accrualInstallmentNumber = null;
+            Money principalLoanBalanceOutstanding = loan.getPrincipal();
+            for (final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : repaymentScheduleInstallments) {
+                if (!transactionDate.isBefore(loanRepaymentScheduleInstallment.getFromDate())
+                        && !transactionDate.isAfter(loanRepaymentScheduleInstallment.getDueDate().minusDays(1))) {
+                    final BigDecimal totalAccruedInterestForInstallment = loan
+                            .getAccruedInterestForInstallment(loanRepaymentScheduleInstallment.getInstallmentNumber());
+                    long daysInPeriod = Math.toIntExact(ChronoUnit.DAYS.between(loanRepaymentScheduleInstallment.getFromDate(),
+                            loanRepaymentScheduleInstallment.getDueDate()));
+                    Money interestForInstallment = loanRepaymentScheduleInstallment.getInterestCharged(currency);
+                    // Adjust interest on the last day of the period to make up the difference
+                    if (transactionDate.equals(loanRepaymentScheduleInstallment.getDueDate().minusDays(1))) {
+                        // if the amount is whole number when divided across the days in the period, then do same for
+                        // last
+                        // day
+                        if (interestForInstallment.getAmount().remainder(BigDecimal.valueOf(daysInPeriod))
+                                .compareTo(BigDecimal.ZERO) == 0) {
+                            dailyAccrualInterest = interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2,
+                                    RoundingMode.HALF_UP);
+                        } else {
+                            // This will ensure no rounding differences remain
+                            if (interestForInstallment.getAmount().compareTo(totalAccruedInterestForInstallment) > 0) {
+                                dailyAccrualInterest = interestForInstallment.getAmount().subtract(totalAccruedInterestForInstallment);
+                            } else {
+                                dailyAccrualInterest = BigDecimal.ZERO;
+                            }
+                        }
+                    } else {
+                        dailyAccrualInterest = interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2,
+                                RoundingMode.HALF_UP);
+                        final ScheduleGeneratorDTO scheduleGeneratorDTO = loanUtilService.buildScheduleGeneratorDTO(loan, null);
+                        final LoanApplicationTerms loanApplicationTerms = loan.constructLoanApplicationTerms(scheduleGeneratorDTO);
+                        final LoanTermVariationsDataWrapper loanTermVariationsDataWrapper = loanApplicationTerms.getLoanTermVariations();
+                        if (loanTermVariationsDataWrapper != null) {
+                            List<LoanTermVariationsData> interestRatesFromInstallment = loanTermVariationsDataWrapper
+                                    .getInterestRateFromInstallment();
+                            if (interestRatesFromInstallment != null && !interestRatesFromInstallment.isEmpty()) {
+                                LocalDate periodStartDate = loanRepaymentScheduleInstallment.getFromDate();
+                                LocalDate periodEndDate = transactionDate;
+                                final LocalDate periodEndDateFinal = periodEndDate;
+                                interestRatesFromInstallment = interestRatesFromInstallment.stream()
+                                        .filter(interestRateVariation -> !DateUtils
+                                                .isAfter(interestRateVariation.getTermVariationApplicableFrom(), periodEndDateFinal))
+                                        .toList();
+                                final List<LoanTermVariationsData> sortedInterestRatesFromInstallment = interestRatesFromInstallment
+                                        .stream().sorted(Comparator.comparing(LoanTermVariationsData::getLastModifiedDate,
+                                                Comparator.nullsLast(Comparator.reverseOrder())))
+                                        .toList();
+                                if (CollectionUtils.isNotEmpty(sortedInterestRatesFromInstallment)) {
+                                    final LoanTermVariationsData interestRateFromInstallment = sortedInterestRatesFromInstallment.get(0);
+                                    final LocalDate termVariationApplicableFromDate = interestRateFromInstallment
+                                            .getTermVariationApplicableFrom();
+                                    final BigDecimal interestRate = interestRateFromInstallment.getDecimalValue();
+                                    if (DateUtils.isAfter(termVariationApplicableFromDate, periodStartDate)) {
+                                        periodStartDate = termVariationApplicableFromDate;
+                                    }
+                                    loanApplicationTerms.updateAnnualNominalInterestRate(interestRate);
+                                }
+                                final LoanScheduleGenerator loanScheduleGenerator = this.loanScheduleFactory
+                                        .create(loanApplicationTerms.getLoanScheduleType(), loanApplicationTerms.getInterestMethod());
+                                final int periodNumber = loanRepaymentScheduleInstallment.getInstallmentNumber();
+                                if (DateUtils.isEqual(periodStartDate, periodEndDate)) {
+                                    periodEndDate = periodEndDate.plusDays(1);
+                                }
+                                final boolean ignoreCurrencyDigitsAfterDecimal = false;
+                                final PrincipalInterest principalInterest = loanScheduleGenerator.calculatePrincipalInterestComponents(
+                                        principalLoanBalanceOutstanding, loanApplicationTerms, periodNumber, periodStartDate, periodEndDate,
+                                        ignoreCurrencyDigitsAfterDecimal);
+                                final int daysDifference = Math.toIntExact(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
+                                dailyAccrualInterest = principalInterest.interest().getAmount().divide(BigDecimal.valueOf(daysDifference),
+                                        2, RoundingMode.HALF_UP);
+                            }
+                        }
+                    }
+                    // Accumulate the daily interest to the installment's accrued interest
+                    dailyAccrualInterest = dailyAccrualInterest.setScale(0, RoundingMode.DOWN);
+                    final BigDecimal accruedInterest = totalAccruedInterestForInstallment.add(dailyAccrualInterest);
+                    loanRepaymentScheduleInstallment.setInterestAccrued(accruedInterest);
+                    accrualInstallmentNumber = loanRepaymentScheduleInstallment.getInstallmentNumber();
+                    break;
+                }
+                principalLoanBalanceOutstanding = principalLoanBalanceOutstanding
+                        .minus(loanRepaymentScheduleInstallment.getPrincipal(currency));
+            }
+            // if (dailyInterest.compareTo(BigDecimal.ZERO) > 0) {
+            if (dailyAccrualInterest != null && dailyAccrualInterest.compareTo(BigDecimal.ZERO) > 0) {
+                final Money dailyInterestMoney = Money.of(currency, dailyAccrualInterest);
+                final LoanTransaction dailyAccrualTransaction = LoanTransaction.accrueDailyInterest(loan.getOffice(), loan,
+                        dailyInterestMoney, transactionDate, externalIdentifier, accrualInstallmentNumber);
+                loan.addLoanTransaction(dailyAccrualTransaction);
+                loan.setInterestAccruedTill(transactionDate);
+            }
             loanRepository.saveAndFlush(loan);
             log.info("Daily accrual persisted for loan: {}", loan.getId());
 
-        });
+        }
     }
 
     public void persistInstallmentalChargeAccrual(LocalDate localDate) {
@@ -4076,14 +4614,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     .filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
             if (loanChargeOptional.isPresent()) {
                 loanCharge = loanChargeOptional.get();
-            }
-            BigDecimal cumulative = BigDecimal.ZERO;
-            cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, false);
-            InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
-                    data.installment(), incident, currentDate, cumulative);
+                if ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
+                        || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
+                    BigDecimal cumulative = BigDecimal.ZERO;
+                    cumulative = processInsuranceChargeCancellation(cumulative, loan, loanCharge, data, false);
+                    InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
+                            data.installment(), incident, currentDate, cumulative);
 
-            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
-            saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+                    this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
+                    saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+                }
+            }
         }
     }
 
@@ -4117,8 +4658,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             if ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
                     || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
                 BigDecimal cumulative = BigDecimal.ZERO;
-                InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
-                        data.installment(), incident, currentDate, cumulative);
+                InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, null,
+                        incident, data.suspensionDate(), cumulative);
 
                 this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
             }
@@ -4164,6 +4705,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 incident = this.insuranceIncidentRepository.findByIncidentType(InsuranceIncidentType.DEFINITIVE_VOLUNTARY_CANCELLATION);
             } else {
                 incident = this.insuranceIncidentRepository.findByIncidentType(InsuranceIncidentType.BAD_SALE_CANCELLATION);
+                if (incident == null) {
+                    throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_CANCELLATION_DEFAULT.name());
+                }
             }
             if (incident == null) {
                 throw new InsuranceIncidentNotFoundException(InsuranceIncidentType.DEFINITIVE_CANCELLATION_DEFAULT.name());

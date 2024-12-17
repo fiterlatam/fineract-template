@@ -244,7 +244,13 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 isTopUp = this.fromJsonHelper.extractBooleanNamed("isTopup", command.parsedJson());
             }
             if (!isTopUp && !isAjuste) {
-                this.fromApiJsonDeserializer.validateClientBlockingList(entityId);
+                Boolean isMigratedLoan = this.fromJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, command.parsedJson());
+                if (isMigratedLoan == null) {
+                    isMigratedLoan = Boolean.FALSE;
+                }
+                if (!isMigratedLoan) {
+                    this.fromApiJsonDeserializer.validateClientBlockingList(entityId);
+                }
             }
             boolean isMeetingMandatoryForJLGLoans = configurationDomainService.isMeetingMandatoryForJLGLoans();
 
@@ -1584,7 +1590,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                                     + " should be after last transaction date of loan to be closed " + lastUserTransactionOnLoanToClose);
                 }
                 BigDecimal loanOutstanding = this.loanReadPlatformService
-                        .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose, expectedDisbursementDate).getAmount();
+                        .retrieveLoanForeclosureTemplate(loanIdToClose, expectedDisbursementDate, false).getAmount();
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
                 if (loanToClose.claimType() == null || !loanToClose.claimType().equals("castigado")) {
                     if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {

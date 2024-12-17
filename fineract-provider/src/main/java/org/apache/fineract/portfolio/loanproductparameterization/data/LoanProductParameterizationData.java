@@ -51,4 +51,8 @@ public class LoanProductParameterizationData {
     private Long lastCreditNoteNumber;
 
     private Long lastDebitNoteNumber;
+
+    private String technicalKey;
+
+    private String note;
 }

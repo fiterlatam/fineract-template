@@ -1,7 +1,9 @@
 package org.apache.fineract.custom.portfolio.ally.jobs.compensationsettlement;
 
 import org.apache.fineract.custom.portfolio.ally.domain.AllyCompensationRepository;
+import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyRepository;
 import org.apache.fineract.custom.portfolio.ally.service.AllyCompensationReadWritePlatformService;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -29,6 +31,12 @@ public class CompensationOfSettlementConfig {
     @Autowired
     AllyCompensationRepository allyCompensationRepository;
 
+    @Autowired
+    ClientAllyRepository allyRepository;
+
+    @Autowired
+    CodeValueRepository codeValueRepository;
+
     @Bean
     public Step CompensationOfSettlementStep() {
 
@@ -45,6 +53,7 @@ public class CompensationOfSettlementConfig {
 
     @Bean
     public CompensationOfSettlementTasklet compensationOfSettlementTasklet() {
-        return new CompensationOfSettlementTasklet(allyCompensationReadWritePlatformService, allyCompensationRepository);
+        return new CompensationOfSettlementTasklet(allyCompensationReadWritePlatformService, allyCompensationRepository, allyRepository,
+                codeValueRepository);
     }
 }

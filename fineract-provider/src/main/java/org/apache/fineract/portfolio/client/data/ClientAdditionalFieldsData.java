@@ -43,6 +43,7 @@ public class ClientAdditionalFieldsData {
     private String clientName;
     private Integer legalForm;
     private BigDecimal totalOutstandingPrincipalAmount;
+    private BigDecimal otherTotalOutstandingPrincipalAmount;
 
     public boolean isPerson() {
         LegalForm legalForm = LegalForm.fromInt(this.legalForm);

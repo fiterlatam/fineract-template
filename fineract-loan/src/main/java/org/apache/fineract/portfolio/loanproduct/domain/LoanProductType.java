@@ -26,7 +26,9 @@ public enum LoanProductType {
 
     SUMAS_PAY("SU+ PAY"), //
     SUMAS_EMPRESSAS("SU+ Empresas"), //
-    SUMAS_VEHICULOS("SU+ Vehiculos"); //
+    SUMAS_VEHICULOS("SU+ Vehiculos"), //
+    SUMAS_PRESTAMOS("SU+ Préstamos"), //
+    SUMAS_CASTIGADO("SU+ Castigado"); //
 
     private final String code;
 

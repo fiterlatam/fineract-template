@@ -96,6 +96,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanSummaryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
 import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorDomainService;
+import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleAssembler;
@@ -151,6 +152,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.serialization.LoanProductDataValidator;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
+import org.apache.fineract.portfolio.loanproductparameterization.domain.LoanProductParameterizationRepository;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
@@ -270,10 +272,11 @@ public class LoanAccountConfiguration {
             ClientWritePlatformService clientWritePlatformService, LoanBlockingReasonRepository loanBlockWritePlatformService,
             BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper, LoanRepository loanRepository,
             PlatformSecurityContext context, InsuranceIncidentRepository insuranceIncidentRepository,
-            InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository) {
+            InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository,
+            ConfigurationDomainService configurationDomainService) {
         return new LoanArrearsAgingServiceImpl(jdbcTemplate, businessEventNotifierService, sqlGenerator, clientWritePlatformService,
                 loanBlockWritePlatformService, blockingReasonSettingsRepositoryWrapper, loanRepository, context,
-                insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository);
+                insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository, configurationDomainService);
     }
 
     @Bean
@@ -446,7 +449,8 @@ public class LoanAccountConfiguration {
             BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepository, InsuranceIncidentRepository insuranceIncidentRepository,
             InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository, LoanScheduleGeneratorFactory loanScheduleFactory,
             BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper,
-            LoanBlockingReasonRepository blockingReasonRepository) {
+            FacturaElectronicMensualRepository facturaElectronicMensualRepository,
+            LoanProductParameterizationRepository productParameterizationRepository) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
@@ -464,7 +468,7 @@ public class LoanAccountConfiguration {
                 jdbcTemplate, commandsSourceWritePlatformService, loanRescheduleRequestReadPlatformService, clientReadPlatformService,
                 channelReadWritePlatformService, platformSecurityContext, globalConfigurationRepository, loanBlockWritePlatformService,
                 loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository, loanScheduleFactory,
-                blockingReasonSettingsRepositoryWrapper, blockingReasonRepository);
+                blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository, productParameterizationRepository);
     }
 
     @Bean

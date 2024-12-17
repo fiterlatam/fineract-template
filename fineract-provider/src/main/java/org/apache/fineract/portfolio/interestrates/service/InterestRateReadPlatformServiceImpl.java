@@ -121,6 +121,8 @@ public class InterestRateReadPlatformServiceImpl implements InterestRateReadPlat
                     mir.current_rate AS "currentRate",
                     mir.appliedon_date AS "appliedOnDate",
                     mir.is_active AS active,
+                    mir.min_rate as minRate,
+                    mir.max_Rate as maxRate,
                     CONCAT(created_by.firstname, ' ', created_by.lastname) AS "createdBy",
                     mir.created_on_utc AS "createdDate",
                     CONCAT(last_modified_by.firstname, ' ', last_modified_by.lastname) AS "lastModifiedBy",
@@ -143,9 +145,12 @@ public class InterestRateReadPlatformServiceImpl implements InterestRateReadPlat
             LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
             final String lastModifiedBy = rs.getString("lastModifiedBy");
             LocalDate lastModifiedDate = JdbcSupport.getLocalDate(rs, "lastModifiedDate");
+            final BigDecimal minRate = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "minRate");
+            final BigDecimal maxRate = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "maxRate");
+
             return InterestRateData.builder().id(id).name(name).currentRate(currentRate).active(active).appliedOnDate(appliedOnDate)
                     .createdBy(createdBy).createdDate(createdDate).lastModifiedBy(lastModifiedBy).lastModifiedDate(lastModifiedDate)
-                    .interestRateType(interestRateType).build();
+                    .interestRateType(interestRateType).minRate(minRate).maxRate(maxRate).build();
         }
     }
 
@@ -195,6 +200,8 @@ public class InterestRateReadPlatformServiceImpl implements InterestRateReadPlat
                     mirh.interest_rate_type_id AS "interestRateTypeId",
                     mirh."name" AS name,
                     mirh.current_rate AS "currentRate",
+                    mirh.min_rate as minRate,
+                    mirh.max_Rate as maxRate,
                     mirh.appliedon_date AS "appliedOnDate",
                     mirh.is_active AS active,
                     CONCAT(created_by.firstname, ' ', created_by.lastname) AS "createdBy",
@@ -215,9 +222,11 @@ public class InterestRateReadPlatformServiceImpl implements InterestRateReadPlat
             LocalDate appliedOnDate = JdbcSupport.getLocalDate(rs, "appliedOnDate");
             final String createdBy = rs.getString("createdBy");
             LocalDate createdDate = JdbcSupport.getLocalDate(rs, "createdDate");
+            final BigDecimal minRate = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "minRate");
+            final BigDecimal maxRate = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "maxRate");
             return InterestRateHistoryData.builder().id(id).name(name).interestRateId(interestRateId).currentRate(currentRate)
                     .active(active).appliedOnDate(appliedOnDate).createdBy(createdBy).createdDate(createdDate)
-                    .interestRateType(interestRateType).build();
+                    .interestRateType(interestRateType).minRate(minRate).maxRate(maxRate).build();
         }
     }
 }

@@ -730,19 +730,33 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     }
 
-    public Money payAvalChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
+    public Money payAvalChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
 
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
-        Money loanChargePaidByPortion = Money.zero(currency);
         Money feePortionOfTransaction = Money.zero(currency);
+        Money loanChargePaidByPortion = Money.zero(currency);
         if (transactionAmountRemaining.isZero()) {
             return feePortionOfTransaction;
         }
         for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
             if (installmentCharge.getLoanCharge().isAvalCharge()) {
+
+                for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                    if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
+                            vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
+                        feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
+                                feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
+                        updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
+                                vatCharge.getLoanCharge());
+                        transactionAmountRemaining = transactionAmountRemaining.minus(feePortionOfTransaction);
+                        loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
+                        break;
+                    }
+                }
                 feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
                         feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
+
                 updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
                         installmentCharge.getLoanCharge());
                 loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
@@ -770,7 +784,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                         feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
                                 feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
                         updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
-                                installmentCharge.getLoanCharge());
+                                vatCharge.getLoanCharge());
                         transactionAmountRemaining = transactionAmountRemaining.minus(feePortionOfTransaction);
                         loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
                         break;
@@ -836,7 +850,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                         feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
                                 feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
                         updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
-                                installmentCharge.getLoanCharge());
+                                vatCharge.getLoanCharge());
                         loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
                     }
                 }
@@ -990,6 +1004,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                 this.originalInterestChargedAmount = this.interestCharged;
                 this.interestCharged = getInterestPaid(currency).plus(getInterestWaived(currency)).plus(getInterestWrittenOff(currency))
                         .plus(interestDue).getAmount();
+            } else {
+                this.originalInterestChargedAmount = BigDecimal.ZERO;
             }
 
         } else {
@@ -1261,7 +1277,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
     }
 
-    private void trackAdvanceAndLateTotalsForRepaymentPeriod(final LocalDate transactionDate, final MonetaryCurrency currency,
+    public void trackAdvanceAndLateTotalsForRepaymentPeriod(final LocalDate transactionDate, final MonetaryCurrency currency,
             final Money amountPaidInRepaymentPeriod) {
         if (isInAdvance(transactionDate)) {
             this.totalPaidInAdvance = asMoney(this.totalPaidInAdvance, currency).plus(amountPaidInRepaymentPeriod).getAmount();
@@ -1330,6 +1346,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public void updateObligationMet(final Boolean obligationMet) {
+
         this.obligationsMet = obligationMet;
     }
 
@@ -1608,6 +1625,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.interestAccrued = defaultToZeroIfNull(this.interestAccrued).add(interestAccrued.getAmount());
     }
 
+    public void setInterestAccrued(BigDecimal interestAccrued) {
+        this.interestAccrued = interestAccrued;
+    }
+
     public Money getAccruedInterest(MonetaryCurrency currency) {
         return Money.of(currency, this.interestAccrued);
     }
@@ -1668,4 +1689,25 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.interestRecalculatedOnDate = interestRecalculatedOnDate;
     }
 
+    public boolean isLastInstallment(List<LoanRepaymentScheduleInstallment> installments) {
+        return this.installmentNumber.equals(installments.get(installments.size() - 1).getInstallmentNumber());
+    }
+
+    public boolean isOverpaidInAdvance(MonetaryCurrency currency) {
+        return this.getPrincipal(currency).isGreaterThanZero() && this.getInterestCharged(currency).isZero()
+                && this.getFeeChargesCharged(currency).isZero() && this.getPenaltyChargesCharged(currency).isZero()
+                && this.isRecalculatedInterestComponent();
+    }
+
+    public boolean hasPenalties() {
+        return (this.penaltyCharges != null && this.penaltyCharges.compareTo(BigDecimal.ZERO) > 0) && !obligationsMet;
+    }
+
+    public boolean isFullyGraced() {
+        return installmentNumber == 0;
+    }
+
+    public BigDecimal originalInterestChargedAmount() {
+        return originalInterestChargedAmount;
+    }
 }

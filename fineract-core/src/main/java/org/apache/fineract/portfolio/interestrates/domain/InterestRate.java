@@ -34,6 +34,12 @@ public class InterestRate extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "interest_rate_type_id")
     private Integer interestRateTypeId;
 
+    @Column(name = "min_rate")
+    private BigDecimal minRate;
+
+    @Column(name = "max_rate")
+    private BigDecimal maxRate;
+
     public static InterestRate createNew(final JsonCommand command) {
         final InterestRate interestRate = new InterestRate();
         final String name = command.stringValueOfParameterNamed("name");
@@ -46,6 +52,12 @@ public class InterestRate extends AbstractAuditableWithUTCDateTimeCustom {
         interestRate.setAppliedOnDate(appliedOnDate);
         final Boolean active = command.booleanObjectValueOfParameterNamed("active");
         interestRate.setActive(active);
+
+        final BigDecimal minRate = command.bigDecimalValueOfParameterNamed("minRate");
+        final BigDecimal maxRate = command.bigDecimalValueOfParameterNamed("maxRate");
+
+        interestRate.setMaxRate(maxRate);
+        interestRate.setMinRate(minRate);
         return interestRate;
     }
 
@@ -82,6 +94,20 @@ public class InterestRate extends AbstractAuditableWithUTCDateTimeCustom {
             final Boolean newValue = command.booleanObjectValueOfParameterNamed(active);
             actualChanges.put(active, newValue);
             this.active = newValue;
+        }
+
+        final String minRate = "minRate";
+        if (command.isChangeInBigDecimalParameterNamed(minRate, this.minRate)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(minRate);
+            actualChanges.put(minRate, newValue);
+            this.minRate = newValue;
+        }
+
+        final String maxRate = "maxRate";
+        if (command.isChangeInBigDecimalParameterNamed(maxRate, this.maxRate)) {
+            final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(maxRate);
+            actualChanges.put(maxRate, newValue);
+            this.maxRate = newValue;
         }
         return actualChanges;
     }

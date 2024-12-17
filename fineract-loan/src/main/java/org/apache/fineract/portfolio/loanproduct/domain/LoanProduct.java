@@ -433,8 +433,8 @@ public class LoanProduct extends AbstractPersistableCustom {
             final BigDecimal currentRate = interestRate.getCurrentRate();
             interestFrequencyType = PeriodFrequencyType.YEARS;
             interestRatePerPeriod = currentRate;
-            minInterestRatePerPeriod = currentRate;
-            maxInterestRatePerPeriod = currentRate;
+            minInterestRatePerPeriod = interestRate.getMinRate();
+            maxInterestRatePerPeriod = interestRate.getMaxRate();
             annualInterestRate = currentRate;
 
         }

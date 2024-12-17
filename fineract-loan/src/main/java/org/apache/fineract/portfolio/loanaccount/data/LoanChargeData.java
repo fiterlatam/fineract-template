@@ -472,6 +472,39 @@ public class LoanChargeData {
         this.externalId = ExternalId.empty();
     }
 
+    public LoanChargeData(final Long id, final BigDecimal amount) {
+        this.id = null;
+        this.chargeId = id;
+        this.name = null;
+        this.currency = null;
+        this.amount = amount;
+        this.amountPaid = null;
+        this.amountWaived = null;
+        this.amountWrittenOff = null;
+        this.amountOutstanding = null;
+        this.chargeTimeType = null;
+        this.submittedOnDate = null;
+        this.dueDate = null;
+        this.chargeCalculationType = null;
+        this.percentage = null;
+        this.amountPercentageAppliedTo = null;
+        this.penalty = false;
+        this.chargePaymentMode = null;
+        this.paid = false;
+        this.waived = false;
+        this.amountOrPercentage = null;
+        this.chargeOptions = null;
+        this.chargePayable = false;
+        this.loanId = null;
+        this.externalLoanId = ExternalId.empty();
+        this.minCap = null;
+        this.maxCap = null;
+        this.installmentChargeData = null;
+        this.amountAccrued = null;
+        this.amountUnrecognized = null;
+        this.externalId = ExternalId.empty();
+    }
+
     public boolean isChargePayable() {
         boolean isAccountTransfer = false;
         if (this.chargePaymentMode != null) {

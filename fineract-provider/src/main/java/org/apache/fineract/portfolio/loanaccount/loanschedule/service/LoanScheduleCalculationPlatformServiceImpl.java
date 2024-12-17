@@ -285,39 +285,124 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
         for (LoanRepaymentScheduleInstallment repaymentScheduleInstallment : loan.getRepaymentScheduleInstallmentsIgnoringTotalGrace()) {
 
             // Calculate individual charge amounts
-
-            Collection<LoanCharge> mandatoryInsuranceCharges = loan.getLoanCharges().stream().filter(LoanCharge::isMandatoryInsurance)
+            final Collection<LoanCharge> mandatoryInsuranceCharges = loan.getLoanCharges().stream().filter(LoanCharge::isMandatoryInsurance)
                     .toList();
-            Collection<LoanCharge> voluntaryInsuranceCharges = loan.getLoanCharges().stream().filter(LoanCharge::isVoluntaryInsurance)
+            final Collection<LoanCharge> voluntaryInsuranceCharges = loan.getLoanCharges().stream().filter(LoanCharge::isVoluntaryInsurance)
                     .toList();
-            Collection<LoanCharge> avalCharges = loan.getLoanCharges().stream().filter(LoanCharge::isAvalCharge).toList();
-            Collection<LoanCharge> honorariosCharges = loan.getLoanCharges().stream().filter(LoanCharge::isFlatHono).toList();
-            Collection<LoanCharge> ivaCharges = loan.getLoanCharges().stream().filter(LoanCharge::isCustomPercentageBasedOfAnotherCharge)
-                    .toList();
+            final Collection<LoanCharge> avalCharges = loan.getLoanCharges().stream().filter(LoanCharge::isAvalCharge).toList();
+            final Collection<LoanCharge> honorariosCharges = loan.getLoanCharges().stream().filter(LoanCharge::isFlatHono).toList();
+            final Collection<LoanCharge> ivaCharges = loan.getLoanCharges().stream()
+                    .filter(LoanCharge::isCustomPercentageBasedOfAnotherCharge).toList();
 
             BigDecimal mandatoryInsuranceAmount = mandatoryInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream())
                     .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
                             lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal mandatoryInsurancePaid = mandatoryInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal mandatoryInsuranceWaived = mandatoryInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWaived).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal mandatoryInsuranceWrittenOff = mandatoryInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWrittenOff).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal mandatoryInsuranceOutstanding = mandatoryInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+
             BigDecimal voluntaryInsuranceAmount = voluntaryInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream())
                     .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
                             lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal voluntaryInsurancePaid = voluntaryInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal voluntaryInsuranceWaived = voluntaryInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWaived).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal voluntaryInsuranceWrittenOff = voluntaryInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWrittenOff).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal voluntaryInsuranceOutstanding = voluntaryInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+
             BigDecimal avalAmount = avalCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
                     lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal avalPaid = avalCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal avalWaived = avalCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWaived).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal avalWrittenOff = avalCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWrittenOff).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal avalOutstanding = avalCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+
             BigDecimal honorariosAmount = honorariosCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
                     lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal honorariosPaid = honorariosCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal honorariosWaived = honorariosCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWaived).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal honorariosWrittenOff = honorariosCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWrittenOff).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal honorariosOutstanding = honorariosCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
 
             // Calculate term Charge
             BigDecimal mandatoryInsuranceTermChargeAmount = ivaCharges.stream()
                     .filter(lc -> mandatoryInsuranceCharges.stream()
-                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                            .anyMatch(mic -> Objects.equals(mic.getCharge().getId(), lc.getCharge().getParentChargeId())))
                     .flatMap(lic -> lic.installmentCharges().stream())
                     .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
                             lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal mandatoryInsuranceTermChargePaid = ivaCharges.stream()
+                    .filter(lc -> mandatoryInsuranceCharges.stream()
+                            .anyMatch(mic -> Objects.equals(mic.getCharge().getId(), lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal mandatoryInsuranceTermChargeWaived = ivaCharges.stream()
+                    .filter(lc -> mandatoryInsuranceCharges.stream()
+                            .anyMatch(mic -> Objects.equals(mic.getCharge().getId(), lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWaived).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal mandatoryInsuranceTermChargeWrittenOff = ivaCharges.stream()
+                    .filter(lc -> mandatoryInsuranceCharges.stream()
+                            .anyMatch(mic -> Objects.equals(mic.getCharge().getId(), lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWrittenOff).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal mandatoryInsuranceTermChargeOutstanding = ivaCharges.stream()
+                    .filter(lc -> mandatoryInsuranceCharges.stream()
+                            .anyMatch(mic -> Objects.equals(mic.getCharge().getId(), lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+
             BigDecimal voluntaryInsuranceTermChargeAmount = ivaCharges.stream()
                     .filter(lc -> voluntaryInsuranceCharges.stream()
                             .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
@@ -325,12 +410,66 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                     .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
                             lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal voluntaryInsuranceTermChargePaid = ivaCharges.stream()
+                    .filter(lc -> voluntaryInsuranceCharges.stream()
+                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal voluntaryInsuranceTermChargeWaived = ivaCharges.stream()
+                    .filter(lc -> voluntaryInsuranceCharges.stream()
+                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWaived).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal voluntaryInsuranceTermChargeWrittenOff = ivaCharges.stream()
+                    .filter(lc -> voluntaryInsuranceCharges.stream()
+                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWrittenOff).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal voluntaryInsuranceTermChargeOutstanding = ivaCharges.stream()
+                    .filter(lc -> voluntaryInsuranceCharges.stream()
+                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+
             BigDecimal avalTermChargeAmount = ivaCharges.stream()
                     .filter(lc -> avalCharges.stream().anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
                     .flatMap(lic -> lic.installmentCharges().stream())
                     .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
                             lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal avalTermChargePaid = ivaCharges.stream()
+                    .filter(lc -> avalCharges.stream().anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal avalTermChargeWaived = ivaCharges.stream()
+                    .filter(lc -> avalCharges.stream().anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWaived).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal avalTermChargeWrittenOff = ivaCharges.stream()
+                    .filter(lc -> avalCharges.stream().anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWrittenOff).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal avalTermChargeOutstanding = ivaCharges.stream()
+                    .filter(lc -> avalCharges.stream().anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+
             BigDecimal honorariosTermChargeAmount = ivaCharges.stream()
                     .filter(lc -> honorariosCharges.stream()
                             .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
@@ -338,11 +477,58 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                     .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
                             lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal honorariosTermChargePaid = ivaCharges.stream()
+                    .filter(lc -> honorariosCharges.stream()
+                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal honorariosTermChargeWaived = ivaCharges.stream()
+                    .filter(lc -> honorariosCharges.stream()
+                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWaived).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal honorariosTermChargeWrittenOff = ivaCharges.stream()
+                    .filter(lc -> honorariosCharges.stream()
+                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWrittenOff).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal honorariosTermChargeOutstanding = ivaCharges.stream()
+                    .filter(lc -> honorariosCharges.stream()
+                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
 
             mandatoryInsuranceAmount = mandatoryInsuranceAmount.add(mandatoryInsuranceTermChargeAmount);
+            mandatoryInsurancePaid = mandatoryInsurancePaid.add(mandatoryInsuranceTermChargePaid);
+            mandatoryInsuranceWaived = mandatoryInsuranceWaived.add(mandatoryInsuranceTermChargeWaived);
+            mandatoryInsuranceWrittenOff = mandatoryInsuranceWrittenOff.add(mandatoryInsuranceTermChargeWrittenOff);
+            mandatoryInsuranceOutstanding = mandatoryInsuranceOutstanding.add(mandatoryInsuranceTermChargeOutstanding);
+
             voluntaryInsuranceAmount = voluntaryInsuranceAmount.add(voluntaryInsuranceTermChargeAmount);
+            voluntaryInsurancePaid = voluntaryInsurancePaid.add(voluntaryInsuranceTermChargePaid);
+            voluntaryInsuranceWaived = voluntaryInsuranceWaived.add(voluntaryInsuranceTermChargeWaived);
+            voluntaryInsuranceWrittenOff = voluntaryInsuranceWrittenOff.add(voluntaryInsuranceTermChargeWrittenOff);
+            voluntaryInsuranceOutstanding = voluntaryInsuranceOutstanding.add(voluntaryInsuranceTermChargeOutstanding);
+
             avalAmount = avalAmount.add(avalTermChargeAmount);
+            avalPaid = avalPaid.add(avalTermChargePaid);
+            avalWaived = avalWaived.add(avalTermChargeWaived);
+            avalWrittenOff = avalWrittenOff.add(avalTermChargeWrittenOff);
+            avalOutstanding = avalOutstanding.add(avalTermChargeOutstanding);
+
             honorariosAmount = honorariosAmount.add(honorariosTermChargeAmount);
+            honorariosPaid = honorariosPaid.add(honorariosTermChargePaid);
+            honorariosWaived = honorariosWaived.add(honorariosTermChargeWaived);
+            honorariosWrittenOff = honorariosWrittenOff.add(honorariosTermChargeWrittenOff);
+            honorariosOutstanding = honorariosOutstanding.add(honorariosTermChargeOutstanding);
 
             totalMandatoryInsuranceCharged = totalMandatoryInsuranceCharged.add(mandatoryInsuranceAmount);
             totalVoluntaryInsuranceCharged = totalVoluntaryInsuranceCharged.add(voluntaryInsuranceAmount);
@@ -365,9 +551,28 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                 if (periodData.getPeriod() != null && periodData.getPeriod().equals(repaymentScheduleInstallment.getInstallmentNumber())
                         && isChargeApplicable) {
                     periodData.setAvalDue(avalAmount);
+                    periodData.setAvalPaid(avalPaid);
+                    periodData.setAvalWaived(avalWaived);
+                    periodData.setAvalWrittenOff(avalWrittenOff);
+                    periodData.setAvalOutstanding(avalOutstanding);
+
                     periodData.setHonorariosDue(honorariosAmount);
+                    periodData.setHonorariosPaid(honorariosPaid);
+                    periodData.setHonorariosWaived(honorariosWaived);
+                    periodData.setHonorariosWrittenOff(honorariosWrittenOff);
+                    periodData.setHonorariosOutstanding(honorariosOutstanding);
+
                     periodData.setMandatoryInsuranceDue(mandatoryInsuranceAmount);
+                    periodData.setMandatoryInsurancePaid(mandatoryInsurancePaid);
+                    periodData.setMandatoryInsuranceWaived(mandatoryInsuranceWaived);
+                    periodData.setMandatoryInsuranceWrittenOff(mandatoryInsuranceWrittenOff);
+                    periodData.setMandatoryInsuranceOutstanding(mandatoryInsuranceOutstanding);
+
                     periodData.setVoluntaryInsuranceDue(voluntaryInsuranceAmount);
+                    periodData.setVoluntaryInsurancePaid(voluntaryInsurancePaid);
+                    periodData.setVoluntaryInsuranceWaived(voluntaryInsuranceWaived);
+                    periodData.setVoluntaryInsuranceWrittenOff(voluntaryInsuranceWrittenOff);
+                    periodData.setVoluntaryInsuranceOutstanding(voluntaryInsuranceOutstanding);
                     break;
                 }
             }

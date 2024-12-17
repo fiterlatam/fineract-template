@@ -107,7 +107,9 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.DISALLOW_EXPECTED_DISBURSEMENTS, LoanApiConstants.FRAUD_ATTRIBUTE_NAME,
             LoanProductConstants.LOAN_SCHEDULE_PROCESSING_TYPE, LoanApiConstants.INTEREST_RATE_POINTS, LoanApiConstants.POINT_OF_SALE_CODE,
             LoanApiConstants.CLIENT_ID_NUMBER, LoanApiConstants.DISCOUNT_VALUE, LoanApiConstants.DISCOUNT_TRANSFER_VALUE,
-            "isWriteoffPunish", LoanApiConstants.AllYID, LoanApiConstants.POINT_OF_SALE_CODE));
+            "isWriteoffPunish", LoanApiConstants.AllYID, LoanApiConstants.POINT_OF_SALE_CODE, LoanApiConstants.MIGRAR_NIT,
+            LoanApiConstants.MIGRAR_CODE, LoanApiConstants.MIGRAR_NUMERO_CREDITO, LoanApiConstants.MIGRAR_CEDULA,
+            LoanApiConstants.IS_MIGRAR_LOAN));
     public static final String LOANAPPLICATION_UNDO = "loanapplication.undo";
 
     private final FromJsonHelper fromApiJsonHelper;
@@ -528,13 +530,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                                 if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.chargeExpireDate, loanChargeElement)) {
                                     String expddate = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.chargeExpireDate,
                                             loanChargeElement);
-                                    if (amount.compareTo(BigDecimal.ZERO) == 0 && !charge.isPercentageOfAnotherCharge()) {
-                                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
-                                                .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
-                                    } else {
-                                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
-                                                .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).ignoreIfNull();
-                                    }
+                                    baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                            .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
 
                                 }
                                 baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
@@ -1111,13 +1108,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                                 if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.chargeExpireDate, loanChargeElement)) {
                                     String expddate = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.chargeExpireDate,
                                             loanChargeElement);
-                                    if (amount.compareTo(BigDecimal.ZERO) == 0 && !charge.isPercentageOfAnotherCharge()) {
-                                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
-                                                .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
-                                    } else {
-                                        baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
-                                                .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).ignoreIfNull();
-                                    }
+                                    baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
+                                            .parameterAtIndexArray(LoanApiConstants.chargeExpireDate, i).value(expddate).notNull();
                                 }
                                 baseDataValidator.reset().parameter(LoanApiConstants.chargesParameterName)
                                         .parameterAtIndexArray(LoanApiConstants.amountParameterName, i).value(amount).notNull();

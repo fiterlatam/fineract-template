@@ -232,14 +232,25 @@ public class LoanScheduleAssembler {
         final boolean requireInterestRatePoint = loanProduct.isRequirePoints();
         Long interestRatePoints = null;
         BigDecimal interestRatePerPeriod = BigDecimal.ZERO;
-        if (loanProduct.getInterestRate() != null) {
+        Boolean isMigratedLoan = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, element);
+        if (isMigratedLoan == null) {
+            isMigratedLoan = Boolean.FALSE;
+        }
+        if (loanProduct.getInterestRate() != null && !isMigratedLoan) {
             final InterestRate interestRate = loanProduct.getInterestRate();
             if (!interestRate.isActive()) {
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.interest.rate.not.active",
                         "The interest rate associated with this loan product is not active", interestRate.getId());
             }
             final Long interestRateId = interestRate.getId();
-            BigDecimal currentInterestRate = interestRate.getCurrentRate();
+            BigDecimal currentInterestRate;
+            if (fromApiJsonHelper.parameterExists(LoanApiConstants.interestRatePerPeriodParameterName, element)) {
+                currentInterestRate = this.fromApiJsonHelper
+                        .extractBigDecimalWithLocaleNamed(LoanApiConstants.interestRatePerPeriodParameterName, element);
+            } else {
+                currentInterestRate = interestRate.getCurrentRate();
+            }
+
             final LocalDate interestRateAppliedOnDate = interestRate.getAppliedOnDate();
             final LocalDate expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed("expectedDisbursementDate", element);
             if (DateUtils.isAfter(interestRateAppliedOnDate, expectedDisbursementDate)) {
@@ -263,6 +274,8 @@ public class LoanScheduleAssembler {
                 }
                 interestRatePerPeriod = interestRatePerPeriod.add(BigDecimal.valueOf(interestRatePoints));
             }
+        } else if (isMigratedLoan) {
+            interestRatePerPeriod = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("interestRatePerPeriod", element);
         }
         final PeriodFrequencyType interestRatePeriodFrequencyType = PeriodFrequencyType.YEARS;
 

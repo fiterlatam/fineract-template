@@ -105,7 +105,7 @@ public class LoanChargeAssembler {
         }
 
         final Set<LoanCharge> loanCharges = new LinkedHashSet<>();
-        final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
+        BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
         final Integer numberOfRepayments = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("numberOfRepayments", element);
         final Long productId = this.fromApiJsonHelper.extractLongNamed("productId", element);
         final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
@@ -174,6 +174,18 @@ public class LoanChargeAssembler {
                     if (id == null) {
                         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
 
+                        Boolean isMigratedLoan = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, element);
+                        if (isMigratedLoan == null) {
+                            isMigratedLoan = Boolean.FALSE;
+                        }
+                        if (!isMigratedLoan && chargeDefinition.isAvalChargeFlatForMigration()) {
+                            final String defaultUserMessage = "Selected Aval Charge is to be used only for migrated loans.";
+                            throw new LoanChargeCannotBeAddedException("loanCharge", "aval.charge", defaultUserMessage, null,
+                                    chargeDefinition.getName());
+                        }
+                        if (chargeDefinition.isFlatHono()) {
+                            amount = BigDecimal.ZERO;
+                        }
                         if (chargeDefinition.isOverdueInstallment()) {
 
                             final String defaultUserMessage = "Installment charge cannot be added to the loan.";
@@ -191,8 +203,8 @@ public class LoanChargeAssembler {
                         }
 
                         boolean getPercentageAmountFromTable = chargeDefinition.isGetPercentageFromTable();
-                        if (getPercentageAmountFromTable || ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation())
-                                .equals(ChargeCalculationType.DISB_AVAL)) {
+                        if (!isMigratedLoan && (getPercentageAmountFromTable || ChargeCalculationType
+                                .fromInt(chargeDefinition.getChargeCalculation()).equals(ChargeCalculationType.DISB_AVAL))) {
                             ChargeCalculationType calculation = chargeCalculation;
                             if (calculation == null) {
                                 calculation = ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation());
@@ -213,7 +225,19 @@ public class LoanChargeAssembler {
                         if (chargePaymentMode != null) {
                             chargePaymentModeEnum = ChargePaymentMode.fromInt(chargePaymentMode);
                         }
+
                         if (!isMultiDisbursal) {
+                            if (chargeDefinition.isPercentageOfAnotherCharge()) {
+                                final Charge parentCharge = this.chargeRepository
+                                        .findOneWithNotFoundDetection(chargeDefinition.getParentChargeId());
+                                if (parentCharge.isAvalChargeFlatForMigration()) {
+                                    for (LoanCharge loanCharge : loanCharges) {
+                                        if (loanCharge.getCharge().getId().equals(chargeDefinition.getParentChargeId())) {
+                                            principal = loanCharge.amountOrPercentage();
+                                        }
+                                    }
+                                }
+                            }
                             final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                     chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
                                     getPercentageAmountFromTable, applicableFromInstallment, expDate, isEndorsed, insuranceName,
