@@ -1545,7 +1545,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 customChargeHonorarioMapRepository.deleteLatestVersionMapEntryOnReversal(loanId, versionToBeDeleted);
                 transactionToAdjust.getLoanTransactionToRepaymentScheduleMappings().clear();
                 final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
-                wrapper.reprocess(loan.getCurrency(), loan.getDisbursementDate(), loan.getRepaymentScheduleInstallments(), loan.getActiveCharges());
+                wrapper.reprocess(loan.getCurrency(), loan.getDisbursementDate(), loan.getRepaymentScheduleInstallments(),
+                        loan.getActiveCharges());
                 break;
             }
         }
