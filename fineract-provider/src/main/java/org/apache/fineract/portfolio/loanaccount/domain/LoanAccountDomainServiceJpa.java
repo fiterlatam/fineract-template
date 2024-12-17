@@ -335,7 +335,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     public FeeCalculationHonorario calculateFeeHonorario(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
             BigDecimal repaymentAmount) {
         // SU-529 Get maximum age of any of the client's loan
-        List<Loan> clientActiveLoans = this.loanRepositoryWrapper.findActiveLoansByClientId(loanRepaymentScheduleInstallment.getLoan().getClientId());
+        List<Loan> clientActiveLoans = this.loanRepositoryWrapper
+                .findActiveLoansByClientId(loanRepaymentScheduleInstallment.getLoan().getClientId());
         Integer ageOverdue = 0;
         for (Loan loan : clientActiveLoans) {
             int overdue = loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
