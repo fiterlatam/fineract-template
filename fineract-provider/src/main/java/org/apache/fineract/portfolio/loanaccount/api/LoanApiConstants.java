@@ -235,4 +235,6 @@ public interface LoanApiConstants {
     String currentLoansParamName = "currentLoans";
     String businessActivityParamName = "businessActivity";
     String dateOfBirthParamName = "dateOfBirth";
+    String glAccountIdParamName = "glAccountId";
+    String receiptNumberParamName = "receiptNumber";
 }
