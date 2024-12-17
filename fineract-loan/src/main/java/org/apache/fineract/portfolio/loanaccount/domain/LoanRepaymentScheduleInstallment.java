@@ -169,6 +169,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     @Column(name = "original_interest_charged", nullable = true)
     private BigDecimal originalInterestChargedAmount;
 
+    @Column(name = "migrated_installment")
+    private boolean isMigratedInstallment;
+
     public LoanRepaymentScheduleInstallment() {
         this.installmentNumber = null;
         this.fromDate = null;
@@ -757,7 +760,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             return feePortionOfTransaction;
         }
         for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
-            if (installmentCharge.getLoanCharge().isAvalCharge()) {
+            if (installmentCharge.getLoanCharge().isAvalCharge() || installmentCharge.getLoanCharge().isAvalChargeFlatForMigration()) {
 
                 for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
                     if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
@@ -891,7 +894,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         Money feeChargePaid = Money.zero(currency);
         Money feeChargesDue = getInstallmentChargeOutstandingAmount(currency, installmentCharge);
         if (installmentCharge.getLoanCharge().isCustomPercentageBasedOfAnotherCharge()) {
-            if (!installmentCharge.getLoanCharge().isVatChargeOfHonoCharge()) {
+            if (installmentCharge.getLoanCharge().isAvalChargeFlatForMigration() && this.isMigratedInstallment) {
+                // Pay charge of migrated installments in full
+                feeChargesDue = getInstallmentChargeOutstandingAmount(currency, installmentCharge);
+            } else if (!installmentCharge.getLoanCharge().isVatChargeOfHonoCharge()) {
                 Money percentageAmountToBePaid = transactionAmountRemaining
                         .percentageOf(installmentCharge.getLoanCharge().amountOrPercentage(), RoundingMode.HALF_UP);
                 if (percentageAmountToBePaid.isLessThan(feeChargesDue)) {
@@ -990,7 +996,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
         Money interestDue = Money.zero(currency);
 
-        if (isOn(transactionDate, this.getDueDate())) {
+        if (this.isMigratedInstallment) {
+            interestDue = getInterestOutstanding(currency);
+        } else if (isOn(transactionDate, this.getDueDate())) {
             interestDue = getInterestOutstanding(currency);
         } else if (isOnOrBetween(transactionDate) && getInterestOutstanding(currency).isGreaterThanZero()) {
             final RoundingMode roundingMode = RoundingMode.HALF_UP;
@@ -1091,7 +1099,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         //// Update installment interest charged if principal is fully paid during the accrual period and interest has
         //// also been recalculated and paid
         // Keep the original interest charged in case the transaction is rollbacked.
-        if (this.getLoan() != null && this.getLoan().isProgressiveLoan()) {
+        if (this.getLoan() != null && this.getLoan().isProgressiveLoan() && !this.isMigratedInstallment) {
             if (isOnOrBetween(transactionDate)) {
                 if (this.getPrincipalOutstanding(currency).isZero()
                         && (this.originalInterestChargedAmount == null || this.originalInterestChargedAmount.equals(BigDecimal.ZERO))
@@ -1728,5 +1736,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public BigDecimal originalInterestChargedAmount() {
         return originalInterestChargedAmount;
+    }
+
+    public boolean isMigratedInstallment() {
+        return isMigratedInstallment;
     }
 }
