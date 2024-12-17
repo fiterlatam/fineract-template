@@ -176,21 +176,6 @@ public class LoanDebtProjectionService {
                 .map(dueDate -> DateUtils.getDifferenceInDays(dueDate, projectedFutureDate)).max(Long::compareTo).orElse(0L);
     }
 
-    /*
-     * private List<FeeCalculationHonorario> calculateFees( List<LoanRepaymentScheduleInstallment> overdueInstallments)
-     * { List<FeeCalculationHonorario> feeCalculationHonorarioList = new ArrayList<>();
-     *
-     *
-     * for (LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : overdueInstallments) {
-     * FeeCalculationHonorario feeCalculationHonorario = this.calculateFeeHonorario(loanRepaymentScheduleInstallment,
-     * repaymentAmount); feeCalculationHonorarioList.add(feeCalculationHonorario); }
-     *
-     *
-     * FeeCalculationHonorario feeCalculationHonorario = this.calculateFeeHonorario(loanRepaymentScheduleInstallment,
-     * repaymentAmount); // Implement logic to calculate fee return new FeeCalculationHonorario(BigDecimal.ZERO,
-     * BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO); }
-     */
-
     private BigDecimal calculatePenaltyForOverdueInstallments(List<LoanRepaymentScheduleInstallment> overdueInstallments,
             LocalDate projectedFutureDate) {
         return overdueInstallments.stream().map(installment -> calculatePenaltyCharge(installment, projectedFutureDate))
