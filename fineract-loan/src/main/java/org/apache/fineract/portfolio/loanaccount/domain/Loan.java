@@ -2041,29 +2041,27 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         BigDecimal amount = BigDecimal.ZERO;
         BigDecimal chargeAmt;
         BigDecimal totalChargeAmt = BigDecimal.ZERO;
-        if (loanCharge.getChargeCalculation().isPercentageBased()) {
-            if (loanCharge.isOverdueInstallmentCharge()) {
-                amount = calculateOverdueAmountPercentageAppliedTo(loanCharge, penaltyWaitPeriod);
-            } else {
+        if (!loanCharge.isOverdueInstallmentCharge()) {
+            if (loanCharge.getChargeCalculation().isPercentageBased()) {
                 amount = calculateAmountPercentageAppliedTo(loanCharge);
-            }
-            chargeAmt = loanCharge.getPercentage();
-            if (loanCharge.isInstalmentFee()) {
-                totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
-            }
-        } else {
-            if (loanCharge.isCustomFlatDistributedCharge()) {
-                chargeAmt = loanCharge.getAmount(loanCharge.getLoan().getCurrency()).getAmount();
+                chargeAmt = loanCharge.getPercentage();
+                if (loanCharge.isInstalmentFee()) {
+                    totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
+                }
             } else {
-                chargeAmt = loanCharge.amountOrPercentage();
+                if (loanCharge.isCustomFlatDistributedCharge()) {
+                    chargeAmt = loanCharge.getAmount(loanCharge.getLoan().getCurrency()).getAmount();
+                } else {
+                    chargeAmt = loanCharge.amountOrPercentage();
+                }
+            }
+            if (loanCharge.isActive()) {
+                clearLoanInstallmentChargesBeforeRegeneration(loanCharge);
+                loanCharge.update(chargeAmt, loanCharge.getDueLocalDate(), amount, fetchNumberOfInstallmensAfterExceptions(),
+                        totalChargeAmt);
+                validateChargeHasValidSpecifiedDateIfApplicable(loanCharge, getDisbursementDate());
             }
         }
-        if (loanCharge.isActive()) {
-            clearLoanInstallmentChargesBeforeRegeneration(loanCharge);
-            loanCharge.update(chargeAmt, loanCharge.getDueLocalDate(), amount, fetchNumberOfInstallmensAfterExceptions(), totalChargeAmt);
-            validateChargeHasValidSpecifiedDateIfApplicable(loanCharge, getDisbursementDate());
-        }
-
     }
 
     public void clearLoanInstallmentChargesBeforeRegeneration(final LoanCharge loanCharge) {
@@ -6224,7 +6222,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
         this.interestRecalculatedOn = DateUtils.getBusinessLocalDate();
         LocalDate lastRepaymentDate = this.getLastRepaymentPeriodDueDate(true);
-        Set<LoanCharge> charges = this.getActiveCharges();
+        final Set<LoanCharge> charges = this.getActiveCharges();
         for (final LoanCharge loanCharge : charges) {
             if (!loanCharge.isDueAtDisbursement()) {
                 updateOverdueScheduleInstallment(loanCharge);
@@ -6239,7 +6237,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             }
         }
-
         processPostDisbursementTransactions();
         processIncomeTransactions();
         updateLoanDerivedFields();
