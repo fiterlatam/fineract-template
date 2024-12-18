@@ -4002,6 +4002,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
                     } else {
                         feeCalculationHonorario = this.calculateFeeDetails(installment, remainingAmount.getAmount());
+                        remainingAmount = remainingAmount.zero();
                     }
                     feeHono = feeHono.add(feeCalculationHonorario.getFeeBasis());
                     if (vatHono.isPresent()) {
