@@ -80,6 +80,8 @@ import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.calendar.domain.CalendarEntityType;
 import org.apache.fineract.portfolio.calendar.service.CalendarReadPlatformService;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
+import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
@@ -181,6 +183,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository;
     private final AgencyReadPlatformService agencyReadPlatformService;
+    private final ChargeRepositoryWrapper chargeRepositoryWrapper;
     private final PrequalificationReadPlatformServiceImpl.PrequalificationIndividualMappingsMapper prequalificationIndividualMappingsMapper = new PrequalificationReadPlatformServiceImpl.PrequalificationIndividualMappingsMapper();
 
     @Autowired
@@ -197,7 +200,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final ConfigurationDomainService configurationDomainService, final CodeValueRepositoryWrapper codeValueRepositoryWrapper,
             final AccountDetailsReadPlatformService accountDetailsReadPlatformService, final LoanRepositoryWrapper loanRepositoryWrapper,
             final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper,
-            LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository, AgencyReadPlatformService agencyReadPlatformService) {
+            LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository, AgencyReadPlatformService agencyReadPlatformService,
+            final ChargeRepositoryWrapper chargeRepositoryWrapper) {
         this.context = context;
         this.loanRepositoryWrapper = loanRepositoryWrapper;
         this.applicationCurrencyRepository = applicationCurrencyRepository;
@@ -225,6 +229,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         this.codeValueRepositoryWrapper = codeValueRepositoryWrapper;
         this.loanAdditionalPropertiesRepository = loanAdditionalPropertiesRepository;
         this.agencyReadPlatformService = agencyReadPlatformService;
+        this.chargeRepositoryWrapper = chargeRepositoryWrapper;
     }
 
     @Override
@@ -2439,14 +2444,42 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         final Boolean isReversed = false;
 
         final Money outStandingAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(currency);
+        BankAccountReadPlatformServiceImpl.BankAccountMapper bankAccountMapper = new BankAccountReadPlatformServiceImpl.BankAccountMapper();
 
-        return new LoanTransactionData(null, null, null, transactionType, null, currencyData, earliestUnpaidInstallmentDate,
-                outStandingAmount.getAmount(), loan.getNetDisbursalAmount(),
-                loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount(),
-                loanRepaymentScheduleInstallment.getInterestOutstanding(currency).getAmount(),
-                loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount(),
-                loanRepaymentScheduleInstallment.getPenaltyChargesOutstanding(currency).getAmount(), null, unrecognizedIncomePortion,
-                paymentTypeOptions, null, null, null, outstandingLoanBalance, isReversed);
+        String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
+        String bankAccSql = "select " + bankAccountMapper.schema();
+        bankAccSql = bankAccSql + " where (mo.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mo.hierarchy, '%')) ";
+        List<BankAccountData> bankAccounts = this.jdbcTemplate.query(bankAccSql, bankAccountMapper, hierarchy, hierarchy);
+
+        BigDecimal penaltyAmount = loanRepaymentScheduleInstallment.getPenaltyChargesOutstanding(currency).getAmount();
+        BigDecimal feeCharges = loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount();
+        BigDecimal interestOutstanding = loanRepaymentScheduleInstallment.getInterestOutstanding(currency).getAmount();
+
+        // if percentage of paid installments is less than 50 add charge
+        if (loan.getLoanRepaymentScheduleDetail().getInterestMethod().equals(InterestMethod.DECLINING_BALANCE)) {
+            String completedPaymentsSql = "select count(*) from m_loan_repayment_schedule where loan_id = ? and completed_derived = true";
+            Integer numberOfPayments = this.jdbcTemplate.queryForObject(completedPaymentsSql, Integer.class, loanId);
+
+            List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
+
+            Double percentage = Double.valueOf((numberOfPayments /= repaymentScheduleInstallments.size()) * 100);
+
+            Long loanForeclosureFeeThreshold = this.configurationDomainService.getLoanForeclosureFeeThreshold();
+
+            if (percentage.compareTo(loanForeclosureFeeThreshold.doubleValue()) < 0) {
+                Charge foreclosureCharge = this.chargeRepositoryWrapper.findOneWithNotFoundDetection("Cargo por ejecución hipotecaria");
+                BigDecimal percentageValue = foreclosureCharge.getAmount();
+                BigDecimal chargeAmount = outstandingLoanBalance.multiply(percentageValue);
+                feeCharges = feeCharges.add(chargeAmount);
+            }
+        }
+
+        LoanTransactionData loanTransactionData = new LoanTransactionData(null, null, null, transactionType, null, currencyData,
+                earliestUnpaidInstallmentDate, outStandingAmount.getAmount(), loan.getNetDisbursalAmount(), outstandingLoanBalance,
+                interestOutstanding, feeCharges, penaltyAmount, null, unrecognizedIncomePortion, paymentTypeOptions, null, null, null,
+                outstandingLoanBalance, isReversed);
+        loanTransactionData.setBankAccounts(bankAccounts);
+        return loanTransactionData;
     }
 
     private static final class CurrencyMapper implements RowMapper<CurrencyData> {
