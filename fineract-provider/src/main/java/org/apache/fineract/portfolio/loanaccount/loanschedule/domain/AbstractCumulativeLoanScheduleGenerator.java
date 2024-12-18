@@ -523,7 +523,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             }
 
             // applies charges for the period
-            applyChargesForCurrentPeriod(loanCharges, currency, scheduleParams, scheduledDueDate, currentPeriodParams, mc,
+            applyChargesForCurrentPeriodOnScheduleGenerate(loanCharges, currency, scheduleParams, scheduledDueDate, currentPeriodParams, mc,
                     isLastInstallmentPeriod, loanApplicationTerms.getActualNumberOfRepayments());
 
             // sum up real totalInstallmentDue from components
@@ -776,6 +776,24 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 }
             }
         }
+    }
+
+    private void applyChargesForCurrentPeriodOnScheduleGenerate(final Set<LoanCharge> loanCharges, final MonetaryCurrency currency,
+            LoanScheduleParams scheduleParams, LocalDate scheduledDueDate, ScheduleCurrentPeriodParams currentPeriodParams,
+            final MathContext mc, boolean isLastInstallmentPeriod, Integer numberOfRepayments) {
+        PrincipalInterest principalInterest = new PrincipalInterest(currentPeriodParams.getPrincipalForThisPeriod(),
+                currentPeriodParams.getInterestForThisPeriod(), null);
+        Money outstandingBalance = scheduleParams.getOutstandingBalance().plus(currentPeriodParams.getPrincipalForThisPeriod());
+        final int instalmentNumber = scheduleParams.getInstalmentNumber();
+        currentPeriodParams.setFeeChargesForInstallment(cumulativeFeeChargesDueWithin(scheduleParams.getPeriodStartDate(), scheduledDueDate,
+                loanCharges, currency, principalInterest, scheduleParams.getPrincipalToBeScheduled(),
+                scheduleParams.getTotalCumulativeInterest(), true, scheduleParams.isFirstPeriod(), mc, instalmentNumber,
+                isLastInstallmentPeriod, numberOfRepayments, outstandingBalance));
+        currentPeriodParams.setPenaltyChargesForInstallment(cumulativePenaltyChargesDueWithin(scheduleParams.getPeriodStartDate(),
+                scheduledDueDate, loanCharges, currency, principalInterest, scheduleParams.getPrincipalToBeScheduled(),
+                scheduleParams.getTotalCumulativeInterest(), true, scheduleParams.isFirstPeriod(), instalmentNumber, mc));
+        scheduleParams.addTotalFeeChargesCharged(currentPeriodParams.getFeeChargesForInstallment());
+        scheduleParams.addTotalPenaltyChargesCharged(currentPeriodParams.getPenaltyChargesForInstallment());
     }
 
     private void applyChargesForCurrentPeriod(final Set<LoanCharge> loanCharges, final MonetaryCurrency currency,
