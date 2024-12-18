@@ -122,7 +122,7 @@ select * from cte where min_inst > 1
 
 -- Check for duplicate external_ids
 
-SELECT * FROM tmp_creditos_migrar WHERE external_id IN (SELECT external_id FROM tmp_creditos_migrar GROUP BY external_id HAVING COUNT(external_id) > 1)
+SELECT * FROM tmp_creditos_migrar WHERE external_id IN (SELECT external_id FROM tmp_creditos_migrar where cuo_nrocuota = 1 GROUP BY external_id HAVING COUNT(external_id) > 1)
 ORDER BY external_id
 
 
