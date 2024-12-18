@@ -501,4 +501,14 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         }
         return property.getValue();
     }
+
+    @Override
+    public Long getLoanForeclosureFeeThreshold() {
+        final String propertyName = "loan-foreclosure-fee-threshold";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        if (property.getValue() == null) {
+            return Long.valueOf(0);
+        }
+        return property.getValue();
+    }
 }

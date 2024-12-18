@@ -80,6 +80,8 @@ import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.calendar.domain.CalendarEntityType;
 import org.apache.fineract.portfolio.calendar.service.CalendarReadPlatformService;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
+import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
@@ -181,6 +183,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository;
     private final AgencyReadPlatformService agencyReadPlatformService;
+    private final ChargeRepositoryWrapper chargeRepositoryWrapper;
     private final PrequalificationReadPlatformServiceImpl.PrequalificationIndividualMappingsMapper prequalificationIndividualMappingsMapper = new PrequalificationReadPlatformServiceImpl.PrequalificationIndividualMappingsMapper();
 
     @Autowired
@@ -197,7 +200,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final ConfigurationDomainService configurationDomainService, final CodeValueRepositoryWrapper codeValueRepositoryWrapper,
             final AccountDetailsReadPlatformService accountDetailsReadPlatformService, final LoanRepositoryWrapper loanRepositoryWrapper,
             final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper,
-            LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository, AgencyReadPlatformService agencyReadPlatformService) {
+            LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository, AgencyReadPlatformService agencyReadPlatformService,
+            final ChargeRepositoryWrapper chargeRepositoryWrapper) {
         this.context = context;
         this.loanRepositoryWrapper = loanRepositoryWrapper;
         this.applicationCurrencyRepository = applicationCurrencyRepository;
@@ -225,6 +229,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         this.codeValueRepositoryWrapper = codeValueRepositoryWrapper;
         this.loanAdditionalPropertiesRepository = loanAdditionalPropertiesRepository;
         this.agencyReadPlatformService = agencyReadPlatformService;
+        this.chargeRepositoryWrapper = chargeRepositoryWrapper;
     }
 
     @Override
@@ -2459,9 +2464,13 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
             Double percentage = Double.valueOf((numberOfPayments /= repaymentScheduleInstallments.size()) * 100);
 
-            if (percentage.compareTo(50D) < 0) {
-                BigDecimal chargePercentage = outstandingLoanBalance.multiply(new BigDecimal("0.03"));
-                feeCharges = feeCharges.add(chargePercentage);
+            Long loanForeclosureFeeThreshold = this.configurationDomainService.getLoanForeclosureFeeThreshold();
+
+            if (percentage.compareTo(loanForeclosureFeeThreshold.doubleValue()) < 0) {
+                Charge foreclosureCharge = this.chargeRepositoryWrapper.findOneWithNotFoundDetection("Cargo por ejecución hipotecaria");
+                BigDecimal percentageValue = foreclosureCharge.getAmount();
+                BigDecimal chargeAmount = outstandingLoanBalance.multiply(percentageValue);
+                feeCharges = feeCharges.add(chargeAmount);
             }
         }
 
