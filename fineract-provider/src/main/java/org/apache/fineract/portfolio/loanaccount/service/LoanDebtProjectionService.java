@@ -188,9 +188,16 @@ public class LoanDebtProjectionService {
         Long loanId = loan.getId();
         final MonetaryCurrency currency = loan.getCurrency();
 
-        Collection<ChargeData> overdueCharges = this.chargeReadPlatformService.retrieveLoanProductCharges(loan.getLoanProduct().getId(),
-                ChargeTimeType.OVERDUE_INSTALLMENT);
-        Long chargeId = overdueCharges.stream().filter(i -> i.getParentChargeId() != null).findFirst().map(ChargeData::getId).orElse(null);
+        Collection<ChargeData> overdueCharges = this.chargeReadPlatformService
+                .retrieveLoanProductCharges(loan.getLoanProduct().getId(), ChargeTimeType.OVERDUE_INSTALLMENT).stream()
+                .filter(ChargeData::isPenalty).toList();
+        Long chargeId = overdueCharges.stream().filter(i -> i.getParentChargeId() == null).findFirst().map(ChargeData::getId).orElse(null);
+        if (chargeId == null) {
+            chargeId = overdueCharges.stream().findFirst().map(ChargeData::getParentChargeId).orElse(null);
+        }
+        if (chargeId == null) {
+            return BigDecimal.ZERO;
+        }
         Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
         if (Objects.isNull(chargeDefinition)) {
             return BigDecimal.ZERO;
@@ -200,7 +207,7 @@ public class LoanDebtProjectionService {
         String json = String.format(
                 "{\"chargeId\":%d, \"locale\":\"%s\", \"amount\":%.2f, \"dateFormat\":\"%s\", \"dueDate\":\"%s\", \"principal\":\"%s\", \"interest\":\"%s\"}",
                 chargeId, locale, chargeDefinition.getAmount(), dateFormat, installment.getDueDate(),
-                installment.getPrincipalOutstanding(currency), installment.getInterestOutstanding(currency));
+                installment.getPrincipalOutstanding(currency).getAmount(), installment.getInterestOutstanding(currency));
 
         final JsonElement parsedCommand = this.fromApiJsonHelper.parse(json);
         final JsonCommand command = JsonCommand.from(json, parsedCommand, this.fromApiJsonHelper, null, null, null, null, null, loanId,
@@ -215,10 +222,8 @@ public class LoanDebtProjectionService {
 
         BigDecimal penaltyAmount = BigDecimal.ZERO;
         if (daysInArrears > 0) {
-            BigDecimal dailyPenaltyRate = loanCharge.getPercentage();
-            BigDecimal baseAmount = (installment.getPrincipalOutstanding(currency).add(installment.getInterestOutstanding(currency)))
-                    .getAmount();
-            penaltyAmount = dailyPenaltyRate.multiply(baseAmount);
+            BigDecimal dailyChargeAmount = loanCharge.amount();
+            penaltyAmount = dailyChargeAmount.multiply(BigDecimal.valueOf(daysInArrears));
         }
 
         return penaltyAmount.setScale(2, RoundingMode.HALF_UP);
