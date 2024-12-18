@@ -384,14 +384,12 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             }
             ////////////
             if (!isMidTermRescheduling) {
-                log.info("Emi " + loanApplicationTerms.getFixedEmiAmount());
-                log.info("Annual Interest rate " + annualNominalInterestRate);
-                log.info("interest per period " + interestRatePerPeriod);
+
                 BigDecimal interst = adjustInterestRate(interestRatePerPeriod, annualNominalInterestRate, interestRatePerPeriod);
-                log.info("interest used " + interst + " in period number " + periodNumber + " " + periodStartDateApplicableForInterest);
+
                 if (annualNominalInterestRate.compareTo(BigDecimal.valueOf(100)) > 0) {
                     loanApplicationTerms.setAnnualNominalInterestRate(annualNominalInterestRate);
-                    log.warn("annual interst more than " + 100 + "% in " + periodStartDateApplicableForInterest + " " + periodEndDate);
+
                     PrincipalInterest anomaliPrincipalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
                             interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
                             totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
@@ -429,11 +427,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         endDate = (LocalDate) entry.get("nextDate");
                         currentInterst = (BigDecimal) entry.get("currentInterst");
                         nextDates = endDate;
-                        log.info("recalculate Interest rate in middle instalment");
+
                         BigDecimal interestRate = adjustInterestRate(currentInterst, interestRatePerPeriod, annualNominalInterestRate);
-                        log.info("start date " + startDate);
-                        log.info("end date " + startDate);
-                        log.info("Interest used " + interestRate);
+
                         if (currentInterst.compareTo(BigDecimal.ZERO) == 0) {
                             loanApplicationTerms.setAnnualNominalInterestRate(interestRatePerPeriod);
                         } else {
@@ -629,20 +625,19 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     public BigDecimal adjustInterestRate(BigDecimal currentInterest, BigDecimal interestPeriod, BigDecimal annualInterest) {
         // If the current interest rate decreases compared to the initial rate
         if (currentInterest.compareTo(interestPeriod) < 0) {
-            log.info("interest rate decreases compared to the initial rate " + currentInterest + " < " + interestPeriod);
+
             return currentInterest;
         }
 
         // If the current interest rate increases but is still below the maximum limit
         if (currentInterest.compareTo(interestPeriod) > 0 && currentInterest.compareTo(annualInterest) <= 0) {
-            log.info("current interest rate increases but is still below the maximum limit " + currentInterest + " < " + interestPeriod
-                    + " with max " + annualInterest);
+
             return currentInterest;
         }
 
         // If the current interest rate exceeds the maximum limit
         if (currentInterest.compareTo(annualInterest) > 0) {
-            log.info("current interest rate exceeds the maximum limit " + currentInterest + " " + annualInterest);
+
             return interestPeriod;
         }
 
