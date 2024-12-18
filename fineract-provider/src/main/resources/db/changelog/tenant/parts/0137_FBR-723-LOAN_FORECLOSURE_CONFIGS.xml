@@ -40,4 +40,23 @@
         </sql>
     </changeSet>
 
+    <changeSet id="2" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sqlCheck expectedResult="1">
+                    select count(*) from c_configuration where name = 'loan-foreclosure-fee-threshold';
+                </sqlCheck>
+            </not>
+        </preConditions>
+            <insert tableName="c_configuration">
+                <column name="name" value="loan-foreclosure-fee-threshold"/>
+                <column name="value" valueNumeric="50"/>
+                <column name="date_value"/>
+                <column name="string_value"/>
+                <column name="enabled" valueBoolean="true"/>
+                <column name="is_trap_door" valueBoolean="false"/>
+                <column name="description" value="Charge Customer If Payments Less than threshold percentage"/>
+            </insert>
+    </changeSet>
+
 </databaseChangeLog>
