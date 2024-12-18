@@ -18,7 +18,6 @@ import com.google.gson.JsonElement;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -208,7 +207,7 @@ public class LoanDebtProjectionService {
                 null, null, null, null, null, null, null);
 
         final LoanCharge loanCharge = loanChargeAssembler.createNewFromJson(loan, chargeDefinition, command, installment.getDueDate(),
-                installment, daysInArrears);
+                installment, null);
 
         if (loanCharge == null) {
             return BigDecimal.ZERO;
@@ -217,7 +216,9 @@ public class LoanDebtProjectionService {
         BigDecimal penaltyAmount = BigDecimal.ZERO;
         if (daysInArrears > 0) {
             BigDecimal dailyPenaltyRate = loanCharge.getPercentage();
-            penaltyAmount = dailyPenaltyRate.multiply(BigDecimal.valueOf(daysInArrears));
+            BigDecimal baseAmount = (installment.getPrincipalOutstanding(currency).add(installment.getInterestOutstanding(currency)))
+                    .getAmount();
+            penaltyAmount = dailyPenaltyRate.multiply(baseAmount);
         }
 
         return penaltyAmount.setScale(2, RoundingMode.HALF_UP);
