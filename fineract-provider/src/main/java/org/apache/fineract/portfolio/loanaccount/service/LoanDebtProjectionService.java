@@ -195,6 +195,9 @@ public class LoanDebtProjectionService {
         if (chargeId == null) {
             chargeId = overdueCharges.stream().findFirst().map(ChargeData::getParentChargeId).orElse(null);
         }
+        if (chargeId == null) {
+            return BigDecimal.ZERO;
+        }
         Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
         if (Objects.isNull(chargeDefinition)) {
             return BigDecimal.ZERO;
