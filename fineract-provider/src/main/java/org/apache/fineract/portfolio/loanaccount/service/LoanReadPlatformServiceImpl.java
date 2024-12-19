@@ -1905,7 +1905,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 " where  (recaldet.is_compounding_to_be_posted_as_transaction is null or recaldet.is_compounding_to_be_posted_as_transaction = false) ")
                 .append(" and (((ls.fee_charges_amount <> COALESCE(ls.accrual_fee_charges_derived, 0))")
                 .append(" or (ls.penalty_charges_amount <> COALESCE(ls.accrual_penalty_charges_derived, 0))")
-                .append(" or (ls.interest_amount <> COALESCE(ls.accrual_interest_derived, 0)))")
+                .append(" or (ls.interest_amount > COALESCE(ls.interest_completed_derived, 0)")
+                .append(" and (ls.interest_amount <> COALESCE(ls.accrual_interest_derived, 0))))")
                 .append(" and loan.loan_status_id=:active and mpl.accounting_type=:type and (loan.closedon_date <= :tillDate or loan.closedon_date is null)")
                 .append(" and loan.is_npa=false and (ls.duedate <= :tillDate or (ls.duedate > :tillDate and ls.fromdate < :tillDate))) ");
         Map<String, Object> paramMap = new HashMap<>(4);
@@ -1930,7 +1931,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     .append("loan.interest_calculated_from_date as interestCalculatedFrom, ").append("loan.repay_every as repayEvery,")
                     .append("ls.installment as installmentNumber, ")
                     .append("ls.duedate as duedate,ls.fromdate as fromdate ,ls.id as scheduleId,loan.product_id as productId,")
-                    .append("ls.interest_amount as interest, ls.interest_waived_derived as interestWaived,")
+                    .append("ls.interest_amount as interest, ls.interest_completed_derived as interestCompleted, ls.interest_waived_derived as interestWaived,")
                     .append("ls.penalty_charges_amount as penalty, ").append("ls.fee_charges_amount as charges, ")
                     .append("ls.accrual_interest_derived as accinterest,ls.accrual_fee_charges_derived as accfeecharege,ls.accrual_penalty_charges_derived as accpenalty,")
                     .append(" loan.currency_code as currencyCode,loan.currency_digits as currencyDigits,loan.currency_multiplesof as inMultiplesOf,")
@@ -1960,6 +1961,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final Long repaymentScheduleId = rs.getLong("scheduleId");
             final Long loanProductId = rs.getLong("productId");
             final BigDecimal interestIncome = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "interest");
+            final BigDecimal interestCompleted = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "interestCompleted");
             final BigDecimal feeIncome = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "charges");
             final BigDecimal penaltyIncome = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "penalty");
             final BigDecimal interestIncomeWaived = JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "interestWaived");
@@ -1977,9 +1979,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final CurrencyData currencyData = new CurrencyData(currencyCode, currencyName, currencyDigits, inMultiplesOf,
                     currencyDisplaySymbol, currencyNameCode, intCode);
 
-            return new LoanScheduleAccrualData(loanId, officeId, installmentNumber, accruedTill, frequency, repayEvery, dueDate, fromDate,
+            LoanScheduleAccrualData loanScheduleAccrualData = new LoanScheduleAccrualData(loanId, officeId, installmentNumber, accruedTill, frequency, repayEvery, dueDate, fromDate,
                     repaymentScheduleId, loanProductId, interestIncome, feeIncome, penaltyIncome, accruedInterestIncome, accruedFeeIncome,
                     accruedPenaltyIncome, currencyData, interestCalculatedFrom, interestIncomeWaived);
+            loanScheduleAccrualData.setInterestCompletedIncome(interestCompleted);
+            return loanScheduleAccrualData;
         }
 
     }
