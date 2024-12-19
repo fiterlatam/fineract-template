@@ -74,8 +74,8 @@ public class LoanDebtProjectionService {
                 loan.getCurrency(), projectedFutureDate);
 
         // Calculate total balance details
-        LoanDebtProjectionData.TotalBalanceDetails totalBalanceDetails = calculateTotalBalanceDetails(loan, projectedFutureDate,
-                overdueBalanceDetails, futureInstallments);
+        LoanDebtProjectionData.TotalBalanceDetails totalBalanceDetails = calculateTotalBalanceDetails(overdueBalanceDetails,
+                futureInstallments);
 
         return new LoanDebtProjectionData(projectedOverdueDays, overdueBalanceDetails, totalBalanceDetails);
     }
@@ -130,7 +130,7 @@ public class LoanDebtProjectionService {
         return new LoanDebtProjectionData.OverdueBalanceDetails(pastDueInstallmentBalance, delinquencyInterest, honorarioFee);
     }
 
-    private LoanDebtProjectionData.TotalBalanceDetails calculateTotalBalanceDetails(Loan loan, LocalDate projectedFutureDate,
+    private LoanDebtProjectionData.TotalBalanceDetails calculateTotalBalanceDetails(
             LoanDebtProjectionData.OverdueBalanceDetails overdueDetails, List<LoanRepaymentScheduleInstallment> futureInstallments) {
         // Calculate Future Balance
         BigDecimal futureBalance = calculateFutureBalance(futureInstallments);
