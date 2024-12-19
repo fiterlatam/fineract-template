@@ -99,7 +99,11 @@ public class LoanRepaymentScheduleProcessingWrapper {
                         cumulative = cumulative.plus(loanCharge.calculateCustomFeeChargeToInstallment(period.getInstallmentNumber(),
                                 totalPrincipal, totalInstallments, outstandingBalance));
                     } else {
-                        cumulative = cumulative.plus(getInstallmentFee(monetaryCurrency, period, loanCharge));
+                        if (loanCharge.getChargeCalculation().isFlatHono()) {
+                            cumulative = Money.zero(monetaryCurrency);
+                        } else {
+                            cumulative = cumulative.plus(getInstallmentFee(monetaryCurrency, period, loanCharge));
+                        }
                     }
                 } else if (loanCharge.isOverdueInstallmentCharge() && isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
                     cumulative = cumulative.plus(loanCharge.chargeAmount());

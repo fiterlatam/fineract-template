@@ -384,18 +384,21 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
             if (!isMidTermRescheduling) {
 
+                if (annualNominalInterestRate.compareTo(BigDecimal.valueOf(100)) > 0) {
+                    loanApplicationTerms.setAnnualNominalInterestRate(annualNominalInterestRate);
+                }
+
                 principalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
                         interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
                         totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
                         periodNumber, mc, principalVariation, compoundingMap, periodStartDateApplicableForInterest, periodEndDate,
                         interestRates, accruedInterestByAdvancePmt);
-
                 prevfixEmiAmout = loanApplicationTerms.getFixedEmiAmount();
+
             } else {
                 Money totalMidPeriodInterestRates = Money.zero(currency);
                 Money totalMidPrincipal = Money.zero(currency);
                 LocalDate nextDates = rescheduleFromDate;
-
                 if (!loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment().isEmpty()) {
                     LocalDate startDate = null;
                     LocalDate endDate = null;
@@ -403,21 +406,17 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     List<LoanTermVariationsData> list = loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment();
                     List<Map<String, Object>> loanTermVariationsData = processLoanTermVariations(list,
                             periodStartDateApplicableForInterest);
-
                     for (Map<String, Object> entry : loanTermVariationsData) {
-
                         startDate = (LocalDate) entry.get("startDate");
                         endDate = (LocalDate) entry.get("nextDate");
                         currentInterst = (BigDecimal) entry.get("currentInterst");
                         nextDates = endDate;
-
                         BigDecimal interestRate = adjustInterestRate(currentInterst, interestRatePerPeriod, annualNominalInterestRate);
                         if (currentInterst.compareTo(BigDecimal.ZERO) == 0) {
                             loanApplicationTerms.setAnnualNominalInterestRate(interestRatePerPeriod);
                         } else {
                             loanApplicationTerms.setAnnualNominalInterestRate(interestRate);
                         }
-
                         final PrincipalInterest midPrincipalInterestForThisPeriods = calculatePrincipalInterestComponentsForPeriod(
                                 calculator, interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal,
                                 totalCumulativeInterest, totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance,
@@ -425,7 +424,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                                 interestRates);
 
                         Money midPeriodInterestRates = midPrincipalInterestForThisPeriods.interest();
-
                         if (midPrincipalInterestForThisPeriods.principal().isGreaterThanZero()) {
                             totalMidPrincipal = midPrincipalInterestForThisPeriods.principal().add(midPeriodInterestRates);
                         }
@@ -439,7 +437,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 /*
                  * End mind interest calculation Start End interest Calculation
                  */
-
                 rescheduleFromDate = nextDates;
                 loanApplicationTerms.setAnnualNominalInterestRate(annualNominalInterestRate);
                 PrincipalInterest endPrincipalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
@@ -450,7 +447,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 final Money periodEndInterestRate = endPrincipalInterestForThisPeriod.interest();
                 final Money totalInterestRate = totalMidPeriodInterestRates.add(periodEndInterestRate);
                 final Money periodEndPrincipal = endPrincipalInterestForThisPeriod.principal();
-
                 if (totalMidPrincipal.isZero()) {
                     totalMidPrincipal = Money.roundToMultiplesOf(Money.of(currency, loanApplicationTerms.getFixedEmiAmount()), 0);
                 }
@@ -458,14 +454,11 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 if (totalPrincipal.equals(periodEndPrincipal)) {
                     totalPrincipal = periodEndPrincipal;
                 }
-
                 /*
                  * End Calc for end Insterst
                  */
-
                 principalInterestForThisPeriod = new PrincipalInterest(totalPrincipal, totalInterestRate,
                         endPrincipalInterestForThisPeriod.interestPaymentDueToGrace());
-
             }
 
             // will check for EMI amount greater than interest calculated
@@ -484,7 +477,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
             // applies early payments on principal portion
             updatePrincipalPortionBasedOnPreviousEarlyPayments(currency, scheduleParams, currentPeriodParams);
-
             // updates amounts with current earlyPaidAmount
             updateAmountsBasedOnCurrentEarlyPayments(mc, loanApplicationTerms, scheduleParams, currentPeriodParams);
 
@@ -492,7 +484,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 currentPeriodParams.plusPrincipalForThisPeriod(scheduleParams.getOutstandingBalance());
                 scheduleParams.setOutstandingBalance(Money.zero(currency));
             }
-
             if (!isNextRepaymentAvailable) {
                 scheduleParams.getDisburseDetailMap().clear();
             }
@@ -639,7 +630,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             LoanTermVariationsData midInterst = iterator.next();
             currentInterst = midInterst.getDecimalValue();
             LocalDate currentDates = midInterst.getTermVariationApplicableFrom();
-            System.out.println("interst " + currentInterst);
             int nextIndex = (index == list.size() - 1) ? index : index + 1;
             nextDates = list.get(nextIndex).getTermVariationApplicableFrom();
 
@@ -756,17 +746,21 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     private void applyChargesForCurrentPeriod(final Set<LoanCharge> loanCharges, final MonetaryCurrency currency,
             LoanScheduleParams scheduleParams, LocalDate scheduledDueDate, ScheduleCurrentPeriodParams currentPeriodParams,
             final MathContext mc, boolean isLastInstallmentPeriod, Integer numberOfRepayments) {
-        PrincipalInterest principalInterest = new PrincipalInterest(currentPeriodParams.getPrincipalForThisPeriod(),
+        final PrincipalInterest principalInterest = new PrincipalInterest(currentPeriodParams.getPrincipalForThisPeriod(),
                 currentPeriodParams.getInterestForThisPeriod(), null);
-        Money outstandingBalance = scheduleParams.getOutstandingBalance().plus(currentPeriodParams.getPrincipalForThisPeriod());
-
-        currentPeriodParams.setFeeChargesForInstallment(cumulativeFeeChargesDueWithin(scheduleParams.getPeriodStartDate(), scheduledDueDate,
+        final Money outstandingBalance = scheduleParams.getOutstandingBalance().plus(currentPeriodParams.getPrincipalForThisPeriod());
+        final int instalmentNumber = scheduleParams.getInstalmentNumber();
+        final Money feeChargesForInstallment = cumulativeFeeChargesDueWithin(scheduleParams.getPeriodStartDate(), scheduledDueDate,
                 loanCharges, currency, principalInterest, scheduleParams.getPrincipalToBeScheduled(),
-                scheduleParams.getTotalCumulativeInterest(), true, scheduleParams.isFirstPeriod(), mc, scheduleParams.getInstalmentNumber(),
-                isLastInstallmentPeriod, numberOfRepayments, outstandingBalance));
-        currentPeriodParams.setPenaltyChargesForInstallment(cumulativePenaltyChargesDueWithin(scheduleParams.getPeriodStartDate(),
-                scheduledDueDate, loanCharges, currency, principalInterest, scheduleParams.getPrincipalToBeScheduled(),
-                scheduleParams.getTotalCumulativeInterest(), true, scheduleParams.isFirstPeriod(), mc));
+                scheduleParams.getTotalCumulativeInterest(), true, scheduleParams.isFirstPeriod(), mc, instalmentNumber,
+                isLastInstallmentPeriod, numberOfRepayments, outstandingBalance);
+        currentPeriodParams.setFeeChargesForInstallment(feeChargesForInstallment);
+
+        final Money penaltyChargesForInstallment = cumulativePenaltyChargesDueWithin(scheduleParams.getPeriodStartDate(), scheduledDueDate,
+                loanCharges, currency, principalInterest, scheduleParams.getPrincipalToBeScheduled(),
+                scheduleParams.getTotalCumulativeInterest(), true, scheduleParams.isFirstPeriod(), instalmentNumber, mc);
+        currentPeriodParams.setPenaltyChargesForInstallment(penaltyChargesForInstallment);
+
         scheduleParams.addTotalFeeChargesCharged(currentPeriodParams.getFeeChargesForInstallment());
         scheduleParams.addTotalPenaltyChargesCharged(currentPeriodParams.getPenaltyChargesForInstallment());
     }
@@ -780,15 +774,16 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 PrincipalInterest principalInterest = new PrincipalInterest(Money.of(currency, loanScheduleModelPeriod.principalDue()),
                         Money.of(currency, loanScheduleModelPeriod.interestDue()), null);
                 outstandingBalance = outstandingBalance.minus(loanScheduleModelPeriod.principalDue());
-                Money feeChargesForInstallment = cumulativeFeeChargesDueWithin(loanScheduleModelPeriod.periodFromDate(),
+                final Money feeChargesForInstallment = cumulativeFeeChargesDueWithin(loanScheduleModelPeriod.periodFromDate(),
                         loanScheduleModelPeriod.periodDueDate(), nonCompoundingCharges, currency, principalInterest,
                         scheduleParams.getPrincipalToBeScheduled(), scheduleParams.getTotalCumulativeInterest(),
                         !loanScheduleModelPeriod.isRecalculatedInterestComponent(), scheduleParams.isFirstPeriod(), mc,
                         scheduleParams.getInstalmentNumber(), isLastInstallmentPeriod, periods.size(), outstandingBalance);
-                Money penaltyChargesForInstallment = cumulativePenaltyChargesDueWithin(loanScheduleModelPeriod.periodFromDate(),
+                final Money penaltyChargesForInstallment = cumulativePenaltyChargesDueWithin(loanScheduleModelPeriod.periodFromDate(),
                         loanScheduleModelPeriod.periodDueDate(), nonCompoundingCharges, currency, principalInterest,
                         scheduleParams.getPrincipalToBeScheduled(), scheduleParams.getTotalCumulativeInterest(),
-                        !loanScheduleModelPeriod.isRecalculatedInterestComponent(), scheduleParams.isFirstPeriod(), mc);
+                        !loanScheduleModelPeriod.isRecalculatedInterestComponent(), scheduleParams.isFirstPeriod(),
+                        scheduleParams.getInstalmentNumber(), mc);
                 scheduleParams.addTotalFeeChargesCharged(feeChargesForInstallment);
                 scheduleParams.addTotalPenaltyChargesCharged(penaltyChargesForInstallment);
                 scheduleParams.addTotalRepaymentExpected(feeChargesForInstallment.plus(penaltyChargesForInstallment));
@@ -893,7 +888,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 false, loanApplicationTerms.getNumberOfRepayments(), outstanding));
         outstanding = outstanding.minus(cumulativePenaltyChargesDueWithin(transactionDate, scheduledDueDate, loanCharges,
                 totalInterestChargedForFullLoanTerm.getCurrency(), tempPrincipalInterest, scheduleParams.getPrincipalToBeScheduled(),
-                scheduleParams.getTotalCumulativeInterest(), true, scheduleParams.isFirstPeriod(), mc));
+                scheduleParams.getTotalCumulativeInterest(), true, scheduleParams.isFirstPeriod(),
+                loanApplicationTerms.getNumberOfRepayments(), mc));
 
         if (!outstanding.isGreaterThan(currentPeriodParams.getInterestForThisPeriod()) && !scheduledDueDate.equals(transactionDate)) {
             final Collection<LoanTermVariationsData> interestRates = loanApplicationTerms.getLoanTermVariations().getInterestRateChanges();
@@ -1088,14 +1084,15 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                             for (LoanRepaymentScheduleInstallment loanScheduleModelPeriod : scheduleParams.getInstallments()) {
                                 outstandingBalance = outstandingBalance.minus(loanScheduleModelPeriod.getPrincipal(currency));
                             }
-                            Money feeChargesForInstallment = cumulativeFeeChargesDueWithin(scheduleParams.getPeriodStartDate(),
+                            final Money feeChargesForInstallment = cumulativeFeeChargesDueWithin(scheduleParams.getPeriodStartDate(),
                                     transactionDate, loanCharges, currency, principalInterest, scheduleParams.getPrincipalToBeScheduled(),
                                     scheduleParams.getTotalCumulativeInterest(), false, scheduleParams.isFirstPeriod(), mc,
                                     scheduleParams.getInstalmentNumber(), false, loanApplicationTerms.getNumberOfRepayments(),
                                     outstandingBalance);
-                            Money penaltyChargesForInstallment = cumulativePenaltyChargesDueWithin(scheduleParams.getPeriodStartDate(),
-                                    transactionDate, loanCharges, currency, principalInterest, scheduleParams.getPrincipalToBeScheduled(),
-                                    scheduleParams.getTotalCumulativeInterest(), false, scheduleParams.isFirstPeriod(), mc);
+                            final Money penaltyChargesForInstallment = cumulativePenaltyChargesDueWithin(
+                                    scheduleParams.getPeriodStartDate(), transactionDate, loanCharges, currency, principalInterest,
+                                    scheduleParams.getPrincipalToBeScheduled(), scheduleParams.getTotalCumulativeInterest(), false,
+                                    scheduleParams.isFirstPeriod(), scheduleParams.getInstalmentNumber(), mc);
 
                             // sum up real totalInstallmentDue from
                             // components
@@ -2162,7 +2159,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                             null, loanApplicationTerms.getPrincipal(), null, false, isFirst, mc, scheduleParams.getInstalmentNumber(),
                             false, loanApplicationTerms.getNumberOfRepayments(), outstandingBalance);
                     Money penaltyChargesForInstallment = cumulativePenaltyChargesDueWithin(lastCompoundingDate, compoundingDate, charges,
-                            currency, null, loanApplicationTerms.getPrincipal(), null, false, isFirst, mc);
+                            currency, null, loanApplicationTerms.getPrincipal(), null, false, isFirst, scheduleParams.getInstalmentNumber(),
+                            mc);
                     Money compoundAmount = feeChargesForInstallment.plus(penaltyChargesForInstallment);
                     if (addUncompounded) {
                         compoundAmount = compoundAmount.plus(scheduleParams.getUnCompoundedAmount());
@@ -2551,7 +2549,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         numberOfRepayments, outstandingBalance);
                 cumulative = cumulative.plus(calculatedAmount);
             } else {
-                if (loanCharge.defaultFromInstallment() != null && installmentNumber >= loanCharge.defaultFromInstallment()) {
+                if (loanCharge.isFlatHono()) {
+                    calculatedAmount = BigDecimal.ZERO;
+                } else if (loanCharge.defaultFromInstallment() != null && installmentNumber >= loanCharge.defaultFromInstallment()) {
                     calculatedAmount = BigDecimal.ZERO;
                 } else {
                     calculatedAmount = loanCharge.amountOrPercentage();
@@ -2567,28 +2567,41 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             final Set<LoanCharge> loanCharges, final MonetaryCurrency monetaryCurrency,
             final PrincipalInterest principalInterestForThisPeriod, final Money principalDisbursed,
             final Money totalInterestChargedForFullLoanTerm, boolean isInstallmentChargeApplicable, final boolean isFirstPeriod,
-            final MathContext mc) {
-
+            final Integer installmentNumber, final MathContext mc) {
         Money cumulative = Money.zero(monetaryCurrency);
-
         for (final LoanCharge loanCharge : loanCharges) {
             if (loanCharge.isPenaltyCharge()) {
                 boolean isDue = isFirstPeriod ? loanCharge.isDueForCollectionFromIncludingAndUpToAndIncluding(periodStart, periodEnd)
                         : loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd);
-                if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
-                    cumulative = calculateInstallmentCharge(principalInterestForThisPeriod, cumulative, loanCharge, mc, null, null, null,
-                            null, loanCharges);
-                } else if (loanCharge.isOverdueInstallmentCharge() && isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
-                    cumulative = cumulative.plus(loanCharge.chargeAmount());
-                } else if (isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
-                    cumulative = calculateSpecificDueDateChargeWithPercentage(principalDisbursed, totalInterestChargedForFullLoanTerm,
-                            cumulative, loanCharge, mc);
-                } else if (isDue) {
-                    cumulative = cumulative.plus(loanCharge.amount());
+                boolean isPenaltyAppliedToInstallment = false;
+                if (installmentNumber != null && loanCharge.isOverdueInstallmentCharge()) {
+                    final LoanOverdueInstallmentCharge overdueInstallmentCharge = loanCharge.getOverdueInstallmentCharge();
+                    if (overdueInstallmentCharge != null) {
+                        final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = overdueInstallmentCharge.getInstallment();
+                        if (loanRepaymentScheduleInstallment != null) {
+                            if (Objects.equals(loanRepaymentScheduleInstallment.getInstallmentNumber(), installmentNumber)) {
+                                isPenaltyAppliedToInstallment = true;
+                            }
+                        }
+                    }
+                }
+                if (loanCharge.isOverdueInstallmentCharge()) {
+                    if (isPenaltyAppliedToInstallment) {
+                        cumulative = cumulative.plus(loanCharge.amount());
+                    }
+                } else {
+                    if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
+                        cumulative = calculateInstallmentCharge(principalInterestForThisPeriod, cumulative, loanCharge, mc, null, null,
+                                null, null, loanCharges);
+                    } else if (isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
+                        cumulative = calculateSpecificDueDateChargeWithPercentage(principalDisbursed, totalInterestChargedForFullLoanTerm,
+                                cumulative, loanCharge, mc);
+                    } else if (isDue) {
+                        cumulative = cumulative.plus(loanCharge.amount());
+                    }
                 }
             }
         }
-
         return cumulative;
     }
 

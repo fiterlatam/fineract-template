@@ -1170,10 +1170,15 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(installmentOutstandingAmount,
                                     installment, installmentNumber, version);
                             remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
+                            remainingAmount = remainingAmount.minus(fee.getFeeBasis());
+                            if (vatChargeOptional.isPresent()) {
+                                remainingAmount = remainingAmount.minus(fee.getFeeVat());
+                            }
 
                         } else {
                             fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(remainingAmount.getAmount(),
                                     installment, installmentNumber, version);
+                            remainingAmount = remainingAmount.zero();
                         }
 
                         remainingAmount = remainingAmount.minus(fee.getFeeBasis());
@@ -1543,6 +1548,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
                 remove.forEach(chargePaidBy.getLoanCharge().getCustomChargeHonorarioMaps()::remove);
                 customChargeHonorarioMapRepository.deleteLatestVersionMapEntryOnReversal(loanId, versionToBeDeleted);
+                transactionToAdjust.getLoanTransactionToRepaymentScheduleMappings().clear();
+                final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
+                wrapper.reprocess(loan.getCurrency(), loan.getDisbursementDate(), loan.getRepaymentScheduleInstallments(),
+                        loan.getActiveCharges());
                 break;
             }
         }
@@ -1647,13 +1656,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled() || loan.isProgressiveLoan()) {
-            scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
+            scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
             loan.regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
             loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         }
-        scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
-        loan.regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
-        loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         final String noteText = command.stringValueOfParameterNamed("note");
         if (StringUtils.isNotBlank(noteText)) {
             changes.put("note", noteText);

@@ -234,7 +234,17 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     private FeeCalculationHonorario calculateFeeDetails(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
             BigDecimal repaymentAmount) {
-        Integer ageOverdue = loanRepaymentScheduleInstallment.getLoan().getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
+        // SU-529 Get maximum age of any of the client's loan
+        List<Loan> clientActiveLoans = this.loanRepositoryWrapper
+                .findActiveLoansByClientId(loanRepaymentScheduleInstallment.getLoan().getClientId());
+        Integer ageOverdue = 0;
+        for (Loan loan : clientActiveLoans) {
+            int overdue = loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
+            if (overdue > ageOverdue) {
+                ageOverdue = overdue;
+            }
+        }
+
         BigDecimal delinquencyValue = BigDecimal.ZERO;
         // Retrieve VAT configuration and percentage
         Integer vatConfig = configurationDomainService.retriveIvaConfiguration();
@@ -2069,9 +2079,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final StringBuilder sqlBuilder = new StringBuilder(400);
         sqlBuilder.append("select ").append(rm.schema())
                 .append(" where " + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "?", "day") + " > ls.duedate ")
-                .append(" and ls.completed_derived <> true and mc.charge_applies_to_enum =1 ")
+                .append(" and ls.completed_derived <> true and mc.charge_applies_to_enum = 1 ")
                 .append(" and ls.recalculated_interest_component <> true ")
-                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 and ml.id = (select max(id) from m_loan)");
+                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ");
 
         if (backdatePenalties) {
             return this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod);
@@ -3992,6 +4002,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
                     } else {
                         feeCalculationHonorario = this.calculateFeeDetails(installment, remainingAmount.getAmount());
+                        remainingAmount = remainingAmount.zero();
                     }
                     feeHono = feeHono.add(feeCalculationHonorario.getFeeBasis());
                     if (vatHono.isPresent()) {
