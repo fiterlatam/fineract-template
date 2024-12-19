@@ -1150,7 +1150,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
 
                 Money remainingAmount = Money.of(loan.getCurrency(), transactionAmount);
-                // SU-516 Transaction amount may contain hono amount as well. ReCalculate hono charge amount based on the actual transaction amount
+                // SU-516 Transaction amount may contain hono amount as well. ReCalculate hono charge amount based on
+                // the actual transaction amount
                 remainingAmount = remainingAmount.minus(honoAmount);
                 Integer installmentNumber = 0;
                 // increment the batch id which will be used to delete the rows from db table when a transaction is
