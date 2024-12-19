@@ -384,18 +384,21 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
             if (!isMidTermRescheduling) {
 
+                if (annualNominalInterestRate.compareTo(BigDecimal.valueOf(100)) > 0) {
+                    loanApplicationTerms.setAnnualNominalInterestRate(annualNominalInterestRate);
+                }
+
                 principalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
                         interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
                         totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
                         periodNumber, mc, principalVariation, compoundingMap, periodStartDateApplicableForInterest, periodEndDate,
                         interestRates, accruedInterestByAdvancePmt);
-
                 prevfixEmiAmout = loanApplicationTerms.getFixedEmiAmount();
+
             } else {
                 Money totalMidPeriodInterestRates = Money.zero(currency);
                 Money totalMidPrincipal = Money.zero(currency);
                 LocalDate nextDates = rescheduleFromDate;
-
                 if (!loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment().isEmpty()) {
                     LocalDate startDate = null;
                     LocalDate endDate = null;
@@ -403,21 +406,17 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     List<LoanTermVariationsData> list = loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment();
                     List<Map<String, Object>> loanTermVariationsData = processLoanTermVariations(list,
                             periodStartDateApplicableForInterest);
-
                     for (Map<String, Object> entry : loanTermVariationsData) {
-
                         startDate = (LocalDate) entry.get("startDate");
                         endDate = (LocalDate) entry.get("nextDate");
                         currentInterst = (BigDecimal) entry.get("currentInterst");
                         nextDates = endDate;
-
                         BigDecimal interestRate = adjustInterestRate(currentInterst, interestRatePerPeriod, annualNominalInterestRate);
                         if (currentInterst.compareTo(BigDecimal.ZERO) == 0) {
                             loanApplicationTerms.setAnnualNominalInterestRate(interestRatePerPeriod);
                         } else {
                             loanApplicationTerms.setAnnualNominalInterestRate(interestRate);
                         }
-
                         final PrincipalInterest midPrincipalInterestForThisPeriods = calculatePrincipalInterestComponentsForPeriod(
                                 calculator, interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal,
                                 totalCumulativeInterest, totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance,
@@ -425,7 +424,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                                 interestRates);
 
                         Money midPeriodInterestRates = midPrincipalInterestForThisPeriods.interest();
-
                         if (midPrincipalInterestForThisPeriods.principal().isGreaterThanZero()) {
                             totalMidPrincipal = midPrincipalInterestForThisPeriods.principal().add(midPeriodInterestRates);
                         }
@@ -439,7 +437,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 /*
                  * End mind interest calculation Start End interest Calculation
                  */
-
                 rescheduleFromDate = nextDates;
                 loanApplicationTerms.setAnnualNominalInterestRate(annualNominalInterestRate);
                 PrincipalInterest endPrincipalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
@@ -450,7 +447,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 final Money periodEndInterestRate = endPrincipalInterestForThisPeriod.interest();
                 final Money totalInterestRate = totalMidPeriodInterestRates.add(periodEndInterestRate);
                 final Money periodEndPrincipal = endPrincipalInterestForThisPeriod.principal();
-
                 if (totalMidPrincipal.isZero()) {
                     totalMidPrincipal = Money.roundToMultiplesOf(Money.of(currency, loanApplicationTerms.getFixedEmiAmount()), 0);
                 }
@@ -458,14 +454,11 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 if (totalPrincipal.equals(periodEndPrincipal)) {
                     totalPrincipal = periodEndPrincipal;
                 }
-
                 /*
                  * End Calc for end Insterst
                  */
-
                 principalInterestForThisPeriod = new PrincipalInterest(totalPrincipal, totalInterestRate,
                         endPrincipalInterestForThisPeriod.interestPaymentDueToGrace());
-
             }
 
             // will check for EMI amount greater than interest calculated
@@ -484,7 +477,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
             // applies early payments on principal portion
             updatePrincipalPortionBasedOnPreviousEarlyPayments(currency, scheduleParams, currentPeriodParams);
-
             // updates amounts with current earlyPaidAmount
             updateAmountsBasedOnCurrentEarlyPayments(mc, loanApplicationTerms, scheduleParams, currentPeriodParams);
 
@@ -492,7 +484,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 currentPeriodParams.plusPrincipalForThisPeriod(scheduleParams.getOutstandingBalance());
                 scheduleParams.setOutstandingBalance(Money.zero(currency));
             }
-
             if (!isNextRepaymentAvailable) {
                 scheduleParams.getDisburseDetailMap().clear();
             }
@@ -639,7 +630,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             LoanTermVariationsData midInterst = iterator.next();
             currentInterst = midInterst.getDecimalValue();
             LocalDate currentDates = midInterst.getTermVariationApplicableFrom();
-            System.out.println("interst " + currentInterst);
             int nextIndex = (index == list.size() - 1) ? index : index + 1;
             nextDates = list.get(nextIndex).getTermVariationApplicableFrom();
 
