@@ -290,7 +290,7 @@ public final class LoanEventApiJsonValidator {
         final Set<String> transactionParameters = new HashSet<>(Arrays.asList("transactionDate", "transactionAmount", "externalId", "note",
                 "locale", "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber",
                 "loanId", "channelHash", "channelName", "pointOfSalesCode", "isImportedTransaction", "repaymentChannelId",
-                "repaymentBankId", "transactionProcessingStrategy", "clientIdNumber", "reduceInstallmentAmount"));
+                "repaymentBankId", "transactionProcessingStrategy", "clientIdNumber", "reduceInstallmentAmount", "honorariosAmount"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);
@@ -304,6 +304,9 @@ public final class LoanEventApiJsonValidator {
 
         final BigDecimal transactionAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("transactionAmount", element);
         baseDataValidator.reset().parameter("transactionAmount").value(transactionAmount).notNull().positiveAmount();
+
+        final BigDecimal honorariosAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("honorariosAmount", element);
+        baseDataValidator.reset().parameter("honorariosAmount").value(honorariosAmount).ignoreIfNull().zeroOrPositiveAmount();
 
         final String note = this.fromApiJsonHelper.extractStringNamed("note", element);
         baseDataValidator.reset().parameter("note").value(note).notExceedingLengthOf(1000);
