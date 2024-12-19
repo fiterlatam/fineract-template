@@ -35,6 +35,7 @@ import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.data.LoanDebtProjectionData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainServiceJpa;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
@@ -49,6 +50,7 @@ public class LoanDebtProjectionService {
     private final FromJsonHelper fromApiJsonHelper;
     private final ChargeReadPlatformService chargeReadPlatformService;
     private final ChargeRepositoryWrapper chargeRepository;
+    private final LoanAccountDomainServiceJpa loanAccountDomainServiceJpa;
 
     public LoanDebtProjectionData calculateDebtProjection(Long loanId, String projectionDate, String dateFormat) {
         // Find the loan and validate
@@ -120,16 +122,18 @@ public class LoanDebtProjectionService {
         BigDecimal delinquencyInterest = calculatePenaltyForOverdueInstallments(overdueInstallments, projectedFutureDate);
 
         // Calculate Fee
-        BigDecimal fee = overdueInstallments.stream().map(installment -> installment.getFeeChargesCharged(currency).getAmount())
+
+        BigDecimal honorarioFee = overdueInstallments.stream()
+                .map(installment -> loanAccountDomainServiceJpa.calculateFeeHonorario(installment, BigDecimal.ZERO).getFeeHono())
                 .reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);
 
-        return new LoanDebtProjectionData.OverdueBalanceDetails(pastDueInstallmentBalance, delinquencyInterest, fee);
+        return new LoanDebtProjectionData.OverdueBalanceDetails(pastDueInstallmentBalance, delinquencyInterest, honorarioFee);
     }
 
     private LoanDebtProjectionData.TotalBalanceDetails calculateTotalBalanceDetails(Loan loan, LocalDate projectedFutureDate,
             LoanDebtProjectionData.OverdueBalanceDetails overdueDetails, List<LoanRepaymentScheduleInstallment> futureInstallments) {
         // Calculate Future Balance
-        BigDecimal futureBalance = calculateFutureBalance(loan, projectedFutureDate, futureInstallments);
+        BigDecimal futureBalance = calculateFutureBalance(futureInstallments);
 
         // Calculate Total Overdue Balance
         BigDecimal totalOverdueBalance = calculateTotalOverdueBalance(overdueDetails);
@@ -140,27 +144,15 @@ public class LoanDebtProjectionService {
         return new LoanDebtProjectionData.TotalBalanceDetails(totalOverdueBalance, futureBalance, totalBalance);
     }
 
-    private BigDecimal calculateFutureBalance(Loan loan, LocalDate projectedFutureDate,
-            List<LoanRepaymentScheduleInstallment> futureInstallments) {
-        // Calculate principal balance from last due date
-        BigDecimal principalBalance = calculatePrincipalBalance(loan);
+    private BigDecimal calculateFutureBalance(List<LoanRepaymentScheduleInstallment> futureInstallments) {
+        if (futureInstallments.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        MonetaryCurrency currency = futureInstallments.get(0).getLoan().getCurrency();
 
-        // Calculate current interest for additional days
-        BigDecimal currentInterest = futureInstallments.stream()
-                .map(installment -> calculateCurrentInterest(loan, installment.getDueDate(), projectedFutureDate))
+        // we should be able to calculate the outstanding for each installment
+        return futureInstallments.stream().map(installment -> installment.getTotalOutstanding(currency).getAmount())
                 .reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);
-
-        return principalBalance.add(currentInterest).setScale(2, RoundingMode.HALF_UP);
-    }
-
-    private BigDecimal calculatePrincipalBalance(Loan loan) {
-        // Implement logic to calculate remaining principal balance
-        return loan.getLoanSummary().getTotalOutstanding();
-    }
-
-    private BigDecimal calculateCurrentInterest(Loan loan, LocalDate lastRepaymentDate, LocalDate projectedFutureDate) {
-        // Implement logic to calculate interest for additional days
-        return BigDecimal.ZERO;
     }
 
     private BigDecimal calculateTotalOverdueBalance(LoanDebtProjectionData.OverdueBalanceDetails overdueDetails) {
