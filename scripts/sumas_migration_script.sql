@@ -396,22 +396,22 @@ select distinct
 	'',
 	tcm.external_id as external_id,
 	case
-		when cpc_monto_aval != null and cpc_monto_aval > 0 then 'Aval_Migrar'
+		when cpc_monto_aval > 0 then 'Aval_Migrar'
 		else null
 	end charge_name,
 	case
-		when cpc_monto_aval != null and cpc_monto_aval > 0 then round(cpc_monto_aval/(1+(cpc_porcentaje_iva/100)))
+		when cpc_monto_aval > 0 then round(cpc_monto_aval/(1+(cpc_porcentaje_iva/100)))
 		else
 		null
 	end charge_amount,
 	'',
 	case
-		when cpc_monto_aval != null and cpc_monto_aval > 0 then 'iva_aval_migrar'
+		when cpc_monto_aval > 0 then 'iva_aval_migrar'
 		else
 		null
 	end vat_charge_name,
 	case
-		when cpc_monto_aval != null and cpc_monto_aval > 0 then 19
+		when cpc_monto_aval > 0 then 19
 		else
 		null
 	end vat_charge_amount,
@@ -552,3 +552,26 @@ set principal_outstanding_derived = principal_disbursed_derived - principal_repa
 	penalty_charges_outstanding_derived = penalty_charges_charged_derived - penalty_charges_repaid_derived,
 	total_repayment_derived = principal_repaid_derived + interest_repaid_derived + fee_charges_repaid_derived + penalty_charges_repaid_derived,
 	total_outstanding_derived = principal_outstanding_derived + interest_outstanding_derived + fee_charges_outstanding_derived + penalty_charges_outstanding_derived;
+
+-------------- Charge Payments -----------------------------
+-- insert m_loan_charge_paid_by
+insert into m_loan_charge_paid_by (loan_transaction_id, loan_charge_id, amount, installment_number)
+select mlt.id, mlic.loan_charge_id, mlic.amount, mlrs.installment
+from m_loan_installment_charge mlic join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+join m_loan_transaction mlt on mlt.installment_id = mlrs.id
+and (select count(1) from m_loan_charge_paid_by where loan_transaction_id = mlt.id and loan_charge_id = mlic.loan_charge_id) = 0
+
+-- update m_loan_installment_charge with paid amount/status and outstanding
+update m_loan_installment_charge
+set amount_paid_derived = amount,
+	amount_outstanding_derived = 0,
+	is_paid_derived = true
+where loan_schedule_id in (select id from m_loan_repayment_schedule mlrs where mlrs.completed_derived = true)
+
+-- update m_loan_charge with paid and outstanding
+update m_loan_charge mlc
+set amount_paid_derived = (select sum(amount_paid_derived) from m_loan_installment_charge mlic where mlic.loan_charge_id = mlc.id and mlic.is_paid_derived = true);
+
+update m_loan_charge
+set amount_outstanding_derived = amount - amount_paid_derived
+where amount_paid_derived is not null;
