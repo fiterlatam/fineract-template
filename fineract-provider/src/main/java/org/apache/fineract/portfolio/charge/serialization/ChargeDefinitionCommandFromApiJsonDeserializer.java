@@ -508,7 +508,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
         if (!penalty) {
             if (calculationType.isVoluntaryInsurance()) {
                 final String insuranceName = this.fromApiJsonHelper.extractStringNamed(ChargesApiConstants.insuranceNameParamName, element);
-                baseDataValidator.reset().parameter(ChargesApiConstants.insuranceNameParamName).value(insuranceName).notBlank()
+                baseDataValidator.reset().parameter(ChargesApiConstants.insuranceNameParamName).value(insuranceName)
                         .notExceedingLengthOf(100);
 
                 final Long insuranceChargedAs = this.fromApiJsonHelper.extractLongNamed(ChargesApiConstants.insuranceChargedAsParamName,
@@ -541,28 +541,26 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
 
                 final Integer daysInArrears = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ChargesApiConstants.DAYS_IN_ARREARS,
                         element.getAsJsonObject());
-                baseDataValidator.reset().parameter(ChargesApiConstants.DAYS_IN_ARREARS).value(daysInArrears).notNull()
+                baseDataValidator.reset().parameter(ChargesApiConstants.DAYS_IN_ARREARS).value(daysInArrears)
                         .integerEqualToOrGreaterThanNumber(1);
             }
             if (calculationType.isInsurance()) {
 
                 final String insuranceCompany = this.fromApiJsonHelper.extractStringNamed(ChargesApiConstants.insuranceCompanyParamName,
                         element);
-                baseDataValidator.reset().parameter(ChargesApiConstants.insuranceCompanyParamName).value(insuranceCompany).notBlank()
+                baseDataValidator.reset().parameter(ChargesApiConstants.insuranceCompanyParamName).value(insuranceCompany)
                         .notExceedingLengthOf(100);
 
                 final String insurerName = this.fromApiJsonHelper.extractStringNamed(ChargesApiConstants.insurerNameParamName, element);
-                baseDataValidator.reset().parameter(ChargesApiConstants.insurerNameParamName).value(insurerName).notBlank()
-                        .notExceedingLengthOf(100);
+                baseDataValidator.reset().parameter(ChargesApiConstants.insurerNameParamName).value(insurerName).notExceedingLengthOf(100);
 
                 final Long insuranceCode = this.fromApiJsonHelper.extractLongNamed(ChargesApiConstants.insuranceCodeParamName,
                         element.getAsJsonObject());
-                baseDataValidator.reset().parameter(ChargesApiConstants.insuranceCodeParamName).value(insuranceCode).notNull()
-                        .longGreaterThanZero();
+                baseDataValidator.reset().parameter(ChargesApiConstants.insuranceCodeParamName).value(insuranceCode).longGreaterThanZero();
 
                 final Integer daysInArrears = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ChargesApiConstants.DAYS_IN_ARREARS,
                         element.getAsJsonObject());
-                baseDataValidator.reset().parameter(ChargesApiConstants.DAYS_IN_ARREARS).value(daysInArrears).notNull()
+                baseDataValidator.reset().parameter(ChargesApiConstants.DAYS_IN_ARREARS).value(daysInArrears)
                         .integerEqualToOrGreaterThanNumber(1);
 
             }
