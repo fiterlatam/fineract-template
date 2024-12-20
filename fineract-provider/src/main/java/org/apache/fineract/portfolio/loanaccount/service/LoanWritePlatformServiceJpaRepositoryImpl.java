@@ -576,7 +576,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     // the existing loan
                     amountToDisburse = disburseAmount.minus(loanOutstanding);
                 }
-                createRestructuringCancellationEvent(loanToClose); // Generate the event
+                if (!"castigado".equalsIgnoreCase(loanToClose.claimType())) { // Ensure the loan is not in castigado
+                                                                              // state
+                    createRestructuringCancellationEvent(loanToClose); // Generate the event
+                }
 
                 disburseLoanToLoan(loan, command, loanOutstanding, loanToClose);
             }
