@@ -41,6 +41,8 @@ public class LoanTransactionDTO {
     /*** Breakup of amounts in case of repayments **/
     private final BigDecimal principal;
     private final BigDecimal interest;
+    private final BigDecimal incomeInterest;
+    private final BigDecimal receivableInterest;
     private final BigDecimal fees;
     private final BigDecimal penalties;
     private final BigDecimal overPayment;

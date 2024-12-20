@@ -184,6 +184,8 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
         final BigDecimal principalAmount = loanTransactionDTO.getPrincipal();
         final BigDecimal interestAmount = loanTransactionDTO.getInterest();
+        final BigDecimal incomeInterestAmount = loanTransactionDTO.getIncomeInterest();
+        final BigDecimal receivableInterest = loanTransactionDTO.getReceivableInterest();
         final BigDecimal feesAmount = loanTransactionDTO.getFees();
         final BigDecimal penaltiesAmount = loanTransactionDTO.getPenalties();
         final BigDecimal overPaymentAmount = loanTransactionDTO.getOverPayment();
@@ -205,15 +207,38 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         // handle interest payment of writeOff (and reversals)
         if (interestAmount != null && !(interestAmount.compareTo(BigDecimal.ZERO) == 0)) {
             totalDebitAmount = totalDebitAmount.add(interestAmount);
-            GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
-                    AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
-            if (accountMap.containsKey(account)) {
-                BigDecimal amount = accountMap.get(account).add(interestAmount);
-                accountMap.put(account, amount);
+
+            if ((incomeInterestAmount !=null && incomeInterestAmount.compareTo(BigDecimal.ZERO) > 0)
+                    && (receivableInterest != null && receivableInterest.compareTo(BigDecimal.ZERO) > 0)) {
+                 GLAccount incomeAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                        AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(), paymentTypeId);
+                 if (accountMap.containsKey(incomeAccount)) {
+                    BigDecimal amount = accountMap.get(incomeAccount).add(incomeInterestAmount);
+                    accountMap.put(incomeAccount, amount);
+                 } else {
+                    accountMap.put(incomeAccount, incomeInterestAmount);
+                 }
+                 GLAccount receivableAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                         AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
+                 if (accountMap.containsKey(receivableAccount)) {
+                     BigDecimal amount = accountMap.get(receivableAccount).add(receivableInterest);
+                     accountMap.put(receivableAccount, amount);
+                 } else {
+                     accountMap.put(receivableAccount, receivableInterest);
+                 }
+
             } else {
-                accountMap.put(account, interestAmount);
+                 GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                        AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
+                 if (accountMap.containsKey(account)) {
+                    BigDecimal amount = accountMap.get(account).add(interestAmount);
+                    accountMap.put(account, amount);
+                 } else {
+                    accountMap.put(account, interestAmount);
+                 }
             }
         }
+
 
         // handle fees payment of writeOff (and reversals)
         if (feesAmount != null && !(feesAmount.compareTo(BigDecimal.ZERO) == 0)) {

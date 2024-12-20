@@ -122,6 +122,8 @@ public class AccountingProcessorHelper {
             final BigDecimal amount = (BigDecimal) map.get("amount");
             final BigDecimal principal = (BigDecimal) map.get("principalPortion");
             final BigDecimal interest = (BigDecimal) map.get("interestPortion");
+            final BigDecimal incomeInterest = (BigDecimal) map.get("incomeInterestPortion");
+            final BigDecimal receivableInterest = (BigDecimal) map.get("receivableInterestPortion");
             final BigDecimal fees = (BigDecimal) map.get("feeChargesPortion");
             final BigDecimal penalties = (BigDecimal) map.get("penaltyChargesPortion");
             final BigDecimal overPayments = (BigDecimal) map.get("overPaymentPortion");
@@ -154,7 +156,7 @@ public class AccountingProcessorHelper {
                         PortfolioAccountType.LOAN);
             }
             final LoanTransactionDTO transaction = new LoanTransactionDTO(transactionOfficeId, paymentTypeId, transactionId,
-                    transactionDate, transactionType, amount, principal, interest, fees, penalties, overPayments, reversed,
+                    transactionDate, transactionType, amount, principal, interest, incomeInterest, receivableInterest , fees, penalties, overPayments, reversed,
                     penaltyPaymentDetails, feePaymentDetails, isAccountTransfer);
             transaction.setGlAccountId(transactionGlAccountId != null ? transactionGlAccountId : glAccountId);
             Boolean isLoanToLoanTransfer = (Boolean) accountingBridgeData.get("isLoanToLoanTransfer");
