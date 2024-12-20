@@ -250,6 +250,11 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             estadoCliente = ClientStatus.fromInt(loan.getClient().getStatus()).name();
                         }
 
+                        BigDecimal waivedFees = currentInstallment.getFeeChargesWaived(loan.getCurrency()).getAmount();
+                        BigDecimal waivedInterest = currentInstallment.getInterestWaived(loan.getCurrency()).getAmount();
+                        BigDecimal waivedPenalties = currentInstallment.getPenaltyChargesWaived(loan.getCurrency()).getAmount();
+                        BigDecimal totalWaived = waivedFees.add(waivedInterest).add(waivedPenalties);
+
                         if (existingLoanArchive.isPresent()) {
 
                             LoanArchiveHistory existingEntry = existingLoanArchive.get();
@@ -292,7 +297,8 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             existingEntry.setSegurosVoluntarios(voluntaryInsuranceAmount);
                             existingEntry.setPeriodicidad(PeriodFrequencyType.fromInt(loan.getTermPeriodFrequencyType()).name());
                             existingEntry.setEmpresaReporta("INTERCREDITO");
-                            existingEntry.setAbono(BigDecimal.ZERO);
+                            existingEntry.setAbono(currentInstallment.getTotalPaid(loan.getCurrency()).getAmount());
+                            existingEntry.setCondonaciones(totalWaived);
                             existingEntry.setActividadLaboral(actividadLaboral);
                             existingEntry.setNumeroDeReprogramaciones(numberReschedule);
                             existingEntry.setCreSaldo(creSaldo);
@@ -358,7 +364,8 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             loanArchiveHistory.setSegurosVoluntarios(voluntaryInsuranceAmount);
                             loanArchiveHistory.setPeriodicidad(PeriodFrequencyType.fromInt(loan.getTermPeriodFrequencyType()).name());
                             loanArchiveHistory.setEmpresaReporta("INTERCREDITO");
-                            loanArchiveHistory.setAbono(BigDecimal.ZERO);
+                            loanArchiveHistory.setAbono(currentInstallment.getTotalPaid(loan.getCurrency()).getAmount());
+                            loanArchiveHistory.setCondonaciones(totalWaived);
                             loanArchiveHistory.setActividadLaboral(actividadLaboral);
                             loanArchiveHistory.setNumeroDeReprogramaciones(numberReschedule);
                             loanArchiveHistory.setCreSaldo(creSaldo);
