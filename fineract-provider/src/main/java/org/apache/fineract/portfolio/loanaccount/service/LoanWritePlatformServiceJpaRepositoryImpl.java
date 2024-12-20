@@ -576,6 +576,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     // the existing loan
                     amountToDisburse = disburseAmount.minus(loanOutstanding);
                 }
+                if (!"castigado".equalsIgnoreCase(loanToClose.claimType())) { // Ensure the loan is not in castigado
+                                                                              // state
+                    createRestructuringCancellationEvent(loanToClose); // Generate the event
+                }
 
                 disburseLoanToLoan(loan, command, loanOutstanding, loanToClose);
             }
@@ -1369,7 +1373,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         createNoveltyNews(loan, writeOffDate, InsuranceIncidentType.DEFINITIVE_FINAL_INVALIDATION);
     }
 
-    private void createNoveltyNews(Loan loan, LocalDate writeOffDate, InsuranceIncidentType incidentType) {
+    private void createNoveltyNews(Loan loan, LocalDate transactionDate, InsuranceIncidentType incidentType) {
         // Fetch the Insurance Incident based on the provided type
         InsuranceIncident incident = this.insuranceIncidentRepository.findByIncidentType(incidentType);
         if (incident == null || (!incident.isValid())) {
@@ -1383,7 +1387,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
                     BigDecimal cumulative = BigDecimal.ZERO;
                     InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
-                            null, incident, writeOffDate, cumulative);
+                            null, incident, transactionDate, cumulative);
 
                     this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
                 }
@@ -2526,6 +2530,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withLoanId(loanId) //
                 .with(changes) //
                 .build();
+    }
+
+    private void createRestructuringCancellationEvent(Loan loan) {
+        createNoveltyNews(loan, DateUtils.getBusinessLocalDate(), InsuranceIncidentType.DEFINITIVE_RESTRUCTURING_CANCELLATION);
     }
 
     private void disburseLoanToLoan(final Loan loan, final JsonCommand command, final BigDecimal amount, final Loan loanToClose) {
