@@ -100,7 +100,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
                                 totalPrincipal, totalInstallments, outstandingBalance));
                     } else {
                         if (loanCharge.getChargeCalculation().isFlatHono()) {
-                            cumulative = Money.zero(monetaryCurrency);
+                            cumulative = cumulative.plus(Money.zero(monetaryCurrency));
                         } else {
                             cumulative = cumulative.plus(getInstallmentFee(monetaryCurrency, period, loanCharge));
                         }

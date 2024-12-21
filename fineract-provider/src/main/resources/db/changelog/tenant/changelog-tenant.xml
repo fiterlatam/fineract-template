@@ -335,4 +335,6 @@
     <include file="parts/20243008011009149_SU_488_update_report._archivo.xml" relativeToChangelogFile="true"/>
     <include file="parts/202412161618100_SU_516_c_custom_charge_honorarios_map_MODIFY.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241216011009134_SU_502_add_column_migrated_loans.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240828220000_SU_457_insurance_incident_addition.xml"  relativeToChangelogFile="true"/>
+    <include file="parts/20240828220000_SU_535_insurance_incident_addition.xml"  relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -1596,6 +1596,45 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
+    // SU-527 SU-530
+    // This method is created to avoid creation of duplicate installments on transaction reversal.
+    // Instead of fineract built-in way of using the newely calculated installments, this function copies the component
+    // amounts
+    // of newely calculated installments to existing installments so that the charges remain intact. If some
+    // installments are removed because
+    // of advance payment then those are removed from the original installment list and vice versa added to the new
+    // installment list in case of reschedule
+    public void updateLoanSchedule(final LoanScheduleDTO loanSchedule) {
+        List<LoanRepaymentScheduleInstallment> scheduleInstallments = loanSchedule.getInstallments();
+        List<LoanRepaymentScheduleInstallment> removeInstallments = new ArrayList<>();
+        for (LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
+            // Do not touch graced or fully paid installments
+            if (installment.getInstallmentNumber() == 0 || installment.isObligationsMet()) {
+                continue;
+            }
+            LoanRepaymentScheduleInstallment scheduledInstallment = findByInstallmentNumber(scheduleInstallments,
+                    installment.getInstallmentNumber());
+            if (scheduledInstallment != null) {
+                installment.updateComponents(scheduledInstallment, this.getCurrency());
+            } else {
+                // This can only be possible in case of big advance payment which reduces the installment count
+                removeInstallments.add(installment);
+            }
+        }
+        // Check if there are extra installments created because of loan rescheduling then add those newely created
+        // installments
+        if (this.repaymentScheduleInstallments.size() < scheduleInstallments.size()) {
+            int newInstallmentsCount = scheduleInstallments.size() - this.repaymentScheduleInstallments.size();
+            for (int i = newInstallmentsCount; i > 0; i--) {
+                int index = scheduleInstallments.size() - i;
+                addLoanRepaymentScheduleInstallment(scheduleInstallments.get(index));
+            }
+        }
+        if (!removeInstallments.isEmpty()) {
+            this.repaymentScheduleInstallments.removeAll(removeInstallments);
+        }
+    }
+
     private LoanRepaymentScheduleInstallment findByInstallmentNumber(Collection<LoanRepaymentScheduleInstallment> installments,
             Integer installmentNumber) {
         for (LoanRepaymentScheduleInstallment installment : installments) {
@@ -6216,7 +6255,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
         // Either the installments got recalculated or the model
         if (loanSchedule.getInstallments() != null) {
-            updateLoanSchedule(loanSchedule.getInstallments());
+            // SU-527 SU-530 using newely created method to update the loan schedule
+            // updateLoanSchedule(loanSchedule.getInstallments());
+            updateLoanSchedule(loanSchedule);
         } else {
             updateLoanSchedule(loanSchedule.getLoanScheduleModel());
         }
