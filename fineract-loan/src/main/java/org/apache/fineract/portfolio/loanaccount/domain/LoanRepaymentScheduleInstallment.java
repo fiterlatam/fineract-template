@@ -1741,4 +1741,19 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     public boolean isMigratedInstallment() {
         return isMigratedInstallment;
     }
+
+    public void updateComponents(LoanRepaymentScheduleInstallment copy, MonetaryCurrency currency) {
+        this.setPrincipal(copy.getPrincipal(currency).getAmount());
+        this.setRecalculateEMI(copy.recalculateEMI);
+        this.setRecalculatedInterestComponent(copy.recalculatedInterestComponent);
+        this.setAdvancePrincipalAmount(copy.getAdvancePrincipalAmount());
+        this.setPenaltyCharges(copy.getPenaltyChargesCharged(currency).getAmount());
+        this.setFeeChargesCharged(copy.getFeeChargesCharged(currency).getAmount());
+        this.setInterestCharged(copy.getInterestCharged(currency).getAmount());
+        if (copy.recalculatedInterestComponent) {
+            // This will only be true if loan is overpaid in advance. A new installment is created with only principal
+            // amount and all other null components
+            this.getInstallmentCharges().clear();
+        }
+    }
 }
