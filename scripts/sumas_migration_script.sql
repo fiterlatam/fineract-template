@@ -451,6 +451,7 @@ set principal_completed_derived = mlrs.principal_amount,
 	interest_completed_derived = mlrs.interest_amount,
 	fee_charges_completed_derived = mlrs.fee_charges_amount,
 	penalty_charges_completed_derived = mlrs.penalty_charges_amount,
+	migrated_installment = true,
 	completed_derived = true,
 	obligations_met_on_date = tcm.cpc_fecha_pago_cuota
 from m_loan ml
