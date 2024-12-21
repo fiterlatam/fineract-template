@@ -1751,7 +1751,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.setFeeChargesCharged(copy.getFeeChargesCharged(currency).getAmount());
         this.setInterestCharged(copy.getInterestCharged(currency).getAmount());
         if (copy.recalculatedInterestComponent) {
-            // This will only be true if loan is overpaid in advance. A new installment is created with only principal amount and all other null components
+            // This will only be true if loan is overpaid in advance. A new installment is created with only principal
+            // amount and all other null components
             this.getInstallmentCharges().clear();
         }
     }

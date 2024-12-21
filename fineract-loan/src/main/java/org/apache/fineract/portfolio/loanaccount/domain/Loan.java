@@ -1598,9 +1598,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     // SU-527 SU-530
     // This method is created to avoid creation of duplicate installments on transaction reversal.
-    // Instead of fineract built-in way of using the newely calculated installments, this function copies the component amounts
-    // of newely calculated installments to existing installments so that the charges remain intact. If some installments are removed because
-    // of advance payment then those are removed from the original installment list and vice versa added to the new installment list in case of reschedule
+    // Instead of fineract built-in way of using the newely calculated installments, this function copies the component
+    // amounts
+    // of newely calculated installments to existing installments so that the charges remain intact. If some
+    // installments are removed because
+    // of advance payment then those are removed from the original installment list and vice versa added to the new
+    // installment list in case of reschedule
     public void updateLoanSchedule(final LoanScheduleDTO loanSchedule) {
         List<LoanRepaymentScheduleInstallment> scheduleInstallments = loanSchedule.getInstallments();
         List<LoanRepaymentScheduleInstallment> removeInstallments = new ArrayList<>();
@@ -1618,7 +1621,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 removeInstallments.add(installment);
             }
         }
-        // Check if there are extra installments created because of loan rescheduling then add those newely created installments
+        // Check if there are extra installments created because of loan rescheduling then add those newely created
+        // installments
         if (this.repaymentScheduleInstallments.size() < scheduleInstallments.size()) {
             int newInstallmentsCount = scheduleInstallments.size() - this.repaymentScheduleInstallments.size();
             for (int i = newInstallmentsCount; i > 0; i--) {
@@ -6251,7 +6255,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
         // Either the installments got recalculated or the model
         if (loanSchedule.getInstallments() != null) {
-            //SU-527 SU-530 using newely created method to update the loan schedule
+            // SU-527 SU-530 using newely created method to update the loan schedule
             // updateLoanSchedule(loanSchedule.getInstallments());
             updateLoanSchedule(loanSchedule);
         } else {
