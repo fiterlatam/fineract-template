@@ -333,12 +333,13 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             Integer ignoreInstallment = loanApplicationTerms.getNumberOfInstallmentsToIgnore();
             // SU-530 commenting below code for now because the implementation is not correct.
             // 1. Grace interest should not be added to outstanding balance.
-            // 2. Implementation of checkbox on product level to calculate interest from disbursement date or from grace period end date is violated here
+            // 2. Implementation of checkbox on product level to calculate interest from disbursement date or from grace
+            // period end date is violated here
             // because this check has never been implemented. For now cumulatingInterestPaymentDueToGrace should be 0
-            //  if (ignoreInstallment != null && ignoreInstallment < periodNumber) {
-            //      outstandingBalance = outstandingBalance.plus(cumulatingInterestPaymentDueToGrace);
-            //      cumulatingInterestPaymentDueToGrace = Money.zero(currency);
-            //  }
+            // if (ignoreInstallment != null && ignoreInstallment < periodNumber) {
+            // outstandingBalance = outstandingBalance.plus(cumulatingInterestPaymentDueToGrace);
+            // cumulatingInterestPaymentDueToGrace = Money.zero(currency);
+            // }
             cumulatingInterestPaymentDueToGrace = Money.zero(currency);
             final TreeMap<LocalDate, Money> principalVariation = mergeVariationsToMap(loanApplicationTerms, scheduleParams);
             final Map<LocalDate, Money> compoundingMap = scheduleParams.getCompoundingMap();
