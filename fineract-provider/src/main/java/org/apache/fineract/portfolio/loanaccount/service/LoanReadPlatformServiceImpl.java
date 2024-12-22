@@ -2428,11 +2428,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     }
 
     @Override
-    public LoanTransactionData retrieveLoanForeclosureTemplate(final Long loanId, final LocalDate transactionDate) {
+    public LoanTransactionData retrieveLoanForeclosureTemplate(final Long loanId, final LocalDate transactionDate, Boolean isProjection) {
         this.context.authenticatedUser();
 
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId, true);
-        loan.validateForForeclosure(transactionDate);
+        if (!isProjection) loan.validateForForeclosure(transactionDate);
         final MonetaryCurrency currency = loan.getCurrency();
         final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepository.findOneWithNotFoundDetection(currency);
 
@@ -2462,18 +2462,19 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         // if percentage of paid installments is less than 50 add charge
         if (loan.getLoanRepaymentScheduleDetail().getInterestMethod().equals(InterestMethod.DECLINING_BALANCE)) {
             String completedPaymentsSql = "select count(*) from m_loan_repayment_schedule where loan_id = ? and completed_derived = true";
-            Integer numberOfPayments = this.jdbcTemplate.queryForObject(completedPaymentsSql, Integer.class, loanId);
+            Double numberOfPayments = this.jdbcTemplate.queryForObject(completedPaymentsSql, Double.class, loanId);
 
             List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
 
-            Double percentage = Double.valueOf((numberOfPayments /= repaymentScheduleInstallments.size()) * 100);
+            Double percentage = (numberOfPayments / repaymentScheduleInstallments.size()) * 100;
 
             Long loanForeclosureFeeThreshold = this.configurationDomainService.getLoanForeclosureFeeThreshold();
 
             if (percentage.compareTo(loanForeclosureFeeThreshold.doubleValue()) < 0) {
                 Charge foreclosureCharge = this.chargeRepositoryWrapper.findOneWithNotFoundDetection("Cargo por ejecución hipotecaria");
                 BigDecimal percentageValue = foreclosureCharge.getAmount();
-                BigDecimal chargeAmount = outstandingLoanBalance.multiply(percentageValue);
+                BigDecimal totalOutstanding = loan.getSummary().getTotalPrincipalOutstanding();
+                BigDecimal chargeAmount = totalOutstanding.multiply(percentageValue.divide(BigDecimal.valueOf(100)));
                 feeCharges = feeCharges.add(chargeAmount);
             }
         }

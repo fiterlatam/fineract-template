@@ -226,6 +226,7 @@ import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationCo
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanEventApiJsonValidator;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanUpdateCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.loanproduct.data.LoanOverdueDTO;
+import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.exception.InvalidCurrencyException;
@@ -246,6 +247,7 @@ import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatform
 import org.apache.fineract.portfolio.transfer.api.TransferApiConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -302,7 +304,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
     private final SavingsAccountDomainService savingsAccountDomainService;
     private final AccountTransferAssembler accountTransferAssembler;
-
+    private final JdbcTemplate jdbcTemplate;
+    private final ChargeRepositoryWrapper chargeRepositoryWrapper;
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
     private final LoanScheduleAssembler loanScheduleAssembler;
     private final ClientRepositoryWrapper clientRepository;
@@ -3503,6 +3506,26 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         changes.put("transactionDate", transactionDate);
         changes.put("receiptNumber", receiptNumber);
         changes.put("glAccountId", glAccountId);
+
+        //if declining balance calculation type. add charge to loan before making payment
+        if (loan.getLoanRepaymentScheduleDetail().getInterestMethod().equals(InterestMethod.DECLINING_BALANCE)) {
+            String completedPaymentsSql = "select count(*) from m_loan_repayment_schedule where loan_id = ? and completed_derived = true";
+            Double numberOfPayments = this.jdbcTemplate.queryForObject(completedPaymentsSql, Double.class, loanId);
+
+            List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
+
+            Double percentage = (numberOfPayments / repaymentScheduleInstallments.size()) * 100;
+
+            Long loanForeclosureFeeThreshold = this.configurationDomainService.getLoanForeclosureFeeThreshold();
+            BigDecimal totalOutstanding = loan.getSummary().getTotalPrincipalOutstanding();
+            if (percentage.compareTo(loanForeclosureFeeThreshold.doubleValue()) < 0) {
+                Charge foreclosureCharge = this.chargeRepositoryWrapper.findOneWithNotFoundDetection("Cargo por ejecución hipotecaria");
+                BigDecimal percentageValue = foreclosureCharge.getAmount();
+                BigDecimal chargeAmount = totalOutstanding.multiply(percentageValue.divide(BigDecimal.valueOf(100)));
+                LoanCharge loanCharge = LoanCharge.createNewFromChargeAmount(loan, foreclosureCharge, transactionDate, chargeAmount, receiptNumber);
+                this.addCharge(loan,foreclosureCharge,loanCharge);
+            }
+        }
 
         LoanRescheduleRequest loanRescheduleRequest = null;
         for (LoanDisbursementDetails loanDisbursementDetails : loan.getDisbursementDetails()) {
