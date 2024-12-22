@@ -3517,7 +3517,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Double percentage = (numberOfPayments / repaymentScheduleInstallments.size()) * 100;
 
             Long loanForeclosureFeeThreshold = this.configurationDomainService.getLoanForeclosureFeeThreshold();
-            BigDecimal totalOutstanding = loan.getSummary().getTotalOutstanding();
+            BigDecimal totalOutstanding = loan.getSummary().getTotalPrincipalOutstanding();
             if (percentage.compareTo(loanForeclosureFeeThreshold.doubleValue()) < 0) {
                 Charge foreclosureCharge = this.chargeRepositoryWrapper.findOneWithNotFoundDetection("Cargo por ejecución hipotecaria");
                 BigDecimal percentageValue = foreclosureCharge.getAmount();

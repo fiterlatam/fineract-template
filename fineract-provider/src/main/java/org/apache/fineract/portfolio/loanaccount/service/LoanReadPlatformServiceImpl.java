@@ -2473,7 +2473,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             if (percentage.compareTo(loanForeclosureFeeThreshold.doubleValue()) < 0) {
                 Charge foreclosureCharge = this.chargeRepositoryWrapper.findOneWithNotFoundDetection("Cargo por ejecución hipotecaria");
                 BigDecimal percentageValue = foreclosureCharge.getAmount();
-                BigDecimal totalOutstanding = loan.getSummary().getTotalOutstanding();
+                BigDecimal totalOutstanding = loan.getSummary().getTotalPrincipalOutstanding();
                 BigDecimal chargeAmount = totalOutstanding.multiply(percentageValue.divide(BigDecimal.valueOf(100)));
                 feeCharges = feeCharges.add(chargeAmount);
             }
