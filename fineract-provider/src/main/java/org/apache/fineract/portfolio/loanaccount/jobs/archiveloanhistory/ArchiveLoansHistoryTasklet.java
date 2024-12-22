@@ -250,10 +250,12 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             estadoCliente = ClientStatus.fromInt(loan.getClient().getStatus()).name();
                         }
 
-                        BigDecimal waivedFees = currentInstallment.getFeeChargesWaived(loan.getCurrency()).getAmount();
-                        BigDecimal waivedInterest = currentInstallment.getInterestWaived(loan.getCurrency()).getAmount();
-                        BigDecimal waivedPenalties = currentInstallment.getPenaltyChargesWaived(loan.getCurrency()).getAmount();
-                        BigDecimal totalWaived = waivedFees.add(waivedInterest).add(waivedPenalties);
+                        BigDecimal writtenOffPrincipal = currentInstallment.getPrincipalWrittenOff(loan.getCurrency()).getAmount();
+                        BigDecimal writtenOffInterest = currentInstallment.getInterestWrittenOff(loan.getCurrency()).getAmount();
+                        BigDecimal writtenOffFees = currentInstallment.getFeeChargesWrittenOff(loan.getCurrency()).getAmount();
+                        BigDecimal writtenOffPenalties = currentInstallment.getPenaltyChargesWrittenOff(loan.getCurrency()).getAmount();
+                        BigDecimal totalWrittenOff = writtenOffPrincipal.add(writtenOffInterest).add(writtenOffFees)
+                                .add(writtenOffPenalties);
 
                         if (existingLoanArchive.isPresent()) {
 
@@ -298,7 +300,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             existingEntry.setPeriodicidad(PeriodFrequencyType.fromInt(loan.getTermPeriodFrequencyType()).name());
                             existingEntry.setEmpresaReporta("INTERCREDITO");
                             existingEntry.setAbono(currentInstallment.getTotalPaid(loan.getCurrency()).getAmount());
-                            existingEntry.setCondonaciones(totalWaived);
+                            existingEntry.setCondonaciones(totalWrittenOff);
                             existingEntry.setActividadLaboral(actividadLaboral);
                             existingEntry.setNumeroDeReprogramaciones(numberReschedule);
                             existingEntry.setCreSaldo(creSaldo);
@@ -365,7 +367,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                             loanArchiveHistory.setPeriodicidad(PeriodFrequencyType.fromInt(loan.getTermPeriodFrequencyType()).name());
                             loanArchiveHistory.setEmpresaReporta("INTERCREDITO");
                             loanArchiveHistory.setAbono(currentInstallment.getTotalPaid(loan.getCurrency()).getAmount());
-                            loanArchiveHistory.setCondonaciones(totalWaived);
+                            loanArchiveHistory.setCondonaciones(totalWrittenOff);
                             loanArchiveHistory.setActividadLaboral(actividadLaboral);
                             loanArchiveHistory.setNumeroDeReprogramaciones(numberReschedule);
                             loanArchiveHistory.setCreSaldo(creSaldo);
