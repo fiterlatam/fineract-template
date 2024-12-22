@@ -219,6 +219,45 @@ public class LoanCharge extends AbstractPersistableCustom {
         return newLoanCharge;
     }
 
+    public static LoanCharge createNewFromChargeAmount(final Loan loan, final Charge chargeDefinition,
+                                                       final LocalDate dueDate, final BigDecimal chargeAmount, String receiptNumber) {
+        final ChargeTimeType chargeTime = null;
+        final ChargeCalculationType chargeCalculation = null;
+        final ChargePaymentMode chargePaymentMode = null;
+        BigDecimal amountPercentageAppliedTo = BigDecimal.ZERO;
+
+        BigDecimal loanCharge = BigDecimal.ZERO;
+        if (ChargeTimeType.fromInt(chargeDefinition.getChargeTimeType()).equals(ChargeTimeType.INSTALMENT_FEE)) {
+            BigDecimal percentage = chargeDefinition.getAmount();
+            if (percentage == null) {
+                percentage = chargeDefinition.getAmount();
+            }
+            loanCharge = loan.calculatePerInstallmentChargeAmount(ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()),
+                    percentage);
+        }
+
+        // If charge type is specified due date and loan is multi disburment
+        // loan.
+        // Then we need to get as of this loan charge due date how much amount
+        // disbursed.
+        if (chargeDefinition.getChargeTimeType().equals(ChargeTimeType.SPECIFIED_DUE_DATE.getValue()) && loan.isMultiDisburmentLoan()) {
+            amountPercentageAppliedTo = BigDecimal.ZERO;
+            for (final LoanDisbursementDetails loanDisbursementDetails : loan.getDisbursementDetails()) {
+                if (!loanDisbursementDetails.expectedDisbursementDate().isAfter(dueDate)) {
+                    amountPercentageAppliedTo = amountPercentageAppliedTo.add(loanDisbursementDetails.principal());
+                }
+            }
+        }
+
+        LoanCharge newLoanCharge = new LoanCharge(loan, chargeDefinition, amountPercentageAppliedTo, chargeAmount, chargeTime, chargeCalculation,
+                dueDate, chargePaymentMode, null, loanCharge);
+        final String externalId = receiptNumber;
+        newLoanCharge.setExternalId(externalId);
+        newLoanCharge.setChargeDisbursementType(chargeDefinition.getChargeDisbursementType());
+        newLoanCharge.setChargeInstallmentFeeType(chargeDefinition.getChargeInstallmentFeeType());
+        return newLoanCharge;
+    }
+
     /*
      * loanPrincipal is required for charges that are percentage based
      */
@@ -868,6 +907,12 @@ public class LoanCharge extends AbstractPersistableCustom {
 
     public void updateAmount(final BigDecimal amount) {
         this.amount = amount;
+        calculateOutstanding();
+    }
+
+    public void updateAmount(final BigDecimal amount, final BigDecimal appliedTo) {
+        this.amount = amount;
+        this.amountPercentageAppliedTo = appliedTo;
         calculateOutstanding();
     }
 
