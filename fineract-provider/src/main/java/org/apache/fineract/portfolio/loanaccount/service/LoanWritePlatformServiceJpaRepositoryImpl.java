@@ -1397,6 +1397,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (!doesIncidentExist) {
             LoanCharge loanCharge = loan.getLoanCharges().stream()
                     .filter(charge -> isChargeEligibleForNoveltyNews(charge, loan.getCurrency(), incident)).findFirst().orElse(null);
+            if (loanCharge == null) {
+                log.warn("No loan charge found for loan with id: {} and incident type: {}", loan.getId(), incident.getIncidentType());
+                return;
+            }
             InsuranceIncidentNoveltyNews noveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, null, incident,
                     transactionDate, BigDecimal.ZERO);
             this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(noveltyNews);
