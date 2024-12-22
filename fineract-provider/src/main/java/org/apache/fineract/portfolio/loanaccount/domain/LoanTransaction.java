@@ -37,6 +37,9 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import javax.persistence.Transient;
+
+import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -120,6 +123,14 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER, mappedBy = "loanTransaction")
     private Set<LoanTransactionToRepaymentScheduleMapping> loanTransactionToRepaymentScheduleMappings = new HashSet<>();
+
+    @Transient
+    @Setter
+    private BigDecimal incomeInterestPortion;
+
+    @Transient
+    @Setter
+    private BigDecimal receivableInterestPortion;
 
     protected LoanTransaction() {}
 
@@ -641,6 +652,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         thisTransactionData.put("netDisbursalAmount", this.loan.getNetDisbursalAmount());
         thisTransactionData.put("principalPortion", this.principalPortion);
         thisTransactionData.put("interestPortion", this.interestPortion);
+        thisTransactionData.put("incomeInterestPortion", this.incomeInterestPortion);
+        thisTransactionData.put("receivableInterestPortion", this.receivableInterestPortion);
         thisTransactionData.put("feeChargesPortion", this.feeChargesPortion);
         thisTransactionData.put("penaltyChargesPortion", this.penaltyChargesPortion);
         thisTransactionData.put("overPaymentPortion", this.overPaymentPortion);
@@ -819,4 +832,12 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     // TODO missing hashCode(), equals(Object obj), but probably OK as long as
     // this is never stored in a Collection.
+
+    public Money getIncomeInterestPortion(final MonetaryCurrency currency) {
+        return Money.of(currency, this.incomeInterestPortion);
+    }
+
+    public Money getReceivableInterestPortion(final MonetaryCurrency currency) {
+        return Money.of(currency, this.receivableInterestPortion);
+    }
 }
