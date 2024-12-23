@@ -1116,7 +1116,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                     continue;
                 }
                 // If due date of charge is before penalty start date, continue
-                if (loanCharge.getDueLocalDate().isBefore(penaltyStartDate)) {
+                if (penaltyStartDate != null && loanCharge.getDueLocalDate().isBefore(penaltyStartDate)) {
                     continue;
                 }
                 LoanOverdueInstallmentCharge overdueInstallmentCharge = new LoanOverdueInstallmentCharge(loanCharge, installment,

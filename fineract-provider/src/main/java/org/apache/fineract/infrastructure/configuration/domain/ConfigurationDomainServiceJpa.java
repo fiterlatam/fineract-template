@@ -612,7 +612,7 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     public LocalDate retrievePenaltyStartDate() {
         final String propertyName = "penalty-start-date";
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
-        return property.getDateValue();
+        return property.isEnabled() ? property.getDateValue() : null;
     }
 
 }
