@@ -555,7 +555,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
 
             // Either the installments got recalculated or the model
             if (loanSchedule.getInstallments() != null) {
-                loan.updateLoanSchedule(loanSchedule.getInstallments());
+                loan.updateLoanSchedule(loanSchedule);
             } else {
                 loan.updateLoanSchedule(loanSchedule.getLoanScheduleModel());
             }
