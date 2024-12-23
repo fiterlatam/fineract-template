@@ -1058,6 +1058,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         Integer feeInterval = chargeDefinition.feeInterval();
         final ScheduledDateGenerator scheduledDateGenerator = new DefaultScheduledDateGenerator();
         Map<Integer, LocalDate> scheduleDates = new HashMap<>();
+        final LocalDate penaltyStartDate = configurationDomainService.retrievePenaltyStartDate();
         Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
         Long penaltyPostingWaitPeriodValue = this.configurationDomainService.retrieveGraceOnPenaltyPostingPeriod();
 
@@ -1112,6 +1113,10 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                         installment, numberOfPenaltyDays);
 
                 if (Objects.isNull(loanCharge.amount()) || BigDecimal.ZERO.compareTo(loanCharge.amount()) == 0) {
+                    continue;
+                }
+                // If due date of charge is before penalty start date, continue
+                if (loanCharge.getDueLocalDate().isBefore(penaltyStartDate)) {
                     continue;
                 }
                 LoanOverdueInstallmentCharge overdueInstallmentCharge = new LoanOverdueInstallmentCharge(loanCharge, installment,
