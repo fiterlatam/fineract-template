@@ -57,46 +57,35 @@ public enum InsuranceIncidentType {
     }
 
     public static InsuranceIncidentType fromInt(final Integer value) {
-
-        InsuranceIncidentType enumeration = InsuranceIncidentType.INVALID;
         switch (value) {
             case 1:
-                enumeration = InsuranceIncidentType.DEFINITIVE_CANCELLATION_DEFAULT;
-            break;
+                return InsuranceIncidentType.DEFINITIVE_CANCELLATION_DEFAULT;
             case 2:
-                enumeration = InsuranceIncidentType.DEFINITIVE_VOLUNTARY_CANCELLATION;
-            break;
+                return InsuranceIncidentType.DEFINITIVE_VOLUNTARY_CANCELLATION;
             case 3:
-                enumeration = InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION;
-            break;
+                return InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION;
             case 4:
-                enumeration = InsuranceIncidentType.FINAL_GUARANTEE_CLAIM_CANCELLATION;
-            break;
+                return InsuranceIncidentType.FINAL_GUARANTEE_CLAIM_CANCELLATION;
             case 5:
-                enumeration = InsuranceIncidentType.FINAL_REFINANCED_CANCELLATION;
-            break;
+                return InsuranceIncidentType.FINAL_REFINANCED_CANCELLATION;
             case 6:
-                enumeration = InsuranceIncidentType.BAD_SALE_CANCELLATION;
-            break;
+                return InsuranceIncidentType.BAD_SALE_CANCELLATION;
             case 7:
-                enumeration = InsuranceIncidentType.PORTFOLIO_WRITE_OFF_CANCELLATION;
-            break;
+                return InsuranceIncidentType.PORTFOLIO_WRITE_OFF_CANCELLATION;
             case 8:
-                enumeration = InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT;
-            break;
+                return InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT;
             case 9:
-                enumeration = InsuranceIncidentType.PERMANENT_CANCELLATION_DUE_TO_MAX_AGE;
-            break;
+                return InsuranceIncidentType.PERMANENT_CANCELLATION_DUE_TO_MAX_AGE;
             case 10:
-                enumeration = InsuranceIncidentType.DEATH_CANCELLATION;
-            break;
+                return InsuranceIncidentType.DEATH_CANCELLATION;
             case 11:
-                enumeration = InsuranceIncidentType.SUSPENSION_REMOVED;
-            break;
+                return InsuranceIncidentType.SUSPENSION_REMOVED;
+            case 12:
+                return InsuranceIncidentType.DEFINITIVE_FINAL_INVALIDATION;
+            case 13:
+                return InsuranceIncidentType.DEFINITIVE_RESTRUCTURING_CANCELLATION;
             default:
-                enumeration = InsuranceIncidentType.INVALID;
-            break;
+                return InsuranceIncidentType.INVALID;
         }
-        return enumeration;
     }
 }
