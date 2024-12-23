@@ -40,6 +40,7 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
 import org.apache.fineract.portfolio.loanproduct.domain.AllocationType;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 
@@ -646,7 +647,23 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         if (transactionAmountRemaining.isZero()) {
             return penaltyPortionOfTransaction;
         }
-        final Money penaltyChargesDue = getPenaltyChargesOutstanding(currency);
+        Money penaltyChargesDue = getPenaltyChargesOutstanding(currency);
+        // SU-533 Avoid reprocessing of transaction paying different amount than originally paid.
+        List<LoanChargePaidByData> paidByOriginalTransactionList = loanTransaction.chargesPaidByOriginalTransaction();
+        Money amountPaidByOriginalTransaction = Money.zero(currency);
+        if (!paidByOriginalTransactionList.isEmpty()) {
+            for (LoanChargePaidByData data : paidByOriginalTransactionList) {
+                if (data.getInstallmentNumber().equals(this.installmentNumber) && data.isPenaltyCharge()) {
+                    amountPaidByOriginalTransaction = amountPaidByOriginalTransaction.plus(data.getAmount());
+                }
+            }
+            if (amountPaidByOriginalTransaction.isGreaterThanZero()) {
+                penaltyChargesDue = amountPaidByOriginalTransaction;
+            } else {
+                penaltyChargesDue = Money.zero(currency);
+            }
+        }
+
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(penaltyChargesDue)) {
             if (isWriteOffTransaction) {
                 this.penaltyChargesWrittenOff = getPenaltyChargesWrittenOff(currency).plus(penaltyChargesDue).getAmount();
@@ -731,7 +748,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                     if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
                             vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
                         feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
-                                feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
+                                feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion, loanTransaction);
                         updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
                                 vatCharge.getLoanCharge());
                         transactionAmountRemaining = transactionAmountRemaining.minus(feePortionOfTransaction);
@@ -740,7 +757,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                     }
                 }
                 feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
-                        feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
+                        feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion, loanTransaction);
                 updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
                         installmentCharge.getLoanCharge());
                 loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
@@ -766,7 +783,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                     if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
                             vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
                         feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
-                                feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
+                                feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion, loanTransaction);
                         updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
                                 vatCharge.getLoanCharge());
                         transactionAmountRemaining = transactionAmountRemaining.minus(feePortionOfTransaction);
@@ -775,7 +792,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                     }
                 }
                 feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
-                        feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
+                        feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion, loanTransaction);
 
                 updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
                         installmentCharge.getLoanCharge());
@@ -802,7 +819,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                     if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
                             vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
                         feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
-                                feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
+                                feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion, loanTransaction);
                         updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
                                 vatCharge.getLoanCharge());
                         transactionAmountRemaining = transactionAmountRemaining.minus(feePortionOfTransaction);
@@ -811,7 +828,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                     }
                 }
                 feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
-                        feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
+                        feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion, loanTransaction);
 
                 updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
                         installmentCharge.getLoanCharge());
@@ -868,14 +885,14 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                     if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
                             vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
                         feePortionOfTransaction = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
-                                feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
+                                feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion, loanTransaction);
                         updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
                                 vatCharge.getLoanCharge());
                         loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
                     }
                 }
                 feePortionOfTransaction = payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency,
-                        feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion);
+                        feePortionOfTransaction, isWriteOffTransaction, loanChargePaidByPortion, loanTransaction);
                 updateChargePaidByAmount(feePortionOfTransaction.minus(loanChargePaidByPortion), loanTransaction,
                         installmentCharge.getLoanCharge());
                 loanChargePaidByPortion = feePortionOfTransaction.minus(loanChargePaidByPortion);
@@ -888,6 +905,13 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     public Money payLoanCharge(LoanInstallmentCharge installmentCharge, final LocalDate transactionDate,
             final Money transactionAmountRemaining, final MonetaryCurrency currency, Money feePortionOfTransaction,
             final boolean isWriteOffTransaction, Money loanChargePaidByPortion) {
+        return payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency, feePortionOfTransaction,
+                isWriteOffTransaction, loanChargePaidByPortion, null);
+    }
+
+    public Money payLoanCharge(LoanInstallmentCharge installmentCharge, final LocalDate transactionDate,
+            final Money transactionAmountRemaining, final MonetaryCurrency currency, Money feePortionOfTransaction,
+            final boolean isWriteOffTransaction, Money loanChargePaidByPortion, LoanTransaction loanTransaction) {
         if (transactionAmountRemaining.isZero()) {
             return feePortionOfTransaction;
         }
@@ -905,6 +929,32 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                 }
             }
         }
+        ///////////////
+        // SU-533 Avoid reprocessing of transaction paying different amount than originally paid.
+        // Fineract by default considers a charge amount will never increase over time for an installment but in hono
+        /////////////// and penalty case
+        // charge amount increases every day for penalty and on transaction for hono. When reprocessing the transactions
+        /////////////// the original
+        // paid amount becomes different than the updated amount and hence the transaction is rollbacked. Below code is
+        /////////////// to avoid this rollback
+        if (loanTransaction != null) {
+            List<LoanChargePaidByData> paidByOriginalTransactionList = loanTransaction.chargesPaidByOriginalTransaction();
+            Money amountPaidByOriginalTransaction = Money.zero(currency);
+            if (!paidByOriginalTransactionList.isEmpty()) {
+                for (LoanChargePaidByData data : paidByOriginalTransactionList) {
+                    if (!data.isPenaltyCharge() && data.getInstallmentNumber().equals(this.installmentNumber)
+                            && data.getChargeId().equals(installmentCharge.getLoanCharge().getId())) {
+                        amountPaidByOriginalTransaction = amountPaidByOriginalTransaction.plus(data.getAmount());
+                    }
+                }
+                if (amountPaidByOriginalTransaction.isGreaterThanZero()) {
+                    feeChargesDue = amountPaidByOriginalTransaction;
+                } else {
+                    feeChargesDue = Money.zero(currency);
+                }
+            }
+        }
+        ///////////////
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(feeChargesDue)) {
             if (isWriteOffTransaction) {
                 this.feeChargesWrittenOff = getFeeChargesWrittenOff(currency).plus(feeChargesDue).getAmount();

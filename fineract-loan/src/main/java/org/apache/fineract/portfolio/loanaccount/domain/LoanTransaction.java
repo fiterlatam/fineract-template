@@ -32,6 +32,7 @@ import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.portfolio.account.data.AccountTransferData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
@@ -158,6 +159,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     private boolean doNotProcessAdvanceInstallments;
 
     protected LoanTransaction() {}
+
+    @Transient
+    List<LoanChargePaidByData> chargesPaidByOriginalTransaction;
 
     public static LoanTransaction incomePosting(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
             final BigDecimal interestPortion, final BigDecimal feeChargesPortion, final BigDecimal penaltyChargesPortion,
@@ -321,6 +325,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         newTransaction.loanScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();
         newTransaction.setClaimType(loanTransaction.claimType());
         newTransaction.setRecalculateEMI(loanTransaction.recalculateEMI());
+
+        // SU-533 set amounts paid by original transaction so that copied transaction also pays the same amounts
+        // to avoid rollbacks
+        newTransaction.setChargesPaidByOriginalTransaction(getLoanChargePaidByDataList(loanTransaction.getLoanChargesPaid()));
         return newTransaction;
     }
 
@@ -1143,5 +1151,23 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     // TODO missing hashCode(), equals(Object obj), but probably OK as long as
     // this is never stored in a Collection.
+
+    public List<LoanChargePaidByData> chargesPaidByOriginalTransaction() {
+        return Objects.requireNonNullElseGet(this.chargesPaidByOriginalTransaction, ArrayList::new);
+    }
+
+    public void setChargesPaidByOriginalTransaction(List<LoanChargePaidByData> chargesPaidByOriginalTransaction) {
+        this.chargesPaidByOriginalTransaction = chargesPaidByOriginalTransaction;
+    }
+
+    private static List<LoanChargePaidByData> getLoanChargePaidByDataList(Set<LoanChargePaidBy> originalList) {
+        List<LoanChargePaidByData> list = new ArrayList<>();
+        if (originalList != null && !originalList.isEmpty()) {
+            for (LoanChargePaidBy paidBy : originalList) {
+                list.add(new LoanChargePaidByData(paidBy));
+            }
+        }
+        return list;
+    }
 
 }

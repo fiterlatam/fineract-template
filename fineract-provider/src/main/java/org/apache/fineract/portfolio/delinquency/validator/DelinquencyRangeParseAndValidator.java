@@ -73,7 +73,7 @@ public class DelinquencyRangeParseAndValidator extends ParseAndValidator {
         dataValidator.reset().parameter(DelinquencyApiConstants.MAXIMUMAGEDAYS_PARAM_NAME).value(maximumAge).ignoreIfNull()
                 .integerGreaterThanNumber(0);
         dataValidator.reset().parameter(DelinquencyApiConstants.PERCENTAGEVALUE).value(percentageValue).ignoreIfNull()
-                .integerGreaterThanNumber(0);
+                .integerEqualToOrGreaterThanNumber(0);
 
         return dataValidator.hasError() ? null : DelinquencyRangeData.instance(classification, minimumAge, maximumAge, percentageValue);
     }
