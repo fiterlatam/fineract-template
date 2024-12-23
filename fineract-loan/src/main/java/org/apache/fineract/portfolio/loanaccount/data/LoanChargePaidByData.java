@@ -19,9 +19,14 @@
 package org.apache.fineract.portfolio.loanaccount.data;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanChargePaidBy;
 
 @Getter
 @Setter
@@ -39,5 +44,15 @@ public class LoanChargePaidByData {
     private BigDecimal aval;
     private BigDecimal hono;
     private BigDecimal penalty;
+    private boolean penaltyCharge;
 
+    public LoanChargePaidByData(LoanChargePaidBy originalData) {
+        this.id = originalData.getId();
+        this.amount = originalData.getAmount();
+        this.installmentNumber = originalData.getInstallmentNumber();
+        this.chargeId = originalData.getLoanCharge().getId();
+        this.transactionId = originalData.getLoanTransaction().getId();
+        this.penaltyCharge = originalData.getLoanCharge().isPenaltyCharge();
+        this.name = "";
+    }
 }
