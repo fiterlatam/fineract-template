@@ -21,8 +21,7 @@ public class InterestRate extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Column(name = "name")
     private String name;
-
-    @Column(name = "current_rate")
+    @Column(name = "current_rate", scale = 8, precision = 10, nullable = false)
     private BigDecimal currentRate;
 
     @Column(name = "appliedon_date")
