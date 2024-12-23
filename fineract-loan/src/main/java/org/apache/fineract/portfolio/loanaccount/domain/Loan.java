@@ -1195,6 +1195,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 numberOfRepayments = numberOfRepayments - graceInstallments.size();
             }
             BigDecimal numberOfInstallments = BigDecimal.valueOf(numberOfRepayments);
+            if (numberOfInstallments.compareTo(BigDecimal.ZERO) == 0) {
+                // Skip further processing if the value is 0
+                return BigDecimal.ZERO;
+            }
             BigDecimal computedAmount = LoanCharge.percentageOf(percentOf.getAmount(), percentage);
             BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 0, RoundingMode.HALF_UP);
             amount = amount.plus(finalAmount);
@@ -1266,7 +1270,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
             BigDecimal numberOfInstallments = BigDecimal.valueOf(numberOfRepayments);
             BigDecimal computedAmount = LoanCharge.percentageOf(percentOf.getAmount(), percentage);
-            BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 0, RoundingMode.HALF_UP);
+            BigDecimal finalAmount = computedAmount;
+            if (numberOfInstallments.compareTo(BigDecimal.ZERO) > 0) {
+                finalAmount = computedAmount.divide(numberOfInstallments, 0, RoundingMode.HALF_UP);
+            }
+
             amount = amount.plus(finalAmount);
         } else if (calculationType.isPercentageOfAnotherCharge() && calculationType.equals(ChargeCalculationType.ACHG)) { // Term/VAT
                                                                                                                           // on
