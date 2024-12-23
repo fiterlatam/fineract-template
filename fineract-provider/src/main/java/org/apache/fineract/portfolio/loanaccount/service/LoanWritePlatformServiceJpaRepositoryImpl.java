@@ -1375,24 +1375,52 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     private void createNoveltyNews(Loan loan, LocalDate transactionDate, InsuranceIncidentType incidentType) {
         // Fetch the Insurance Incident based on the provided type
+        InsuranceIncident incident = fetchValidIncident(incidentType);
+
+        if (incidentType == InsuranceIncidentType.DEFINITIVE_RESTRUCTURING_CANCELLATION) {
+            handleDefinitiveRestructuringCancellation(loan, incident, transactionDate);
+        } else {
+            processLoanChargesForNoveltyNews(loan, incident, transactionDate);
+        }
+    }
+
+    private InsuranceIncident fetchValidIncident(InsuranceIncidentType incidentType) {
         InsuranceIncident incident = this.insuranceIncidentRepository.findByIncidentType(incidentType);
-        if (incident == null || (!incident.isValid())) {
+        if (incident == null || !incident.isValid()) {
             throw new InsuranceIncidentNotFoundException(incidentType.name());
         }
+        return incident;
+    }
 
-        // Iterate through loan charges and create novelty news as needed
+    private void handleDefinitiveRestructuringCancellation(Loan loan, InsuranceIncident incident, LocalDate transactionDate) {
+        boolean doesIncidentExist = this.insuranceIncidentNoveltyNewsRepository.existsByLoanAndIncident(loan.getId(), incident.getId());
+        if (!doesIncidentExist) {
+            LoanCharge loanCharge = loan.getLoanCharges().stream()
+                    .filter(charge -> isChargeEligibleForNoveltyNews(charge, loan.getCurrency(), incident)).findFirst().orElse(null);
+            if (loanCharge == null) {
+                log.warn("No loan charge found for loan with id: {} and incident type: {}", loan.getId(), incident.getIncidentType());
+                return;
+            }
+            InsuranceIncidentNoveltyNews noveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, null, incident,
+                    transactionDate, BigDecimal.ZERO);
+            this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(noveltyNews);
+        }
+    }
+
+    private void processLoanChargesForNoveltyNews(Loan loan, InsuranceIncident incident, LocalDate transactionDate) {
         for (LoanCharge loanCharge : loan.getCharges()) {
-            if (loanCharge.getAmountOutstanding(loan.getCurrency()).isGreaterThanZero()) {
-                if ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
-                        || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance())) {
-                    BigDecimal cumulative = BigDecimal.ZERO;
-                    InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge,
-                            null, incident, transactionDate, cumulative);
-
-                    this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
-                }
+            if (isChargeEligibleForNoveltyNews(loanCharge, loan.getCurrency(), incident)) {
+                InsuranceIncidentNoveltyNews noveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, null, incident,
+                        transactionDate, BigDecimal.ZERO);
+                this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(noveltyNews);
             }
         }
+    }
+
+    private boolean isChargeEligibleForNoveltyNews(LoanCharge loanCharge, MonetaryCurrency currency, InsuranceIncident incident) {
+        return loanCharge.getAmountOutstanding(currency).isGreaterThanZero()
+                && ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
+                        || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance()));
     }
 
     private ChannelData validateRepaymentChannel(final String channelName, final LoanProduct loanProduct) {

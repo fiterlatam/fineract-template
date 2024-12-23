@@ -28,4 +28,8 @@ public interface InsuranceIncidentNoveltyNewsRepository
 
     @Query(nativeQuery = true, value = "select * from m_insurance_novelty_news where loan_id = ?1 and novelty_id in (?2, ?3) order by id desc limit 1")
     Optional<InsuranceIncidentNoveltyNews> findLastSuspensionIfPresent(Long loanId, Long suspensionId, Long suspensionExitId);
+
+    @Query(nativeQuery = true, value = "select exists (select 1 from m_insurance_novelty_news where loan_id = ?1 and novelty_id = ?2)")
+    boolean existsByLoanAndIncident(Long loanId, Long noveltyId);
+
 }
