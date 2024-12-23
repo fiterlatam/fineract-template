@@ -162,4 +162,6 @@ public interface ConfigurationDomainService {
 
     Integer retriveIvaConfiguration();
 
+    LocalDate retrievePenaltyStartDate();
+
 }
