@@ -903,11 +903,12 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public Money payLoanCharge(LoanInstallmentCharge installmentCharge, final LocalDate transactionDate,
-                               final Money transactionAmountRemaining, final MonetaryCurrency currency, Money feePortionOfTransaction,
-                               final boolean isWriteOffTransaction, Money loanChargePaidByPortion) {
+            final Money transactionAmountRemaining, final MonetaryCurrency currency, Money feePortionOfTransaction,
+            final boolean isWriteOffTransaction, Money loanChargePaidByPortion) {
         return payLoanCharge(installmentCharge, transactionDate, transactionAmountRemaining, currency, feePortionOfTransaction,
-        isWriteOffTransaction, loanChargePaidByPortion, null);
+                isWriteOffTransaction, loanChargePaidByPortion, null);
     }
+
     public Money payLoanCharge(LoanInstallmentCharge installmentCharge, final LocalDate transactionDate,
             final Money transactionAmountRemaining, final MonetaryCurrency currency, Money feePortionOfTransaction,
             final boolean isWriteOffTransaction, Money loanChargePaidByPortion, LoanTransaction loanTransaction) {
@@ -930,15 +931,19 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
         ///////////////
         // SU-533 Avoid reprocessing of transaction paying different amount than originally paid.
-        // Fineract by default considers a charge amount will never increase over time for an installment but in hono and penalty case
-        // charge amount increases every day for penalty and on transaction for hono. When reprocessing the transactions the original
-        // paid amount becomes different than the updated amount and hence the transaction is rollbacked. Below code is to avoid this rollback
+        // Fineract by default considers a charge amount will never increase over time for an installment but in hono
+        /////////////// and penalty case
+        // charge amount increases every day for penalty and on transaction for hono. When reprocessing the transactions
+        /////////////// the original
+        // paid amount becomes different than the updated amount and hence the transaction is rollbacked. Below code is
+        /////////////// to avoid this rollback
         if (loanTransaction != null) {
             List<LoanChargePaidByData> paidByOriginalTransactionList = loanTransaction.chargesPaidByOriginalTransaction();
             Money amountPaidByOriginalTransaction = Money.zero(currency);
             if (!paidByOriginalTransactionList.isEmpty()) {
                 for (LoanChargePaidByData data : paidByOriginalTransactionList) {
-                    if (!data.isPenaltyCharge() && data.getInstallmentNumber().equals(this.installmentNumber) && data.getChargeId().equals(installmentCharge.getLoanCharge().getId())) {
+                    if (!data.isPenaltyCharge() && data.getInstallmentNumber().equals(this.installmentNumber)
+                            && data.getChargeId().equals(installmentCharge.getLoanCharge().getId())) {
                         amountPaidByOriginalTransaction = amountPaidByOriginalTransaction.plus(data.getAmount());
                     }
                 }

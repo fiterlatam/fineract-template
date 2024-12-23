@@ -325,9 +325,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         newTransaction.loanScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();
         newTransaction.setClaimType(loanTransaction.claimType());
         newTransaction.setRecalculateEMI(loanTransaction.recalculateEMI());
-	
-	// SU-533 set amounts paid by original transaction so that copied transaction also pays the same amounts
-	// to avoid rollbacks
+
+        // SU-533 set amounts paid by original transaction so that copied transaction also pays the same amounts
+        // to avoid rollbacks
         newTransaction.setChargesPaidByOriginalTransaction(getLoanChargePaidByDataList(loanTransaction.getLoanChargesPaid()));
         return newTransaction;
     }
