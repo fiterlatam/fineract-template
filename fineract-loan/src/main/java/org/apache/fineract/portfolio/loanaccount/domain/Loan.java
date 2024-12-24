@@ -1179,11 +1179,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     private BigDecimal calculatePerInstallmentChargeAmount(final LoanCharge loanCharge) {
         return calculatePerInstallmentChargeAmount(loanCharge.getChargeCalculation(), loanCharge.getPercentage(),
-                loanCharge.amountOrPercentage(), loanCharge.getCharge().getParentChargeId());
+                loanCharge.amountOrPercentage(), loanCharge.getCharge().getParentChargeId(), loanCharge);
     }
 
     public BigDecimal calculatePerInstallmentChargeAmount(final ChargeCalculationType calculationType, final BigDecimal percentage,
-            BigDecimal chargeAmount, Long parentChargeId) {
+            BigDecimal chargeAmount, Long parentChargeId, LoanCharge loanCharge) {
         Money amount = Money.zero(getCurrency());
         if (calculationType.isCustomPercentageBasedDistributedCharge()) { // Disbursement based mandatory insurance or
                                                                           // aval
@@ -1207,7 +1207,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         this.outstandingBalance = this.loanRepaymentScheduleDetail.getPrincipal();
         List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallmentsIgnoringTotalGrace();
         for (final LoanRepaymentScheduleInstallment installment : installments) {
-            amount = amount.plus(calculateInstallmentChargeAmount(calculationType, percentage, installment, chargeAmount, parentChargeId));
+            amount = amount.plus(
+                    calculateInstallmentChargeAmount(calculationType, percentage, installment, chargeAmount, parentChargeId, loanCharge));
         }
         return amount.getAmount();
     }
@@ -1226,7 +1227,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     private Money outstandingBalance = null;
 
     private Money calculateInstallmentChargeAmount(final ChargeCalculationType calculationType, final BigDecimal percentage,
-            final LoanRepaymentScheduleInstallment installment, BigDecimal chargeAmount, Long parentChargeId) {
+            final LoanRepaymentScheduleInstallment installment, BigDecimal chargeAmount, Long parentChargeId, LoanCharge loanCharge) {
         Money amount = Money.zero(getCurrency());
         Money percentOf = Money.zero(getCurrency());
         switch (calculationType) {
@@ -1279,7 +1280,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         } else if (calculationType.isPercentageOfAnotherCharge() && calculationType.equals(ChargeCalculationType.ACHG)) { // Term/VAT
                                                                                                                           // on
                                                                                                                           // insurance
-            amount = amount.plus(percentOf.getAmount().multiply(percentage).divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP));
+            if (loanCharge != null && loanCharge.isVatChargeOfHonoCharge()) {
+                amount = amount.plus(Money.of(getCurrency(), loanCharge.getVatAmountOfHonoCharge(installment.getInstallmentNumber())));
+            } else {
+                amount = amount.plus(percentOf.getAmount().multiply(percentage).divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP));
+            }
         } else if (calculationType.isCustomPercentageOfOutstandingPrincipalCharge()) {
             Integer numberOfRepayments = this.getLoanProductRelatedDetail().getNumberOfRepayments();
             List<LoanRepaymentScheduleInstallment> graceInstallments = this.getRepaymentScheduleInstallments().stream()
@@ -5834,7 +5839,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     }
                 } else {
                     amount = calculateInstallmentChargeAmount(loanCharge.getChargeCalculation(), loanCharge.getPercentage(), installment,
-                            loanCharge.amountOrPercentage(), loanCharge.getCharge().getParentChargeId()).getAmount();
+                            loanCharge.amountOrPercentage(), loanCharge.getCharge().getParentChargeId(), loanCharge).getAmount();
                 }
                 if (((loanCharge.isCustomFlatDistributedCharge() || loanCharge.isCustomPercentageBasedDistributedCharge()
                         || loanCharge.isCustomPercentageOfOutstandingPrincipalCharge())

@@ -641,7 +641,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     loanCharge = BigDecimal.ZERO;
                     if (isInstalmentFee()) {
                         loanCharge = this.loan.calculatePerInstallmentChargeAmount(ChargeCalculationType.fromInt(this.chargeCalculation),
-                                this.percentage, this.amountOrPercentage, this.getCharge().getParentChargeId());
+                                this.percentage, this.amountOrPercentage, this.getCharge().getParentChargeId(), this);
                     }
                     if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
                         loanCharge = percentageOf(this.amountPercentageAppliedTo);
