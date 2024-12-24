@@ -493,7 +493,7 @@ public class LoanChargeAssembler {
             } else {
                 loanCharge = loan.calculatePerInstallmentChargeAmount(
                         ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()), percentage, null,
-                        chargeDefinition.getParentChargeId());
+                        chargeDefinition.getParentChargeId(), null);
             }
         }
 
