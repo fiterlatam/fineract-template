@@ -1207,7 +1207,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         this.outstandingBalance = this.loanRepaymentScheduleDetail.getPrincipal();
         List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallmentsIgnoringTotalGrace();
         for (final LoanRepaymentScheduleInstallment installment : installments) {
-            amount = amount.plus(calculateInstallmentChargeAmount(calculationType, percentage, installment, chargeAmount, parentChargeId, loanCharge));
+            amount = amount.plus(
+                    calculateInstallmentChargeAmount(calculationType, percentage, installment, chargeAmount, parentChargeId, loanCharge));
         }
         return amount.getAmount();
     }
