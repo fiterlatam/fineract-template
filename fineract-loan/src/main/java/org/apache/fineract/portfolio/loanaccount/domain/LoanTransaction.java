@@ -163,6 +163,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Transient
     List<LoanChargePaidByData> chargesPaidByOriginalTransaction;
 
+    @Transient
+    private BigDecimal interestPaidByOriginalTransaction;
+
     public static LoanTransaction incomePosting(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
             final BigDecimal interestPortion, final BigDecimal feeChargesPortion, final BigDecimal penaltyChargesPortion,
             final ExternalId externalId) {
@@ -329,6 +332,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         // SU-533 set amounts paid by original transaction so that copied transaction also pays the same amounts
         // to avoid rollbacks
         newTransaction.setChargesPaidByOriginalTransaction(getLoanChargePaidByDataList(loanTransaction.getLoanChargesPaid()));
+        newTransaction.setInterestPaidByOriginalTransaction(loanTransaction.getInterestPortion());
         return newTransaction;
     }
 
@@ -1158,6 +1162,14 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setChargesPaidByOriginalTransaction(List<LoanChargePaidByData> chargesPaidByOriginalTransaction) {
         this.chargesPaidByOriginalTransaction = chargesPaidByOriginalTransaction;
+    }
+
+    public BigDecimal interestPaidByOriginalTransaction() {
+        return Objects.requireNonNullElse(interestPaidByOriginalTransaction, BigDecimal.ZERO);
+    }
+
+    public void setInterestPaidByOriginalTransaction(BigDecimal interestPaidByOriginalTransaction) {
+        this.interestPaidByOriginalTransaction = interestPaidByOriginalTransaction;
     }
 
     private static List<LoanChargePaidByData> getLoanChargePaidByDataList(Set<LoanChargePaidBy> originalList) {
