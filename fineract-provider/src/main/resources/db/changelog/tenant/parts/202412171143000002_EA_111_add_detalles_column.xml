@@ -132,21 +132,4 @@
         <modifyDataType tableName="m_interest_rate" columnName="current_rate" newDataType="DECIMAL(10,8)"/>
     </changeSet>
 
-    <changeSet author="bosco@fiter.io" id="add_sMLV_seqence_configuration" context="postgresql">
-        <sql>
-            SELECT SETVAL('c_configuration_id_seq', COALESCE(MAX(id), 0)+1, false ) FROM c_configuration;
-        </sql>
-    </changeSet>
-    <changeSet author="bosco@fiter.io" id="create-c_configuration-SMLV">
-        <insert tableName="c_configuration">
-            <column name="name" value="SMLV"/>
-            <column name="value" valueNumeric="1300"/>
-            <column name="date_value"/>
-            <column name="string_value"/>
-            <column name="enabled" valueBoolean="true"/>
-            <column name="is_trap_door" valueBoolean="false"/>
-            <column name="description" value="Salario Minimo Legal Vigente"/>
-        </insert>
-    </changeSet>
-
 </databaseChangeLog>
