@@ -481,7 +481,7 @@ from m_loan_repayment_schedule mlrs join m_loan_transaction mlt on mlrs.id = mlt
 where mlrs.completed_derived = true
 
 
--- Update loan balance in transactions (took about 7 minutes for 25K loans)
+-- Update loan balance in transactions (took about 7 minutes for 25K loans; took 27 minutes for 200K loans)
 UPDATE m_loan_transaction lt
 SET outstanding_loan_balance_derived = (
     SELECT ml.principal_disbursed_derived - COALESCE(SUM(lt2.principal_portion_derived), 0)
@@ -576,3 +576,28 @@ set amount_paid_derived = (select sum(amount_paid_derived) from m_loan_installme
 update m_loan_charge
 set amount_outstanding_derived = amount - amount_paid_derived
 where amount_paid_derived is not null;
+
+-- insert honorarios
+INSERT INTO public.m_loan_charge
+(loan_id, charge_id, is_penalty, charge_time_enum, due_for_collection_as_of_date, charge_calculation_enum, charge_payment_mode_enum, calculation_percentage, calculation_on_amount, charge_amount_or_percentage, amount, amount_outstanding_derived, is_paid_derived, is_active, submitted_on_date, applicable_from_installment, created_on_utc, last_modified_on_utc, created_by, last_modified_by)
+select ml.id loan_id, mc.id charge_id, mc.is_penalty, mc.charge_time_enum, null::date due_for_collection_as_of_date, mc.charge_calculation_enum, mc.charge_payment_mode_enum, NULL::numeric calculation_percentage, NULL::numeric calculation_on_amount, 0 charge_amount_or_percentage, 0 amount, 0 amount_outstanding_derived, true is_paid_derived, true is_active, ml.disbursedon_date submitted_on_date, 1 applicable_from_installment, ml.disbursedon_date created_on_utc, ml.disbursedon_date last_modified_on_utc, 1 created_by, 1 last_modified_by from m_loan ml
+join m_charge mc on mc.charge_calculation_enum = 1009
+where ml.id not in (select loan_id from m_loan_charge mlc where mlc.charge_id = mc.id)
+and ml.loan_status_id = 300
+
+-- insert iva honorarios (assumption here is that there's only one Honorarios charge)
+INSERT INTO public.m_loan_charge
+(loan_id, charge_id, is_penalty, charge_time_enum, due_for_collection_as_of_date, charge_calculation_enum, charge_payment_mode_enum, calculation_percentage, calculation_on_amount, charge_amount_or_percentage, amount, amount_outstanding_derived, is_paid_derived, is_active, submitted_on_date, applicable_from_installment, created_on_utc, last_modified_on_utc, created_by, last_modified_by)
+select ml.id loan_id, mc.id charge_id, mc.is_penalty, mc.charge_time_enum, null::date due_for_collection_as_of_date, mc.charge_calculation_enum, mc.charge_payment_mode_enum, mc.amount calculation_percentage, ml.principal_amount calculation_on_amount, mc.amount charge_amount_or_percentage, 0 amount, 0 amount_outstanding_derived, false is_paid_derived, true is_active, ml.disbursedon_date submitted_on_date, 1 applicable_from_installment, ml.disbursedon_date created_on_utc, ml.disbursedon_date last_modified_on_utc, 1 created_by, 1 last_modified_by from m_loan ml
+join m_charge mc on mc.parent_charge_id = (select id from m_charge where charge_calculation_enum = 1009)
+where ml.id not in (select loan_id from m_loan_charge mlc where mlc.charge_id = mc.id)
+and ml.loan_status_id = 300
+
+-- insert m_loan_installment_charge for honorarios charges
+INSERT INTO m_loan_installment_charge
+(loan_charge_id, loan_schedule_id, due_date, amount)
+select mlc.id loan_charge_id, mlrs.id loan_schedule_id, null::date due_date, 0 amount from m_loan ml join m_loan_charge mlc on ml.id = mlc.loan_id
+join m_loan_repayment_schedule mlrs on ml.id = mlrs.loan_id
+where mlc.charge_id in (3,4)
+and mlc.id not in (select loan_charge_id from m_loan_installment_charge where loan_charge_id = mlc.id and loan_schedule_id = mlrs.id)
+order by mlc.id, mlrs.installment;
