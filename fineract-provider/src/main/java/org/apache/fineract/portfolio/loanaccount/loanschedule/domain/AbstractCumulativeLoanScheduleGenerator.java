@@ -388,7 +388,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             }
             ////////////
 
-            if (!isMidTermRescheduling) {
+            if (!isMidTermRescheduling || loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment().isEmpty()) {
 
                 if (annualNominalInterestRate.compareTo(BigDecimal.valueOf(100)) > 0) {
                     loanApplicationTerms.setAnnualNominalInterestRate(annualNominalInterestRate);

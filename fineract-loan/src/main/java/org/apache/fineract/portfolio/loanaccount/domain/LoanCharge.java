@@ -399,7 +399,12 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 numberOfRepayments = numberOfRepayments - (this.applicableFromInstallment - 1);
             }
         }
-        this.amountOrPercentage = amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
+        if (numberOfRepayments == 0) {
+            this.amountOrPercentage = BigDecimal.ZERO;
+        } else {
+            this.amountOrPercentage = amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
+        }
+
         if (this.getChargeCalculation().isFlatMandatoryInsurance()) {
             this.amountOrPercentage = this.amountOrPercentage.setScale(0, RoundingMode.DOWN);
         }
