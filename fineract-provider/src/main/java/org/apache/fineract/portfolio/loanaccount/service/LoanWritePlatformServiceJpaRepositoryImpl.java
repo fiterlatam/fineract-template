@@ -729,12 +729,15 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (minimumDaysInArrearsToSuspendLoanAccount == null) {
             minimumDaysInArrearsToSuspendLoanAccount = 90L;
         }
-        final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loan.getId());
-        final Long daysInArrears = collectionData.getPastDueDays();
-        if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
-            loan.retrieveListOfAccrualTransactions().forEach(LoanTransaction::markAsOccurredOnSuspendedAccount);
-            loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+
+        for (LoanTransaction transaction : loan.retrieveListOfAccrualTransactions()) {
+            long days = loan.getDisburseDonDate().until(transaction.getTransactionDate(), ChronoUnit.DAYS);
+            if (days >= minimumDaysInArrearsToSuspendLoanAccount) {
+                transaction.markAsOccurredOnSuspendedAccount();
+            }
         }
+        loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(loan.getId()) //
