@@ -56,6 +56,12 @@ import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.account.service.AccountTransfersWritePlatformService;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncident;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentNoveltyNews;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentNoveltyNewsRepository;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentRepository;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentType;
+import org.apache.fineract.portfolio.insurance.exception.InsuranceIncidentNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
@@ -122,6 +128,8 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
     private final LoanReadPlatformService loanReadPlatformService;
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
     private final LoanTermVariationsRepository loanTermVariationsRepository;
+    private final InsuranceIncidentRepository insuranceIncidentRepository;
+    private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
 
     /**
      * create a new instance of the LoanRescheduleRequest object from the JsonCommand object and persist
@@ -609,6 +617,8 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 // Trigger transaction replayed event
                 replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
             }
+            // we need to create Novedad rediferido once the loan is rescheduled
+            createRediferidoNovelty(loan);
             loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             // update the loan object
             postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
@@ -628,6 +638,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             return new CommandProcessingResultBuilder().withCommandId(jsonCommand.commandId()).withEntityId(loanRescheduleRequestId)
                     .withLoanId(loanRescheduleRequest.getLoan().getId()).with(changes).withClientId(loan.getClientId())
                     .withOfficeId(loan.getOfficeId()).withGroupId(loan.getGroupId()).build();
+
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             // handle the data integrity violation
             handleDataIntegrityViolation(dve);
@@ -742,5 +753,26 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
         LOG.error("Error occured.", dve);
         throw ErrorHandler.getMappable(dve, "error.msg.loan.reschedule.unknown.data.integrity.issue",
                 "Unknown data integrity issue with resource.");
+    }
+
+    private void createRediferidoNovelty(Loan loan) {
+        InsuranceIncidentType incidentType = InsuranceIncidentType.NOVEDAD_REDIFERIDO;
+        InsuranceIncident incident = this.insuranceIncidentRepository.findByIncidentType(incidentType);
+        if (incident == null || !incident.isValid()) {
+            throw new InsuranceIncidentNotFoundException(incidentType.name());
+        }
+        final LocalDate incidentDate = DateUtils.getBusinessLocalDate();
+        MonetaryCurrency currency = loan.getCurrency();
+        for (LoanCharge loanCharge : loan.getCharges()) {
+            boolean isChargeEligibleForNoveltyNews = loanCharge.getAmountOutstanding(currency).isGreaterThanZero()
+                    && ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
+                            || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance()));
+
+            if (isChargeEligibleForNoveltyNews) {
+                InsuranceIncidentNoveltyNews noveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, null, incident,
+                        incidentDate, BigDecimal.ZERO);
+                this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(noveltyNews);
+            }
+        }
     }
 }
