@@ -118,4 +118,32 @@
         </sql>
     </changeSet>
 
+    <changeSet id="5" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists tableName="Detalles de Contacto" indexName="Detalles de Contacto_pkey"/>
+            </not>
+            <tableExists tableName="Detalles de Contacto"/>
+        </preConditions>
+        <sql>
+            <![CDATA[
+                CREATE UNIQUE INDEX "Detalles de Contacto_pkey" ON "Detalles de Contacto" USING btree (client_id);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="6" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists tableName="Detalles_de_Contacto" indexName="Detalles_de_Contacto_pkey"/>
+            </not>
+            <tableExists tableName="Detalles_de_Contacto"/>
+        </preConditions>
+        <sql>
+            <![CDATA[
+                CREATE UNIQUE INDEX "Detalles_de_Contacto_pkey" ON "Detalles_de_Contacto" USING btree (client_id);
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
