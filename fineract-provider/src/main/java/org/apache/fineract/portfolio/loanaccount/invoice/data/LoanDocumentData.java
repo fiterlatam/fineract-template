@@ -21,12 +21,12 @@ package org.apache.fineract.portfolio.loanaccount.invoice.data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Objects;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicaMensual;
@@ -153,7 +153,8 @@ public class LoanDocumentData {
         }
 
         // INFORMATION AT COMPANY LEVEL
-        final String taxInformation = "RESPONSABLE DEL IVA.  No Somos Grandes Contribuyentes. Autorretenedores Renta según Resol. No. 04314 may 16 de 20028.  Auterretenedores especiales según Decreto No. 2201 dic 30 de 2016.  Autorretenedores de ICA según Resol. No. 202150186360 del 22 de dic de 2021 Medellín.";
+        final String taxInformation = StringUtils.stripAccents(
+                "RESPONSABLE DEL IVA.  No Somos Grandes Contribuyentes. Autorretenedores Renta según Resol. No. 04314 may 16 de 20028.  Auterretenedores especiales según Decreto No. 2201 dic 30 de 2016.  Autorretenedores de ICA según Resol. No. 202150186360 del 22 de dic de 2021 Medellín.");
         facturaElectronicaMensual.setInf_tributaria(taxInformation);
         facturaElectronicaMensual.setCantidad(BigDecimal.ONE);
         if (LegalForm.fromInt(this.clientLegalForm).isEntity()) {
@@ -197,7 +198,8 @@ public class LoanDocumentData {
 
         // SU+ Constant Fields
         facturaElectronicaMensual.setNit_emisor("800139398-6");
-        facturaElectronicaMensual.setNom_emisor("Intercrédito de Colombia S.A.S");
+        String companyName = StringUtils.stripAccents("Intercrédito de Colombia S.A.S");
+        facturaElectronicaMensual.setNom_emisor(companyName);
 
         // Static values for specified fields
         facturaElectronicaMensual.setCod_pais_tienda("CO");
@@ -224,7 +226,12 @@ public class LoanDocumentData {
 
         private final String code;
     }
-    private String getFirstNameAndMiddleName(){
-        return String.format("%s %s", Objects.toString(this.clientFirstName,""), Objects.toString(this.clientMiddleName,""));
+
+    private String getFirstNameAndMiddleName() {
+        if (StringUtils.isAllBlank(this.clientFirstName, this.clientMiddleName)) {
+            return StringUtils.stripAccents(this.clientDisplayName);
+        }
+        return StringUtils.stripAccents(
+                String.format("%s %s", Objects.toString(this.clientFirstName, ""), Objects.toString(this.clientMiddleName, "")));
     }
 }

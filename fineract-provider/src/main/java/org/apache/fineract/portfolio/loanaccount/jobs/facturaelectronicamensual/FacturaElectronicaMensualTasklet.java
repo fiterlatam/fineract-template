@@ -135,6 +135,8 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                                     .clientCedula(loanDocumentData.getClientCedula()).clientAddress(loanDocumentData.getClientAddress())
                                     .clientCityCode(loanDocumentData.getClientCityCode())
                                     .clientCityName(loanDocumentData.getClientCityName())
+                                    .clientFirstName(loanDocumentData.getClientFirstName())
+                                    .clientMiddleName(loanDocumentData.getClientMiddleName())
                                     .clientTelephone(loanDocumentData.getClientTelephone()).build();
                         })))
                 .values().stream().toList();
@@ -584,9 +586,9 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                     .totalPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalPaid"))
                     .mandatoryInsuranceCode(rs.getString("mandatoryInsuranceCode"))
                     .voluntaryInsuranceCode(rs.getString("voluntaryInsuranceCode"))
-                    .voluntaryInsuranceName(rs.getString("voluntaryInsuranceName"))
-                    .clientFirstName(rs.getString("clientFirstName")).clientMiddleName(rs.getString("clientMiddleName"))
-                    .mandatoryInsuranceName(rs.getString("mandatoryInsuranceName")).build();
+                    .voluntaryInsuranceName(rs.getString("voluntaryInsuranceName")).clientFirstName(rs.getString("clientFirstName"))
+                    .clientMiddleName(rs.getString("clientMiddleName")).mandatoryInsuranceName(rs.getString("mandatoryInsuranceName"))
+                    .build();
         }
     }
 
