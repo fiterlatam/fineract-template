@@ -359,6 +359,8 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         	mc.id AS "clientId",
                         	mc.legal_form_enum AS "clientLegalForm",
                         	ml.id AS "loanId",
+                        	mc.firstname AS "clientFirstName",
+                        	mc.middlename AS "clientMiddleName",
                         	mc.display_name AS "clientDisplayName",
                         	mc.lastname AS "clientLastName",
                         	mlaa.overdue_since_date_derived AS "overdueSinceDate",
