@@ -20,6 +20,8 @@ package org.apache.fineract.portfolio.loanaccount.invoice.data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Objects;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -45,6 +47,8 @@ public class LoanDocumentData {
     private Long productTypeId;
     private String productTypeName;
     private String clientDisplayName;
+    private String clientFirstName;
+    private String clientMiddleName;
     private String clientLastName;
     private String clientEmailAddress;
     private String clientIdNumber;
@@ -153,26 +157,14 @@ public class LoanDocumentData {
         facturaElectronicaMensual.setInf_tributaria(taxInformation);
         facturaElectronicaMensual.setCantidad(BigDecimal.ONE);
         if (LegalForm.fromInt(this.clientLegalForm).isEntity()) {
-            final String companyCountryCode = "CO";
-            final String companyCountryName = "COLOMBIA";
             if ("NIT".equalsIgnoreCase(this.companyDocType)) {
                 facturaElectronicaMensual.setTipo_docid("31");
             } else {
                 facturaElectronicaMensual.setTipo_docid("13");
             }
-            facturaElectronicaMensual.setCod_pais_tienda(companyCountryCode);
-            facturaElectronicaMensual.setNom_pais_tienda(companyCountryName);
-            facturaElectronicaMensual.setDep_tienda(this.companyDeptCode);
-            facturaElectronicaMensual.setNom_dep_tienda(this.companyDeptName);
-            facturaElectronicaMensual.setCod_mun_tienda("05001");
-            facturaElectronicaMensual.setCiudad_tienda(this.companyCityName);
-            facturaElectronicaMensual.setDireccion_tienda(this.companyAddress);
-            facturaElectronicaMensual.setEmail_tienda(this.clientEmailAddress);
             facturaElectronicaMensual.setTipo_pers(1L);
-            facturaElectronicaMensual.setCodigopostal(this.companyCityCode);
-            facturaElectronicaMensual.setEmail(this.clientEmailAddress);
             facturaElectronicaMensual.setId_cliente(this.clientIdNumber);
-            facturaElectronicaMensual.setNombre_cliente(this.clientDisplayName);
+            facturaElectronicaMensual.setNombre_cliente(this.getFirstNameAndMiddleName());
         }
 
         // INFORMATION AT INDIVIDUAL CLIENT LEVEL
@@ -180,7 +172,7 @@ public class LoanDocumentData {
             facturaElectronicaMensual.setId_cliente(this.clientIdNumber);
             facturaElectronicaMensual.setTipo_docid("13");
             facturaElectronicaMensual.setTipo_pers(2L);
-            facturaElectronicaMensual.setNombre_cliente(this.clientDisplayName);
+            facturaElectronicaMensual.setNombre_cliente(this.getFirstNameAndMiddleName());
             facturaElectronicaMensual.setApellido_cliente(this.clientLastName);
             facturaElectronicaMensual.setDireccion(this.clientAddress);
             facturaElectronicaMensual.setCiudad(this.clientCityName);
@@ -201,13 +193,23 @@ public class LoanDocumentData {
         facturaElectronicaMensual.setVal_dto(this.totalPaid);
         facturaElectronicaMensual.setTotal(this.totalPaid);
         facturaElectronicaMensual.setLoan_transaction_id(this.loanTransactionId);
-        facturaElectronicaMensual.setTel_tienda("018000187373");
         facturaElectronicaMensual.setTelefono(this.clientTelephone);
 
-        /** SU+ Constant Fields **/
+        // SU+ Constant Fields
         facturaElectronicaMensual.setNit_emisor("800139398-6");
         facturaElectronicaMensual.setNom_emisor("Intercrédito de Colombia S.A.S");
-        facturaElectronicaMensual.setNombre_tienda("Intercrédito de Colombia S.A.S");
+
+        // Static values for specified fields
+        facturaElectronicaMensual.setCod_pais_tienda("CO");
+        facturaElectronicaMensual.setNom_pais_tienda("COLOMBIA");
+        facturaElectronicaMensual.setDep_tienda("5");
+        facturaElectronicaMensual.setNom_dep_tienda("ANTIOQUIA");
+        facturaElectronicaMensual.setCod_mun_tienda("5001");
+        facturaElectronicaMensual.setCiudad_tienda("MEDELLIN");
+        facturaElectronicaMensual.setDireccion_tienda("Calle 4 SUR 43AA 30 OFICINA 901");
+        facturaElectronicaMensual.setTel_tienda("18000187373");
+        facturaElectronicaMensual.setNombre_tienda(null);
+        facturaElectronicaMensual.setEmail_tienda(null);
 
         return facturaElectronicaMensual;
     }
@@ -221,5 +223,8 @@ public class LoanDocumentData {
         DEBIT_NOTE("ND"); //
 
         private final String code;
+    }
+    private String getFirstNameAndMiddleName(){
+        return String.format("%s %s", Objects.toString(this.clientFirstName,""), Objects.toString(this.clientMiddleName,""));
     }
 }
