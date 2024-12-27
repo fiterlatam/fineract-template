@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet author="bosco@fiter.io" id="EA-73_Daily_Loan_disbursement_report" context="postgresql">
+        <insert tableName="stretchy_report">
+            <column name="report_name" value="Daily Disbursement Report"/>
+            <column name="report_type" value="Table"/>
+            <column name="report_subtype"/>
+            <column name="report_category" value="Loan"/>
+            <column name="report_sql" value=" SELECT c.display_name  AS &quot;Client Name&quot;,
+       Coalesce(cur.display_symbol, l.currency_code) AS &quot;Currency&quot;,
+       l.disbursedon_date AS &quot;Disbursed Date&quot;,
+       Round(Sum(l.principal_amount), 4)  AS &quot;Disbursed Amount&quot;
+       FROM m_office ounder
+         JOIN m_client c ON c.office_id = ounder.id
+         JOIN m_loan l ON l.client_id = c.id
+         JOIN m_currency cur ON cur.code = l.currency_code
+WHERE disbursedon_date BETWEEN '${startDate}'
+  AND '${endDate}'
+  AND ( l.currency_code = '${currencyId}'
+   OR '-1' = '${currencyId}')
+  AND ounder.hierarchy LIKE concat('${currentUserHierarchy}'
+    , '%')
+GROUP BY c.display_name, coalesce (cur.display_symbol, l.currency_code),l.disbursedon_date
+ORDER BY c.display_name, coalesce (cur.display_symbol, l.currency_code)  "/>
+
+            <column name="description" value="Daily Disbursement Report"/>
+            <column name="core_report" valueBoolean="true"/>
+            <column name="use_report" valueBoolean="true"/>
+            <column name="self_service_user_report" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="bosco@fiter.io" id="EA-73-Daily_report_parameters" context="postgresql">
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select sr.id from stretchy_report sr where sr.report_name ='Daily Disbursement Report')"/>
+            <column name="parameter_id" valueNumeric="(select sp.id from stretchy_parameter sp where sp.parameter_name = 'startDateSelect')"/>
+            <column name="report_parameter_name" value="startDate"/>
+        </insert>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select sr.id from stretchy_report sr where sr.report_name ='Daily Disbursement Report')"/>
+            <column name="parameter_id" valueNumeric="(select sp.id from stretchy_parameter sp where sp.parameter_name = 'endDateSelect')"/>
+            <column name="report_parameter_name" value="endDate"/>
+        </insert>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select sr.id from stretchy_report sr where sr.report_name ='Daily Disbursement Report')"/>
+            <column name="parameter_id" valueNumeric="(select sp.id from stretchy_parameter sp where sp.parameter_name = 'currencyIdSelectAll')"/>
+            <column name="report_parameter_name" value="currencyId"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

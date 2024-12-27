@@ -339,4 +339,5 @@
     <include file="parts/202412171143000001_EA_111_delete_interest_rates.xml" relativeToChangelogFile="true"/>
     <include file="parts/202412171143000002_EA_111_add_detalles_column.xml" relativeToChangelogFile="true" />
     <include file="parts/202412241143000002_EA_115_add_configuration_details_column.xml" relativeToChangelogFile="true" />
+    <include file="parts/202412271143000002_EA_73_create_loan_disbursement_report.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>
