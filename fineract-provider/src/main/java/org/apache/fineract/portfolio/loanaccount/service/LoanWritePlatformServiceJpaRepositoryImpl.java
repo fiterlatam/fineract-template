@@ -729,12 +729,15 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (minimumDaysInArrearsToSuspendLoanAccount == null) {
             minimumDaysInArrearsToSuspendLoanAccount = 90L;
         }
-        final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loan.getId());
-        final Long daysInArrears = collectionData.getPastDueDays();
-        if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
-            loan.retrieveListOfAccrualTransactions().forEach(LoanTransaction::markAsOccurredOnSuspendedAccount);
-            loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+
+        for (LoanTransaction transaction : loan.retrieveListOfAccrualTransactions()) {
+            long days = loan.getDisburseDonDate().until(transaction.getTransactionDate(), ChronoUnit.DAYS);
+            if (days >= minimumDaysInArrearsToSuspendLoanAccount) {
+                transaction.markAsOccurredOnSuspendedAccount();
+            }
         }
+        loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(loan.getId()) //
@@ -4304,21 +4307,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final Long creditNoteCounter = loanProductParameterization.getCreditNoteCounter();
         final Long rangeEndNumber = loanProductParameterization.getRangeEndNumber();
         long documentNumber;
-        String documentNumberString;
         Long currentCounter;
         List<FacturaElectronicaMensual> invoicesToKnockOff = new ArrayList<>();
         final LoanDocumentData.LoanDocumentType documentType = loanDocumentData.getDocumentType();
         if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
             currentCounter = ObjectUtils.defaultIfNull(creditNoteCounter, 0L) + 1L;
             documentNumber = rangeStartNumber + currentCounter;
-            documentNumberString = "NC" + documentNumber;
             loanProductParameterization.setCreditNoteCounter(currentCounter);
             invoicesToKnockOff = this.facturaElectronicMensualRepository.findById_clienteAndTipo_prod(loanDocumentData.getClientIdNumber(),
                     loanDocumentData.getProductTypeName());
         } else {
             currentCounter = ObjectUtils.defaultIfNull(invoiceCounter, 0L) + 1L;
             documentNumber = rangeStartNumber + currentCounter;
-            documentNumberString = loanDocumentData.getBillingPrefix() + documentNumber;
             loanProductParameterization.setInvoiceCounter(currentCounter);
         }
         if (currentCounter > rangeEndNumber) {
@@ -4326,7 +4326,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
                             loanProductParameterization.getProductType()));
         }
-        facturaElectronicaMensual.setNumero_doc(documentNumberString);
+        facturaElectronicaMensual.setNumero_doc(String.valueOf(documentNumber));
         facturaElectronicaMensual.setReferencia(String.valueOf(documentNumber));
         facturaElectronicaMensual.setCodigo_descuento("0");
         facturaElectronicaMensual.setPorcentajedescuento(BigDecimal.ZERO);

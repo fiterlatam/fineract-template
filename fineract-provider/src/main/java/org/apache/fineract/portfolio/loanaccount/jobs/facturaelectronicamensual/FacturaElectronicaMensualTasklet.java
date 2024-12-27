@@ -135,6 +135,8 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                                     .clientCedula(loanDocumentData.getClientCedula()).clientAddress(loanDocumentData.getClientAddress())
                                     .clientCityCode(loanDocumentData.getClientCityCode())
                                     .clientCityName(loanDocumentData.getClientCityName())
+                                    .clientFirstName(loanDocumentData.getClientFirstName())
+                                    .clientMiddleName(loanDocumentData.getClientMiddleName())
                                     .clientTelephone(loanDocumentData.getClientTelephone()).build();
                         })))
                 .values().stream().toList();
@@ -148,6 +150,8 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         	mc.id AS "clientId",
                         	mc.legal_form_enum AS "clientLegalForm",
                         	ml.id AS "loanId",
+                        	mc.firstname AS "clientFirstName",
+                        	mc.middlename AS "clientMiddleName",
                         	mc.display_name AS "clientDisplayName",
                         	mc.lastname AS "clientLastName",
                         	mlaa.overdue_since_date_derived AS "overdueSinceDate",
@@ -355,6 +359,8 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         	mc.id AS "clientId",
                         	mc.legal_form_enum AS "clientLegalForm",
                         	ml.id AS "loanId",
+                        	mc.firstname AS "clientFirstName",
+                        	mc.middlename AS "clientMiddleName",
                         	mc.display_name AS "clientDisplayName",
                         	mc.lastname AS "clientLastName",
                         	mlaa.overdue_since_date_derived AS "overdueSinceDate",
@@ -582,8 +588,9 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                     .totalPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalPaid"))
                     .mandatoryInsuranceCode(rs.getString("mandatoryInsuranceCode"))
                     .voluntaryInsuranceCode(rs.getString("voluntaryInsuranceCode"))
-                    .voluntaryInsuranceName(rs.getString("voluntaryInsuranceName"))
-                    .mandatoryInsuranceName(rs.getString("mandatoryInsuranceName")).build();
+                    .voluntaryInsuranceName(rs.getString("voluntaryInsuranceName")).clientFirstName(rs.getString("clientFirstName"))
+                    .clientMiddleName(rs.getString("clientMiddleName")).mandatoryInsuranceName(rs.getString("mandatoryInsuranceName"))
+                    .build();
         }
     }
 
