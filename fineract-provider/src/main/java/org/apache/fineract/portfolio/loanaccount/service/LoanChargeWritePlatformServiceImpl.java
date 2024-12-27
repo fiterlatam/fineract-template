@@ -1052,7 +1052,8 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         if (loan.getStatus().isActive() && loan.isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
             final LoanTransaction applyLoanChargeTransaction = loan.handleChargeAppliedTransaction(loanCharge, null);
             if (DateUtils.isBeforeBusinessDate(loanCharge.getDueLocalDate())) {
-                Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
+                Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
+                        .retriveMinimumDaysInArrearsToSuspendLoanAccount();
                 if (minimumDaysInArrearsToSuspendLoanAccount == null) {
                     minimumDaysInArrearsToSuspendLoanAccount = 90L;
                 }
