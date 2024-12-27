@@ -23,6 +23,7 @@ import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -746,7 +747,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         // add check duplication instalment number or invalid data
         Boolean duplicateNumberInstalment = loan
-                .getRepaymentScheduleInstallments().stream().collect(Collectors
+                .getRepaymentScheduleInstallments().stream().filter(e -> e.getInstallmentNumber() > 0).collect(Collectors
                         .groupingBy(schedule -> schedule.getLoan().getId() + "-" + schedule.getInstallmentNumber(), Collectors.counting()))
                 .values().stream().anyMatch(count -> count > 1);
 
@@ -1050,6 +1051,16 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         // the loan product uses Upfront Accruals
         if (loan.getStatus().isActive() && loan.isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
             final LoanTransaction applyLoanChargeTransaction = loan.handleChargeAppliedTransaction(loanCharge, null);
+            if (DateUtils.isBeforeBusinessDate(loanCharge.getDueLocalDate())) {
+                Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
+                if (minimumDaysInArrearsToSuspendLoanAccount == null) {
+                    minimumDaysInArrearsToSuspendLoanAccount = 90L;
+                }
+                long days = loan.getDisburseDonDate().until(applyLoanChargeTransaction.getTransactionDate(), ChronoUnit.DAYS);
+                if (days >= minimumDaysInArrearsToSuspendLoanAccount) {
+                    applyLoanChargeTransaction.markAsOccurredOnSuspendedAccount();
+                }
+            }
             this.loanTransactionRepository.saveAndFlush(applyLoanChargeTransaction);
         }
         return DateUtils.isBeforeBusinessDate(loanCharge.getDueLocalDate());
