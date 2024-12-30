@@ -32,7 +32,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -651,7 +650,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         // Transactions are getting replayed because we did a fundamental change in honorarios and penalty charge
         // calculations. Hono charge is calculated when a repayment transaction is made while penalty charge is
         // accumulated in its respective installment for which it was accrued instead of fineract default implementation
-        // where penalty was added to the installment which falls in penalty accrued date. For example, in fineract penalty
+        // where penalty was added to the installment which falls in penalty accrued date. For example, in fineract
+        // penalty
         // of first installment is charged in second installment but no penalty of first installment is charged in
         // first installment and it grows every day till installment is paid off.
         // This changes the component amount and when reprocessing the transaction more amount is paid for
@@ -1100,22 +1100,23 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             interestDue = getInterestOutstanding(currency);
         }
 
-	// SU-533
-	// If it is a reprocessed transaction then make sure it pays the exact amount as was paid originally.
-	// Transactions are getting replayed because we did a fundamental change in honorarios and penalty charge
-	// calculations. Hono charge is calculated when a repayment transaction is made while penalty charge is
-	// accumulated in its respective installment for which it was accrued instead of fineract default implementation
-	// where penalty was added to the installment which falls in penalty accrued date. For example, in fineract penalty 
-	// of first installment is charged in second installment but no penalty of first installment is charged in
-	// first installment and it grows every day till installment is paid off.
-	// This changes the component amount and when reprocessing the transaction more amount is paid for 
-	// component than the original transaction
-	// causing the original transaction to be reversed.
+        // SU-533
+        // If it is a reprocessed transaction then make sure it pays the exact amount as was paid originally.
+        // Transactions are getting replayed because we did a fundamental change in honorarios and penalty charge
+        // calculations. Hono charge is calculated when a repayment transaction is made while penalty charge is
+        // accumulated in its respective installment for which it was accrued instead of fineract default implementation
+        // where penalty was added to the installment which falls in penalty accrued date. For example, in fineract
+        // penalty
+        // of first installment is charged in second installment but no penalty of first installment is charged in
+        // first installment and it grows every day till installment is paid off.
+        // This changes the component amount and when reprocessing the transaction more amount is paid for
+        // component than the original transaction
+        // causing the original transaction to be reversed.
 
         HashMap<Integer, BigDecimal> interestMap = loanTransaction.interestPaidByOriginalTransaction();
         if (interestMap != null && !interestMap.isEmpty() && interestMap.get(this.installmentNumber) != null) {
             // SU-533 Avoid reprocessing of transaction paying different amount than originally paid.
-            interestDue = Money.of(currency,interestMap.get(this.installmentNumber));
+            interestDue = Money.of(currency, interestMap.get(this.installmentNumber));
         }
 
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(interestDue)) {

@@ -338,7 +338,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
             HashMap<Integer, BigDecimal> interestPaidByInstallment = new HashMap<>();
             for (LoanTransactionToRepaymentScheduleMapping mapping : loanTransaction.getLoanTransactionToRepaymentScheduleMappings()) {
                 if (mapping.getInterestPortion(loanTransaction.getLoan().getCurrency()).isGreaterThanZero()) {
-                    interestPaidByInstallment.put(mapping.getLoanRepaymentScheduleInstallment().getInstallmentNumber(), mapping.getInterestPortion());
+                    interestPaidByInstallment.put(mapping.getLoanRepaymentScheduleInstallment().getInstallmentNumber(),
+                            mapping.getInterestPortion());
                 }
             }
             newTransaction.setInterestPaidByOriginalTransaction(interestPaidByInstallment);
