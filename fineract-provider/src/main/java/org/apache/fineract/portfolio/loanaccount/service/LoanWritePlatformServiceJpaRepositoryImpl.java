@@ -4083,6 +4083,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             ORDER BY ltv.loan_id, ltv.id DESC
                         ) term_variation ON term_variation.loan_id = ml.id
                         WHERE ml.loan_status_id = 300 AND mlrs.duedate >= ? AND ml.is_charged_off = FALSE
+                        and ml.id = 1157
                             AND (CASE
                                 WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value != ?
                                 WHEN term_variation.decimal_value IS NULL THEN ml.annual_nominal_interest_rate > ?

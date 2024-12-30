@@ -160,11 +160,13 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     protected LoanTransaction() {}
 
+    // Transient variable to hold details of loan charge amounts paid by original transaction for this installment
     @Transient
     List<LoanChargePaidByData> chargesPaidByOriginalTransaction;
 
+    // Transient variable to hold original interest amount paid by the original transaction
     @Transient
-    private BigDecimal interestPaidByOriginalTransaction;
+    private HashMap<Integer, BigDecimal> interestPaidByOriginalTransaction = new HashMap<>();
 
     public static LoanTransaction incomePosting(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
             final BigDecimal interestPortion, final BigDecimal feeChargesPortion, final BigDecimal penaltyChargesPortion,
@@ -332,7 +334,15 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         // SU-533 set amounts paid by original transaction so that copied transaction also pays the same amounts
         // to avoid rollbacks
         newTransaction.setChargesPaidByOriginalTransaction(getLoanChargePaidByDataList(loanTransaction.getLoanChargesPaid()));
-        newTransaction.setInterestPaidByOriginalTransaction(loanTransaction.getInterestPortion());
+        if (loanTransaction.getLoanTransactionToRepaymentScheduleMappings() != null) {
+            HashMap<Integer, BigDecimal> interestPaidByInstallment = new HashMap<>();
+            for (LoanTransactionToRepaymentScheduleMapping mapping : loanTransaction.getLoanTransactionToRepaymentScheduleMappings()) {
+                if (mapping.getInterestPortion(loanTransaction.getLoan().getCurrency()).isGreaterThanZero()) {
+                    interestPaidByInstallment.put(mapping.getLoanRepaymentScheduleInstallment().getInstallmentNumber(), mapping.getInterestPortion());
+                }
+            }
+            newTransaction.setInterestPaidByOriginalTransaction(interestPaidByInstallment);
+        }
         return newTransaction;
     }
 
@@ -1164,11 +1174,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         this.chargesPaidByOriginalTransaction = chargesPaidByOriginalTransaction;
     }
 
-    public BigDecimal interestPaidByOriginalTransaction() {
-        return Objects.requireNonNullElse(interestPaidByOriginalTransaction, BigDecimal.ZERO);
+    public HashMap<Integer, BigDecimal> interestPaidByOriginalTransaction() {
+        return interestPaidByOriginalTransaction;
     }
 
-    public void setInterestPaidByOriginalTransaction(BigDecimal interestPaidByOriginalTransaction) {
+    public void setInterestPaidByOriginalTransaction(HashMap<Integer, BigDecimal> interestPaidByOriginalTransaction) {
         this.interestPaidByOriginalTransaction = interestPaidByOriginalTransaction;
     }
 
