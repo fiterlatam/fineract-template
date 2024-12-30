@@ -70,4 +70,25 @@ ORDER BY c.display_name, coalesce (cur.display_symbol, l.currency_code)  "/>
             <column name="report_parameter_name" value="currencyId"/>
         </insert>
     </changeSet>
+
+    <changeSet author="bosco@fiter.io" id="EA-72-refactor-Loan-rejected-report">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                Select count(*) from stretchy_report where report_name = 'Loan Rejected'
+            </sqlCheck>
+        </preConditions>
+        <update tableName="stretchy_report">
+            <column name="report_name" value="Loan Rejected"/>
+            <column name="report_sql">
+                <![CDATA[
+                SELECT mc.id, mc.firstname, mc.middlename as middlename, mc.lastname, mc.display_name as FullName, mc.mobile_no as mobileNo, mc.group_name as GroupName,  mo.name as officename, ml.id as loanId, ml.account_no as accountnumber, ml.principal_amount_proposed as loanamount, ml.annual_nominal_interest_rate as annualinterestrate  FROM m_office mo  JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, '%')  AND ounder.hierarchy like CONCAT('.', '%')  LEFT JOIN (  select   ml.id as loanId, COALESCE(mc.id,mc2.id) as id, COALESCE(mc.firstname,mc2.firstname) as firstname, COALESCE(mc.middlename,COALESCE(mc2.middlename,(''))) as middlename,   COALESCE(mc.lastname,mc2.lastname) as lastname,   COALESCE(mc.display_name,mc2.display_name) as display_name,   COALESCE(mc.status_enum,mc2.status_enum) as status_enum,  COALESCE(mc.mobile_no,mc2.mobile_no) as mobile_no,  COALESCE(mg.office_id,mc2.office_id) as office_id,  COALESCE(mg.staff_id,mc2.staff_id) as staff_id, mg.id as group_id,  mg.display_name as group_name  from m_loan ml  left join m_group mg on mg.id = ml.group_id  left join m_group_client mgc on mgc.group_id = mg.id  left join m_client mc on mc.id = mgc.client_id  left join m_client mc2 on mc2.id = ml.client_id  order by loanId  ) mc on mc.office_id = ounder.id  left join m_loan ml on ml.id = mc.loanId  WHERE mc.status_enum = 300 AND ml.loan_status_id = 500  and (mo.id = ${officeId} or '${officeId}' = -1)  AND       ( ml.loan_officer_id = ${loanOfficerId} OR        '-1' = '${loanOfficerId}') and (ml.id = ${loanId} or '${loanId}' = -1) and (mc.id = ${clientId} or '${clientId}' = -1) and (mc.group_id = ${groupId} or '${groupId}' = -1)  and (ml.loan_type_enum = ${loanType} or '${loanType}' = -1)
+                ]]>
+            </column>
+            <column name="report_type" value="Table"/>
+            <column name="report_category" value="Loan"/>
+            <column name="core_report" value="true"/>
+            <column name="use_report" value="true"/>
+            <where>report_name = 'Loan Rejected'</where>
+        </update>
+    </changeSet>
 </databaseChangeLog>
