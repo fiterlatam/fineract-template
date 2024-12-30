@@ -91,4 +91,25 @@ ORDER BY c.display_name, coalesce (cur.display_symbol, l.currency_code)  "/>
             <where>report_name = 'Loan Rejected'</where>
         </update>
     </changeSet>
+
+    <changeSet author="bosco@fiter.io" id="EA-72-refactor-Loan-in-arrears-report">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                Select count(*) from stretchy_report where report_name = 'Loan in arrears'
+            </sqlCheck>
+        </preConditions>
+        <update tableName="stretchy_report">
+            <column name="report_name" value="Loan in arrears"/>
+            <column name="report_sql">
+                <![CDATA[
+                SELECT mc.id AS id, mc.firstname AS firstName, mc.middlename AS middleName, mc.lastname AS lastName, mc.display_name AS fullName, mc.mobile_no AS mobileNo, ml.principal_amount AS loanAmount, (COALESCE(ml.principal_outstanding_derived, 0) + COALESCE(ml.interest_outstanding_derived, 0) + COALESCE(ml.fee_charges_outstanding_derived, 0) + COALESCE(ml.penalty_charges_outstanding_derived, 0)) AS loanOutstanding, ml.principal_disbursed_derived AS loanDisbursed, laa.overdue_since_date_derived AS paymentDueDate, COALESCE(laa.total_overdue_derived, 0) AS totalDue, ounder.id AS officeNumber, ml.account_no AS loanAccountId, gua.lastname AS guarantorLastName, COUNT(gua.id) AS numberOfGuarantors, g.display_name AS groupName FROM m_office mo JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, '%') INNER JOIN m_client mc ON mc.office_id=ounder.id INNER JOIN m_loan ml ON ml.client_id = mc.id INNER JOIN r_enum_value rev ON rev.enum_id=ml.loan_status_id AND rev.enum_name = 'loan_status_id' INNER JOIN m_loan_arrears_aging laa ON laa.loan_id=ml.id LEFT JOIN m_currency cur ON cur.code = ml.currency_code LEFT JOIN m_group_client gc ON gc.client_id = mc.id LEFT JOIN m_group g ON g.id = gc.group_id LEFT JOIN m_staff lo ON lo.id = ml.loan_officer_id LEFT JOIN m_guarantor gua ON gua.loan_id = ml.id WHERE ml.loan_status_id=300 AND mo.id='${officeId}' AND (COALESCE(ml.loan_officer_id, -10) = ${loanOfficerId} OR '-1' = ${loanOfficerId}) AND (EXTRACT(DAY FROM (CURRENT_DATE - laa.overdue_since_date_derived::TIMESTAMP)) BETWEEN ${fromX} AND ${toY}) GROUP BY ml.id, mc.id, laa.loan_id, ounder.id, gua.id, g.id, ounder.hierarchy, ml.currency_code, mc.account_no, ml.account_no ORDER BY ounder.hierarchy, ml.currency_code, mc.account_no, ml.account_no
+                ]]>
+            </column>
+            <column name="report_type" value="Table"/>
+            <column name="report_category" value="Loan"/>
+            <column name="core_report" value="true"/>
+            <column name="use_report" value="true"/>
+            <where>report_name = 'Loan in arrears'</where>
+        </update>
+    </changeSet>
 </databaseChangeLog>
