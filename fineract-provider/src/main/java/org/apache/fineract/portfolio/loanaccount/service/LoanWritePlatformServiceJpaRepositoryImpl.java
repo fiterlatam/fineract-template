@@ -250,6 +250,7 @@ import org.apache.fineract.portfolio.transfer.api.TransferApiConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -1138,6 +1139,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     public CommandProcessingResult makeLoanRepayment(final LoanTransactionType repaymentTransactionType, final Long loanId,
             final JsonCommand command, final boolean isRecoveryRepayment) {
         final String chargeRefundChargeType = null;
+        BigDecimal cumulativeHonoFee = BigDecimal.ZERO;
+        BigDecimal cumulativeVatFee = BigDecimal.ZERO;
         // SU-516 Calculate the hono charge for repayment only
         if (!isRecoveryRepayment) {
             Loan loan = this.loanAssembler.assembleFrom(loanId);
@@ -1197,9 +1200,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             remainingAmount = remainingAmount.zero();
                         }
 
+                        cumulativeHonoFee = cumulativeHonoFee.add(fee.getFeeBasis());
                         remainingAmount = remainingAmount.minus(fee.getFeeBasis());
                         if (vatChargeOptional.isPresent()) {
                             remainingAmount = remainingAmount.minus(fee.getFeeVat());
+                            cumulativeVatFee = cumulativeVatFee.add(fee.getFeeVat());
                         }
 
                         if (remainingAmount.isZero() || remainingAmount.isLessThanZero()) {
@@ -1208,6 +1213,44 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                     }
                 }
+
+                // Add Accrual Transaction
+                Integer daysInArrears = 0;
+                boolean isSuspendedAccount = false;
+                Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
+                        .retriveMinimumDaysInArrearsToSuspendLoanAccount();
+                if (minimumDaysInArrearsToSuspendLoanAccount == null) {
+                    minimumDaysInArrearsToSuspendLoanAccount = 90L;
+                }
+                try {
+                    daysInArrears = this.jdbcTemplate.queryForObject(
+                            "select COALESCE(current_date - overdue_since_date_derived,0) aging_days from m_loan_arrears_aging mlaa where mlaa.loan_id =?",
+                            Integer.class, loan.getId());
+                } catch (final EmptyResultDataAccessException e) {
+                    // not in arrears
+                    daysInArrears = 0;
+                }
+                if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
+                    isSuspendedAccount = true;
+                }
+                Money accrualAmount = Money.of(loan.getCurrency(), cumulativeHonoFee.add(cumulativeVatFee));
+                final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(loan, loan.getOffice(),
+                        accrualAmount, transactionDate, accrualAmount, Money.zero(loan.getCurrency()), ExternalId.empty());
+                if (isSuspendedAccount) {
+                    applyLoanChargeTransaction.markAsOccurredOnSuspendedAccount();
+                }
+                final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, honoCharge, cumulativeHonoFee,
+                        installmentNumber);
+                applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
+
+                if (vatChargeOptional.isPresent()) {
+                    LoanCharge vat = vatChargeOptional.get();
+
+                    final LoanChargePaidBy vatChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, vat, cumulativeVatFee,
+                            installmentNumber);
+                    applyLoanChargeTransaction.getLoanChargesPaid().add(vatChargePaidBy);
+                }
+                loan.addLoanTransaction(applyLoanChargeTransaction);
             }
         }
         return makeLoanRepaymentWithChargeRefundChargeType(repaymentTransactionType, loanId, command, isRecoveryRepayment,
@@ -1603,6 +1646,22 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 remove.forEach(chargePaidBy.getLoanCharge().getCustomChargeHonorarioMaps()::remove);
                 customChargeHonorarioMapRepository.deleteLatestVersionMapEntryOnReversal(loanId, versionToBeDeleted);
                 transactionToAdjust.getLoanTransactionToRepaymentScheduleMappings().clear();
+
+                // Reverse Accrual Transaction
+                for (int i = loan.getLoanTransactions().size(); i >= 0; i--) {
+                    LoanTransaction lastTransaction = loan.getLoanTransactions().get(i - 1);
+                    if (!lastTransaction.isReversed() && lastTransaction.isAccrual()
+                            && lastTransaction.getTransactionDate().equals(transactionToAdjust.getTransactionDate())) {
+                        for (LoanChargePaidBy accrualChargePaidBy : lastTransaction.getLoanChargesPaid()) {
+                            if (accrualChargePaidBy.getLoanCharge().isFlatHono()) {
+                                lastTransaction.manuallyAdjustedOrReversed();
+                                lastTransaction.reverse();
+                                i = -1;
+                                break;
+                            }
+                        }
+                    }
+                }
                 final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
                 wrapper.reprocess(loan.getCurrency(), loan.getDisbursementDate(), loan.getRepaymentScheduleInstallments(),
                         loan.getActiveCharges());

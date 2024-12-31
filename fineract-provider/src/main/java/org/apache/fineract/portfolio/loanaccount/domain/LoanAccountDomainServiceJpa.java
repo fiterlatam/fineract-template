@@ -111,6 +111,8 @@ import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDat
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -126,7 +128,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final ConfigurationDomainService configurationDomainService;
     private final HolidayRepository holidayRepository;
     private final WorkingDaysRepositoryWrapper workingDaysRepository;
-
     private final JournalEntryWritePlatformService journalEntryWritePlatformService;
     private final NoteRepository noteRepository;
     private final AccountTransferRepository accountTransferRepository;
@@ -146,8 +147,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
     private final LoanBlockingReasonRepository loanBlockingReasonRepository;
-
     private final PlatformSecurityContext platformSecurityContext;
+    private final JdbcTemplate jdbcTemplate;
     @Autowired
     private CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
 
@@ -1094,7 +1095,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
     private BigDecimal calculateHonoForForeclosure(Loan loan, BigDecimal transactionAmount, LocalDate transactionDate) {
         /// SU-516 Calculate Hono Charge
-        BigDecimal honoFee = BigDecimal.ZERO;
+        BigDecimal cumulativeHonoFee = BigDecimal.ZERO;
+        BigDecimal cumulativeVatFee = BigDecimal.ZERO;
         Optional<LoanCharge> honoChargeOptional = loan.getLoanCharges().stream().filter(LoanCharge::isFlatHono).findFirst();
         if (honoChargeOptional.isPresent() && loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()) > 0) {
             LoanCharge honoCharge = honoChargeOptional.get();
@@ -1131,12 +1133,12 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                         fee = this.updateCalculationHonoLoanChargeOverDueVat(remainingAmount.getAmount(), installment, installmentNumber,
                                 version);
                     }
-                    honoFee = honoFee.add(fee.getFeeBasis());
+                    cumulativeHonoFee = cumulativeHonoFee.add(fee.getFeeBasis());
 
                     remainingAmount = remainingAmount.minus(fee.getFeeBasis());
                     if (vatChargeOptional.isPresent()) {
                         remainingAmount = remainingAmount.minus(fee.getFeeVat());
-                        honoFee = honoFee.add(fee.getFeeVat());
+                        cumulativeVatFee = cumulativeVatFee.add(fee.getFeeVat());
                     }
 
                     if (remainingAmount.isZero() || remainingAmount.isLessThanZero()) {
@@ -1145,8 +1147,46 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
                 }
             }
+
+            // Add Accrual Transaction
+            Integer daysInArrears = 0;
+            boolean isSuspendedAccount = false;
+            Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
+                    .retriveMinimumDaysInArrearsToSuspendLoanAccount();
+            if (minimumDaysInArrearsToSuspendLoanAccount == null) {
+                minimumDaysInArrearsToSuspendLoanAccount = 90L;
+            }
+            try {
+                daysInArrears = this.jdbcTemplate.queryForObject(
+                        "select COALESCE(current_date - overdue_since_date_derived,0) aging_days from m_loan_arrears_aging mlaa where mlaa.loan_id =?",
+                        Integer.class, loan.getId());
+            } catch (final EmptyResultDataAccessException e) {
+                // not in arrears
+                daysInArrears = 0;
+            }
+            if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
+                isSuspendedAccount = true;
+            }
+            Money accrualAmount = Money.of(loan.getCurrency(), cumulativeHonoFee.add(cumulativeVatFee));
+            final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(loan, loan.getOffice(),
+                    accrualAmount, transactionDate, accrualAmount, Money.zero(loan.getCurrency()), ExternalId.empty());
+            if (isSuspendedAccount) {
+                applyLoanChargeTransaction.markAsOccurredOnSuspendedAccount();
+            }
+            final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, honoCharge, cumulativeHonoFee,
+                    installmentNumber);
+            applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
+
+            if (vatChargeOptional.isPresent()) {
+                LoanCharge vat = vatChargeOptional.get();
+
+                final LoanChargePaidBy vatChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, vat, cumulativeVatFee,
+                        installmentNumber);
+                applyLoanChargeTransaction.getLoanChargesPaid().add(vatChargePaidBy);
+            }
+            loan.addLoanTransaction(applyLoanChargeTransaction);
         }
-        return honoFee;
+        return cumulativeHonoFee.add(cumulativeVatFee);
         //////
     }
 
