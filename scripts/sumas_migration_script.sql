@@ -601,3 +601,14 @@ join m_loan_repayment_schedule mlrs on ml.id = mlrs.loan_id
 where mlc.charge_id in (3,4)
 and mlc.id not in (select loan_charge_id from m_loan_installment_charge where loan_charge_id = mlc.id and loan_schedule_id = mlrs.id)
 order by mlc.id, mlrs.installment;
+
+
+-- populate c_client_buy_process
+insert into custom.c_client_buy_process (channel_id, client_id, point_if_sales_id, product_id, credit_id, requested_date, amount, term, created_at, created_by, ip_details, status, error_message, loan_id, interest_rate_points, codigo_seguro, cedula_seguro_voluntario)
+SELECT (select id from c_channel cc where cc.name = 'Tienda física'), ml.client_id, ccapos.id, ml.product_id, ml.id credit_id, ml.disbursedon_date requested_date, ml.principal_amount amount, ml.term_frequency term, CURRENT_DATE created_at, created_by, null::text ip_details, 200 status, null::text error_message, ml.id loan_id, 0 interest_rate_points, 0 codigo_seguro, 0 cedula_seguro_voluntario
+from public.m_loan ml 
+left join c_client_ally_point_of_sales ccapos 
+on ml.migrar_code = ccapos.code 
+where ml.loan_status_id = 300
+and ml.is_migrated_loan = true
+and ml.id not in (select loan_id from custom.c_client_buy_process)
