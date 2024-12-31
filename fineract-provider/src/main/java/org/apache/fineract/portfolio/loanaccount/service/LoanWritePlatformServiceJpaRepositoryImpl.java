@@ -4680,6 +4680,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     public void persistDailyAccrual(final LocalDate transactionDate) {
         final List<Loan> loans = loanRepository.findActiveLoansWithNotYetPostedAccrual(transactionDate);
         for (final Loan loan : loans) {
+            final String claimType = loan.claimType();
+            if (claimType != null && claimType.equalsIgnoreCase("guarantor")) {
+                continue;
+            }
             final MonetaryCurrency currency = loan.getCurrency();
             log.info("Persisting daily accrual for loan: {}", loan.getId());
             ExternalId externalIdentifier = ExternalId.empty();

@@ -31,10 +31,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -648,7 +645,18 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             return penaltyPortionOfTransaction;
         }
         Money penaltyChargesDue = getPenaltyChargesOutstanding(currency);
-        // SU-533 Avoid reprocessing of transaction paying different amount than originally paid.
+        // SU-533
+        // If it is a reprocessed transaction then make sure it pays the exact amount as was paid originally.
+        // Transactions are getting replayed because we did a fundamental change in honorarios and penalty charge
+        // calculations. Hono charge is calculated when a repayment transaction is made while penalty charge is
+        // accumulated in its respective installment for which it was accrued instead of fineract default implementation
+        // where penalty was added to the installment which falls in penalty accrued date. For example, in fineract
+        // penalty
+        // of first installment is charged in second installment but no penalty of first installment is charged in
+        // first installment and it grows every day till installment is paid off.
+        // This changes the component amount and when reprocessing the transaction more amount is paid for
+        // component than the original transaction
+        // causing the original transaction to be reversed.
         List<LoanChargePaidByData> paidByOriginalTransactionList = loanTransaction.chargesPaidByOriginalTransaction();
         Money amountPaidByOriginalTransaction = Money.zero(currency);
         if (!paidByOriginalTransactionList.isEmpty()) {
@@ -931,12 +939,16 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
         ///////////////
         // SU-533 Avoid reprocessing of transaction paying different amount than originally paid.
-        // Fineract by default considers a charge amount will never increase over time for an installment but in hono
-        /////////////// and penalty case
-        // charge amount increases every day for penalty and on transaction for hono. When reprocessing the transactions
-        /////////////// the original
-        // paid amount becomes different than the updated amount and hence the transaction is rollbacked. Below code is
-        /////////////// to avoid this rollback
+        // If it is a reprocessed transaction then make sure it pays the exact amount as was paid originally.
+        // Transactions are getting replayed because we did a fundamental change in honorarios and penalty charge
+        // calculations. Hono charge is calculated when a repayment transaction is made while penalty charge is
+        // accumulated in its respective installment for which it was accrued instead of fineract default implementation
+        // where penalty was added to the installment which falls in penalty accrued date.
+        // For example, in fineract penalty of first installment is charged in second installment but no penalty of
+        // first installment is charged in first installment and it grows every day till installment is paid off.
+        // This changes the component amount and when reprocessing the transaction more amount is paid for
+        // component than the original transaction
+        // causing the original transaction to be reversed.
         if (loanTransaction != null) {
             List<LoanChargePaidByData> paidByOriginalTransactionList = loanTransaction.chargesPaidByOriginalTransaction();
             Money amountPaidByOriginalTransaction = Money.zero(currency);
@@ -1045,53 +1057,66 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
 
         Money interestDue = Money.zero(currency);
+        if (this.isMigratedInstallment) {
+            interestDue = getInterestOutstanding(currency);
+        } else if (isOn(transactionDate, this.getDueDate())) {
+            interestDue = getInterestOutstanding(currency);
+        } else if (isOnOrBetween(transactionDate) && getInterestOutstanding(currency).isGreaterThanZero()) {
+            final RoundingMode roundingMode = RoundingMode.HALF_UP;
 
-        if (loanTransaction.interestPaidByOriginalTransaction().compareTo(BigDecimal.ZERO) > 0) {
-            // SU-533 Avoid reprocessing of transaction paying different amount than originally paid.
-            interestDue = interestDue.plus(loanTransaction.interestPaidByOriginalTransaction());
-        } else {
-            if (this.isMigratedInstallment) {
-                interestDue = getInterestOutstanding(currency);
-            } else if (isOn(transactionDate, this.getDueDate())) {
-                interestDue = getInterestOutstanding(currency);
-            } else if (isOnOrBetween(transactionDate) && getInterestOutstanding(currency).isGreaterThanZero()) {
-                final RoundingMode roundingMode = RoundingMode.HALF_UP;
-
-                BigDecimal numberOfDaysForInterestCalculation = BigDecimal.ZERO;
-                if (this.interestRecalculatedOnDate != null) {
-                    if (this.interestRecalculatedOnDate.isAfter(transactionDate)) { // This should only be true if the
-                        // repayment is reversed
-                        numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
-                    } else {
-                        numberOfDaysForInterestCalculation = BigDecimal
-                                .valueOf(ChronoUnit.DAYS.between(this.interestRecalculatedOnDate, transactionDate));
-                    }
-                } else {
+            BigDecimal numberOfDaysForInterestCalculation = BigDecimal.ZERO;
+            if (this.interestRecalculatedOnDate != null) {
+                if (this.interestRecalculatedOnDate.isAfter(transactionDate)) { // This should only be true if the
+                    // repayment is reversed
                     numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
-                }
-                BigDecimal numberOfDaysInPeriod = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, this.dueDate));
-                BigDecimal oneDayOfInterest = this.interestCharged.divide(numberOfDaysInPeriod, RoundingMode.HALF_UP);
-                oneDayOfInterest = oneDayOfInterest.setScale(5, roundingMode);
-                interestDue = Money.of(currency, oneDayOfInterest.multiply(numberOfDaysForInterestCalculation));
-                if (interestDue.isGreaterThan(getInterestOutstanding(currency))) {
-                    interestDue = getInterestOutstanding(currency);
-                }
-
-                //// Update installment interest charged if principal is fully paid during the accrual period
-                // Keep the original interest charged in case the transaction is rollbacked and interest charged needs
-                //// to be moved to original amount.
-                this.interestRecalculatedOnDate = transactionDate;
-                if (this.getPrincipalOutstanding(currency).isZero()) {
-                    this.originalInterestChargedAmount = this.interestCharged;
-                    this.interestCharged = getInterestPaid(currency).plus(getInterestWaived(currency)).plus(getInterestWrittenOff(currency))
-                            .plus(interestDue).getAmount();
                 } else {
-                    this.originalInterestChargedAmount = BigDecimal.ZERO;
+                    numberOfDaysForInterestCalculation = BigDecimal
+                            .valueOf(ChronoUnit.DAYS.between(this.interestRecalculatedOnDate, transactionDate));
                 }
-
             } else {
+                numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
+            }
+            BigDecimal numberOfDaysInPeriod = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, this.dueDate));
+            BigDecimal oneDayOfInterest = this.interestCharged.divide(numberOfDaysInPeriod, RoundingMode.HALF_UP);
+            oneDayOfInterest = oneDayOfInterest.setScale(5, roundingMode);
+            interestDue = Money.of(currency, oneDayOfInterest.multiply(numberOfDaysForInterestCalculation));
+            if (interestDue.isGreaterThan(getInterestOutstanding(currency))) {
                 interestDue = getInterestOutstanding(currency);
             }
+
+            //// Update installment interest charged if principal is fully paid during the accrual period
+            // Keep the original interest charged in case the transaction is rollbacked and interest charged needs
+            //// to be moved to original amount.
+            this.interestRecalculatedOnDate = transactionDate;
+            if (this.getPrincipalOutstanding(currency).isZero()) {
+                this.originalInterestChargedAmount = this.interestCharged;
+                this.interestCharged = getInterestPaid(currency).plus(getInterestWaived(currency)).plus(getInterestWrittenOff(currency))
+                        .plus(interestDue).getAmount();
+            } else {
+                this.originalInterestChargedAmount = BigDecimal.ZERO;
+            }
+
+        } else {
+            interestDue = getInterestOutstanding(currency);
+        }
+
+        // SU-533
+        // If it is a reprocessed transaction then make sure it pays the exact amount as was paid originally.
+        // Transactions are getting replayed because we did a fundamental change in honorarios and penalty charge
+        // calculations. Hono charge is calculated when a repayment transaction is made while penalty charge is
+        // accumulated in its respective installment for which it was accrued instead of fineract default implementation
+        // where penalty was added to the installment which falls in penalty accrued date. For example, in fineract
+        // penalty
+        // of first installment is charged in second installment but no penalty of first installment is charged in
+        // first installment and it grows every day till installment is paid off.
+        // This changes the component amount and when reprocessing the transaction more amount is paid for
+        // component than the original transaction
+        // causing the original transaction to be reversed.
+
+        HashMap<Integer, BigDecimal> interestMap = loanTransaction.interestPaidByOriginalTransaction();
+        if (interestMap != null && !interestMap.isEmpty() && interestMap.get(this.installmentNumber) != null) {
+            // SU-533 Avoid reprocessing of transaction paying different amount than originally paid.
+            interestDue = Money.of(currency, interestMap.get(this.installmentNumber));
         }
 
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(interestDue)) {
