@@ -1168,8 +1168,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 isSuspendedAccount = true;
             }
             Money accrualAmount = Money.of(loan.getCurrency(), cumulativeHonoFee.add(cumulativeVatFee));
-            final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(loan, loan.getOffice(), accrualAmount,
-                    transactionDate, accrualAmount, Money.zero(loan.getCurrency()), ExternalId.empty());
+            final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(loan, loan.getOffice(),
+                    accrualAmount, transactionDate, accrualAmount, Money.zero(loan.getCurrency()), ExternalId.empty());
             if (isSuspendedAccount) {
                 applyLoanChargeTransaction.markAsOccurredOnSuspendedAccount();
             }

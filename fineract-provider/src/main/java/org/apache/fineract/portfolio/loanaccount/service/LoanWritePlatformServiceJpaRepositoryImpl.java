@@ -1234,8 +1234,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     isSuspendedAccount = true;
                 }
                 Money accrualAmount = Money.of(loan.getCurrency(), cumulativeHonoFee.add(cumulativeVatFee));
-                final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(loan, loan.getOffice(), accrualAmount,
-                        transactionDate, accrualAmount, Money.zero(loan.getCurrency()), ExternalId.empty());
+                final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(loan, loan.getOffice(),
+                        accrualAmount, transactionDate, accrualAmount, Money.zero(loan.getCurrency()), ExternalId.empty());
                 if (isSuspendedAccount) {
                     applyLoanChargeTransaction.markAsOccurredOnSuspendedAccount();
                 }
@@ -1650,7 +1650,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 // Reverse Accrual Transaction
                 for (int i = loan.getLoanTransactions().size(); i >= 0; i--) {
                     LoanTransaction lastTransaction = loan.getLoanTransactions().get(i - 1);
-                    if (!lastTransaction.isReversed() && lastTransaction.isAccrual() && lastTransaction.getTransactionDate().equals(transactionToAdjust.getTransactionDate())) {
+                    if (!lastTransaction.isReversed() && lastTransaction.isAccrual()
+                            && lastTransaction.getTransactionDate().equals(transactionToAdjust.getTransactionDate())) {
                         for (LoanChargePaidBy accrualChargePaidBy : lastTransaction.getLoanChargesPaid()) {
                             if (accrualChargePaidBy.getLoanCharge().isFlatHono()) {
                                 lastTransaction.manuallyAdjustedOrReversed();
