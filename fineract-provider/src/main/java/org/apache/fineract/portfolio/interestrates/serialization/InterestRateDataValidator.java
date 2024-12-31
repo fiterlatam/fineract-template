@@ -68,16 +68,15 @@ public class InterestRateDataValidator {
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("interest.rate");
         final JsonElement element = this.fromApiJsonHelper.parse(json);
+
         final String name = this.fromApiJsonHelper.extractStringNamed(InterestRateDataValidator.NAME, element);
         baseDataValidator.reset().parameter(InterestRateDataValidator.NAME).value(name).notBlank().notExceedingLengthOf(100);
+
         final Integer interestRateTypeId = this.fromApiJsonHelper
                 .extractIntegerWithLocaleNamed(InterestRateDataValidator.INTEREST_RATE_TYPE_ID, element);
         baseDataValidator.reset().parameter(InterestRateDataValidator.INTEREST_RATE_TYPE_ID).value(interestRateTypeId).notNull()
                 .inMinMaxRange(1, 2);
-        final BigDecimal currentRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(InterestRateDataValidator.CURRENT_RATE,
-                element);
-        baseDataValidator.reset().parameter(InterestRateDataValidator.CURRENT_RATE).value(currentRate).notBlank()
-                .inMinAndMaxAmountRange(BigDecimal.ZERO, BigDecimal.valueOf(100));
+
         final Boolean active = this.fromApiJsonHelper.extractBooleanNamed(InterestRateDataValidator.ACTIVE, element);
         baseDataValidator.reset().parameter(InterestRateDataValidator.ACTIVE).value(active).notNull();
         final LocalDate appliedOnDate = this.fromApiJsonHelper.extractLocalDateNamed(InterestRateDataValidator.APPLIED_ON_DATE, element);
@@ -92,10 +91,18 @@ public class InterestRateDataValidator {
             minRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(MIN_RATE, element);
             baseDataValidator.reset().parameter(MIN_RATE).value(minRate).notLessThanMin(BigDecimal.ZERO);
         }
-
+        BigDecimal maxRate = BigDecimal.ZERO;
         if (fromApiJsonHelper.parameterExists(MAX_RATE, element)) {
-            BigDecimal maxRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(MAX_RATE, element);
-            baseDataValidator.reset().parameter(MAX_RATE).value(maxRate).notLessThanMin(BigDecimal.ZERO).notLessThanMin(minRate);
+            maxRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(MAX_RATE, element);
+            baseDataValidator.reset().parameter(MAX_RATE).value(maxRate).notLessThanMin(BigDecimal.ZERO).notLessThanMin(minRate)
+                    .notGreaterThanMax(BigDecimal.valueOf(100));
+        }
+
+        if (fromApiJsonHelper.parameterExists(CURRENT_RATE, element)) {
+            BigDecimal currentRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(InterestRateDataValidator.CURRENT_RATE,
+                    element);
+            baseDataValidator.reset().parameter(InterestRateDataValidator.CURRENT_RATE).value(currentRate).notBlank()
+                    .inMinAndMaxAmountRange(BigDecimal.ZERO, BigDecimal.valueOf(100)).notLessThanMin(minRate).notGreaterThanMax(maxRate);
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
@@ -118,12 +125,26 @@ public class InterestRateDataValidator {
             baseDataValidator.reset().parameter(InterestRateDataValidator.INTEREST_RATE_TYPE_ID).value(interestRateTypeId).notNull()
                     .inMinMaxRange(1, 2);
         }
+        BigDecimal minRate = BigDecimal.ZERO;
+        if (this.fromApiJsonHelper.parameterExists(InterestRateDataValidator.MIN_RATE, element)) {
+            minRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(InterestRateDataValidator.MIN_RATE, element);
+            baseDataValidator.reset().parameter(InterestRateDataValidator.MIN_RATE).value(minRate).notBlank()
+                    .notLessThanMin(BigDecimal.ZERO);
+        }
+        BigDecimal maxRate = BigDecimal.ZERO;
+        if (this.fromApiJsonHelper.parameterExists(InterestRateDataValidator.MAX_RATE, element)) {
+            maxRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(InterestRateDataValidator.MAX_RATE, element);
+            baseDataValidator.reset().parameter(InterestRateDataValidator.MAX_RATE).value(maxRate).notBlank()
+                    .notLessThanMin(BigDecimal.ZERO).notLessThanMin(minRate).notGreaterThanMax(BigDecimal.valueOf(100));
+        }
+
         if (this.fromApiJsonHelper.parameterExists(InterestRateDataValidator.CURRENT_RATE, element)) {
             final BigDecimal currentRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(InterestRateDataValidator.CURRENT_RATE,
                     element);
             baseDataValidator.reset().parameter(InterestRateDataValidator.CURRENT_RATE).value(currentRate).notBlank()
-                    .inMinAndMaxAmountRange(BigDecimal.ZERO, BigDecimal.valueOf(100));
+                    .inMinAndMaxAmountRange(BigDecimal.ZERO, BigDecimal.valueOf(100)).notLessThanMin(minRate).notGreaterThanMax(maxRate);
         }
+
         if (this.fromApiJsonHelper.parameterExists(InterestRateDataValidator.ACTIVE, element)) {
             final Boolean active = this.fromApiJsonHelper.extractBooleanNamed(InterestRateDataValidator.ACTIVE, element);
             baseDataValidator.reset().parameter(InterestRateDataValidator.ACTIVE).value(active).notNull();
