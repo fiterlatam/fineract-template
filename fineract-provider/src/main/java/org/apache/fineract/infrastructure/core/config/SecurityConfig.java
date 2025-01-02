@@ -61,9 +61,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -235,5 +237,18 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+    @Autowired
+    public void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth
+                .ldapAuthentication()
+                .userDnPatterns("uid={0},ou=people")
+                .groupSearchBase("ou=groups")
+                .contextSource()
+                .url("ldap://localhost:8389/dc=springframework,dc=org")
+                .and()
+                .passwordCompare()
+                .passwordEncoder(new BCryptPasswordEncoder())
+                .passwordAttribute("userPassword");
     }
 }
