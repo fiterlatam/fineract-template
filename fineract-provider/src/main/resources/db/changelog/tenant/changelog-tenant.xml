@@ -340,4 +340,5 @@
     <include file="parts/202412230000000100_SU_519_add_configuration_for_penalty_start_date.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241230011009100_SU_545_delete_hono_job.xml" relativeToChangelogFile="true"/>
     <include file="parts/202412230000000101_SU_479_update_reports_reclamados.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2024070222441925_SU_272_add_column_point_of_sales_code.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
