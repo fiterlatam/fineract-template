@@ -350,7 +350,7 @@ public class LoanAccountConfiguration {
             ExternalIdFactory externalIdFactory, AccountTransferDetailRepository accountTransferDetailRepository,
             LoanChargeAssembler loanChargeAssembler, ReplayedTransactionBusinessEventService replayedTransactionBusinessEventService,
             PaymentDetailWritePlatformService paymentDetailWritePlatformService, NoteRepository noteRepository,
-            LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService
+            LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService, JdbcTemplate jdbcTemplate
 
     ) {
         return new LoanChargeWritePlatformServiceImpl(loanChargeApiJsonValidator, loanAssembler, chargeRepository,
@@ -359,7 +359,7 @@ public class LoanAccountConfiguration {
                 loanChargeReadPlatformService, defaultLoanLifecycleStateMachine, accountAssociationsReadPlatformService, fromApiJsonHelper,
                 configurationDomainService, loanRepaymentScheduleTransactionProcessorFactory, externalIdFactory,
                 accountTransferDetailRepository, loanChargeAssembler, replayedTransactionBusinessEventService,
-                paymentDetailWritePlatformService, noteRepository, loanAccrualTransactionBusinessEventService);
+                paymentDetailWritePlatformService, noteRepository, loanAccrualTransactionBusinessEventService, jdbcTemplate);
     }
 
     @Bean

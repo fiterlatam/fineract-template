@@ -732,7 +732,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         for (LoanTransaction transaction : loan.retrieveListOfAccrualTransactions()) {
-            long days = loan.getDisburseDonDate().until(transaction.getTransactionDate(), ChronoUnit.DAYS);
+            long days = loan.getRepaymentScheduleInstallmentsIgnoringTotalGrace().get(0).getDueDate().until(transaction.getTransactionDate(), ChronoUnit.DAYS);
             if (days >= minimumDaysInArrearsToSuspendLoanAccount) {
                 transaction.markAsOccurredOnSuspendedAccount();
             }

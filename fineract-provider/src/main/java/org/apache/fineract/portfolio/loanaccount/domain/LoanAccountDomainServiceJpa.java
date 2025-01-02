@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -1149,24 +1150,29 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             }
 
             // Add Accrual Transaction
-            Integer daysInArrears = 0;
             boolean isSuspendedAccount = false;
             Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
                     .retriveMinimumDaysInArrearsToSuspendLoanAccount();
             if (minimumDaysInArrearsToSuspendLoanAccount == null) {
                 minimumDaysInArrearsToSuspendLoanAccount = 90L;
             }
+            LocalDate arrearsStartDate = LocalDate.now();
             try {
-                daysInArrears = this.jdbcTemplate.queryForObject(
-                        "select COALESCE(current_date - overdue_since_date_derived,0) aging_days from m_loan_arrears_aging mlaa where mlaa.loan_id =?",
-                        Integer.class, loan.getId());
+                arrearsStartDate = this.jdbcTemplate.queryForObject(
+                        "select overdue_since_date_derived aging_days from m_loan_arrears_aging mlaa where mlaa.loan_id =?",
+                        LocalDate.class, loan.getId());
             } catch (final EmptyResultDataAccessException e) {
                 // not in arrears
-                daysInArrears = 0;
+                arrearsStartDate = LocalDate.now();
             }
-            if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
+            long days = 0L;
+            if (arrearsStartDate != null) {
+                days = arrearsStartDate.until(transactionDate, ChronoUnit.DAYS);
+            }
+            if (days >= minimumDaysInArrearsToSuspendLoanAccount) {
                 isSuspendedAccount = true;
             }
+
             Money accrualAmount = Money.of(loan.getCurrency(), cumulativeHonoFee.add(cumulativeVatFee));
             final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(loan, loan.getOffice(),
                     accrualAmount, transactionDate, accrualAmount, Money.zero(loan.getCurrency()), ExternalId.empty());

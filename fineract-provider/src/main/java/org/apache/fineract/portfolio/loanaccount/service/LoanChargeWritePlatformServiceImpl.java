@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import jnr.constants.platform.Local;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -116,6 +118,8 @@ import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -148,6 +152,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
     private final PaymentDetailWritePlatformService paymentDetailWritePlatformService;
     private final NoteRepository noteRepository;
     private final LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService;
+    private final JdbcTemplate jdbcTemplate;
 
     private static boolean isPartOfThisInstallment(LoanCharge loanCharge, LoanRepaymentScheduleInstallment e) {
         return DateUtils.isAfter(loanCharge.getDueDate(), e.getFromDate()) && !DateUtils.isAfter(loanCharge.getDueDate(), e.getDueDate());
@@ -1051,13 +1056,26 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         // the loan product uses Upfront Accruals
         if (loan.getStatus().isActive() && loan.isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
             final LoanTransaction applyLoanChargeTransaction = loan.handleChargeAppliedTransaction(loanCharge, null);
+
             if (DateUtils.isBeforeBusinessDate(loanCharge.getDueLocalDate())) {
                 Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
                         .retriveMinimumDaysInArrearsToSuspendLoanAccount();
                 if (minimumDaysInArrearsToSuspendLoanAccount == null) {
                     minimumDaysInArrearsToSuspendLoanAccount = 90L;
                 }
-                long days = loan.getDisburseDonDate().until(applyLoanChargeTransaction.getTransactionDate(), ChronoUnit.DAYS);
+                LocalDate arrearsStartDate = LocalDate.now();
+                try {
+                    arrearsStartDate = this.jdbcTemplate.queryForObject(
+                            "select overdue_since_date_derived aging_days from m_loan_arrears_aging mlaa where mlaa.loan_id =?",
+                            LocalDate.class, loan.getId());
+                } catch (final EmptyResultDataAccessException e) {
+                    // not in arrears
+                    arrearsStartDate = LocalDate.now();
+                }
+                long days = 0L;
+                if (arrearsStartDate != null) {
+                    days = arrearsStartDate.until(applyLoanChargeTransaction.getTransactionDate(), ChronoUnit.DAYS);
+                }
                 if (days >= minimumDaysInArrearsToSuspendLoanAccount) {
                     applyLoanChargeTransaction.markAsOccurredOnSuspendedAccount();
                 }
