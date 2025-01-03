@@ -23,17 +23,8 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
@@ -58,6 +49,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.MultiDis
 import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.ScheduleDateException;
 import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
 
+@Slf4j
 public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanScheduleGenerator {
 
     @Override
@@ -1518,7 +1510,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         boolean recalculateAmounts = false;
         LocalDate modifiedScheduledDueDate = scheduledDueDate;
         ArrayList<LoanTermVariationsData> variationsData = new ArrayList<>();
-
         for (LoanTermVariationsData variation : loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment()) {
             if (variation.isApplicable(modifiedScheduledDueDate) && variation.getDecimalValue() != null && !variation.isProcessed()) {
                 loanApplicationTerms.updateAnnualNominalInterestRate(variation.getDecimalValue());
@@ -3113,6 +3104,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             // identify retain installments
             List<LoanRepaymentScheduleInstallment> processInstallmentsInstallments = new ArrayList<>();
             if (recalculationDetails.size() > 0) {
+
                 processInstallmentsInstallments = fetchRetainedInstallmentsForProgressiveLoans(loan.getRepaymentScheduleInstallments(),
                         rescheduleFrom, currency);
             }
@@ -3130,6 +3122,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             // before reschedule from date
             // This will create the recalculation details by applying the
             // transactions
+
             for (LoanRepaymentScheduleInstallment installment : processInstallmentsInstallments) {
                 if (installment.isFullyGraced()) {
                     periods.add(createLoanScheduleModelDownPaymentPeriod(installment, outstandingBalance));
@@ -3248,7 +3241,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         loanTermVariationParams = applyExceptionLoanTermVariations(loanApplicationTerms, lastInstallmentDate,
                                 exceptionDataListIterator, instalmentNumber, totalCumulativePrincipal, totalCumulativeInterest, mc);
                     } while (loanTermVariationParams != null && loanTermVariationParams.skipPeriod());
-
                     periodNumber++;
 
                     for (LoanTermVariationsData dueDateVariation : dueDateVariationsDataList) {
@@ -3301,7 +3293,12 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         updateFixedInstallmentAmount(mc, loanApplicationTerms, instalmentNumber, outstandingBalance);
                     }
                 }
+                for (LoanTermVariationsData check : exceptionDataList) {
+                    if (!check.isApplicable(installment.getDueDate())) {
+                        installment.setPrincipal(BigDecimal.ZERO);
+                    }
 
+                }
                 newRepaymentScheduleInstallments.add(installment);
                 outstandingBalance = outstandingBalance.minus(installment.getPrincipal(currency));
                 final LoanScheduleModelPeriod loanScheduleModelPeriod = createLoanScheduleModelPeriod(installment, outstandingBalance);
@@ -3337,7 +3334,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     if (actualPrincipalPortion.isLessThanZero()) {
                         actualPrincipalPortion = principalPortionCalculated.zero();
                     }
-
                     Money unprocessed = updateEarlyPaidAmountsToMap(loanApplicationTerms, holidayDetailDTO,
                             loanRepaymentScheduleTransactionProcessor, newRepaymentScheduleInstallments, currency, principalPortionMap,
                             installment, applicableTransactions, actualPrincipalPortion, loan.getActiveCharges());
@@ -3396,6 +3392,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         uncompoundedAmount, disburseDetailMap, principalToBeScheduled, outstandingBalance, outstandingBalanceAsPerRest,
                         newRepaymentScheduleInstallments, recalculationDetails, loanRepaymentScheduleTransactionProcessor, scheduleTillDate,
                         rescheduleFrom, currency, applyInterestRecalculation);
+
                 retainedInstallments.addAll(newRepaymentScheduleInstallments);
                 loanScheduleParams.getCompoundingDateVariations().putAll(compoundingDateVariations);
                 loanScheduleParams.setAdvanceTransactions(advancePayments);
@@ -3424,6 +3421,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         }
         periods.addAll(loanScheduleModel.getPeriods());
         LoanScheduleModel loanScheduleModelWithPeriodChanges = LoanScheduleModel.withLoanScheduleModelPeriods(periods, loanScheduleModel);
+
         return LoanScheduleDTO.from(retainedInstallments, loanScheduleModelWithPeriodChanges);
     }
 

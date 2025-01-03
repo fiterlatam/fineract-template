@@ -550,12 +550,12 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
                         .fetchLoanForeclosureDetail(rescheduleFromDate, scheduleGeneratorDTO);
                 for (LoanRepaymentScheduleInstallment installment : loanSchedule.getInstallments()) {
-                    if (installment.isNotFullyPaidOff() && !rediferirUnpaidInstallments.contains(installment)) {
-                        // installment.setPrincipal(BigDecimal.ZERO);
-                        System.out.println("check instalment " + installment.getInstallmentNumber() + " " + installment.getFromDate() + " "
-                                + installment.getDueDate() + " " + installment.getPrincipal(loan.getCurrency()) + " "
-                                + installment.getInterestCharged(loan.getCurrency()));
-                    }
+                    // if (installment.isNotFullyPaidOff() && !rediferirUnpaidInstallments.contains(installment)) {
+                    // installment.setPrincipal(BigDecimal.ZERO);
+                    System.out.println("check instalment " + installment.getInstallmentNumber() + " " + installment.getFromDate() + " "
+                            + installment.getDueDate() + " " + installment.getPrincipal(loan.getCurrency()) + " "
+                            + installment.getInterestCharged(loan.getCurrency()));
+                    // }
                 }
             }
 
