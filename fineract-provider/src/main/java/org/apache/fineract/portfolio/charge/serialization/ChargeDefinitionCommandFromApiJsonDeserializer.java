@@ -512,7 +512,6 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
         if (!penalty) {
             if (calculationType.isVoluntaryInsurance()) {
                 final String insuranceName = this.fromApiJsonHelper.extractStringNamed(ChargesApiConstants.insuranceNameParamName, element);
-
                 baseDataValidator.reset().parameter(ChargesApiConstants.insuranceNameParamName).value(insuranceName)
                         .notExceedingLengthOf(100);
 
@@ -546,9 +545,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
 
                 final Integer daysInArrears = this.fromApiJsonHelper.extractIntegerWithLocaleNamed(ChargesApiConstants.DAYS_IN_ARREARS,
                         element.getAsJsonObject());
-
                 baseDataValidator.reset().parameter(ChargesApiConstants.DAYS_IN_ARREARS).value(daysInArrears)
-
                         .integerEqualToOrGreaterThanNumber(1);
             }
             if (calculationType.isInsurance()) {

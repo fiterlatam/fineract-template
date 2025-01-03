@@ -145,5 +145,18 @@
             ]]>
         </sql>
     </changeSet>
+    <changeSet id="upgrade_scale_from_2_to_8" author="bosco@fiter.io">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="m_charge" columnName="amount"/>
+        </preConditions>
+        <modifyDataType tableName="m_charge" columnName="amount" newDataType="DECIMAL(19,8)"/>
+    </changeSet>
+
+    <changeSet id="upgrade-m_interest_rate_scale_from_4_to_8" author="bosco@fiter.io">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="m_interest_rate" columnName="current_rate"/>
+        </preConditions>
+        <modifyDataType tableName="m_interest_rate" columnName="current_rate" newDataType="DECIMAL(10,8)"/>
+    </changeSet>
 
 </databaseChangeLog>

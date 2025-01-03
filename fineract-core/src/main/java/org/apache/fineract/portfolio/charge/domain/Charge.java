@@ -63,7 +63,7 @@ public class Charge extends AbstractPersistableCustom {
     @Column(name = "name", length = 100)
     private String name;
 
-    @Column(name = "amount", scale = 6, precision = 19, nullable = false)
+    @Column(name = "amount", scale = 8, precision = 19, nullable = false)
     private BigDecimal amount;
 
     @Column(name = "currency_code", length = 3)

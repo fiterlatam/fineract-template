@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet author="bosco@fiter.io" id="EA-73_Daily_Loan_disbursement_report" context="postgresql">
+        <insert tableName="stretchy_report">
+            <column name="report_name" value="Daily Disbursement Report"/>
+            <column name="report_type" value="Table"/>
+            <column name="report_subtype"/>
+            <column name="report_category" value="Loan"/>
+            <column name="report_sql" value=" SELECT c.display_name  AS &quot;Client Name&quot;,
+       Coalesce(cur.display_symbol, l.currency_code) AS &quot;Currency&quot;,
+       l.disbursedon_date AS &quot;Disbursed Date&quot;,
+       Round(Sum(l.principal_amount), 4)  AS &quot;Disbursed Amount&quot;
+       FROM m_office ounder
+         JOIN m_client c ON c.office_id = ounder.id
+         JOIN m_loan l ON l.client_id = c.id
+         JOIN m_currency cur ON cur.code = l.currency_code
+WHERE disbursedon_date BETWEEN '${startDate}'
+  AND '${endDate}'
+  AND ( l.currency_code = '${currencyId}'
+   OR '-1' = '${currencyId}')
+  AND ounder.hierarchy LIKE concat('${currentUserHierarchy}'
+    , '%')
+GROUP BY c.display_name, coalesce (cur.display_symbol, l.currency_code),l.disbursedon_date
+ORDER BY c.display_name, coalesce (cur.display_symbol, l.currency_code)  "/>
+
+            <column name="description" value="Daily Disbursement Report"/>
+            <column name="core_report" valueBoolean="true"/>
+            <column name="use_report" valueBoolean="true"/>
+            <column name="self_service_user_report" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="bosco@fiter.io" id="EA-73-Daily_report_parameters" context="postgresql">
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select sr.id from stretchy_report sr where sr.report_name ='Daily Disbursement Report')"/>
+            <column name="parameter_id" valueNumeric="(select sp.id from stretchy_parameter sp where sp.parameter_name = 'startDateSelect')"/>
+            <column name="report_parameter_name" value="startDate"/>
+        </insert>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select sr.id from stretchy_report sr where sr.report_name ='Daily Disbursement Report')"/>
+            <column name="parameter_id" valueNumeric="(select sp.id from stretchy_parameter sp where sp.parameter_name = 'endDateSelect')"/>
+            <column name="report_parameter_name" value="endDate"/>
+        </insert>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id" valueComputed="(select sr.id from stretchy_report sr where sr.report_name ='Daily Disbursement Report')"/>
+            <column name="parameter_id" valueNumeric="(select sp.id from stretchy_parameter sp where sp.parameter_name = 'currencyIdSelectAll')"/>
+            <column name="report_parameter_name" value="currencyId"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="bosco@fiter.io" id="EA-72-refactor-Loan-rejected-report">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                Select count(*) from stretchy_report where report_name = 'Loan Rejected'
+            </sqlCheck>
+        </preConditions>
+        <update tableName="stretchy_report">
+            <column name="report_name" value="Loan Rejected"/>
+            <column name="report_sql">
+                <![CDATA[
+                SELECT mc.id, mc.firstname, mc.middlename as middlename, mc.lastname, mc.display_name as FullName, mc.mobile_no as mobileNo, mc.group_name as GroupName,  mo.name as officename, ml.id as loanId, ml.account_no as accountnumber, ml.principal_amount_proposed as loanamount, ml.annual_nominal_interest_rate as annualinterestrate  FROM m_office mo  JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, '%')  AND ounder.hierarchy like CONCAT('.', '%')  LEFT JOIN (  select   ml.id as loanId, COALESCE(mc.id,mc2.id) as id, COALESCE(mc.firstname,mc2.firstname) as firstname, COALESCE(mc.middlename,COALESCE(mc2.middlename,(''))) as middlename,   COALESCE(mc.lastname,mc2.lastname) as lastname,   COALESCE(mc.display_name,mc2.display_name) as display_name,   COALESCE(mc.status_enum,mc2.status_enum) as status_enum,  COALESCE(mc.mobile_no,mc2.mobile_no) as mobile_no,  COALESCE(mg.office_id,mc2.office_id) as office_id,  COALESCE(mg.staff_id,mc2.staff_id) as staff_id, mg.id as group_id,  mg.display_name as group_name  from m_loan ml  left join m_group mg on mg.id = ml.group_id  left join m_group_client mgc on mgc.group_id = mg.id  left join m_client mc on mc.id = mgc.client_id  left join m_client mc2 on mc2.id = ml.client_id  order by loanId  ) mc on mc.office_id = ounder.id  left join m_loan ml on ml.id = mc.loanId  WHERE mc.status_enum = 300 AND ml.loan_status_id = 500  and (mo.id = ${officeId} or '${officeId}' = -1)  AND       ( ml.loan_officer_id = ${loanOfficerId} OR        '-1' = '${loanOfficerId}') and (ml.id = ${loanId} or '${loanId}' = -1) and (mc.id = ${clientId} or '${clientId}' = -1) and (mc.group_id = ${groupId} or '${groupId}' = -1)  and (ml.loan_type_enum = ${loanType} or '${loanType}' = -1)
+                ]]>
+            </column>
+            <column name="report_type" value="Table"/>
+            <column name="report_category" value="Loan"/>
+            <column name="core_report" value="true"/>
+            <column name="use_report" value="true"/>
+            <where>report_name = 'Loan Rejected'</where>
+        </update>
+    </changeSet>
+
+    <changeSet author="bosco@fiter.io" id="EA-72-refactor-Loan-in-arrears-report">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                Select count(*) from stretchy_report where report_name = 'Loan in arrears'
+            </sqlCheck>
+        </preConditions>
+        <update tableName="stretchy_report">
+            <column name="report_name" value="Loan in arrears"/>
+            <column name="report_sql">
+                <![CDATA[
+                SELECT mc.id AS id, mc.firstname AS firstName, mc.middlename AS middleName, mc.lastname AS lastName, mc.display_name AS fullName, mc.mobile_no AS mobileNo, ml.principal_amount AS loanAmount, (COALESCE(ml.principal_outstanding_derived, 0) + COALESCE(ml.interest_outstanding_derived, 0) + COALESCE(ml.fee_charges_outstanding_derived, 0) + COALESCE(ml.penalty_charges_outstanding_derived, 0)) AS loanOutstanding, ml.principal_disbursed_derived AS loanDisbursed, laa.overdue_since_date_derived AS paymentDueDate, COALESCE(laa.total_overdue_derived, 0) AS totalDue, ounder.id AS officeNumber, ml.account_no AS loanAccountId, gua.lastname AS guarantorLastName, COUNT(gua.id) AS numberOfGuarantors, g.display_name AS groupName FROM m_office mo JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, '%') INNER JOIN m_client mc ON mc.office_id=ounder.id INNER JOIN m_loan ml ON ml.client_id = mc.id INNER JOIN r_enum_value rev ON rev.enum_id=ml.loan_status_id AND rev.enum_name = 'loan_status_id' INNER JOIN m_loan_arrears_aging laa ON laa.loan_id=ml.id LEFT JOIN m_currency cur ON cur.code = ml.currency_code LEFT JOIN m_group_client gc ON gc.client_id = mc.id LEFT JOIN m_group g ON g.id = gc.group_id LEFT JOIN m_staff lo ON lo.id = ml.loan_officer_id LEFT JOIN m_guarantor gua ON gua.loan_id = ml.id WHERE ml.loan_status_id=300 AND mo.id='${officeId}' AND (COALESCE(ml.loan_officer_id, -10) = ${loanOfficerId} OR '-1' = ${loanOfficerId}) AND (EXTRACT(DAY FROM (CURRENT_DATE - laa.overdue_since_date_derived::TIMESTAMP)) BETWEEN ${fromX} AND ${toY}) GROUP BY ml.id, mc.id, laa.loan_id, ounder.id, gua.id, g.id, ounder.hierarchy, ml.currency_code, mc.account_no, ml.account_no ORDER BY ounder.hierarchy, ml.currency_code, mc.account_no, ml.account_no
+                ]]>
+            </column>
+            <column name="report_type" value="Table"/>
+            <column name="report_category" value="Loan"/>
+            <column name="core_report" value="true"/>
+            <column name="use_report" value="true"/>
+            <where>report_name = 'Loan in arrears'</where>
+        </update>
+    </changeSet>
+</databaseChangeLog>
