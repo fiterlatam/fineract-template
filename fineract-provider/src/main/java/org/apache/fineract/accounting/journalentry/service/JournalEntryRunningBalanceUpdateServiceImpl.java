@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.accounting.common.AccountingEnumerations;
@@ -161,14 +160,14 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
             final Integer batchUpdateSize = 1000;
 
             // Batch update using JdbcTemplate with PreparedStatement
-            try (Stream<JournalEntryData> entryStream = jdbcTemplate.queryForStream(
-                    entryMapper.organizationRunningBalanceSchema(), entryMapper, entityDate)) {
+            try (Stream<JournalEntryData> entryStream = jdbcTemplate.queryForStream(entryMapper.organizationRunningBalanceSchema(),
+                    entryMapper, entityDate)) {
 
                 List<JournalEntryData> batch = new ArrayList<>();
                 entryStream.forEach(entry -> {
                     batch.add(entry);
                     if (batch.size() == batchUpdateSize) {
-                        processBatch(batch, jdbcTemplate,officesRunningBalance,runningBalanceMap);
+                        processBatch(batch, jdbcTemplate, officesRunningBalance, runningBalanceMap);
                         batch.clear();
                     }
                 });
@@ -181,11 +180,10 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
 
     }
 
-    private void processBatch(List<JournalEntryData> batch, JdbcTemplate jdbcTemplate, Map<Long, Map<Long, BigDecimal>> officesRunningBalance, Map<Long, BigDecimal> runningBalanceMap) {
-        jdbcTemplate.batchUpdate(
-                "UPDATE acc_gl_journal_entry SET is_running_balance_calculated=true, "
-                        + "organization_running_balance = ?, office_running_balance = ? WHERE id = ?",
-                batch, 1000, (ps, entryData) -> {
+    private void processBatch(List<JournalEntryData> batch, JdbcTemplate jdbcTemplate,
+            Map<Long, Map<Long, BigDecimal>> officesRunningBalance, Map<Long, BigDecimal> runningBalanceMap) {
+        jdbcTemplate.batchUpdate("UPDATE acc_gl_journal_entry SET is_running_balance_calculated=true, "
+                + "organization_running_balance = ?, office_running_balance = ? WHERE id = ?", batch, 1000, (ps, entryData) -> {
                     Map<Long, BigDecimal> officeRunningBalanceMap = officesRunningBalance.computeIfAbsent(entryData.getOfficeId(),
                             k -> new HashMap<>());
 
