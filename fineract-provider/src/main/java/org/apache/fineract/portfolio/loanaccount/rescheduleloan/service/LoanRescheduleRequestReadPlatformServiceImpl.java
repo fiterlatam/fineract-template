@@ -74,52 +74,29 @@ public class LoanRescheduleRequestReadPlatformServiceImpl implements LoanResched
         private final String schema;
 
         LoanRescheduleRequestRowMapper() {
-            final StringBuilder sqlBuilder = new StringBuilder(200);
 
-            sqlBuilder.append("lr.id as id, lr.loan_id as loanId, lr.status_enum as statusEnum, ");
-            sqlBuilder.append("mc.display_name as clientName, ");
-            sqlBuilder.append("mc.id as clientId, ");
-            sqlBuilder.append("ml.account_no as loanAccountNumber, ");
-            sqlBuilder.append("lr.reschedule_from_installment as rescheduleFromInstallment, ");
-            sqlBuilder.append("lr.reschedule_from_date as rescheduleFromDate, ");
-            sqlBuilder.append("lr.recalculate_interest as recalculateInterest, ");
-            sqlBuilder.append("lr.reschedule_reason_cv_id as rescheduleReasonCvId, ");
-            sqlBuilder.append("cv.code_value as rescheduleReasonCvValue, ");
-            sqlBuilder.append("lr.reschedule_reason_comment as rescheduleReasonComment, ");
+            String sqlBuilder = "lr.id as id, lr.loan_id as loanId, lr.status_enum as statusEnum, " + "mc.display_name as clientName, "
+                    + "mc.id as clientId, " + "ml.account_no as loanAccountNumber, "
+                    + "lr.reschedule_from_installment as rescheduleFromInstallment, " + "lr.reschedule_from_date as rescheduleFromDate, "
+                    + "lr.recalculate_interest as recalculateInterest, " + "lr.reschedule_reason_cv_id as rescheduleReasonCvId, "
+                    + "cv.code_value as rescheduleReasonCvValue, " + "lr.reschedule_reason_comment as rescheduleReasonComment, "
+                    + "lr.submitted_on_date as submittedOnDate, " + "sbu.username as submittedByUsername, "
+                    + "sbu.firstname as submittedByFirstname, " + "sbu.lastname as submittedByLastname, "
+                    + "lr.approved_on_date as approvedOnDate, " + "abu.username as approvedByUsername, "
+                    + "abu.firstname as approvedByFirstname, " + "abu.lastname as approvedByLastname, "
+                    + "lr.rejected_on_date as rejectedOnDate, " + "rbu.username as rejectedByUsername, "
+                    + "rbu.firstname as rejectedByFirstname, " + "rbu.lastname as rejectedByLastname, " + "tv.id as termId,"
+                    + "tv.term_type as termType," + "tv.applicable_date as variationApplicableFrom, " + "tv.decimal_value as decimalValue, "
+                    + "tv.date_value as dateValue, " + "tv.is_specific_to_installment as isSpecificToInstallment "
+                    + "from m_loan_reschedule_request lr " + "left join m_code_value cv on cv.id = lr.reschedule_reason_cv_id "
+                    + "left join m_appuser sbu on sbu.id = lr.submitted_by_user_id "
+                    + "left join m_appuser abu on abu.id = lr.approved_by_user_id "
+                    + "left join m_appuser rbu on rbu.id = lr.rejected_by_user_id " + "left join m_loan ml on ml.id = lr.loan_id "
+                    + "left join m_client mc on mc.id = ml.client_id "
+                    + "join m_loan_reschedule_request_term_variations_mapping rrtvm on lr.id = rrtvm.loan_reschedule_request_id "
+                    + "join m_loan_term_variations tv on tv.id = rrtvm.loan_term_variations_id and tv.parent_id is null";
 
-            sqlBuilder.append("lr.submitted_on_date as submittedOnDate, ");
-            sqlBuilder.append("sbu.username as submittedByUsername, ");
-            sqlBuilder.append("sbu.firstname as submittedByFirstname, ");
-            sqlBuilder.append("sbu.lastname as submittedByLastname, ");
-
-            sqlBuilder.append("lr.approved_on_date as approvedOnDate, ");
-            sqlBuilder.append("abu.username as approvedByUsername, ");
-            sqlBuilder.append("abu.firstname as approvedByFirstname, ");
-            sqlBuilder.append("abu.lastname as approvedByLastname, ");
-
-            sqlBuilder.append("lr.rejected_on_date as rejectedOnDate, ");
-            sqlBuilder.append("rbu.username as rejectedByUsername, ");
-            sqlBuilder.append("rbu.firstname as rejectedByFirstname, ");
-            sqlBuilder.append("rbu.lastname as rejectedByLastname, ");
-
-            sqlBuilder.append("tv.id as termId,");
-            sqlBuilder.append("tv.term_type as termType,");
-            sqlBuilder.append("tv.applicable_date as variationApplicableFrom, ");
-            sqlBuilder.append("tv.decimal_value as decimalValue, ");
-            sqlBuilder.append("tv.date_value as dateValue, ");
-            sqlBuilder.append("tv.is_specific_to_installment as isSpecificToInstallment ");
-
-            sqlBuilder.append("from m_loan_reschedule_request lr ");
-            sqlBuilder.append("left join m_code_value cv on cv.id = lr.reschedule_reason_cv_id ");
-            sqlBuilder.append("left join m_appuser sbu on sbu.id = lr.submitted_by_user_id ");
-            sqlBuilder.append("left join m_appuser abu on abu.id = lr.approved_by_user_id ");
-            sqlBuilder.append("left join m_appuser rbu on rbu.id = lr.rejected_by_user_id ");
-            sqlBuilder.append("left join m_loan ml on ml.id = lr.loan_id ");
-            sqlBuilder.append("left join m_client mc on mc.id = ml.client_id ");
-            sqlBuilder.append("join m_loan_reschedule_request_term_variations_mapping rrtvm on lr.id = rrtvm.loan_reschedule_request_id ");
-            sqlBuilder.append("join m_loan_term_variations tv on tv.id = rrtvm.loan_term_variations_id and tv.parent_id is null");
-
-            this.schema = sqlBuilder.toString();
+            this.schema = sqlBuilder;
         }
 
         public String schema() {
@@ -197,17 +174,14 @@ public class LoanRescheduleRequestReadPlatformServiceImpl implements LoanResched
     private static final class LoanRescheduleRequestRowMapperForBulkApproval implements RowMapper<LoanRescheduleRequestData> {
 
         public String schema() {
-            final StringBuilder sqlBuilder = new StringBuilder(200);
 
-            sqlBuilder.append("lrr.id as id, lrr.status_enum as statusEnum, lrr.reschedule_from_date as rescheduleFromDate, ");
-            sqlBuilder.append("cv.id as rescheduleReasonCvId, cv.code_value as rescheduleReasonCvValue, ");
-            sqlBuilder.append(
-                    " loan.id as loanId, loan.account_no as loanAccountNumber, client.id as clientId, client.display_name as clientName ");
-            sqlBuilder.append("from m_loan_reschedule_request lrr ");
-            sqlBuilder.append("left join m_loan loan on loan.id = lrr.loan_id ");
-            sqlBuilder.append("left join m_client client on client.id = loan.client_id ");
-            sqlBuilder.append("left join m_code_value cv on cv.id = lrr.reschedule_reason_cv_id ");
-            return sqlBuilder.toString();
+            String sqlBuilder = "lrr.id as id, lrr.status_enum as statusEnum, lrr.reschedule_from_date as rescheduleFromDate, "
+                    + "cv.id as rescheduleReasonCvId, cv.code_value as rescheduleReasonCvValue, "
+                    + " loan.id as loanId, loan.account_no as loanAccountNumber, client.id as clientId, client.display_name as clientName "
+                    + "from m_loan_reschedule_request lrr " + "left join m_loan loan on loan.id = lrr.loan_id "
+                    + "left join m_client client on client.id = loan.client_id "
+                    + "left join m_code_value cv on cv.id = lrr.reschedule_reason_cv_id ";
+            return sqlBuilder;
         }
 
         @Override
@@ -318,5 +292,38 @@ public class LoanRescheduleRequestReadPlatformServiceImpl implements LoanResched
             sql += " where " + String.join(" AND ", extraFilters);
         }
         return jdbcTemplate.query(sql, loanRescheduleRequestRowMapperForBulkApproval, extraParams.toArray()); // NOSONAR
+    }
+
+    @Override
+    public LoanRescheduleRequestData retrieveAllRescheduleReasonsTilDate(String loanRescheduleReason, Long loanId, LocalDate tillDate) {
+        final List<CodeValueData> rescheduleReasons = new ArrayList<>(
+                this.codeValueReadPlatformService.retrieveCodeValuesByCode(loanRescheduleReason));
+        final Long id = null;
+        BigDecimal rediferirAmount = BigDecimal.ZERO;
+        final LoanRescheduleRequestStatusEnumData statusEnum = null;
+        final Integer rescheduleFromInstallment = null;
+        final LocalDate rescheduleFromDate = null;
+        final CodeValueData rescheduleReasonCodeValue = null;
+        final String rescheduleReasonComment = null;
+        final LoanRescheduleRequestTimelineData timeline = null;
+        final String clientName = null;
+        final String loanAccountNumber = null;
+        final Long clientId = null;
+        final Boolean recalculateInterest = null;
+        final Collection<LoanTermVariationsData> loanTermVariationsData = null;
+        final LoanRescheduleRequestData loanRescheduleRequestData = LoanRescheduleRequestData.instance(id, loanId, statusEnum,
+                rescheduleFromInstallment, rescheduleFromDate, rescheduleReasonCodeValue, rescheduleReasonComment, timeline, clientName,
+                loanAccountNumber, clientId, recalculateInterest, rescheduleReasons, loanTermVariationsData);
+        if (loanId != null) {
+            final Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+            final MonetaryCurrency currency = loan.getCurrency();
+
+            final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
+            final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(tillDate,
+                    scheduleGeneratorDTO);
+            rediferirAmount = loanRepaymentScheduleInstallment.getRediferirAmount(currency).getAmount();
+        }
+        loanRescheduleRequestData.setRediferirAmount(rediferirAmount);
+        return loanRescheduleRequestData;
     }
 }

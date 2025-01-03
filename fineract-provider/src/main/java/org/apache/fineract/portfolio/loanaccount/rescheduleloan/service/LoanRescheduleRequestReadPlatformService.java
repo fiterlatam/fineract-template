@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.rescheduleloan.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.data.LoanRescheduleRequestData;
 
@@ -68,4 +69,6 @@ public interface LoanRescheduleRequestReadPlatformService {
      * @return list of LoanRescheduleRequestData objects
      **/
     List<LoanRescheduleRequestData> retrieveAllRescheduleRequests(String command, Long loanId);
+
+    LoanRescheduleRequestData retrieveAllRescheduleReasonsTilDate(String loanRescheduleReason, Long loanId, LocalDate tillDate);
 }
