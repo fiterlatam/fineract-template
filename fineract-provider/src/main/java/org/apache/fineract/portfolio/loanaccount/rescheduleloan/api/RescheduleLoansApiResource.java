@@ -89,7 +89,7 @@ public class RescheduleLoansApiResource {
     @Operation(summary = "Retrieve all reschedule loan reasons", description = "Retrieve all reschedule loan reasons as a template")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RescheduleLoansApiResourceSwagger.GetRescheduleReasonsTemplateResponse.class))) })
-    public String retrieveTemplate(@Context final UriInfo uriInfo, @QueryParam("loanId") Long loanId,
+    public String retrieveTemplatetillDate(@Context final UriInfo uriInfo, @QueryParam("loanId") Long loanId,
             @QueryParam("tillDate") String tillDate) {
         this.platformSecurityContext.authenticatedUser().validateHasReadPermission(RescheduleLoansApiConstants.ENTITY_NAME);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
