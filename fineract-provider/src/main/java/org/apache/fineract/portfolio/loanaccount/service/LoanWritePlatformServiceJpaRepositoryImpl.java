@@ -4768,7 +4768,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             .getAccruedInterestForInstallment(loanRepaymentScheduleInstallment.getInstallmentNumber());
                     long daysInPeriod = Math.toIntExact(ChronoUnit.DAYS.between(loanRepaymentScheduleInstallment.getFromDate(),
                             loanRepaymentScheduleInstallment.getDueDate()));
-                    Money interestForInstallment = loanRepaymentScheduleInstallment.getInterestCharged(currency);
+                    Money interestForInstallment = loanRepaymentScheduleInstallment.getInterestOutstanding(currency);
                     // Adjust interest on the last day of the period to make up the difference
                     if (transactionDate.equals(loanRepaymentScheduleInstallment.getDueDate().minusDays(1))) {
                         // if the amount is whole number when divided across the days in the period, then do same for
