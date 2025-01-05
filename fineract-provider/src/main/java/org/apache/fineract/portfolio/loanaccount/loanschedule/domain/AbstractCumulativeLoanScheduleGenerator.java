@@ -301,7 +301,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             // 5 determine principal,interest of repayment period
             LocalDate rescheduleFromDate = null;
             boolean isMidTermRescheduling = false;
-            if (loanScheduleParams != null) {
+
+            if (loanScheduleParams != null && loanScheduleParams.applyInterestRecalculation()) {
                 rescheduleFromDate = loanScheduleParams.getRescheduleFromDate();
                 if (rescheduleFromDate != null) {
                     if (DateUtils.isAfter(rescheduleFromDate, periodStartDateApplicableForInterest)
@@ -379,8 +380,20 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 scheduleParams.advanceTransactions().clear();
             }
             ////////////
+            if (loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment().size() > 0) {
+                for (LoanTermVariationsData loanTermVariation : loanApplicationTerms.getLoanTermVariations()
+                        .getInterestRateFromInstallment()) {
+                    if (DateUtils.isAfter(loanTermVariation.getTermVariationApplicableFrom(), periodStartDateApplicableForInterest)
+                            && DateUtils.isBefore(loanTermVariation.getTermVariationApplicableFrom(), periodEndDate)) {
+                        if (!loanTermVariation.getTermVariationApplicableFrom().equals(periodEndDate)) {
+                            isMidTermRescheduling = true;
+                            rescheduleFromDate = loanTermVariation.getTermVariationApplicableFrom();
+                        }
+                    }
+                }
+            }
 
-            if (!isMidTermRescheduling || loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment().isEmpty()) {
+            if (!isMidTermRescheduling) {
 
                 if (annualNominalInterestRate.compareTo(BigDecimal.valueOf(100)) > 0) {
                     loanApplicationTerms.setAnnualNominalInterestRate(annualNominalInterestRate);
@@ -2984,6 +2997,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             final LoanApplicationTerms loanApplicationTerms, Loan loan, final HolidayDetailDTO holidayDetailDTO,
             final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor, LocalDate rescheduleFrom,
             final LocalDate scheduleTillDate) {
+
         // Loan transactions to process and find the variation on payments
         Collection<RecalculationDetail> recalculationDetails = new ArrayList<>();
         Collection<RecalculationDetail> advancePayments = new ArrayList<>();
@@ -3293,12 +3307,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         updateFixedInstallmentAmount(mc, loanApplicationTerms, instalmentNumber, outstandingBalance);
                     }
                 }
-                for (LoanTermVariationsData check : exceptionDataList) {
-                    if (!check.isApplicable(installment.getDueDate())) {
-                        installment.setPrincipal(BigDecimal.ZERO);
-                    }
 
-                }
                 newRepaymentScheduleInstallments.add(installment);
                 outstandingBalance = outstandingBalance.minus(installment.getPrincipal(currency));
                 final LoanScheduleModelPeriod loanScheduleModelPeriod = createLoanScheduleModelPeriod(installment, outstandingBalance);
@@ -3398,6 +3407,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 loanScheduleParams.setAdvanceTransactions(advancePayments);
                 loanApplicationTerms.updateTotalInterestDue(Money.of(currency, loan.getLoanSummary().getTotalInterestCharged()));
             } else {
+
                 loanApplicationTerms.getLoanTermVariations().resetVariations();
                 periods.clear();
             }
@@ -3409,6 +3419,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             loanApplicationTerms.setInterestTobeApproppriated(
                     Money.of(loan.getCurrency(), retainedInstallments.get(retainedInstallments.size() - 1).getRescheduleInterestPortion()));
         }
+
         LoanScheduleModel loanScheduleModel = generate(mc, loanApplicationTerms, loan.getActiveCharges(), holidayDetailDTO,
                 loanScheduleParams);
 

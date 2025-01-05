@@ -465,6 +465,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 }
                 mapping.getLoanTermVariations().updateIsActive(true);
             }
+            BigDecimal rediferirAmount = BigDecimal.ZERO;
             if (!rediferirVariations.isEmpty()) {
                 if (Boolean.FALSE.equals(isJobTriggered) && !loanProduct.getCustomAllowReferido()) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.not.allowed",
@@ -475,7 +476,8 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
                         .fetchLoanForeclosureDetail(rescheduleFromDate, scheduleGeneratorDTO);
                 final MonetaryCurrency currency = loan.getCurrency();
-                final BigDecimal rediferirAmount = loanRepaymentScheduleInstallment.getRediferirAmount(currency).getAmount();
+                rediferirAmount = loanRepaymentScheduleInstallment.getRediferirAmount(currency).getAmount();
+
                 if (!Money.of(currency, rediferirAmount).isGreaterThanZero()) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.amount.zero",
                             "Rediferir amount is zero", rediferirAmount);
@@ -499,7 +501,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                         }
                     }
                     rediferirTermVariationValue.setDecimalValue(BigDecimal.valueOf(numberOfNewRepaymentPeriods));
-                    // rediferirTermVariationValue.setTermType(LoanTermVariationType.EXTEND_REPAYMENT_PERIOD.getValue());
+                    rediferirTermVariationValue.setTermType(LoanTermVariationType.EXTEND_REPAYMENT_PERIOD.getValue());
                     rediferirTermVariationValue.setTermApplicableFrom(rescheduleFromDate);
                     loanRescheduleRequest.setRescheduleFromDate(rescheduleFromDate);
                     this.loanTermVariationsRepository.saveAndFlush(rediferirTermVariationValue);
@@ -517,6 +519,11 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             final List<LoanTermVariationsData> loanTermVariations = new ArrayList<>();
             loan.constructLoanTermVariations(scheduleGeneratorDTO.getFloatingRateDTO(), annualNominalInterestRate, loanTermVariations);
             loanApplicationTerms.getLoanTermVariations().setExceptionData(loanTermVariations);
+            for (LoanTermVariationsData ishaveRecalculateInterst : loanTermVariations) {
+                if (ishaveRecalculateInterst.getTermVariationType().isInterestRateFromInstallment()) {
+                    loanApplicationTerms.updateLoanTermVariations(loanTermVariations);
+                }
+            }
 
             /*
              * for (LoanTermVariationsData loanTermVariation :
@@ -542,23 +549,6 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     loanApplicationTerms, loan, loanApplicationTerms.getHolidayDetailDTO(), loanRepaymentScheduleTransactionProcessor,
                     rescheduleFromDate);
 
-            // Check if Referido
-
-            if (!rediferirVariations.isEmpty()) {
-                final List<LoanRepaymentScheduleInstallment> rediferirUnpaidInstallments = findRediferirUnpaidInstallments(
-                        loanSchedule.getInstallments(), rescheduleFromDate);
-                final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
-                        .fetchLoanForeclosureDetail(rescheduleFromDate, scheduleGeneratorDTO);
-                for (LoanRepaymentScheduleInstallment installment : loanSchedule.getInstallments()) {
-                    // if (installment.isNotFullyPaidOff() && !rediferirUnpaidInstallments.contains(installment)) {
-                    // installment.setPrincipal(BigDecimal.ZERO);
-                    System.out.println("check instalment " + installment.getInstallmentNumber() + " " + installment.getFromDate() + " "
-                            + installment.getDueDate() + " " + installment.getPrincipal(loan.getCurrency()) + " "
-                            + installment.getInterestCharged(loan.getCurrency()));
-                    // }
-                }
-            }
-
             // Either the installments got recalculated or the model
             if (loanSchedule.getInstallments() != null) {
                 loan.updateLoanSchedule(loanSchedule);
@@ -566,6 +556,18 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 loan.updateLoanSchedule(loanSchedule.getLoanScheduleModel());
             }
             loan.recalculateAllCharges();
+
+            // Check if Referido
+            if (!rediferirVariations.isEmpty()) {
+                final List<LoanRepaymentScheduleInstallment> rediferirUnpaidInstallments = findRediferirUnpaidInstallments(
+                        loan.getRepaymentScheduleInstallments(), rescheduleFromDate);
+                for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
+                    if (installment.isNotFullyPaidOff() && !rediferirUnpaidInstallments.contains(installment)) {
+                        installment.setPrincipal(BigDecimal.ZERO);
+                    }
+                }
+            }
+
             ChangedTransactionDetail changedTransactionDetail = loan.processTransactions();
             if (!rediferirVariations.isEmpty()) {
                 saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
@@ -575,7 +577,12 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
                         .fetchLoanForeclosureDetail(rescheduleFromDate, scheduleGeneratorDTO);
                 final MonetaryCurrency currency = loan.getCurrency();
-                final BigDecimal rediferirAmount = loanRepaymentScheduleInstallment.getRediferirAmount(currency).getAmount();
+
+                if (!Money.of(currency, rediferirAmount).isGreaterThanZero()) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.amount.zero",
+                            "Rediferir amount is zero", rediferirAmount);
+                }
+
                 final LoanTransaction newRepaymentTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.REPAYMENT,
                         loan, businessLocalDate, rediferirAmount, paymentDetail, null, txnExternalId, false, null, isAccountTransfer, null,
                         false, true);
