@@ -191,10 +191,12 @@ public class LoanRepaymentScheduleProcessingWrapper {
                     } else {
                         cumulative = cumulative.plus(loanCharge.amountOrPercentage());
                     }
-                } else if (loanCharge.isOverdueInstallmentCharge()
-                        && loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)
-                        && loanCharge.getChargeCalculation().isPercentageBased()) {
-                    cumulative = cumulative.plus(loanCharge.chargeAmount());
+                } else if (loanCharge.isOverdueInstallmentCharge()) {
+                    LoanOverdueInstallmentCharge installmentCharge = loanCharge.getOverdueInstallmentCharge();
+                    if (installmentCharge.getInstallment().getInstallmentNumber().equals(period.getInstallmentNumber())
+                            && loanCharge.getChargeCalculation().isPercentageBased()){
+                        cumulative = cumulative.plus(loanCharge.chargeAmount());
+                    }
                 } else if (loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)
                         && loanCharge.getChargeCalculation().isPercentageBased()) {
                     BigDecimal amount = BigDecimal.ZERO;
