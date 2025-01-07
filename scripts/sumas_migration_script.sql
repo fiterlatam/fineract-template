@@ -194,7 +194,7 @@ INSERT INTO campos_cliente_persona
 select 
 	mc.id as client_id,
 	c.id as "Cedula",
-	 marital_status.id as "Estado Civil_cd_Estado civil",
+	marital_status.id as "Estado Civil_cd_Estado civil",
 	c.age as "Edad",
 	c.estrato as "Estrato",
 	city_value.id as "Ciudad_cd_Ciudad",
@@ -202,7 +202,7 @@ select
 		when c.has_own_vehicle = 'N' then false
 		else true
 	end	as "Tiene vehiculo propio",
-	 vehicle_value.id as "Tipo Vehiculo_cd_Tipo de vehiculo",
+	vehicle_value.id as "Tipo Vehiculo_cd_Tipo de vehiculo",
 	academic_value.id as "Nivel Academico_cd_Nivel academico",
 	workActivity_value.id as "Actividad Laboral_cd_Actividad laboral",
 	c.work_time as "Tiempo de actividad laboral",
@@ -441,7 +441,11 @@ from
 
 
 -- Set the original cupo value for client
-update campos_cliente_persona set "Cupo aprobado" = "Cupo solicitado"
+update campos_cliente_persona ccp
+set "Cupo aprobado" = tcm.cupo_approved
+from m_client mc
+inner join tmp_clientes_migrar tcm on mc.external_id = cast(tcm.external_id as text)
+where ccp.client_id = mc.id
 
 
 ----------------------------------- Loan Transactions ----------------------------------------------
@@ -612,3 +616,24 @@ on ml.migrar_code = ccapos.code
 where ml.loan_status_id = 300
 and ml.is_migrated_loan = true
 and ml.id not in (select loan_id from custom.c_client_buy_process)
+
+-- UPDATE CLIENT STATUS
+-- First run this query to check the client statuses in the migration data
+select count(*), estadocli from tmp_clientes_migrar tcm group by tcm.estadocli;
+-- Then run this query to check the existing client status
+select * from m_blocking_reason_setting mbrs where level = 'CLIENT';
+-- Add any missing statuses via the UI: Admin -> System -> Manage Blocking Reason Settings
+-- Afterwards run these queries with the appropriate values for each status
+update m_client mc1
+set blocking_reason_id = case
+	when tcm.estadocli = 'BLOQUEO POR INCONSISTENCIA EN INFORMACIÓN' then 24
+	when tcm.estadocli = 'MORA' then 6
+	when tcm.estadocli = 'BLOQUEO RIESGO DE CRÉDITO' then 3
+	else null
+end
+from m_client mc2
+inner join tmp_clientes_migrar tcm on mc2.external_id = cast(tcm.external_id as text)
+where mc1.id = mc2.id
+
+-- Run this to verify that the statuses are distributed right as per the migration data
+select count(*), blocking_reason_id from m_client group by blocking_reason_id;
