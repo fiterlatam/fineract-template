@@ -21,4 +21,5 @@ public class SpecialWriteOffPayload {
     private BigDecimal totalWriteOffAmount;
     private String dateFormat;
     private String locale;
+    private boolean isCreditNote;
 }

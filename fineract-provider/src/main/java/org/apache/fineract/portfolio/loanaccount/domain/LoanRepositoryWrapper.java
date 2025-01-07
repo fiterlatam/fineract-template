@@ -221,6 +221,16 @@ public class LoanRepositoryWrapper {
         return loans;
     }
 
+    public List<Loan> findActiveLoansByClientId(@Param("clientId") Long clientId) {
+        List<Loan> loans = this.repository.findActiveLoansByClientId(clientId);
+        if (loans != null && loans.size() > 0) {
+            for (Loan loan : loans) {
+                loan.initializeRepaymentSchedule();
+            }
+        }
+        return loans;
+    }
+
     public List<Long> findActiveLoansLoanProductIdsByClient(@Param("clientId") Long clientId, @Param("loanStatus") Integer loanStatus) {
         return this.repository.findActiveLoansLoanProductIdsByClient(clientId, loanStatus);
     }

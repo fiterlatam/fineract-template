@@ -118,7 +118,8 @@ public class LoanChargeAssembler {
             final String dateFormat = this.fromApiJsonHelper.extractDateFormatParameter(topLevelJsonElement);
             final Locale locale = this.fromApiJsonHelper.extractLocaleParameter(topLevelJsonElement);
             if (topLevelJsonElement.has("charges") && topLevelJsonElement.get("charges").isJsonArray()) {
-                final JsonArray array = topLevelJsonElement.get("charges").getAsJsonArray();
+                final JsonArray chargesJsonArray = topLevelJsonElement.get("charges").getAsJsonArray();
+                final JsonArray array = sortByPercentOfAnotherCharge(chargesJsonArray);
                 for (int i = 0; i < array.size(); i++) {
 
                     final JsonObject loanChargeElement = array.get(i).getAsJsonObject();
@@ -183,7 +184,7 @@ public class LoanChargeAssembler {
                             throw new LoanChargeCannotBeAddedException("loanCharge", "aval.charge", defaultUserMessage, null,
                                     chargeDefinition.getName());
                         }
-                        if (chargeDefinition.isFlatHono()) {
+                        if (chargeDefinition.isFlatHono() && !chargeDefinition.isDisbursementCharge()) {
                             amount = BigDecimal.ZERO;
                         }
                         if (chargeDefinition.isOverdueInstallment()) {
@@ -232,7 +233,15 @@ public class LoanChargeAssembler {
                                         .findOneWithNotFoundDetection(chargeDefinition.getParentChargeId());
                                 if (parentCharge.isAvalChargeFlatForMigration()) {
                                     for (LoanCharge loanCharge : loanCharges) {
-                                        if (loanCharge.getCharge().getId().equals(chargeDefinition.getParentChargeId())) {
+                                        if (Objects.equals(loanCharge.getCharge().getId(), chargeDefinition.getParentChargeId())) {
+                                            principal = loanCharge.amountOrPercentage();
+                                        }
+                                    }
+                                }
+
+                                if (parentCharge.isFlatHono() && parentCharge.isDisbursementCharge()) {
+                                    for (LoanCharge loanCharge : loanCharges) {
+                                        if (Objects.equals(loanCharge.getCharge().getId(), chargeDefinition.getParentChargeId())) {
                                             principal = loanCharge.amountOrPercentage();
                                         }
                                     }
@@ -327,6 +336,26 @@ public class LoanChargeAssembler {
             }
         }
         return loanCharges;
+    }
+
+    public JsonArray sortByPercentOfAnotherCharge(final JsonArray chargesJsonArray) {
+        final List<JsonObject> chargesJsonList = new ArrayList<>();
+        for (final JsonElement jsonElement : chargesJsonArray) {
+            if (jsonElement.isJsonObject()) {
+                final JsonObject chargeJsonObject = jsonElement.getAsJsonObject();
+                final Long chargeId = this.fromApiJsonHelper.extractLongNamed("chargeId", chargeJsonObject);
+                final Charge chargeEntity = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
+                final boolean isPercentOfAnotherCharge = chargeEntity.isPercentageOfAnotherCharge();
+                chargeJsonObject.addProperty("isPercentOfAnotherCharge", isPercentOfAnotherCharge);
+                chargesJsonList.add(chargeJsonObject);
+            }
+        }
+        chargesJsonList.sort(Comparator.comparing(jsonObject -> jsonObject.get("isPercentOfAnotherCharge").getAsBoolean()));
+        final JsonArray array = new JsonArray();
+        for (final JsonObject jsonObject : chargesJsonList) {
+            array.add(jsonObject);
+        }
+        return array;
     }
 
     public Set<Charge> getNewLoanTrancheCharges(final JsonElement element) {
@@ -493,7 +522,7 @@ public class LoanChargeAssembler {
             } else {
                 loanCharge = loan.calculatePerInstallmentChargeAmount(
                         ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()), percentage, null,
-                        chargeDefinition.getParentChargeId());
+                        chargeDefinition.getParentChargeId(), null);
             }
         }
 

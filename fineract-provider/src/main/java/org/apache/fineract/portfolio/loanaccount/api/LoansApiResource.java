@@ -50,6 +50,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1509,6 +1510,18 @@ public class LoansApiResource {
         LoanDebtProjectionData projection = this.loanDebtProjectionService.calculateDebtProjection(loanId, projectionDate, dateFormat);
 
         return this.toApiJsonSerializer.serialize(projection);
+    }
+
+    @GET
+    @Path("{loanId}/calculateHonorariosAmount")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansApprovalTemplateResponse.class))) })
+    public BigDecimal calculateHonorariosAmount(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
+            @QueryParam("amount") @Parameter(description = "amount") final BigDecimal amount, @Context final UriInfo uriInfo) {
+        this.context.authenticatedUser();
+        return this.loanReadPlatformService.calculateHonorariosAmount(loanId, amount);
     }
 
 }

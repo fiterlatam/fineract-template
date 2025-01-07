@@ -26,6 +26,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -229,6 +230,50 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         return this.jdbcTemplate.queryForObject(sql, rm, loanAccountNumber); // NOSONAR
 
+    }
+
+    private FeeCalculationHonorario calculateFeeDetails(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
+            BigDecimal repaymentAmount) {
+        // SU-529 Get maximum age of any of the client's loan
+        List<Loan> clientActiveLoans = this.loanRepositoryWrapper
+                .findActiveLoansByClientId(loanRepaymentScheduleInstallment.getLoan().getClientId());
+        Integer ageOverdue = 0;
+        for (Loan loan : clientActiveLoans) {
+            int overdue = loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
+            if (overdue > ageOverdue) {
+                ageOverdue = overdue;
+            }
+        }
+
+        BigDecimal delinquencyValue = BigDecimal.ZERO;
+        // Retrieve VAT configuration and percentage
+        Integer vatConfig = configurationDomainService.retriveIvaConfiguration();
+        BigDecimal vatPercentage = BigDecimal.valueOf(vatConfig).divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
+
+        // Retrieve delinquency percentage
+        DelinquencyRangeData delinquencyRangeData = delinquencyReadPlatformService
+                .retrieveCurrentDelinquencyTag(loanRepaymentScheduleInstallment.getLoan().getId());
+        if (delinquencyRangeData != null) {
+            delinquencyValue = BigDecimal.valueOf(delinquencyRangeData.getPercentageValue());
+        } else {
+            DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
+            if (delinquencyRange != null) {
+                delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
+            }
+        }
+
+        // Calculate delinquent portion, fee with VAT, fee basis, and fee VAT
+        BigDecimal delinquencyRate = delinquencyValue.divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
+        BigDecimal delinquentPortion = repaymentAmount
+                .divide(BigDecimal.ONE.add(delinquencyRate.multiply(BigDecimal.ONE.add(vatPercentage))), 2, MoneyHelper.getRoundingMode());
+        BigDecimal feeWithTax = delinquentPortion.multiply(delinquencyRate.multiply(BigDecimal.ONE.add(vatPercentage))).setScale(0,
+                RoundingMode.HALF_UP);
+        BigDecimal feeBasis = feeWithTax.divide(BigDecimal.ONE.add(vatPercentage), 0, RoundingMode.HALF_UP);
+        BigDecimal feeVat = feeWithTax.subtract(feeBasis).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal feeHono = feeVat.add(feeBasis).setScale(0, RoundingMode.HALF_UP);
+
+        // Return results as an object
+        return new FeeCalculationHonorario(delinquentPortion, feeWithTax, feeBasis, feeVat, feeHono);
     }
 
     @Override
@@ -460,10 +505,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
         Boolean isCalculate = false;
-        Boolean isHasCustomHonoraioMap = loan.getActiveCharges().stream()
-                .anyMatch(charge -> charge.getChargeCalculation().isFlatHono() || charge.getChargeCalculation().isPercentageOfHonorarios());
-        Optional<LoanCharge> loanCharge = loan.getActiveCharges().stream()
-                .filter(chg -> chg.isFlatHono() || chg.getChargeCalculation().isPercentageOfHonorarios()).findFirst();
+        Boolean isHasCustomHonoraioMap = loan.getActiveCharges().stream().anyMatch(charge -> charge.getChargeCalculation().isFlatHono());
+        Optional<LoanCharge> loanCharge = loan.getActiveCharges().stream().filter(LoanCharge::isFlatHono).findFirst();
         if (loanCharge.isPresent()) {
             isCalculate = true;
             Set<CustomChargeHonorarioMap> customChargeHonorarioMaps = loanCharge.get().getCustomChargeHonorarioMaps();
@@ -505,6 +548,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         loanTransactionTemplate.setIsCalculate(isCalculate);
 
         return loanTransactionTemplate;
+    }
+
+    @Override
+    public BigDecimal calculateHonorariosAmount(Long loanId, BigDecimal repaymentAmount) {
+        Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+        return calculateHonoChargeAmount(loan, DateUtils.getBusinessLocalDate(), repaymentAmount);
     }
 
     @Override
@@ -2030,9 +2079,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final StringBuilder sqlBuilder = new StringBuilder(400);
         sqlBuilder.append("select ").append(rm.schema())
                 .append(" where " + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "?", "day") + " > ls.duedate ")
-                .append(" and ls.completed_derived <> true and mc.charge_applies_to_enum =1 ")
+                .append(" and ls.completed_derived <> true and mc.charge_applies_to_enum = 1 ")
                 .append(" and ls.recalculated_interest_component <> true ")
-                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 and ml.id = (select max(id) from m_loan)");
+                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ");
 
         if (backdatePenalties) {
             return this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod);
@@ -2886,13 +2935,19 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final BigDecimal outstandingLoanBalance = loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount();
         final Boolean isReversed = false;
 
-        final Money outStandingAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(currency);
+        BigDecimal feeHono = calculateHonoChargeAmount(loan, transactionDate,
+                loanRepaymentScheduleInstallment.getTotalOutstanding(currency).getAmount());
+        BigDecimal feeOutstanding = loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount();
+        BigDecimal totalOutStanding = loanRepaymentScheduleInstallment.getTotalOutstanding(currency).getAmount();
 
+        if (!isAnulado) {
+            feeOutstanding = feeOutstanding.add(feeHono);
+            totalOutStanding = totalOutStanding.add(feeHono);
+        }
         return new LoanTransactionData(null, null, null, transactionType, null, currencyData, earliestUnpaidInstallmentDate,
-                outStandingAmount.getAmount(), loan.getNetDisbursalAmount(),
+                totalOutStanding, loan.getNetDisbursalAmount(),
                 loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount(),
-                loanRepaymentScheduleInstallment.getInterestOutstanding(currency).getAmount(),
-                loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount(),
+                loanRepaymentScheduleInstallment.getInterestOutstanding(currency).getAmount(), feeOutstanding,
                 loanRepaymentScheduleInstallment.getPenaltyChargesOutstanding(currency).getAmount(), null, unrecognizedIncomePortion,
                 paymentTypeOptions, ExternalId.empty(), null, null, outstandingLoanBalance, isReversed, loanId, loan.getExternalId());
     }
@@ -3557,24 +3612,23 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                   group by mlc2.loan_id
                           	) other_vat_chg  ON other_vat_chg.loan_id = ml.id
                           	LEFT join (
-                          		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
-                                  inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
-                                  inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
-                                  and mlrs.completed_derived != true
-                                  and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
-                                  and mlrs.duedate <= current_date
-                                  where mlc.is_penalty = true group by mlc.loan_id
+                                select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                                inner join m_loan_overdue_installment_charge mloic ON mloic.loan_charge_id = mlc.id
+                                inner join m_loan_repayment_schedule mlrs on mlrs.id = mloic.loan_schedule_id
+                                where mlc.is_penalty = true
+                                group by mlc.loan_id
                           	) penalty_chg ON penalty_chg.loan_id = ml.id
                           	LEFT JOIN (
-                          		SELECT sum(mlic.amount) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
-                                  inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
-                                  inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
-                                  and mlrs.completed_derived != true
-                                  and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
-                                  and mlrs.duedate <= current_date
-                                  JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
-                                  JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                                  WHERE parent_charge.is_penalty = true group by mlc2.loan_id
+                                SELECT sum(mlc.amount_outstanding_derived) outstanding_amount, mlc.loan_id FROM m_loan_charge mlc
+                                 inner join m_loan_overdue_installment_charge mloic ON mloic.loan_charge_id = mlc.id
+                                 inner join m_loan_repayment_schedule mlrs on mlrs.id = mloic.loan_schedule_id
+                                 JOIN m_charge mc ON mc.id = mlc.charge_id
+                                 JOIN m_charge parent_charge on parent_charge.id = mc.parent_charge_id
+                                 WHERE mc.charge_calculation_enum = 342
+                                AND mc.is_penalty = TRUE
+                                AND parent_charge.charge_calculation_enum = 1009
+                                AND parent_charge.is_penalty = TRUE
+                                group by mlc.loan_id
                           	) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
                           WHERE
                           	ml.loan_status_id = 300
@@ -3685,24 +3739,23 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                 group by mlc2.loan_id
                         	) other_vat_chg  ON other_vat_chg.loan_id = ml.id
                         	LEFT join (
-                        		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
-                                inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
-                                inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
-                                and mlrs.completed_derived != true
-                                and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
-                                and mlrs.duedate <= current_date
-                                where mlc.is_penalty = true group by mlc.loan_id
+                                 select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                                 inner join m_loan_overdue_installment_charge mloic ON mloic.loan_charge_id = mlc.id
+                                 inner join m_loan_repayment_schedule mlrs on mlrs.id = mloic.loan_schedule_id
+                                 where mlc.is_penalty = true
+                                 group by mlc.loan_id
                         	) penalty_chg ON penalty_chg.loan_id = ml.id
                         	LEFT JOIN (
-                        		SELECT sum(mlic.amount) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
-                                inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
-                                inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
-                                and mlrs.completed_derived != true
-                                and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
-                                and mlrs.duedate <= current_date
-                                JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
-                                JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                                WHERE parent_charge.is_penalty = true group by mlc2.loan_id
+                                SELECT sum(mlc.amount_outstanding_derived) outstanding_amount, mlc.loan_id FROM m_loan_charge mlc
+                                   inner join m_loan_overdue_installment_charge mloic ON mloic.loan_charge_id = mlc.id
+                                   inner join m_loan_repayment_schedule mlrs on mlrs.id = mloic.loan_schedule_id
+                                   JOIN m_charge mc ON mc.id = mlc.charge_id
+                                   JOIN m_charge parent_charge on parent_charge.id = mc.parent_charge_id
+                                   WHERE mc.charge_calculation_enum = 342
+                                  AND mc.is_penalty = TRUE
+                                  AND parent_charge.charge_calculation_enum = 1009
+                                  AND parent_charge.is_penalty = TRUE
+                                  group by mlc.loan_id
                         	) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
                         WHERE
                         	ml.loan_status_id = 300
@@ -3813,24 +3866,23 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                 group by mlc2.loan_id
                         	) other_vat_chg  ON other_vat_chg.loan_id = ml.id
                         	LEFT join (
-                        		select mlc.loan_id, sum(mlic.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
-                                inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc.id
-                                inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
-                                and mlrs.completed_derived != true
-                                and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc.loan_id)
-                                and mlrs.duedate <= current_date
-                                where mlc.is_penalty = true group by mlc.loan_id
+                                   select mlc.loan_id, sum(mlc.amount_outstanding_derived) outstanding_amount from m_loan_charge mlc
+                                  inner join m_loan_overdue_installment_charge mloic ON mloic.loan_charge_id = mlc.id
+                                  inner join m_loan_repayment_schedule mlrs on mlrs.id = mloic.loan_schedule_id
+                                  where mlc.is_penalty = true
+                                  group by mlc.loan_id
                         	) penalty_chg ON penalty_chg.loan_id = ml.id
                         	LEFT JOIN (
-                        		SELECT sum(mlic.amount) outstanding_amount, mlc2.loan_id FROM m_loan_charge mlc2
-                                inner join m_loan_installment_charge mlic ON mlic.loan_charge_id = mlc2.id
-                                inner join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
-                                and mlrs.completed_derived != true
-                                and mlrs.duedate >= (select overdue_since_date_derived from m_loan_arrears_aging where loan_id = mlc2.loan_id)
-                                and mlrs.duedate <= current_date
-                                JOIN m_charge mc2 ON mc2.id = mlc2.charge_id AND mc2.charge_calculation_enum = 342
-                                JOIN m_charge parent_charge on parent_charge.id = mc2.parent_charge_id
-                                WHERE parent_charge.is_penalty = true group by mlc2.loan_id
+                                  SELECT sum(mlc.amount_outstanding_derived) outstanding_amount, mlc.loan_id FROM m_loan_charge mlc
+                                  inner join m_loan_overdue_installment_charge mloic ON mloic.loan_charge_id = mlc.id
+                                  inner join m_loan_repayment_schedule mlrs on mlrs.id = mloic.loan_schedule_id
+                                  JOIN m_charge mc ON mc.id = mlc.charge_id
+                                  JOIN m_charge parent_charge on parent_charge.id = mc.parent_charge_id
+                                  WHERE mc.charge_calculation_enum = 342
+                                      AND mc.is_penalty = TRUE
+                                      AND parent_charge.charge_calculation_enum = 1009
+                                      AND parent_charge.is_penalty = TRUE
+                                  group by mlc.loan_id
                         	) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
                         WHERE
                         	ml.loan_status_id = 300
@@ -3923,5 +3975,40 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final Object[] objectArray = { minimDaysToReclaim, claimType };
 
         return this.jdbcTemplate.query(sqlBuilder.toString(), objectArray, loanReclaimMapper);
+    }
+
+    private BigDecimal calculateHonoChargeAmount(Loan loan, LocalDate transactionDate, BigDecimal repaymentAmount) {
+        BigDecimal feeHono = BigDecimal.ZERO;
+        Optional<LoanCharge> haveHonoCharge = loan.getActiveCharges().stream().filter(charge -> charge.isFlatHono()).findFirst();
+        if (haveHonoCharge.isPresent() && loan.getAgeOfOverdueDays(transactionDate) > 0) {
+            LoanCharge honoCharge = haveHonoCharge.get();
+            Optional<LoanCharge> vatHono = loan.getActiveCharges().stream().filter(charge -> charge.isCustomPercentageBasedOfAnotherCharge()
+                    && charge.getCharge().getParentChargeId().equals(honoCharge.getCharge().getId())).findFirst();
+            List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = loan.getRepaymentScheduleInstallments().stream()
+                    .filter(installment -> installment.isOverdueOn(transactionDate)).toList();
+
+            Money remainingAmount = Money.of(loan.getCurrency(), repaymentAmount);
+            for (LoanRepaymentScheduleInstallment installment : loanRepaymentScheduleInstallments) {
+                if (installment.isOverdueOn(transactionDate) && !installment.isObligationsMet()) {
+                    FeeCalculationHonorario feeCalculationHonorario = new FeeCalculationHonorario(BigDecimal.ZERO, BigDecimal.ZERO,
+                            BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+                    BigDecimal installmentOutstandingAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount();
+                    if (remainingAmount.isGreaterThanZero()
+                            && remainingAmount.isGreaterThanOrEqualTo(installment.getTotalOutstanding(loan.getCurrency()))) {
+                        feeCalculationHonorario = this.calculateFeeDetails(installment, installmentOutstandingAmount);
+                        remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
+                    } else {
+                        feeCalculationHonorario = this.calculateFeeDetails(installment, remainingAmount.getAmount());
+                        remainingAmount = remainingAmount.zero();
+                    }
+                    feeHono = feeHono.add(feeCalculationHonorario.getFeeBasis());
+                    if (vatHono.isPresent()) {
+                        feeHono = feeHono.add((feeCalculationHonorario.getFeeVat()));
+                    }
+
+                }
+            }
+        }
+        return feeHono;
     }
 }

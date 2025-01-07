@@ -508,20 +508,6 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
         AccountTransferDetails accountTransferDetails = this.accountTransferAssembler.assembleLoanToLoanTransfer(accountTransferDTO,
                 fromLoanAccount, toLoanAccount, disburseTransaction, repayTransaction);
         this.accountTransferDetailRepository.saveAndFlush(accountTransferDetails);
-
-        InsuranceIncident incident = this.insuranceIncidentRepository
-                .findByIncidentType(InsuranceIncidentType.FINAL_REFINANCED_CANCELLATION);
-        if (incident != null) {
-            BigDecimal cumulative = BigDecimal.ZERO;
-            List<LoanCharge> loanCharges = toLoanAccount.getLoanCharges().stream()
-                    .filter(lc -> lc.getChargeCalculation().isVoluntaryInsurance()).toList();
-            for (LoanCharge loanCharge : loanCharges) {
-                InsuranceIncidentNoveltyNews insuranceIncidentNoveltyNews = InsuranceIncidentNoveltyNews.instance(toLoanAccount, loanCharge,
-                        installmentNumber, incident, accountTransferDTO.getTransactionDate(), cumulative);
-                this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(insuranceIncidentNoveltyNews);
-            }
-        }
-
         return accountTransferDetails;
     }
 
