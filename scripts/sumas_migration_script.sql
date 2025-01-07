@@ -328,7 +328,10 @@ update m_client set activation_date = '2021-01-01', submittedon_date = '2021-01-
 update m_product_loan set min_nominal_interest_rate_per_period = 10, max_nominal_interest_rate_per_period = 40 where id in (1,2,3)
 
 -- Update cupo amount to high value so that loans can be processed. Revert this limit back to the original limit
-update campos_cliente_persona set "Cupo aprobado" = 10000000;
+update campos_cliente_persona set "Cupo solicitado" = 10000000, "Cupo aprobado" = 10000000;
+
+-- Update is_advance field on m_product_loan id 3 to allow loans to disburse
+update m_product_loan set is_advance = false where id = 3;
 
 
 --- Indexes to speed up retrieval of records --
@@ -442,10 +445,14 @@ from
 
 -- Set the original cupo value for client
 update campos_cliente_persona ccp
-set "Cupo aprobado" = tcm.cupo_approved
+set "Cupo aprobado" = tcm.cupo_approved,
+"Cupo solicitado" = tcm.cupo_requested
 from m_client mc
 inner join tmp_clientes_migrar tcm on mc.external_id = cast(tcm.external_id as text)
 where ccp.client_id = mc.id
+
+-- Reinstate is_advance field on m_product_loan id 3
+update m_product_loan set is_advance = true where id = 3;
 
 
 ----------------------------------- Loan Transactions ----------------------------------------------
@@ -609,9 +616,9 @@ order by mlc.id, mlrs.installment;
 
 -- populate c_client_buy_process
 insert into custom.c_client_buy_process (channel_id, client_id, point_if_sales_id, product_id, credit_id, requested_date, amount, term, created_at, created_by, ip_details, status, error_message, loan_id, interest_rate_points, codigo_seguro, cedula_seguro_voluntario)
-SELECT (select id from c_channel cc where cc.name = 'Tienda física'), ml.client_id, ccapos.id, ml.product_id, ml.id credit_id, ml.disbursedon_date requested_date, ml.principal_amount amount, ml.term_frequency term, CURRENT_DATE created_at, created_by, null::text ip_details, 200 status, null::text error_message, ml.id loan_id, 0 interest_rate_points, 0 codigo_seguro, 0 cedula_seguro_voluntario
+SELECT (select id from custom.c_channel cc where cc.name = 'Tienda física'), ml.client_id, ccapos.id, ml.product_id, ml.id credit_id, ml.disbursedon_date requested_date, ml.principal_amount amount, ml.term_frequency term, CURRENT_DATE created_at, created_by, null::text ip_details, 200 status, null::text error_message, ml.id loan_id, 0 interest_rate_points, 0 codigo_seguro, 0 cedula_seguro_voluntario
 from public.m_loan ml 
-left join c_client_ally_point_of_sales ccapos 
+left join custom.c_client_ally_point_of_sales ccapos
 on ml.migrar_code = ccapos.code 
 where ml.loan_status_id = 300
 and ml.is_migrated_loan = true
@@ -637,3 +644,6 @@ where mc1.id = mc2.id
 
 -- Run this to verify that the statuses are distributed right as per the migration data
 select count(*), blocking_reason_id from m_client group by blocking_reason_id;
+
+-- Update office id back to 1 for all clients
+update m_client set office_id = 1;
