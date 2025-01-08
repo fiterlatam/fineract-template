@@ -64,4 +64,5 @@ public class ChequeData {
     private Boolean reassingedCheque;
     private String depositNumber;
     private String numeroCliente;
+    private Long reassignedFrom;
 }
