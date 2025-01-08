@@ -162,4 +162,5 @@ public interface ConfigurationDomainService {
 
     Integer retriveIvaConfiguration();
 
+    Long retrieveSMVLLimit();
 }

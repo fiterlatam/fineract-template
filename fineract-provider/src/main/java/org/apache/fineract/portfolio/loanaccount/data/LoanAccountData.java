@@ -294,6 +294,7 @@ public class LoanAccountData {
     private String numeroCredito;
     private String cedula;
     private boolean isMigratedLoan;
+    private Long smvl;
 
     public static LoanAccountData importInstanceIndividual(EnumOptionData loanTypeEnumOption, Long clientId, Long productId,
             Long loanOfficerId, LocalDate submittedOnDate, Long fundId, BigDecimal principal, Integer numberOfRepayments,
