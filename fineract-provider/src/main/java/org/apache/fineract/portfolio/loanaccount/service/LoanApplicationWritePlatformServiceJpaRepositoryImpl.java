@@ -42,6 +42,7 @@ import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumb
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainServiceJpa;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -204,6 +205,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
     private final ClientBuyProcessRepository clientBuyProcessRepository;
     private final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository;
+
+    private final ConfigurationDomainServiceJpa configurationDomainServiceJpa;
 
     @Transactional
     @Override
@@ -382,7 +385,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     newLoanApplication.setTopupLoanDetails(topupDetails);
                 }
             }
-            validateAllChargesAreSetupCorrectly(newLoanApplication);
+            validateAllChargesAreSetupCorrectly(newLoanApplication); // Just a remark here before calling validate
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
 
             if (loanProduct.isInterestRecalculationEnabled()) {
@@ -1936,6 +1939,28 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             for (LoanCharge loanCharge : loan.getLoanCharges()) {
                 Charge charge = loanCharge.getCharge();
                 charge.validateChargeIsSetupCorrectly();
+            }
+
+            // Check if Comision Mi Pyme is set, depending on the Loan Amount against SMLV config
+            Long limit = configurationDomainServiceJpa.retrieveSMVLLimit();
+            if (loan.getProposedPrincipal().compareTo(new BigDecimal(limit)) >= 0) {
+
+                Long comissionPymeCounter = loan.getLoanCharges().stream()
+                        .filter(name -> name.getCharge().getName().toLowerCase().contains("comision mi pyme >= 4smlv")).count();
+
+                if (comissionPymeCounter.compareTo(2L) != 0) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.charge.smlv.incorrect",
+                            "Loan repayment strategy can not be equal to Advanced Payment Allocation");
+                }
+
+            } else {
+                Long comissionPymeCounter = loan.getLoanCharges().stream()
+                        .filter(name -> name.getCharge().getName().toLowerCase().contains("comision mi pyme < 4smlv")).count();
+
+                if (comissionPymeCounter.compareTo(2L) != 0) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.charge.smlv.incorrect",
+                            "Loan repayment strategy can not be equal to Advanced Payment Allocation");
+                }
             }
         }
     }
