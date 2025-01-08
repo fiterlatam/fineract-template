@@ -161,4 +161,5 @@
     <include file="parts/FS_037_ADD_PERMISSION_SAVINGS_ACCOUNT_REBALANCING.xml" relativeToChangelogFile="true"/>
     <include file="parts/0136_FBR-724-OVERDUE_LOAN_CHARGE.xml" relativeToChangelogFile="true"/>
     <include file="parts/0137_FBR-723-LOAN_FORECLOSURE_CONFIGS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0138_FBR-726-CHECK_REASSIGNMENT_CONFIGURATION.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

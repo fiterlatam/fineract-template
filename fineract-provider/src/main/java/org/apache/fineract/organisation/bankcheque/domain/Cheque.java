@@ -113,6 +113,9 @@ public class Cheque extends AbstractAuditableCustom {
     @Column(name = "numero_cliente")
     private String numeroCliente;
 
+    @Column(name = "is_reassigned_from")
+    private Long reassignedFrom;
+
     public Cheque setChequeNo(Long chequeNo) {
         this.chequeNo = chequeNo;
         return this;
@@ -222,5 +225,13 @@ public class Cheque extends AbstractAuditableCustom {
 
     public void setNumeroCliente(String numeroCliente) {
         this.numeroCliente = numeroCliente;
+    }
+
+    public void setReassignedFrom(Long reassignedFrom) {
+        this.reassignedFrom = reassignedFrom;
+    }
+
+    public Long getReassignedFrom() {
+        return reassignedFrom;
     }
 }
