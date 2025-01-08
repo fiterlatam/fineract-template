@@ -73,6 +73,7 @@ import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingR
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainServiceJpa;
 import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.api.JsonQuery;
@@ -290,6 +291,7 @@ public class LoansApiResource {
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
     private final LoanBlockReadPlatformService loanBlockingReasonReadPlatformService;
     private final LoanDebtProjectionService loanDebtProjectionService;
+    private final ConfigurationDomainServiceJpa configurationDomainServiceJpa;
 
     @Autowired
     private SpringTemplateEngine templateEngine;
@@ -435,6 +437,9 @@ public class LoansApiResource {
         final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
                 .retrieveMaximumCreditRateConfigurationData();
         newLoanAccount.setMaximumCreditRateConfiguration(maximumCreditRateConfigurationData);
+
+        // Add smvl info to the template in order to pick the correct charges
+        newLoanAccount.setSmvl(configurationDomainServiceJpa.retrieveSMVLLimit());
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, newLoanAccount, LOAN_DATA_PARAMETERS);
@@ -1303,6 +1308,9 @@ public class LoansApiResource {
                 loanAccount.setVoluntaryInsurance(voluntaryInsurance);
             }
         }
+
+        loanAccount.setSmvl(configurationDomainServiceJpa.retrieveSMVLLimit());
+
         final boolean isRediferir = this.loanReadPlatformService.retrieveRediferidoNumber(loanId) > 0;
         loanAccount.setRediferir(isRediferir);
         return this.toApiJsonSerializer.serialize(settings, loanAccount, LOAN_DATA_PARAMETERS);

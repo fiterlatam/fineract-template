@@ -341,4 +341,5 @@
     <include file="parts/202412241143000002_EA_115_add_configuration_details_column.xml" relativeToChangelogFile="true" />
     <include file="parts/202412271143000002_EA_73_create_loan_disbursement_report.xml" relativeToChangelogFile="true" />
     <include file="parts/202501021143000002_EA_create_new_data_table_Contactabilidad.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501062000001000_EA_69_create_charge_comission.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

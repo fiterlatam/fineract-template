@@ -607,4 +607,10 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         return value;
     }
 
+    @Override
+    public Long retrieveSMVLLimit() {
+        final String propertyName = "SMLV";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.getValue();
+    }
 }
