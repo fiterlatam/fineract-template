@@ -60,4 +60,7 @@ public class InsuranceIncident extends AbstractAuditableWithUTCDateTimeCustom {
         return InsuranceIncidentData.instance(this.getId(), this.name, this.isMandatory, this.isVoluntary, code, value, null);
     }
 
+    public boolean isValid() {
+        return this.isMandatory || this.isVoluntary;
+    }
 }

@@ -215,7 +215,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
     public Money processLatestTransaction(final LoanTransaction loanTransaction, final TransactionCtx ctx) {
         Money transactionAmountUnprocessed = Money.zero(ctx.getCurrency());
         switch (loanTransaction.getTypeOf()) {
-            case WRITEOFF ->
+            case WRITEOFF, CREDIT_NOTE ->
                 handleWriteOff(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges(), ctx.getOverpaymentHolder());
             case REFUND_FOR_ACTIVE_LOAN -> handleRefund(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges());
             case CHARGEBACK -> handleChargeback(loanTransaction, ctx);

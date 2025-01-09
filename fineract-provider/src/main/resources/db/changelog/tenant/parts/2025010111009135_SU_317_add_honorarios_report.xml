@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="1" author="fineract">
+        <sql>
+            INSERT INTO stretchy_parameter
+            (parameter_name, parameter_variable, parameter_label, "parameter_displayType", "parameter_FormatType", parameter_default, special, "selectOne", "selectAll", parameter_sql, parent_id)
+            VALUES('collectionCode', 'collectionCode', 'Código de la casa de cobro', 'select', 'text', '', NULL, NULL, 'Y', 'select distinct collection_code  as id, collection_code as name from m_collection_house_configuration where collection_verification_code is not null', NULL);
+        </sql>
+        <sql>
+            INSERT INTO stretchy_parameter
+            (parameter_name, parameter_variable, parameter_label, "parameter_displayType", "parameter_FormatType", parameter_default, special, "selectOne", "selectAll", parameter_sql, parent_id)
+            VALUES('collectionNit', 'collectionNit', 'Nit casa de cobro', 'select', 'text', '', NULL, NULL, 'Y', 'select distinct collection_nit  as id, collection_nit as name from m_collection_house_configuration where collection_verification_code is not null', NULL);
+        </sql>
+    </changeSet>
+
+    <changeSet id="2" author="fineract">
+        <insert tableName="STRETCHY_REPORT">
+            <column name="REPORT_NAME" value="Reporte de Honorarios"/>
+            <column name="REPORT_SQL">
+                <![CDATA[
+                select distinct
+            '800139398-6' AS "Nit de empresa",
+            TO_CHAR(mlt.transaction_date , 'DD/MM/YYYY') AS "Fecha de causación del honorario",
+            mch.collection_nit AS "Nit casa de cobro",
+            coalesce(hono.amt, 0) + coalesce(vat.amt, 0) as "Valor del honorario",
+            coalesce(hono.amt, 0) AS "Valor base",
+            coalesce(vat.amt, 0) AS "Valor IVA",
+             COALESCE(cce."NIT", ccp."Cedula") AS "Cédula del cliente",
+            ml.id AS "Crédito del cliente",
+            coalesce(paid_amounts.overdue_non_penalty_amount,0) AS "Valor porción morosa del pago",
+            coalesce(paid_amounts.penaly_paid,0) AS "Valor interés de mora pagado",
+            coalesce(paid_amounts.overdue_amount, 0) AS "Valor de las cuotas morosas pagadas"
+        from
+            m_loan ml
+            join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+            join m_loan_transaction mlt on mlt.loan_id = ml.id and mlt.transaction_date > mlrs.duedate
+            join m_client mc on mc.id = ml.client_id
+            join m_collection_house_history mch on mch.client_account_number = mc.account_no
+            LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
+            LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+            join m_loan_charge mlc on mlc.loan_id = ml.id and mlc.is_penalty = false and mlc.charge_calculation_enum = 1009
+            join(
+                select
+                    mlt2.id, mlt2.loan_id,
+                    sum(coalesce(mltrsm.principal_portion_derived,0) + coalesce(mltrsm.interest_portion_derived,0) + coalesce(mltrsm.penalty_charges_portion_derived,0) + coalesce(mltrsm.fee_charges_portion_derived,0)) AS overdue_non_penalty_amount,
+                    sum(coalesce(mltrsm.penalty_charges_portion_derived,0)) AS penaly_paid,
+                    sum(coalesce(mltrsm.principal_portion_derived,0) + coalesce(mltrsm.interest_portion_derived,0) + coalesce(mltrsm.fee_charges_portion_derived,0)) overdue_amount
+                from
+                m_loan_transaction_repayment_schedule_mapping mltrsm
+                join m_loan_repayment_schedule mlrs2 on mlrs2.id = mltrsm.loan_repayment_schedule_id
+                join m_loan_transaction mlt2 on mlt2.id = mltrsm.loan_transaction_id and mlt2.transaction_date > mlrs2.duedate
+                group by mlt2.id, mlt2.loan_id
+            ) paid_amounts on paid_amounts.loan_id = ml.id and paid_amounts.id = mlt.id
+            join (
+                select
+                     mlcp.loan_transaction_id, mlcp.loan_charge_id,
+                    sum(coalesce(mlcp.amount,0)) amt
+                from
+                    m_loan_charge_paid_by mlcp
+                group by mlcp.loan_transaction_id, mlcp.loan_charge_id
+            ) hono on hono.loan_transaction_id = mlt.id and hono.loan_charge_id = mlc.id
+            left join (
+                select
+                    vat.loan_id, vat_paid.loan_transaction_id, vat_charge.parent_charge_id,
+                    sum(coalesce(vat_paid.amount,0)) amt
+                from
+                    m_loan_charge vat
+                    join m_charge vat_charge on vat_charge.id = vat.charge_id and vat_charge.parent_charge_id is not null
+                    join m_loan_charge_paid_by vat_paid on vat_paid.loan_charge_id = vat.id
+                    where vat.charge_calculation_enum = 342
+                    group by vat.loan_id, vat_paid.loan_transaction_id, vat_charge.parent_charge_id
+            ) vat on vat.loan_id = ml.id and vat.loan_transaction_id = mlt.id and vat.parent_charge_id = mlc.charge_id
+        where
+            mlt.transaction_type_enum = 2 and mlt.is_reversed = false
+            and mlt.transaction_date between '${startDate}' and '${endDate}'
+            and (mch.collection_nit = '${collectionNit}' or '${collectionNit}' = '-1')
+            and (mch.collection_house_code = '${collectionCode}' or '${collectionCode}' = '-1')
+                ]]>
+            </column>
+            <column name="report_type" value="Table"/>
+            <column name="report_category" value="Loan"/>
+            <column name="description" value="Reporte de Honorarios"/>
+            <column name="core_report" value="false"/>
+            <column name="use_report" value="true"/>
+        </insert>
+
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Reporte de Honorarios')"/>
+            <column name="parameter_id"
+                    valueComputed="(select id from stretchy_parameter where parameter_variable = 'startDate')"/>
+            <column name="report_parameter_name" value="startDate"/>
+            <column name="mandatory_parameter" value="true"/>
+        </insert>
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Reporte de Honorarios')"/>
+            <column name="parameter_id"
+                    valueComputed="(select id from stretchy_parameter where parameter_variable = 'endDate')"/>
+            <column name="report_parameter_name" value="endDate"/>
+            <column name="mandatory_parameter" value="true"/>
+        </insert>
+
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Reporte de Honorarios')"/>
+            <column name="parameter_id"
+                    valueComputed="(select id from stretchy_parameter where parameter_variable = 'collectionNit')"/>
+            <column name="report_parameter_name" value="collectionNit"/>
+            <column name="mandatory_parameter" value="true"/>
+        </insert>
+
+        <insert tableName="stretchy_report_parameter">
+            <column name="report_id"
+                    valueComputed="(select id from stretchy_report where report_name = 'Reporte de Honorarios')"/>
+            <column name="parameter_id"
+                    valueComputed="(select id from stretchy_parameter where parameter_variable = 'collectionCode')"/>
+            <column name="report_parameter_name" value="collectionCode"/>
+            <column name="mandatory_parameter" value="true"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

@@ -399,7 +399,12 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 numberOfRepayments = numberOfRepayments - (this.applicableFromInstallment - 1);
             }
         }
-        this.amountOrPercentage = amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
+        if (numberOfRepayments == 0) {
+            this.amountOrPercentage = BigDecimal.ZERO;
+        } else {
+            this.amountOrPercentage = amount.divide(BigDecimal.valueOf(numberOfRepayments), 2, RoundingMode.CEILING);
+        }
+
         if (this.getChargeCalculation().isFlatMandatoryInsurance()) {
             this.amountOrPercentage = this.amountOrPercentage.setScale(0, RoundingMode.DOWN);
         }
@@ -636,7 +641,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     loanCharge = BigDecimal.ZERO;
                     if (isInstalmentFee()) {
                         loanCharge = this.loan.calculatePerInstallmentChargeAmount(ChargeCalculationType.fromInt(this.chargeCalculation),
-                                this.percentage, this.amountOrPercentage, this.getCharge().getParentChargeId());
+                                this.percentage, this.amountOrPercentage, this.getCharge().getParentChargeId(), this);
                     }
                     if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
                         loanCharge = percentageOf(this.amountPercentageAppliedTo);
@@ -856,7 +861,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         final BigDecimal totalAccountedFor = amountPaidLocal.add(amountWaivedLocal).add(amountWrittenOffLocal);
-
+        // SU-516 recalculate and increase the amount of a closed hono charge
+        BigDecimal difference = this.amount.subtract(totalAccountedFor);
+        if (difference.compareTo(BigDecimal.ZERO) > 0 && this.isPaid()) {
+            this.paid = false;
+        }
         return this.amount.subtract(totalAccountedFor);
     }
 
@@ -909,6 +918,22 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         return this.amount;
     }
 
+    public BigDecimal getAmountPaid() {
+        return this.amountPaid != null ? this.amountPaid : BigDecimal.ZERO;
+    }
+
+    public BigDecimal getAmountWaived() {
+        return this.amountWaived != null ? this.amountWaived : BigDecimal.ZERO;
+    }
+
+    public BigDecimal getAmountWrittenOff() {
+        return this.amountWrittenOff != null ? this.amountWrittenOff : BigDecimal.ZERO;
+    }
+
+    public BigDecimal getAmountOutstanding() {
+        return this.amountOutstanding != null ? this.amountOutstanding : BigDecimal.ZERO;
+    }
+
     public BigDecimal amountOutstanding() {
         return this.amountOutstanding;
     }
@@ -933,6 +958,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     public boolean isDueForCollectionForInstallment(final LoanRepaymentScheduleInstallment installment) {
         return this.getOverdueInstallmentCharge() != null && Objects
                 .equals(this.getOverdueInstallmentCharge().installment().getInstallmentNumber(), installment.getInstallmentNumber());
+    }
+
+    public boolean isDueForCollectionForInstallmentByInstallmentNumber(final Integer installmentNumber) {
+        return this.getOverdueInstallmentCharge() != null
+                && Objects.equals(this.getOverdueInstallmentCharge().installment().getInstallmentNumber(), installmentNumber);
     }
 
     public boolean isDueForCollectionFromIncludingAndUpToAndIncluding(final LocalDate fromAndInclusive, final LocalDate upToAndInclusive) {
@@ -1458,8 +1488,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         if (this.getChargeCalculation().isFlatHono() && !this.getCustomChargeHonorarioMaps().isEmpty()) {
             for (CustomChargeHonorarioMap customCharge : this.getCustomChargeHonorarioMaps()) {
                 if (customCharge.getLoanInstallmentNr().equals(installmentNumber)) {
-                    customAmout = customAmout.add(customCharge.getFeeTotalAmount());
-                    break;
+                    customAmout = customAmout.add(customCharge.getFeeBaseAmount());
                 }
             }
         } else if (this.isCustomFlatDistributedCharge()) {
@@ -1483,10 +1512,14 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             }
             customAmout = customAmout.add(chargeAmount);
         } else if (this.isCustomPercentageBasedOfAnotherCharge()) {
-            if (!this.installmentCharges().isEmpty()) {
-                final LoanInstallmentCharge installmentCharge = this.getInstallmentLoanCharge(installmentNumber);
-                if (installmentCharge != null) {
-                    customAmout = customAmout.add(installmentCharge.getAmount());
+            if (isVatChargeOfHonoCharge()) {
+                customAmout = getVatAmountOfHonoCharge(installmentNumber);
+            } else {
+                if (!this.installmentCharges().isEmpty()) {
+                    final LoanInstallmentCharge installmentCharge = this.getInstallmentLoanCharge(installmentNumber);
+                    if (installmentCharge != null) {
+                        customAmout = customAmout.add(installmentCharge.getAmount());
+                    }
                 }
             }
         } else if (this.isCustomPercentageOfOutstandingPrincipalCharge()) {
@@ -1639,5 +1672,34 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void updateAmountOutstanding() {
         this.amountOutstanding = calculateOutstanding();
+    }
+
+    public void setCustomChargeHonorarioMaps(Set<CustomChargeHonorarioMap> customChargeHonorarioMaps) {
+        this.customChargeHonorarioMaps = customChargeHonorarioMaps;
+    }
+
+    public boolean isVatChargeOfHonoCharge() {
+        for (LoanCharge parentCharge : this.loan.getCharges()) {
+            if (parentCharge.isFlatHono() && parentCharge.getCharge().getId().equals(this.getCharge().getParentChargeId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public BigDecimal getVatAmountOfHonoCharge(Integer installmentNumber) {
+        BigDecimal customAmout = BigDecimal.ZERO;
+        for (LoanCharge parentCharge : this.loan.getCharges()) {
+            if (parentCharge.isFlatHono() && parentCharge.getCharge().getId().equals(this.getCharge().getParentChargeId())) {
+                if (!parentCharge.getCustomChargeHonorarioMaps().isEmpty()) {
+                    for (CustomChargeHonorarioMap customCharge : parentCharge.getCustomChargeHonorarioMaps()) {
+                        if (customCharge.getLoanInstallmentNr().equals(installmentNumber)) {
+                            customAmout = customAmout.add(customCharge.getFeeVatAmount());
+                        }
+                    }
+                }
+            }
+        }
+        return customAmout;
     }
 }

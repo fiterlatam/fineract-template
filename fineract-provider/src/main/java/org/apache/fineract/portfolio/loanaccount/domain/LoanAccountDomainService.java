@@ -26,6 +26,7 @@ import java.util.Set;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.portfolio.delinquency.validator.LoanDelinquencyActionData;
+import org.apache.fineract.portfolio.loanaccount.data.FeeCalculationHonorario;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 
@@ -87,8 +88,8 @@ public interface LoanAccountDomainService {
 
     Loan saveLoanWithDataIntegrityViolationChecks(Loan loan);
 
-    LoanTransaction foreCloseLoan(Loan loan, LocalDate foreClourseDate, String noteText, ExternalId externalId,
-            Map<String, Object> changes);
+    LoanTransaction foreCloseLoan(Loan loan, LocalDate foreClourseDate, String noteText, ExternalId externalId, Map<String, Object> changes,
+            boolean isForCloureAction);
 
     LoanTransaction claimLoan(Loan loan, LocalDate claimDate, ExternalId externalId, Map<String, Object> changes);
 
@@ -109,4 +110,12 @@ public interface LoanAccountDomainService {
 
     LoanTransaction writeoffPunishLoan(Loan loan, LocalDate writeOffDate, String noteText, ExternalId externalId,
             Map<String, Object> changes);
+
+    FeeCalculationHonorario calculateFeeHonorario(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, BigDecimal repayment);
+
+    FeeCalculationHonorario updateCalculationHonoLoanChargeOverDueVat(BigDecimal repaymentAmount,
+            LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, Integer installmentNumberToBeCharged, Long version);
+
+    void updateRepaymentInstalmentCharge(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, Integer numberOfRepayment);
+
 }

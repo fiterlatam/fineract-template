@@ -33,6 +33,8 @@ public interface LoanScheduleModelPeriod {
 
     boolean isDownPaymentPeriod();
 
+    boolean isDisbursementPeriod();
+
     boolean isTotalGracePeriod();
 
     Integer periodNumber();

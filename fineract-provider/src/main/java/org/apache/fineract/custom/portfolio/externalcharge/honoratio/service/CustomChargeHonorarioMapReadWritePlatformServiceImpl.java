@@ -63,6 +63,7 @@ import retrofit2.Retrofit;
 
 @Slf4j
 @Service
+@Deprecated
 public class CustomChargeHonorarioMapReadWritePlatformServiceImpl implements CustomChargeHonorarioMapReadWritePlatformService {
 
     private final JdbcTemplate jdbcTemplate;

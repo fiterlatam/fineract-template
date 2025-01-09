@@ -140,6 +140,11 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
             final LoanSchedulePeriodData disbursementPeriod = LoanSchedulePeriodData.disbursementOnlyPeriod(
                     this.disbursement.disbursementDate(), this.disbursement.getPrincipal(), this.totalFeeChargesDueAtDisbursement,
                     this.disbursement.isDisbursed());
+            disbursementPeriod.setHonorariosDue(disbursementPeriod.getFeeChargesDue());
+            disbursementPeriod.setHonorariosPaid(disbursementPeriod.getFeeChargesPaid());
+            disbursementPeriod.setHonorariosWaived(disbursementPeriod.getFeeChargesWaived());
+            disbursementPeriod.setHonorariosWrittenOff(disbursementPeriod.getFeeChargesWrittenOff());
+            disbursementPeriod.setHonorariosOutstanding(disbursementPeriod.getFeeChargesOutstanding());
 
             final Collection<LoanSchedulePeriodData> periods = new ArrayList<>();
             final MonetaryCurrency monCurrency = new MonetaryCurrency(this.currency.getCode(), this.currency.getDecimalPlaces(),
@@ -161,7 +166,7 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
             Money totalMandatoryInsuranceCharged = Money.zero(monCurrency);
             Money totalVoluntaryInsuranceCharged = Money.zero(monCurrency);
             Money totalAvalCharged = Money.zero(monCurrency);
-            Money totalHonorariosCharged = Money.zero(monCurrency);
+            Money totalHonorariosCharged = Money.of(monCurrency, disbursementPeriod.getHonorariosDue());
 
             // update totals with details of fees charged during disbursement
             totalFeeChargesCharged = totalFeeChargesCharged.plus(disbursementPeriod.getFeeChargesDue());

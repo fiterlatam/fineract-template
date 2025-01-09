@@ -199,7 +199,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         Money unprocessed = Money.zero(ctx.getCurrency());
         switch (loanTransaction.getTypeOf()) {
             case DISBURSEMENT -> handleDisbursement(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getOverpaymentHolder());
-            case WRITEOFF ->
+            case WRITEOFF, CREDIT_NOTE ->
                 handleWriteOff(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges(), ctx.getOverpaymentHolder());
             case REFUND_FOR_ACTIVE_LOAN -> handleRefund(loanTransaction, ctx.getCurrency(), ctx.getInstallments(), ctx.getCharges());
             case CHARGEBACK -> handleChargeback(loanTransaction, ctx);
@@ -1133,7 +1133,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             }
             LoanRepaymentScheduleInstallment dueInstallment = installments.stream()
                     .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
-                    .filter(e -> loanTransaction.isOnOrBetween(e.getFromDate(), e.getDueDate()))
+                    .filter(e -> loanTransaction.isOnOrBetween(e.getFromDate(), e.getDueDate()) || loanTransaction.isOn(e.getDueDate()))
                     .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
 
             found = false;
@@ -1256,6 +1256,18 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                 Money zero = transactionAmountUnprocessed.zero();
                                 for (LoanRepaymentScheduleInstallment inAdvanceInstallment : inAdvanceInstallments) {
                                     if (transactionAmountUnprocessed.isGreaterThanZero()) {
+                                        if (inAdvanceInstallment.isMigratedInstallment()) {
+                                            // Process migrated installments as due or past due installments
+                                            Set<LoanCharge> inAdvanceInstallmentCharges = getLoanChargesOfInstallment(charges,
+                                                    inAdvanceInstallment, firstNormalInstallmentNumber);
+                                            LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
+                                                    transactionMappings, loanTransaction, inAdvanceInstallment, currency);
+                                            paidPortion = processPaymentAllocation(paymentAllocationType, inAdvanceInstallment,
+                                                    loanTransaction, transactionAmountUnprocessed,
+                                                    loanTransactionToRepaymentScheduleMapping, inAdvanceInstallmentCharges, balances,
+                                                    LoanRepaymentScheduleInstallment.PaymentAction.PAY);
+                                            transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
+                                        }
                                         if (inAdvanceInstallment.isLastInstallment(installments)
                                                 && inAdvanceInstallment.isOverpaidInAdvance(currency) && transactionAmountUnprocessed
                                                         .isGreaterThanOrEqualTo(inAdvanceInstallment.getPrincipal(currency))) {
