@@ -174,4 +174,6 @@ public interface LoanReadPlatformService {
     List<LoanReclaimData> retrieveExcludedTemplate(String claimType);
 
     List<Long> findLoanIdsForAccrualPosting(LocalDate tillDate, int pageSize, Long minLoanId);
+
+    List<Long> retrieveIdsForActiveLoans(int pageSize, Long minLoanId);
 }

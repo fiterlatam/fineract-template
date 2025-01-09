@@ -4867,23 +4867,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     @Override
-    public void persistInstallmentalChargeAccrual(LocalDate localDate) {
-        List<Loan> activeLoans = loanRepository.findActiveLoans();
-        activeLoans.forEach(loan -> {
-            log.info("Persisting Installment charge accrual for loan: {}", loan.getId());
-            List<LoanCharge> charges = filterInstallmentCharges(loan.getActiveCharges());
-            Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
-                    .retriveMinimumDaysInArrearsToSuspendLoanAccount();
-            if (minimumDaysInArrearsToSuspendLoanAccount == null) {
-                minimumDaysInArrearsToSuspendLoanAccount = 90L;
-            }
-            final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loan.getId());
-            final Long daysInArrears = collectionData.getPastDueDays();
-            final boolean hasOccurredOnSuspendedAccount = daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount;
-            loan.handleChargeAppliedTransactionPerInstallment(charges, localDate, hasOccurredOnSuspendedAccount);
-            loanRepository.saveAndFlush(loan);
-            log.info("Installment  charge accrual persisted for loan: {}", loan.getId());
-        });
+    @Transactional
+    public void persistInstallmentalChargeAccrual(Long loanId, LocalDate localDate, Long minimumDaysInArrearsToSuspendLoanAccount) {
+        Loan loan = this.loanAssembler.assembleFrom(loanId);
+        log.info("Persisting Installment charge accrual for loan: {}", loan.getId());
+        List<LoanCharge> charges = filterInstallmentCharges(loan.getActiveCharges());
+
+        if (minimumDaysInArrearsToSuspendLoanAccount == null) {
+            minimumDaysInArrearsToSuspendLoanAccount = 90L;
+        }
+        final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loanId);
+        final Long daysInArrears = collectionData.getPastDueDays();
+        final boolean hasOccurredOnSuspendedAccount = daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount;
+        loan.handleChargeAppliedTransactionPerInstallment(charges, localDate, hasOccurredOnSuspendedAccount);
+        loanRepository.saveAndFlush(loan);
+        log.info("Installment  charge accrual persisted for loan: {}", loan.getId());
     }
 
     private List<LoanCharge> filterInstallmentCharges(Set<LoanCharge> charges) {

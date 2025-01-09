@@ -100,6 +100,8 @@ import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorDoma
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
 import org.apache.fineract.portfolio.loanaccount.jobs.dailyaccrual.DailyInterestAccrualPoster;
 import org.apache.fineract.portfolio.loanaccount.jobs.dailyaccrual.DailyInterestAccrualPosterTask;
+import org.apache.fineract.portfolio.loanaccount.jobs.installmentalchargeaccrual.InstallmentChargeAccrualPoster;
+import org.apache.fineract.portfolio.loanaccount.jobs.installmentalchargeaccrual.InstallmentChargeAccrualPosterTask;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleAssembler;
@@ -510,5 +512,20 @@ public class LoanAccountConfiguration {
     @ConditionalOnMissingBean(DailyInterestAccrualPosterTask.class)
     public DailyInterestAccrualPosterTask dailyAccrualPosterTask(DailyInterestAccrualPoster dailyAccrualPoster) {
         return new DailyInterestAccrualPosterTask(dailyAccrualPoster);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(InstallmentChargeAccrualPoster.class)
+    public InstallmentChargeAccrualPoster installmentChargeAccrualPoster(LoanWritePlatformService loanWritePlatformService) {
+        return new InstallmentChargeAccrualPoster(loanWritePlatformService);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(InstallmentChargeAccrualPosterTask.class)
+    public InstallmentChargeAccrualPosterTask installmentChargeAccrualPosterTask(
+            InstallmentChargeAccrualPoster installmentChargeAccrualPoster) {
+        return new InstallmentChargeAccrualPosterTask(installmentChargeAccrualPoster);
     }
 }
