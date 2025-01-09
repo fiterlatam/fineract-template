@@ -129,9 +129,9 @@ public interface LoanWritePlatformService {
 
     void recalculateInterestRate(Loan loan);
 
-    void persistDailyAccrual(LocalDate localDate);
+    void persistDailyInterestAccrual(Long loanId, LocalDate accrualDate);
 
-    void persistInstallmentalChargeAccrual(LocalDate localDate);
+    void persistInstallmentalChargeAccrual(Long loanId, LocalDate localDate, Long minimumDaysInArrearsToSuspendLoanAccount);
 
     void cancelDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds);
 
