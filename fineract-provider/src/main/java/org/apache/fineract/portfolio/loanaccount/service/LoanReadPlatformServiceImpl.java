@@ -219,19 +219,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         return Optional.ofNullable(currentUser).map(appUser -> appUser.getOffice().getHierarchy()).orElse(".");
     }
 
-    @Override
-    public LoanAccountData retrieveLoanByLoanAccount(String loanAccountNumber) {
-
-        // final AppUser currentUser = this.context.authenticatedUser();
-        this.context.authenticatedUser();
-        final LoanMapper rm = new LoanMapper(sqlGenerator, delinquencyReadPlatformService);
-
-        final String sql = "select " + rm.loanSchema() + " where l.account_no=?";
-
-        return this.jdbcTemplate.queryForObject(sql, rm, loanAccountNumber); // NOSONAR
-
-    }
-
     private FeeCalculationHonorario calculateFeeDetails(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
             BigDecimal repaymentAmount) {
         // SU-529 Get maximum age of any of the client's loan
@@ -274,19 +261,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         // Return results as an object
         return new FeeCalculationHonorario(delinquentPortion, feeWithTax, feeBasis, feeVat, feeHono);
-    }
-
-    @Override
-    public List<LoanAccountData> retrieveGLIMChildLoansByGLIMParentAccount(String parentloanAccountNumber) {
-        this.context.authenticatedUser();
-        final LoanMapper rm = new LoanMapper(sqlGenerator, delinquencyReadPlatformService);
-
-        final String sql = "select " + rm.loanSchema()
-                + " left join glim_parent_child_mapping as glim on glim.glim_child_account_id=l.account_no "
-                + "where glim.glim_parent_account_id=?";
-
-        return this.jdbcTemplate.query(sql, rm, parentloanAccountNumber); // NOSONAR
-
     }
 
     @Override
@@ -426,69 +400,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final Object[] objectArray = extraCriterias.toArray();
         final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
         return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), finalObjectArray, loanMapper);
-    }
-
-    @Override
-    public LoanAccountData retrieveTemplateWithClientAndProductDetails(final Long clientId, final Long productId) {
-
-        this.context.authenticatedUser();
-
-        final ClientData clientAccount = this.clientReadPlatformService.retrieveOne(clientId);
-        final LocalDate expectedDisbursementDate = DateUtils.getBusinessLocalDate();
-        LoanAccountData loanTemplateDetails = LoanAccountData.clientDefaults(clientAccount.getId(), clientAccount.getAccountNo(),
-                clientAccount.getDisplayName(), clientAccount.getOfficeId(), clientAccount.getExternalId(), expectedDisbursementDate);
-
-        if (productId != null) {
-            final LoanProductData selectedProduct = this.loanProductReadPlatformService.retrieveLoanProduct(productId);
-            loanTemplateDetails = LoanAccountData.populateLoanProductDefaults(loanTemplateDetails, selectedProduct);
-        }
-
-        return loanTemplateDetails;
-    }
-
-    @Override
-    public LoanAccountData retrieveTemplateWithGroupAndProductDetails(final Long groupId, final Long productId) {
-
-        this.context.authenticatedUser();
-
-        final GroupGeneralData groupAccount = this.groupReadPlatformService.retrieveOne(groupId);
-        final LocalDate expectedDisbursementDate = DateUtils.getBusinessLocalDate();
-        LoanAccountData loanDetails = LoanAccountData.groupDefaults(groupAccount, expectedDisbursementDate);
-
-        if (productId != null) {
-            final LoanProductData selectedProduct = this.loanProductReadPlatformService.retrieveLoanProduct(productId);
-            loanDetails = LoanAccountData.populateLoanProductDefaults(loanDetails, selectedProduct);
-        }
-
-        return loanDetails;
-    }
-
-    @Override
-    public LoanAccountData retrieveTemplateWithCompleteGroupAndProductDetails(final Long groupId, final Long productId) {
-
-        this.context.authenticatedUser();
-
-        GroupGeneralData groupAccount = this.groupReadPlatformService.retrieveOne(groupId);
-        // get group associations
-        final Collection<ClientData> membersOfGroup = this.clientReadPlatformService.retrieveClientMembersOfGroup(groupId);
-        if (!CollectionUtils.isEmpty(membersOfGroup)) {
-            final Collection<ClientData> activeClientMembers = null;
-            final Collection<CalendarData> calendarsData = null;
-            final CalendarData collectionMeetingCalendar = null;
-            final Collection<GroupRoleData> groupRoles = null;
-            groupAccount = GroupGeneralData.withAssocations(groupAccount, membersOfGroup, activeClientMembers, groupRoles, calendarsData,
-                    collectionMeetingCalendar);
-        }
-
-        final LocalDate expectedDisbursementDate = DateUtils.getBusinessLocalDate();
-        LoanAccountData loanDetails = LoanAccountData.groupDefaults(groupAccount, expectedDisbursementDate);
-
-        if (productId != null) {
-            final LoanProductData selectedProduct = this.loanProductReadPlatformService.retrieveLoanProduct(productId);
-            loanDetails = LoanAccountData.populateLoanProductDefaults(loanDetails, selectedProduct);
-        }
-
-        return loanDetails;
     }
 
     @Override
@@ -2783,13 +2694,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public LocalDate retrieveMinimumDateOfRepaymentTransaction(Long loanId) {
-        return this.jdbcTemplate.queryForObject(
-                "select min(transaction_date) from m_loan_transaction where loan_id=? and transaction_type_enum=2", LocalDate.class,
-                loanId);
-    }
-
-    @Override
     public PaidInAdvanceData retrieveTotalPaidInAdvance(Long loanId) {
         try {
             final String sql = "  select (SUM(COALESCE(mr.principal_completed_derived, 0))"
@@ -3078,16 +2982,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public Long retrieveLoanIdByAccountNumber(String loanAccountNumber) {
-        try {
-            return this.jdbcTemplate.queryForObject("select l.id from m_loan l where l.account_no = ?", Long.class, loanAccountNumber);
-
-        } catch (final EmptyResultDataAccessException e) {
-            return null;
-        }
-    }
-
-    @Override
     public String retrieveAccountNumberByAccountId(Long accountId) {
         try {
             final String sql = "select loan.account_no from m_loan loan where loan.id = ?";
@@ -3095,12 +2989,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         } catch (final EmptyResultDataAccessException e) {
             throw new LoanNotFoundException(accountId, e);
         }
-    }
-
-    @Override
-    public Integer retrieveNumberOfActiveLoans() {
-        final String sql = "select count(*) from m_loan";
-        return this.jdbcTemplate.queryForObject(sql, Integer.class);
     }
 
     @Override
