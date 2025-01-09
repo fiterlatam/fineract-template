@@ -142,6 +142,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	mbc.id AS chequeId,
                     	mpb.id as batchId,
                     	mbc.check_no AS chequeNo,
+                    	mbc.is_reassigned_from AS reassignedFrom,
                     	mbc.is_reassigned AS reassinged,
                     	mbc.status_enum AS statusEnum,
                     	mbc.description AS description,
@@ -220,6 +221,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final Long bankAccId = JdbcSupport.getLong(rs, "bankAccId");
             final Long agencyId = JdbcSupport.getLong(rs, "agencyId");
             final Long glAccountId = JdbcSupport.getLong(rs, "glAccountId");
+            final Long reassignedFrom = JdbcSupport.getLong(rs, "reassignedFrom");
             final String agencyName = rs.getString("agencyName");
             final String caseId = rs.getString("caseId");
             final String bankName = rs.getString("bankName");
@@ -257,7 +259,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     .lastModifiedByUsername(lastModifiedByUsername).clientName(clientName).clientNo(clientNo).groupName(groupName)
                     .loanAccNo(loanAccNo).loanAmount(loanAmount).guaranteeAmount(guaranteeAmount).groupNo(groupNo).guaranteeId(guaranteeId)
                     .caseId(caseId).chequeAmount(chequeAmount).agencyId(agencyId).loanAccId(loanAccId).reassingedCheque(reassinged)
-                    .depositNumber(depositNumber).numeroCliente(numeroCliente).glAccountId(glAccountId).build();
+                    .depositNumber(depositNumber).numeroCliente(numeroCliente).glAccountId(glAccountId).reassignedFrom(reassignedFrom).build();
 
         }
     }
