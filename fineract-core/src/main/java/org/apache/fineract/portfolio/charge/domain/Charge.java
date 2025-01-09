@@ -1061,7 +1061,7 @@ public class Charge extends AbstractPersistableCustom {
                         this.getName());
             }
 
-            if (!this.isPenalty() && !ChargeTimeType.fromInt(this.getChargeTimeType()).isInstalmentFee()) {
+            if (!this.isPenalty() && !ChargeTimeType.fromInt(this.getChargeTimeType()).isInstalmentFee() && !this.isDisbursementCharge()) {
                 throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
                         this.getName());
             }
@@ -1075,7 +1075,7 @@ public class Charge extends AbstractPersistableCustom {
                         this.getName());
             }
         }
-        if (!this.isPenalty() && !this.isInstallmentFee()) {
+        if (!this.isPenalty() && !this.isInstallmentFee() && !this.isDisbursementCharge()) {
             throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
                     this.getName());
         }

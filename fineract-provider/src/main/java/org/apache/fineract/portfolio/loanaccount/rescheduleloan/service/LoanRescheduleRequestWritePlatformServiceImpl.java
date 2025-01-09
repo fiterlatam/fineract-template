@@ -56,24 +56,16 @@ import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.account.service.AccountTransfersWritePlatformService;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncident;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentNoveltyNews;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentNoveltyNewsRepository;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentRepository;
+import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentType;
+import org.apache.fineract.portfolio.insurance.exception.InsuranceIncidentNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
-import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallmentRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRescheduleRequestToTermVariationMapping;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanSummaryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariationType;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariations;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleDTO;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.DefaultScheduledDateGenerator;
@@ -136,6 +128,8 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
     private final LoanReadPlatformService loanReadPlatformService;
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
     private final LoanTermVariationsRepository loanTermVariationsRepository;
+    private final InsuranceIncidentRepository insuranceIncidentRepository;
+    private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
 
     /**
      * create a new instance of the LoanRescheduleRequest object from the JsonCommand object and persist
@@ -563,12 +557,13 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             final LoanLifecycleStateMachine loanLifecycleStateMachine = null;
             loan.setHelpers(loanLifecycleStateMachine, this.loanSummaryWrapper, this.loanRepaymentScheduleTransactionProcessorFactory);
 
-            final LoanScheduleDTO loanSchedule = loanScheduleGenerator.rescheduleNextInstallments(mathContext, loanApplicationTerms, loan,
-                    loanApplicationTerms.getHolidayDetailDTO(), loanRepaymentScheduleTransactionProcessor, rescheduleFromDate);
+            final LoanScheduleDTO loanSchedule = loanScheduleGenerator.rescheduleNextInstallmentsForProgressiveLoans(mathContext,
+                    loanApplicationTerms, loan, loanApplicationTerms.getHolidayDetailDTO(), loanRepaymentScheduleTransactionProcessor,
+                    rescheduleFromDate);
 
             // Either the installments got recalculated or the model
             if (loanSchedule.getInstallments() != null) {
-                loan.updateLoanSchedule(loanSchedule.getInstallments());
+                loan.updateLoanSchedule(loanSchedule);
             } else {
                 loan.updateLoanSchedule(loanSchedule.getLoanScheduleModel());
             }
@@ -594,7 +589,18 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             this.loanRepaymentScheduleHistoryRepository.saveAll(loanRepaymentScheduleHistoryList);
             loan.updateRescheduledByUser(appUser);
             loan.updateRescheduledOnDate(DateUtils.getBusinessLocalDate());
-
+            Set<LoanCharge> charges = loan.getActiveCharges();
+            for (LoanCharge charge : charges) {
+                LoanOverdueInstallmentCharge overdueInstallmentCharge = charge.getOverdueInstallmentCharge();
+                if (overdueInstallmentCharge != null) {
+                    Integer installmentNumber = overdueInstallmentCharge.getInstallment().getInstallmentNumber();
+                    LoanRepaymentScheduleInstallment installment = loan.fetchRepaymentScheduleInstallment(installmentNumber);
+                    if (installment.getInstallmentNumber() == 0) {
+                        System.out.println("here is zero ");
+                    }
+                    overdueInstallmentCharge.updateLoanRepaymentScheduleInstallment(installment);
+                }
+            }
             // update the status of the request
             loanRescheduleRequest.approve(appUser, approvedOnDate);
 
@@ -611,6 +617,8 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 // Trigger transaction replayed event
                 replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
             }
+            // we need to create Novedad rediferido once the loan is rescheduled
+            createRediferidoNovelty(loan);
             loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             // update the loan object
             postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
@@ -630,6 +638,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             return new CommandProcessingResultBuilder().withCommandId(jsonCommand.commandId()).withEntityId(loanRescheduleRequestId)
                     .withLoanId(loanRescheduleRequest.getLoan().getId()).with(changes).withClientId(loan.getClientId())
                     .withOfficeId(loan.getOfficeId()).withGroupId(loan.getGroupId()).build();
+
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             // handle the data integrity violation
             handleDataIntegrityViolation(dve);
@@ -744,5 +753,26 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
         LOG.error("Error occured.", dve);
         throw ErrorHandler.getMappable(dve, "error.msg.loan.reschedule.unknown.data.integrity.issue",
                 "Unknown data integrity issue with resource.");
+    }
+
+    private void createRediferidoNovelty(Loan loan) {
+        InsuranceIncidentType incidentType = InsuranceIncidentType.NOVEDAD_REDIFERIDO;
+        InsuranceIncident incident = this.insuranceIncidentRepository.findByIncidentType(incidentType);
+        if (incident == null || !incident.isValid()) {
+            throw new InsuranceIncidentNotFoundException(incidentType.name());
+        }
+        final LocalDate incidentDate = DateUtils.getBusinessLocalDate();
+        MonetaryCurrency currency = loan.getCurrency();
+        for (LoanCharge loanCharge : loan.getCharges()) {
+            boolean isChargeEligibleForNoveltyNews = loanCharge.getAmountOutstanding(currency).isGreaterThanZero()
+                    && ((incident.isMandatory() && loanCharge.isMandatoryInsurance())
+                            || (incident.isVoluntary() && loanCharge.isVoluntaryInsurance()));
+
+            if (isChargeEligibleForNoveltyNews) {
+                InsuranceIncidentNoveltyNews noveltyNews = InsuranceIncidentNoveltyNews.instance(loan, loanCharge, null, incident,
+                        incidentDate, BigDecimal.ZERO);
+                this.insuranceIncidentNoveltyNewsRepository.saveAndFlush(noveltyNews);
+            }
+        }
     }
 }

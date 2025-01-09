@@ -315,6 +315,8 @@ public final class LoanEnumerations {
                     LoanTransactionType.CHARGE_OFF.getCode(), "Charge-off");
             case DOWN_PAYMENT -> new LoanTransactionEnumData(LoanTransactionType.DOWN_PAYMENT.getValue().longValue(),
                     LoanTransactionType.DOWN_PAYMENT.getCode(), "Down Payment");
+            case CREDIT_NOTE -> new LoanTransactionEnumData(LoanTransactionType.CREDIT_NOTE.getValue().longValue(),
+                    LoanTransactionType.CREDIT_NOTE.getCode(), "Credit Note");
         };
     }
 

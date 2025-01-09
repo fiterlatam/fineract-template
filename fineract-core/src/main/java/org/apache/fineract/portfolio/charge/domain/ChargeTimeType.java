@@ -182,6 +182,11 @@ public enum ChargeTimeType {
         return this.value.equals(ChargeTimeType.INSTALMENT_FEE.getValue());
     }
 
+    public boolean isDisbursementCharge() {
+        return ChargeTimeType.DISBURSEMENT.getValue().equals(this.value)
+                || ChargeTimeType.TRANCHE_DISBURSEMENT.getValue().equals(this.value);
+    }
+
     public boolean isOverdueInstallment() {
         return this.value.equals(ChargeTimeType.OVERDUE_INSTALLMENT.getValue());
     }

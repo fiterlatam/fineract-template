@@ -35,6 +35,7 @@ public interface LoanScheduleGenerator {
     LoanScheduleModel generate(MathContext mc, LoanApplicationTerms loanApplicationTerms, Set<LoanCharge> loanCharges,
             HolidayDetailDTO holidayDetailDTO);
 
+    @SuppressWarnings("unused")
     LoanScheduleDTO rescheduleNextInstallments(MathContext mc, LoanApplicationTerms loanApplicationTerms, Loan loan,
             HolidayDetailDTO holidayDetailDTO, LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor,
             LocalDate rescheduleFrom);

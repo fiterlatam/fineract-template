@@ -107,15 +107,23 @@ public final class LoanScheduleModel {
         for (final LoanScheduleModelPeriod modelPeriod : this.periods) {
             LoanSchedulePeriodData periodData = modelPeriod.toData();
             periodData.setAvalDue(modelPeriod.getTotalAvalCharged());
-            periodData.setHonorariosDue(modelPeriod.getTotalHonorariosCharged());
+            if (modelPeriod.isDisbursementPeriod()) {
+                periodData.setHonorariosDue(periodData.getFeeChargesDue());
+            } else {
+                periodData.setHonorariosDue(modelPeriod.getTotalHonorariosCharged());
+            }
             periodData.setMandatoryInsuranceDue(modelPeriod.getTotalMandatoryInsuranceCharged());
             periodData.setVoluntaryInsuranceDue(modelPeriod.getTotalVoluntaryInsuranceCharged());
 
             totalMandatoryInsuranceCharged = totalMandatoryInsuranceCharged.add(modelPeriod.getTotalMandatoryInsuranceCharged());
             totalVoluntaryInsuranceCharged = totalVoluntaryInsuranceCharged.add(modelPeriod.getTotalVoluntaryInsuranceCharged());
             totalAvalCharged = totalAvalCharged.add(modelPeriod.getTotalAvalCharged());
-            totalHonorariosCharged = totalHonorariosCharged.add(modelPeriod.getTotalHonorariosCharged());
 
+            if (modelPeriod.isDisbursementPeriod()) {
+                totalHonorariosCharged = totalHonorariosCharged.add(periodData.getFeeChargesDue());
+            } else {
+                totalHonorariosCharged = totalHonorariosCharged.add(modelPeriod.getTotalHonorariosCharged());
+            }
             periodsData.add(periodData);
         }
 

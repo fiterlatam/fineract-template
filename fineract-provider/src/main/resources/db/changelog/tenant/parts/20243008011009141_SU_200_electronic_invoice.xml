@@ -443,4 +443,26 @@
                                  onDelete="CASCADE"/>
     </changeSet>
 
+    <changeSet id="19" author="fineract">
+        <addColumn tableName="m_loan_transaction">
+            <column name="invoiced_by_transaction_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="m_loan_transaction"
+                                 baseColumnNames="invoiced_by_transaction_id"
+                                 constraintName="fk_m_loan_transaction_invoiced_by_transaction_id"
+                                 referencedTableName="m_loan_transaction"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="20" author="fineract">
+        <dropNotNullConstraint tableName="c_facturacion_electronica" columnName="porcentaje_impuesto" columnDataType="numeric(10, 3)"/>
+    </changeSet>
+
+    <changeSet id="21" author="fineract">
+        <dropNotNullConstraint tableName="c_facturacion_electronica" columnName="nota2" columnDataType="TEXT"/>
+    </changeSet>
+
 </databaseChangeLog>

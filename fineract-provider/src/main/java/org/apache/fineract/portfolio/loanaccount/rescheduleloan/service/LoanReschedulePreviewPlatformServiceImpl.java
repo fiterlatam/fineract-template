@@ -133,8 +133,9 @@ public class LoanReschedulePreviewPlatformServiceImpl implements LoanRescheduleP
         final LoanScheduleGenerator loanScheduleGenerator = this.loanScheduleFactory.create(loanApplicationTerms.getLoanScheduleType(),
                 loanApplicationTerms.getInterestMethod());
         loan.setHelpers(null, this.loanSummaryWrapper, this.loanRepaymentScheduleTransactionProcessorFactory);
-        final LoanScheduleDTO loanSchedule = loanScheduleGenerator.rescheduleNextInstallments(mathContext, loanApplicationTerms, loan,
-                loanApplicationTerms.getHolidayDetailDTO(), loanRepaymentScheduleTransactionProcessor, rescheduleFromDate);
+        final LoanScheduleDTO loanSchedule = loanScheduleGenerator.rescheduleNextInstallmentsForProgressiveLoans(mathContext,
+                loanApplicationTerms, loan, loanApplicationTerms.getHolidayDetailDTO(), loanRepaymentScheduleTransactionProcessor,
+                rescheduleFromDate);
         final LoanScheduleModel loanScheduleModel = loanSchedule.getLoanScheduleModel();
 
         return LoanScheduleModel.withLoanScheduleModelPeriods(loanScheduleModel.getPeriods(), loanScheduleModel);
