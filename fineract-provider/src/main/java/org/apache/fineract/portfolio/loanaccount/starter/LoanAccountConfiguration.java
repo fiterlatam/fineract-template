@@ -35,6 +35,7 @@ import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingR
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainServiceJpa;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepository;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
@@ -252,7 +253,8 @@ public class LoanAccountConfiguration {
             RateAssembler rateAssembler, GLIMAccountInfoWritePlatformService glimAccountInfoWritePlatformService,
             GLIMAccountInfoRepository glimRepository, LoanRepository loanRepository, GSIMReadPlatformService gsimReadPlatformService,
             LoanLifecycleStateMachine defaultLoanLifecycleStateMachine, ClientBuyProcessRepository clientBuyProcessRepository,
-            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository) {
+            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository,
+            ConfigurationDomainServiceJpa configurationDomainServiceJpa) {
         return new LoanApplicationWritePlatformServiceJpaRepositoryImpl(context, fromJsonHelper, loanApplicationTransitionApiJsonValidator,
                 loanProductCommandFromApiJsonDeserializer, fromApiJsonDeserializer, loanRepositoryWrapper, noteRepository,
                 calculationPlatformService, loanAssembler, clientRepository, loanProductRepository, loanChargeAssembler,
@@ -263,7 +265,7 @@ public class LoanAccountConfiguration {
                 entityDatatableChecksWritePlatformService, globalConfigurationRepository, entityMappingRepository,
                 fineractEntityRelationRepository, loanProductReadPlatformService, rateAssembler, glimAccountInfoWritePlatformService,
                 glimRepository, loanRepository, gsimReadPlatformService, defaultLoanLifecycleStateMachine, clientBuyProcessRepository,
-                clientAllyPointOfSalesRepository);
+                clientAllyPointOfSalesRepository, configurationDomainServiceJpa);
     }
 
     @Bean

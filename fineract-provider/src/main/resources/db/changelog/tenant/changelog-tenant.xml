@@ -351,4 +351,6 @@
     <include file="parts/2024070222441925_SU_272_add_column_point_of_sales_code_v2.xml" relativeToChangelogFile="true"/>
     <include file="parts/202412230000000101_SU_540_update_cron_expressions.xml" relativeToChangelogFile="true"/>
     <include file="parts/202501021143000003_EA_80_add_FNG_charge.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202501021143000002_EA_create_new_data_table_Contactabilidad.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501062000001000_EA_69_create_charge_comission.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>
