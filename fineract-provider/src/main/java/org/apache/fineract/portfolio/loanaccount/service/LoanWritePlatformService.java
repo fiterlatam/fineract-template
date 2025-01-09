@@ -129,7 +129,7 @@ public interface LoanWritePlatformService {
 
     void recalculateInterestRate(Loan loan);
 
-    void persistDailyAccrual(LocalDate localDate);
+    void persistDailyInterestAccrual(Long loanId, LocalDate accrualDate);
 
     void persistInstallmentalChargeAccrual(LocalDate localDate);
 

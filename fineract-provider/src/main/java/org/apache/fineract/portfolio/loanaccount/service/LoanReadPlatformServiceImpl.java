@@ -3899,4 +3899,18 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         }
         return feeHono;
     }
+
+    @Override
+    public List<Long> findLoanIdsForAccrualPosting(LocalDate tillDate, int pageSize, Long minLoanId) {
+        final String sql = """
+                select loan.id from m_loan loan
+                where loan.loan_status_id = ?
+                and (loan.interest_accrued_till < ? or loan.interest_accrued_till is null)
+                and loan.maturedon_date >= ?
+                and loan.id > ?
+                order by loan.id limit ?;
+                """;
+        return this.jdbcTemplate.queryForList(sql, Long.class, LoanStatus.ACTIVE.getValue(), tillDate, tillDate, minLoanId, pageSize)
+                .stream().toList();
+    }
 }
