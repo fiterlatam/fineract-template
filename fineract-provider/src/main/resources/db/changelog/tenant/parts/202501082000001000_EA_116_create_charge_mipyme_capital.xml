@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet author="danielsta@fiter.io" id="10">
+        <sql>
+            <![CDATA[
+                UPDATE m_charge
+                    SET is_active = false
+                    , "name" = CONCAT("name",' --DISABLED')
+                WHERE
+                    "name" LIKE '%Capital Pendiente MiPyme%'
+                    OR "name" LIKE '%Capital Pendiente My Pyme%';
+
+
+                UPDATE m_product_loan
+                    SET "name" = CONCAT("name",' --DISABLED')
+                    , short_name = '*001'
+                    , close_date = (CURRENT_DATE - INTERVAL '1 day')
+                WHERE
+                    "name" = 'Microcredito';
+
+                UPDATE m_product_loan
+                    SET "name" = CONCAT("name",' --DISABLED')
+                    , short_name = '*002'
+                    , close_date = (CURRENT_DATE - INTERVAL '1 day')
+                WHERE
+                    "name" = 'Microcredito B';
+
+                UPDATE m_product_loan
+                    SET "name" = CONCAT("name",' --DISABLED')
+                    , short_name = '*003'
+                    , close_date = (CURRENT_DATE - INTERVAL '1 day')
+                WHERE
+                    "name" = 'MicrocreditoM';
+
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="danielsta@fiter.io" id="20">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_product_loan
+                (short_name, currency_code, currency_digits, currency_multiplesof, principal_amount, min_principal_amount, max_principal_amount, arrearstolerance_amount, "name", description, fund_id, is_linked_to_floating_interest_rates, allow_variabe_installments, nominal_interest_rate_per_period, min_nominal_interest_rate_per_period, max_nominal_interest_rate_per_period, interest_period_frequency_enum, annual_nominal_interest_rate, interest_method_enum, interest_calculated_in_period_enum, allow_partial_period_interest_calcualtion, repay_every, repayment_period_frequency_enum, number_of_repayments, min_number_of_repayments, max_number_of_repayments, grace_on_principal_periods, recurring_moratorium_principal_periods, grace_on_interest_periods, grace_interest_free_periods, amortization_method_enum, accounting_type, loan_transaction_strategy_id, external_id, include_in_borrower_cycle, use_borrower_cycle, start_date, close_date, allow_multiple_disbursals, max_disbursals, max_outstanding_loan_balance, grace_on_arrears_ageing, overdue_days_for_npa, days_in_month_enum, days_in_year_enum, interest_recalculation_enabled, min_days_between_disbursal_and_first_repayment, hold_guarantee_funds, principal_threshold_for_last_installment, account_moves_out_of_npa_only_on_arrears_completion, can_define_fixed_emi_amount, instalment_amount_in_multiples_of, can_use_for_topup, sync_expected_with_disbursement_date, is_equal_amortization, fixed_principal_percentage_per_installment, disallow_expected_disbursements, allow_approved_disbursed_amounts_over_applied, over_applied_calculation_type, over_applied_number, delinquency_bucket_id, loan_transaction_strategy_code, loan_transaction_strategy_name, due_days_for_repayment_event, overdue_days_for_repayment_event, enable_down_payment, disbursed_amount_percentage_for_down_payment, enable_installment_level_delinquency, repayment_rescheduling_enum, max_client_inactivity_period, overdue_amount_for_arrears, extend_term_monthly_repayments, product_type, use_other_loans_cupo, is_advance, custom_allow_create_or_disburse, custom_allow_collections, custom_allow_debit_note, custom_allow_credit_note, custom_allow_forgiveness, custom_allow_reversal_cancellation, custom_allow_refinance, custom_allow_restructure, custom_allow_referido, custom_allow_create_or_disburse_sms, custom_allow_collections_sms, custom_allow_debit_note_sms, custom_allow_credit_note_sms, custom_allow_forgiveness_sms, custom_allow_reversal_cancellation_sms, custom_allow_refinance_sms, custom_allow_restructure_sms, custom_allow_referido_sms, require_points, interest_rate_id, interest_rate_points, grace_on_charges_periods, is_purchase_charge, voluntary_insurance_id, is_interest_starts_after_grace_period)
+                VALUES('MICB', 'COP', 0, 0, 100000.000000, 100000.000000, 32500000.000000, NULL, 'Microcredito B', 'Microcredito_B', NULL, false, false, 46.230000, 46.230000, 46.230000, 3, 46.230000, 0, 1, true, 1, 2, 12, 1, 60, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, false, false, '2024-12-10', NULL, false, NULL, NULL, 0, 0, 1, 1, false, 1, false, 0.00, false, true, NULL, false, false, false, NULL, false, false, NULL, NULL, NULL, 'advanced-payment-allocation-strategy', 'Advanced payment allocation strategy', 1, 1, false, NULL, false, 2, 1, 30000, false, 2460, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, (select MAX(id) from m_interest_rate), NULL, NULL, false, NULL, true);
+
+                INSERT INTO m_product_loan_configurable_attributes
+                (loan_product_id, amortization_method_enum, interest_method_enum, loan_transaction_strategy_code, interest_calculated_in_period_enum, arrearstolerance_amount, repay_every, moratorium, grace_on_arrears_ageing)
+                VALUES((SELECT id FROM m_product_loan WHERE short_name = 'MICB'), true, true, true, true, true, true, true, true);
+
+                INSERT INTO m_product_loan
+                (short_name, currency_code, currency_digits, currency_multiplesof, principal_amount, min_principal_amount, max_principal_amount, arrearstolerance_amount, "name", description, fund_id, is_linked_to_floating_interest_rates, allow_variabe_installments, nominal_interest_rate_per_period, min_nominal_interest_rate_per_period, max_nominal_interest_rate_per_period, interest_period_frequency_enum, annual_nominal_interest_rate, interest_method_enum, interest_calculated_in_period_enum, allow_partial_period_interest_calcualtion, repay_every, repayment_period_frequency_enum, number_of_repayments, min_number_of_repayments, max_number_of_repayments, grace_on_principal_periods, recurring_moratorium_principal_periods, grace_on_interest_periods, grace_interest_free_periods, amortization_method_enum, accounting_type, loan_transaction_strategy_id, external_id, include_in_borrower_cycle, use_borrower_cycle, start_date, close_date, allow_multiple_disbursals, max_disbursals, max_outstanding_loan_balance, grace_on_arrears_ageing, overdue_days_for_npa, days_in_month_enum, days_in_year_enum, interest_recalculation_enabled, min_days_between_disbursal_and_first_repayment, hold_guarantee_funds, principal_threshold_for_last_installment, account_moves_out_of_npa_only_on_arrears_completion, can_define_fixed_emi_amount, instalment_amount_in_multiples_of, can_use_for_topup, sync_expected_with_disbursement_date, is_equal_amortization, fixed_principal_percentage_per_installment, disallow_expected_disbursements, allow_approved_disbursed_amounts_over_applied, over_applied_calculation_type, over_applied_number, delinquency_bucket_id, loan_transaction_strategy_code, loan_transaction_strategy_name, due_days_for_repayment_event, overdue_days_for_repayment_event, enable_down_payment, disbursed_amount_percentage_for_down_payment, enable_installment_level_delinquency, repayment_rescheduling_enum, max_client_inactivity_period, overdue_amount_for_arrears, extend_term_monthly_repayments, product_type, use_other_loans_cupo, is_advance, custom_allow_create_or_disburse, custom_allow_collections, custom_allow_debit_note, custom_allow_credit_note, custom_allow_forgiveness, custom_allow_reversal_cancellation, custom_allow_refinance, custom_allow_restructure, custom_allow_referido, custom_allow_create_or_disburse_sms, custom_allow_collections_sms, custom_allow_debit_note_sms, custom_allow_credit_note_sms, custom_allow_forgiveness_sms, custom_allow_reversal_cancellation_sms, custom_allow_refinance_sms, custom_allow_restructure_sms, custom_allow_referido_sms, require_points, interest_rate_id, interest_rate_points, grace_on_charges_periods, is_purchase_charge, voluntary_insurance_id, is_interest_starts_after_grace_period)
+                VALUES('MICM', 'COP', 0, 0, 500000.000000, 500000.000000, 29000000.000000, NULL, 'Microcredito M', 'Microcredito M', NULL, false, false, 3.620000, 3.620000, 3.620000, 3, 3.620000, 0, 1, true, 1, 2, 12, 1, 35, NULL, NULL, NULL, NULL, 1, 1, NULL, NULL, false, false, '2024-12-10', NULL, false, NULL, NULL, 0, 0, 1, 1, false, 1, false, 0.00, false, false, NULL, false, false, false, NULL, false, false, NULL, NULL, NULL, 'advanced-payment-allocation-strategy', 'Advanced payment allocation strategy', 1, 1, false, NULL, true, 2, 1, 30000, false, 2460, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, (select MAX(id) from m_interest_rate), NULL, NULL, false, NULL, true);
+
+                INSERT INTO m_product_loan_configurable_attributes
+                (loan_product_id, amortization_method_enum, interest_method_enum, loan_transaction_strategy_code, interest_calculated_in_period_enum, arrearstolerance_amount, repay_every, moratorium, grace_on_arrears_ageing)
+                VALUES((SELECT id FROM m_product_loan WHERE short_name = 'MICM'), true, true, true, true, true, true, true, true);
+
+                INSERT INTO m_product_loan
+                (short_name, currency_code, currency_digits, currency_multiplesof, principal_amount, min_principal_amount, max_principal_amount, arrearstolerance_amount, "name", description, fund_id, is_linked_to_floating_interest_rates, allow_variabe_installments, nominal_interest_rate_per_period, min_nominal_interest_rate_per_period, max_nominal_interest_rate_per_period, interest_period_frequency_enum, annual_nominal_interest_rate, interest_method_enum, interest_calculated_in_period_enum, allow_partial_period_interest_calcualtion, repay_every, repayment_period_frequency_enum, number_of_repayments, min_number_of_repayments, max_number_of_repayments, grace_on_principal_periods, recurring_moratorium_principal_periods, grace_on_interest_periods, grace_interest_free_periods, amortization_method_enum, accounting_type, loan_transaction_strategy_id, external_id, include_in_borrower_cycle, use_borrower_cycle, start_date, close_date, allow_multiple_disbursals, max_disbursals, max_outstanding_loan_balance, grace_on_arrears_ageing, overdue_days_for_npa, days_in_month_enum, days_in_year_enum, interest_recalculation_enabled, min_days_between_disbursal_and_first_repayment, hold_guarantee_funds, principal_threshold_for_last_installment, account_moves_out_of_npa_only_on_arrears_completion, can_define_fixed_emi_amount, instalment_amount_in_multiples_of, can_use_for_topup, sync_expected_with_disbursement_date, is_equal_amortization, fixed_principal_percentage_per_installment, disallow_expected_disbursements, allow_approved_disbursed_amounts_over_applied, over_applied_calculation_type, over_applied_number, delinquency_bucket_id, loan_transaction_strategy_code, loan_transaction_strategy_name, due_days_for_repayment_event, overdue_days_for_repayment_event, enable_down_payment, disbursed_amount_percentage_for_down_payment, enable_installment_level_delinquency, repayment_rescheduling_enum, max_client_inactivity_period, overdue_amount_for_arrears, extend_term_monthly_repayments, product_type, use_other_loans_cupo, is_advance, custom_allow_create_or_disburse, custom_allow_collections, custom_allow_debit_note, custom_allow_credit_note, custom_allow_forgiveness, custom_allow_reversal_cancellation, custom_allow_refinance, custom_allow_restructure, custom_allow_referido, custom_allow_create_or_disburse_sms, custom_allow_collections_sms, custom_allow_debit_note_sms, custom_allow_credit_note_sms, custom_allow_forgiveness_sms, custom_allow_reversal_cancellation_sms, custom_allow_refinance_sms, custom_allow_restructure_sms, custom_allow_referido_sms, require_points, interest_rate_id, interest_rate_points, grace_on_charges_periods, is_purchase_charge, voluntary_insurance_id, is_interest_starts_after_grace_period)
+                VALUES('MICR', 'COP', 0, 0, 300000.000000, 300000.000000, 32500000.000000, NULL, 'Microcredito', 'Microcredito', NULL, false, false, 46.230000, 46.230000, 46.230000, 3, 46.230000, 0, 1, false, 1, 2, 12, 1, 60, NULL, NULL, NULL, NULL, 1, 1, NULL, NULL, false, false, '2024-12-10', NULL, false, NULL, NULL, 0, 0, 1, 1, false, 1, false, 1.00, false, false, NULL, false, false, false, NULL, false, false, NULL, NULL, NULL, 'advanced-payment-allocation-strategy', 'Advanced payment allocation strategy', 1, 1, false, NULL, true, 2, 1, 29999, false, 2460, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, (select MAX(id) from m_interest_rate), NULL, NULL, false, NULL, true);
+
+                INSERT INTO m_product_loan_configurable_attributes
+                (loan_product_id, amortization_method_enum, interest_method_enum, loan_transaction_strategy_code, interest_calculated_in_period_enum, arrearstolerance_amount, repay_every, moratorium, grace_on_arrears_ageing)
+                VALUES((SELECT id FROM m_product_loan WHERE short_name = 'MICR'), true, true, true, true, true, true, true, true);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="danielsta@fiter.io" id="40">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_charge
+                ("name", currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, is_free_withdrawal, free_withdrawal_charge_frequency, restart_frequency, restart_frequency_enum, is_payment_type, payment_type_id, income_or_liability_account_id, tax_group_id, grace_on_charge_period_amount, parent_charge_id, interest_rate_id, insurance_name, insurance_charged_as, insurance_company, insurer_name, insurance_code, insurance_plan, base_value, vat_value, total_value, deadline, is_get_percentage_from_table, days_in_arrears)
+                VALUES ('Capital Pendiente Mi Pyme >= 4SMLV', 'COP', 1, 8, 575, 0, 4.50000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, false, NULL, NULL, NULL, false, NULL, NULL, NULL, 0, 0, NULL, '', 0, '123', '123', 123, '', 0, 0, NULL, NULL, false, 1)
+                ;
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="danielsta@fiter.io" id="50">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_charge
+                ("name", currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, is_free_withdrawal, free_withdrawal_charge_frequency, restart_frequency, restart_frequency_enum, is_payment_type, payment_type_id, income_or_liability_account_id, tax_group_id, grace_on_charge_period_enum, grace_on_charge_period_amount, parent_charge_id, interest_rate_id, insurance_name, insurance_charged_as, insurance_company, insurer_name, insurance_code, insurance_plan, base_value, vat_value, total_value, deadline, is_get_percentage_from_table, days_in_arrears)
+                VALUES ('IVA Capital Pendiente Mi Pyme >= 4SMLV', 'COP', 1, 8, 342, 0, 19.00000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, false, NULL, NULL, NULL, false, NULL, NULL, NULL, 1, 0, (SELECT id FROM m_charge WHERE "name" = 'Capital Pendiente Mi Pyme >= 4SMLV'), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="danielsta@fiter.io" id="60">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_charge
+                ("name", currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, is_free_withdrawal, free_withdrawal_charge_frequency, restart_frequency, restart_frequency_enum, is_payment_type, payment_type_id, income_or_liability_account_id, tax_group_id, grace_on_charge_period_enum, grace_on_charge_period_amount, parent_charge_id, interest_rate_id, insurance_name, insurance_charged_as, insurance_company, insurer_name, insurance_code, insurance_plan, base_value, vat_value, total_value, deadline, is_get_percentage_from_table, days_in_arrears)
+                VALUES ('Capital Pendiente Mi Pyme < 4SMLV', 'COP', 1, 8, 575, 0, 7.50000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, false, NULL, NULL, NULL, false, NULL, NULL, NULL, 1, 0, 0, NULL, '', 0, '123', '123', 123, '', 0, 0, NULL, NULL, false, 1)
+                ;
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="danielsta@fiter.io" id="70">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_charge
+                ("name", currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, is_free_withdrawal, free_withdrawal_charge_frequency, restart_frequency, restart_frequency_enum, is_payment_type, payment_type_id, income_or_liability_account_id, tax_group_id, grace_on_charge_period_enum, grace_on_charge_period_amount, parent_charge_id, interest_rate_id, insurance_name, insurance_charged_as, insurance_company, insurer_name, insurance_code, insurance_plan, base_value, vat_value, total_value, deadline, is_get_percentage_from_table, days_in_arrears)
+                VALUES ('IVA Capital Pendiente Mi Pyme < 4SMLV', 'COP', 1, 8, 342, 0, 19.00000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, false, NULL, NULL, NULL, false, NULL, NULL, NULL, 1, 0, (SELECT id FROM m_charge WHERE "name" = 'Capital Pendiente Mi Pyme < 4SMLV'), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL);
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
