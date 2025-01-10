@@ -741,11 +741,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
         }
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
-        // if(!loanId.equals(1L)){
-        // throw new GeneralPlatformDomainRuleException("error.msg.loan.outside.the.off.restriction.period",
-        // "Maximum number of restructures within 6 months exceeded");
-        // }
-
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(loan.getId()) //
