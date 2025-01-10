@@ -43,6 +43,7 @@ import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTyp
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeReadWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
@@ -105,6 +106,7 @@ public class LoanChargeAssembler {
         }
 
         final Set<LoanCharge> loanCharges = new LinkedHashSet<>();
+        final BigDecimal principalFinal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
         BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
         final Integer numberOfRepayments = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("numberOfRepayments", element);
         final Long productId = this.fromApiJsonHelper.extractLongNamed("productId", element);
@@ -246,6 +248,10 @@ public class LoanChargeAssembler {
                                         }
                                     }
                                 }
+                            }
+                            if (amount != null && amount.compareTo(principalFinal) > 0) {
+                                throw new GeneralPlatformDomainRuleException("error.msg.loan.charge.amount.exceeds.principal",
+                                        "Loan charge amount exceeds principal amount", amount, principalFinal, chargeDefinition.getName());
                             }
                             final LoanCharge loanCharge = createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                     chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments, externalId,
