@@ -296,7 +296,7 @@ type_value.id type_id,
 tpm.settled_comission::double precision ,
 tpm.buy_enabled ,
 tpm.collection_enabled,
-(select id from m_code_value where code_id = (select id from m_code where code_name ='Estado') and code_value = 'Activo') state_id
+(select id from m_code_value where code_id = (select id from m_code where code_name ='Estado') and upper(code_value) = tpm.state_id) state_id
 from
 tmp_puntoscredito_migrar tpm
 join custom.c_client_ally cca on cca.nit = tpm.client_ally_id 
