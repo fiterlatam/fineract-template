@@ -98,6 +98,8 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationR
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
 import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorDomainService;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
+import org.apache.fineract.portfolio.loanaccount.jobs.applychargetooverdueloaninstallment.ApplyChargeToOverdueLoanInstallmentProcessor;
+import org.apache.fineract.portfolio.loanaccount.jobs.applychargetooverdueloaninstallment.ApplyChargeToOverdueLoanInstallmentProcessorTask;
 import org.apache.fineract.portfolio.loanaccount.jobs.dailyaccrual.DailyInterestAccrualPoster;
 import org.apache.fineract.portfolio.loanaccount.jobs.dailyaccrual.DailyInterestAccrualPosterTask;
 import org.apache.fineract.portfolio.loanaccount.jobs.installmentalchargeaccrual.InstallmentChargeAccrualPoster;
@@ -527,5 +529,21 @@ public class LoanAccountConfiguration {
     public InstallmentChargeAccrualPosterTask installmentChargeAccrualPosterTask(
             InstallmentChargeAccrualPoster installmentChargeAccrualPoster) {
         return new InstallmentChargeAccrualPosterTask(installmentChargeAccrualPoster);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(ApplyChargeToOverdueLoanInstallmentProcessor.class)
+    public ApplyChargeToOverdueLoanInstallmentProcessor applyChargeToOverdueLoanInstallmentProcessor(
+            LoanChargeWritePlatformService loanChargeWritePlatformService, ChargeRepositoryWrapper chargeRepository) {
+        return new ApplyChargeToOverdueLoanInstallmentProcessor(loanChargeWritePlatformService, chargeRepository);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(ApplyChargeToOverdueLoanInstallmentProcessorTask.class)
+    public ApplyChargeToOverdueLoanInstallmentProcessorTask applyChargeToOverdueLoanInstallmentProcessorTask(
+            ApplyChargeToOverdueLoanInstallmentProcessor applyChargeToOverdueLoanInstallmentProcessor) {
+        return new ApplyChargeToOverdueLoanInstallmentProcessorTask(applyChargeToOverdueLoanInstallmentProcessor);
     }
 }

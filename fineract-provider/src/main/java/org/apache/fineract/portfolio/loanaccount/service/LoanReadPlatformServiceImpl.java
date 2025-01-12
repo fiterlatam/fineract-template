@@ -1271,7 +1271,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     private static final class MusoniOverdueLoanScheduleMapper implements RowMapper<OverdueLoanScheduleData> {
 
         public String schema() {
-            return " ls.loan_id as loanId, ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, ls.obligations_met_on_date as obligationsMetOnDate, ls.completed_derived as complete,"
+            return " ls.loan_id as loanId, ls.id as installmentId, ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, ls.obligations_met_on_date as obligationsMetOnDate, ls.completed_derived as complete,"
                     + " ls.principal_amount as principalDue, ls.principal_completed_derived as principalPaid, ls.principal_writtenoff_derived as principalWrittenOff, "
                     + " ls.interest_amount as interestDue, ls.interest_completed_derived as interestPaid, ls.interest_waived_derived as interestWaived, ls.interest_writtenoff_derived as interestWrittenOff, "
                     + " ls.fee_charges_amount as feeChargesDue, ls.fee_charges_completed_derived as feeChargesPaid, ls.fee_charges_waived_derived as feeChargesWaived, ls.fee_charges_writtenoff_derived as feeChargesWrittenOff, "
@@ -1287,6 +1287,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         public OverdueLoanScheduleData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
             final Long chargeId = rs.getLong("chargeId");
             final Long loanId = rs.getLong("loanId");
+            final Long installmentId = rs.getLong("installmentId");
             final BigDecimal amount = rs.getBigDecimal("amount");
             final String dateFormat = "yyyy-MM-dd";
             final String dueDate = rs.getString("dueDate");
@@ -1308,7 +1309,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
             final Integer installmentNumber = JdbcSupport.getIntegerDefaultToNullIfZero(rs, "period");
 
-            return new OverdueLoanScheduleData(loanId, chargeId, dueDate, amount, dateFormat, locale, principalOutstanding,
+            return new OverdueLoanScheduleData(loanId, chargeId, installmentId, dueDate, amount, dateFormat, locale, principalOutstanding,
                     interestOutstanding, installmentNumber);
         }
     }
@@ -1983,8 +1984,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public Collection<OverdueLoanScheduleData> retrieveAllLoansWithOverdueInstallments(final Long penaltyWaitPeriod,
-            final Boolean backdatePenalties) {
+    public List<OverdueLoanScheduleData> retrieveAllLoansWithOverdueInstallments(final Long penaltyWaitPeriod,
+            final Boolean backdatePenalties, int pageSize, Long minInstallmentId) {
         final MusoniOverdueLoanScheduleMapper rm = new MusoniOverdueLoanScheduleMapper();
 
         final StringBuilder sqlBuilder = new StringBuilder(400);
@@ -1992,18 +1993,21 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 .append(" where " + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "?", "day") + " > ls.duedate ")
                 .append(" and ls.completed_derived <> true and mc.charge_applies_to_enum = 1 ")
                 .append(" and ls.recalculated_interest_component <> true ")
-                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ");
+                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ").append(" and ls.id > ? ");
 
         if (backdatePenalties) {
-            return this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod);
+            sqlBuilder.append(" limit ").append(pageSize);
+            return this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, minInstallmentId);
         }
         // Only apply for duedate = yesterday (so that we don't apply
         // penalties on the duedate itself)
         sqlBuilder.append(" and ls.duedate >= " + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "(? + 1)", "day"));
-        // order by installment duedate
-        sqlBuilder.append(" order by ls.duedate");
+        // limit resultset
+        sqlBuilder.append(" limit ").append(pageSize);
+        // order by installment id
+        sqlBuilder.append(" order by ls.id");
 
-        return this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, penaltyWaitPeriod);
+        return this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, minInstallmentId, penaltyWaitPeriod);
     }
 
     @Override
@@ -2036,7 +2040,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     continue;
                 }
 
-                list.add(new OverdueLoanScheduleData(loan.getId(), penaltyCharge.get().getId(),
+                list.add(new OverdueLoanScheduleData(loan.getId(), penaltyCharge.get().getId(), installment.getId(),
                         DateUtils.DEFAULT_DATE_FORMATTER.format(installment.getDueDate()), penaltyCharge.get().getAmount(),
                         DateUtils.DEFAULT_DATE_FORMAT, Locale.ENGLISH.toLanguageTag(),
                         installment.getPrincipalOutstanding(loan.getCurrency()).getAmount(),
