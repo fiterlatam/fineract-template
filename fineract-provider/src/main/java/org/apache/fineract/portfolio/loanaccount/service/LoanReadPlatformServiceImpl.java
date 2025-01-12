@@ -120,6 +120,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanSchedul
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.mapper.LoanTransactionRelationMapper;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
@@ -2048,6 +2049,65 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             }
         }
         return list;
+    }
+
+    @Override
+    public List<LoanRescheduleData> retrieveLoansForInterestRecalculation(
+            MaximumCreditRateConfigurationData maximumCreditRateConfigurationData, int pageSize, Long minLoanId) {
+        final LocalDate appliedOnDate = maximumCreditRateConfigurationData.getAppliedOnDate();
+        final BigDecimal maximumLegalAnnualNominalRateValue = maximumCreditRateConfigurationData.getAnnualNominalRate();
+        final LoanRescheduleMapper rm = new LoanRescheduleMapper();
+        final String sql = "SELECT " + rm.schema();
+        final Object[] params = new Object[] { appliedOnDate, appliedOnDate, minLoanId, appliedOnDate, maximumLegalAnnualNominalRateValue,
+                maximumLegalAnnualNominalRateValue, pageSize };
+        return this.jdbcTemplate.query(sql, rm, params);
+    }
+
+    private static final class LoanRescheduleMapper implements RowMapper<LoanRescheduleData> {
+
+        public String schema() {
+            return """
+                            ml.id AS "id",
+                            ml.annual_nominal_interest_rate AS "annualNominalRate",
+                            MIN(next_schedule.duedate) AS "nextDueDate",
+                            MAX(term_variation.applicable_date) AS "applicableDate",
+                            term_variation.decimal_value AS "rescheduledAnnualRate"
+                        FROM m_loan ml
+                        INNER JOIN m_loan_repayment_schedule mlrs ON mlrs.loan_id = ml.id
+                        INNER JOIN (
+                            SELECT sch.*
+                            FROM m_loan_repayment_schedule sch
+                            LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = sch.loan_id
+                            WHERE sch.completed_derived = FALSE AND sch.duedate >= ? AND (mlaa.overdue_since_date_derived IS NULL OR sch.fromdate > mlaa.overdue_since_date_derived)
+                            AND (COALESCE(sch.penalty_charges_amount, 0) - COALESCE(sch.penalty_charges_completed_derived, 0) - COALESCE(sch.penalty_charges_writtenoff_derived, 0) - COALESCE(sch.penalty_charges_waived_derived, 0)) <= 0
+                            ORDER BY sch.duedate ASC
+                        ) next_schedule ON next_schedule.loan_id = ml.id
+                        LEFT JOIN (
+                            SELECT DISTINCT ON (ltv.loan_id) ltv.loan_id, ltv.applicable_date, ltv.decimal_value
+                            FROM m_loan_term_variations ltv
+                            WHERE ltv.term_type = 10 AND ltv.is_active = TRUE AND ltv.applied_on_loan_status = 300 AND ltv.applicable_date >= ?
+                            ORDER BY ltv.loan_id, ltv.id DESC
+                        ) term_variation ON term_variation.loan_id = ml.id
+                        WHERE ml.loan_status_id = 300 AND ml.id > ? AND mlrs.duedate >= ? AND ml.is_charged_off = FALSE
+                            AND (CASE
+                                WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value != ?
+                                WHEN term_variation.decimal_value IS NULL THEN ml.annual_nominal_interest_rate > ?
+                            END)
+                        GROUP BY term_variation.loan_id, ml.annual_nominal_interest_rate, term_variation.decimal_value, ml.id
+                        ORDER BY ml.id LIMIT ?
+                    """;
+        }
+
+        @Override
+        public LoanRescheduleData mapRow(@NotNull final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+            final Long id = JdbcSupport.getLong(rs, "id");
+            final BigDecimal annualNominalRate = rs.getBigDecimal("annualNominalRate");
+            final BigDecimal rescheduledAnnualRate = rs.getBigDecimal("rescheduledAnnualRate");
+            final LocalDate applicableDate = JdbcSupport.getLocalDate(rs, "applicableDate");
+            final LocalDate nextDueDate = JdbcSupport.getLocalDate(rs, "nextDueDate");
+            return LoanRescheduleData.builder().id(id).annualNominalRate(annualNominalRate).rescheduledAnnualRate(rescheduledAnnualRate)
+                    .applicableDate(applicableDate).nextDueDate(nextDueDate).build();
+        }
     }
 
     @SuppressWarnings("deprecation")

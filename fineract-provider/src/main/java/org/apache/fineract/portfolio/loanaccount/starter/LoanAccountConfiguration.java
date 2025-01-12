@@ -104,6 +104,8 @@ import org.apache.fineract.portfolio.loanaccount.jobs.dailyaccrual.DailyInterest
 import org.apache.fineract.portfolio.loanaccount.jobs.dailyaccrual.DailyInterestAccrualPosterTask;
 import org.apache.fineract.portfolio.loanaccount.jobs.installmentalchargeaccrual.InstallmentChargeAccrualPoster;
 import org.apache.fineract.portfolio.loanaccount.jobs.installmentalchargeaccrual.InstallmentChargeAccrualPosterTask;
+import org.apache.fineract.portfolio.loanaccount.jobs.recalculateloaninterestaftermaximumlegalratechange.RecalculateInterestForMLRProcessor;
+import org.apache.fineract.portfolio.loanaccount.jobs.recalculateloaninterestaftermaximumlegalratechange.RecalculateInterestForMLRProcessorTask;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleAssembler;
@@ -545,5 +547,20 @@ public class LoanAccountConfiguration {
     public ApplyChargeToOverdueLoanInstallmentProcessorTask applyChargeToOverdueLoanInstallmentProcessorTask(
             ApplyChargeToOverdueLoanInstallmentProcessor applyChargeToOverdueLoanInstallmentProcessor) {
         return new ApplyChargeToOverdueLoanInstallmentProcessorTask(applyChargeToOverdueLoanInstallmentProcessor);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(RecalculateInterestForMLRProcessor.class)
+    public RecalculateInterestForMLRProcessor recalculateInterestForMLRProcessor(LoanWritePlatformService loanWritePlatformService) {
+        return new RecalculateInterestForMLRProcessor(loanWritePlatformService);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(RecalculateInterestForMLRProcessorTask.class)
+    public RecalculateInterestForMLRProcessorTask recalculateInterestForMLRProcessorTask(
+            RecalculateInterestForMLRProcessor recalculateInterestForMLRProcessor) {
+        return new RecalculateInterestForMLRProcessorTask(recalculateInterestForMLRProcessor);
     }
 }

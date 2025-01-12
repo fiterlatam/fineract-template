@@ -37,6 +37,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleD
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 
 public interface LoanReadPlatformService {
 
@@ -84,6 +85,9 @@ public interface LoanReadPlatformService {
      */
     List<OverdueLoanScheduleData> retrieveAllLoansWithOverdueInstallments(Long penaltyWaitPeriod, Boolean backdatePenalties, int pageSize,
             Long minInstallmentId);
+
+    List<LoanRescheduleData> retrieveLoansForInterestRecalculation(MaximumCreditRateConfigurationData maximumCreditRateConfigurationData,
+            int pageSize, Long minLoanId);
 
     Collection<OverdueLoanScheduleData> retrieveAllOverdueInstallmentsForLoan(Loan loan);
 
