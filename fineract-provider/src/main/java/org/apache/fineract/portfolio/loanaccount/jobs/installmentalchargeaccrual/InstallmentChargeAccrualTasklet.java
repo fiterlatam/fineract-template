@@ -74,7 +74,7 @@ public class InstallmentChargeAccrualTasklet implements Tasklet {
         log.info("Starting Installment Charge Accrual posting for the date: {}", accrualDate);
         log.debug("Reading Load Ids for installment charge accrual processing!");
         List<Long> loanIds = this.loanReadPlatformService.retrieveIdsForActiveLoans(pageSize, maxLoanIdInList);
-        if (loanIds != null && loanIds.size() > 0) {
+        if (loanIds != null && !loanIds.isEmpty()) {
             loanIds = Collections.synchronizedList(loanIds);
             long finish = System.currentTimeMillis();
             log.debug("Done fetching Loan Ids within {} milliseconds", finish - start);

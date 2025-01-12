@@ -98,10 +98,14 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationR
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
 import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorDomainService;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
+import org.apache.fineract.portfolio.loanaccount.jobs.applychargetooverdueloaninstallment.ApplyChargeToOverdueLoanInstallmentProcessor;
+import org.apache.fineract.portfolio.loanaccount.jobs.applychargetooverdueloaninstallment.ApplyChargeToOverdueLoanInstallmentProcessorTask;
 import org.apache.fineract.portfolio.loanaccount.jobs.dailyaccrual.DailyInterestAccrualPoster;
 import org.apache.fineract.portfolio.loanaccount.jobs.dailyaccrual.DailyInterestAccrualPosterTask;
 import org.apache.fineract.portfolio.loanaccount.jobs.installmentalchargeaccrual.InstallmentChargeAccrualPoster;
 import org.apache.fineract.portfolio.loanaccount.jobs.installmentalchargeaccrual.InstallmentChargeAccrualPosterTask;
+import org.apache.fineract.portfolio.loanaccount.jobs.recalculateloaninterestaftermaximumlegalratechange.RecalculateInterestForMLRProcessor;
+import org.apache.fineract.portfolio.loanaccount.jobs.recalculateloaninterestaftermaximumlegalratechange.RecalculateInterestForMLRProcessorTask;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleAssembler;
@@ -527,5 +531,36 @@ public class LoanAccountConfiguration {
     public InstallmentChargeAccrualPosterTask installmentChargeAccrualPosterTask(
             InstallmentChargeAccrualPoster installmentChargeAccrualPoster) {
         return new InstallmentChargeAccrualPosterTask(installmentChargeAccrualPoster);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(ApplyChargeToOverdueLoanInstallmentProcessor.class)
+    public ApplyChargeToOverdueLoanInstallmentProcessor applyChargeToOverdueLoanInstallmentProcessor(
+            LoanChargeWritePlatformService loanChargeWritePlatformService, ChargeRepositoryWrapper chargeRepository) {
+        return new ApplyChargeToOverdueLoanInstallmentProcessor(loanChargeWritePlatformService, chargeRepository);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(ApplyChargeToOverdueLoanInstallmentProcessorTask.class)
+    public ApplyChargeToOverdueLoanInstallmentProcessorTask applyChargeToOverdueLoanInstallmentProcessorTask(
+            ApplyChargeToOverdueLoanInstallmentProcessor applyChargeToOverdueLoanInstallmentProcessor) {
+        return new ApplyChargeToOverdueLoanInstallmentProcessorTask(applyChargeToOverdueLoanInstallmentProcessor);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(RecalculateInterestForMLRProcessor.class)
+    public RecalculateInterestForMLRProcessor recalculateInterestForMLRProcessor(LoanWritePlatformService loanWritePlatformService) {
+        return new RecalculateInterestForMLRProcessor(loanWritePlatformService);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(RecalculateInterestForMLRProcessorTask.class)
+    public RecalculateInterestForMLRProcessorTask recalculateInterestForMLRProcessorTask(
+            RecalculateInterestForMLRProcessor recalculateInterestForMLRProcessor) {
+        return new RecalculateInterestForMLRProcessorTask(recalculateInterestForMLRProcessor);
     }
 }

@@ -344,4 +344,5 @@
     <include file="parts/2024070222441925_SU_272_add_column_point_of_sales_code_v2.xml" relativeToChangelogFile="true"/>
     <include file="parts/202412230000000101_SU_540_update_cron_expressions.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025012091721000000_SU_556_add_job_params_for_accruals_and_fees.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2025012111428000000_SU_570_add_job_params_for_penalties_job.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
