@@ -4214,10 +4214,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final List<LoanTransactionData> invoicedByAccrualTransactionDataList = new ArrayList<>();
             final List<LoanTransaction> invoicedByAccrualTransactionList = new ArrayList<>();
             final List<LoanTransaction> accrualTransactions = loan.retrieveListOfAccrualTransactions().stream()
-                    .filter(ltx -> ltx.hasOccurredOnSuspendedAccount() && Objects.isNull(ltx.getInvoicedByTransactionId())).toList();
+                    .filter(ltx -> Objects.isNull(ltx.getInvoicedByTransactionId())).toList();
             for (final LoanTransaction accrualTransaction : accrualTransactions) {
+                boolean occurredOnSuspendedAccount = accrualTransaction.hasOccurredOnSuspendedAccount();
                 final LoanTransactionData loanTransactionData = loanReadPlatformService.retrieveLoanTransaction(loan.getId(),
                         accrualTransaction.getId());
+                loanTransactionData.setOccurredOnSuspendedAccount(occurredOnSuspendedAccount);
                 final LoanChargePaidByData loanChargePaidByData = loanTransactionData.getLoanChargePaidBySummary();
                 final BigDecimal interestPaid = loanTransactionData.getInterestPortion();
                 final BigDecimal penaltyChargesPaid = loanTransactionData.getPenaltyChargesPortion();
@@ -4254,19 +4256,24 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
 
             if (CollectionUtils.isNotEmpty(invoicedByAccrualTransactionDataList)) {
-                final BigDecimal interestPaid = invoicedByAccrualTransactionDataList.stream().map(LoanTransactionData::getInterestPortion)
+                final BigDecimal interestPaid = invoicedByAccrualTransactionDataList.stream()
+                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(LoanTransactionData::getInterestPortion)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 final BigDecimal mandatoryInsurancePaid = invoicedByAccrualTransactionDataList.stream()
+                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount)
                         .map(loanTransactionData -> loanTransactionData.getLoanChargePaidBySummary().getMandatoryInsurance())
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 final BigDecimal voluntaryInsurancePaid = invoicedByAccrualTransactionDataList.stream()
+                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount)
                         .map(loanTransactionData -> loanTransactionData.getLoanChargePaidBySummary().getVoluntaryInsurance())
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 final BigDecimal honorariosPaid = invoicedByAccrualTransactionDataList.stream()
+                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount)
                         .map(loanTransactionData -> loanTransactionData.getLoanChargePaidBySummary().getHono())
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 final BigDecimal penaltyChargesPaid = invoicedByAccrualTransactionDataList.stream()
-                        .map(LoanTransactionData::getPenaltyChargesPortion).reduce(BigDecimal.ZERO, BigDecimal::add);
+                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(LoanTransactionData::getPenaltyChargesPortion)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
                 loanDocumentData.setInterestPaid(interestPaid);
                 loanDocumentData.setMandatoryInsurancePaid(mandatoryInsurancePaid);
                 loanDocumentData.setVoluntaryInsurancePaid(voluntaryInsurancePaid);
@@ -4536,6 +4543,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
             }
 
+        }
+        final BigDecimal totalImpuestoItem = facturaElectronicaMensuals.stream().map(FacturaElectronicaMensual::getImpuesto_item)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        for (final FacturaElectronicaMensual facturaElectronicaMensualItem : facturaElectronicaMensuals) {
+            final BigDecimal totalValue = facturaElectronicaMensualItem.getTotal().add(totalImpuestoItem);
+            facturaElectronicaMensualItem.setTotal(totalValue);
         }
         this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
         this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
