@@ -353,4 +353,5 @@
     <include file="parts/202501021143000003_EA_80_add_FNG_charge.xml" relativeToChangelogFile="true"/>
     <include file="parts/202501021143000002_EA_create_new_data_table_Contactabilidad.xml" relativeToChangelogFile="true" />
     <include file="parts/202501062000001000_EA_69_create_charge_comission.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501082000001000_EA_116_create_charge_mipyme_capital.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>
