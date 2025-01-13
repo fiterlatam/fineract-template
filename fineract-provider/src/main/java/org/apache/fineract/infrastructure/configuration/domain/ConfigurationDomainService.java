@@ -126,4 +126,8 @@ public interface ConfigurationDomainService {
     Long retrieveDefaultDurationForMeetings();
 
     Long retrieveTimeBetweenMeetings();
+
+    Long getLoanForeclosureFeeThreshold();
+
+    long getNumberOfDaysToKeepRunningBalance();
 }
