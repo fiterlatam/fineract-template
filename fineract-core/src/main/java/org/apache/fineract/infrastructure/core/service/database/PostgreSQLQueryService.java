@@ -55,7 +55,8 @@ public class PostgreSQLQueryService implements DatabaseQueryService {
     public SqlRowSet getTableColumns(DataSource dataSource, String tableName) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         String sql = "SELECT column_name, is_nullable, data_type,"
-                + " coalesce(character_maximum_length, numeric_precision, datetime_precision) AS max_length, ordinal_position = 1 AS column_key"
+                + " coalesce(character_maximum_length, numeric_precision, datetime_precision) AS max_length, ordinal_position = 1 AS column_key, "
+                + " col_description((quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass::oid, ordinal_position) AS column_comment "
                 + " FROM information_schema.columns WHERE table_catalog = current_catalog AND table_schema = current_schema AND table_name = '"
                 + tableName + "' ORDER BY ordinal_position";
         final SqlRowSet columnDefinitions = jdbcTemplate.queryForRowSet(sql); // NOSONAR
