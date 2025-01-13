@@ -132,4 +132,32 @@
         <modifyDataType tableName="m_interest_rate" columnName="current_rate" newDataType="DECIMAL(10,8)"/>
     </changeSet>
 
+    <changeSet author="fineract" id="5" >
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="Detalles de Contacto"/>
+            <sqlCheck expectedResult="0">
+                <![CDATA[
+                    SELECT COUNT(*)
+                    FROM information_schema.table_constraints
+                    WHERE table_name = 'Detalles de Contacto' AND constraint_type = 'PRIMARY KEY';
+                ]]>
+            </sqlCheck>
+        </preConditions>
+        <addPrimaryKey columnNames="client_id" tableName="Detalles de Contacto" constraintName="detalles_de_contacto_pk1"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="6" >
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="Detalles_de_Contacto"/>
+            <sqlCheck expectedResult="0">
+                <![CDATA[
+                    SELECT COUNT(*)
+                    FROM information_schema.table_constraints
+                    WHERE table_name = 'Detalles_de_Contacto' AND constraint_type = 'PRIMARY KEY';
+                ]]>
+            </sqlCheck>
+        </preConditions>
+        <addPrimaryKey columnNames="client_id" tableName="Detalles_de_Contacto" constraintName="detalles_de_contacto_pk2"/>
+    </changeSet>
+
 </databaseChangeLog>
