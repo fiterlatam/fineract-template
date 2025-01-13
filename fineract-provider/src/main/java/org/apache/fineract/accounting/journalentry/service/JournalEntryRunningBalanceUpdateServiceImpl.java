@@ -35,6 +35,7 @@ import org.apache.fineract.accounting.journalentry.api.JournalEntryJsonInputPara
 import org.apache.fineract.accounting.journalentry.data.JournalEntryData;
 import org.apache.fineract.accounting.journalentry.data.JournalEntryDataValidator;
 import org.apache.fineract.accounting.journalentry.domain.JournalEntryType;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -65,6 +66,7 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
     private final DatabaseSpecificSQLGenerator sqlGenerator;
 
     private final GLJournalEntryMapper entryMapper = new GLJournalEntryMapper();
+    private final ConfigurationDomainService configurationDomainService;
 
     @Override
     @CronTarget(jobName = JobName.ACCOUNTING_RUNNING_BALANCE_UPDATE)
@@ -154,15 +156,15 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
                     (BigDecimal) entry.get("runningBalance"));
         });
 
-        List<JournalEntryData> entryDatas = jdbcTemplate.query(entryMapper.organizationRunningBalanceSchema(), entryMapper, entityDate);
-        if (entryDatas.size() > 0) {
-            // run a batch update of 1000 SQL statements at a time
-            final Integer batchUpdateSize = 1000;
+        // run a batch update of 1000 SQL statements at a time
+        final Integer batchUpdateSize = 1000;
 
-            // Batch update using JdbcTemplate with PreparedStatement
-            try (Stream<JournalEntryData> entryStream = jdbcTemplate.queryForStream(entryMapper.organizationRunningBalanceSchema(),
-                    entryMapper, entityDate)) {
-
+        // Batch update using JdbcTemplate with PreparedStatement
+        long numberOfDaysToKeepRunningBalance = configurationDomainService.getNumberOfDaysToKeepRunningBalance();
+        LocalDate endDate = entityDate.plusDays(numberOfDaysToKeepRunningBalance);
+        String sqlString = numberOfDaysToKeepRunningBalance > 0 ? entryMapper.organizationRunningBalanceSchemaParts() : entryMapper.organizationRunningBalanceSchema();
+        try (Stream<JournalEntryData> entryStream = jdbcTemplate.queryForStream(
+                sqlString, entryMapper, entityDate, endDate)) {
                 List<JournalEntryData> batch = new ArrayList<>();
                 entryStream.forEach(entry -> {
                     batch.add(entry);
@@ -175,9 +177,7 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
                 if (!batch.isEmpty()) {
                     processBatch(batch, jdbcTemplate, officesRunningBalance, runningBalanceMap);
                 }
-            }
         }
-
     }
 
     private void processBatch(List<JournalEntryData> batch, JdbcTemplate jdbcTemplate,
@@ -254,6 +254,13 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
                     + "glAccount.classification_enum as classification,je.office_id as officeId  "
                     + "from acc_gl_journal_entry je  JOIN acc_gl_account glAccount on je.account_id = glAccount.id "
                     + "WHERE je.entry_date >= ? order by je.entry_date,je.id";
+        }
+
+        public String organizationRunningBalanceSchemaParts() {
+            return "select je.id as id,je.account_id as glAccountId," + "je.type_enum as entryType,je.amount as amount, "
+                    + "glAccount.classification_enum as classification,je.office_id as officeId  "
+                    + "from acc_gl_journal_entry je  JOIN acc_gl_account glAccount on je.account_id = glAccount.id "
+                    + "WHERE je.entry_date >= ? and je.entry_date < ? order by je.entry_date,je.id";
         }
 
         @Override
