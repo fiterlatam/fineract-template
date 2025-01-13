@@ -437,10 +437,10 @@ from
  	-- and tcm.nit = '800069933' and code = '2655' and cre_numerocredito = 208 and cli_nroid = '92541184'
 	order by tcm.cli_nroid, tcm.cre_fechafinancia
 	limit 5000 -- first 5k loans for first sheet
- --	 limit 5000 offset 5001 -- next5k loans for second sheet
- --	 limit 5000 offset 10001 -- next 5k loans for third sheet
- --	 limit 5000 offset 15001 -- next 5k loans for forth sheet
- --	 limit 5000 offset 20001 -- next 5k loans for fifth sheet
+ --	 limit 5000 offset 5000 -- next5k loans for second sheet
+ --	 limit 5000 offset 10000 -- next 5k loans for third sheet
+ --	 limit 5000 offset 15000 -- next 5k loans for forth sheet
+ --	 limit 5000 offset 20000 -- next 5k loans for fifth sheet
 
 
 -- Set the original cupo value for client
