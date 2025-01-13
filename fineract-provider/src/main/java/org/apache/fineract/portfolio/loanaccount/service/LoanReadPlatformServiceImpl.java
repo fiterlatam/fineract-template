@@ -120,6 +120,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanSchedul
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.mapper.LoanTransactionRelationMapper;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
@@ -1271,7 +1272,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     private static final class MusoniOverdueLoanScheduleMapper implements RowMapper<OverdueLoanScheduleData> {
 
         public String schema() {
-            return " ls.loan_id as loanId, ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, ls.obligations_met_on_date as obligationsMetOnDate, ls.completed_derived as complete,"
+            return " ls.loan_id as loanId, ls.id as installmentId, ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, ls.obligations_met_on_date as obligationsMetOnDate, ls.completed_derived as complete,"
                     + " ls.principal_amount as principalDue, ls.principal_completed_derived as principalPaid, ls.principal_writtenoff_derived as principalWrittenOff, "
                     + " ls.interest_amount as interestDue, ls.interest_completed_derived as interestPaid, ls.interest_waived_derived as interestWaived, ls.interest_writtenoff_derived as interestWrittenOff, "
                     + " ls.fee_charges_amount as feeChargesDue, ls.fee_charges_completed_derived as feeChargesPaid, ls.fee_charges_waived_derived as feeChargesWaived, ls.fee_charges_writtenoff_derived as feeChargesWrittenOff, "
@@ -1287,6 +1288,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         public OverdueLoanScheduleData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
             final Long chargeId = rs.getLong("chargeId");
             final Long loanId = rs.getLong("loanId");
+            final Long installmentId = rs.getLong("installmentId");
             final BigDecimal amount = rs.getBigDecimal("amount");
             final String dateFormat = "yyyy-MM-dd";
             final String dueDate = rs.getString("dueDate");
@@ -1308,7 +1310,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
             final Integer installmentNumber = JdbcSupport.getIntegerDefaultToNullIfZero(rs, "period");
 
-            return new OverdueLoanScheduleData(loanId, chargeId, dueDate, amount, dateFormat, locale, principalOutstanding,
+            return new OverdueLoanScheduleData(loanId, chargeId, installmentId, dueDate, amount, dateFormat, locale, principalOutstanding,
                     interestOutstanding, installmentNumber);
         }
     }
@@ -1983,8 +1985,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public Collection<OverdueLoanScheduleData> retrieveAllLoansWithOverdueInstallments(final Long penaltyWaitPeriod,
-            final Boolean backdatePenalties) {
+    public List<OverdueLoanScheduleData> retrieveAllLoansWithOverdueInstallments(final Long penaltyWaitPeriod,
+            final Boolean backdatePenalties, int pageSize, Long minInstallmentId) {
         final MusoniOverdueLoanScheduleMapper rm = new MusoniOverdueLoanScheduleMapper();
 
         final StringBuilder sqlBuilder = new StringBuilder(400);
@@ -1992,18 +1994,21 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 .append(" where " + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "?", "day") + " > ls.duedate ")
                 .append(" and ls.completed_derived <> true and mc.charge_applies_to_enum = 1 ")
                 .append(" and ls.recalculated_interest_component <> true ")
-                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ");
+                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ").append(" and ls.id > ? ");
 
         if (backdatePenalties) {
-            return this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod);
+            sqlBuilder.append(" limit ").append(pageSize);
+            return this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, minInstallmentId);
         }
         // Only apply for duedate = yesterday (so that we don't apply
         // penalties on the duedate itself)
         sqlBuilder.append(" and ls.duedate >= " + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "(? + 1)", "day"));
-        // order by installment duedate
-        sqlBuilder.append(" order by ls.duedate");
+        // limit resultset
+        sqlBuilder.append(" limit ").append(pageSize);
+        // order by installment id
+        sqlBuilder.append(" order by ls.id");
 
-        return this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, penaltyWaitPeriod);
+        return this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, minInstallmentId, penaltyWaitPeriod);
     }
 
     @Override
@@ -2036,7 +2041,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     continue;
                 }
 
-                list.add(new OverdueLoanScheduleData(loan.getId(), penaltyCharge.get().getId(),
+                list.add(new OverdueLoanScheduleData(loan.getId(), penaltyCharge.get().getId(), installment.getId(),
                         DateUtils.DEFAULT_DATE_FORMATTER.format(installment.getDueDate()), penaltyCharge.get().getAmount(),
                         DateUtils.DEFAULT_DATE_FORMAT, Locale.ENGLISH.toLanguageTag(),
                         installment.getPrincipalOutstanding(loan.getCurrency()).getAmount(),
@@ -2044,6 +2049,65 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             }
         }
         return list;
+    }
+
+    @Override
+    public List<LoanRescheduleData> retrieveLoansForInterestRecalculation(
+            MaximumCreditRateConfigurationData maximumCreditRateConfigurationData, int pageSize, Long minLoanId) {
+        final LocalDate appliedOnDate = maximumCreditRateConfigurationData.getAppliedOnDate();
+        final BigDecimal maximumLegalAnnualNominalRateValue = maximumCreditRateConfigurationData.getAnnualNominalRate();
+        final LoanRescheduleMapper rm = new LoanRescheduleMapper();
+        final String sql = "SELECT " + rm.schema();
+        final Object[] params = new Object[] { appliedOnDate, appliedOnDate, minLoanId, appliedOnDate, maximumLegalAnnualNominalRateValue,
+                maximumLegalAnnualNominalRateValue, pageSize };
+        return this.jdbcTemplate.query(sql, rm, params);
+    }
+
+    private static final class LoanRescheduleMapper implements RowMapper<LoanRescheduleData> {
+
+        public String schema() {
+            return """
+                            ml.id AS "id",
+                            ml.annual_nominal_interest_rate AS "annualNominalRate",
+                            MIN(next_schedule.duedate) AS "nextDueDate",
+                            MAX(term_variation.applicable_date) AS "applicableDate",
+                            term_variation.decimal_value AS "rescheduledAnnualRate"
+                        FROM m_loan ml
+                        INNER JOIN m_loan_repayment_schedule mlrs ON mlrs.loan_id = ml.id
+                        INNER JOIN (
+                            SELECT sch.*
+                            FROM m_loan_repayment_schedule sch
+                            LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = sch.loan_id
+                            WHERE sch.completed_derived = FALSE AND sch.duedate >= ? AND (mlaa.overdue_since_date_derived IS NULL OR sch.fromdate > mlaa.overdue_since_date_derived)
+                            AND (COALESCE(sch.penalty_charges_amount, 0) - COALESCE(sch.penalty_charges_completed_derived, 0) - COALESCE(sch.penalty_charges_writtenoff_derived, 0) - COALESCE(sch.penalty_charges_waived_derived, 0)) <= 0
+                            ORDER BY sch.duedate ASC
+                        ) next_schedule ON next_schedule.loan_id = ml.id
+                        LEFT JOIN (
+                            SELECT DISTINCT ON (ltv.loan_id) ltv.loan_id, ltv.applicable_date, ltv.decimal_value
+                            FROM m_loan_term_variations ltv
+                            WHERE ltv.term_type = 10 AND ltv.is_active = TRUE AND ltv.applied_on_loan_status = 300 AND ltv.applicable_date >= ?
+                            ORDER BY ltv.loan_id, ltv.id DESC
+                        ) term_variation ON term_variation.loan_id = ml.id
+                        WHERE ml.loan_status_id = 300 AND ml.id > ? AND mlrs.duedate >= ? AND ml.is_charged_off = FALSE
+                            AND (CASE
+                                WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value != ?
+                                WHEN term_variation.decimal_value IS NULL THEN ml.annual_nominal_interest_rate > ?
+                            END)
+                        GROUP BY term_variation.loan_id, ml.annual_nominal_interest_rate, term_variation.decimal_value, ml.id
+                        ORDER BY ml.id LIMIT ?
+                    """;
+        }
+
+        @Override
+        public LoanRescheduleData mapRow(@NotNull final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+            final Long id = JdbcSupport.getLong(rs, "id");
+            final BigDecimal annualNominalRate = rs.getBigDecimal("annualNominalRate");
+            final BigDecimal rescheduledAnnualRate = rs.getBigDecimal("rescheduledAnnualRate");
+            final LocalDate applicableDate = JdbcSupport.getLocalDate(rs, "applicableDate");
+            final LocalDate nextDueDate = JdbcSupport.getLocalDate(rs, "nextDueDate");
+            return LoanRescheduleData.builder().id(id).annualNominalRate(annualNominalRate).rescheduledAnnualRate(rescheduledAnnualRate)
+                    .applicableDate(applicableDate).nextDueDate(nextDueDate).build();
+        }
     }
 
     @SuppressWarnings("deprecation")

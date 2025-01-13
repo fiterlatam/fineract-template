@@ -249,6 +249,14 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
     @Column(name = "loan_transaction_id")
     private Long loan_transaction_id;
 
+    public BigDecimal getImpuesto_item() {
+        return this.impuesto_item == null ? BigDecimal.ZERO : this.impuesto_item;
+    }
+
+    public BigDecimal getTotal() {
+        return this.total == null ? BigDecimal.ZERO : this.total;
+    }
+
     @Override
     public FacturaElectronicaMensual clone() {
         try {

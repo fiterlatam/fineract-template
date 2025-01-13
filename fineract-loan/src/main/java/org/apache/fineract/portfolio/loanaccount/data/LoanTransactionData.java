@@ -111,6 +111,7 @@ public class LoanTransactionData {
     private BigDecimal ivaPercentage;
     private Boolean haveHono;
     private Boolean isCalculate;
+    private boolean occurredOnSuspendedAccount;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {

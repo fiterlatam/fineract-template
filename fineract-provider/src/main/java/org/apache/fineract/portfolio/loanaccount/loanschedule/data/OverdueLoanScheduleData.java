@@ -24,6 +24,7 @@ public class OverdueLoanScheduleData {
 
     private final Long loanId;
     private final Long chargeId;
+    private final Long installmentId;
     private final String locale;
     private final BigDecimal amount;
     private final String dateFormat;
@@ -32,11 +33,12 @@ public class OverdueLoanScheduleData {
     private final BigDecimal interestOverdue;
     private final Integer periodNumber;
 
-    public OverdueLoanScheduleData(final Long loanId, final Long chargeId, final String dueDate, final BigDecimal amount,
-            final String dateFormat, final String locale, final BigDecimal principalOverdue, final BigDecimal interestOverdue,
-            final Integer periodNumber) {
+    public OverdueLoanScheduleData(final Long loanId, final Long chargeId, final Long installmentId, final String dueDate,
+            final BigDecimal amount, final String dateFormat, final String locale, final BigDecimal principalOverdue,
+            final BigDecimal interestOverdue, final Integer periodNumber) {
         this.loanId = loanId;
         this.chargeId = chargeId;
+        this.installmentId = installmentId;
         this.dueDate = dueDate;
         this.amount = amount;
         this.dateFormat = dateFormat;
@@ -52,6 +54,10 @@ public class OverdueLoanScheduleData {
 
     public Long getChargeId() {
         return this.chargeId;
+    }
+
+    public Long getInstallmentId() {
+        return installmentId;
     }
 
     public String getDueDate() {
