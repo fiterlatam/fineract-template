@@ -1185,28 +1185,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(installmentOutstandingAmount,
                                     installment, installmentNumber, version);
                             remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
-                            remainingAmount = remainingAmount.minus(fee.getFeeBasis());
-                            if (vatChargeOptional.isPresent()) {
-                                remainingAmount = remainingAmount.minus(fee.getFeeVat());
-                            }
-
                         } else {
                             fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(remainingAmount.getAmount(),
                                     installment, installmentNumber, version);
                             remainingAmount = remainingAmount.zero();
                         }
-
                         cumulativeHonoFee = cumulativeHonoFee.add(fee.getFeeBasis());
-                        remainingAmount = remainingAmount.minus(fee.getFeeBasis());
                         if (vatChargeOptional.isPresent()) {
-                            remainingAmount = remainingAmount.minus(fee.getFeeVat());
                             cumulativeVatFee = cumulativeVatFee.add(fee.getFeeVat());
                         }
-
                         if (remainingAmount.isZero() || remainingAmount.isLessThanZero()) {
                             break;
                         }
-
                     }
                 }
 
