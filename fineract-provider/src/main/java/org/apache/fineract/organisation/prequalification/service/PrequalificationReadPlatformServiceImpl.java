@@ -413,101 +413,126 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         PrequalificationsGroupMapper() {
             this.schema = """
-                    	DISTINCT g.id AS id,
-                                 g.prequalification_number AS prequalificationNumber,
-                                 g.STATUS,
-                                 linkedGroup.id AS linkedGroupId,
-                                 g.prequalification_duration AS prequalilficationTimespan,
-                                 g.comments,
-                                 g.created_at,
-                                 g.prequalification_type_enum AS prequalificationType,
-                                 sl.from_status AS previousStatus,
-                                 sl.sub_status AS substatus,
-                                 sl.comments AS latestComments,
-                                 assigned.username AS assignedUser,
-                                 concat( assigned.firstname, ' ', assigned.lastname ) AS assignedUserName,
-                                 sl.date_created AS statusChangedOn,
-                                 prequalification_numbers.total_requested_amount AS totalRequestedAmount,
-                                 prequalification_numbers.total_approved_amount totalApprovedAmount,
-                                 ( CASE WHEN g.previous_prequalification IS NOT NULL THEN 'Recredito' ELSE 'Nuevo' END ) AS processType,
-                                 (CASE WHEN mpsl.reprocess_count > 0 THEN 'Reproceso' ELSE 'Nuevo' END) as processQuality,
-                                 		concat( mu.firstname, ' ', mu.lastname ) AS statusChangedBy,
-                                 		COALESCE ( ma.NAME, individualOffice.agency_name ) AS agencyName,
-                                 		ma.id AS agencyId,
-                                 		cg.display_name AS groupName,
-                                 		g.group_name AS newGroupName,
-                                 		g.group_id AS groupId,
-                                 		pc.display_name AS centerName,
-                                 		pc.id AS centerId,
-                                 		lp.id AS productId,
-                                 		fa.id AS facilitatorId,
-                                 		concat( fa.firstname, ' ', fa.lastname ) AS facilitatorName,
-                                 		lp.NAME AS productName,
-                                 		au.firstname,
-                                 		au.lastname,
-                                                      	greenValidCount AS greenValidationCount,
-                                                      	yellowValidCount AS yellowValidationCount,
-                                                      	orangeValidCount AS orangeValidationCount,
-                                                      	redValidCount AS redValidationCount
-                                 	FROM
-                                 		m_prequalification_group g
-                                 		INNER JOIN m_appuser au ON au.id = g.added_by
-                                 		INNER JOIN m_product_loan lp ON g.product_id = lp.id
-                                 		LEFT JOIN (
-                                 		SELECT
-                                 			mpgm.group_id AS prequalification_id,
-                                 			SUM( mpgm.requested_amount ) total_requested_amount,
-                                 			SUM( mpgm.approved_amount ) total_approved_amount
-                                 		FROM
-                                 			m_prequalification_group_members mpgm
-                                 		GROUP BY
-                                 			mpgm.group_id
-                                 		) prequalification_numbers ON prequalification_numbers.prequalification_id = g.id
-                                 		LEFT JOIN (
-                                 		SELECT DISTINCT
-                                 			mc.office_id,
-                                 			ms.agency_id,
-                                 			mag.NAME AS agency_name,
-                                 			mpgm.group_id,
-                                 			ms.linked_office_id AS supervision_office
-                                 		FROM
-                                 			m_prequalification_group_members mpgm
-                                 			INNER JOIN m_client mc ON mc.dpi = mpgm.dpi
-                                 			INNER JOIN m_group_client mgc ON mgc.client_id = mc.id
-                                 			INNER JOIN m_group mg ON mg.id = mgc.group_id
-                                 			INNER JOIN m_group center ON center.id = mg.parent_id
-                                 			INNER JOIN m_portfolio mp ON mp.id = center.portfolio_id
-                                 			INNER JOIN m_supervision ms ON ms.id = mp.supervision_id
-                                 			INNER JOIN m_agency mag ON mag.id = ms.agency_id
-                                 		) individualOffice ON individualOffice.group_id = g.id
-                                 		LEFT JOIN m_agency ma ON g.agency_id = ma.id
-                                 		LEFT JOIN ( SELECT agency_id, linked_office_id FROM m_supervision GROUP BY agency_id ) supv ON supv.agency_id = ma.id
-                                 		LEFT JOIN m_office mo ON mo.id = supv.linked_office_id
-                                 		LEFT JOIN m_office moind ON moind.id = individualOffice.supervision_office
-                                                      	LEFT JOIN (
-                                                      	SELECT
-                                                      		mcvr.prequalification_id,
-                                                      		COUNT( CASE WHEN mcvr.validation_color_enum = 1 THEN 1 END ) AS greenValidCount,
-                                                      		COUNT( CASE WHEN mcvr.validation_color_enum = 2 THEN 1 END ) AS yellowValidCount,
-                                                      		COUNT( CASE WHEN mcvr.validation_color_enum = 3 THEN 1 END ) AS orangeValidCount,
-                                                      		COUNT( CASE WHEN mcvr.validation_color_enum = 4 THEN 1 END ) AS redValidCount
-                                                      	FROM
-                                                      		m_checklist_validation_result mcvr
-                                                      	GROUP BY
-                                                      		mcvr.prequalification_id
-                                                      	) validations ON validations.prequalification_id = g.id
-                                 		LEFT JOIN m_group cg ON cg.id = g.group_id
-                                 		LEFT JOIN m_group linkedGroup ON linkedGroup.prequalification_id = g.id
-                                 		LEFT JOIN m_group pc ON pc.id = g.center_id
-                                 		LEFT JOIN m_prequalification_status_log sl ON sl.prequalification_id = g.id
-                                 		AND sl.to_status = g.STATUS
-                                 		AND sl.id = ( SELECT MAX( id ) FROM m_prequalification_status_log WHERE prequalification_id = g.id AND sl.to_status = g.STATUS )
-                                 		LEFT JOIN m_appuser assigned ON assigned.id = sl.assigned_to
-                                 	LEFT JOIN m_appuser mu ON mu.id = sl.updatedby_id
-                                 	LEFT JOIN m_appuser fa ON fa.id = g.facilitator
-                                 	LEFT JOIN ( SELECT count(*) AS reprocess_count, prequalification_id, to_status FROM
-                                 	m_prequalification_status_log GROUP BY prequalification_id, to_status )
-                                 	mpsl ON mpsl.prequalification_id = g.id
+                    DISTINCT
+                        g.id AS id,
+                        g.prequalification_number AS prequalificationNumber,
+                        g.STATUS,
+                        linkedGroup.id AS linkedGroupId,
+                        g.prequalification_duration AS prequalilficationTimespan,
+                        g.comments,
+                        g.created_at,
+                        g.prequalification_type_enum AS prequalificationType,
+                        sl.from_status AS previousStatus,
+                        sl.sub_status AS substatus,
+                        sl.comments AS latestComments,
+                        assigned.username AS assignedUser,
+                        CONCAT(assigned.firstname, ' ', assigned.lastname) AS assignedUserName,
+                        sl.date_created AS statusChangedOn,
+                        prequalification_numbers.total_requested_amount AS totalRequestedAmount,
+                        prequalification_numbers.total_approved_amount AS totalApprovedAmount,
+                        CASE
+                            WHEN g.previous_prequalification IS NOT NULL THEN 'Recredito'
+                            ELSE 'Nuevo' 
+                        END AS processType,
+                        CASE 
+                            WHEN mpsl.reprocess_count > 0 THEN 'Reproceso' 
+                            ELSE 'Nuevo' 
+                        END AS processQuality,
+                        CONCAT(mu.firstname, ' ', mu.lastname) AS statusChangedBy,
+                        COALESCE(ma.NAME, individualOffice.agency_name) AS agencyName,
+                        ma.id AS agencyId,
+                        cg.display_name AS groupName,
+                        g.group_name AS newGroupName,
+                        g.group_id AS groupId,
+                        pc.display_name AS centerName,
+                        pc.id AS centerId,
+                        lp.id AS productId,
+                        fa.id AS facilitatorId,
+                        CONCAT(fa.firstname, ' ', fa.lastname) AS facilitatorName,
+                        lp.NAME AS productName,
+                        au.firstname,
+                        au.lastname,
+                        COALESCE(validations.greenValidCount, 0) AS greenValidationCount,
+                        COALESCE(validations.yellowValidCount, 0) AS yellowValidationCount,
+                        COALESCE(validations.orangeValidCount, 0) AS orangeValidationCount,
+                        COALESCE(validations.redValidCount, 0) AS redValidationCount
+                    FROM
+                        m_prequalification_group g
+                        INNER JOIN m_appuser au ON au.id = g.added_by
+                        INNER JOIN m_product_loan lp ON g.product_id = lp.id
+                        LEFT JOIN (
+                            SELECT
+                                mpgm.group_id AS prequalification_id,
+                                SUM(mpgm.requested_amount) AS total_requested_amount,
+                                SUM(mpgm.approved_amount) AS total_approved_amount
+                            FROM
+                                m_prequalification_group_members mpgm
+                            GROUP BY
+                                mpgm.group_id
+                        ) prequalification_numbers ON prequalification_numbers.prequalification_id = g.id
+                        LEFT JOIN (
+                            SELECT
+                                mpgm.group_id,
+                                mag.NAME AS agency_name,
+                    						ms.linked_office_id AS supervision_office 
+                            FROM
+                                m_prequalification_group_members mpgm
+                                INNER JOIN m_client mc ON mc.dpi = mpgm.dpi
+                                INNER JOIN m_group_client mgc ON mgc.client_id = mc.id
+                                INNER JOIN m_group mg ON mg.id = mgc.group_id
+                                INNER JOIN m_group center ON center.id = mg.parent_id
+                                INNER JOIN m_portfolio mp ON mp.id = center.portfolio_id
+                                INNER JOIN m_supervision ms ON ms.id = mp.supervision_id
+                                INNER JOIN m_agency mag ON mag.id = ms.agency_id
+                            GROUP BY
+                                mpgm.group_id, mag.NAME
+                        ) individualOffice ON individualOffice.group_id = g.id
+                      LEFT JOIN m_agency ma ON g.agency_id = ma.id
+                    	LEFT JOIN (SELECT agency_id, linked_office_id FROM m_supervision GROUP BY agency_id) supv ON supv.agency_id = ma.id
+                    	LEFT JOIN m_office mo ON mo.id = supv.linked_office_id
+                    	LEFT JOIN m_office moind ON moind.id = individualOffice.supervision_office
+                        LEFT JOIN (
+                            SELECT
+                                mcvr.prequalification_id,
+                                COUNT(CASE WHEN mcvr.validation_color_enum = 1 THEN 1 END) AS greenValidCount,
+                                COUNT(CASE WHEN mcvr.validation_color_enum = 2 THEN 1 END) AS yellowValidCount,
+                                COUNT(CASE WHEN mcvr.validation_color_enum = 3 THEN 1 END) AS orangeValidCount,
+                                COUNT(CASE WHEN mcvr.validation_color_enum = 4 THEN 1 END) AS redValidCount
+                            FROM
+                                m_checklist_validation_result mcvr
+                            GROUP BY
+                                mcvr.prequalification_id
+                        ) validations ON validations.prequalification_id = g.id
+                        LEFT JOIN m_group cg ON cg.id = g.group_id
+                        LEFT JOIN m_group linkedGroup ON linkedGroup.prequalification_id = g.id
+                        LEFT JOIN m_group pc ON pc.id = g.center_id
+                        LEFT JOIN (
+                            SELECT
+                                prequalification_id,
+                                to_status,
+                                from_status,
+                                sub_status,
+                                comments,
+                                date_created,
+                                assigned_to,
+                                updatedby_id
+                            FROM
+                                m_prequalification_status_log
+                            WHERE
+                                id IN (SELECT MAX(id) FROM m_prequalification_status_log GROUP BY prequalification_id, to_status)
+                        ) sl ON sl.prequalification_id = g.id AND sl.to_status = g.STATUS
+                        LEFT JOIN m_appuser assigned ON assigned.id = sl.assigned_to
+                        LEFT JOIN m_appuser mu ON mu.id = sl.updatedby_id
+                        LEFT JOIN m_appuser fa ON fa.id = g.facilitator
+                        LEFT JOIN (
+                            SELECT
+                                prequalification_id,
+                                COUNT(*) AS reprocess_count
+                            FROM
+                                m_prequalification_status_log
+                            GROUP BY
+                                prequalification_id
+                        ) mpsl ON mpsl.prequalification_id = g.id
                     """;
 
             this.grpSchema = """
