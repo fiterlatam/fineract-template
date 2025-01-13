@@ -115,6 +115,8 @@ public class GenericDataServiceImpl implements GenericDataService {
             final String isNullable = columnDefinitions.getString(2);
             final String isPrimaryKey = columnDefinitions.getString(5);
             final String columnType = columnDefinitions.getString(3);
+            final String columnComment = columnDefinitions.getString(6);
+
             Long columnLength = columnDefinitions.getLong(4);
 
             columnLength = defineColumnLenghtIfIntegerLike(columnType, columnLength);
@@ -142,6 +144,7 @@ public class GenericDataServiceImpl implements GenericDataService {
                     columnNullable, columnIsPrimaryKey, columnValues, codeName, columnIsUnique, columnIsIndexed, dialect);
 
             columnHeader.setFieldMask(columnMaskHM.get(columnName));
+            columnHeader.setColumnComment(columnComment);
 
             columnHeaders.add(columnHeader);
         }
