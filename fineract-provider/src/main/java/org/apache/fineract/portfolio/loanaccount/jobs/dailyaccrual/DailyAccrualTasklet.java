@@ -72,7 +72,7 @@ public class DailyAccrualTasklet implements Tasklet {
         log.info("Starting Daily Accrual posting for the date: {}", accrualDate);
         log.debug("Reading Load Ids for accrual processing!");
         List<Long> loanIds = this.loanReadPlatformService.findLoanIdsForAccrualPosting(accrualDate, pageSize, maxLoanIdInList);
-        if (loanIds != null && loanIds.size() > 0) {
+        if (loanIds != null && !loanIds.isEmpty()) {
             loanIds = Collections.synchronizedList(loanIds);
             long finish = System.currentTimeMillis();
             log.debug("Done fetching Loan Ids within {} milliseconds", finish - start);

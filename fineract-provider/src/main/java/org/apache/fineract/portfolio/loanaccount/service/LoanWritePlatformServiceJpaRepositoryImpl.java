@@ -28,8 +28,6 @@ import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
@@ -82,7 +80,6 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
-import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
@@ -248,11 +245,9 @@ import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.service.Repaym
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.transfer.api.TransferApiConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -4009,17 +4004,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     @Override
-    public void recalculateInterestForMaximumLegalRate() throws JobExecutionException {
+    public void recalculateInterestForMaximumLegalRate(List<LoanRescheduleData> loanLoanRescheduleDataList,
+            MaximumCreditRateConfigurationData maximumCreditRateConfigurationData) throws JobExecutionException {
         final List<Throwable> exceptions = new ArrayList<>();
-        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
-                .retrieveMaximumCreditRateConfigurationData();
         final LocalDate appliedOnDate = maximumCreditRateConfigurationData.getAppliedOnDate();
         final BigDecimal maximumLegalAnnualNominalRateValue = maximumCreditRateConfigurationData.getAnnualNominalRate();
-        final LoanRescheduleMapper rm = new LoanRescheduleMapper();
-        final String sql = "SELECT " + rm.schema();
-        final Object[] params = new Object[] { appliedOnDate, appliedOnDate, appliedOnDate, maximumLegalAnnualNominalRateValue,
-                maximumLegalAnnualNominalRateValue };
-        final List<LoanRescheduleData> loanLoanRescheduleDataList = this.jdbcTemplate.query(sql, rm, params);
         if (CollectionUtils.isNotEmpty(loanLoanRescheduleDataList)) {
             final String locale = "es";
             final String dateFormat = "dd MMMM yyyy";
@@ -4114,53 +4103,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         if (!exceptions.isEmpty()) {
             throw new JobExecutionException(exceptions);
-        }
-    }
-
-    private static final class LoanRescheduleMapper implements RowMapper<LoanRescheduleData> {
-
-        public String schema() {
-            return """
-                            ml.id AS "id",
-                            ml.annual_nominal_interest_rate AS "annualNominalRate",
-                            MIN(next_schedule.duedate) AS "nextDueDate",
-                            MAX(term_variation.applicable_date) AS "applicableDate",
-                            term_variation.decimal_value AS "rescheduledAnnualRate"
-                        FROM m_loan ml
-                        INNER JOIN m_loan_repayment_schedule mlrs ON mlrs.loan_id = ml.id
-                        INNER JOIN (
-                            SELECT sch.*
-                            FROM m_loan_repayment_schedule sch
-                            LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = sch.loan_id
-                            WHERE sch.completed_derived = FALSE AND sch.duedate >= ? AND (mlaa.overdue_since_date_derived IS NULL OR sch.fromdate > mlaa.overdue_since_date_derived)
-                            AND (COALESCE(sch.penalty_charges_amount, 0) - COALESCE(sch.penalty_charges_completed_derived, 0) - COALESCE(sch.penalty_charges_writtenoff_derived, 0) - COALESCE(sch.penalty_charges_waived_derived, 0)) <= 0
-                            ORDER BY sch.duedate ASC
-                        ) next_schedule ON next_schedule.loan_id = ml.id
-                        LEFT JOIN (
-                            SELECT DISTINCT ON (ltv.loan_id) ltv.loan_id, ltv.applicable_date, ltv.decimal_value
-                            FROM m_loan_term_variations ltv
-                            WHERE ltv.term_type = 10 AND ltv.is_active = TRUE AND ltv.applied_on_loan_status = 300 AND ltv.applicable_date >= ?
-                            ORDER BY ltv.loan_id, ltv.id DESC
-                        ) term_variation ON term_variation.loan_id = ml.id
-                        WHERE ml.loan_status_id = 300 AND mlrs.duedate >= ? AND ml.is_charged_off = FALSE
-                            AND (CASE
-                                WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value != ?
-                                WHEN term_variation.decimal_value IS NULL THEN ml.annual_nominal_interest_rate > ?
-                            END)
-                        GROUP BY term_variation.loan_id, ml.annual_nominal_interest_rate, term_variation.decimal_value, ml.id
-                        ORDER BY ml.id
-                    """;
-        }
-
-        @Override
-        public LoanRescheduleData mapRow(@NotNull final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
-            final Long id = JdbcSupport.getLong(rs, "id");
-            final BigDecimal annualNominalRate = rs.getBigDecimal("annualNominalRate");
-            final BigDecimal rescheduledAnnualRate = rs.getBigDecimal("rescheduledAnnualRate");
-            final LocalDate applicableDate = JdbcSupport.getLocalDate(rs, "applicableDate");
-            final LocalDate nextDueDate = JdbcSupport.getLocalDate(rs, "nextDueDate");
-            return LoanRescheduleData.builder().id(id).annualNominalRate(annualNominalRate).rescheduledAnnualRate(rescheduledAnnualRate)
-                    .applicableDate(applicableDate).nextDueDate(nextDueDate).build();
         }
     }
 
@@ -4272,10 +4214,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final List<LoanTransactionData> invoicedByAccrualTransactionDataList = new ArrayList<>();
             final List<LoanTransaction> invoicedByAccrualTransactionList = new ArrayList<>();
             final List<LoanTransaction> accrualTransactions = loan.retrieveListOfAccrualTransactions().stream()
-                    .filter(ltx -> ltx.hasOccurredOnSuspendedAccount() && Objects.isNull(ltx.getInvoicedByTransactionId())).toList();
+                    .filter(ltx -> Objects.isNull(ltx.getInvoicedByTransactionId())).toList();
             for (final LoanTransaction accrualTransaction : accrualTransactions) {
+                boolean occurredOnSuspendedAccount = accrualTransaction.hasOccurredOnSuspendedAccount();
                 final LoanTransactionData loanTransactionData = loanReadPlatformService.retrieveLoanTransaction(loan.getId(),
                         accrualTransaction.getId());
+                loanTransactionData.setOccurredOnSuspendedAccount(occurredOnSuspendedAccount);
                 final LoanChargePaidByData loanChargePaidByData = loanTransactionData.getLoanChargePaidBySummary();
                 final BigDecimal interestPaid = loanTransactionData.getInterestPortion();
                 final BigDecimal penaltyChargesPaid = loanTransactionData.getPenaltyChargesPortion();
@@ -4312,19 +4256,24 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
 
             if (CollectionUtils.isNotEmpty(invoicedByAccrualTransactionDataList)) {
-                final BigDecimal interestPaid = invoicedByAccrualTransactionDataList.stream().map(LoanTransactionData::getInterestPortion)
+                final BigDecimal interestPaid = invoicedByAccrualTransactionDataList.stream()
+                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(LoanTransactionData::getInterestPortion)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 final BigDecimal mandatoryInsurancePaid = invoicedByAccrualTransactionDataList.stream()
+                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount)
                         .map(loanTransactionData -> loanTransactionData.getLoanChargePaidBySummary().getMandatoryInsurance())
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 final BigDecimal voluntaryInsurancePaid = invoicedByAccrualTransactionDataList.stream()
+                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount)
                         .map(loanTransactionData -> loanTransactionData.getLoanChargePaidBySummary().getVoluntaryInsurance())
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 final BigDecimal honorariosPaid = invoicedByAccrualTransactionDataList.stream()
+                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount)
                         .map(loanTransactionData -> loanTransactionData.getLoanChargePaidBySummary().getHono())
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 final BigDecimal penaltyChargesPaid = invoicedByAccrualTransactionDataList.stream()
-                        .map(LoanTransactionData::getPenaltyChargesPortion).reduce(BigDecimal.ZERO, BigDecimal::add);
+                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(LoanTransactionData::getPenaltyChargesPortion)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
                 loanDocumentData.setInterestPaid(interestPaid);
                 loanDocumentData.setMandatoryInsurancePaid(mandatoryInsurancePaid);
                 loanDocumentData.setVoluntaryInsurancePaid(voluntaryInsurancePaid);
@@ -4594,6 +4543,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
             }
 
+        }
+        final BigDecimal totalImpuestoItem = facturaElectronicaMensuals.stream().map(FacturaElectronicaMensual::getImpuesto_item)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        for (final FacturaElectronicaMensual facturaElectronicaMensualItem : facturaElectronicaMensuals) {
+            final BigDecimal totalValue = facturaElectronicaMensualItem.getTotal().add(totalImpuestoItem);
+            facturaElectronicaMensualItem.setTotal(totalValue);
         }
         this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
         this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
