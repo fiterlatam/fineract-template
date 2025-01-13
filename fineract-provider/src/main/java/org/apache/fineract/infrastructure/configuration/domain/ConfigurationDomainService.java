@@ -128,4 +128,6 @@ public interface ConfigurationDomainService {
     Long retrieveTimeBetweenMeetings();
 
     Long getLoanForeclosureFeeThreshold();
+
+    long getNumberOfDaysToKeepRunningBalance();
 }
