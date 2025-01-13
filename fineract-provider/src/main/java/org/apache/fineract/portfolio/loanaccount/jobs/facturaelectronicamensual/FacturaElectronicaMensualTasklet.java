@@ -69,7 +69,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
         if (businessLocalDate.equals(secondLastDayOfMonth) || enableMonthlyInvoiceGenerationOnJobTrigger) {
             final LoanInvoiceMapper loanInvoiceMapper = new LoanInvoiceMapper();
             final String invoiceQuery = "SELECT " + loanInvoiceMapper.invoiceSchema();
-            List<LoanDocumentData> loanInvoiceDataList = this.jdbcTemplate.query(invoiceQuery, loanInvoiceMapper, firstDayOfMonth,
+            final List<LoanDocumentData> loanInvoiceDataList = this.jdbcTemplate.query(invoiceQuery, loanInvoiceMapper, firstDayOfMonth,
                     secondLastDayOfMonth);
             final List<LoanDocumentData> groupedLoanInvoices = groupByClientIdAndProductType(loanInvoiceDataList);
             for (final LoanDocumentData groupedLoanInvoice : groupedLoanInvoices) {

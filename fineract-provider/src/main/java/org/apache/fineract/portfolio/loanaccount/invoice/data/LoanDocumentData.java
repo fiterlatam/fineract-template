@@ -121,6 +121,8 @@ public class LoanDocumentData {
         }
         this.itemsCount = conceptCount;
 
+        BigDecimal totalPaidAmount = this.interestPaid.add(this.mandatoryInsurancePaid).add(this.voluntaryInsurancePaid)
+                .add(this.honorariosPaid).add(this.penaltyChargesPaid);
         // INFORMATION AT RESOLUTION LEVEL
         facturaElectronicaMensual.setCreatedDate(DateUtils.getAuditOffsetDateTime());
         facturaElectronicaMensual.setNum_resolucion(this.billingResolutionNumber);
@@ -183,16 +185,16 @@ public class LoanDocumentData {
         // INFORMATION AT TAX LEVEL
         facturaElectronicaMensual.setIva_codigo("01");
         facturaElectronicaMensual.setIva_name("IVA");
-        facturaElectronicaMensual.setBase(this.totalPaid);
+        facturaElectronicaMensual.setBase(totalPaidAmount);
 
         if (LoanProductType.SUMAS_PAY.getCode().equals(this.productTypeName)) {
             facturaElectronicaMensual.setNota2("Estos valores corresponden a los cobros asociados a tu Credito Sumas Pay.");
         }
         facturaElectronicaMensual.setTipo_prod(this.productTypeName);
 
-        facturaElectronicaMensual.setPor_dto(this.totalPaid);
-        facturaElectronicaMensual.setVal_dto(this.totalPaid);
-        facturaElectronicaMensual.setTotal(this.totalPaid);
+        facturaElectronicaMensual.setPor_dto(totalPaidAmount);
+        facturaElectronicaMensual.setVal_dto(totalPaidAmount);
+        facturaElectronicaMensual.setTotal(totalPaidAmount);
         facturaElectronicaMensual.setLoan_transaction_id(this.loanTransactionId);
         facturaElectronicaMensual.setTelefono(this.clientTelephone);
 
