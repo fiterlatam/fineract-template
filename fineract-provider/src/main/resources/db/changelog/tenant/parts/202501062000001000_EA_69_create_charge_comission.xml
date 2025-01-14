@@ -96,4 +96,13 @@
         </sql>
     </changeSet>
 
+    <changeSet author="danielsta@fiter.io" id="80">
+        <sql>
+            <![CDATA[
+                UPDATE m_charge SET amount = 0.60449190 WHERE id = (SELECT id FROM m_charge WHERE "name" = 'Capital Pendiente Mi Pyme < 4SMLV');
+                UPDATE m_charge SET amount = 0.367480940 WHERE id = (SELECT id FROM m_charge WHERE "name" = 'Capital Pendiente Mi Pyme >= 4SMLV');
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
