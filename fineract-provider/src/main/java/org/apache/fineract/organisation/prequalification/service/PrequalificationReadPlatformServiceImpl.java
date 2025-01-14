@@ -473,6 +473,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                         LEFT JOIN (
                             SELECT
                                 mpgm.group_id,
+                                ms.agency_id,
                                 mag.NAME AS agency_name,
                     						ms.linked_office_id AS supervision_office 
                             FROM
