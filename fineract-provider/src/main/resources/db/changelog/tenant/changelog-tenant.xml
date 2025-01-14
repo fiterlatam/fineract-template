@@ -359,4 +359,7 @@
     <include file="parts/202501112000001200_EA_151_create_datatable_informacionfinanciera.xml" relativeToChangelogFile="true" />
     <include file="parts/202501112000001300_EA_152_create_datatable_alianzas.xml" relativeToChangelogFile="true" />
     <include file="parts/202501112000001400_EA_153_create_datatable_estadodecartera.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501112000001500_EA_154_create_datatable_validacionoperacion.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501112000001600_EA_155_create_datatable_visita.xml" relativeToChangelogFile="true" />
+
 </databaseChangeLog>
