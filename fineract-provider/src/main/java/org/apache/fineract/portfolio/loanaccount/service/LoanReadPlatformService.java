@@ -84,7 +84,7 @@ public interface LoanReadPlatformService {
      * charge already applied are not returned.
      */
     List<OverdueLoanScheduleData> retrieveAllLoansWithOverdueInstallments(Long penaltyWaitPeriod, Boolean backdatePenalties, int pageSize,
-            Long minInstallmentId);
+            Long minLoanId);
 
     List<LoanRescheduleData> retrieveLoansForInterestRecalculation(MaximumCreditRateConfigurationData maximumCreditRateConfigurationData,
             int pageSize, Long minLoanId);
