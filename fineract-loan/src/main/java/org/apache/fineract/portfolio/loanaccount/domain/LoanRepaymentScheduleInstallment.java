@@ -1070,7 +1070,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                     // repayment is reversed
                     numberOfDaysForInterestCalculation = Math.toIntExact(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
                 } else {
-                    numberOfDaysForInterestCalculation = Math.toIntExact(ChronoUnit.DAYS.between(this.interestRecalculatedOnDate, transactionDate));
+                    numberOfDaysForInterestCalculation = Math
+                            .toIntExact(ChronoUnit.DAYS.between(this.interestRecalculatedOnDate, transactionDate));
                 }
             } else {
                 numberOfDaysForInterestCalculation = Math.toIntExact(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
@@ -1080,8 +1081,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             if (this.originalInterestChargedAmount != null && this.originalInterestChargedAmount.compareTo(BigDecimal.ZERO) > 0) {
                 actualInterestCharged = this.originalInterestChargedAmount;
             }
-            interestDue = Money.of(currency,
-                    BigDecimal.valueOf(calculateInterestForDays(numberOfDaysInPeriod, actualInterestCharged, numberOfDaysForInterestCalculation)));
+            interestDue = Money.of(currency, BigDecimal
+                    .valueOf(calculateInterestForDays(numberOfDaysInPeriod, actualInterestCharged, numberOfDaysForInterestCalculation)));
             if (interestDue.isGreaterThan(getInterestOutstanding(currency))) {
                 interestDue = getInterestOutstanding(currency);
             }
