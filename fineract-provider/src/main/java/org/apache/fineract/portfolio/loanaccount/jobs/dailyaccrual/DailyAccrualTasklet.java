@@ -63,7 +63,6 @@ public class DailyAccrualTasklet implements Tasklet {
         taskExecutor.setCorePoolSize(threadPoolSize);
         taskExecutor.setMaxPoolSize(threadPoolSize);
         final int batchSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
-        final int pageSize = batchSize * threadPoolSize;
         Long maxLoanIdInList = 0L;
 
         LocalDate accrualDate = DateUtils.getLocalDateOfTenant().minusDays(1);
@@ -71,7 +70,7 @@ public class DailyAccrualTasklet implements Tasklet {
         long start = System.currentTimeMillis();
         log.info("Starting Daily Accrual posting for the date: {}", accrualDate);
         log.debug("Reading Load Ids for accrual processing!");
-        List<Long> loanIds = this.loanReadPlatformService.findLoanIdsForAccrualPosting(accrualDate, pageSize, maxLoanIdInList);
+        List<Long> loanIds = this.loanReadPlatformService.findLoanIdsForAccrualPosting(accrualDate, batchSize, maxLoanIdInList);
         if (loanIds != null && !loanIds.isEmpty()) {
             loanIds = Collections.synchronizedList(loanIds);
             long finish = System.currentTimeMillis();
@@ -84,7 +83,7 @@ public class DailyAccrualTasklet implements Tasklet {
                     log.debug("Starting Daily Accrual posting - total records - {}", totalFilteredRecords);
                     List<Long> queueElement = queue.element();
                     maxLoanIdInList = queueElement.get(queueElement.size() - 1);
-                    this.postDailyAccruals(queue.remove(), threadPoolSize, accrualDate, pageSize, maxLoanIdInList);
+                    this.postDailyAccruals(queue.remove(), threadPoolSize, accrualDate, batchSize, maxLoanIdInList);
                 } while (!CollectionUtils.isEmpty(queue));
             }
         }
