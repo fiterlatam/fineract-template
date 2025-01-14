@@ -1947,13 +1947,13 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     }
 
     private void validateMicrocreditoProductCharges(Loan loan) {
-        String filterCriteriaTmp = "comision";
+        String filterCriteriaTmp = "capital pendiente";
 
         if (loan.getLoanProduct().getName().toLowerCase().contains(STRING_PRODUCT_MICROCREDITO.toLowerCase())) {
 
             if (loan.getLoanProduct().getName().equalsIgnoreCase(STRING_PRODUCT_MICROCREDITO)
                     || loan.getLoanProduct().getName().equalsIgnoreCase(STRING_PRODUCT_MICROCREDITO.concat(" m"))) {
-                filterCriteriaTmp = "capital pendiente";
+                filterCriteriaTmp = "comision";
             }
 
             // Check if Comision Mi Pyme is set, depending on the Loan Amount against SMLV config and microcredito
