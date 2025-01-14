@@ -75,7 +75,8 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
                 + "where je.is_running_balance_calculated=false ";
         try {
             LocalDate entityDate = this.jdbcTemplate.queryForObject(dateFinder, LocalDate.class);
-            updateOrganizationRunningBalance(entityDate);
+            if (entityDate!=null)
+                updateOrganizationRunningBalance(entityDate);
         } catch (EmptyResultDataAccessException e) {
             log.debug("No results found for updation of running balance ");
         }
