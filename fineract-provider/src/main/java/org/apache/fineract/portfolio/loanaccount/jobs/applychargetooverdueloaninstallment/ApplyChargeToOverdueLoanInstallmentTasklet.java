@@ -64,7 +64,7 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
         taskExecutor.setMaxPoolSize(threadPoolSize);
         final int batchSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
         final int pageSize = batchSize * threadPoolSize;
-        Long maxInstallmentId = 0L;
+        Long maxLoanId = 0L;
         final Long penaltyWaitPeriodValue = configurationDomainService.retrievePenaltyWaitPeriod();
         final Boolean backdatePenalties = configurationDomainService.isBackdatePenaltiesEnabled();
 
@@ -72,7 +72,7 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
         log.info("Starting Apply Penalties to Overdue Loans job");
         log.debug("Reading overdue loan scheduled installments for processing!");
         List<OverdueLoanScheduleData> overdueLoanScheduledInstallments = loanReadPlatformService
-                .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties, pageSize, maxInstallmentId);
+                .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties, pageSize, maxLoanId);
         if (overdueLoanScheduledInstallments != null && !overdueLoanScheduledInstallments.isEmpty()) {
             overdueLoanScheduledInstallments = Collections.synchronizedList(overdueLoanScheduledInstallments);
             long finish = System.currentTimeMillis();
@@ -82,9 +82,9 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
             if (!CollectionUtils.isEmpty(queue)) {
                 do {
                     List<OverdueLoanScheduleData> queueElement = queue.element();
-                    maxInstallmentId = queueElement.get(queueElement.size() - 1).getInstallmentId();
-                    this.applyPenaltiesToOverdueInstallments(queue.remove(), threadPoolSize, pageSize, maxInstallmentId,
-                            penaltyWaitPeriodValue, backdatePenalties);
+                    maxLoanId = queueElement.get(queueElement.size() - 1).getLoanId();
+                    this.applyPenaltiesToOverdueInstallments(queue.remove(), threadPoolSize, pageSize, maxLoanId, penaltyWaitPeriodValue,
+                            backdatePenalties);
                 } while (!CollectionUtils.isEmpty(queue));
             }
         }
@@ -92,7 +92,7 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
     }
 
     private void applyPenaltiesToOverdueInstallments(List<OverdueLoanScheduleData> overdueLoanScheduledInstallments, int threadPoolSize,
-            int pageSize, Long maxInstallmentId, Long penaltyWaitPeriodValue, Boolean backdatePenalties) {
+            int pageSize, Long maxLoanId, Long penaltyWaitPeriodValue, Boolean backdatePenalties) {
         List<Callable<Void>> posters = new ArrayList<>();
         int fromIndex = 0;
         int size = overdueLoanScheduledInstallments.size();
@@ -103,8 +103,8 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
         }
 
         int toIndex = (batchSize > size - 1) ? size : batchSize;
-        while (toIndex < size && overdueLoanScheduledInstallments.get(toIndex - 1).getInstallmentId()
-                .equals(overdueLoanScheduledInstallments.get(toIndex).getInstallmentId())) {
+        while (toIndex < size && overdueLoanScheduledInstallments.get(toIndex - 1).getLoanId()
+                .equals(overdueLoanScheduledInstallments.get(toIndex).getLoanId())) {
             toIndex++;
         }
         boolean lastBatch = false;
@@ -114,9 +114,9 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
 
         Callable<Void> fetchData = () -> {
             ThreadLocalContextUtil.init(context);
-            Long maxId = maxInstallmentId;
+            Long maxId = maxLoanId;
             if (!queue.isEmpty()) {
-                maxId = Math.max(maxInstallmentId, queue.element().get(queue.element().size() - 1).getInstallmentId());
+                maxId = Math.max(maxLoanId, queue.element().get(queue.element().size() - 1).getLoanId());
             }
             while (queue.size() <= QUEUE_SIZE) {
 
@@ -126,7 +126,7 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
                 if (overdueLoanScheduleData.isEmpty()) {
                     break;
                 }
-                maxId = overdueLoanScheduleData.get(overdueLoanScheduleData.size() - 1).getInstallmentId();
+                maxId = overdueLoanScheduleData.get(overdueLoanScheduleData.size() - 1).getLoanId();
                 queue.add(overdueLoanScheduleData);
             }
             return null;
@@ -149,17 +149,17 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
             }
             fromIndex = fromIndex + (toIndex - fromIndex);
             toIndex = (toIndex + batchSize > size - 1) ? size : toIndex + batchSize;
-            while (toIndex < size && overdueLoanScheduledInstallments.get(toIndex - 1).getInstallmentId()
-                    .equals(overdueLoanScheduledInstallments.get(toIndex).getInstallmentId())) {
+            while (toIndex < size && overdueLoanScheduledInstallments.get(toIndex - 1).getLoanId()
+                    .equals(overdueLoanScheduledInstallments.get(toIndex).getLoanId())) {
                 toIndex++;
             }
         }
 
         List<Future<Void>> responses = new ArrayList<>();
         posters.forEach(poster -> responses.add(taskExecutor.submit(poster)));
-        Long maxId = maxInstallmentId;
+        Long maxId = maxLoanId;
         if (!queue.isEmpty()) {
-            maxId = Math.max(maxInstallmentId, queue.element().get(queue.element().size() - 1).getInstallmentId());
+            maxId = Math.max(maxLoanId, queue.element().get(queue.element().size() - 1).getLoanId());
         }
 
         while (queue.size() <= QUEUE_SIZE) {
@@ -169,7 +169,7 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
             if (overdueLoanScheduledInstallments.isEmpty()) {
                 break;
             }
-            maxId = overdueLoanScheduledInstallments.get(overdueLoanScheduledInstallments.size() - 1).getInstallmentId();
+            maxId = overdueLoanScheduledInstallments.get(overdueLoanScheduledInstallments.size() - 1).getLoanId();
             log.debug("Add to the Queue");
             queue.add(overdueLoanScheduledInstallments);
         }

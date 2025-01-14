@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.loanaccount.loanschedule.data;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 public class OverdueLoanScheduleData {
 
@@ -87,4 +88,17 @@ public class OverdueLoanScheduleData {
                 + ", interest:'" + this.interestOverdue + '\'' + '}';
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OverdueLoanScheduleData that = (OverdueLoanScheduleData) o;
+        return Objects.equals(loanId, that.loanId) && Objects.equals(chargeId, that.chargeId)
+                && Objects.equals(installmentId, that.installmentId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(loanId, chargeId, installmentId);
+    }
 }
