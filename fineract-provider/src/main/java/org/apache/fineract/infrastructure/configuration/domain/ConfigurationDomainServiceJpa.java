@@ -615,10 +615,4 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         return property.isEnabled() ? property.getDateValue() : null;
     }
 
-    @Override
-    public Long retrieveSMVLLimit() {
-        final String propertyName = "SMLV";
-        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
-        return property.getValue();
-    }
 }

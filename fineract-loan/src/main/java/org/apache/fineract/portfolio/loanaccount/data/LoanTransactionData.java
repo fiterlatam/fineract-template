@@ -50,7 +50,7 @@ public class LoanTransactionData {
     private final CurrencyData currency;
     private final PaymentDetailData paymentDetailData;
     private BigDecimal amount;
-    private BigDecimal netDisbursalAmount;
+    private final BigDecimal netDisbursalAmount;
     private final BigDecimal principalPortion;
     private final BigDecimal interestPortion;
     private BigDecimal feeChargesPortion;
@@ -111,8 +111,7 @@ public class LoanTransactionData {
     private BigDecimal ivaPercentage;
     private Boolean haveHono;
     private Boolean isCalculate;
-    private List<DisbursementFeeData> disbursementFees;
-    private BigDecimal totalDisbursementFeesAmount;
+    private boolean occurredOnSuspendedAccount;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {
@@ -228,17 +227,14 @@ public class LoanTransactionData {
 
     public static LoanTransactionData templateOnTop(final LoanTransactionData loanTransactionData,
             final Collection<PaymentTypeData> paymentTypeOptions) {
-        final LoanTransactionData loanTransactionTemplate = new LoanTransactionData(loanTransactionData.id, loanTransactionData.officeId,
-                loanTransactionData.officeName, loanTransactionData.type, loanTransactionData.paymentDetailData,
-                loanTransactionData.currency, loanTransactionData.date, loanTransactionData.amount, loanTransactionData.netDisbursalAmount,
-                loanTransactionData.principalPortion, loanTransactionData.interestPortion, loanTransactionData.feeChargesPortion,
-                loanTransactionData.penaltyChargesPortion, loanTransactionData.overpaymentPortion,
-                loanTransactionData.unrecognizedIncomePortion, paymentTypeOptions, loanTransactionData.externalId,
-                loanTransactionData.transfer, loanTransactionData.fixedEmiAmount, loanTransactionData.outstandingLoanBalance,
-                loanTransactionData.manuallyReversed, loanTransactionData.loanId, loanTransactionData.externalLoanId);
-        loanTransactionTemplate.setNetDisbursalAmount(loanTransactionData.getNetDisbursalAmount());
-        loanTransactionTemplate.setDisbursementFees(loanTransactionData.getDisbursementFees());
-        return loanTransactionTemplate;
+        return new LoanTransactionData(loanTransactionData.id, loanTransactionData.officeId, loanTransactionData.officeName,
+                loanTransactionData.type, loanTransactionData.paymentDetailData, loanTransactionData.currency, loanTransactionData.date,
+                loanTransactionData.amount, loanTransactionData.netDisbursalAmount, loanTransactionData.principalPortion,
+                loanTransactionData.interestPortion, loanTransactionData.feeChargesPortion, loanTransactionData.penaltyChargesPortion,
+                loanTransactionData.overpaymentPortion, loanTransactionData.unrecognizedIncomePortion, paymentTypeOptions,
+                loanTransactionData.externalId, loanTransactionData.transfer, loanTransactionData.fixedEmiAmount,
+                loanTransactionData.outstandingLoanBalance, loanTransactionData.manuallyReversed, loanTransactionData.loanId,
+                loanTransactionData.externalLoanId);
 
     }
 
@@ -475,16 +471,6 @@ public class LoanTransactionData {
 
     public void updateFeeChargesPortion(BigDecimal amount) {
         this.feeChargesPortion = this.feeChargesPortion.add(amount);
-    }
-
-    @lombok.Builder
-    @lombok.Data
-    public static class DisbursementFeeData {
-
-        private final Long chargeId;
-        private final BigDecimal amount;
-        private final String chargeName;
-        private final BigDecimal netDisbursalAmount;
     }
 
 }

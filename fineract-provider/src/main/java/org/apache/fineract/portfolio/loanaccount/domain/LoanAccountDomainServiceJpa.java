@@ -1135,10 +1135,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                                 version);
                     }
                     cumulativeHonoFee = cumulativeHonoFee.add(fee.getFeeBasis());
-
-                    remainingAmount = remainingAmount.minus(fee.getFeeBasis());
                     if (vatChargeOptional.isPresent()) {
-                        remainingAmount = remainingAmount.minus(fee.getFeeVat());
                         cumulativeVatFee = cumulativeVatFee.add(fee.getFeeVat());
                     }
 

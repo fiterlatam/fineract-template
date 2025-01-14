@@ -332,13 +332,6 @@
     <include file="parts/20241208121243_SU_485_client_death_blocking_reason.xml" relativeToChangelogFile="true"/>
     <include file="parts/202412101146000000_SU_462_c_client_ally_point_of_sales_UPDATE_CONSTRAINT.xml" relativeToChangelogFile="true"/>
     <include file="parts/202412120000000100_SU_472_m_permission_INSERT_CLASIFICACION_CONCEPTO_permissions.xml" relativeToChangelogFile="true"/>
-    <include file="parts/20241209011009142_EA_49_tipo_identificacion.xml" relativeToChangelogFile="true"/>
-    <include file="parts/202412131143000000_EA_66_add_min_max_interest.xml" relativeToChangelogFile="true"/>
-    <include file="parts/202412171143000000_EA_110_delete_blocking_reasons.xml" relativeToChangelogFile="true"/>
-    <include file="parts/202412171143000001_EA_111_delete_interest_rates.xml" relativeToChangelogFile="true"/>
-    <include file="parts/202412171143000002_EA_111_add_detalles_column.xml" relativeToChangelogFile="true" />
-    <include file="parts/202412241143000002_EA_115_add_configuration_details_column.xml" relativeToChangelogFile="true" />
-    <include file="parts/202412271143000002_EA_73_create_loan_disbursement_report.xml" relativeToChangelogFile="true" />
     <include file="parts/20243008011009149_SU_488_update_report._archivo.xml" relativeToChangelogFile="true"/>
     <include file="parts/202412161618100_SU_516_c_custom_charge_honorarios_map_MODIFY.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241216011009134_SU_502_add_column_migrated_loans.xml" relativeToChangelogFile="true"/>
@@ -350,13 +343,6 @@
     <include file="parts/2025010111009135_SU_317_add_honorarios_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/2024070222441925_SU_272_add_column_point_of_sales_code_v2.xml" relativeToChangelogFile="true"/>
     <include file="parts/202412230000000101_SU_540_update_cron_expressions.xml" relativeToChangelogFile="true"/>
-    <include file="parts/202501021143000003_EA_80_add_FNG_charge.xml" relativeToChangelogFile="true"/>
-    <include file="parts/202501021143000002_EA_create_new_data_table_Contactabilidad.xml" relativeToChangelogFile="true" />
-    <include file="parts/202501062000001000_EA_69_create_charge_comission.xml" relativeToChangelogFile="true" />
-    <include file="parts/202501082000001000_EA_116_create_charge_mipyme_capital.xml" relativeToChangelogFile="true" />
-    <include file="parts/202501112000001000_EA_149_create_datatable_informacionadicional.xml" relativeToChangelogFile="true" />
-    <include file="parts/202501112000001100_EA_150_create_datatable_informacionbancaria.xml" relativeToChangelogFile="true" />
-    <include file="parts/202501112000001200_EA_151_create_datatable_informacionfinanciera.xml" relativeToChangelogFile="true" />
-    <include file="parts/202501112000001300_EA_152_create_datatable_alianzas.xml" relativeToChangelogFile="true" />
-    <include file="parts/202501112000001400_EA_153_create_datatable_estadodecartera.xml" relativeToChangelogFile="true" />
+    <include file="parts/2025012091721000000_SU_556_add_job_params_for_accruals_and_fees.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2025012111428000000_SU_570_add_job_params_for_penalties_job.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
