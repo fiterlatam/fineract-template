@@ -325,13 +325,16 @@ VALUES('iva aval migrar', 'COP', 1, 8, 342, 0, 19.000000, NULL, NULL, NULL, fals
 update m_client set activation_date = '2021-01-01', submittedon_date = '2021-01-01', office_joining_date = '2021-01-01';
 
 ---- update product interest rate
-update m_product_loan set min_nominal_interest_rate_per_period = 10, max_nominal_interest_rate_per_period = 40 where id in (1,2,3)
+update m_product_loan set min_nominal_interest_rate_per_period = 10, max_nominal_interest_rate_per_period = 40 where id in (1,2,3, 4)
+
+--- update product start date
+update m_product_loan set start_date = '2024-07-01' where id in (1,2,3, 4)
 
 -- Update cupo amount to high value so that loans can be processed. Revert this limit back to the original limit
 update campos_cliente_persona set "Cupo solicitado" = 10000000, "Cupo aprobado" = 10000000;
 
 -- Update is_advance field on m_product_loan id 3 to allow loans to disburse
-update m_product_loan set is_advance = false where id = 3;
+update m_product_loan set is_advance = false where id = 3; -- in (3,9); --for production
 
 
 --- Indexes to speed up retrieval of records --
