@@ -1010,7 +1010,6 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
     private Money processTransaction(LoanTransaction loanTransaction, MonetaryCurrency currency,
             List<LoanRepaymentScheduleInstallment> installments, Money transactionAmountUnprocessed, Set<LoanCharge> charges,
             MoneyHolder overpaymentHolder) {
-        log.info(" 3. inside AdvancedPaymentScheduleTransactionProcessor.java : processTransaction method");
         if (!loanTransaction.isSpecialWriteOff()) {
             Money zero = Money.zero(currency);
             List<LoanTransactionToRepaymentScheduleMapping> transactionMappings = new ArrayList<>();
@@ -1074,7 +1073,6 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             List<LoanRepaymentScheduleInstallment> installments, Money transactionAmountUnprocessed,
             LoanPaymentAllocationRule paymentAllocationRule, List<LoanTransactionToRepaymentScheduleMapping> transactionMappings,
             Set<LoanCharge> charges, Balances balances) {
-        log.info(" 4. inside AdvancedPaymentScheduleTransactionProcessor.java : processPeriodsHorizontally method");
         LinkedHashMap<DueType, List<PaymentAllocationType>> paymentAllocationsMap = paymentAllocationRule.getAllocationTypes().stream()
                 .collect(Collectors.groupingBy(PaymentAllocationType::getDueType, LinkedHashMap::new,
                         mapping(Function.identity(), toList())));

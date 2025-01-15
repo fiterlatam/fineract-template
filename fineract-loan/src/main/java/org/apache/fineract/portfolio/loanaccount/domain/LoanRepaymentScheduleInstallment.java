@@ -640,8 +640,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payPenaltyChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payPenaltyChargesComponent method : installment number:"
-                + this.installmentNumber);
+
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money penaltyPortionOfTransaction = Money.zero(currency);
         Money loanChargePaidByPortion = Money.zero(currency);
@@ -807,8 +806,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payAvalChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payAvalChargesComponent method : installment number:"
-                + this.installmentNumber);
+
+
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money feePortionOfTransaction = Money.zero(currency);
         Money loanChargePaidByPortion = Money.zero(currency);
@@ -988,13 +987,19 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             List<LoanChargePaidByData> paidByOriginalTransactionList = loanTransaction.chargesPaidByOriginalTransaction();
             Money amountPaidByOriginalTransaction = Money.zero(currency);
             if (!paidByOriginalTransactionList.isEmpty()) {
+                log.info("originaltransactionpaidbylist is not empty");
                 for (LoanChargePaidByData data : paidByOriginalTransactionList) {
+                    log.info("oringinal transaction paid amount: " + data.getAmount());
+                    log.info("oringinal transaction installmentNumber: " + data.getInstallmentNumber());
+                    log.info("oringinal transaction charge Id: " + data.getChargeId());
+                    log.info("installmentCharge.getLoanCharge().getId(): " + installmentCharge.getLoanCharge().getId());
+
                     if (!data.isPenaltyCharge() && data.getInstallmentNumber().equals(this.installmentNumber)
                             && data.getChargeId().equals(installmentCharge.getLoanCharge().getId())) {
                         amountPaidByOriginalTransaction = amountPaidByOriginalTransaction.plus(data.getAmount());
                     }
                 }
-                log.info("amount paid by original transaction: "+ amountPaidByOriginalTransaction);
+                log.info("amount paid by original transaction: " + amountPaidByOriginalTransaction);
                 if (amountPaidByOriginalTransaction.isGreaterThanZero()) {
                     feeChargesDue = amountPaidByOriginalTransaction;
                 } else {
@@ -1195,8 +1200,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payPrincipalComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payInterestComponent method : installment number:"
-                + this.installmentNumber);
+
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money principalPortionOfTransaction = Money.zero(currency);
         if (transactionAmountRemaining.isZero() || getPrincipalOutstanding(currency).isZero()) {
