@@ -1064,22 +1064,25 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         } else if (isOnOrBetween(transactionDate) && getInterestOutstanding(currency).isGreaterThanZero()) {
             final RoundingMode roundingMode = RoundingMode.HALF_UP;
 
-            BigDecimal numberOfDaysForInterestCalculation = BigDecimal.ZERO;
+            int numberOfDaysForInterestCalculation = 0;
             if (this.interestRecalculatedOnDate != null) {
                 if (this.interestRecalculatedOnDate.isAfter(transactionDate)) { // This should only be true if the
                     // repayment is reversed
-                    numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
+                    numberOfDaysForInterestCalculation = Math.toIntExact(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
                 } else {
-                    numberOfDaysForInterestCalculation = BigDecimal
-                            .valueOf(ChronoUnit.DAYS.between(this.interestRecalculatedOnDate, transactionDate));
+                    numberOfDaysForInterestCalculation = Math
+                            .toIntExact(ChronoUnit.DAYS.between(this.interestRecalculatedOnDate, transactionDate));
                 }
             } else {
-                numberOfDaysForInterestCalculation = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
+                numberOfDaysForInterestCalculation = Math.toIntExact(ChronoUnit.DAYS.between(this.fromDate, transactionDate));
             }
-            BigDecimal numberOfDaysInPeriod = BigDecimal.valueOf(ChronoUnit.DAYS.between(this.fromDate, this.dueDate));
-            BigDecimal oneDayOfInterest = this.interestCharged.divide(numberOfDaysInPeriod, RoundingMode.HALF_UP);
-            oneDayOfInterest = oneDayOfInterest.setScale(5, roundingMode);
-            interestDue = Money.of(currency, oneDayOfInterest.multiply(numberOfDaysForInterestCalculation));
+            int numberOfDaysInPeriod = Math.toIntExact(ChronoUnit.DAYS.between(this.fromDate, this.dueDate));
+            BigDecimal actualInterestCharged = this.interestCharged;
+            if (this.originalInterestChargedAmount != null && this.originalInterestChargedAmount.compareTo(BigDecimal.ZERO) > 0) {
+                actualInterestCharged = this.originalInterestChargedAmount;
+            }
+            interestDue = Money.of(currency, BigDecimal
+                    .valueOf(calculateInterestForDays(numberOfDaysInPeriod, actualInterestCharged, numberOfDaysForInterestCalculation)));
             if (interestDue.isGreaterThan(getInterestOutstanding(currency))) {
                 interestDue = getInterestOutstanding(currency);
             }
