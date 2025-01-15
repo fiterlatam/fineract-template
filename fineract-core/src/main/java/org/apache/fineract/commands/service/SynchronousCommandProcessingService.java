@@ -28,6 +28,7 @@ import io.github.resilience4j.retry.annotation.Retry;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,7 @@ import org.apache.fineract.batch.exception.ErrorInfo;
 import org.apache.fineract.commands.domain.CommandProcessingResultType;
 import org.apache.fineract.commands.domain.CommandSource;
 import org.apache.fineract.commands.domain.CommandWrapper;
+import org.apache.fineract.commands.event.CustomWebhookEventProcessor;
 import org.apache.fineract.commands.exception.UnsupportedCommandException;
 import org.apache.fineract.commands.handler.NewCommandSourceHandler;
 import org.apache.fineract.commands.provider.CommandHandlerProvider;
@@ -74,7 +76,7 @@ public class SynchronousCommandProcessingService implements CommandProcessingSer
     private final CommandHandlerProvider commandHandlerProvider;
     private final IdempotencyKeyResolver idempotencyKeyResolver;
     private final CommandSourceService commandSourceService;
-
+    private final List<CustomWebhookEventProcessor> customWebhookEventProcessorList;
     private final FineractRequestContextHolder fineractRequestContextHolder;
     private final Gson gson = GoogleGsonSerializerHelper.createSimpleGson();
 
@@ -160,8 +162,8 @@ public class SynchronousCommandProcessingService implements CommandProcessingSer
         storeCommandIdInContext(commandSource); // Store command id as a request attribute
 
         result.setRollbackTransaction(null);
-        publishHookEvent(wrapper.entityName(), wrapper.actionName(), command, result); // TODO must be performed in a
-                                                                                       // new transaction
+        publishHookEventOnSuccess(wrapper, command, result, user);
+
         return result;
     }
 
@@ -173,7 +175,28 @@ public class SynchronousCommandProcessingService implements CommandProcessingSer
         fineractRequestContextHolder.setAttribute(COMMAND_SOURCE_ID, savedCommandSource.getId());
     }
 
+    private void publishHookEventOnSuccess(CommandWrapper wrapper, JsonCommand command, CommandProcessingResult result, AppUser user) {
+        boolean isCustomWebhook = customWebhookEventProcessorList.stream()
+                .anyMatch(p -> p.supports(wrapper.entityName(), wrapper.actionName()));
+
+        if (isCustomWebhook) {
+            // Filter processors that support the webhook and process them
+            customWebhookEventProcessorList.stream().filter(p -> p.supports(wrapper.entityName(), wrapper.actionName())).forEach(p -> {
+                var transformedEvent = p.transform(wrapper.entityName(), wrapper.actionName(), command, result);
+                p.publish(transformedEvent, wrapper.entityName(), wrapper.actionName(), user, ThreadLocalContextUtil.getContext());
+            });
+        } else {
+            publishHookEvent(wrapper.entityName(), wrapper.actionName(), command, result);
+        }
+    }
+
     private void publishHookErrorEvent(CommandWrapper wrapper, JsonCommand command, ErrorInfo errorInfo) {
+        boolean isCustomWebhook = customWebhookEventProcessorList.stream()
+                .anyMatch(p -> p.supports(wrapper.entityName(), wrapper.actionName()));
+        if (isCustomWebhook) {
+            // we have no reason to send the event if the command failed
+            return;
+        }
         publishHookEvent(wrapper.entityName(), wrapper.actionName(), command, gson.toJson(errorInfo));
     }
 
