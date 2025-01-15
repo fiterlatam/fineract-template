@@ -1201,7 +1201,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
                     }
                 }
-                log.info(" 1. inside LoanWritePlatformServiceJpaRepositoryImpl.java : makeLoanRepayment method. Hono amount calculated =="+cumulativeHonoFee);
+                log.info(" 1. inside LoanWritePlatformServiceJpaRepositoryImpl.java : makeLoanRepayment method. Hono amount calculated =="
+                        + cumulativeHonoFee);
                 // Add Accrual Transaction
                 Integer daysInArrears = 0;
                 boolean isSuspendedAccount = false;

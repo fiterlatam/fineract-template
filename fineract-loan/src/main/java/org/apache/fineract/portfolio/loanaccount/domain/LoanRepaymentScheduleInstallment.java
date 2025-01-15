@@ -32,7 +32,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
@@ -641,7 +640,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payPenaltyChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payPenaltyChargesComponent method : installment number:" + this.installmentNumber);
+        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payPenaltyChargesComponent method : installment number:"
+                + this.installmentNumber);
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money penaltyPortionOfTransaction = Money.zero(currency);
         Money loanChargePaidByPortion = Money.zero(currency);
@@ -747,22 +747,29 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payHonorariosChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info("transactionAmountRemaining : "+ transactionAmountRemaining);
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : installment number:" + this.installmentNumber);
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : total fee : " + this.feeChargesCharged);
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : total fee paid: " + this.feeChargesPaid);
+        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : installment number:"
+                + this.installmentNumber);
+        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : total fee : "
+                + this.feeChargesCharged);
+        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : total fee paid: "
+                + this.feeChargesPaid);
 
         for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
-            log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : charge :" + installmentCharge.getLoanCharge().getCharge().getName());
-            log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : charge amount :" + installmentCharge.getAmount());
-            log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : charge amount paid :" + installmentCharge.getAmountPaid());
-            if (installmentCharge.getLoanCharge().getCustomChargeHonorarioMaps() != null && !installmentCharge.getLoanCharge().getCustomChargeHonorarioMaps().isEmpty()) {
+            log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : charge :"
+                    + installmentCharge.getLoanCharge().getCharge().getName());
+            log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : charge amount :"
+                    + installmentCharge.getAmount());
+            log.info(
+                    " 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : charge amount paid :"
+                            + installmentCharge.getAmountPaid());
+            if (installmentCharge.getLoanCharge().getCustomChargeHonorarioMaps() != null
+                    && !installmentCharge.getLoanCharge().getCustomChargeHonorarioMaps().isEmpty()) {
                 Set<CustomChargeHonorarioMap> set = installmentCharge.getLoanCharge().getCustomChargeHonorarioMaps();
                 for (CustomChargeHonorarioMap map : set) {
                     log.info(" 6. payHonorariosChargesComponent method : charge amount paid : hono map");
-                    log.info(" 6. installment number : "+ map.getLoanInstallmentNr());
-                    log.info(" 6. fee amount : "+ map.getFeeBaseAmount());
-                    log.info(" 6. version : "+ map.getVersion());
+                    log.info(" 6. installment number : " + map.getLoanInstallmentNr());
+                    log.info(" 6. fee amount : " + map.getFeeBaseAmount());
+                    log.info(" 6. version : " + map.getVersion());
                 }
             }
         }
@@ -800,7 +807,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payAvalChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payAvalChargesComponent method : installment number:" + this.installmentNumber);
+        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payAvalChargesComponent method : installment number:"
+                + this.installmentNumber);
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money feePortionOfTransaction = Money.zero(currency);
         Money loanChargePaidByPortion = Money.zero(currency);
@@ -836,7 +844,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payMandatoryInsuranceChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payMandatoryInsuranceChargesComponent method : installment number:" + this.installmentNumber);
+        log.info(
+                " 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payMandatoryInsuranceChargesComponent method : installment number:"
+                        + this.installmentNumber);
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money feePortionOfTransaction = Money.zero(currency);
         Money loanChargePaidByPortion = Money.zero(currency);
@@ -902,7 +912,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payVoluntaryInsuranceChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payVoluntaryInsuranceChargesComponent method : installment number:" + this.installmentNumber);
+        log.info(
+                " 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payVoluntaryInsuranceChargesComponent method : installment number:"
+                        + this.installmentNumber);
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money loanChargePaidByPortion = Money.zero(currency);
         Money feePortionOfTransaction = Money.zero(currency);
@@ -1077,7 +1089,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payInterestComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payInterestComponent method : installment number:" + this.installmentNumber);
+        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payInterestComponent method : installment number:"
+                + this.installmentNumber);
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money interestPortionOfTransaction = Money.zero(currency);
         if (transactionAmountRemaining.isZero() || getInterestOutstanding(currency).isZero()) {
@@ -1182,7 +1195,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payPrincipalComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payInterestComponent method : installment number:" + this.installmentNumber);
+        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payInterestComponent method : installment number:"
+                + this.installmentNumber);
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money principalPortionOfTransaction = Money.zero(currency);
         if (transactionAmountRemaining.isZero() || getPrincipalOutstanding(currency).isZero()) {
