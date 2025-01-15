@@ -988,7 +988,13 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             List<LoanChargePaidByData> paidByOriginalTransactionList = loanTransaction.chargesPaidByOriginalTransaction();
             Money amountPaidByOriginalTransaction = Money.zero(currency);
             if (!paidByOriginalTransactionList.isEmpty()) {
+                log.info("originaltransactionpaidbylist is not empty");
                 for (LoanChargePaidByData data : paidByOriginalTransactionList) {
+                    log.info("oringinal transaction paid amount: " + data.getAmount());
+                    log.info("oringinal transaction installmentNumber: " + data.getInstallmentNumber());
+                    log.info("oringinal transaction charge Id: " + data.getChargeId());
+                    log.info("installmentCharge.getLoanCharge().getId(): " + installmentCharge.getLoanCharge().getId());
+
                     if (!data.isPenaltyCharge() && data.getInstallmentNumber().equals(this.installmentNumber)
                             && data.getChargeId().equals(installmentCharge.getLoanCharge().getId())) {
                         amountPaidByOriginalTransaction = amountPaidByOriginalTransaction.plus(data.getAmount());
