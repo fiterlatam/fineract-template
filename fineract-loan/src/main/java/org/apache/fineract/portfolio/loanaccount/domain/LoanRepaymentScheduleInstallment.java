@@ -807,7 +807,6 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     public Money payAvalChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
 
-
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money feePortionOfTransaction = Money.zero(currency);
         Money loanChargePaidByPortion = Money.zero(currency);
