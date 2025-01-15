@@ -3755,6 +3755,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
 
+        log.info("1. inside loan.java : handleRepaymentOrRecoveryOrWaiverTransaction method");
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
                 .determineProcessor(this.transactionProcessingStrategyCode);
 
@@ -3798,6 +3799,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             }
             final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
+            log.info(" 9. inside Loan.java : again reprocessing the transactions to get changedtransaction details");
             changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(getDisbursementDate(),
                     allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), getActiveCharges());
             if (isProgressiveLoan()) {
@@ -4224,6 +4226,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final LoanLifecycleStateMachine loanLifecycleStateMachine, final LoanTransaction transactionForAdjustment,
             final List<Long> existingTransactionIds, final List<Long> existingReversedTransactionIds,
             final ScheduleGeneratorDTO scheduleGeneratorDTO, final ExternalId reversalExternalId) {
+
+        log.info(" 2. inside Loan.java : adjustExistingTransaction method");
 
         HolidayDetailDTO holidayDetailDTO = scheduleGeneratorDTO.getHolidayDetailDTO();
         validateActivityNotBeforeLastTransactionDate(LoanEvent.LOAN_REPAYMENT_OR_WAIVER, transactionForAdjustment.getTransactionDate());
@@ -6263,6 +6267,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public void regenerateRepaymentScheduleWithInterestRecalculation(final ScheduleGeneratorDTO generatorDTO) {
+        log.info(" 7. inside Loan.java : regenerateRepaymentScheduleWithInterestRecalculation method");
         LocalDate lastTransactionDate = getLastUserTransactionDate();
         final LoanScheduleDTO loanSchedule = getRecalculatedSchedule(generatorDTO);
         if (loanSchedule == null) {
@@ -6488,6 +6493,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public void processPostDisbursementTransactions() {
+        log.info(" 8. inside Loan.java : processPostDisbursementTransactions method");
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
                 .determineProcessor(this.transactionProcessingStrategyCode);
         final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
