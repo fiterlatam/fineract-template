@@ -1,3 +1,19 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.fineract.portfolio.loanaccount.event;
 
 import java.util.Collections;
@@ -22,18 +38,18 @@ public class LoanRepaymentEventProcessor extends BaseCustomWebhookEventProcessor
     @Override
     public Map<String, Object> transform(String entityName, String actionName, JsonCommand command, Object result) {
         Map<String, Object> response = new HashMap<>();
-        response.put("loanId", "000123"); // {ACCOUNT_ID}
-        response.put("amount", "1.234,56"); // FORMAT{TRANSACTION_AMOUNT,numericPattern=#.###,##}
-        response.put("arrearDue", "234,50"); // FORMAT{ARREARS_POSITION,numericPattern=#.###,##}
-        response.put("paymentDate", "2024-01-15"); // FORMAT_DATE{TRANSACTION_DATE,datePattern=yyyy-MM-dd}
-        response.put("document", "123456789"); // {CF:LOAN:NÚMERO DE IDENTIFICACIÓN}
-        response.put("documentType", "CC"); // {CF:LOAN:TIPO IDENTIFICACIÓN}
-        response.put("fullname", "John Doe"); // {RECIPIENT_NAME}
-        response.put("loanAmount", "5.000,00"); // FORMAT{LOAN_AMOUNT,numericPattern=#.###,##}
-        response.put("mobilePhone", "+1234567890"); // {RECIPIENT_MOBILE_PHONE}
-        response.put("principalBalance", "3.765,44"); // FORMAT{PRINCIPAL_BALANCE,numericPattern=#.###,##}
-        response.put("totalDue", "4.000,00"); // FORMAT{TOTAL_DUE,numericPattern=#.###,##}
-        response.put("externalId", "EXT123"); // {CF:CLIENT:EXTERNAL ID}
+        response.put("loanId", "000123");
+        response.put("amount", "1.234,56");
+        response.put("arrearDue", "234,50");
+        response.put("paymentDate", "2024-01-15");
+        response.put("document", "123456789");
+        response.put("documentType", "CC");
+        response.put("fullname", "John Doe");
+        response.put("loanAmount", "5.000,00");
+        response.put("mobilePhone", "+1234567890");
+        response.put("principalBalance", "3.765,44");
+        response.put("totalDue", "4.000,00");
+        response.put("externalId", "EXT123");
 
         return response;
     }
