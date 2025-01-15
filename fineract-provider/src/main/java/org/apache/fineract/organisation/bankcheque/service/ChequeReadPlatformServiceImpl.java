@@ -151,7 +151,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	ml.approved_principal as loanAmount,
                         CASE
                             WHEN ml.is_topup = FALSE THEN ml.net_disbursal_amount
-                            WHEN ml.is_topup = TRUE THEN (COALESCE(ml.net_disbursal_amount, 0) + COALESCE(closureloan.interest_outstanding_derived, 0))
+                            WHEN ml.is_topup = TRUE THEN (COALESCE(ml.approved_principal, 0) - COALESCE(closureloan.total_outstanding_derived, 0))
                             ELSE mbc.guarantee_amount
                      	END as chequeAmount,
                     	mbc.case_id AS caseId,
