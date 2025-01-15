@@ -1008,7 +1008,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
             }
         }
-        log.info("feeChargesDue: "+ feeChargesDue);
+        log.info("feeChargesDue: " + feeChargesDue);
         ///////////////
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(feeChargesDue)) {
             if (isWriteOffTransaction) {
@@ -1034,7 +1034,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         log.info("installmentCharge paid amount : " + installmentCharge.getAmountPaid());
 
         this.feeChargesPaid = defaultToNullIfZero(this.feeChargesPaid);
-        log.info("feeChargesPaid: "+ feeChargesPaid);
+        log.info("feeChargesPaid: " + feeChargesPaid);
         checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
 
         trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, feeChargePaid);
