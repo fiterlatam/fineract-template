@@ -334,7 +334,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     }
 
     @Override
-    public FeeCalculationHonorario calculateFeeHonorario(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
+    public FeeCalculationHonorario calculateFeeHonorario(final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
             BigDecimal repaymentAmount) {
         // SU-529 Get maximum age of any of the client's loan
         List<Loan> clientActiveLoans = this.loanRepositoryWrapper

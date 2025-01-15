@@ -14,31 +14,29 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
-import com.google.gson.JsonElement;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
-import org.apache.fineract.portfolio.charge.data.ChargeData;
-import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
-import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanDebtProjectionData;
+import org.apache.fineract.portfolio.loanaccount.data.RepaymentScheduleRelatedLoanData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainServiceJpa;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleCalculationPlatformService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -51,6 +49,8 @@ public class LoanDebtProjectionService {
     private final ChargeReadPlatformService chargeReadPlatformService;
     private final ChargeRepositoryWrapper chargeRepository;
     private final LoanAccountDomainServiceJpa loanAccountDomainServiceJpa;
+    private final LoanReadPlatformService loanReadPlatformService;
+    private final LoanScheduleCalculationPlatformService calculationPlatformService;
 
     public LoanDebtProjectionData calculateDebtProjection(Long loanId, String projectionDate, String dateFormat) {
         // Find the loan and validate
@@ -61,13 +61,22 @@ public class LoanDebtProjectionService {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.projection.date.in.past", "Projection date cannot be in the past",
                     loan.getId());
         }
+        final LoanAccountData loanAccountData = this.loanReadPlatformService.retrieveOne(loanId);
+        final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData = loanAccountData.getTimeline().repaymentScheduleRelatedData(
+                loanAccountData.getCurrency(), loanAccountData.getPrincipal(), loanAccountData.getApprovedPrincipal(),
+                loanAccountData.getInArrearsTolerance(), loanAccountData.getFeeChargesAtDisbursementCharged());
+        Collection<DisbursementData> disbursementData = this.loanReadPlatformService.retrieveLoanDisbursementDetails(loanId);
+        final LoanScheduleData loanScheduleData = this.loanReadPlatformService.retrieveRepaymentSchedule(loanId,
+                repaymentScheduleRelatedData, disbursementData, loanAccountData.isInterestRecalculationEnabled(),
+                LoanScheduleType.fromEnumOptionData(loanAccountData.getLoanScheduleType()));
+        this.calculationPlatformService.getFeeChargesDetail(loanScheduleData, loanId);
 
         // Get overdue and future installments
-        List<LoanRepaymentScheduleInstallment> overdueInstallments = getOverdueInstallments(loan, projectedFutureDate);
-        List<LoanRepaymentScheduleInstallment> futureInstallments = getFutureInstallments(loan, projectedFutureDate);
+        final List<LoanSchedulePeriodData> overdueInstallments = getOverdueInstallments(loanScheduleData, projectedFutureDate);
+        final List<LoanSchedulePeriodData> futureInstallments = getFutureInstallments(loanScheduleData, projectedFutureDate);
 
         // Calculate projected overdue days
-        Long projectedOverdueDays = calculateProjectedOverdueDays(overdueInstallments, projectedFutureDate);
+        final Long projectedOverdueDays = calculateProjectedOverdueDays(overdueInstallments, projectedFutureDate);
 
         // Calculate discriminated past due balance
         LoanDebtProjectionData.OverdueBalanceDetails overdueBalanceDetails = calculateDiscriminatedPastDueBalance(overdueInstallments,
@@ -92,46 +101,45 @@ public class LoanDebtProjectionService {
         return loan;
     }
 
-    private List<LoanRepaymentScheduleInstallment> getOverdueInstallments(Loan loan, LocalDate projectedFutureDate) {
-        return loan.getRepaymentScheduleInstallments().stream()
-                .filter(installment -> installment.getDueDate().isBefore(projectedFutureDate)
-                        || installment.getDueDate().equals(projectedFutureDate))
-                .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff).toList();
-    }
-
-    private List<LoanRepaymentScheduleInstallment> getFutureInstallments(Loan loan, LocalDate projectedFutureDate) {
-        LocalDate currentDate = DateUtils.getLocalDateOfTenant();
-        return loan.getRepaymentScheduleInstallments().stream().filter(
-                installment -> installment.getDueDate().isAfter(currentDate) && installment.getDueDate().isBefore(projectedFutureDate))
+    private List<LoanSchedulePeriodData> getOverdueInstallments(final LoanScheduleData loanScheduleData,
+            final LocalDate projectedFutureDate) {
+        return loanScheduleData.getPeriods().stream().filter(period -> period.getPeriod() != null && !period.getComplete())
+                .filter(period -> period.getDueDate().isBefore(projectedFutureDate) || period.getDueDate().equals(projectedFutureDate))
                 .toList();
     }
 
+    private List<LoanSchedulePeriodData> getFutureInstallments(final LoanScheduleData loanScheduleData,
+            final LocalDate projectedFutureDate) {
+        final LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+        return loanScheduleData.getPeriods().stream().filter(period -> period.getPeriod() != null && !period.getComplete())
+                .filter(period -> period.getDueDate().isAfter(currentDate) && period.getDueDate().isBefore(projectedFutureDate)).toList();
+    }
+
     private LoanDebtProjectionData.OverdueBalanceDetails calculateDiscriminatedPastDueBalance(
-            List<LoanRepaymentScheduleInstallment> overdueInstallments, MonetaryCurrency currency, LocalDate projectedFutureDate) {
+            List<LoanSchedulePeriodData> overdueInstallments, MonetaryCurrency currency, LocalDate projectedFutureDate) {
         if (overdueInstallments.isEmpty()) {
             return new LoanDebtProjectionData.OverdueBalanceDetails(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
         }
 
         // Calculate Past Due Installment Balance
         BigDecimal pastDueInstallmentBalance = overdueInstallments.stream()
-                .map(installment -> installment.getPrincipal(currency).add(installment.getInterestCharged(currency))
-                        .add(installment.getFeeChargesCharged(currency)).add(installment.getPenaltyChargesCharged(currency)).getAmount())
+                .map(installment -> installment.getPrincipalOutstanding().add(installment.getInterestOutstanding()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);
 
         // Calculate Delinquency Interest
-        BigDecimal delinquencyInterest = calculatePenaltyForOverdueInstallments(overdueInstallments, projectedFutureDate);
-
-        // Calculate Fee
-
-        BigDecimal honorarioFee = overdueInstallments.stream()
-                .map(installment -> loanAccountDomainServiceJpa.calculateFeeHonorario(installment, BigDecimal.ZERO).getFeeHono())
+        final BigDecimal outstandingPenaltyCharges = overdueInstallments.stream().map(LoanSchedulePeriodData::getPenaltyChargesOutstanding)
                 .reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);
 
-        return new LoanDebtProjectionData.OverdueBalanceDetails(pastDueInstallmentBalance, delinquencyInterest, honorarioFee);
+        // Calculate Fee
+        final BigDecimal outstandingHonorariosFees = overdueInstallments.stream().map(LoanSchedulePeriodData::getHonorariosOutstanding)
+                .reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);
+
+        return new LoanDebtProjectionData.OverdueBalanceDetails(pastDueInstallmentBalance, outstandingPenaltyCharges,
+                outstandingHonorariosFees);
     }
 
     private LoanDebtProjectionData.TotalBalanceDetails calculateTotalBalanceDetails(
-            LoanDebtProjectionData.OverdueBalanceDetails overdueDetails, List<LoanRepaymentScheduleInstallment> futureInstallments) {
+            LoanDebtProjectionData.OverdueBalanceDetails overdueDetails, List<LoanSchedulePeriodData> futureInstallments) {
         // Calculate Future Balance
         BigDecimal futureBalance = calculateFutureBalance(futureInstallments);
 
@@ -144,14 +152,12 @@ public class LoanDebtProjectionService {
         return new LoanDebtProjectionData.TotalBalanceDetails(totalOverdueBalance, futureBalance, totalBalance);
     }
 
-    private BigDecimal calculateFutureBalance(List<LoanRepaymentScheduleInstallment> futureInstallments) {
+    private BigDecimal calculateFutureBalance(List<LoanSchedulePeriodData> futureInstallments) {
         if (futureInstallments.isEmpty()) {
             return BigDecimal.ZERO;
         }
-        MonetaryCurrency currency = futureInstallments.get(0).getLoan().getCurrency();
-
         // we should be able to calculate the outstanding for each installment
-        return futureInstallments.stream().map(installment -> installment.getTotalOutstanding(currency).getAmount())
+        return futureInstallments.stream().map(LoanSchedulePeriodData::getTotalOutstandingForPeriod)
                 .reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);
     }
 
@@ -159,66 +165,13 @@ public class LoanDebtProjectionService {
         return overdueDetails.getTotal();
     }
 
-    private Long calculateProjectedOverdueDays(List<LoanRepaymentScheduleInstallment> overdueInstallments, LocalDate projectedFutureDate) {
+    private Long calculateProjectedOverdueDays(final List<LoanSchedulePeriodData> overdueInstallments,
+            final LocalDate projectedFutureDate) {
         if (overdueInstallments.isEmpty()) {
             return 0L;
         }
-        return overdueInstallments.stream().map(LoanRepaymentScheduleInstallment::getDueDate)
+        return overdueInstallments.stream().map(LoanSchedulePeriodData::getDueDate)
                 .map(dueDate -> DateUtils.getDifferenceInDays(dueDate, projectedFutureDate)).max(Long::compareTo).orElse(0L);
-    }
-
-    private BigDecimal calculatePenaltyForOverdueInstallments(List<LoanRepaymentScheduleInstallment> overdueInstallments,
-            LocalDate projectedFutureDate) {
-        return overdueInstallments.stream().map(installment -> calculatePenaltyCharge(installment, projectedFutureDate))
-                .reduce(BigDecimal.ZERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);
-    }
-
-    private BigDecimal calculatePenaltyCharge(LoanRepaymentScheduleInstallment installment, LocalDate projectedFutureDate) {
-        LocalDate dueDate = installment.getDueDate();
-        long daysInArrears = DateUtils.getDifferenceInDays(dueDate, projectedFutureDate);
-        Loan loan = installment.getLoan();
-        Long loanId = loan.getId();
-        final MonetaryCurrency currency = loan.getCurrency();
-
-        Collection<ChargeData> overdueCharges = this.chargeReadPlatformService
-                .retrieveLoanProductCharges(loan.getLoanProduct().getId(), ChargeTimeType.OVERDUE_INSTALLMENT).stream()
-                .filter(ChargeData::isPenalty).toList();
-        Long chargeId = overdueCharges.stream().filter(i -> i.getParentChargeId() == null).findFirst().map(ChargeData::getId).orElse(null);
-        if (chargeId == null) {
-            chargeId = overdueCharges.stream().findFirst().map(ChargeData::getParentChargeId).orElse(null);
-        }
-        if (chargeId == null) {
-            return BigDecimal.ZERO;
-        }
-        Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
-        if (Objects.isNull(chargeDefinition)) {
-            return BigDecimal.ZERO;
-        }
-        final String locale = Locale.ENGLISH.toLanguageTag();
-        final String dateFormat = "yyyy-MM-dd";
-        String json = String.format(
-                "{\"chargeId\":%d, \"locale\":\"%s\", \"amount\":%.2f, \"dateFormat\":\"%s\", \"dueDate\":\"%s\", \"principal\":\"%s\", \"interest\":\"%s\"}",
-                chargeId, locale, chargeDefinition.getAmount(), dateFormat, installment.getDueDate(),
-                installment.getPrincipalOutstanding(currency).getAmount(), installment.getInterestOutstanding(currency));
-
-        final JsonElement parsedCommand = this.fromApiJsonHelper.parse(json);
-        final JsonCommand command = JsonCommand.from(json, parsedCommand, this.fromApiJsonHelper, null, null, null, null, null, loanId,
-                null, null, null, null, null, null, null);
-
-        final LoanCharge loanCharge = loanChargeAssembler.createNewFromJson(loan, chargeDefinition, command, installment.getDueDate(),
-                installment, null);
-
-        if (loanCharge == null) {
-            return BigDecimal.ZERO;
-        }
-
-        BigDecimal penaltyAmount = BigDecimal.ZERO;
-        if (daysInArrears > 0) {
-            BigDecimal dailyChargeAmount = loanCharge.amount();
-            penaltyAmount = dailyChargeAmount.multiply(BigDecimal.valueOf(daysInArrears));
-        }
-
-        return penaltyAmount.setScale(2, RoundingMode.HALF_UP);
     }
 
 }
