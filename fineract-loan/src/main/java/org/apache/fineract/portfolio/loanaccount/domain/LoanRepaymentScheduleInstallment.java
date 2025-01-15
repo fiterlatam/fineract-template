@@ -994,13 +994,16 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                         amountPaidByOriginalTransaction = amountPaidByOriginalTransaction.plus(data.getAmount());
                     }
                 }
+                log.info("amount paid by original transaction: " + amountPaidByOriginalTransaction);
                 if (amountPaidByOriginalTransaction.isGreaterThanZero()) {
                     feeChargesDue = amountPaidByOriginalTransaction;
                 } else {
                     feeChargesDue = Money.zero(currency);
                 }
+
             }
         }
+        log.info("feeChargesDue: " + feeChargesDue);
         ///////////////
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(feeChargesDue)) {
             if (isWriteOffTransaction) {
@@ -1023,8 +1026,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         // installmentCharge.updatePaidAmountBy(feePortionOfTransaction, Money.zero(currency));
         installmentCharge.getLoanCharge().updatePaidAmountBy(feeChargePaid, this.installmentNumber, Money.zero(currency),
                 isWriteOffTransaction);
-        this.feeChargesPaid = defaultToNullIfZero(this.feeChargesPaid);
+        log.info("installmentCharge paid amount : " + installmentCharge.getAmountPaid());
 
+        this.feeChargesPaid = defaultToNullIfZero(this.feeChargesPaid);
+        log.info("feeChargesPaid: " + feeChargesPaid);
         checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
 
         trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, feeChargePaid);
