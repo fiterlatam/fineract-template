@@ -747,6 +747,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payHonorariosChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
+        log.info("transactionAmountRemaining : "+ transactionAmountRemaining);
         log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : installment number:" + this.installmentNumber);
         log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : total fee : " + this.feeChargesCharged);
         log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : total fee paid: " + this.feeChargesPaid);
@@ -981,13 +982,16 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                         amountPaidByOriginalTransaction = amountPaidByOriginalTransaction.plus(data.getAmount());
                     }
                 }
+                log.info("amount paid by original transaction: "+ amountPaidByOriginalTransaction);
                 if (amountPaidByOriginalTransaction.isGreaterThanZero()) {
                     feeChargesDue = amountPaidByOriginalTransaction;
                 } else {
                     feeChargesDue = Money.zero(currency);
                 }
+
             }
         }
+        log.info("feeChargesDue: "+ feeChargesDue);
         ///////////////
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(feeChargesDue)) {
             if (isWriteOffTransaction) {
@@ -1010,8 +1014,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         // installmentCharge.updatePaidAmountBy(feePortionOfTransaction, Money.zero(currency));
         installmentCharge.getLoanCharge().updatePaidAmountBy(feeChargePaid, this.installmentNumber, Money.zero(currency),
                 isWriteOffTransaction);
-        this.feeChargesPaid = defaultToNullIfZero(this.feeChargesPaid);
+        log.info("installmentCharge paid amount : " + installmentCharge.getAmountPaid());
 
+        this.feeChargesPaid = defaultToNullIfZero(this.feeChargesPaid);
+        log.info("feeChargesPaid: "+ feeChargesPaid);
         checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
 
         trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, feeChargePaid);
