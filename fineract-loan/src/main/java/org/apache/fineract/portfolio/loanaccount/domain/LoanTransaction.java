@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.util.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -44,6 +45,7 @@ import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
  * All monetary transactions against a loan are modelled through this entity. Disbursements, Repayments, Waivers,
  * Write-off etc
  */
+@Slf4j
 @Entity
 @Table(name = "m_loan_transaction", uniqueConstraints = { @UniqueConstraint(columnNames = { "external_id" }, name = "external_id_UNIQUE") })
 public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
