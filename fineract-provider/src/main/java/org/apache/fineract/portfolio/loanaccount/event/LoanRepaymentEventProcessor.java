@@ -16,18 +16,32 @@
  */
 package org.apache.fineract.portfolio.loanaccount.event;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.domain.ExternalId;
+import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 @Component()
 @Slf4j
+@RequiredArgsConstructor
 public class LoanRepaymentEventProcessor extends BaseCustomWebhookEventProcessorImpl {
+
+    private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     protected List<Map<String, String>> getSupportedEvents() {
@@ -37,19 +51,55 @@ public class LoanRepaymentEventProcessor extends BaseCustomWebhookEventProcessor
 
     @Override
     public Map<String, Object> transform(String entityName, String actionName, JsonCommand command, Object result) {
+
+        if (result instanceof CommandProcessingResult successResult) {
+            return generateSuccessResponse(command, CommandProcessingResult.fromCommandProcessingResult(successResult));
+        }
+        return Collections.emptyMap();
+    }
+
+    public Map<String, Object> generateSuccessResponse(JsonCommand command, CommandProcessingResult successResult) {
         Map<String, Object> response = new HashMap<>();
-        response.put("loanId", "000123");
-        response.put("amount", "1.234,56");
-        response.put("arrearDue", "234,50");
-        response.put("paymentDate", "2024-01-15");
+        Long loanId = successResult.getLoanId();
+        Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+        Client client = loan.getClient();
+        final LocalDate transactionDate = command.localDateValueOfParameterNamed("transactionDate");
+        BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed("transactionAmount");
+        BigDecimal principalAmount = loan.getApprovedPrincipal();
+        BigDecimal principalOutstanding = loan.getLoanSummary().getTotalPrincipalOutstanding();
+        BigDecimal loanBalance = loan.getLoanSummary().getTotalOutstanding();
+
+        String clientName = client.getDisplayName();
+        ExternalId externalId = client.getExternalId();
+        if (externalId != null) {
+            response.put("externalId", externalId.getValue());
+        }
+        String mobileNumber = client.mobileNo();
+        int daysInArrears = 0;
+        String query = """
+                SELECT COALESCE(current_date - overdue_since_date_derived, 0) AS aging_days
+                FROM m_loan_arrears_aging
+                WHERE loan_id = ?
+                """;
+
+        try {
+            daysInArrears = this.jdbcTemplate.queryForObject(query, Integer.class, loan.getId());
+        } catch (EmptyResultDataAccessException e) {
+            // Loan is not in arrears, default value is already set
+            log.warn("No arrears data found for loan ID: {}", loan.getId());
+        }
+
+        response.put("loanId", loanId);
+        response.put("amount", transactionAmount);
+        response.put("arrearDue", daysInArrears);
+        response.put("paymentDate", transactionDate);
         response.put("document", "123456789");
         response.put("documentType", "CC");
-        response.put("fullname", "John Doe");
-        response.put("loanAmount", "5.000,00");
-        response.put("mobilePhone", "+1234567890");
-        response.put("principalBalance", "3.765,44");
-        response.put("totalDue", "4.000,00");
-        response.put("externalId", "EXT123");
+        response.put("fullname", clientName);
+        response.put("loanAmount", principalAmount);
+        response.put("mobilePhone", mobileNumber);
+        response.put("principalBalance", principalOutstanding);
+        response.put("totalDue", loanBalance);
 
         return response;
     }
