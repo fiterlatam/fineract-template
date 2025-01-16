@@ -50,6 +50,10 @@ public abstract class BaseCustomWebhookEventProcessorImpl implements CustomWebho
     @Override
     public void publish(Map<String, Object> transformedPayload, String entityName, String actionName, AppUser user,
             FineractContext fineractContext) {
+        if (transformedPayload.isEmpty()) {
+            log.warn("Skipping webhook event publishing for {}.{} as the transformed payload is empty", entityName, actionName);
+            return;
+        }
         CompletableFuture.runAsync(() -> {
             try {
                 String serializedPayload = toApiResultJsonSerializer.serialize(transformedPayload);
