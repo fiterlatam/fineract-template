@@ -3874,6 +3874,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
         repaymentsOrWaivers.sort(LoanTransactionComparator.INSTANCE);
+        log.info("transactions details after sorting");
+        for (final LoanTransaction transaction : repaymentsOrWaivers) {
+            if (transaction.isAccrual() || transaction.isDisbursement()) {
+                continue;
+            } else {
+                log.info("transaction id :" + transaction.getId());
+                log.info("tranaction fee paid" + transaction.getFeeChargesPortion());
+                log.info("transaction interest paid" + transaction.getInterestPortion());
+            }
+        }
         return repaymentsOrWaivers;
     }
 
