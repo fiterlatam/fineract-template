@@ -145,6 +145,7 @@ import org.apache.fineract.portfolio.loanaccount.exception.LoanApplicationDateEx
 import org.apache.fineract.portfolio.loanaccount.exception.LoanApplicationNotInClosedStateCannotBeModified;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanApplicationNotInSubmittedAndPendingApprovalStateCannotBeDeleted;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanApplicationNotInSubmittedAndPendingApprovalStateCannotBeModified;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanDisbursalExistingActiveProduct;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanIndividualAdditionDataException;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
@@ -345,6 +346,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         try {
             boolean isMeetingMandatoryForJLGLoans = configurationDomainService.isMeetingMandatoryForJLGLoans();
             final Long productId = this.fromJsonHelper.extractLongNamed("productId", command.parsedJson());
+            final Boolean isTopup = command.booleanObjectValueOfParameterNamed(LoanApiConstants.isTopup);
             final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
                     .orElseThrow(() -> new LoanProductNotFoundException(productId));
 
@@ -365,6 +367,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         CodeValue typificationCodeValue = this.codeValueRepository.findOneWithNotFoundDetection(typification.longValue());
                         throw new ClientBlacklistedException(typificationCodeValue.getDescription());
                     }
+                }
+
+                //look for active loan products for client if active loan exists new request has to be a topup.
+                List<Long> activeLoansLoanProductIdsByClient = this.loanRepository.findActiveLoansLoanProductIdsByClient(clientId, LoanStatus.ACTIVE.getValue());
+                if (activeLoansLoanProductIdsByClient.contains(productId) && !Boolean.TRUE.equals(isTopup)) {
+                    throw new LoanDisbursalExistingActiveProduct("error.msg.loan.existing.active.loan", loanProduct.getName());
                 }
             }
             final Long groupId = this.fromJsonHelper.extractLongNamed("groupId", command.parsedJson());
@@ -435,7 +443,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     newLoanApplication);
 
             if (loanProduct.canUseForTopup() && clientId != null) {
-                final Boolean isTopup = command.booleanObjectValueOfParameterNamed(LoanApiConstants.isTopup);
                 if (null == isTopup) {
                     newLoanApplication.setIsTopup(false);
                 } else {
