@@ -53,19 +53,7 @@ import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
-import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanChargePaidBy;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCreditAllocationRule;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanPaymentAllocationRule;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleProcessingWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelation;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationTypeEnum;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionToRepaymentScheduleMapping;
-import org.apache.fineract.portfolio.loanaccount.domain.SingleLoanChargeRepaymentScheduleProcessingWrapper;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.AbstractLoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.MoneyHolder;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
@@ -531,6 +519,20 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             chargeOrTransactions.addAll(loanTransactions.stream().map(ChargeOrTransaction::new).toList());
         }
         Collections.sort(chargeOrTransactions);
+
+        log.info("transaction list after next sort in createSortedChargesAndTransactionsList method in AdvancedPaymentScheduleTransactionProcessor.java");
+        for(ChargeOrTransaction t : chargeOrTransactions) {
+            if (t.getLoanTransaction().isPresent()) {
+                LoanTransaction transaction = t.getLoanTransaction().get();
+                if (transaction.isAccrual() || transaction.isDisbursement()) {
+                    continue;
+                } else {
+                    log.info("transaction id :" + transaction.getId());
+                    log.info("tranaction fee paid" + transaction.getFeeChargesPortion());
+                    log.info("transaction interest paid" + transaction.getInterestPortion());
+                }
+            }
+        }
         return chargeOrTransactions;
     }
 
