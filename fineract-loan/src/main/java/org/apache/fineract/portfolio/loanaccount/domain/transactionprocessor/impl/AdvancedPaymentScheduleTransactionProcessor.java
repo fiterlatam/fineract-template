@@ -512,13 +512,13 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
     private List<ChargeOrTransaction> createSortedChargesAndTransactionsList(List<LoanTransaction> loanTransactions,
             Set<LoanCharge> charges) {
         List<ChargeOrTransaction> chargeOrTransactions = new ArrayList<>();
-        if (charges != null) {
-            chargeOrTransactions.addAll(charges.stream().map(ChargeOrTransaction::new).toList());
-        }
+        // if (charges != null) {
+        //    chargeOrTransactions.addAll(charges.stream().map(ChargeOrTransaction::new).toList());
+        // }
         if (loanTransactions != null) {
             chargeOrTransactions.addAll(loanTransactions.stream().map(ChargeOrTransaction::new).toList());
         }
-        Collections.sort(chargeOrTransactions);
+        // Collections.sort(chargeOrTransactions);
 
         log.info(
                 "transaction list after next sort in createSortedChargesAndTransactionsList method in AdvancedPaymentScheduleTransactionProcessor.java");
