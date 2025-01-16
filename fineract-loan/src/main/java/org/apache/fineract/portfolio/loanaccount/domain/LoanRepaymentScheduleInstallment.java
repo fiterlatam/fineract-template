@@ -640,8 +640,6 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payPenaltyChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payPenaltyChargesComponent method : installment number:"
-                + this.installmentNumber);
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money penaltyPortionOfTransaction = Money.zero(currency);
         Money loanChargePaidByPortion = Money.zero(currency);
@@ -807,8 +805,6 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payAvalChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payAvalChargesComponent method : installment number:"
-                + this.installmentNumber);
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money feePortionOfTransaction = Money.zero(currency);
         Money loanChargePaidByPortion = Money.zero(currency);
@@ -844,9 +840,6 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payMandatoryInsuranceChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(
-                " 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payMandatoryInsuranceChargesComponent method : installment number:"
-                        + this.installmentNumber);
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money feePortionOfTransaction = Money.zero(currency);
         Money loanChargePaidByPortion = Money.zero(currency);
@@ -990,6 +983,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             if (!paidByOriginalTransactionList.isEmpty()) {
                 log.info("originaltransactionpaidbylist is not empty");
                 for (LoanChargePaidByData data : paidByOriginalTransactionList) {
+                    log.info(" oringinal transaction id" + data.getTransactionId());
                     log.info("oringinal transaction paid amount: " + data.getAmount());
                     log.info("oringinal transaction installmentNumber: " + data.getInstallmentNumber());
                     log.info("oringinal transaction charge Id: " + data.getChargeId());
@@ -1095,8 +1089,6 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payInterestComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payInterestComponent method : installment number:"
-                + this.installmentNumber);
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money interestPortionOfTransaction = Money.zero(currency);
         if (transactionAmountRemaining.isZero() || getInterestOutstanding(currency).isZero()) {
@@ -1201,8 +1193,6 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payPrincipalComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payInterestComponent method : installment number:"
-                + this.installmentNumber);
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money principalPortionOfTransaction = Money.zero(currency);
         if (transactionAmountRemaining.isZero() || getPrincipalOutstanding(currency).isZero()) {
