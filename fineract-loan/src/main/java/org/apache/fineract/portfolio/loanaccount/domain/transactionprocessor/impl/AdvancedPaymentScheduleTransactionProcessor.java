@@ -520,8 +520,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         }
         Collections.sort(chargeOrTransactions);
 
-        log.info("transaction list after next sort in createSortedChargesAndTransactionsList method in AdvancedPaymentScheduleTransactionProcessor.java");
-        for(ChargeOrTransaction t : chargeOrTransactions) {
+        log.info(
+                "transaction list after next sort in createSortedChargesAndTransactionsList method in AdvancedPaymentScheduleTransactionProcessor.java");
+        for (ChargeOrTransaction t : chargeOrTransactions) {
             if (t.getLoanTransaction().isPresent()) {
                 LoanTransaction transaction = t.getLoanTransaction().get();
                 if (transaction.isAccrual() || transaction.isDisbursement()) {
