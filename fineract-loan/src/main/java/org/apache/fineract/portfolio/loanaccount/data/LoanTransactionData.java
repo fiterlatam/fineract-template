@@ -113,6 +113,7 @@ public class LoanTransactionData {
     private Boolean isCalculate;
     private List<DisbursementFeeData> disbursementFees;
     private BigDecimal totalDisbursementFeesAmount;
+    private boolean occurredOnSuspendedAccount;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {
@@ -486,5 +487,4 @@ public class LoanTransactionData {
         private final String chargeName;
         private final BigDecimal netDisbursalAmount;
     }
-
 }
