@@ -513,7 +513,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             Set<LoanCharge> charges) {
         List<ChargeOrTransaction> chargeOrTransactions = new ArrayList<>();
         // if (charges != null) {
-        //    chargeOrTransactions.addAll(charges.stream().map(ChargeOrTransaction::new).toList());
+        // chargeOrTransactions.addAll(charges.stream().map(ChargeOrTransaction::new).toList());
         // }
         if (loanTransactions != null) {
             chargeOrTransactions.addAll(loanTransactions.stream().map(ChargeOrTransaction::new).toList());
