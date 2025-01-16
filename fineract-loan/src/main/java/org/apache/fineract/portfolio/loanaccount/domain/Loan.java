@@ -2883,12 +2883,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (((isMultiDisburmentLoan() && getDisbursedLoanDisbursementDetails().size() == 1) || !isMultiDisburmentLoan())
                 && isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
 
-            // according to SU-314 , rather than post the whole accrual , apply just the daily accruals
-            // from the disbursed date till cuurent date , apply the daily accruals
-            LocalDate currentDate = DateUtils.getLocalDateOfTenant();
-            for (LocalDate selectedDate = actualDisbursementDate; selectedDate
-                    .isBefore(currentDate); selectedDate = selectedDate.plusDays(1)) {
-                applyDailyAccrualsAtDisbursement(selectedDate);
+            if (!this.isMigratedLoan) {
+                // according to SU-314 , rather than post the whole accrual , apply just the daily accruals
+                // from the disbursed date till cuurent date , apply the daily accruals
+                LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+                for (LocalDate selectedDate = actualDisbursementDate; selectedDate
+                        .isBefore(currentDate); selectedDate = selectedDate.plusDays(1)) {
+                    applyDailyAccrualsAtDisbursement(selectedDate);
+                }
             }
 
         }
