@@ -18,6 +18,10 @@
  */
 package org.apache.fineract.useradministration.starter;
 
+import org.apache.fineract.infrastructure.codes.domain.CodeRepository;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
+import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
+import org.apache.fineract.infrastructure.codes.service.CodeValueWritePlatformService;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncoder;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -76,10 +80,13 @@ public class UserAdministrationConfiguration {
             OfficeRepositoryWrapper officeRepositoryWrapper, RoleRepository roleRepository, UserDataValidator fromApiJsonDeserializer,
             AppUserPreviousPasswordRepository appUserPreviewPasswordRepository, StaffRepositoryWrapper staffRepositoryWrapper,
             ClientRepositoryWrapper clientRepositoryWrapper, RoleReadPlatformService roleReadPlatformService,
-            StaffReadPlatformService staffReadPlatformService, JdbcTemplate jdbcTemplate) {
+            StaffReadPlatformService staffReadPlatformService, JdbcTemplate jdbcTemplate, CodeRepository codeRepository,
+            CodeValueRepository codeValueRepository, CodeValueReadPlatformService codeValueReadPlatformService,
+            CodeValueWritePlatformService codeValueWritePlatformService) {
         return new AppUserWritePlatformServiceJpaRepositoryImpl(context, userDomainService, platformPasswordEncoder, appUserRepository,
                 officeRepositoryWrapper, roleRepository, fromApiJsonDeserializer, appUserPreviewPasswordRepository, staffRepositoryWrapper,
-                clientRepositoryWrapper, roleReadPlatformService, staffReadPlatformService, jdbcTemplate);
+                clientRepositoryWrapper, roleReadPlatformService, staffReadPlatformService, jdbcTemplate, codeRepository,
+                codeValueRepository, codeValueReadPlatformService, codeValueWritePlatformService);
     }
 
     @Bean
