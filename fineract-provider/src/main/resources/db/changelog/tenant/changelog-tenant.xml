@@ -363,4 +363,5 @@
     <include file="parts/202501112000001600_EA_155_create_datatable_visita.xml" relativeToChangelogFile="true" />
     <include file="parts/2025012091721000000_SU_556_add_job_params_for_accruals_and_fees.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025012111428000000_SU_570_add_job_params_for_penalties_job.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202501112000001700_EA_156_create_datatable_validacioncontacta.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

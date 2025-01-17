@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="1" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_code (code_name, is_system_defined) VALUES('Validacion Contactabilidad', false);
+
+                INSERT INTO m_code_value
+                (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Validacion Contactabilidad'), 'Exitosa', 'Exitosa', 0, '0', true, false, NULL);
+
+                INSERT INTO m_code_value
+                (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Validacion Contactabilidad'), 'Fallida', 'Fallida', 0, '0', true, false, NULL);
+
+                INSERT INTO m_code_value
+                (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Validacion Contactabilidad'), 'No Aplica ', 'NA', 0, '0', true, false, NULL);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="2" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_code (code_name, is_system_defined) VALUES('Correo Usuario Asignado', false);
+
+                INSERT INTO m_code_value
+                (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Correo Usuario Asignado'), 'dramirezr@fgs.codramirezr@fgs.co', 'dramirezr@fgs.codramirezr@fgs.co', 0, '0', true, false, NULL);
+
+                INSERT INTO m_code_value
+                (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Correo Usuario Asignado'), 'nzambranop@fgs.co', 'nzambranop@fgs.co', 0, '0', true, false, NULL);
+
+                INSERT INTO m_code_value
+                (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Correo Usuario Asignado'), 'nzambranop@fgs.co', 'nzambranop@fgs.co', 0, '0', true, false, NULL);
+            ]]>
+        </sql>
+    </changeSet>
+
+
+    <changeSet id="3" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_code (code_name, is_system_defined) VALUES('Causal Rechazo Contactabilidad', false);
+
+                INSERT INTO m_code_value
+                (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Contactabilidad'), 'No Aplica', 'NA', 0, '0', true, false, NULL);
+
+                INSERT INTO m_code_value
+                (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Contactabilidad'), 'En Contacto telefónico Desiste de crédito', 'Alerta1', 0, '0', true, false, NULL);
+
+                INSERT INTO m_code_value
+                (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Contactabilidad'), 'En contacto telefónico existe Duda Razonable', 'Alerta2', 0, '0', true, false, NULL);
+
+                INSERT INTO m_code_value
+                (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Contactabilidad'), 'En Contacto telefónico Negado por actividad', 'Alerta3', 0, '0', true, false, NULL);
+
+                INSERT INTO m_code_value
+                (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Contactabilidad'), 'En Contacto telefónico toma un valor diferente', 'Alerta4', 0, '0', true, false, NULL);
+
+                INSERT INTO m_code_value
+                (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Contactabilidad'), 'Falta de Contactabilidad telefónica', 'Alerta5', 0, '0', true, false, NULL);
+
+                INSERT INTO m_code_value
+                (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Contactabilidad'), 'Tiene otro crédito recien desembolsado', 'Alerta6', 0, '0', true, false, NULL);
+
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="4" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_code (code_name, is_system_defined) VALUES('Usuario Asignado', false);
+
+                INSERT INTO m_code_value
+                    (code_id, code_value, code_description, order_position, code_score,
+                    is_active, is_mandatory, parent_id)
+                SELECT
+                    (SELECT id FROM m_code WHERE code_name='Usuario Asignado')
+                    , CONCAT(firstname, ' ', lastname)
+                    , username
+                    , 0
+                    , CAST(id AS VARCHAR(100))
+                    , true
+                    , false
+                    , NULL
+                FROM m_appuser
+            ]]>
+        </sql>
+    </changeSet>
+
+
+    <changeSet author="danielsta@fiter.io" id="10">
+        <sql>
+            <![CDATA[
+                DROP TABLE if exists "Validacion Contacta";
+
+                CREATE TABLE "Validacion Contacta" (
+                    loan_id bigint PRIMARY KEY,
+                    "Usuario Asignado_cd_Usuario Asignado" int4, -- Usuario Asignado (Enlace Usuario)
+                    "Correo Usuario Asignado_cd_Correo Usuario Asignado" int4, -- Correo Usuario Asignado
+                    fecha_inicio_contactabilidad DATE, -- Fecha Inicio Contactabilidad
+                    "Validacion Contactabilidad_cd_Validacion Contactabilidad" int4, -- Validacion Contactabilidad
+                    "Causal Rechazo Contactabilidad_cd_Causal Rechazo Contactabilidad" INT4, -- Causal Rechazo Contactabilidad
+                    contactabilidad_fallida TEXT, -- Observación Rechazo Contactabilidad
+                    observacion_contactabilidad TEXT, -- Observación Contactabilidad
+                    contactabilidad_observ2 TEXT, -- Segunda Observación Contactabilidad
+                    contactabilidad_observ3 TEXT, -- Tercera Observación Contactabilidad
+                    telefono_de_contacto TEXT, -- Teléfono de Contactabilidad
+                    fecha_fin_contactabilidad DATE, -- Fecha Fin Contactabilidad
+                    created_at TIMESTAMP,
+                    updated_at TIMESTAMP NULL
+                );
+
+            ]]>
+        </sql>
+    </changeSet>
+
+
+    <changeSet author="danielsta@fiter.io" id="20">
+        <sql>
+            <![CDATA[
+                COMMENT ON COLUMN "Validacion Contacta".loan_id IS 'Identificador Unico Prestamo';
+                COMMENT ON COLUMN "Validacion Contacta"."Usuario Asignado_cd_Usuario Asignado" IS 'Usuario Asignado';
+                COMMENT ON COLUMN "Validacion Contacta"."Correo Usuario Asignado_cd_Correo Usuario Asignado" IS 'Correo Usuario Asignado';
+                COMMENT ON COLUMN "Validacion Contacta".fecha_inicio_contactabilidad IS 'Fecha Inicio Contactabilidad';
+                COMMENT ON COLUMN "Validacion Contacta"."Validacion Contactabilidad_cd_Validacion Contactabilidad" IS 'Validacion Contactabilidad';
+                COMMENT ON COLUMN "Validacion Contacta"."Causal Rechazo Contactabilidad_cd_Causal Rechazo Contactabilidad" IS 'Causal Rechazo Contactabilidad';
+                COMMENT ON COLUMN "Validacion Contacta".contactabilidad_fallida IS 'Observación Rechazo Contactabilidad';
+                COMMENT ON COLUMN "Validacion Contacta".observacion_contactabilidad IS 'Observación Contactabilidad';
+                COMMENT ON COLUMN "Validacion Contacta".contactabilidad_observ2 IS 'Segunda Observación Contactabilidad';
+                COMMENT ON COLUMN "Validacion Contacta".contactabilidad_observ3 IS 'Tercera Observación Contactabilidad';
+                COMMENT ON COLUMN "Validacion Contacta".telefono_de_contacto IS 'Teléfono de Contactabilidad';
+                COMMENT ON COLUMN "Validacion Contacta".fecha_fin_contactabilidad IS 'Fecha Fin Contactabilidad';
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="danielsta@fiter.io" id="30">
+        <sql>
+            <![CDATA[
+                INSERT INTO x_registered_table
+                (registered_table_name, application_table_name, entity_subtype, category)
+                VALUES('Validacion Contacta', 'm_loan', 'Entity', 100);
+            ]]>
+        </sql>
+    </changeSet>
+
+
+</databaseChangeLog>
