@@ -365,4 +365,6 @@
     <include file="parts/2025012111428000000_SU_570_add_job_params_for_penalties_job.xml" relativeToChangelogFile="true"/>
     <include file="parts/202501112000001700_EA_156_create_datatable_validacioncontacta.xml" relativeToChangelogFile="true" />
     <include file="parts/202501021143000003_EA-195_create_transaction_details_table.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501112000001800_EA_157_create_datatable_validacionseguridad.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501112000001900_EA_158_create_datatable_detallegarantia.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>
