@@ -60,19 +60,18 @@ public class LoanRepaymentScheduleProcessingWrapper {
                         currency, period, totalPrincipal, totalInterest, !period.isRecalculatedInterestComponent(),
                         isFirstNonDownPaymentPeriod, outstandingBalance, repaymentPeriods.size());
                 final Money feeChargesWaivedForRepaymentPeriod = cumulativeChargesWaivedWithin(startDate, period.getDueDate(), loanCharges,
-                        currency, !period.isRecalculatedInterestComponent(), isFirstNonDownPaymentPeriod, feeCharge());
+                        currency, !period.isRecalculatedInterestComponent(), isFirstNonDownPaymentPeriod, feeCharge(), period);
                 final Money feeChargesWrittenOffForRepaymentPeriod = cumulativeChargesWrittenOffWithin(startDate, period.getDueDate(),
-                        loanCharges, currency, !period.isRecalculatedInterestComponent(), isFirstNonDownPaymentPeriod, feeCharge());
+                        loanCharges, currency, !period.isRecalculatedInterestComponent(), isFirstNonDownPaymentPeriod, feeCharge(), period);
 
-                final Money penaltyChargesDueForRepaymentPeriod = cumulativePenaltyChargesDueWithin(startDate, period.getDueDate(),
-                        loanCharges, currency, period, totalPrincipal, totalInterest, !period.isRecalculatedInterestComponent(),
-                        isFirstNonDownPaymentPeriod);
+                final Money penaltyChargesDueForRepaymentPeriod = cumulativePenaltyChargesDueWithin(loanCharges, currency, period,
+                        totalPrincipal, totalInterest, !period.isRecalculatedInterestComponent(), isFirstNonDownPaymentPeriod);
                 final Money penaltyChargesWaivedForRepaymentPeriod = cumulativeChargesWaivedWithin(startDate, period.getDueDate(),
                         loanCharges, currency, !period.isRecalculatedInterestComponent(), isFirstNonDownPaymentPeriod,
-                        LoanCharge::isPenaltyCharge);
+                        LoanCharge::isPenaltyCharge, period);
                 final Money penaltyChargesWrittenOffForRepaymentPeriod = cumulativeChargesWrittenOffWithin(startDate, period.getDueDate(),
                         loanCharges, currency, !period.isRecalculatedInterestComponent(), isFirstNonDownPaymentPeriod,
-                        LoanCharge::isPenaltyCharge);
+                        LoanCharge::isPenaltyCharge, period);
 
                 period.updateChargePortion(feeChargesDueForRepaymentPeriod, feeChargesWaivedForRepaymentPeriod,
                         feeChargesWrittenOffForRepaymentPeriod, penaltyChargesDueForRepaymentPeriod, penaltyChargesWaivedForRepaymentPeriod,
@@ -85,6 +84,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
         }
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private Money cumulativeFeeChargesDueWithin(final LocalDate periodStart, final LocalDate periodEnd, final Set<LoanCharge> loanCharges,
             final MonetaryCurrency monetaryCurrency, LoanRepaymentScheduleInstallment period, final Money totalPrincipal,
             final Money totalInterest, boolean isInstallmentChargeApplicable, boolean isFirstPeriod, Money outstandingBalance,
@@ -99,7 +99,11 @@ public class LoanRepaymentScheduleProcessingWrapper {
                         cumulative = cumulative.plus(loanCharge.calculateCustomFeeChargeToInstallment(period.getInstallmentNumber(),
                                 totalPrincipal, totalInstallments, outstandingBalance));
                     } else {
-                        cumulative = cumulative.plus(getInstallmentFee(monetaryCurrency, period, loanCharge));
+                        if (loanCharge.getChargeCalculation().isFlatHono()) {
+                            cumulative = cumulative.plus(Money.zero(monetaryCurrency));
+                        } else {
+                            cumulative = cumulative.plus(getInstallmentFee(monetaryCurrency, period, loanCharge));
+                        }
                     }
                 } else if (loanCharge.isOverdueInstallmentCharge() && isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
                     cumulative = cumulative.plus(loanCharge.chargeAmount());
@@ -137,14 +141,17 @@ public class LoanRepaymentScheduleProcessingWrapper {
     }
 
     private Money cumulativeChargesWaivedWithin(final LocalDate periodStart, final LocalDate periodEnd, final Set<LoanCharge> loanCharges,
-            final MonetaryCurrency currency, boolean isInstallmentChargeApplicable, boolean isFirstPeriod,
-            Predicate<LoanCharge> predicate) {
+            final MonetaryCurrency currency, boolean isInstallmentChargeApplicable, boolean isFirstPeriod, Predicate<LoanCharge> predicate,
+            LoanRepaymentScheduleInstallment period) {
 
         Money cumulative = Money.zero(currency);
 
         for (final LoanCharge loanCharge : loanCharges) {
             if (predicate.test(loanCharge)) {
                 boolean isDue = loanChargeIsDue(periodStart, periodEnd, isFirstPeriod, loanCharge);
+                if (loanCharge.isPenaltyCharge()) {
+                    isDue = loanChargeIsDue(loanCharge, period.getInstallmentNumber());
+                }
                 if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
                     LoanInstallmentCharge loanChargePerInstallment = loanCharge.getInstallmentLoanCharge(periodEnd);
                     if (loanChargePerInstallment != null) {
@@ -161,13 +168,16 @@ public class LoanRepaymentScheduleProcessingWrapper {
 
     private Money cumulativeChargesWrittenOffWithin(final LocalDate periodStart, final LocalDate periodEnd,
             final Set<LoanCharge> loanCharges, final MonetaryCurrency currency, boolean isInstallmentChargeApplicable,
-            boolean isFirstPeriod, Predicate<LoanCharge> chargePredicate) {
+            boolean isFirstPeriod, Predicate<LoanCharge> chargePredicate, LoanRepaymentScheduleInstallment period) {
 
         Money cumulative = Money.zero(currency);
 
         for (final LoanCharge loanCharge : loanCharges) {
             if (chargePredicate.test(loanCharge)) {
                 boolean isDue = loanChargeIsDue(periodStart, periodEnd, isFirstPeriod, loanCharge);
+                if (loanCharge.isPenaltyCharge()) {
+                    isDue = loanChargeIsDue(loanCharge, period.getInstallmentNumber());
+                }
                 if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
                     LoanInstallmentCharge loanChargePerInstallment = loanCharge.getInstallmentLoanCharge(periodEnd);
                     if (loanChargePerInstallment != null) {
@@ -191,15 +201,20 @@ public class LoanRepaymentScheduleProcessingWrapper {
                 : loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd);
     }
 
-    private Money cumulativePenaltyChargesDueWithin(final LocalDate periodStart, final LocalDate periodEnd,
-            final Set<LoanCharge> loanCharges, final MonetaryCurrency currency, LoanRepaymentScheduleInstallment period,
-            final Money totalPrincipal, final Money totalInterest, boolean isInstallmentChargeApplicable, boolean isFirstPeriod) {
+    private boolean loanChargeIsDue(LoanCharge loanCharge, Integer installmentNumber) {
+        return loanCharge.isDueForCollectionForInstallmentByInstallmentNumber(installmentNumber);
+    }
+
+    @SuppressWarnings({ "squid:S3776" })
+    private Money cumulativePenaltyChargesDueWithin(final Set<LoanCharge> loanCharges, final MonetaryCurrency currency,
+            LoanRepaymentScheduleInstallment period, final Money totalPrincipal, final Money totalInterest,
+            boolean isInstallmentChargeApplicable, boolean isFirstPeriod) {
 
         Money cumulative = Money.zero(currency);
 
         for (final LoanCharge loanCharge : loanCharges) {
             if (loanCharge.isPenaltyCharge()) {
-                boolean isDue = loanChargeIsDue(periodStart, periodEnd, isFirstPeriod, loanCharge);
+                boolean isDue = loanChargeIsDue(loanCharge, period.getInstallmentNumber());
                 if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
                     cumulative = cumulative.plus(getInstallmentFee(currency, period, loanCharge));
                 } else if (loanCharge.isOverdueInstallmentCharge() && isDue && loanCharge.getChargeCalculation().isPercentageBased()) {
@@ -225,6 +240,9 @@ public class LoanRepaymentScheduleProcessingWrapper {
     }
 
     private BigDecimal getInstallmentFee(MonetaryCurrency currency, LoanRepaymentScheduleInstallment period, LoanCharge loanCharge) {
+        if (loanCharge.isFlatHono()) {
+            return BigDecimal.ZERO;
+        }
         if (loanCharge.getChargeCalculation().isPercentageBased()) {
             BigDecimal amount = BigDecimal.ZERO;
             if (loanCharge.getChargeCalculation().isPercentageOfAnotherCharge()) {

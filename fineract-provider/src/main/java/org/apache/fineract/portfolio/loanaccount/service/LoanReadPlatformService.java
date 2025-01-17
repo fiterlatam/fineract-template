@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.loanaccount.service;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -36,6 +37,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleD
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 
 public interface LoanReadPlatformService {
 
@@ -48,10 +50,6 @@ public interface LoanReadPlatformService {
 
     Collection<LoanTransactionData> retrieveLoanTransactions(Long loanId);
 
-    LoanAccountData retrieveTemplateWithClientAndProductDetails(Long clientId, Long productId);
-
-    LoanAccountData retrieveTemplateWithGroupAndProductDetails(Long groupId, Long productId);
-
     LoanTransactionData retrieveLoanTransactionTemplate(Long loanId);
 
     LoanTransactionData retrieveWaiveInterestDetails(Long loanId);
@@ -63,8 +61,6 @@ public interface LoanReadPlatformService {
     LoanTransactionData retrieveDisbursalTemplate(Long loanId, boolean paymentDetailsRequired);
 
     LoanApprovalData retrieveApprovalTemplate(Long loanId);
-
-    LoanAccountData retrieveTemplateWithCompleteGroupAndProductDetails(Long groupId, Long productId);
 
     LoanAccountData retrieveLoanProductDetailsTemplate(Long productId, Long clientId, Long groupId);
 
@@ -87,7 +83,11 @@ public interface LoanReadPlatformService {
      * The 'overdue-charge' is only ever applied once to an installment and as a result overdue installments with this
      * charge already applied are not returned.
      */
-    Collection<OverdueLoanScheduleData> retrieveAllLoansWithOverdueInstallments(Long penaltyWaitPeriod, Boolean backdatePenalties);
+    List<OverdueLoanScheduleData> retrieveAllLoansWithOverdueInstallments(Long penaltyWaitPeriod, Boolean backdatePenalties, int pageSize,
+            Long minLoanId);
+
+    List<LoanRescheduleData> retrieveLoansForInterestRecalculation(MaximumCreditRateConfigurationData maximumCreditRateConfigurationData,
+            int pageSize, Long minLoanId);
 
     Collection<OverdueLoanScheduleData> retrieveAllOverdueInstallmentsForLoan(Loan loan);
 
@@ -117,6 +117,8 @@ public interface LoanReadPlatformService {
 
     List<Long> fetchLoansForInterestRecalculation(Integer pageSize, Long maxLoanIdInList, String officeHierarchy);
 
+    BigDecimal calculateHonorariosAmount(Long loanId, BigDecimal repaymentAmount);
+
     LoanTransactionData retrieveLoanPrePaymentTemplate(LoanTransactionType repaymentTransactionType, Long loanId, LocalDate onDate);
 
     Collection<LoanTransactionData> retrieveWaiverLoanTransactions(Long loanId);
@@ -124,8 +126,6 @@ public interface LoanReadPlatformService {
     Collection<LoanSchedulePeriodData> fetchWaiverInterestRepaymentData(Long loanId);
 
     boolean isGuaranteeRequired(Long loanId);
-
-    LocalDate retrieveMinimumDateOfRepaymentTransaction(Long loanId);
 
     PaidInAdvanceData retrieveTotalPaidInAdvance(Long loanId);
 
@@ -141,17 +141,9 @@ public interface LoanReadPlatformService {
 
     LoanTransactionData retrieveLoanSpecialWriteOffTemplate(Long loanId);
 
-    LoanAccountData retrieveLoanByLoanAccount(String loanAccountNumber);
-
-    Long retrieveLoanIdByAccountNumber(String loanAccountNumber);
-
     String retrieveAccountNumberByAccountId(Long accountId);
 
-    Integer retrieveNumberOfActiveLoans();
-
     Integer retrieveNumberOfRepayments(Long loanId);
-
-    List<LoanAccountData> retrieveGLIMChildLoansByGLIMParentAccount(String parentloanAccountNumber);
 
     List<LoanRepaymentScheduleInstallmentData> getRepaymentDataResponse(Long loanId);
 
@@ -185,4 +177,8 @@ public interface LoanReadPlatformService {
     List<LoanReclaimData> retrieveClaimTemplate(String claimType);
 
     List<LoanReclaimData> retrieveExcludedTemplate(String claimType);
+
+    List<Long> findLoanIdsForAccrualPosting(LocalDate tillDate, int pageSize, Long minLoanId);
+
+    List<Long> retrieveIdsForActiveLoans(int pageSize, Long minLoanId);
 }

@@ -50,6 +50,10 @@ public final class ResultsetColumnHeaderData implements Serializable {
     @Getter
     private String fieldMask = StringUtils.EMPTY;
 
+    @Getter
+    @Setter
+    private String columnComment;
+
     public static ResultsetColumnHeaderData basic(final String columnName, final String columnType, DatabaseType dialect) {
         final Long columnLength = null;
         final boolean columnNullable = false;

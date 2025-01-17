@@ -18,48 +18,37 @@
  */
 package org.apache.fineract.portfolio.loanaccount.jobs.recalculateloaninterestaftermaximumlegalratechange;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
-import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
+@RequiredArgsConstructor
 public class RecalculateInterestForMaximumLegalRateConfig {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
-    private final LoanWritePlatformService loanWritePlatformService;
-
-    @Autowired
-    public RecalculateInterestForMaximumLegalRateConfig(JobRepository jobRepository, PlatformTransactionManager transactionManager,
-            LoanWritePlatformService loanWritePlatformService) {
-        this.jobRepository = jobRepository;
-        this.transactionManager = transactionManager;
-        this.loanWritePlatformService = loanWritePlatformService;
-    }
 
     @Bean
-    protected Step recalculateInterestForMaximumLegalRateStep() {
+    protected Step recalculateInterestForMaximumLegalRateStep(
+            RecalculateInterestForMaximumLegalRateTasklet recalculateInterestForMaximumLegalRateTasklet) {
         return new StepBuilder(JobName.RECALCULATE_LOAN_INTEREST_AFTER_MAXIMUM_LEGAL_RATE_CHANGE.name(), jobRepository)
-                .tasklet(recalculateInterestForMaximumLegalRateTasklet(), transactionManager).build();
+                .tasklet(recalculateInterestForMaximumLegalRateTasklet, transactionManager).build();
     }
 
     @Bean
-    public Job recalculateInterestForMaximumLegalRateJob() {
+    public Job recalculateInterestForMaximumLegalRateJob(
+            RecalculateInterestForMaximumLegalRateTasklet recalculateInterestForMaximumLegalRateTasklet) {
         return new JobBuilder(JobName.RECALCULATE_LOAN_INTEREST_AFTER_MAXIMUM_LEGAL_RATE_CHANGE.name(), jobRepository)
-                .start(recalculateInterestForMaximumLegalRateStep()).incrementer(new RunIdIncrementer()).build();
-    }
-
-    @Bean
-    public RecalculateInterestForMaximumLegalRateTasklet recalculateInterestForMaximumLegalRateTasklet() {
-        return new RecalculateInterestForMaximumLegalRateTasklet(loanWritePlatformService);
+                .start(recalculateInterestForMaximumLegalRateStep(recalculateInterestForMaximumLegalRateTasklet))
+                .incrementer(new RunIdIncrementer()).build();
     }
 }

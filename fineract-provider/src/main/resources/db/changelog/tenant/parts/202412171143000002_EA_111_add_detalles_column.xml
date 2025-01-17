@@ -118,33 +118,6 @@
         </sql>
     </changeSet>
 
-    <changeSet id="5" author="fineract">
-        <preConditions onFail="MARK_RAN">
-            <not>
-                <indexExists tableName="Detalles de Contacto" indexName="Detalles de Contacto_pkey"/>
-            </not>
-            <tableExists tableName="Detalles de Contacto"/>
-        </preConditions>
-        <sql>
-            <![CDATA[
-                CREATE UNIQUE INDEX "Detalles de Contacto_pkey" ON "Detalles de Contacto" USING btree (client_id);
-            ]]>
-        </sql>
-    </changeSet>
-
-    <changeSet id="6" author="fineract">
-        <preConditions onFail="MARK_RAN">
-            <not>
-                <indexExists tableName="Detalles_de_Contacto" indexName="Detalles_de_Contacto_pkey"/>
-            </not>
-            <tableExists tableName="Detalles_de_Contacto"/>
-        </preConditions>
-        <sql>
-            <![CDATA[
-                CREATE UNIQUE INDEX "Detalles_de_Contacto_pkey" ON "Detalles_de_Contacto" USING btree (client_id);
-            ]]>
-        </sql>
-    </changeSet>
     <changeSet id="upgrade_scale_from_2_to_8" author="bosco@fiter.io">
         <preConditions onFail="MARK_RAN">
             <columnExists tableName="m_charge" columnName="amount"/>
@@ -157,6 +130,34 @@
             <columnExists tableName="m_interest_rate" columnName="current_rate"/>
         </preConditions>
         <modifyDataType tableName="m_interest_rate" columnName="current_rate" newDataType="DECIMAL(10,8)"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="5" >
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="Detalles de Contacto"/>
+            <sqlCheck expectedResult="0">
+                <![CDATA[
+                    SELECT COUNT(*)
+                    FROM information_schema.table_constraints
+                    WHERE table_name = 'Detalles de Contacto' AND constraint_type = 'PRIMARY KEY';
+                ]]>
+            </sqlCheck>
+        </preConditions>
+        <addPrimaryKey columnNames="client_id" tableName="Detalles de Contacto" constraintName="detalles_de_contacto_pk1"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="6" >
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="Detalles_de_Contacto"/>
+            <sqlCheck expectedResult="0">
+                <![CDATA[
+                    SELECT COUNT(*)
+                    FROM information_schema.table_constraints
+                    WHERE table_name = 'Detalles_de_Contacto' AND constraint_type = 'PRIMARY KEY';
+                ]]>
+            </sqlCheck>
+        </preConditions>
+        <addPrimaryKey columnNames="client_id" tableName="Detalles_de_Contacto" constraintName="detalles_de_contacto_pk2"/>
     </changeSet>
 
 </databaseChangeLog>

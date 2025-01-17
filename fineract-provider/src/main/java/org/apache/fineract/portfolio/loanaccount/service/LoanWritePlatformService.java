@@ -32,11 +32,13 @@ import org.apache.fineract.portfolio.calendar.domain.CalendarInstance;
 import org.apache.fineract.portfolio.collectionsheet.command.CollectionSheetBulkDisbursalCommand;
 import org.apache.fineract.portfolio.collectionsheet.command.CollectionSheetBulkRepaymentCommand;
 import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceInstallmentData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.invoice.data.ClasificacionConceptosData;
 import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
+import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface LoanWritePlatformService {
@@ -125,13 +127,14 @@ public interface LoanWritePlatformService {
     @Transactional
     CommandProcessingResult undoChargeOff(JsonCommand command);
 
-    void recalculateInterestForMaximumLegalRate() throws JobExecutionException;
+    void recalculateInterestForMaximumLegalRate(List<LoanRescheduleData> loanLoanRescheduleDataList,
+            MaximumCreditRateConfigurationData maximumCreditRateConfigurationData) throws JobExecutionException;
 
     void recalculateInterestRate(Loan loan);
 
-    void persistDailyAccrual(LocalDate localDate);
+    void persistDailyInterestAccrual(Long loanId, LocalDate accrualDate);
 
-    void persistInstallmentalChargeAccrual(LocalDate localDate);
+    void persistInstallmentalChargeAccrual(Long loanId, LocalDate localDate, Long minimumDaysInArrearsToSuspendLoanAccount);
 
     void cancelDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds);
 

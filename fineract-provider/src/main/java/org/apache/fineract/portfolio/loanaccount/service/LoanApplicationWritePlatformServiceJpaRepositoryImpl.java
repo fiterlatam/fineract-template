@@ -42,6 +42,7 @@ import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumb
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainServiceJpa;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -160,6 +161,7 @@ import org.springframework.util.CollectionUtils;
 @Service
 public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements LoanApplicationWritePlatformService {
 
+    public static final String STRING_PRODUCT_MICROCREDITO = "microcredito";
     private final PlatformSecurityContext context;
     private final FromJsonHelper fromJsonHelper;
     private final LoanApplicationTransitionApiJsonValidator loanApplicationTransitionApiJsonValidator;
@@ -204,6 +206,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
     private final ClientBuyProcessRepository clientBuyProcessRepository;
     private final ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository;
+
+    private final ConfigurationDomainServiceJpa configurationDomainServiceJpa;
 
     @Transactional
     @Override
@@ -382,7 +386,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     newLoanApplication.setTopupLoanDetails(topupDetails);
                 }
             }
-            validateAllChargesAreSetupCorrectly(newLoanApplication);
+            validateAllChargesAreSetupCorrectly(newLoanApplication); // Just a remark here before calling validate
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
 
             if (loanProduct.isInterestRecalculationEnabled()) {
@@ -1937,6 +1941,48 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 Charge charge = loanCharge.getCharge();
                 charge.validateChargeIsSetupCorrectly();
             }
+
+            validateMicrocreditoProductCharges(loan);
+        }
+    }
+
+    private void validateMicrocreditoProductCharges(Loan loan) {
+        String filterCriteriaTmp = "capital pendiente";
+
+        if (loan.getLoanProduct().getName().toLowerCase().contains(STRING_PRODUCT_MICROCREDITO.toLowerCase())) {
+
+            if (loan.getLoanProduct().getName().equalsIgnoreCase(STRING_PRODUCT_MICROCREDITO)
+                    || loan.getLoanProduct().getName().equalsIgnoreCase(STRING_PRODUCT_MICROCREDITO.concat(" m"))) {
+                filterCriteriaTmp = "comision";
+            }
+
+            // Check if Comision Mi Pyme is set, depending on the Loan Amount against SMLV config and microcredito
+            // product
+            Long limit = configurationDomainServiceJpa.retrieveSMVLLimit();
+            if (loan.getProposedPrincipal().compareTo(new BigDecimal(limit)) >= 0) {
+
+                final String filterCriteria = filterCriteriaTmp.concat(" mi pyme >= 4smlv");
+
+                Long comissionPymeCounter = loan.getLoanCharges().stream()
+                        .filter(name -> name.getCharge().getName().toLowerCase().contains(filterCriteria)).count();
+
+                if (comissionPymeCounter.compareTo(2L) != 0) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.charge.smlv.incorrect",
+                            "Charges for this products are not set correctly");
+                }
+
+            } else {
+                final String filterCriteria = filterCriteriaTmp.concat(" mi pyme < 4smlv");
+
+                Long comissionPymeCounter = loan.getLoanCharges().stream()
+                        .filter(name -> name.getCharge().getName().toLowerCase().contains(filterCriteria)).count();
+
+                if (comissionPymeCounter.compareTo(2L) != 0) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.charge.smlv.incorrect",
+                            "Charges for this products are not set correctly");
+                }
+            }
+
         }
     }
 }

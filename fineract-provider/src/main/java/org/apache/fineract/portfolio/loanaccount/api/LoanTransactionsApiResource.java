@@ -38,13 +38,16 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.AllArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
@@ -69,13 +72,16 @@ import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRepaymentScheduleInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanTransactionNotFoundException;
+import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargePaidByReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 @Path("/v1/loans")
@@ -91,6 +97,7 @@ public class LoanTransactionsApiResource {
             LoanApiConstants.REVERSAL_EXTERNAL_ID_PARAMNAME, LoanApiConstants.REVERSED_ON_DATE_PARAMNAME, LoanApiConstants.CHANNEL_HASH));
 
     private static final String RESOURCE_NAME_FOR_PERMISSIONS = "LOAN";
+    private static final String TRANSACTION_DATE_PARAM = "transactionDate";
 
     private final PlatformSecurityContext context;
     private final LoanReadPlatformService loanReadPlatformService;
@@ -101,6 +108,8 @@ public class LoanTransactionsApiResource {
     private final LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService;
     private final ChannelReadWritePlatformService channelReadWritePlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
+    private final LoanAssembler loanAssembler;
+    private final JdbcTemplate jdbcTemplate;
 
     @GET
     @Path("{loanId}/transactions/template")
@@ -123,7 +132,7 @@ public class LoanTransactionsApiResource {
     public String retrieveTransactionTemplate(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
             @QueryParam("command") @Parameter(description = "command") final String commandParam, @Context final UriInfo uriInfo,
             @QueryParam("dateFormat") @Parameter(description = "dateFormat") final String rawDateFormat,
-            @QueryParam("transactionDate") @Parameter(description = "transactionDate") final DateParam transactionDateParam,
+            @QueryParam(LoanTransactionsApiResource.TRANSACTION_DATE_PARAM) @Parameter(description = LoanTransactionsApiResource.TRANSACTION_DATE_PARAM) final DateParam transactionDateParam,
             @QueryParam("locale") @Parameter(description = "locale") final String locale) {
 
         final DateFormat dateFormat = StringUtils.isBlank(rawDateFormat) ? null : new DateFormat(rawDateFormat);
@@ -153,7 +162,7 @@ public class LoanTransactionsApiResource {
             @PathParam("loanExternalId") @Parameter(description = "loanExternalId", required = true) final String loanExternalId,
             @QueryParam("command") @Parameter(description = "command") final String commandParam, @Context final UriInfo uriInfo,
             @QueryParam("dateFormat") @Parameter(description = "dateFormat") final String rawDateFormat,
-            @QueryParam("transactionDate") @Parameter(description = "transactionDate") final DateParam transactionDateParam,
+            @QueryParam(LoanTransactionsApiResource.TRANSACTION_DATE_PARAM) @Parameter(description = LoanTransactionsApiResource.TRANSACTION_DATE_PARAM) final DateParam transactionDateParam,
             @QueryParam("locale") @Parameter(description = "locale") final String locale) {
 
         final DateFormat dateFormat = StringUtils.isBlank(rawDateFormat) ? null : new DateFormat(rawDateFormat);
@@ -420,6 +429,7 @@ public class LoanTransactionsApiResource {
         return undoWaiveCharge(null, loanExternalId, null, transactionExternalId);
     }
 
+    @SuppressWarnings({ "squid:S2479" })
     private String retrieveTransaction(final Long loanId, final String loanExternalIdStr, final Long transactionId,
             final String transactionExternalIdStr, final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
@@ -429,11 +439,49 @@ public class LoanTransactionsApiResource {
 
         Long resolvedLoanId = getResolvedLoanId(loanId, loanExternalId);
         Long resolvedLoanTransactionId = getResolvedLoanTransactionId(transactionId, transactionExternalId);
-
+        final Loan loan = this.loanAssembler.assembleFrom(loanId);
         LoanTransactionData transactionData = this.loanReadPlatformService.retrieveLoanTransaction(resolvedLoanId,
                 resolvedLoanTransactionId);
         transactionData.setLoanChargePaidByList(
                 this.loanChargePaidByReadPlatformService.getLoanChargesPaidByTransactionId(transactionData.getId()));
+        if (transactionData.getType() != null && transactionData.getType().isDisbursement()) {
+            final BigDecimal netDisbursalAmount = loan.getNetDisbursalAmount();
+            transactionData.setNetDisbursalAmount(netDisbursalAmount);
+            final String sql = """
+                    SELECT
+                    	mc.id AS "chargeId",
+                    	mlc.amount AS "amount",
+                    	mc.name AS "chargeName",
+                    	ml.net_disbursal_amount AS "netDisbursalAmount"
+                    FROM m_loan_transaction mlt
+                    INNER JOIN m_loan ml ON ml.id = mlt.loan_id
+                    INNER JOIN m_loan_charge_paid_by mlcpb ON mlcpb.loan_transaction_id = mlt.id
+                    INNER JOIN m_loan_charge mlc ON mlc.id = mlcpb.loan_charge_id
+                    INNER JOIN m_charge mc ON mc.id = mlc.charge_id
+                    WHERE mlt.loan_id = ? AND mlt.is_reversed = FALSE AND mlt.transaction_type_enum = 5
+                    """;
+            final List<LoanTransactionData.DisbursementFeeData> disbursementFees = this.jdbcTemplate.query(sql, resultSet -> {
+                List<LoanTransactionData.DisbursementFeeData> disbursementFeeDataList = new ArrayList<>();
+                while (resultSet.next()) {
+                    final Long chargeId = resultSet.getLong("chargeId");
+                    final BigDecimal amount = resultSet.getBigDecimal("amount");
+                    final String chargeName = resultSet.getString("chargeName");
+                    final BigDecimal netPrincipalDisbursalAmount = resultSet.getBigDecimal("netDisbursalAmount");
+                    final LoanTransactionData.DisbursementFeeData disbursementFeeData = LoanTransactionData.DisbursementFeeData.builder()
+                            .chargeId(chargeId).amount(amount).chargeName(chargeName).netDisbursalAmount(netPrincipalDisbursalAmount)
+                            .build();
+                    disbursementFeeDataList.add(disbursementFeeData);
+                }
+                return disbursementFeeDataList;
+            }, loanId);
+            transactionData.setDisbursementFees(disbursementFees);
+            transactionData.setTotalDisbursementFeesAmount(BigDecimal.ZERO);
+            if (CollectionUtils.isNotEmpty(disbursementFees)) {
+                final BigDecimal totalDisbursementFees = disbursementFees.stream().map(LoanTransactionData.DisbursementFeeData::getAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                transactionData.setTotalDisbursementFeesAmount(totalDisbursementFees);
+            }
+        }
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         if (settings.isTemplate()) {
             final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
@@ -449,6 +497,7 @@ public class LoanTransactionsApiResource {
         return this.toApiJsonSerializer.serialize(settings, transactionData, this.responseDataParameters);
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private String executeTransaction(final Long loanId, final String loanExternalIdStr, final String commandParam,
             final String apiRequestBodyAsJson) {
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
@@ -508,6 +557,7 @@ public class LoanTransactionsApiResource {
         return this.toApiJsonSerializer.serialize(result);
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private String retrieveTransactionTemplate(Long loanId, String loanExternalIdStr, String commandParam, UriInfo uriInfo,
             DateFormat dateFormat, DateParam transactionDateParam, String locale) {
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
@@ -554,7 +604,7 @@ public class LoanTransactionsApiResource {
             if (transactionDateParam == null) {
                 transactionDate = DateUtils.getBusinessLocalDate();
             } else {
-                transactionDate = transactionDateParam.getDate("transactionDate", dateFormat, locale);
+                transactionDate = transactionDateParam.getDate(LoanTransactionsApiResource.TRANSACTION_DATE_PARAM, dateFormat, locale);
             }
             transactionData = this.loanReadPlatformService.retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, resolvedLoanId,
                     transactionDate);
@@ -567,7 +617,7 @@ public class LoanTransactionsApiResource {
             if (transactionDateParam == null) {
                 transactionDate = DateUtils.getBusinessLocalDate();
             } else {
-                transactionDate = transactionDateParam.getDate("transactionDate", dateFormat, locale);
+                transactionDate = transactionDateParam.getDate(LoanTransactionsApiResource.TRANSACTION_DATE_PARAM, dateFormat, locale);
             }
             transactionData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(resolvedLoanId, transactionDate, false);
         } else if (CommandParameterUtil.is(commandParam, "anulado")) {
@@ -575,7 +625,7 @@ public class LoanTransactionsApiResource {
             if (transactionDateParam == null) {
                 transactionDate = DateUtils.getBusinessLocalDate();
             } else {
-                transactionDate = transactionDateParam.getDate("transactionDate", dateFormat, locale);
+                transactionDate = transactionDateParam.getDate(LoanTransactionsApiResource.TRANSACTION_DATE_PARAM, dateFormat, locale);
             }
             transactionData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(resolvedLoanId, transactionDate, true);
         } else if (CommandParameterUtil.is(commandParam, "special-write-off")) {

@@ -3,7 +3,6 @@ package org.apache.fineract.portfolio.collectionhousemanagement.service;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.util.*;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -34,65 +33,69 @@ public class CollectionHouseHistoryReadWriteServiceImpl implements CollectionHou
     private final AccountDetailsReadPlatformService accountDetailsReadPlatformService;
     private final ClientRepositoryWrapper clientRepositoryWrapper;
 
+    @SuppressWarnings({ "squid:S3776", "squid:S1141" })
     @Override
     public CommandProcessingResult createCollectionHouseHistory(JsonCommand command) {
         collectionHouseHistoryValidator.validateForCreateCollectionHouse(command.json());
         JsonArray updatesArray = command.arrayOfParameterNamed("collectionHouseUpdates");
         List<Map<String, Object>> savedHistories = new ArrayList<>();
 
-        for (int i = 0; i < updatesArray.size(); i++) {
-            JsonObject updateObject = updatesArray.get(i).getAsJsonObject();
-            String clientAccountNo = updateObject.get("clientAccountNo").getAsString();
-            String nit = updateObject.get("nit").getAsString();
-            String collectionHouseCode = updateObject.get("collectionHouseCode").getAsString();
+        try {
+            collectionHouseHistoryRepository.deleteAll();
+            collectionHouseHistoryRepository.flush();
 
-            try {
-                ColletionHouseHistory checkCollectionHouse = this.findCollectionHouseHistoryByAcctountNo(clientAccountNo);
-                Client client = clientRepositoryWrapper.getClientByAccountNumber(clientAccountNo);
-                Boolean hasLoanAccountsInArrears = false;
-                if (client != null) {
-                    AccountSummaryCollectionData clientAccount = accountDetailsReadPlatformService
-                            .retrieveClientAccountDetails(client.getId());
-                    Collection<LoanAccountSummaryData> loanAccounts = clientAccount.getLoanAccounts();
-                    if (!loanAccounts.isEmpty()) {
-                        for (LoanAccountSummaryData loanAccountSummaryData : loanAccounts) {
-                            LoanStatusEnumData statusEnumData = loanAccountSummaryData.getStatus();
-                            Long status = statusEnumData.getId();
-                            if (loanAccountSummaryData.getInArrears() == true && LoanStatus.fromInt(status.intValue()).isActive()) {
-                                hasLoanAccountsInArrears = true;
+            for (int i = 0; i < updatesArray.size(); i++) {
+                JsonObject updateObject = updatesArray.get(i).getAsJsonObject();
+                String clientAccountNo = updateObject.get("clientAccountNo").getAsString();
+                String nit = updateObject.get("nit").getAsString();
+                String collectionHouseCode = updateObject.get("collectionHouseCode").getAsString();
+
+                try {
+                    Client client = clientRepositoryWrapper.getClientByAccountNumber(clientAccountNo);
+                    boolean hasLoanAccountsInArrears = false;
+                    if (client != null) {
+                        AccountSummaryCollectionData clientAccount = accountDetailsReadPlatformService
+                                .retrieveClientAccountDetails(client.getId());
+                        Collection<LoanAccountSummaryData> loanAccounts = clientAccount.getLoanAccounts();
+                        if (!loanAccounts.isEmpty()) {
+                            for (LoanAccountSummaryData loanAccountSummaryData : loanAccounts) {
+                                LoanStatusEnumData statusEnumData = loanAccountSummaryData.getStatus();
+                                Long status = statusEnumData.getId();
+                                if (Boolean.TRUE.equals(loanAccountSummaryData.getInArrears())
+                                        && LoanStatus.fromInt(status.intValue()).isActive()) {
+                                    hasLoanAccountsInArrears = true;
+                                }
                             }
                         }
-                    } else {
-                        hasLoanAccountsInArrears = false;
                     }
-                }
 
-                if (checkCollectionHouse == null && hasLoanAccountsInArrears) {
-                    ColletionHouseHistory colletionHouseHistory = new ColletionHouseHistory();
-                    Map<String, Object> savedRecord = new HashMap<>();
-                    colletionHouseHistory.setClientAccountNumber(clientAccountNo);
-                    colletionHouseHistory.setCollectionNit(nit);
-                    colletionHouseHistory.setCollectionCode(collectionHouseCode);
-                    collectionHouseHistoryRepository.saveAndFlush(colletionHouseHistory);
-                } else {
-                    if (checkCollectionHouse != null && !hasLoanAccountsInArrears) {
-                        collectionHouseHistoryRepository.delete(checkCollectionHouse);
+                    if (hasLoanAccountsInArrears) {
+                        ColletionHouseHistory colletionHouseHistory = new ColletionHouseHistory();
+                        colletionHouseHistory.setClientAccountNumber(clientAccountNo);
+                        colletionHouseHistory.setCollectionNit(nit);
+                        colletionHouseHistory.setCollectionCode(collectionHouseCode);
+                        collectionHouseHistoryRepository.saveAndFlush(colletionHouseHistory);
                     }
-                }
 
-            } catch (final JpaSystemException | DataIntegrityViolationException ex) {
-                throw new PlatformDataIntegrityException("error.msg.collectionHouseHistory.save.failed",
-                        "Failed to save Collection House History for clientAccountNo: " + clientAccountNo, ex);
+                } catch (final JpaSystemException | DataIntegrityViolationException ex) {
+                    throw new PlatformDataIntegrityException("error.msg.collectionHouseHistory.save.failed",
+                            "Failed to save Collection House History for clientAccountNo: " + clientAccountNo, ex);
+                }
             }
+            List<ColletionHouseHistory> colletionHouseHistories = this.findAllCollectionHouseHistory();
+            savedHistories = colletionHouseHistories.stream().map(colletionHouseHistory -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("clientAccountNumber", colletionHouseHistory.getClientAccountNumber());
+                map.put("collectionHouseCode", colletionHouseHistory.getCollectionCode());
+                map.put("collectionNit", colletionHouseHistory.getCollectionNit());
+                return map;
+            }).toList();
+
+        } catch (Exception e) {
+            log.error("Error during collection house history refresh", e);
+            throw e;
         }
-        List<ColletionHouseHistory> colletionHouseHistories = this.findAllCollectionHouseHistory();
-        savedHistories = colletionHouseHistories.stream().map(colletionHouseHistory -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("clientAccountNumber", colletionHouseHistory.getClientAccountNumber());
-            map.put("collectionHouseCode", colletionHouseHistory.getCollectionCode());
-            map.put("collectionNit", colletionHouseHistory.getCollectionNit());
-            return map;
-        }).collect(Collectors.toList());
+
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(command.entityId())
                 .withCollectionHouse(savedHistories).build();
     }
@@ -101,16 +104,11 @@ public class CollectionHouseHistoryReadWriteServiceImpl implements CollectionHou
     public ColletionHouseHistory findCollectionHouseHistoryByAcctountNo(String accountNo) {
         Optional<ColletionHouseHistory> getColletionHouseHistory = collectionHouseHistoryRepository
                 .getCollectionHouseHistoryByAccountNo((accountNo));
-        if (getColletionHouseHistory.isPresent()) {
-            ColletionHouseHistory colletionHouseHistory = getColletionHouseHistory.get();
-            return colletionHouseHistory;
-        }
-        return null;
+        return getColletionHouseHistory.orElse(null);
     }
 
     @Override
     public List<ColletionHouseHistory> findAllCollectionHouseHistory() {
-        List<ColletionHouseHistory> colletionHouseHistories = collectionHouseHistoryRepository.findAll();
-        return colletionHouseHistories;
+        return collectionHouseHistoryRepository.findAll();
     }
 }

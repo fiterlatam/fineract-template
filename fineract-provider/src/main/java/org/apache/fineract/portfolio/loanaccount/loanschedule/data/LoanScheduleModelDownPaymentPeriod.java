@@ -62,6 +62,11 @@ public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleMod
     }
 
     @Override
+    public boolean isDisbursementPeriod() {
+        return false;
+    }
+
+    @Override
     public boolean isTotalGracePeriod() {
         return false;
     }

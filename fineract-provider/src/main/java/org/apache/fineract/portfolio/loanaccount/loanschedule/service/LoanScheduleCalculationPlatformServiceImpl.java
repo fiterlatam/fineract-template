@@ -577,7 +577,16 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                 }
             }
         }
-
+        final LoanSchedulePeriodData disbursementPeriod = loanScheduleData.getPeriods().stream()
+                .filter(periodData -> periodData.getPeriod() == null).findFirst().orElse(null);
+        if (disbursementPeriod != null) {
+            disbursementPeriod.setHonorariosDue(disbursementPeriod.getFeeChargesDue());
+            disbursementPeriod.setHonorariosPaid(disbursementPeriod.getFeeChargesPaid());
+            disbursementPeriod.setHonorariosWaived(disbursementPeriod.getFeeChargesWaived());
+            disbursementPeriod.setHonorariosWrittenOff(disbursementPeriod.getFeeChargesWrittenOff());
+            disbursementPeriod.setHonorariosOutstanding(disbursementPeriod.getFeeChargesOutstanding());
+            totalHonorariosCharged = totalHonorariosCharged.add(disbursementPeriod.getHonorariosDue());
+        }
         loanScheduleData.setTotalMandatoryInsuranceCharged(totalMandatoryInsuranceCharged);
         loanScheduleData.setTotalVoluntaryInsuranceCharged(totalVoluntaryInsuranceCharged);
         loanScheduleData.setTotalAvalCharged(totalAvalCharged);

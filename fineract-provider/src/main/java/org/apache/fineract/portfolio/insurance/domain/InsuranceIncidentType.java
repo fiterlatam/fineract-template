@@ -15,8 +15,12 @@ public enum InsuranceIncidentType {
             "Cancelación definitiva por cancelación del crédito"), //
     FINAL_GUARANTEE_CLAIM_CANCELLATION(4, "labels.inputs.insurance.incident.final.guarantee.claim.cancellation",
             "Cancelación definitiva por reclamación avaladora"), //
-    FINAL_REFINANCED_CANCELLATION(5, "labels.inputs.insurance.incident.final.refinanced.cancellation",
-            "Cancelación definitiva por rediferido/refinanciado"), //
+    NOVEDAD_REDIFERIDO(5, "labels.inputs.insurance.incident.novedad.rediferido", "Novedad rediferido"), // Renamed
+                                                                                                        // notification
+                                                                                                        // type from
+                                                                                                        // FINAL_REFINANCED_CANCELLATION
+                                                                                                        // to
+                                                                                                        // NOVEDAD_REDIFERIDO
     BAD_SALE_CANCELLATION(6, "labels.inputs.insurance.incident.bad.sale.cancellation", "Cancelación por mala venta"), //
     PORTFOLIO_WRITE_OFF_CANCELLATION(7, "labels.inputs.insurance.incident.portfolio.write.off.cancellation",
             "Cancelación por castigo de cartera"), //
@@ -24,7 +28,11 @@ public enum InsuranceIncidentType {
     PERMANENT_CANCELLATION_DUE_TO_MAX_AGE(9, "labels.inputs.insurance.incident.permanent.cancellation.max.age",
             "Cancelación definitiva por edad máxima de permanencia"), //
     DEATH_CANCELLATION(10, "labels.inputs.insurance.incident.death.cancellation", "Cancelación definitiva por fallecimiento"), //
-    SUSPENSION_REMOVED(11, "labels.inputs.insurance.incident.removed.suspension", "Salida de suspensión"); //
+    SUSPENSION_REMOVED(11, "labels.inputs.insurance.incident.removed.suspension", "Salida de suspensión"), //
+    DEFINITIVE_FINAL_INVALIDATION(12, "labels.inputs.insurance.incident.final.annulment",
+            "Anulación definitiva por invalidez del contrato"), //
+    DEFINITIVE_RESTRUCTURING_CANCELLATION(13, "labels.inputs.insurance.incident.definitive.restructuring.cancellation",
+            "Cancelación definitiva por reestructuración"); //
 
     private final Integer value;
     private final String code;
@@ -53,46 +61,35 @@ public enum InsuranceIncidentType {
     }
 
     public static InsuranceIncidentType fromInt(final Integer value) {
-
-        InsuranceIncidentType enumeration = InsuranceIncidentType.INVALID;
         switch (value) {
             case 1:
-                enumeration = InsuranceIncidentType.DEFINITIVE_CANCELLATION_DEFAULT;
-            break;
+                return InsuranceIncidentType.DEFINITIVE_CANCELLATION_DEFAULT;
             case 2:
-                enumeration = InsuranceIncidentType.DEFINITIVE_VOLUNTARY_CANCELLATION;
-            break;
+                return InsuranceIncidentType.DEFINITIVE_VOLUNTARY_CANCELLATION;
             case 3:
-                enumeration = InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION;
-            break;
+                return InsuranceIncidentType.DEFINITIVE_FINAL_CANCELLATION;
             case 4:
-                enumeration = InsuranceIncidentType.FINAL_GUARANTEE_CLAIM_CANCELLATION;
-            break;
+                return InsuranceIncidentType.FINAL_GUARANTEE_CLAIM_CANCELLATION;
             case 5:
-                enumeration = InsuranceIncidentType.FINAL_REFINANCED_CANCELLATION;
-            break;
+                return InsuranceIncidentType.NOVEDAD_REDIFERIDO;
             case 6:
-                enumeration = InsuranceIncidentType.BAD_SALE_CANCELLATION;
-            break;
+                return InsuranceIncidentType.BAD_SALE_CANCELLATION;
             case 7:
-                enumeration = InsuranceIncidentType.PORTFOLIO_WRITE_OFF_CANCELLATION;
-            break;
+                return InsuranceIncidentType.PORTFOLIO_WRITE_OFF_CANCELLATION;
             case 8:
-                enumeration = InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT;
-            break;
+                return InsuranceIncidentType.TEMPORARY_SUSPENSION_DUE_TO_DEFAULT;
             case 9:
-                enumeration = InsuranceIncidentType.PERMANENT_CANCELLATION_DUE_TO_MAX_AGE;
-            break;
+                return InsuranceIncidentType.PERMANENT_CANCELLATION_DUE_TO_MAX_AGE;
             case 10:
-                enumeration = InsuranceIncidentType.DEATH_CANCELLATION;
-            break;
+                return InsuranceIncidentType.DEATH_CANCELLATION;
             case 11:
-                enumeration = InsuranceIncidentType.SUSPENSION_REMOVED;
-            break;
+                return InsuranceIncidentType.SUSPENSION_REMOVED;
+            case 12:
+                return InsuranceIncidentType.DEFINITIVE_FINAL_INVALIDATION;
+            case 13:
+                return InsuranceIncidentType.DEFINITIVE_RESTRUCTURING_CANCELLATION;
             default:
-                enumeration = InsuranceIncidentType.INVALID;
-            break;
+                return InsuranceIncidentType.INVALID;
         }
-        return enumeration;
     }
 }

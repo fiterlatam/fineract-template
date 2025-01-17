@@ -2,8 +2,8 @@ package org.apache.fineract.portfolio.loanaccount.invoice.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
-@Getter
 @AllArgsConstructor
 public enum LoanDocumentConcept {
 
@@ -13,6 +13,11 @@ public enum LoanDocumentConcept {
     HONORARIOS("HON", "HONORARIOS"), //
     SEGUROS_VOLUNTARIOS("SEGV", "SEGURO VOLUNTARIO");
 
+    @Getter
     private final String sku;
     private final String name;
+
+    public String getName() {
+        return StringUtils.stripAccents(this.name);
+    }
 }

@@ -29,11 +29,13 @@ import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcessRe
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeEntityReadWritePlatformService;
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeMapReadWritePlatformService;
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMapRepository;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainServiceJpa;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepository;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
@@ -97,6 +99,14 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationR
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
 import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorDomainService;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
+import org.apache.fineract.portfolio.loanaccount.jobs.applychargetooverdueloaninstallment.ApplyChargeToOverdueLoanInstallmentProcessor;
+import org.apache.fineract.portfolio.loanaccount.jobs.applychargetooverdueloaninstallment.ApplyChargeToOverdueLoanInstallmentProcessorTask;
+import org.apache.fineract.portfolio.loanaccount.jobs.dailyaccrual.DailyInterestAccrualPoster;
+import org.apache.fineract.portfolio.loanaccount.jobs.dailyaccrual.DailyInterestAccrualPosterTask;
+import org.apache.fineract.portfolio.loanaccount.jobs.installmentalchargeaccrual.InstallmentChargeAccrualPoster;
+import org.apache.fineract.portfolio.loanaccount.jobs.installmentalchargeaccrual.InstallmentChargeAccrualPosterTask;
+import org.apache.fineract.portfolio.loanaccount.jobs.recalculateloaninterestaftermaximumlegalratechange.RecalculateInterestForMLRProcessor;
+import org.apache.fineract.portfolio.loanaccount.jobs.recalculateloaninterestaftermaximumlegalratechange.RecalculateInterestForMLRProcessorTask;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleAssembler;
@@ -251,7 +261,8 @@ public class LoanAccountConfiguration {
             RateAssembler rateAssembler, GLIMAccountInfoWritePlatformService glimAccountInfoWritePlatformService,
             GLIMAccountInfoRepository glimRepository, LoanRepository loanRepository, GSIMReadPlatformService gsimReadPlatformService,
             LoanLifecycleStateMachine defaultLoanLifecycleStateMachine, ClientBuyProcessRepository clientBuyProcessRepository,
-            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository) {
+            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository,
+            ConfigurationDomainServiceJpa configurationDomainServiceJpa) {
         return new LoanApplicationWritePlatformServiceJpaRepositoryImpl(context, fromJsonHelper, loanApplicationTransitionApiJsonValidator,
                 loanProductCommandFromApiJsonDeserializer, fromApiJsonDeserializer, loanRepositoryWrapper, noteRepository,
                 calculationPlatformService, loanAssembler, clientRepository, loanProductRepository, loanChargeAssembler,
@@ -262,7 +273,7 @@ public class LoanAccountConfiguration {
                 entityDatatableChecksWritePlatformService, globalConfigurationRepository, entityMappingRepository,
                 fineractEntityRelationRepository, loanProductReadPlatformService, rateAssembler, glimAccountInfoWritePlatformService,
                 glimRepository, loanRepository, gsimReadPlatformService, defaultLoanLifecycleStateMachine, clientBuyProcessRepository,
-                clientAllyPointOfSalesRepository);
+                clientAllyPointOfSalesRepository, configurationDomainServiceJpa);
     }
 
     @Bean
@@ -349,7 +360,7 @@ public class LoanAccountConfiguration {
             ExternalIdFactory externalIdFactory, AccountTransferDetailRepository accountTransferDetailRepository,
             LoanChargeAssembler loanChargeAssembler, ReplayedTransactionBusinessEventService replayedTransactionBusinessEventService,
             PaymentDetailWritePlatformService paymentDetailWritePlatformService, NoteRepository noteRepository,
-            LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService
+            LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService, JdbcTemplate jdbcTemplate
 
     ) {
         return new LoanChargeWritePlatformServiceImpl(loanChargeApiJsonValidator, loanAssembler, chargeRepository,
@@ -358,7 +369,7 @@ public class LoanAccountConfiguration {
                 loanChargeReadPlatformService, defaultLoanLifecycleStateMachine, accountAssociationsReadPlatformService, fromApiJsonHelper,
                 configurationDomainService, loanRepaymentScheduleTransactionProcessorFactory, externalIdFactory,
                 accountTransferDetailRepository, loanChargeAssembler, replayedTransactionBusinessEventService,
-                paymentDetailWritePlatformService, noteRepository, loanAccrualTransactionBusinessEventService);
+                paymentDetailWritePlatformService, noteRepository, loanAccrualTransactionBusinessEventService, jdbcTemplate);
     }
 
     @Bean
@@ -450,7 +461,9 @@ public class LoanAccountConfiguration {
             InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository, LoanScheduleGeneratorFactory loanScheduleFactory,
             BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper,
             FacturaElectronicMensualRepository facturaElectronicMensualRepository,
-            LoanProductParameterizationRepository productParameterizationRepository) {
+            LoanProductParameterizationRepository productParameterizationRepository,
+            CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository,
+            DelinquencyReadPlatformService delinquencyReadPlatformService) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
@@ -468,7 +481,8 @@ public class LoanAccountConfiguration {
                 jdbcTemplate, commandsSourceWritePlatformService, loanRescheduleRequestReadPlatformService, clientReadPlatformService,
                 channelReadWritePlatformService, platformSecurityContext, globalConfigurationRepository, loanBlockWritePlatformService,
                 loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository, loanScheduleFactory,
-                blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository, productParameterizationRepository);
+                blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository, productParameterizationRepository,
+                customChargeHonorarioMapRepository, delinquencyReadPlatformService);
     }
 
     @Bean
@@ -490,5 +504,65 @@ public class LoanAccountConfiguration {
     public LoanDownPaymentHandlerService loanDownPaymentHandlerService(LoanTransactionRepository loanTransactionRepository,
             BusinessEventNotifierService businessEventNotifierService) {
         return new LoanDownPaymentHandlerServiceImpl(loanTransactionRepository, businessEventNotifierService);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(DailyInterestAccrualPoster.class)
+    public DailyInterestAccrualPoster dailyAccrualPoster(LoanWritePlatformService loanWritePlatformService) {
+        return new DailyInterestAccrualPoster(loanWritePlatformService);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(DailyInterestAccrualPosterTask.class)
+    public DailyInterestAccrualPosterTask dailyAccrualPosterTask(DailyInterestAccrualPoster dailyAccrualPoster) {
+        return new DailyInterestAccrualPosterTask(dailyAccrualPoster);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(InstallmentChargeAccrualPoster.class)
+    public InstallmentChargeAccrualPoster installmentChargeAccrualPoster(LoanWritePlatformService loanWritePlatformService) {
+        return new InstallmentChargeAccrualPoster(loanWritePlatformService);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(InstallmentChargeAccrualPosterTask.class)
+    public InstallmentChargeAccrualPosterTask installmentChargeAccrualPosterTask(
+            InstallmentChargeAccrualPoster installmentChargeAccrualPoster) {
+        return new InstallmentChargeAccrualPosterTask(installmentChargeAccrualPoster);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(ApplyChargeToOverdueLoanInstallmentProcessor.class)
+    public ApplyChargeToOverdueLoanInstallmentProcessor applyChargeToOverdueLoanInstallmentProcessor(
+            LoanChargeWritePlatformService loanChargeWritePlatformService, ChargeRepositoryWrapper chargeRepository) {
+        return new ApplyChargeToOverdueLoanInstallmentProcessor(loanChargeWritePlatformService, chargeRepository);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(ApplyChargeToOverdueLoanInstallmentProcessorTask.class)
+    public ApplyChargeToOverdueLoanInstallmentProcessorTask applyChargeToOverdueLoanInstallmentProcessorTask(
+            ApplyChargeToOverdueLoanInstallmentProcessor applyChargeToOverdueLoanInstallmentProcessor) {
+        return new ApplyChargeToOverdueLoanInstallmentProcessorTask(applyChargeToOverdueLoanInstallmentProcessor);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(RecalculateInterestForMLRProcessor.class)
+    public RecalculateInterestForMLRProcessor recalculateInterestForMLRProcessor(LoanWritePlatformService loanWritePlatformService) {
+        return new RecalculateInterestForMLRProcessor(loanWritePlatformService);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(RecalculateInterestForMLRProcessorTask.class)
+    public RecalculateInterestForMLRProcessorTask recalculateInterestForMLRProcessorTask(
+            RecalculateInterestForMLRProcessor recalculateInterestForMLRProcessor) {
+        return new RecalculateInterestForMLRProcessorTask(recalculateInterestForMLRProcessor);
     }
 }

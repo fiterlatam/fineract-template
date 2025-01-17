@@ -22,6 +22,8 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -30,6 +32,7 @@ import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.portfolio.account.data.AccountTransferData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
@@ -145,12 +148,25 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "occurred_on_suspended_account", nullable = false)
     private boolean occurredOnSuspendedAccount;
 
+    @Setter
+    @Getter
+    @Column(name = "invoiced_by_transaction_id")
+    private Long invoicedByTransactionId;
+
     // This property is added to process vertical payments horizontally for Past Due and Due installments.
     // Advance Payments will be handled through VerticalPayment Scheme
     @Transient
     private boolean doNotProcessAdvanceInstallments;
 
     protected LoanTransaction() {}
+
+    // Transient variable to hold details of loan charge amounts paid by original transaction for this installment
+    @Transient
+    transient List<LoanChargePaidByData> chargesPaidByOriginalTransaction;
+
+    // Transient variable to hold original interest amount paid by the original transaction
+    @Transient
+    private Map<Integer, BigDecimal> interestPaidByOriginalTransaction = new HashMap<>();
 
     public static LoanTransaction incomePosting(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
             final BigDecimal interestPortion, final BigDecimal feeChargesPortion, final BigDecimal penaltyChargesPortion,
@@ -314,6 +330,20 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         newTransaction.loanScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();
         newTransaction.setClaimType(loanTransaction.claimType());
         newTransaction.setRecalculateEMI(loanTransaction.recalculateEMI());
+
+        // SU-533 set amounts paid by original transaction so that copied transaction also pays the same amounts
+        // to avoid rollbacks
+        newTransaction.setChargesPaidByOriginalTransaction(getLoanChargePaidByDataList(loanTransaction.getLoanChargesPaid()));
+        if (loanTransaction.getLoanTransactionToRepaymentScheduleMappings() != null) {
+            HashMap<Integer, BigDecimal> interestPaidByInstallment = new HashMap<>();
+            for (LoanTransactionToRepaymentScheduleMapping mapping : loanTransaction.getLoanTransactionToRepaymentScheduleMappings()) {
+                if (mapping.getInterestPortion(loanTransaction.getLoan().getCurrency()).isGreaterThanZero()) {
+                    interestPaidByInstallment.put(mapping.getLoanRepaymentScheduleInstallment().getInstallmentNumber(),
+                            mapping.getInterestPortion());
+                }
+            }
+            newTransaction.setInterestPaidByOriginalTransaction(interestPaidByInstallment);
+        }
         return newTransaction;
     }
 
@@ -395,6 +425,16 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return new LoanTransaction(loan, office, LoanTransactionType.WRITEOFF, null, writeOffDate, externalId);
     }
 
+    public static LoanTransaction creditNote(final Loan loan, final Office office, final LocalDate writeOffDate,
+            final ExternalId externalId, final BigDecimal amount) {
+        return new LoanTransaction(loan, office, LoanTransactionType.CREDIT_NOTE, amount, writeOffDate, externalId);
+    }
+
+    public static LoanTransaction creditNote(final Loan loan, final Office office, final LocalDate writeOffDate,
+            final ExternalId externalId) {
+        return new LoanTransaction(loan, office, LoanTransactionType.CREDIT_NOTE, null, writeOffDate, externalId);
+    }
+
     public static LoanTransaction chargeOff(final Loan loan, final LocalDate chargeOffDate, final ExternalId externalId) {
         BigDecimal principalPortion = loan.getLoanSummary().getTotalPrincipalOutstanding().compareTo(BigDecimal.ZERO) != 0
                 ? loan.getLoanSummary().getTotalPrincipalOutstanding()
@@ -471,6 +511,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean hasOccurredOnSuspendedAccount() {
         return this.occurredOnSuspendedAccount;
+    }
+
+    public void resetInvoicedByTransactionId() {
+        this.invoicedByTransactionId = null;
     }
 
     public void resetDerivedComponents() {
@@ -735,7 +779,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         if (isChargePayment()) {
             for (final LoanChargePaidBy chargePaidBy : this.loanChargesPaid) {
                 isPenalty = chargePaidBy.getLoanCharge().isPenaltyCharge();
-                break;
             }
         }
         return isPenalty;
@@ -747,18 +790,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isChargeOff() {
         return getTypeOf().isChargeOff() && isNotReversed();
-    }
-
-    public boolean isIdentifiedBy(final Long identifier) {
-        return getId().equals(identifier);
-    }
-
-    public boolean isBelongingToLoanOf(final Loan check) {
-        return this.loan.getId().equals(check.getId());
-    }
-
-    public boolean isNotBelongingToLoanOf(final Loan check) {
-        return !isBelongingToLoanOf(check);
     }
 
     public boolean isNonZero() {
@@ -897,7 +928,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean isNotRefundForActiveLoan() {
-        // TODO Auto-generated method stub
         return !isRefundForActiveLoan();
     }
 
@@ -932,8 +962,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
             if (updatedrepaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getId() != null
                     && repaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getDueDate()
                             .equals(updatedrepaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getDueDate())
-                    && updatedrepaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getId()
-                            .equals(repaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getId())) {
+                    && Objects.equals(updatedrepaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getId(),
+                            repaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getId())) {
                 repaymentScheduleMapping.setComponents(updatedrepaymentScheduleMapping.getPrincipalPortion(),
                         updatedrepaymentScheduleMapping.getInterestPortion(), updatedrepaymentScheduleMapping.getFeeChargesPortion(),
                         updatedrepaymentScheduleMapping.getPenaltyChargesPortion());
@@ -981,10 +1011,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public LocalDate getSubmittedOnDate() {
         return submittedOnDate;
-    }
-
-    public boolean hasLoanTransactionRelations() {
-        return (loanTransactionRelations != null && loanTransactionRelations.size() > 0);
     }
 
     public boolean hasChargebackLoanTransactionRelations() {
@@ -1042,7 +1068,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public BigDecimal getAdvancePrincipalAmountPaidForInstallment(Integer installmentNumber) {
-        BigDecimal principalPortion = BigDecimal.ZERO;
+        BigDecimal principalPortionV2 = BigDecimal.ZERO;
         if (this.loanTransactionToRepaymentScheduleMappings != null) {
             Optional<LoanTransactionToRepaymentScheduleMapping> optionalMapping = this.loanTransactionToRepaymentScheduleMappings.stream()
                     .filter(i -> i.getLoanRepaymentScheduleInstallment().getInstallmentNumber().equals(installmentNumber)
@@ -1052,10 +1078,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
                             && i.getPenaltyChargesPortion(this.loan.getCurrency()).isZero())
                     .findFirst();
             if (optionalMapping.isPresent()) {
-                principalPortion = optionalMapping.get().getPrincipalPortion();
+                principalPortionV2 = optionalMapping.get().getPrincipalPortion();
             }
         }
-        return principalPortion;
+        return principalPortionV2;
     }
 
     public boolean isDailyAccrual() {
@@ -1120,7 +1146,30 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         this.doNotProcessAdvanceInstallments = doNotProcessAdvanceInstallments;
     }
 
-    // TODO missing hashCode(), equals(Object obj), but probably OK as long as
-    // this is never stored in a Collection.
+    public List<LoanChargePaidByData> chargesPaidByOriginalTransaction() {
+        return Objects.requireNonNullElseGet(this.chargesPaidByOriginalTransaction, ArrayList::new);
+    }
+
+    public void setChargesPaidByOriginalTransaction(List<LoanChargePaidByData> chargesPaidByOriginalTransaction) {
+        this.chargesPaidByOriginalTransaction = chargesPaidByOriginalTransaction;
+    }
+
+    public Map<Integer, BigDecimal> interestPaidByOriginalTransaction() {
+        return interestPaidByOriginalTransaction;
+    }
+
+    public void setInterestPaidByOriginalTransaction(Map<Integer, BigDecimal> interestPaidByOriginalTransaction) {
+        this.interestPaidByOriginalTransaction = interestPaidByOriginalTransaction;
+    }
+
+    private static List<LoanChargePaidByData> getLoanChargePaidByDataList(Set<LoanChargePaidBy> originalList) {
+        List<LoanChargePaidByData> list = new ArrayList<>();
+        if (originalList != null && !originalList.isEmpty()) {
+            for (LoanChargePaidBy paidBy : originalList) {
+                list.add(new LoanChargePaidByData(paidBy));
+            }
+        }
+        return list;
+    }
 
 }
