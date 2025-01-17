@@ -18,12 +18,15 @@
  */
 package org.apache.fineract.infrastructure.codes.service;
 
+import org.apache.fineract.infrastructure.codes.domain.Code;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
 public interface CodeValueWritePlatformService {
 
     CommandProcessingResult createCodeValue(JsonCommand command);
+
+    void createCodeValue(Code code, String label, String description, Long appUserId);
 
     CommandProcessingResult updateCodeValue(Long codeValueId, JsonCommand command);
 

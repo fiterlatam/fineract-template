@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.codes.service;
 
 import java.util.Map;
+import java.util.Objects;
 import org.apache.fineract.infrastructure.codes.domain.Code;
 import org.apache.fineract.infrastructure.codes.domain.CodeRepository;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
@@ -90,6 +91,30 @@ public class CodeValueWritePlatformServiceJpaRepositoryImpl implements CodeValue
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .build();
+        }
+    }
+
+    @Transactional
+    @Override
+    @CacheEvict(value = "code_values", allEntries = true)
+    public void createCodeValue(Code code, String label, String description, Long appUserId) {
+
+        try {
+            this.context.authenticatedUser();
+
+            if (Objects.isNull(label) || Objects.isNull(description) || label.isEmpty() || description.isEmpty()) {
+                new PlatformDataIntegrityException("error.msg.user.code.codevalue.data.integrity.issue",
+                        "Error whislt creating new Code Value from user name");
+            }
+
+            final CodeValue codeValue = CodeValue.builder().code(code).label(label).description(description).score(appUserId.toString())
+                    .isActive(true).build();
+
+            this.codeValueRepository.saveAndFlush(codeValue);
+
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            new PlatformDataIntegrityException("error.msg.user.code.codevalue.data.integrity.issue",
+                    "Error whislt creating new Code Value from user name");
         }
     }
 
