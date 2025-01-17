@@ -170,6 +170,15 @@
         </sql>
     </changeSet>
 
+    <changeSet author="danielsta@fiter.io" id="21">
+        <sql>
+            <![CDATA[
+                COMMENT ON COLUMN "Validacion Contacta".created_at IS 'Creado en';
+                COMMENT ON COLUMN "Validacion Contacta".updated_at IS 'Actualizado en';
+            ]]>
+        </sql>
+    </changeSet>
+
     <changeSet author="danielsta@fiter.io" id="30">
         <sql>
             <![CDATA[
