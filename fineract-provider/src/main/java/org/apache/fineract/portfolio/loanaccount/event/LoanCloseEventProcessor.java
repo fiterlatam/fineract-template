@@ -1,0 +1,133 @@
+package org.apache.fineract.portfolio.loanaccount.event;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.domain.ExternalId;
+import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.rowset.SqlRowSet;
+import org.springframework.stereotype.Component;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Component()
+@Slf4j
+@RequiredArgsConstructor
+public class LoanCloseEventProcessor extends BaseCustomWebhookEventProcessorImpl {
+
+    private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final JdbcTemplate jdbcTemplate;
+
+    @Override
+    protected List<Map<String, String>> getSupportedEvents() {
+        Map<String, String> loanCloseEvent = Map.of("entityName", "LOAN", "actionName", "CLOSE");
+        return Collections.singletonList(loanCloseEvent);
+    }
+
+    @Override
+    public Map<String, Object> transform(String entityName, String actionName, JsonCommand command, Object result) {
+        if (result instanceof CommandProcessingResult successResult) {
+            return generateSuccessResponse(CommandProcessingResult.fromCommandProcessingResult(successResult));
+        }
+        return Collections.emptyMap();
+    }
+
+    public Map<String, Object> generateSuccessResponse(CommandProcessingResult successResult) {
+        Map<String, Object> response = new HashMap<>();
+        Long loanId = successResult.getLoanId();
+        Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+        Client client = loan.getClient();
+        String firstName = client.getFirstname();
+        String lastName = client.getLastname();
+        String email = client.getEmailAddress();
+        String phoneNumber = client.getMobileNo();
+        ExternalId externalId = client.getExternalId();
+        Long customerId = client.getId();
+        String productName = loan.getLoanProduct().getName();
+
+        response.put("loanId", loanId);
+        response.put("customerId", customerId);
+        response.put("firstName", firstName);
+        response.put("lastName", lastName);
+        if(email != null) {
+            response.put("email", email);
+        }
+        if(phoneNumber != null) {
+            response.put("phoneNumber", phoneNumber);
+        }
+        if (externalId.getValue() != null) {
+            response.put("externalId", externalId.getValue());
+        }
+        response.put("productName", productName);
+
+        String document = null;
+        String documentType = null;
+        String sql = """ 
+                select mc.id AS clientId, ccp."Cedula" AS document, cv.code_value as documentType
+                FROM m_client mc
+                LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+                LEFT JOIN m_code_value cv ON cv.id = ccp."Customer Identifier_cd_Tipo identificacion"
+                where mc.id = ?
+                """;
+        SqlRowSet rs = this.jdbcTemplate.queryForRowSet(sql, new Object[] { client.getId() });
+        while (rs.next()) {
+            document = rs.getString("document");
+            documentType = rs.getString("documentType");
+        }
+        if(document != null) {
+            response.put("documentId", document); // client data table - campos_cliente_persona
+        }
+        if(documentType != null) {
+            response.put("documentType", documentType); // client data table - campos_cliente_persona
+        }
+
+        String monthlyIncome = null;
+        String assets = null;
+        sql = """
+              select ml.id AS loanId, ifn.ingresos as monthlyIncome, ifn.activos as assets
+              FROM m_loan ml
+              LEFT JOIN "Informacion Financiera" ifn ON ifn.loan_id = ml.id
+              where ml.id = ?
+              """;
+        rs = this.jdbcTemplate.queryForRowSet(sql, new Object[] { loanId });
+        while (rs.next()) {
+            monthlyIncome = rs.getString("monthlyIncome");
+            assets = rs.getString("assets");
+        }
+        if(monthlyIncome != null) {
+            response.put("monthlyIncome", monthlyIncome); // loan data table - Informacion Financiera
+        }
+        if(assets != null) {
+            response.put("assets", assets); // loan data table - Informacion Financiera
+        }
+
+        String promoterCode = null;
+        String promoterCodeOriginal = null;
+        sql = """
+            select ml.id AS loanId, ian.codigo_promotor as promoterCode, ian.codigo_promotor_original as promoterCodeOriginal
+            FROM m_loan ml
+            LEFT JOIN "Informacion Adicional" ian ON ian.loan_id = ml.id
+            where ml.id = ?
+            """;
+        rs = this.jdbcTemplate.queryForRowSet(sql, new Object[] { loanId });
+        while (rs.next()) {
+            promoterCode = rs.getString("promoterCode");
+            promoterCodeOriginal = rs.getString("promoterCodeOriginal");
+        }
+        if(promoterCode != null) {
+            response.put("promoterCode", promoterCode); // loan data table - Informacion Adicional
+        }
+        if(promoterCodeOriginal != null) {
+            response.put("promoterCodeOriginal", promoterCodeOriginal); // loan data table - Informacion Adicional
+        }
+        return response;
+    }
+}
