@@ -110,7 +110,6 @@ import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.data.PostDatedChecksStatus;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -122,6 +121,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
+
+    private static final String ERROR_MESSAGE_TRANSACTION_DATE_CANNOT_BE_EARLIER_THAN_CHARGE_OFF = "error.msg.transaction.date.cannot.be.earlier.than.charge.off.date";
+    private static final String LOAN_DESCRIPTION = "Loan: ";
+    private static final String ERROR_MESSAGE_BACKDATE_NOT_ALLOWED = " backdated transaction is not allowed. Transaction date cannot be earlier than the charge-off date of the loan";
 
     private final LoanAssembler loanAccountAssembler;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
@@ -150,9 +153,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final LoanBlockingReasonRepository loanBlockingReasonRepository;
     private final PlatformSecurityContext platformSecurityContext;
     private final JdbcTemplate jdbcTemplate;
-    @Autowired
-    private CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
+    private final CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
 
+    @SuppressWarnings({ "squid:S6809" })
     @Transactional
     @Override
     public LoanTransaction makeRepayment(final LoanTransactionType repaymentTransactionType, final Loan loan,
@@ -178,6 +181,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         this.loanCollateralManagementRepository.saveAll(loanCollateralManagementSet);
     }
 
+    @SuppressWarnings({ "squid:S3776", "squid:S6809" })
     @Transactional
     @Override
     public LoanTransaction makeRepayment(final LoanTransactionType repaymentTransactionType, Loan loan, final LocalDate transactionDate,
@@ -190,15 +194,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         if (repaymentEvent != null) {
             businessEventNotifierService.notifyPreBusinessEvent(repaymentEvent);
         }
-
-        // TODO: Is it required to validate transaction date with meeting dates
-        // if repayments is synced with meeting?
-        /*
-         * if(loan.isSyncDisbursementWithMeeting()){ // validate actual disbursement date against meeting date
-         * CalendarInstance calendarInstance = this.calendarInstanceRepository.findCalendarInstaneByLoanId
-         * (loan.getId(), CalendarEntityType.LOANS.getValue()); this.loanEventApiJsonValidator
-         * .validateRepaymentDateWithMeetingDate(transactionDate, calendarInstance); }
-         */
 
         final List<Long> existingTransactionIds = new ArrayList<>();
         final List<Long> existingReversedTransactionIds = new ArrayList<>();
@@ -228,12 +223,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 scheduleGeneratorDTO, isHolidayValidationDone);
 
         saveLoanTransactionWithDataIntegrityViolationChecks(newRepaymentTransaction);
-
-        /***
-         * TODO Vishwas Batch save is giving me a HibernateOptimisticLockingFailureException, looping and saving for the
-         * time being, not a major issue for now as this loop is entered only in edge cases (when a payment is made
-         * before the latest payment recorded against the loan)
-         ***/
         if (changedTransactionDetail != null) {
             for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
                 saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.getValue());
@@ -269,8 +258,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             }
         }
 
-        // disable all active standing orders linked to this loan if status
-        // changes to closed
         disableStandingInstructionsLinkedToClosedLoan(loan);
 
         if (AccountType.fromInt(loan.getLoanType()).isIndividualAccount()) {
@@ -309,8 +296,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     @Override
     public void updateRepaymentInstalmentCharge(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
             Integer numberOfRepayment) {
-        if (loanRepaymentScheduleInstallment.getInstallmentNumber() != numberOfRepayment) {
-
+        if (!Objects.equals(loanRepaymentScheduleInstallment.getInstallmentNumber(), numberOfRepayment)) {
             MonetaryCurrency currency = loanRepaymentScheduleInstallment.getLoan().getCurrency();
             BigDecimal feeChargePortion = BigDecimal.ZERO;
             Collection<LoanCharge> loanCharges = loanRepaymentScheduleInstallment.getLoan().getLoanCharges();
@@ -539,9 +525,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         boolean isAccountTransfer = true;
         checkClientOrGroupActive(loan);
         if (loan.isChargedOff() && DateUtils.isBefore(transactionDate, loan.getChargedOffOnDate())) {
-            throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
-                    + loan.getId()
-                    + " backdated transaction is not allowed. Transaction date cannot be earlier than the charge-off date of the loan",
+            throw new GeneralPlatformDomainRuleException(
+                    LoanAccountDomainServiceJpa.ERROR_MESSAGE_TRANSACTION_DATE_CANNOT_BE_EARLIER_THAN_CHARGE_OFF,
+                    LoanAccountDomainServiceJpa.LOAN_DESCRIPTION + loan.getId()
+                            + LoanAccountDomainServiceJpa.ERROR_MESSAGE_BACKDATE_NOT_ALLOWED,
                     loan.getId());
         }
         businessEventNotifierService.notifyPreBusinessEvent(new LoanChargePaymentPreBusinessEvent(loan));
@@ -617,17 +604,15 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
     private void checkClientOrGroupActive(final Loan loan) {
         final Client client = loan.client();
-        if (client != null) {
-            if (client.isNotActive()) {
-                throw new ClientNotActiveException(client.getId());
-            }
+        if (client != null && client.isNotActive()) {
+            throw new ClientNotActiveException(client.getId());
         }
+
         final Group group = loan.group();
-        if (group != null) {
-            if (group.isNotActive()) {
-                throw new GroupNotActiveException(group.getId());
-            }
+        if (group != null && group.isNotActive()) {
+            throw new GroupNotActiveException(group.getId());
         }
+
     }
 
     @Override
@@ -638,9 +623,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final Loan loan = this.loanAccountAssembler.assembleFrom(accountId);
         checkClientOrGroupActive(loan);
         if (loan.isChargedOff() && DateUtils.isBefore(transactionDate, loan.getChargedOffOnDate())) {
-            throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
-                    + loan.getId()
-                    + " backdated transaction is not allowed. Transaction date cannot be earlier than the charge-off date of the loan",
+            throw new GeneralPlatformDomainRuleException(
+                    LoanAccountDomainServiceJpa.ERROR_MESSAGE_TRANSACTION_DATE_CANNOT_BE_EARLIER_THAN_CHARGE_OFF,
+                    LoanAccountDomainServiceJpa.LOAN_DESCRIPTION + loan.getId()
+                            + LoanAccountDomainServiceJpa.ERROR_MESSAGE_BACKDATE_NOT_ALLOWED,
                     loan.getId());
         }
         businessEventNotifierService.notifyPreBusinessEvent(new LoanRefundPreBusinessEvent(loan));
@@ -678,6 +664,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         return newRefundTransaction;
     }
 
+    @SuppressWarnings({ "squid:S6809" })
     @Transactional
     @Override
     public LoanTransaction makeDisburseTransaction(final Long loanId, final LocalDate transactionDate, final BigDecimal transactionAmount,
@@ -692,9 +679,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final Loan loan = this.loanAccountAssembler.assembleFrom(loanId);
         checkClientOrGroupActive(loan);
         if (loan.isChargedOff() && DateUtils.isBefore(transactionDate, loan.getChargedOffOnDate())) {
-            throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
-                    + loan.getId()
-                    + " backdated transaction is not allowed. Transaction date cannot be earlier than the charge-off date of the loan",
+            throw new GeneralPlatformDomainRuleException(
+                    LoanAccountDomainServiceJpa.ERROR_MESSAGE_TRANSACTION_DATE_CANNOT_BE_EARLIER_THAN_CHARGE_OFF,
+                    LoanAccountDomainServiceJpa.LOAN_DESCRIPTION + loan.getId()
+                            + LoanAccountDomainServiceJpa.ERROR_MESSAGE_BACKDATE_NOT_ALLOWED,
                     loan.getId());
         }
         boolean isAccountTransfer = true;
@@ -726,9 +714,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     public void reverseTransfer(final LoanTransaction loanTransaction) {
         if (loanTransaction.getLoan().isChargedOff()
                 && DateUtils.isBefore(loanTransaction.getTransactionDate(), loanTransaction.getLoan().getChargedOffOnDate())) {
-            throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date",
-                    "Loan transaction: " + loanTransaction.getId()
-                            + " reversal is not allowed before or on the date when the loan got charged-off",
+            throw new GeneralPlatformDomainRuleException(
+                    LoanAccountDomainServiceJpa.ERROR_MESSAGE_TRANSACTION_DATE_CANNOT_BE_EARLIER_THAN_CHARGE_OFF, "Loan transaction: "
+                            + loanTransaction.getId() + " reversal is not allowed before or on the date when the loan got charged-off",
                     loanTransaction.getId());
         }
         loanTransaction.reverse();
@@ -781,8 +769,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     @Override
     public void recalculateAccruals(Loan loan, boolean isInterestCalculationHappened) {
         LocalDate accruedTill = loan.getAccruedTill();
-        if (!loan.isPeriodicAccrualAccountingEnabledOnLoanProduct() || !isInterestCalculationHappened || accruedTill == null || loan.isNpa()
-                || !loan.getStatus().isActive() || loan.isChargedOff()) {
+        if (Boolean.TRUE.equals(!loan.isPeriodicAccrualAccountingEnabledOnLoanProduct() || !isInterestCalculationHappened
+                || accruedTill == null || loan.isNpa() || !loan.getStatus().isActive()) || loan.isChargedOff()) {
             return;
         }
 
@@ -829,6 +817,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private void generateLoanScheduleAccrualData(final LocalDate accruedTill,
             final Collection<LoanScheduleAccrualData> loanScheduleAccrualDatas, final Long loanId, Long officeId,
             final LocalDate accrualStartDate, final PeriodFrequencyType repaymentFrequency, final Integer repayEvery,
@@ -883,12 +872,15 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             final String noteText, final ExternalId externalId, PaymentDetail paymentDetail) {
         if (transactionDate.isAfter(DateUtils.getBusinessLocalDate())) {
             throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.in.the.future",
-                    "Loan: " + loan.getId() + ", Credit Balance Refund transaction cannot be created for the future.", loan.getId());
+                    LoanAccountDomainServiceJpa.LOAN_DESCRIPTION + loan.getId()
+                            + ", Credit Balance Refund transaction cannot be created for the future.",
+                    loan.getId());
         }
         if (loan.isChargedOff() && DateUtils.isBefore(transactionDate, loan.getChargedOffOnDate())) {
-            throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
-                    + loan.getId()
-                    + " backdated transaction is not allowed. Transaction date cannot be earlier than the charge-off date of the loan",
+            throw new GeneralPlatformDomainRuleException(
+                    LoanAccountDomainServiceJpa.ERROR_MESSAGE_TRANSACTION_DATE_CANNOT_BE_EARLIER_THAN_CHARGE_OFF,
+                    LoanAccountDomainServiceJpa.LOAN_DESCRIPTION + loan.getId()
+                            + LoanAccountDomainServiceJpa.ERROR_MESSAGE_BACKDATE_NOT_ALLOWED,
                     loan.getId());
         }
 
@@ -930,9 +922,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
         final Money refundAmount = Money.of(loan.getCurrency(), transactionAmount);
         if (loan.isChargedOff() && DateUtils.isBefore(transactionDate, loan.getChargedOffOnDate())) {
-            throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
-                    + loan.getId()
-                    + " backdated transaction is not allowed. Transaction date cannot be earlier than the charge-off date of the loan",
+            throw new GeneralPlatformDomainRuleException(
+                    LoanAccountDomainServiceJpa.ERROR_MESSAGE_TRANSACTION_DATE_CANNOT_BE_EARLIER_THAN_CHARGE_OFF,
+                    LoanAccountDomainServiceJpa.LOAN_DESCRIPTION + loan.getId()
+                            + LoanAccountDomainServiceJpa.ERROR_MESSAGE_BACKDATE_NOT_ALLOWED,
                     loan.getId());
         }
         final LoanTransaction newRefundTransaction = LoanTransaction.refundForActiveLoan(loan.getOffice(), refundAmount, paymentDetail,
@@ -967,13 +960,15 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         return newRefundTransaction;
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     @Override
     public LoanTransaction foreCloseLoan(Loan loan, final LocalDate foreClosureDate, final String noteText, final ExternalId externalId,
             Map<String, Object> changes, boolean isForCloureAction) {
         if (loan.isChargedOff() && DateUtils.isBefore(foreClosureDate, loan.getChargedOffOnDate())) {
-            throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
-                    + loan.getId()
-                    + " backdated transaction is not allowed. Transaction date cannot be earlier than the charge-off date of the loan",
+            throw new GeneralPlatformDomainRuleException(
+                    LoanAccountDomainServiceJpa.ERROR_MESSAGE_TRANSACTION_DATE_CANNOT_BE_EARLIER_THAN_CHARGE_OFF,
+                    LoanAccountDomainServiceJpa.LOAN_DESCRIPTION + loan.getId()
+                            + LoanAccountDomainServiceJpa.ERROR_MESSAGE_BACKDATE_NOT_ALLOWED,
                     loan.getId());
         }
         businessEventNotifierService.notifyPreBusinessEvent(new LoanForeClosurePreBusinessEvent(loan));
@@ -986,7 +981,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         existingReversedTransactionIds.addAll(loan.findExistingReversedTransactionIds());
         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
         final LoanRepaymentScheduleInstallment foreCloseDetail = loan.fetchLoanForeclosureDetail(foreClosureDate, scheduleGeneratorDTO);
-        if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()
+        if (Boolean.TRUE.equals(loan.isPeriodicAccrualAccountingEnabledOnLoanProduct())
                 && (loan.getAccruedTill() == null || !DateUtils.isEqual(foreClosureDate, loan.getAccruedTill()))) {
             loan.reverseAccrualsAfter(foreClosureDate);
             Money[] accruedReceivables = loan.getReceivableIncome(foreClosureDate);
@@ -1036,7 +1031,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         LoanTransaction payment = null;
 
         if (payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).isGreaterThanZero()) {
-            BigDecimal honoFee = BigDecimal.ZERO;
+            BigDecimal honoFee;
             if (isForCloureAction) {
                 honoFee = calculateHonoForForeclosure(loan,
                         payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).getAmount(), foreClosureDate);
@@ -1052,12 +1047,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         List<Long> transactionIds = new ArrayList<>();
         final ChangedTransactionDetail changedTransactionDetail = loan.handleForeClosureTransactions(payment,
                 defaultLoanLifecycleStateMachine, scheduleGeneratorDTO);
-
-        /***
-         * TODO Vishwas Batch save is giving me a HibernateOptimisticLockingFailureException, looping and saving for the
-         * time being, not a major issue for now as this loop is entered only in edge cases (when a payment is made
-         * before the latest payment recorded against the loan)
-         ***/
 
         for (LoanTransaction newTransaction : newTransactions) {
             saveLoanTransactionWithDataIntegrityViolationChecks(newTransaction);
@@ -1094,6 +1083,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         return payment;
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private BigDecimal calculateHonoForForeclosure(Loan loan, BigDecimal transactionAmount, LocalDate transactionDate) {
         /// SU-516 Calculate Hono Charge
         BigDecimal cumulativeHonoFee = BigDecimal.ZERO;
@@ -1122,8 +1112,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                         installmentNumber = installment.getInstallmentNumber();
                     }
                     BigDecimal installmentOutstandingAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount();
-                    FeeCalculationHonorario fee = new FeeCalculationHonorario(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-                            BigDecimal.ZERO, BigDecimal.ZERO);
+                    FeeCalculationHonorario fee;
                     if (remainingAmount.isGreaterThanZero()
                             && remainingAmount.isGreaterThanOrEqualTo(installment.getTotalOutstanding(loan.getCurrency()))) {
                         fee = this.updateCalculationHonoLoanChargeOverDueVat(installmentOutstandingAmount, installment, installmentNumber,
@@ -1190,15 +1179,16 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             loan.addLoanTransaction(applyLoanChargeTransaction);
         }
         return cumulativeHonoFee.add(cumulativeVatFee);
-        //////
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     @Override
     public LoanTransaction claimLoan(Loan loan, final LocalDate claimDate, final ExternalId externalId, Map<String, Object> changes) {
         if (loan.isChargedOff() && DateUtils.isBefore(claimDate, loan.getChargedOffOnDate())) {
-            throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
-                    + loan.getId()
-                    + " backdated transaction is not allowed. Transaction date cannot be earlier than the charge-off date of the loan",
+            throw new GeneralPlatformDomainRuleException(
+                    LoanAccountDomainServiceJpa.ERROR_MESSAGE_TRANSACTION_DATE_CANNOT_BE_EARLIER_THAN_CHARGE_OFF,
+                    LoanAccountDomainServiceJpa.LOAN_DESCRIPTION + loan.getId()
+                            + LoanAccountDomainServiceJpa.ERROR_MESSAGE_BACKDATE_NOT_ALLOWED,
                     loan.getId());
         }
         MonetaryCurrency currency = loan.getCurrency();
@@ -1208,7 +1198,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final List<Long> existingReversedTransactionIds = new ArrayList<>(loan.findExistingReversedTransactionIds());
         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
         final LoanRepaymentScheduleInstallment foreCloseDetail = loan.fetchLoanForeclosureDetail(claimDate, scheduleGeneratorDTO);
-        if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()
+        if (Boolean.TRUE.equals(loan.isPeriodicAccrualAccountingEnabledOnLoanProduct())
                 && (loan.getAccruedTill() == null || !DateUtils.isEqual(claimDate, loan.getAccruedTill()))) {
             loan.reverseAccrualsAfter(claimDate);
             Money[] accruedReceivables = loan.getReceivableIncome(claimDate);
@@ -1292,13 +1282,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         List<Long> transactionIds = new ArrayList<>();
         final ChangedTransactionDetail changedTransactionDetail = loan.handleClaimTransactions(payment, defaultLoanLifecycleStateMachine,
                 scheduleGeneratorDTO);
-
-        /***
-         * TODO Vishwas Batch save is giving me a HibernateOptimisticLockingFailureException, looping and saving for the
-         * time being, not a major issue for now as this loop is entered only in edge cases (when a payment is made
-         * before the latest payment recorded against the loan)
-         ***/
-
         for (LoanTransaction newTransaction : newTransactions) {
             saveLoanTransactionWithDataIntegrityViolationChecks(newTransaction);
             transactionIds.add(newTransaction.getId());
@@ -1341,13 +1324,14 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         }
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     @Override
     public void applyFinalIncomeAccrualTransaction(Loan loan) {
-        if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()
+        if (Boolean.TRUE.equals(loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()
                 // to avoid collision with processIncomeAccrualTransactionOnLoanClosure()
                 && !(loan.getLoanInterestRecalculationDetails() != null
                         && loan.getLoanInterestRecalculationDetails().isCompoundingToBePostedAsTransaction())
-                && !loan.isNpa() && !loan.isChargedOff()) {
+                && !loan.isNpa()) && !loan.isChargedOff()) {
 
             MonetaryCurrency currency = loan.getCurrency();
             Money interestPortion = Money.zero(currency);
@@ -1380,12 +1364,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 Map<Long, Money> accrualDetails = loan.getActiveCharges().stream()
                         .collect(Collectors.toMap(LoanCharge::getId, v -> Money.zero(currency)));
 
-                loan.getLoanTransactions(LoanTransaction::isAccrual).forEach(transaction -> {
-                    transaction.getLoanChargesPaid().forEach(loanChargePaid -> {
-                        accrualDetails.computeIfPresent(loanChargePaid.getLoanCharge().getId(),
-                                (mappedKey, mappedValue) -> mappedValue.add(Money.of(currency, loanChargePaid.getAmount())));
-                    });
-                });
+                loan.getLoanTransactions(LoanTransaction::isAccrual)
+                        .forEach(transaction -> transaction.getLoanChargesPaid()
+                                .forEach(loanChargePaid -> accrualDetails.computeIfPresent(loanChargePaid.getLoanCharge().getId(),
+                                        (mappedKey, mappedValue) -> mappedValue.add(Money.of(currency, loanChargePaid.getAmount())))));
 
                 loan.getActiveCharges().forEach(loanCharge -> {
                     Money amount = loanCharge.getAmount(currency).minus(loanCharge.getAmountWaived(currency));
@@ -1425,12 +1407,11 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 loan.addLoanTransaction(accrualTransaction);
                 businessEventNotifierService.notifyPostBusinessEvent(new LoanAccrualTransactionCreatedBusinessEvent(accrualTransaction));
 
-                loan.getRepaymentScheduleInstallments().forEach(installment -> {
-                    installment.updateAccrualPortion(
-                            installment.getInterestCharged(currency).minus(installment.getInterestWaived(currency)),
-                            installment.getFeeChargesCharged(currency).minus(installment.getFeeChargesWaived(currency)),
-                            installment.getPenaltyChargesCharged(currency).minus(installment.getPenaltyChargesWaived(currency)));
-                });
+                loan.getRepaymentScheduleInstallments()
+                        .forEach(installment -> installment.updateAccrualPortion(
+                                installment.getInterestCharged(currency).minus(installment.getInterestWaived(currency)),
+                                installment.getFeeChargesCharged(currency).minus(installment.getFeeChargesWaived(currency)),
+                                installment.getPenaltyChargesCharged(currency).minus(installment.getPenaltyChargesWaived(currency))));
             }
         }
     }
@@ -1443,13 +1424,15 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         };
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     @Override
     public LoanTransaction writeoffPunishLoan(Loan loan, final LocalDate writeOffDate, final String noteText, final ExternalId externalId,
             Map<String, Object> changes) {
         if (loan.isChargedOff() && DateUtils.isBefore(writeOffDate, loan.getChargedOffOnDate())) {
-            throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
-                    + loan.getId()
-                    + " backdated transaction is not allowed. Transaction date cannot be earlier than the charge-off date of the loan",
+            throw new GeneralPlatformDomainRuleException(
+                    LoanAccountDomainServiceJpa.ERROR_MESSAGE_TRANSACTION_DATE_CANNOT_BE_EARLIER_THAN_CHARGE_OFF,
+                    LoanAccountDomainServiceJpa.LOAN_DESCRIPTION + loan.getId()
+                            + LoanAccountDomainServiceJpa.ERROR_MESSAGE_BACKDATE_NOT_ALLOWED,
                     loan.getId());
         }
         MonetaryCurrency currency = loan.getCurrency();
@@ -1459,7 +1442,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final List<Long> existingReversedTransactionIds = new ArrayList<>(loan.findExistingReversedTransactionIds());
         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
         final LoanRepaymentScheduleInstallment foreCloseDetail = loan.fetchLoanForeclosureDetail(writeOffDate, scheduleGeneratorDTO);
-        if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()
+        if (Boolean.TRUE.equals(loan.isPeriodicAccrualAccountingEnabledOnLoanProduct())
                 && (loan.getAccruedTill() == null || !DateUtils.isEqual(writeOffDate, loan.getAccruedTill()))) {
             loan.reverseAccrualsAfter(writeOffDate);
             Money[] accruedReceivables = loan.getReceivableIncome(writeOffDate);
@@ -1512,13 +1495,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         List<Long> transactionIds = new ArrayList<>();
         final ChangedTransactionDetail changedTransactionDetail = loan.handleClaimTransactions(payment, defaultLoanLifecycleStateMachine,
                 scheduleGeneratorDTO);
-
-        /***
-         * TODO Vishwas Batch save is giving me a HibernateOptimisticLockingFailureException, looping and saving for the
-         * time being, not a major issue for now as this loop is entered only in edge cases (when a payment is made
-         * before the latest payment recorded against the loan)
-         ***/
-
         for (LoanTransaction newTransaction : newTransactions) {
             saveLoanTransactionWithDataIntegrityViolationChecks(newTransaction);
             transactionIds.add(newTransaction.getId());
@@ -1537,28 +1513,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         loanAccrualTransactionBusinessEventService.raiseBusinessEventForAccrualTransactions(loan, existingTransactionIds);
         businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
         return payment;
-    }
-
-    private Money getPendingHonoAmountForAnuladoLoan(Loan loan) {
-        BigDecimal honorariosAmount = BigDecimal.ZERO;
-        Collection<LoanCharge> honorariosCharges = loan.getLoanCharges().stream().filter(LoanCharge::isFlatHono).toList();
-        Collection<LoanCharge> ivaCharges = loan.getLoanCharges().stream().filter(LoanCharge::isCustomPercentageBasedOfAnotherCharge)
-                .toList();
-        for (LoanRepaymentScheduleInstallment repaymentScheduleInstallment : loan.getRepaymentScheduleInstallments()) {
-
-            BigDecimal chargeAmount = honorariosCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
-                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
-                    .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal honorariosTermChargeAmount = ivaCharges.stream()
-                    .filter(lc -> honorariosCharges.stream()
-                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
-                    .flatMap(lic -> lic.installmentCharges().stream())
-                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
-                            lc.getInstallment().getInstallmentNumber()))
-                    .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
-            honorariosAmount = honorariosAmount.add(honorariosTermChargeAmount).add(chargeAmount);
-        }
-        return Money.of(loan.getCurrency(), honorariosAmount);
     }
 
 }

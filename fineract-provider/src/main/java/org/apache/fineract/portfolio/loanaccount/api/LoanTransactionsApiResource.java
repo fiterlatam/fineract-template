@@ -97,6 +97,7 @@ public class LoanTransactionsApiResource {
             LoanApiConstants.REVERSAL_EXTERNAL_ID_PARAMNAME, LoanApiConstants.REVERSED_ON_DATE_PARAMNAME, LoanApiConstants.CHANNEL_HASH));
 
     private static final String RESOURCE_NAME_FOR_PERMISSIONS = "LOAN";
+    private static final String TRANSACTION_DATE_PARAM = "transactionDate";
 
     private final PlatformSecurityContext context;
     private final LoanReadPlatformService loanReadPlatformService;
@@ -131,7 +132,7 @@ public class LoanTransactionsApiResource {
     public String retrieveTransactionTemplate(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
             @QueryParam("command") @Parameter(description = "command") final String commandParam, @Context final UriInfo uriInfo,
             @QueryParam("dateFormat") @Parameter(description = "dateFormat") final String rawDateFormat,
-            @QueryParam("transactionDate") @Parameter(description = "transactionDate") final DateParam transactionDateParam,
+            @QueryParam(LoanTransactionsApiResource.TRANSACTION_DATE_PARAM) @Parameter(description = LoanTransactionsApiResource.TRANSACTION_DATE_PARAM) final DateParam transactionDateParam,
             @QueryParam("locale") @Parameter(description = "locale") final String locale) {
 
         final DateFormat dateFormat = StringUtils.isBlank(rawDateFormat) ? null : new DateFormat(rawDateFormat);
@@ -161,7 +162,7 @@ public class LoanTransactionsApiResource {
             @PathParam("loanExternalId") @Parameter(description = "loanExternalId", required = true) final String loanExternalId,
             @QueryParam("command") @Parameter(description = "command") final String commandParam, @Context final UriInfo uriInfo,
             @QueryParam("dateFormat") @Parameter(description = "dateFormat") final String rawDateFormat,
-            @QueryParam("transactionDate") @Parameter(description = "transactionDate") final DateParam transactionDateParam,
+            @QueryParam(LoanTransactionsApiResource.TRANSACTION_DATE_PARAM) @Parameter(description = LoanTransactionsApiResource.TRANSACTION_DATE_PARAM) final DateParam transactionDateParam,
             @QueryParam("locale") @Parameter(description = "locale") final String locale) {
 
         final DateFormat dateFormat = StringUtils.isBlank(rawDateFormat) ? null : new DateFormat(rawDateFormat);
@@ -428,6 +429,7 @@ public class LoanTransactionsApiResource {
         return undoWaiveCharge(null, loanExternalId, null, transactionExternalId);
     }
 
+    @SuppressWarnings({ "squid:S2479" })
     private String retrieveTransaction(final Long loanId, final String loanExternalIdStr, final Long transactionId,
             final String transactionExternalIdStr, final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
@@ -495,6 +497,7 @@ public class LoanTransactionsApiResource {
         return this.toApiJsonSerializer.serialize(settings, transactionData, this.responseDataParameters);
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private String executeTransaction(final Long loanId, final String loanExternalIdStr, final String commandParam,
             final String apiRequestBodyAsJson) {
         final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
@@ -554,6 +557,7 @@ public class LoanTransactionsApiResource {
         return this.toApiJsonSerializer.serialize(result);
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private String retrieveTransactionTemplate(Long loanId, String loanExternalIdStr, String commandParam, UriInfo uriInfo,
             DateFormat dateFormat, DateParam transactionDateParam, String locale) {
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
@@ -600,7 +604,7 @@ public class LoanTransactionsApiResource {
             if (transactionDateParam == null) {
                 transactionDate = DateUtils.getBusinessLocalDate();
             } else {
-                transactionDate = transactionDateParam.getDate("transactionDate", dateFormat, locale);
+                transactionDate = transactionDateParam.getDate(LoanTransactionsApiResource.TRANSACTION_DATE_PARAM, dateFormat, locale);
             }
             transactionData = this.loanReadPlatformService.retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, resolvedLoanId,
                     transactionDate);
@@ -613,7 +617,7 @@ public class LoanTransactionsApiResource {
             if (transactionDateParam == null) {
                 transactionDate = DateUtils.getBusinessLocalDate();
             } else {
-                transactionDate = transactionDateParam.getDate("transactionDate", dateFormat, locale);
+                transactionDate = transactionDateParam.getDate(LoanTransactionsApiResource.TRANSACTION_DATE_PARAM, dateFormat, locale);
             }
             transactionData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(resolvedLoanId, transactionDate, false);
         } else if (CommandParameterUtil.is(commandParam, "anulado")) {
@@ -621,7 +625,7 @@ public class LoanTransactionsApiResource {
             if (transactionDateParam == null) {
                 transactionDate = DateUtils.getBusinessLocalDate();
             } else {
-                transactionDate = transactionDateParam.getDate("transactionDate", dateFormat, locale);
+                transactionDate = transactionDateParam.getDate(LoanTransactionsApiResource.TRANSACTION_DATE_PARAM, dateFormat, locale);
             }
             transactionData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(resolvedLoanId, transactionDate, true);
         } else if (CommandParameterUtil.is(commandParam, "special-write-off")) {
