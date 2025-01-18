@@ -4809,10 +4809,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
                 dailyAccrualTransaction.markAsOccurredOnSuspendedAccount();
             }
-            loan.addLoanTransaction(dailyAccrualTransaction);
+            if (!this.accrualExistsForDate(accrualDate, loan.getId())) {
+                loan.addLoanTransaction(dailyAccrualTransaction);
+            }
         }
         loan.setInterestAccruedTill(accrualDate);
         loanRepository.saveAndFlush(loan);
+    }
+
+    private boolean accrualExistsForDate(final LocalDate accrualDate, final Long loanId) {
+        String sql = "SELECT id FROM m_loan_transaction WHERE transaction_type_enum = ? AND transaction_date = ? AND loan_id = ? AND is_reversed = false And is_daily_accrual = true";
+        List<Long> results = this.jdbcTemplate.queryForList(sql, Long.class, LoanTransactionType.ACCRUAL.getValue(), accrualDate, loanId);
+        return !results.isEmpty();
     }
 
     @Override
