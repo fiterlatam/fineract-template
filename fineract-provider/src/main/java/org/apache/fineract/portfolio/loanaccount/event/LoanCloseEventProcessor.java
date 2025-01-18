@@ -1,5 +1,9 @@
 package org.apache.fineract.portfolio.loanaccount.event;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
@@ -12,11 +16,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Component()
 @Slf4j
@@ -57,10 +56,10 @@ public class LoanCloseEventProcessor extends BaseCustomWebhookEventProcessorImpl
         response.put("customerId", customerId);
         response.put("firstName", firstName);
         response.put("lastName", lastName);
-        if(email != null) {
+        if (email != null) {
             response.put("email", email);
         }
-        if(phoneNumber != null) {
+        if (phoneNumber != null) {
             response.put("phoneNumber", phoneNumber);
         }
         if (externalId.getValue() != null) {
@@ -70,7 +69,7 @@ public class LoanCloseEventProcessor extends BaseCustomWebhookEventProcessorImpl
 
         String document = null;
         String documentType = null;
-        String sql = """ 
+        String sql = """
                 select mc.id AS clientId, ccp."Cedula" AS document, cv.code_value as documentType
                 FROM m_client mc
                 LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
@@ -82,50 +81,50 @@ public class LoanCloseEventProcessor extends BaseCustomWebhookEventProcessorImpl
             document = rs.getString("document");
             documentType = rs.getString("documentType");
         }
-        if(document != null) {
+        if (document != null) {
             response.put("documentId", document); // client data table - campos_cliente_persona
         }
-        if(documentType != null) {
+        if (documentType != null) {
             response.put("documentType", documentType); // client data table - campos_cliente_persona
         }
 
         String monthlyIncome = null;
         String assets = null;
         sql = """
-              select ml.id AS loanId, ifn.ingresos as monthlyIncome, ifn.activos as assets
-              FROM m_loan ml
-              LEFT JOIN "Informacion Financiera" ifn ON ifn.loan_id = ml.id
-              where ml.id = ?
-              """;
+                select ml.id AS loanId, ifn.ingresos as monthlyIncome, ifn.activos as assets
+                FROM m_loan ml
+                LEFT JOIN "Informacion Financiera" ifn ON ifn.loan_id = ml.id
+                where ml.id = ?
+                """;
         rs = this.jdbcTemplate.queryForRowSet(sql, new Object[] { loanId });
         while (rs.next()) {
             monthlyIncome = rs.getString("monthlyIncome");
             assets = rs.getString("assets");
         }
-        if(monthlyIncome != null) {
+        if (monthlyIncome != null) {
             response.put("monthlyIncome", monthlyIncome); // loan data table - Informacion Financiera
         }
-        if(assets != null) {
+        if (assets != null) {
             response.put("assets", assets); // loan data table - Informacion Financiera
         }
 
         String promoterCode = null;
         String promoterCodeOriginal = null;
         sql = """
-            select ml.id AS loanId, ian.codigo_promotor as promoterCode, ian.codigo_promotor_original as promoterCodeOriginal
-            FROM m_loan ml
-            LEFT JOIN "Informacion Adicional" ian ON ian.loan_id = ml.id
-            where ml.id = ?
-            """;
+                select ml.id AS loanId, ian.codigo_promotor as promoterCode, ian.codigo_promotor_original as promoterCodeOriginal
+                FROM m_loan ml
+                LEFT JOIN "Informacion Adicional" ian ON ian.loan_id = ml.id
+                where ml.id = ?
+                """;
         rs = this.jdbcTemplate.queryForRowSet(sql, new Object[] { loanId });
         while (rs.next()) {
             promoterCode = rs.getString("promoterCode");
             promoterCodeOriginal = rs.getString("promoterCodeOriginal");
         }
-        if(promoterCode != null) {
+        if (promoterCode != null) {
             response.put("promoterCode", promoterCode); // loan data table - Informacion Adicional
         }
-        if(promoterCodeOriginal != null) {
+        if (promoterCodeOriginal != null) {
             response.put("promoterCodeOriginal", promoterCodeOriginal); // loan data table - Informacion Adicional
         }
         return response;
