@@ -1172,8 +1172,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     }
                 }
                 version = version + 1;
-                log.info(" 1. inside LoanWritePlatformServiceJpaRepositoryImpl.java : makeLoanRepayment method");
-                log.info(" 1. inside LoanWritePlatformServiceJpaRepositoryImpl.java : makeLoanRepayment method calculating hono amount");
                 for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
                     if (installment.isOverdueOn(transactionDate) && !installment.isObligationsMet()) {
                         if (installmentNumber == 0) {
@@ -1201,8 +1199,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
                     }
                 }
-                log.info(" 1. inside LoanWritePlatformServiceJpaRepositoryImpl.java : makeLoanRepayment method. Hono amount calculated =="
-                        + cumulativeHonoFee);
                 // Add Accrual Transaction
                 Integer daysInArrears = 0;
                 boolean isSuspendedAccount = false;
@@ -1580,7 +1576,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     @Transactional
     @Override
     public CommandProcessingResult adjustLoanTransaction(final Long loanId, final Long transactionId, final JsonCommand command) {
-        log.info(" 1. inside LoanWritePlatformServiceJpaRepositoryImpl.java : adjustLoanTransaction method");
         final AppUser authenticatedUser = context.authenticatedUser();
         this.loanEventApiJsonValidator.validateTransaction(command.json());
         LoanTransaction transactionToAdjust = this.loanTransactionRepository.findByIdAndLoanId(command.entityId(), command.getLoanId())
