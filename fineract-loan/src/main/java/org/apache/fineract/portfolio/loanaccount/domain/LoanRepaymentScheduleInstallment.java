@@ -745,32 +745,6 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payHonorariosChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : installment number:"
-                + this.installmentNumber);
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : total fee : "
-                + this.feeChargesCharged);
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : total fee paid: "
-                + this.feeChargesPaid);
-
-        for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
-            log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : charge :"
-                    + installmentCharge.getLoanCharge().getCharge().getName());
-            log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : charge amount :"
-                    + installmentCharge.getAmount());
-            log.info(
-                    " 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payHonorariosChargesComponent method : charge amount paid :"
-                            + installmentCharge.getAmountPaid());
-            if (installmentCharge.getLoanCharge().getCustomChargeHonorarioMaps() != null
-                    && !installmentCharge.getLoanCharge().getCustomChargeHonorarioMaps().isEmpty()) {
-                Set<CustomChargeHonorarioMap> set = installmentCharge.getLoanCharge().getCustomChargeHonorarioMaps();
-                for (CustomChargeHonorarioMap map : set) {
-                    log.info(" 6. payHonorariosChargesComponent method : charge amount paid : hono map");
-                    log.info(" 6. installment number : " + map.getLoanInstallmentNr());
-                    log.info(" 6. fee amount : " + map.getFeeBaseAmount());
-                    log.info(" 6. version : " + map.getVersion());
-                }
-            }
-        }
 
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money feePortionOfTransaction = Money.zero(currency);
@@ -905,9 +879,6 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money payVoluntaryInsuranceChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
-        log.info(
-                " 6. inside AdvancedPaymentScheduleTransactionProcessor.java : payVoluntaryInsuranceChargesComponent method : installment number:"
-                        + this.installmentNumber);
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money loanChargePaidByPortion = Money.zero(currency);
         Money feePortionOfTransaction = Money.zero(currency);
@@ -981,20 +952,12 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             List<LoanChargePaidByData> paidByOriginalTransactionList = loanTransaction.chargesPaidByOriginalTransaction();
             Money amountPaidByOriginalTransaction = Money.zero(currency);
             if (!paidByOriginalTransactionList.isEmpty()) {
-                log.info("originaltransactionpaidbylist is not empty");
                 for (LoanChargePaidByData data : paidByOriginalTransactionList) {
-                    log.info(" oringinal transaction id" + data.getTransactionId());
-                    log.info("oringinal transaction paid amount: " + data.getAmount());
-                    log.info("oringinal transaction installmentNumber: " + data.getInstallmentNumber());
-                    log.info("oringinal transaction charge Id: " + data.getChargeId());
-                    log.info("installmentCharge.getLoanCharge().getId(): " + installmentCharge.getLoanCharge().getId());
-
                     if (!data.isPenaltyCharge() && data.getInstallmentNumber().equals(this.installmentNumber)
                             && data.getChargeId().equals(installmentCharge.getLoanCharge().getId())) {
                         amountPaidByOriginalTransaction = amountPaidByOriginalTransaction.plus(data.getAmount());
                     }
                 }
-                log.info("amount paid by original transaction: " + amountPaidByOriginalTransaction);
                 if (amountPaidByOriginalTransaction.isGreaterThanZero()) {
                     feeChargesDue = amountPaidByOriginalTransaction;
                 } else {
@@ -1003,7 +966,6 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
             }
         }
-        log.info("feeChargesDue: " + feeChargesDue);
         ///////////////
         if (transactionAmountRemaining.isGreaterThanOrEqualTo(feeChargesDue)) {
             if (isWriteOffTransaction) {
