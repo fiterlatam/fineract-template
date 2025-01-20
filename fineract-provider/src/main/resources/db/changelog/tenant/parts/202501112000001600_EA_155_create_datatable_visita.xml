@@ -121,7 +121,7 @@
     <changeSet author="danielsta@fiter.io" id="20">
         <sql>
             <![CDATA[
-                COMMENT ON COLUMN "Validacion Operacion".loan_id IS 'Identificador Unico Prestamo';
+                COMMENT ON COLUMN "Visita".loan_id IS 'Identificador Unico Prestamo';
                 COMMENT ON COLUMN "Visita".loan_id IS 'Identificación';
                 COMMENT ON COLUMN "Visita".req_visita IS '¿Requiere Visita?';
                 COMMENT ON COLUMN "Visita"."Resultado Visita_cd_Resultado Visita" IS 'Resultado Visita';
@@ -144,5 +144,38 @@
         </sql>
     </changeSet>
 
+    <changeSet author="danielsta@fiter.io" id="40">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'CREATE_Visita', 'Visita', 'CREATE', true);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'CREATE_Visita_CHECKER', 'Visita', 'CREATE', false);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'READ_Visita', 'Visita', 'READ', false);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'UPDATE_Visita', 'Visita', 'UPDATE', true);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'UPDATE_Visita_CHECKER', 'Visita', 'UPDATE', false);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'DELETE_Visita', 'Visita', 'DELETE', true);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'DELETE_Visita_CHECKER', 'Visita', 'DELETE', false);
+            ]]>
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>
