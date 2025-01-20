@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+    <changeSet author="fineract" id="1">
+        <update tableName="stretchy_report">
+            <column name="report_sql">
+                <![CDATA[
+                select distinct
+            '800139398-6' AS "Nit de empresa",
+            TO_CHAR(mlt.transaction_date , 'DD/MM/YYYY') AS "Fecha de causación del honorario",
+            mchc.collection_nit AS "Nit casa de cobro",
+            mch.collection_house_code  as "Código casa de cobro",
+            coalesce(hono.amt, 0) + coalesce(vat.amt, 0) as "Valor del honorario",
+            coalesce(hono.amt, 0) AS "Valor base",
+            coalesce(vat.amt, 0) AS "Valor IVA",
+            COALESCE(cce."NIT", ccp."Cedula") AS "Cédula del cliente",
+            ml.id AS "Crédito del cliente",
+            coalesce(delinquent_paid_amounts.overdue_amount,0) - coalesce(hono.amt, 0) - coalesce(vat.amt, 0) AS "Valor porción morosa del pago",
+            coalesce(delinquent_paid_amounts.penaly_paid,0) AS "Valor interés de mora pagado",
+            coalesce(delinquent_paid_amounts.overdue_non_penalty_amount, 0) - coalesce(hono.amt, 0) - coalesce(vat.amt, 0) AS "Valor de las cuotas morosas pagadas"
+        from
+            m_loan ml
+            join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+            join m_loan_transaction mlt on mlt.loan_id = ml.id
+            join m_client mc on mc.id = ml.client_id
+            join m_collection_house_history mch on mch.client_account_number = mc.account_no
+            join m_collection_house_configuration mchc on mchc.collection_code = mch.collection_house_code
+            LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
+            LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+            join m_loan_charge mlc on mlc.loan_id = ml.id and mlc.is_penalty = false and mlc.charge_calculation_enum = 1009
+            left join(
+                select
+                    mlt2.id, mlt2.loan_id,
+                    sum(coalesce(mltrsm.principal_portion_derived,0) + coalesce(mltrsm.interest_portion_derived,0) + coalesce(mltrsm.fee_charges_portion_derived,0)) AS overdue_non_penalty_amount,
+                    sum(coalesce(mltrsm.penalty_charges_portion_derived,0)) AS penaly_paid,
+                    sum(coalesce(mltrsm.principal_portion_derived,0) + coalesce(mltrsm.interest_portion_derived,0) + coalesce(mltrsm.fee_charges_portion_derived,0)) overdue_amount
+                from
+                m_loan_transaction_repayment_schedule_mapping mltrsm
+                join m_loan_repayment_schedule mlrs2 on mlrs2.id = mltrsm.loan_repayment_schedule_id
+                join m_loan_transaction mlt2 on mlt2.id = mltrsm.loan_transaction_id and mlt2.transaction_date > mlrs2.duedate
+                group by mlt2.id, mlt2.loan_id
+            ) delinquent_paid_amounts on delinquent_paid_amounts.loan_id = ml.id and delinquent_paid_amounts.id = mlt.id
+            left join(
+                select
+                    mlt2.id, mlt2.loan_id,
+                    sum(coalesce(mltrsm.principal_portion_derived,0) + coalesce(mltrsm.interest_portion_derived,0) + coalesce(mltrsm.fee_charges_portion_derived,0)) due_amount
+                from
+                m_loan_transaction_repayment_schedule_mapping mltrsm
+                join m_loan_repayment_schedule mlrs2 on mlrs2.id = mltrsm.loan_repayment_schedule_id
+                join m_loan_transaction mlt2 on mlt2.id = mltrsm.loan_transaction_id and mlt2.transaction_date <= mlrs2.duedate
+                group by mlt2.id, mlt2.loan_id
+            ) non_delinquent_paid_amounts on non_delinquent_paid_amounts.loan_id = ml.id and non_delinquent_paid_amounts.id = mlt.id
+            join (
+                select
+                     mlcp.loan_transaction_id, mlcp.loan_charge_id,
+                    sum(coalesce(mlcp.amount,0)) amt
+                from
+                    m_loan_charge_paid_by mlcp
+                group by mlcp.loan_transaction_id, mlcp.loan_charge_id
+            ) hono on hono.loan_transaction_id = mlt.id and hono.loan_charge_id = mlc.id
+            left join (
+                select
+                    vat.loan_id, vat_paid.loan_transaction_id, vat_charge.parent_charge_id,
+                    sum(coalesce(vat_paid.amount,0)) amt
+                from
+                    m_loan_charge vat
+                    join m_charge vat_charge on vat_charge.id = vat.charge_id and vat_charge.parent_charge_id is not null
+                    join m_loan_charge_paid_by vat_paid on vat_paid.loan_charge_id = vat.id
+                    where vat.charge_calculation_enum = 342
+                    group by vat.loan_id, vat_paid.loan_transaction_id, vat_charge.parent_charge_id
+            ) vat on vat.loan_id = ml.id and vat.loan_transaction_id = mlt.id and vat.parent_charge_id = mlc.charge_id
+        where
+            mlt.transaction_type_enum = 2 and mlt.is_reversed = false
+            and mlt.transaction_date between '${startDate}' and '${endDate}'
+            and (mch.collection_nit = '${collectionNit}' or '${collectionNit}' = '-1')
+            and (mch.collection_house_code = '${collectionCode}' or '${collectionCode}' = '-1')
+                ]]>
+            </column>
+            <where> report_name='Reporte de Honorarios' </where>
+        </update>
+    </changeSet>
+</databaseChangeLog>
