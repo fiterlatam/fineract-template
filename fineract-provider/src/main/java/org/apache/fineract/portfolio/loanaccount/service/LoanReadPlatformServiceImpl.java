@@ -1607,6 +1607,16 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     (COALESCE(hono.amount, 0) + COALESCE(vat_hono.amount, 0)) hono,
                     (COALESCE(aval.amount, 0) + COALESCE(vat_aval.amount, 0)) aval,
                     (COALESCE(penalty.amount, 0) + COALESCE(vat_penalty.amount, 0)) penalty,
+
+                    COALESCE(penalty.amount, 0) AS "penaltyPortion",
+                    COALESCE(vat_penalty.amount, 0) AS "penaltyVatPortion",
+                    COALESCE(hono.amount, 0) AS "honorariosPortion",
+                    COALESCE(vat_hono.amount, 0) AS "honorariosVatPortion",
+                    COALESCE(voluntary_insurance.amount, 0) AS "voluntaryInsurancePortion",
+                    COALESCE(vat_voluntary_insurance.amount, 0) AS "voluntaryInsuranceVatPortion",
+                    COALESCE(mandatory_insurance.amount, 0) AS "mandatoryInsurancePortion",
+                    COALESCE(vat_mandatory_insurance.amount, 0) AS "mandatoryInsuranceVatPortion",
+
                     trcu.firstname as creator_firstname, trcu.lastname as creator_lastname, trmu.firstname as modifier_firstname, trmu.lastname as modifier_lastname
                      from m_loan l
                      join m_loan_transaction tr on tr.loan_id = l.id
@@ -1813,6 +1823,24 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             data.setAval(aval);
             data.setHono(hono);
             data.setPenalty(penalty);
+
+            // Invoice related fields
+            final BigDecimal penaltyPortion = rs.getBigDecimal("penaltyPortion");
+            final BigDecimal penaltyVatPortion = rs.getBigDecimal("penaltyVatPortion");
+            final BigDecimal honorariosPortion = rs.getBigDecimal("honorariosPortion");
+            final BigDecimal honorariosVatPortion = rs.getBigDecimal("honorariosVatPortion");
+            final BigDecimal voluntaryInsurancePortion = rs.getBigDecimal("voluntaryInsurancePortion");
+            final BigDecimal voluntaryInsuranceVatPortion = rs.getBigDecimal("voluntaryInsuranceVatPortion");
+            final BigDecimal mandatoryInsurancePortion = rs.getBigDecimal("mandatoryInsurancePortion");
+            final BigDecimal mandatoryInsuranceVatPortion = rs.getBigDecimal("mandatoryInsuranceVatPortion");
+            data.setPenaltyPortion(penaltyPortion);
+            data.setPenaltyVatPortion(penaltyVatPortion);
+            data.setHonorariosPortion(honorariosPortion);
+            data.setHonorariosVatPortion(honorariosVatPortion);
+            data.setVoluntaryInsurancePortion(voluntaryInsurancePortion);
+            data.setVoluntaryInsuranceVatPortion(voluntaryInsuranceVatPortion);
+            data.setMandatoryInsurancePortion(mandatoryInsurancePortion);
+            data.setMandatoryInsuranceVatPortion(mandatoryInsuranceVatPortion);
 
             // include name of creator and modifier
             final String creatorFirstName = rs.getString("creator_firstname");

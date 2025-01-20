@@ -345,5 +345,6 @@
     <include file="parts/202412230000000101_SU_540_update_cron_expressions.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025012091721000000_SU_556_add_job_params_for_accruals_and_fees.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025012111428000000_SU_570_add_job_params_for_penalties_job.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2025012111428000001_SU_568.xml" relativeToChangelogFile="true"/>
     <include file="parts/20250120011009134_SU_575_update_reports_honorarios.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

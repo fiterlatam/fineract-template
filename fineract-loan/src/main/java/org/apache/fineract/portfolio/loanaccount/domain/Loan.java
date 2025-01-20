@@ -3755,7 +3755,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
 
-        log.info("1. inside loan.java : handleRepaymentOrRecoveryOrWaiverTransaction method");
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
                 .determineProcessor(this.transactionProcessingStrategyCode);
 
@@ -3799,7 +3798,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             }
             final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
-            log.info(" 9. inside Loan.java : again reprocessing the transactions to get changedtransaction details");
             changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(getDisbursementDate(),
                     allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), getActiveCharges());
             if (isProgressiveLoan()) {
@@ -3874,16 +3872,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
         repaymentsOrWaivers.sort(LoanTransactionComparator.INSTANCE);
-        log.info("transactions details after sorting");
-        for (final LoanTransaction transaction : repaymentsOrWaivers) {
-            if (transaction.isAccrual() || transaction.isDisbursement()) {
-                continue;
-            } else {
-                log.info("transaction id :" + transaction.getId());
-                log.info("tranaction fee paid" + transaction.getFeeChargesPortion());
-                log.info("transaction interest paid" + transaction.getInterestPortion());
-            }
-        }
         return repaymentsOrWaivers;
     }
 
@@ -4236,9 +4224,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final LoanLifecycleStateMachine loanLifecycleStateMachine, final LoanTransaction transactionForAdjustment,
             final List<Long> existingTransactionIds, final List<Long> existingReversedTransactionIds,
             final ScheduleGeneratorDTO scheduleGeneratorDTO, final ExternalId reversalExternalId) {
-
-        log.info(" 2. inside Loan.java : adjustExistingTransaction method");
-
         HolidayDetailDTO holidayDetailDTO = scheduleGeneratorDTO.getHolidayDetailDTO();
         validateActivityNotBeforeLastTransactionDate(LoanEvent.LOAN_REPAYMENT_OR_WAIVER, transactionForAdjustment.getTransactionDate());
         validateRepaymentDateIsOnHoliday(newTransactionDetail.getTransactionDate(), holidayDetailDTO.isAllowTransactionsOnHoliday(),
@@ -6277,7 +6262,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public void regenerateRepaymentScheduleWithInterestRecalculation(final ScheduleGeneratorDTO generatorDTO) {
-        log.info(" 7. inside Loan.java : regenerateRepaymentScheduleWithInterestRecalculation method");
         LocalDate lastTransactionDate = getLastUserTransactionDate();
         final LoanScheduleDTO loanSchedule = getRecalculatedSchedule(generatorDTO);
         if (loanSchedule == null) {
@@ -6503,7 +6487,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public void processPostDisbursementTransactions() {
-        log.info(" 8. inside Loan.java : processPostDisbursementTransactions method");
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
                 .determineProcessor(this.transactionProcessingStrategyCode);
         final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
@@ -7593,6 +7576,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money penalty = Money.zero(currency);
         Money principalLoanBalanceOutstanding = this.getPrincipal();
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
+            principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(installment.getAdvancePrincipalAmount());
             if (!DateUtils.isBefore(paymentDate, installment.getDueDate())) {
                 interest = interest.plus(installment.getInterestOutstanding(currency));
                 penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
@@ -7622,13 +7606,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 // When Foreclosure on disbursement date then pay fee charges
                 // When loan is canceled on same date then only pay hono charges
                 if (installment.getInstallmentNumber() == 1 && DateUtils.isEqual(paymentDate, installment.getFromDate())) {
+                    paidFromFutureInstallments = paidFromFutureInstallments.plus(installment.getInterestPaid(currency))
+                            .plus(installment.getPenaltyChargesPaid(currency));
                     fee = fee.plus(installment.getFeeChargesOutstanding(currency));
                     if (this.isAnulado) {
                         fee = getPendingHonoAmountOfAnuladoLoanForInstallment(this, installment.getInstallmentNumber());
                     }
+                } else {
+                    paidFromFutureInstallments = paidFromFutureInstallments.plus(installment.getInterestPaid(currency))
+                            .plus(installment.getPenaltyChargesPaid(currency)).plus(installment.getFeeChargesPaid(currency));
                 }
-                paidFromFutureInstallments = paidFromFutureInstallments.plus(installment.getInterestPaid(currency))
-                        .plus(installment.getPenaltyChargesPaid(currency)).plus(installment.getFeeChargesPaid(currency));
             }
             principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(installment.getPrincipal(currency));
         }
@@ -7745,6 +7732,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         balances[0] = balances[1] = balances[2] = Money.zero(currency);
         Money principalLoanBalanceOutstanding = this.getPrincipal();
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
+            principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(installment.getAdvancePrincipalAmount());
             if (DateUtils.isEqual(paymentDate, installment.getDueDate())) {
                 Money interest = installment.getInterestCharged(currency);
                 Money fee = installment.getFeeChargesCharged(currency);
@@ -7761,10 +7749,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             } else if (installment.getInstallmentNumber() == 1 && DateUtils.isEqual(paymentDate, installment.getFromDate())) {
                 // Foreclosure being done on same date as disbursement date. Fee charge must be paid
                 // If loan is canceled on same date then only pay hono charge
-                Money fee = installment.getFeeChargesOutstanding(currency);
+                Money fee = installment.getFeeChargesCharged(currency);
                 if (this.isAnulado) {
                     fee = getPendingHonoAmountOfAnuladoLoanForInstallment(this, installment.getInstallmentNumber());
                 }
+                balances[1] = fee;
+            } else if (DateUtils.isEqual(paymentDate, installment.getFromDate())) {
+                Money fee = installment.getFeeChargesCharged(currency);
                 balances[1] = fee;
             }
             principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(installment.getPrincipal(currency));
