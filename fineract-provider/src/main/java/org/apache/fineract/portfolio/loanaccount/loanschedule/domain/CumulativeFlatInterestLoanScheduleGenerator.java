@@ -23,7 +23,7 @@ import java.math.MathContext;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.SortedMap;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
@@ -52,8 +52,8 @@ public class CumulativeFlatInterestLoanScheduleGenerator extends AbstractCumulat
             @SuppressWarnings("unused") final Money totalCumulativeInterest,
             @SuppressWarnings("unused") final Money totalInterestDueForLoan, final Money cumulatingInterestPaymentDueToGrace,
             final Money outstandingBalance, final LoanApplicationTerms loanApplicationTerms, final int periodNumber, final MathContext mc,
-            final TreeMap<LocalDate, Money> principalVariation, final Map<LocalDate, Money> compoundingMap, final LocalDate periodStartDate,
-            final LocalDate periodEndDate, final Collection<LoanTermVariationsData> termVariations) {
+            final SortedMap<LocalDate, Money> principalVariation, final Map<LocalDate, Money> compoundingMap,
+            final LocalDate periodStartDate, final LocalDate periodEndDate, final Collection<LoanTermVariationsData> termVariations) {
 
         Money accruedInterestByAdvancePmt = Money.zero(loanApplicationTerms.getCurrency());
         return calculatePrincipalInterestComponentsForPeriod(calculator, interestCalculationGraceOnRepaymentPeriodFraction,
@@ -68,7 +68,7 @@ public class CumulativeFlatInterestLoanScheduleGenerator extends AbstractCumulat
             final BigDecimal interestCalculationGraceOnRepaymentPeriodFraction, final Money totalCumulativePrincipal,
             Money totalCumulativeInterest, Money totalInterestDueForLoan, final Money cumulatingInterestPaymentDueToGrace,
             final Money outstandingBalance, final LoanApplicationTerms loanApplicationTerms, final int periodNumber, final MathContext mc,
-            @SuppressWarnings("unused") TreeMap<LocalDate, Money> principalVariation,
+            @SuppressWarnings("unused") SortedMap<LocalDate, Money> principalVariation,
             @SuppressWarnings("unused") Map<LocalDate, Money> compoundingMap, LocalDate periodStartDate, LocalDate periodEndDate,
             @SuppressWarnings("unused") Collection<LoanTermVariationsData> termVariations, final Money accruedInterestByAdvancePmt) {
 

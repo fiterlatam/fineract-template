@@ -68,6 +68,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @RequiredArgsConstructor
 public class LoanChargeAssembler {
 
+    private static final String PRINCIPAL_PARAM = "principal";
+    private static final String CHARGES_PARAM = "charges";
+    private static final String CHARGE_ID_PARAM = "chargeId";
+    private static final String LOAN_CHARGE_PARAM = "loanCharge";
+    private static final String INSURANCE_PARAM = "Insurance";
+    private static final String DISBURSEMENT_DATA_PARAM = "disbursementData";
+    private static final String DUE_DATE_PARAM = "dueDate";
+
     private final FromJsonHelper fromApiJsonHelper;
     private final ChargeRepositoryWrapper chargeRepository;
     private final LoanChargeRepository loanChargeRepository;
@@ -81,8 +89,9 @@ public class LoanChargeAssembler {
     private final ClientAdditionalInformationRepository clientAdditionalInformationRepository;
     private final IndividualAdditionalInformationRepository individualAdditionalInformationRepository;
 
+    @SuppressWarnings({ "squid:S3776" })
     public Set<LoanCharge> fromParsedJson(final JsonElement element, List<LoanDisbursementDetails> disbursementDetails) {
-        JsonArray jsonDisbursement = this.fromApiJsonHelper.extractJsonArrayNamed("disbursementData", element);
+        JsonArray jsonDisbursement = this.fromApiJsonHelper.extractJsonArrayNamed(LoanChargeAssembler.DISBURSEMENT_DATA_PARAM, element);
         List<Long> disbursementChargeIds = new ArrayList<>();
 
         if (jsonDisbursement != null && !jsonDisbursement.isEmpty()) {
@@ -106,8 +115,9 @@ public class LoanChargeAssembler {
         }
 
         final Set<LoanCharge> loanCharges = new LinkedHashSet<>();
-        final BigDecimal principalFinal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
-        BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
+        final BigDecimal principalFinal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanChargeAssembler.PRINCIPAL_PARAM,
+                element);
+        BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanChargeAssembler.PRINCIPAL_PARAM, element);
         final Integer numberOfRepayments = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("numberOfRepayments", element);
         final Long productId = this.fromApiJsonHelper.extractLongNamed("productId", element);
         final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
@@ -119,15 +129,16 @@ public class LoanChargeAssembler {
             final JsonObject topLevelJsonElement = element.getAsJsonObject();
             final String dateFormat = this.fromApiJsonHelper.extractDateFormatParameter(topLevelJsonElement);
             final Locale locale = this.fromApiJsonHelper.extractLocaleParameter(topLevelJsonElement);
-            if (topLevelJsonElement.has("charges") && topLevelJsonElement.get("charges").isJsonArray()) {
-                final JsonArray chargesJsonArray = topLevelJsonElement.get("charges").getAsJsonArray();
+            if (topLevelJsonElement.has(LoanChargeAssembler.CHARGES_PARAM)
+                    && topLevelJsonElement.get(LoanChargeAssembler.CHARGES_PARAM).isJsonArray()) {
+                final JsonArray chargesJsonArray = topLevelJsonElement.get(LoanChargeAssembler.CHARGES_PARAM).getAsJsonArray();
                 final JsonArray array = sortByPercentOfAnotherCharge(chargesJsonArray);
                 for (int i = 0; i < array.size(); i++) {
 
                     final JsonObject loanChargeElement = array.get(i).getAsJsonObject();
 
                     final Long id = this.fromApiJsonHelper.extractLongNamed("id", loanChargeElement);
-                    final Long chargeId = this.fromApiJsonHelper.extractLongNamed("chargeId", loanChargeElement);
+                    final Long chargeId = this.fromApiJsonHelper.extractLongNamed(LoanChargeAssembler.CHARGE_ID_PARAM, loanChargeElement);
                     BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed("amount", loanChargeElement, locale);
                     Boolean isEndorsed = false;
                     LocalDate expDate = null;
@@ -168,8 +179,8 @@ public class LoanChargeAssembler {
                     final Integer chargeCalculationType = this.fromApiJsonHelper.extractIntegerNamed("chargeCalculationType",
                             loanChargeElement, locale);
 
-                    final LocalDate dueDate = this.fromApiJsonHelper.extractLocalDateNamed("dueDate", loanChargeElement, dateFormat,
-                            locale);
+                    final LocalDate dueDate = this.fromApiJsonHelper.extractLocalDateNamed(LoanChargeAssembler.DUE_DATE_PARAM,
+                            loanChargeElement, dateFormat, locale);
                     final Integer chargePaymentMode = this.fromApiJsonHelper.extractIntegerNamed("chargePaymentMode", loanChargeElement,
                             locale);
                     final String externalIdStr = this.fromApiJsonHelper.extractStringNamed("externalId", loanChargeElement);
@@ -181,10 +192,10 @@ public class LoanChargeAssembler {
                         if (isMigratedLoan == null) {
                             isMigratedLoan = Boolean.FALSE;
                         }
-                        if (!isMigratedLoan && chargeDefinition.isAvalChargeFlatForMigration()) {
+                        if (Boolean.TRUE.equals(!isMigratedLoan) && chargeDefinition.isAvalChargeFlatForMigration()) {
                             final String defaultUserMessage = "Selected Aval Charge is to be used only for migrated loans.";
-                            throw new LoanChargeCannotBeAddedException("loanCharge", "aval.charge", defaultUserMessage, null,
-                                    chargeDefinition.getName());
+                            throw new LoanChargeCannotBeAddedException(LoanChargeAssembler.LOAN_CHARGE_PARAM, "aval.charge",
+                                    defaultUserMessage, null, chargeDefinition.getName());
                         }
                         if (chargeDefinition.isFlatHono() && !chargeDefinition.isDisbursementCharge()) {
                             amount = BigDecimal.ZERO;
@@ -192,8 +203,8 @@ public class LoanChargeAssembler {
                         if (chargeDefinition.isOverdueInstallment()) {
 
                             final String defaultUserMessage = "Installment charge cannot be added to the loan.";
-                            throw new LoanChargeCannotBeAddedException("loanCharge", "overdue.charge", defaultUserMessage, null,
-                                    chargeDefinition.getName());
+                            throw new LoanChargeCannotBeAddedException(LoanChargeAssembler.LOAN_CHARGE_PARAM, "overdue.charge",
+                                    defaultUserMessage, null, chargeDefinition.getName());
                         }
 
                         ChargeTimeType chargeTime = null;
@@ -206,7 +217,7 @@ public class LoanChargeAssembler {
                         }
 
                         boolean getPercentageAmountFromTable = chargeDefinition.isGetPercentageFromTable();
-                        if (!isMigratedLoan && (getPercentageAmountFromTable || ChargeCalculationType
+                        if (Boolean.TRUE.equals(!isMigratedLoan) && (getPercentageAmountFromTable || ChargeCalculationType
                                 .fromInt(chargeDefinition.getChargeCalculation()).equals(ChargeCalculationType.DISB_AVAL))) {
                             ChargeCalculationType calculation = chargeCalculation;
                             if (calculation == null) {
@@ -260,8 +271,10 @@ public class LoanChargeAssembler {
 
                             loanCharges.add(loanCharge);
                         } else {
-                            if (topLevelJsonElement.has("disbursementData") && topLevelJsonElement.get("disbursementData").isJsonArray()) {
-                                final JsonArray disbursementArray = topLevelJsonElement.get("disbursementData").getAsJsonArray();
+                            if (topLevelJsonElement.has(LoanChargeAssembler.DISBURSEMENT_DATA_PARAM)
+                                    && topLevelJsonElement.get(LoanChargeAssembler.DISBURSEMENT_DATA_PARAM).isJsonArray()) {
+                                final JsonArray disbursementArray = topLevelJsonElement.get(LoanChargeAssembler.DISBURSEMENT_DATA_PARAM)
+                                        .getAsJsonArray();
                                 if (!disbursementArray.isEmpty()) {
                                     JsonObject disbursementDataElement = disbursementArray.get(0).getAsJsonObject();
                                     expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed(
@@ -324,14 +337,12 @@ public class LoanChargeAssembler {
                             }
                         }
                     } else {
-                        final Long loanChargeId = id;
-                        final LoanCharge loanCharge = this.loanChargeRepository.findById(loanChargeId).orElse(null);
-                        if (loanCharge != null) {
-                            if (!loanCharge.isTrancheDisbursementCharge() || disbursementChargeIds.contains(loanChargeId)) {
-                                loanCharge.update(amount, dueDate, numberOfRepayments);
-                                loanCharges.add(loanCharge);
-                            }
+                        final LoanCharge loanCharge = this.loanChargeRepository.findById(id).orElse(null);
+                        if (loanCharge != null && (!loanCharge.isTrancheDisbursementCharge() || disbursementChargeIds.contains(id))) {
+                            loanCharge.update(amount, dueDate, numberOfRepayments);
+                            loanCharges.add(loanCharge);
                         }
+
                     }
                 }
             }
@@ -349,7 +360,7 @@ public class LoanChargeAssembler {
         for (final JsonElement jsonElement : chargesJsonArray) {
             if (jsonElement.isJsonObject()) {
                 final JsonObject chargeJsonObject = jsonElement.getAsJsonObject();
-                final Long chargeId = this.fromApiJsonHelper.extractLongNamed("chargeId", chargeJsonObject);
+                final Long chargeId = this.fromApiJsonHelper.extractLongNamed(LoanChargeAssembler.CHARGE_ID_PARAM, chargeJsonObject);
                 final Charge chargeEntity = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
                 final boolean isPercentOfAnotherCharge = chargeEntity.isPercentageOfAnotherCharge();
                 chargeJsonObject.addProperty("isPercentOfAnotherCharge", isPercentOfAnotherCharge);
@@ -364,16 +375,18 @@ public class LoanChargeAssembler {
         return array;
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     public Set<Charge> getNewLoanTrancheCharges(final JsonElement element) {
         final Set<Charge> associatedChargesForLoan = new HashSet<>();
         if (element.isJsonObject()) {
             final JsonObject topLevelJsonElement = element.getAsJsonObject();
-            if (topLevelJsonElement.has("charges") && topLevelJsonElement.get("charges").isJsonArray()) {
-                final JsonArray array = topLevelJsonElement.get("charges").getAsJsonArray();
+            if (topLevelJsonElement.has(LoanChargeAssembler.CHARGES_PARAM)
+                    && topLevelJsonElement.get(LoanChargeAssembler.CHARGES_PARAM).isJsonArray()) {
+                final JsonArray array = topLevelJsonElement.get(LoanChargeAssembler.CHARGES_PARAM).getAsJsonArray();
                 for (int i = 0; i < array.size(); i++) {
                     final JsonObject loanChargeElement = array.get(i).getAsJsonObject();
                     final Long id = this.fromApiJsonHelper.extractLongNamed("id", loanChargeElement);
-                    final Long chargeId = this.fromApiJsonHelper.extractLongNamed("chargeId", loanChargeElement);
+                    final Long chargeId = this.fromApiJsonHelper.extractLongNamed(LoanChargeAssembler.CHARGE_ID_PARAM, loanChargeElement);
                     if (id == null) {
                         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
                         if (chargeDefinition.getChargeTimeType().equals(ChargeTimeType.TRANCHE_DISBURSEMENT.getValue())) {
@@ -387,15 +400,16 @@ public class LoanChargeAssembler {
     }
 
     public LoanCharge createNewFromJson(final Loan loan, final Charge chargeDefinition, final JsonCommand command) {
-        final LocalDate dueDate = command.localDateValueOfParameterNamed("dueDate");
+        final LocalDate dueDate = command.localDateValueOfParameterNamed(LoanChargeAssembler.DUE_DATE_PARAM);
         if (chargeDefinition.getChargeTimeType().equals(ChargeTimeType.SPECIFIED_DUE_DATE.getValue()) && dueDate == null) {
             final String defaultUserMessage = "Loan charge is missing due date.";
-            throw new LoanChargeWithoutMandatoryFieldException("loanCharge", "dueDate", defaultUserMessage, chargeDefinition.getId(),
-                    chargeDefinition.getName());
+            throw new LoanChargeWithoutMandatoryFieldException(LoanChargeAssembler.LOAN_CHARGE_PARAM, LoanChargeAssembler.DUE_DATE_PARAM,
+                    defaultUserMessage, chargeDefinition.getId(), chargeDefinition.getName());
         }
         return createNewFromJson(loan, chargeDefinition, command, dueDate, null, null);
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     public LoanCharge createNewFromJson(final Loan loan, final Charge chargeDefinition, final JsonCommand command, final LocalDate dueDate,
             LoanRepaymentScheduleInstallment installment, Long numberOfPenaltyDays) {
         final Locale locale = command.extractLocale();
@@ -435,8 +449,9 @@ public class LoanChargeAssembler {
         }
 
         if (chargeCalculationType.isPercentageOfInstallmentPrincipal()) {
-            if (command.hasParameter("principal")) {
-                amountPercentageAppliedTo = amountPercentageAppliedTo.add(command.bigDecimalValueOfParameterNamed("principal"));
+            if (command.hasParameter(LoanChargeAssembler.PRINCIPAL_PARAM)) {
+                amountPercentageAppliedTo = amountPercentageAppliedTo
+                        .add(command.bigDecimalValueOfParameterNamed(LoanChargeAssembler.PRINCIPAL_PARAM));
             } else {
                 amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getPrincipal().getAmount());
             }
@@ -451,8 +466,9 @@ public class LoanChargeAssembler {
         }
 
         if (chargeCalculationType.isCustomPercentageOfOutstandingPrincipalCharge()) {
-            if (command.hasParameter("principal")) {
-                amountPercentageAppliedTo = amountPercentageAppliedTo.add(command.bigDecimalValueOfParameterNamed("principal"));
+            if (command.hasParameter(LoanChargeAssembler.PRINCIPAL_PARAM)) {
+                amountPercentageAppliedTo = amountPercentageAppliedTo
+                        .add(command.bigDecimalValueOfParameterNamed(LoanChargeAssembler.PRINCIPAL_PARAM));
             } else {
                 amountPercentageAppliedTo = amountPercentageAppliedTo.add(loan.getPrincipal().getAmount());
             }
@@ -527,7 +543,7 @@ public class LoanChargeAssembler {
                 loanCharge = percentageOf(loan.getPrincipal().getAmount(), amount);
             } else {
                 loanCharge = loan.calculatePerInstallmentChargeAmount(
-                        ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()), percentage, null,
+                        ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()), percentage,
                         chargeDefinition.getParentChargeId(), null);
             }
         }
@@ -583,6 +599,7 @@ public class LoanChargeAssembler {
         return percentageOf;
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private BigDecimal getAmountPerentageFromCustomChargeTable(final ChargeCalculationType type, final Integer numberOfInstallments,
             final String pointOfSaleCode, final String clientIdNumber) {
         BigDecimal percentage = BigDecimal.ZERO;
@@ -634,11 +651,12 @@ public class LoanChargeAssembler {
 
     private boolean isAllowedChargeCalculationType(final ChargeCalculationType chargeCalculationType,
             final CustomChargeEntityData customChargeEntityData) {
-        return (customChargeEntityData.getName().equalsIgnoreCase("Insurance")
+        return (customChargeEntityData.getName().equalsIgnoreCase(LoanChargeAssembler.INSURANCE_PARAM)
                 && chargeCalculationType.isPercentageBasedMandatoryInsurance())
-                || (customChargeEntityData.getName().equalsIgnoreCase("Insurance")
+                || (customChargeEntityData.getName().equalsIgnoreCase(LoanChargeAssembler.INSURANCE_PARAM)
                         && chargeCalculationType.isCustomPercentageOfOutstandingPrincipalCharge())
-                || (customChargeEntityData.getName().equalsIgnoreCase("Insurance") && chargeCalculationType.isVoluntaryInsurance())
+                || (customChargeEntityData.getName().equalsIgnoreCase(LoanChargeAssembler.INSURANCE_PARAM)
+                        && chargeCalculationType.isVoluntaryInsurance())
                 || (customChargeEntityData.getName().equalsIgnoreCase("Term") && chargeCalculationType.isTermCharge())
                 || (customChargeEntityData.getName().equalsIgnoreCase("Aval") && chargeCalculationType.isPercentageOfAval());
     }
@@ -684,6 +702,7 @@ public class LoanChargeAssembler {
         return false;
     }
 
+    @SuppressWarnings({ "squid:S2479" })
     private LoanAccountData getLoanExtras(final Long loanId) {
         final String loanSQL = """
                     SELECT
@@ -701,7 +720,7 @@ public class LoanChargeAssembler {
                     WHERE ml.id = ?
                 """;
         final List<LoanAccountData> loanAccounts = jdbcTemplate.query(loanSQL, resultSet -> {
-            final List<LoanAccountData> LoanAccountDataList = new ArrayList<>();
+            final List<LoanAccountData> loanAccountDataList = new ArrayList<>();
             while (resultSet.next()) {
                 final Long loanAccountId = resultSet.getLong("loanId");
                 final Long clientId = resultSet.getLong("clientId");
@@ -713,7 +732,7 @@ public class LoanChargeAssembler {
                 loanAccountData.setClientIdNumber(clientIdNumber);
                 loanAccountData.setClientId(clientId);
             }
-            return LoanAccountDataList;
+            return loanAccountDataList;
         }, loanId);
         return CollectionUtils.isNotEmpty(loanAccounts) ? loanAccounts.get(0) : null;
     }

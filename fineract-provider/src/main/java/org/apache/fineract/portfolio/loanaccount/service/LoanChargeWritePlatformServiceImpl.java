@@ -125,6 +125,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatformService {
 
     private static final String AMOUNT = "amount";
+    private static final String EXTERNAL_ID_PARAM = "externalId";
+    private static final String INSTALLMENT_NUMBER_PARAM = "installmentNumber";
+    private static final String DUE_DATE_PARAM = "dueDate";
+    private static final String TRANSACTION_AMOUNT_PARAM = "transactionAmount";
+    private static final String TRANSACTION_DATE_PARAM = "transactionDate";
+    private static final String DATE_FORMAT_PARAM = "dateFormat";
+    private static final String LOAN_CHARGE_PARAM = "loanCharge";
+
     private final LoanChargeApiJsonValidator loanChargeApiJsonValidator;
     private final LoanAssembler loanAssembler;
     private final ChargeRepositoryWrapper chargeRepository;
@@ -156,6 +164,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         return DateUtils.isAfter(loanCharge.getDueDate(), e.getFromDate()) && !DateUtils.isAfter(loanCharge.getDueDate(), e.getDueDate());
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     @Transactional
     @Override
     public CommandProcessingResult addLoanCharge(final Long loanId, final JsonCommand command) {
@@ -184,7 +193,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         LocalDate recalculateFrom = loan.fetchInterestRecalculateFromDate();
         if (chargeDefinition.isPercentageOfDisbursementAmount()) {
             LoanTrancheDisbursementCharge loanTrancheDisbursementCharge;
-            ExternalId externalId = externalIdFactory.createFromCommand(command, "externalId");
+            ExternalId externalId = externalIdFactory.createFromCommand(command, LoanChargeWritePlatformServiceImpl.EXTERNAL_ID_PARAM);
             boolean needToGenerateNewExternalId = false;
             for (LoanDisbursementDetails disbursementDetail : loanDisburseDetails) {
                 if (disbursementDetail.actualDisbursementDate() == null) {
@@ -259,12 +268,11 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         // date, if yes trigger reprocess else no reprocessing
         if (AdvancedPaymentScheduleTransactionProcessor.ADVANCED_PAYMENT_ALLOCATION_STRATEGY.equals(loan.transactionProcessingStrategy())) {
             LoanTransaction lastPaymentTransaction = loan.getLastPaymentTransaction();
-            if (lastPaymentTransaction != null) {
-                if (loanCharge.getEffectiveDueDate() != null
-                        && DateUtils.isAfter(loanCharge.getEffectiveDueDate(), lastPaymentTransaction.getTransactionDate())) {
-                    reprocessRequired = false;
-                }
+            if (lastPaymentTransaction != null && loanCharge.getEffectiveDueDate() != null
+                    && DateUtils.isAfter(loanCharge.getEffectiveDueDate(), lastPaymentTransaction.getTransactionDate())) {
+                reprocessRequired = false;
             }
+
         }
 
         if (reprocessRequired) {
@@ -310,9 +318,10 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         final Long loanChargeId = command.longValueOfParameterNamed("loanChargeId");
         final LoanCharge loanCharge = retrieveLoanChargeBy(loanId, loanChargeId);
 
-        final Integer installmentNumber = command.integerValueOfParameterNamed("installmentNumber");
-        final LocalDate dueDate = command.localDateValueOfParameterNamed("dueDate");
-        final BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed("transactionAmount");
+        final Integer installmentNumber = command.integerValueOfParameterNamed(LoanChargeWritePlatformServiceImpl.INSTALLMENT_NUMBER_PARAM);
+        final LocalDate dueDate = command.localDateValueOfParameterNamed(LoanChargeWritePlatformServiceImpl.DUE_DATE_PARAM);
+        final BigDecimal transactionAmount = command
+                .bigDecimalValueOfParameterNamed(LoanChargeWritePlatformServiceImpl.TRANSACTION_AMOUNT_PARAM);
 
         final LoanInstallmentCharge installmentChargeEntry = loanChargeRefundEntranceValidation(loanCharge, installmentNumber, dueDate);
         Integer installmentNumberIdentified = null;
@@ -407,7 +416,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         changes.put("penaltyChargesPortion", loanTransaction.getPenaltyChargesPortion());
         changes.put("outstandingLoanBalance", loanTransaction.getOutstandingLoanBalance());
         changes.put("id", loanTransaction.getId());
-        changes.put("externalId", loanTransaction.getExternalId());
+        changes.put(LoanChargeWritePlatformServiceImpl.EXTERNAL_ID_PARAM, loanTransaction.getExternalId());
         changes.put("date", loanTransaction.getTransactionDate());
 
         return new CommandProcessingResultBuilder() //
@@ -455,6 +464,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                 .build();
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     @Transactional
     @Override
     public CommandProcessingResult waiveLoanCharge(final Long loanId, final Long loanChargeId, final JsonCommand command) {
@@ -485,8 +495,9 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         if (loanCharge.isInstalmentFee()) {
             LoanInstallmentCharge chargePerInstallment = null;
             if (!StringUtils.isBlank(command.json())) {
-                final LocalDate dueDate = command.localDateValueOfParameterNamed("dueDate");
-                final Integer installmentNumber = command.integerValueOfParameterNamed("installmentNumber");
+                final LocalDate dueDate = command.localDateValueOfParameterNamed(LoanChargeWritePlatformServiceImpl.DUE_DATE_PARAM);
+                final Integer installmentNumber = command
+                        .integerValueOfParameterNamed(LoanChargeWritePlatformServiceImpl.INSTALLMENT_NUMBER_PARAM);
                 if (dueDate != null) {
                     chargePerInstallment = loanCharge.getInstallmentLoanCharge(dueDate);
                 } else if (installmentNumber != null) {
@@ -515,7 +526,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
 
         Money accruedCharge = Money.zero(loan.getCurrency());
-        if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()) {
+        if (Boolean.TRUE.equals(loan.isPeriodicAccrualAccountingEnabledOnLoanProduct())) {
             Collection<LoanChargePaidByData> chargePaidByCollection = this.loanChargeReadPlatformService
                     .retrieveLoanChargesPaidBy(loanCharge.getId(), LoanTransactionType.ACCRUAL, loanInstallmentNumber);
             for (LoanChargePaidByData chargePaidByData : chargePaidByCollection) {
@@ -615,7 +626,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                     LoanChargeCannotBePayedException.LoanChargeCannotBePayedReason.CHARGE_NOT_ACCOUNT_TRANSFER, loanCharge.getId());
         }
 
-        final LocalDate transactionDate = command.localDateValueOfParameterNamed("transactionDate");
+        final LocalDate transactionDate = command.localDateValueOfParameterNamed(LoanChargeWritePlatformServiceImpl.TRANSACTION_DATE_PARAM);
 
         final Locale locale = command.extractLocale();
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(locale);
@@ -623,8 +634,9 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         BigDecimal amount = loanCharge.amountOutstanding();
         if (loanCharge.isInstalmentFee()) {
             LoanInstallmentCharge chargePerInstallment = null;
-            final LocalDate dueDate = command.localDateValueOfParameterNamed("dueDate");
-            final Integer installmentNumber = command.integerValueOfParameterNamed("installmentNumber");
+            final LocalDate dueDate = command.localDateValueOfParameterNamed(LoanChargeWritePlatformServiceImpl.DUE_DATE_PARAM);
+            final Integer installmentNumber = command
+                    .integerValueOfParameterNamed(LoanChargeWritePlatformServiceImpl.INSTALLMENT_NUMBER_PARAM);
             if (dueDate != null) {
                 chargePerInstallment = loanCharge.getInstallmentLoanCharge(dueDate);
             } else if (installmentNumber != null) {
@@ -682,14 +694,14 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
         final LoanCharge loanCharge = retrieveLoanChargeBy(loanId, loanChargeId);
         final LocalDate transactionDate = DateUtils.getBusinessLocalDate();
-        final BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed("amount");
-        final ExternalId externalId = externalIdFactory.createFromCommand(command, "externalId");
+        final BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed(AMOUNT);
+        final ExternalId externalId = externalIdFactory.createFromCommand(command, LoanChargeWritePlatformServiceImpl.EXTERNAL_ID_PARAM);
         final String locale = command.locale();
 
         Map<String, Object> changes = new HashMap<>();
-        changes.put("externalId", externalId);
-        changes.put("amount", transactionAmount);
-        changes.put("transactionDate", transactionDate);
+        changes.put(LoanChargeWritePlatformServiceImpl.EXTERNAL_ID_PARAM, externalId);
+        changes.put(LoanChargeWritePlatformServiceImpl.AMOUNT, transactionAmount);
+        changes.put(LoanChargeWritePlatformServiceImpl.TRANSACTION_DATE_PARAM, transactionDate);
         changes.put("locale", locale);
 
         loanChargeAdjustmentEntranceValidation(loanCharge, transactionAmount);
@@ -740,6 +752,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                 .build();
     }
 
+    @SuppressWarnings({ "squid:S3776", "squid:S135" })
     @Transactional
     @Override
     public void applyOverdueChargesForLoan(final Long loanId, Collection<OverdueLoanScheduleData> overdueUnsortedLoanScheduleDataList) {
@@ -754,7 +767,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                         .groupingBy(schedule -> schedule.getLoan().getId() + "-" + schedule.getInstallmentNumber(), Collectors.counting()))
                 .values().stream().anyMatch(count -> count > 1);
 
-        if (!duplicateNumberInstalment) {
+        if (Boolean.FALSE.equals(duplicateNumberInstalment)) {
             if (loan.isChargedOff()) {
                 log.warn("Adding charge to Loan: {} is not allowed. Loan Account is Charged-off", loanId);
                 return;
@@ -764,6 +777,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
             boolean runInterestRecalculation = false;
             LocalDate recalculateFrom = DateUtils.getBusinessLocalDate();
             LocalDate lastChargeDate = null;
+
             for (final OverdueLoanScheduleData overdueInstallment : overdueLoanScheduleDataList) {
 
                 if (overdueInstallment.getPeriodNumber() < 1) {
@@ -812,9 +826,6 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                 }
 
                 if (reprocessRequired) {
-                    // No need to add new penalty installment. This has been handled in
-                    // SingleLoanChargeRepaymentScheduleProcessingWrapper.reprocess
-                    // addInstallmentIfPenaltyAppliedAfterLastDueDate(loan, lastChargeDate);
                     ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions();
                     if (changedTransactionDetail != null) {
                         for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings()
@@ -891,7 +902,6 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         LoanCharge loanCharge = loanChargePaidBy.getLoanCharge();
         final Integer installmentNumber = loanChargePaidBy.getInstallmentNumber();
         LoanInstallmentCharge chargePerInstallment;
-        // final Integer installmentNumber = command.integerValueOfParameterNamed("installmentNumber");
         if (installmentNumber != null) {
             // Get installment charge.
             chargePerInstallment = loanCharge.getInstallmentLoanCharge(installmentNumber);
@@ -993,18 +1003,18 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
     private void validateAddLoanCharge(final Loan loan, final Charge chargeDefinition, final LoanCharge loanCharge) {
         if (chargeDefinition.isOverdueInstallment()) {
             final String defaultUserMessage = "Installment charge cannot be added to the loan.";
-            throw new LoanChargeCannotBeAddedException("loanCharge", "overdue.charge", defaultUserMessage, null,
-                    chargeDefinition.getName());
+            throw new LoanChargeCannotBeAddedException(LoanChargeWritePlatformServiceImpl.LOAN_CHARGE_PARAM, "overdue.charge",
+                    defaultUserMessage, null, chargeDefinition.getName());
         } else if (loanCharge.getDueLocalDate() != null
                 && DateUtils.isBefore(loanCharge.getDueLocalDate(), loan.getLastUserTransactionForChargeCalc())) {
             final String defaultUserMessage = "charge with date before last transaction date can not be added to loan.";
-            throw new LoanChargeCannotBeAddedException("loanCharge", "date.is.before.last.transaction.date", defaultUserMessage, null,
-                    chargeDefinition.getName());
+            throw new LoanChargeCannotBeAddedException(LoanChargeWritePlatformServiceImpl.LOAN_CHARGE_PARAM,
+                    "date.is.before.last.transaction.date", defaultUserMessage, null, chargeDefinition.getName());
         } else if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
             if (loanCharge.isInstalmentFee() && loan.getStatus().isActive()) {
                 final String defaultUserMessage = "installment charge addition not allowed after disbursement";
-                throw new LoanChargeCannotBeAddedException("loanCharge", "installment.charge", defaultUserMessage, null,
-                        chargeDefinition.getName());
+                throw new LoanChargeCannotBeAddedException(LoanChargeWritePlatformServiceImpl.LOAN_CHARGE_PARAM, "installment.charge",
+                        defaultUserMessage, null, chargeDefinition.getName());
             }
             final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
             final Set<LoanCharge> loanCharges = new HashSet<>(1);
@@ -1016,11 +1026,12 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         }
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private boolean addCharge(final Loan loan, final Charge chargeDefinition, LoanCharge loanCharge) {
 
         if (!loan.hasCurrencyCodeOf(chargeDefinition.getCurrencyCode())) {
             final String errorMessage = "Charge and Loan must have the same currency.";
-            throw new InvalidCurrencyException("loanCharge", "attach.to.loan", errorMessage);
+            throw new InvalidCurrencyException(LoanChargeWritePlatformServiceImpl.LOAN_CHARGE_PARAM, "attach.to.loan", errorMessage);
         }
 
         if (loanCharge.getChargePaymentMode().isPaymentModeAccountTransfer()) {
@@ -1032,27 +1043,13 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
             }
         }
 
-        /*
-         * Do not need to add additional penalty installment anymore
-         *
-         * if (!loan.isInterestBearing() && loanCharge.isSpecifiedDueDate()) { LoanRepaymentScheduleInstallment
-         * latestRepaymentScheduleInstalment = loan.getRepaymentScheduleInstallments()
-         * .get(loan.getLoanRepaymentScheduleInstallmentsSize() - 1); if (DateUtils.isAfter(loanCharge.getDueDate(),
-         * latestRepaymentScheduleInstalment.getDueDate())) { if (latestRepaymentScheduleInstalment.isAdditional()) {
-         * latestRepaymentScheduleInstalment.updateDueDate(loanCharge.getDueDate()); } else { final
-         * LoanRepaymentScheduleInstallment installment = new LoanRepaymentScheduleInstallment(loan,
-         * (loan.getLoanRepaymentScheduleInstallmentsSize() + 1), latestRepaymentScheduleInstalment.getDueDate(),
-         * loanCharge.getDueDate(), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, false, null);
-         * installment.markAsAdditional(); loan.addLoanRepaymentScheduleInstallment(installment); } } }
-         */
-
         loan.addLoanCharge(loanCharge);
 
         loanCharge = this.loanChargeRepository.saveAndFlush(loanCharge);
 
         // we want to apply charge transactions only for those loans charges that are applied when a loan is active and
         // the loan product uses Upfront Accruals
-        if (loan.getStatus().isActive() && loan.isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
+        if (loan.getStatus().isActive() && Boolean.TRUE.equals(loan.isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct())) {
             final LoanTransaction applyLoanChargeTransaction = loan.handleChargeAppliedTransaction(loanCharge, null);
 
             if (DateUtils.isBeforeBusinessDate(loanCharge.getDueLocalDate())) {
@@ -1083,6 +1080,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         return DateUtils.isBeforeBusinessDate(loanCharge.getDueLocalDate());
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private LoanOverdueDTO applyChargeToOverdueLoanInstallment(final Loan loan, final Long loanChargeId, final Integer periodNumber,
             final JsonCommand command) {
         boolean runInterestRecalculation = false;
@@ -1107,7 +1105,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
             penaltyWaitPeriodValue = 0L;
         }
 
-        final LocalDate dueDate = command.localDateValueOfParameterNamed("dueDate");
+        final LocalDate dueDate = command.localDateValueOfParameterNamed(LoanChargeWritePlatformServiceImpl.DUE_DATE_PARAM);
         long diff = penaltyWaitPeriodValue + 1 - penaltyPostingWaitPeriodValue;
         if (diff < 1) {
             diff = 1L;
@@ -1116,7 +1114,8 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         LocalDate startDate = dueDate.plusDays(penaltyWaitPeriodValue + 1L);
         int frequencyNumber = 1;
         if (feeFrequency == null) {
-            scheduleDates.put(frequencyNumber++, startDate.minusDays(diff));
+            frequencyNumber++;
+            scheduleDates.put(frequencyNumber, startDate.minusDays(diff));
         } else {
             while (!DateUtils.isDateInTheFuture(startDate)) {
                 scheduleDates.put(frequencyNumber++, startDate.minusDays(diff));
@@ -1146,11 +1145,8 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
             for (Map.Entry<Integer, LocalDate> entry : scheduleDates.entrySet()) {
                 final LoanCharge loanCharge = loanChargeAssembler.createNewFromJson(loan, chargeDefinition, command, entry.getValue(),
                         installment, numberOfPenaltyDays);
-                if (Objects.isNull(loanCharge.amount()) || BigDecimal.ZERO.compareTo(loanCharge.amount()) == 0) {
-                    continue;
-                }
-                // If due date of charge is before penalty start date, continue
-                if (penaltyStartDate != null && loanCharge.getDueLocalDate().isBefore(penaltyStartDate)) {
+                if ((Objects.isNull(loanCharge.amount()) || BigDecimal.ZERO.compareTo(loanCharge.amount()) == 0)
+                        || (penaltyStartDate != null && loanCharge.getDueLocalDate().isBefore(penaltyStartDate))) {
                     continue;
                 }
                 LoanOverdueInstallmentCharge overdueInstallmentCharge = new LoanOverdueInstallmentCharge(loanCharge, installment,
@@ -1170,29 +1166,6 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         }
 
         return new LoanOverdueDTO(loan, runInterestRecalculation, recalculateFrom, lastChargeAppliedDate);
-    }
-
-    private void addInstallmentIfPenaltyAppliedAfterLastDueDate(Loan loan, LocalDate lastChargeDate) {
-        if (lastChargeDate != null) {
-            List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments();
-            LoanRepaymentScheduleInstallment lastInstallment = loan.fetchRepaymentScheduleInstallment(installments.size());
-            if (lastInstallment != null && DateUtils.isAfter(lastChargeDate, lastInstallment.getDueDate())) {
-                if (lastInstallment.isRecalculatedInterestComponent()) {
-                    installments.remove(lastInstallment);
-                    lastInstallment = loan.fetchRepaymentScheduleInstallment(installments.size());
-                }
-                boolean recalculatedInterestComponent = true;
-                BigDecimal principal = BigDecimal.ZERO;
-                BigDecimal interest = BigDecimal.ZERO;
-                BigDecimal feeCharges = BigDecimal.ZERO;
-                BigDecimal penaltyCharges = BigDecimal.ONE;
-                final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails = null;
-                LoanRepaymentScheduleInstallment newEntry = new LoanRepaymentScheduleInstallment(loan, installments.size() + 1,
-                        lastInstallment.getDueDate(), lastChargeDate, principal, interest, feeCharges, penaltyCharges,
-                        recalculatedInterestComponent, compoundingDetails);
-                loan.addLoanRepaymentScheduleInstallment(newEntry);
-            }
-        }
     }
 
     public Loan runScheduleRecalculation(Loan loan, final LocalDate recalculateFrom) {
@@ -1220,26 +1193,27 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         JsonObject jsonObject = (JsonObject) this.fromApiJsonHelper.parse(command.json());
 
         String dateFormat;
-        if (this.fromApiJsonHelper.parameterExists("dateFormat", jsonObject)) {
-            dateFormat = this.fromApiJsonHelper.extractStringNamed("dateFormat", jsonObject);
+        if (this.fromApiJsonHelper.parameterExists(LoanChargeWritePlatformServiceImpl.DATE_FORMAT_PARAM, jsonObject)) {
+            dateFormat = this.fromApiJsonHelper.extractStringNamed(LoanChargeWritePlatformServiceImpl.DATE_FORMAT_PARAM, jsonObject);
         } else {
             dateFormat = "dd MMMM yyyy";
-            jsonObject.addProperty("dateFormat", dateFormat);
+            jsonObject.addProperty(LoanChargeWritePlatformServiceImpl.DATE_FORMAT_PARAM, dateFormat);
         }
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat);
         LocalDate transactionDate = DateUtils.getBusinessLocalDate();
         String transactionDateString = transactionDate.format(dateTimeFormatter);
-        jsonObject.addProperty("transactionDate", transactionDateString);
-        if (!this.fromApiJsonHelper.parameterExists("transactionAmount", jsonObject)) {
-            jsonObject.addProperty("transactionAmount", fullRefundAbleAmount.toString());
+        jsonObject.addProperty(LoanChargeWritePlatformServiceImpl.TRANSACTION_DATE_PARAM, transactionDateString);
+        if (!this.fromApiJsonHelper.parameterExists(LoanChargeWritePlatformServiceImpl.TRANSACTION_AMOUNT_PARAM, jsonObject)) {
+            jsonObject.addProperty(LoanChargeWritePlatformServiceImpl.TRANSACTION_AMOUNT_PARAM, fullRefundAbleAmount.toString());
         }
         jsonObject.remove("loanChargeId");
-        jsonObject.remove("installmentNumber");
-        jsonObject.remove("dueDate");
+        jsonObject.remove(LoanChargeWritePlatformServiceImpl.INSTALLMENT_NUMBER_PARAM);
+        jsonObject.remove(LoanChargeWritePlatformServiceImpl.DUE_DATE_PARAM);
 
         return JsonCommand.fromExistingCommand(command, jsonObject);
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private BigDecimal loanChargeValidateRefundAmount(LoanCharge loanCharge, LoanInstallmentCharge installmentChargeEntry,
             BigDecimal transactionAmount) {
         // if transactionAmount not provided return max refundable amount (amount paid minus previous refunds)
@@ -1306,6 +1280,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         return (loanChargePaidBy.getLoanTransaction().isChargeRefund() && loanChargePaidBy.getAmount().compareTo(BigDecimal.ZERO) < 0);
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private LoanInstallmentCharge loanChargeRefundEntranceValidation(LoanCharge loanCharge, Integer installmentNumber, LocalDate dueDate) {
 
         LoanInstallmentCharge installmentChargeEntry = null;
@@ -1330,7 +1305,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
             if (dueDate != null) {
                 installmentChargeEntry = loanCharge.getInstallmentLoanCharge(dueDate);
-            } else if (installmentNumber != null) {
+            } else {
                 installmentChargeEntry = loanCharge.getInstallmentLoanCharge(installmentNumber);
             }
 
@@ -1401,16 +1376,14 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
     private void checkClientOrGroupActive(final Loan loan) {
         final Client client = loan.client();
-        if (client != null) {
-            if (client.isNotActive()) {
-                throw new ClientNotActiveException(client.getId());
-            }
+        if (client != null && client.isNotActive()) {
+            throw new ClientNotActiveException(client.getId());
         }
+
         final Group group = loan.group();
-        if (group != null) {
-            if (group.isNotActive()) {
-                throw new GroupNotActiveException(group.getId());
-            }
+        if (group != null && group.isNotActive()) {
+            throw new GroupNotActiveException(group.getId());
         }
+
     }
 }

@@ -27,11 +27,11 @@ import org.springframework.data.repository.query.Param;
 public interface FacturaElectronicMensualRepository
         extends JpaRepository<FacturaElectronicaMensual, Long>, JpaSpecificationExecutor<FacturaElectronicaMensual> {
 
-    @Query("SELECT f FROM FacturaElectronicaMensual f WHERE f.id_cliente = :id_cliente AND f.tipo_prod = :tipo_prod AND f.tip_doc = 'INVOIC' ORDER BY f.createdDate, f.id")
+    @Query("SELECT f FROM FacturaElectronicaMensual f WHERE f.idCliente = :id_cliente AND f.tipoProd = :tipo_prod AND f.tipDoc = 'INVOIC' ORDER BY f.createdDate, f.id")
     List<FacturaElectronicaMensual> findById_clienteAndTipo_prod(@Param("id_cliente") String id_cliente,
             @Param("tipo_prod") String tipo_prod);
 
-    @Query("SELECT f FROM FacturaElectronicaMensual f WHERE f.loan_transaction_id = :loanTransactionId")
+    @Query("SELECT f FROM FacturaElectronicaMensual f WHERE f.loanTransactionId = :loanTransactionId")
     List<FacturaElectronicaMensual> findByLoanTransactionId(final Long loanTransactionId);
 
 }

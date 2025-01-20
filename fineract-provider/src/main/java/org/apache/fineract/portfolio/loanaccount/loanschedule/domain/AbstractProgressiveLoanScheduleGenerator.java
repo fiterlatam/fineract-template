@@ -52,10 +52,10 @@ import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
 
 public abstract class AbstractProgressiveLoanScheduleGenerator implements LoanScheduleGenerator {
 
+    @SuppressWarnings({ "squid:S3776" })
     @Override
     public LoanScheduleModel generate(final MathContext mc, final LoanApplicationTerms loanApplicationTerms,
             final Set<LoanCharge> loanCharges, final HolidayDetailDTO holidayDetailDTO) {
-        // TODO: handle interest calculation
         final ApplicationCurrency applicationCurrency = loanApplicationTerms.getApplicationCurrency();
         // generate list of proposed schedule due dates
         LocalDate loanEndDate = getScheduledDateGenerator().getLastRepaymentDate(loanApplicationTerms, holidayDetailDTO);
@@ -174,12 +174,6 @@ public abstract class AbstractProgressiveLoanScheduleGenerator implements LoanSc
             scheduleParams.setPeriodStartDate(scheduledDueDate);
             scheduleParams.incrementInstalmentNumber();
             scheduleParams.incrementPeriodNumber();
-            // if (termVariationParams.isRecalculateAmounts()) {
-            // loanApplicationTerms.setCurrentPeriodFixedEmiAmount(null);
-            // loanApplicationTerms.setCurrentPeriodFixedPrincipalAmount(null);
-            // adjustInstallmentOrPrincipalAmount(loanApplicationTerms, scheduleParams.getTotalCumulativePrincipal(),
-            // scheduleParams.getPeriodNumber(), mc);
-            // }
         }
 
         // determine fees and penalties for charges which depends on total
@@ -394,6 +388,7 @@ public abstract class AbstractProgressiveLoanScheduleGenerator implements LoanSc
         scheduleParams.addTotalPenaltyChargesCharged(currentPeriodParams.getPenaltyChargesForInstallment());
     }
 
+    @SuppressWarnings({ "squid:S107" })
     private Money cumulativeFeeChargesDueWithin(final LocalDate periodStart, final LocalDate periodEnd, final Set<LoanCharge> loanCharges,
             final MonetaryCurrency monetaryCurrency, final PrincipalInterest principalInterestForThisPeriod, final Money principalDisbursed,
             final Money totalInterestChargedForFullLoanTerm, boolean isInstallmentChargeApplicable, final boolean isFirstPeriod,
@@ -408,6 +403,7 @@ public abstract class AbstractProgressiveLoanScheduleGenerator implements LoanSc
         return cumulative;
     }
 
+    @SuppressWarnings({ "squid:S107" })
     private Money getCumulativeAmountOfCharge(LocalDate periodStart, LocalDate periodEnd, PrincipalInterest principalInterestForThisPeriod,
             Money principalDisbursed, Money totalInterestChargedForFullLoanTerm, boolean isInstallmentChargeApplicable,
             boolean isFirstPeriod, LoanCharge loanCharge, Money cumulative, MathContext mc) {
@@ -426,6 +422,7 @@ public abstract class AbstractProgressiveLoanScheduleGenerator implements LoanSc
         return cumulative;
     }
 
+    @SuppressWarnings({ "squid:S107" })
     private Money cumulativePenaltyChargesDueWithin(final LocalDate periodStart, final LocalDate periodEnd,
             final Set<LoanCharge> loanCharges, final MonetaryCurrency monetaryCurrency,
             final PrincipalInterest principalInterestForThisPeriod, final Money principalDisbursed,

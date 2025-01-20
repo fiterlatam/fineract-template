@@ -93,6 +93,7 @@ public class InstallmentChargeAccrualTasklet implements Tasklet {
         return RepeatStatus.FINISHED;
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private void postInstallmentChargeAccruals(List<Long> loanIds, int threadPoolSize, LocalDate accrualDate, int pageSize,
             Long maxLoanIdInList) {
         List<Callable<Void>> posters = new ArrayList<>();
@@ -212,6 +213,7 @@ public class InstallmentChargeAccrualTasklet implements Tasklet {
             }
         } catch (InterruptedException e1) {
             log.error("Interrupted while processing installment charge accruals", e1);
+            Thread.currentThread().interrupt();
         } catch (ExecutionException e2) {
             log.error("Execution exception while processing installment charge accruals", e2);
         }

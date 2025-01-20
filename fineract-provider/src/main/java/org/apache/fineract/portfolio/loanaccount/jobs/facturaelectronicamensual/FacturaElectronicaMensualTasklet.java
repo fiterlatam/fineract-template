@@ -145,6 +145,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
 
     public static class LoanInvoiceMapper implements RowMapper<LoanDocumentData> {
 
+        @SuppressWarnings({ "squid:S2479" })
         public String invoiceSchema() {
             return """
                         	mc.id AS "clientId",
@@ -354,6 +355,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                     """;
         }
 
+        @SuppressWarnings({ "squid:S2479" })
         public String transactionSchema() {
             return """
                         	mc.id AS "clientId",

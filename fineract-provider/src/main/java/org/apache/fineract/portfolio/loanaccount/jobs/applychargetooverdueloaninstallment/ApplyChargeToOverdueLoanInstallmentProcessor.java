@@ -46,6 +46,7 @@ public class ApplyChargeToOverdueLoanInstallmentProcessor {
     private final LoanChargeWritePlatformService loanChargeWritePlatformService;
     private final ChargeRepositoryWrapper chargeRepository;
 
+    @SuppressWarnings({ "squid:S3776" })
     @Transactional(isolation = Isolation.READ_UNCOMMITTED, rollbackFor = Exception.class)
     public void processOverdueCharges() throws JobExecutionException {
         List<Throwable> exceptions = new ArrayList<>();

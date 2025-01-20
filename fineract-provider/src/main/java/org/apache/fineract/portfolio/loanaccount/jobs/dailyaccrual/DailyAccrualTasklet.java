@@ -90,6 +90,7 @@ public class DailyAccrualTasklet implements Tasklet {
         return RepeatStatus.FINISHED;
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private void postDailyAccruals(List<Long> loanIds, int threadPoolSize, LocalDate accrualDate, int pageSize, Long maxLoanIdInList) {
         List<Callable<Void>> posters = new ArrayList<>();
         int fromIndex = 0;
@@ -205,6 +206,7 @@ public class DailyAccrualTasklet implements Tasklet {
             }
         } catch (InterruptedException e1) {
             log.error("Interrupted while processing daily accruals", e1);
+            Thread.currentThread().interrupt();
         } catch (ExecutionException e2) {
             log.error("Execution exception while processing daily accruals", e2);
         }

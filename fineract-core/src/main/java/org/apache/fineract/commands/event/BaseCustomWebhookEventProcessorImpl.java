@@ -76,4 +76,6 @@ public abstract class BaseCustomWebhookEventProcessorImpl implements CustomWebho
 
     protected abstract List<Map<String, String>> getSupportedEvents();
 
+    // we need a method to check is the event is supported
+    // we need a method to publish the event
 }

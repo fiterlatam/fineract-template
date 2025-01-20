@@ -7,18 +7,19 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.SortedMap;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 
 public class PrincipalInterestCalculator {
 
+    @SuppressWarnings({ "squid:S1172" })
     public PrincipalInterest principalInterestComponentsForFlatInterestLoans(final PaymentPeriodsInOneYearCalculator calculator,
             final BigDecimal interestCalculationGraceOnRepaymentPeriodFraction, final Money totalCumulativePrincipal,
             Money totalCumulativeInterest, Money totalInterestDueForLoan, final Money cumulatingInterestPaymentDueToGrace,
             final Money outstandingBalance, final LoanApplicationTerms loanApplicationTerms, final int periodNumber, final MathContext mc,
-            @SuppressWarnings("unused") TreeMap<LocalDate, Money> principalVariation,
+            @SuppressWarnings("unused") SortedMap<LocalDate, Money> principalVariation,
             @SuppressWarnings("unused") Map<LocalDate, Money> compoundingMap, LocalDate periodStartDate, LocalDate periodEndDate,
             @SuppressWarnings("unused") Collection<LoanTermVariationsData> termVariations) {
 
@@ -39,28 +40,20 @@ public class PrincipalInterestCalculator {
         // adjust if needed
         principalForThisInstallment = loanApplicationTerms.adjustPrincipalIfLastRepaymentPeriod(principalForThisInstallment,
                 totalCumulativePrincipalToDate, periodNumber);
-
-        // totalCumulativeInterest from partial schedule generation for multi
-        // rescheduling
-        /*
-         * if (loanApplicationTerms.getPartialTotalCumulativeInterest() != null &&
-         * loanApplicationTerms.getTotalInterestDue() != null) { totalInterestDueForLoan =
-         * loanApplicationTerms.getTotalInterestDue(); totalInterestDueForLoan =
-         * totalInterestDueForLoan.plus(loanApplicationTerms. getPartialTotalCumulativeInterest()); }
-         */
         interestForThisInstallment = loanApplicationTerms.adjustInterestIfLastRepaymentPeriod(interestForThisInstallment,
                 totalCumulativeInterestToDate, totalInterestDueForLoan, periodNumber);
 
         return new PrincipalInterest(principalForThisInstallment, interestForThisInstallment, interestBroughtForwardDueToGrace);
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     public PrincipalInterest principalInterestComponentsForDecliningBalanceLoan(final PaymentPeriodsInOneYearCalculator calculator,
             final BigDecimal interestCalculationGraceOnRepaymentPeriodFraction, final Money totalCumulativePrincipal,
             @SuppressWarnings("unused") final Money totalCumulativeInterest,
             @SuppressWarnings("unused") final Money totalInterestDueForLoan, final Money cumulatingInterestPaymentDueToGrace,
             final Money outstandingBalance, final LoanApplicationTerms loanApplicationTerms, final int periodNumber, final MathContext mc,
-            final TreeMap<LocalDate, Money> principalVariation, final Map<LocalDate, Money> compoundingMap, final LocalDate periodStartDate,
-            final LocalDate periodEndDate, final Collection<LoanTermVariationsData> termVariations,
+            final SortedMap<LocalDate, Money> principalVariation, final Map<LocalDate, Money> compoundingMap,
+            final LocalDate periodStartDate, final LocalDate periodEndDate, final Collection<LoanTermVariationsData> termVariations,
             final Money accruedInterestByAdvancePmt) {
 
         LocalDate interestStartDate = periodStartDate;
@@ -138,7 +131,7 @@ public class PrincipalInterestCalculator {
         cumulatingInterestDueToGrace = result.interestPaymentDueToGrace();
 
         if (loanApplicationTerms.isInterestToBeRecoveredFirstWhenGreaterThanEMIEnabled()
-                && loanApplicationTerms.isInterestTobeApproppriated()) {
+                && Boolean.TRUE.equals(loanApplicationTerms.isInterestTobeApproppriated())) {
             interestForThisInstallment = interestForThisInstallment.add(loanApplicationTerms.getInterestTobeApproppriated());
             loanApplicationTerms.setInterestTobeApproppriated(interestForThisInstallment.zero());
         }
