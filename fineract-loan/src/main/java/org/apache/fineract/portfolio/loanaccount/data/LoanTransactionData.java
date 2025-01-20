@@ -112,6 +112,7 @@ public class LoanTransactionData {
     private Boolean haveHono;
     private Boolean isCalculate;
     private boolean occurredOnSuspendedAccount;
+    private boolean partiallyInvoiced;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {
@@ -471,6 +472,10 @@ public class LoanTransactionData {
 
     public void updateFeeChargesPortion(BigDecimal amount) {
         this.feeChargesPortion = this.feeChargesPortion.add(amount);
+    }
+
+    public void markAsPartiallyInvoiced() {
+        this.partiallyInvoiced = true;
     }
 
 }

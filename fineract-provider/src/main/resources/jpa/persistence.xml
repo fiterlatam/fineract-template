@@ -85,6 +85,7 @@
         <class>org.apache.fineract.portfolio.loanaccount.domain.GroupLoanIndividualMonitoringAccount</class>
         <class>org.apache.fineract.portfolio.loanaccount.domain.Loan</class>
         <class>org.apache.fineract.portfolio.loanaccount.domain.LoanCharge</class>
+        <class>org.apache.fineract.portfolio.loanaccount.domain.PartialInvoicedTransaction</class>
         <class>org.apache.fineract.portfolio.loanaccount.domain.LoanChargePaidBy</class>
         <class>org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagement</class>
         <class>org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails</class>
