@@ -1185,11 +1185,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         if (remainingAmount.isGreaterThanZero()
                                 && remainingAmount.isGreaterThanOrEqualTo(installment.getTotalOutstanding(loan.getCurrency()))) {
                             fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(installmentOutstandingAmount,
-                                    installment, installmentNumber, version);
+                                    installment, installmentNumber, version, transactionDate);
                             remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
                         } else {
                             fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(remainingAmount.getAmount(),
-                                    installment, installmentNumber, version);
+                                    installment, installmentNumber, version, transactionDate);
                             remainingAmount = remainingAmount.zero();
                         }
                         cumulativeHonoFee = cumulativeHonoFee.add(fee.getFeeBasis());
