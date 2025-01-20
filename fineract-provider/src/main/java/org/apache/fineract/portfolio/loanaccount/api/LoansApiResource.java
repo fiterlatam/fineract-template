@@ -92,8 +92,10 @@ import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.dataqueries.api.DataTableApiConstant;
 import org.apache.fineract.infrastructure.dataqueries.data.DatatableData;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
+import org.apache.fineract.infrastructure.dataqueries.data.GenericResultsetData;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksReadService;
+import org.apache.fineract.infrastructure.dataqueries.service.ReadWriteNonCoreDataService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.staff.data.StaffData;
@@ -125,7 +127,23 @@ import org.apache.fineract.portfolio.fund.data.FundData;
 import org.apache.fineract.portfolio.fund.service.FundReadPlatformService;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
-import org.apache.fineract.portfolio.loanaccount.data.*;
+import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
+import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
+import org.apache.fineract.portfolio.loanaccount.data.GlimRepaymentTemplate;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAssignorData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanBlockingReasonData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanCollateralManagementData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanDebtProjectionData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanReclaimData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanSummaryData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
+import org.apache.fineract.portfolio.loanaccount.data.PaidInAdvanceData;
+import org.apache.fineract.portfolio.loanaccount.data.ReclaimData;
+import org.apache.fineract.portfolio.loanaccount.data.RepaymentScheduleRelatedLoanData;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariationType;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanTemplateTypeRequiredException;
@@ -332,6 +350,7 @@ public class LoansApiResource {
     private final LoanBlockReadPlatformService loanBlockingReasonReadPlatformService;
     private final LoanDebtProjectionService loanDebtProjectionService;
     private final ConfigurationDomainServiceJpa configurationDomainServiceJpa;
+    private final ReadWriteNonCoreDataService readWriteNonCoreDataService;
 
     @GET
     @Path("{loanId}/template")
@@ -1376,6 +1395,18 @@ public class LoansApiResource {
                 loanAccount.setVoluntaryInsurance(voluntaryInsurance);
             }
         }
+
+        // Add Datatables info and data to the response
+        final List<DatatableData> datatableNamesList = this.readWriteNonCoreDataService.retrieveDatatableNames("m_loan");
+        datatableNamesList.stream().forEach(name -> {
+            GenericResultsetData results = this.readWriteNonCoreDataService.retrieveDataTableGenericResultSet(name.getRegisteredTableName(),
+                    loanId, "", null);
+
+            name.setColumnHeaderData(null);
+            name.setGenericResultSet(results);
+        });
+
+        loanAccount.setDatatables(datatableNamesList);
 
         loanAccount.setSmvl(configurationDomainServiceJpa.retrieveSMVLLimit());
 

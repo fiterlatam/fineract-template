@@ -20,6 +20,8 @@ package org.apache.fineract.infrastructure.dataqueries.data;
 
 import java.io.Serializable;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Immutable data object representing datatable data.
@@ -33,7 +35,11 @@ public final class DatatableData implements Serializable {
     @SuppressWarnings("unused")
     private final String entitySubType;
     @SuppressWarnings("unused")
-    private final List<ResultsetColumnHeaderData> columnHeaderData;
+    @Setter
+    private List<ResultsetColumnHeaderData> columnHeaderData;
+    @Setter
+    @Getter
+    private GenericResultsetData genericResultSet;
 
     public static DatatableData create(final String applicationTableName, final String registeredTableName, final String entitySubType,
             final List<ResultsetColumnHeaderData> columnHeaderData) {
