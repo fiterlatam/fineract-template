@@ -344,16 +344,11 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         BigDecimal vatPercentage = BigDecimal.valueOf(vatConfig).divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
 
         // Retrieve delinquency percentage
-        DelinquencyRangeData delinquencyRangeData = delinquencyReadPlatformService
-                .retrieveCurrentDelinquencyTag(loanRepaymentScheduleInstallment.getLoan().getId());
-        if (delinquencyRangeData != null) {
-            delinquencyValue = BigDecimal.valueOf(delinquencyRangeData.getPercentageValue());
-        } else {
-            DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
-            if (delinquencyRange != null) {
-                delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
-            }
+        DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
+        if (delinquencyRange != null) {
+            delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
         }
+
         // Calculate delinquent portion, fee with VAT, fee basis, and fee VAT
         BigDecimal delinquencyRate = delinquencyValue.divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
         BigDecimal delinquentPortion = repaymentAmount

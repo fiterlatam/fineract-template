@@ -221,17 +221,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     private FeeCalculationHonorario calculateFeeDetails(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
-            BigDecimal repaymentAmount) {
-        // SU-529 Get maximum age of any of the client's loan
-        List<Loan> clientActiveLoans = this.loanRepositoryWrapper
-                .findActiveLoansByClientId(loanRepaymentScheduleInstallment.getLoan().getClientId());
-        Integer ageOverdue = 0;
-        for (Loan loan : clientActiveLoans) {
-            int overdue = loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
-            if (overdue > ageOverdue) {
-                ageOverdue = overdue;
-            }
-        }
+            BigDecimal repaymentAmount, LocalDate transactionDate) {
+
+        Integer ageOverdue = loanRepaymentScheduleInstallment.getLoan().getAgeOfOverdueDays(transactionDate).intValue();
 
         BigDecimal delinquencyValue = BigDecimal.ZERO;
         // Retrieve VAT configuration and percentage
@@ -239,16 +231,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         BigDecimal vatPercentage = BigDecimal.valueOf(vatConfig).divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
 
         // Retrieve delinquency percentage
-        DelinquencyRangeData delinquencyRangeData = delinquencyReadPlatformService
-                .retrieveCurrentDelinquencyTag(loanRepaymentScheduleInstallment.getLoan().getId());
-        if (delinquencyRangeData != null) {
-            delinquencyValue = BigDecimal.valueOf(delinquencyRangeData.getPercentageValue());
-        } else {
-            DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
-            if (delinquencyRange != null) {
-                delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
-            }
+
+        DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
+        if (delinquencyRange != null) {
+            delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
         }
+
 
         // Calculate delinquent portion, fee with VAT, fee basis, and fee VAT
         BigDecimal delinquencyRate = delinquencyValue.divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
@@ -3972,10 +3960,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     BigDecimal installmentOutstandingAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount();
                     if (remainingAmount.isGreaterThanZero()
                             && remainingAmount.isGreaterThanOrEqualTo(installment.getTotalOutstanding(loan.getCurrency()))) {
-                        feeCalculationHonorario = this.calculateFeeDetails(installment, installmentOutstandingAmount);
+                        feeCalculationHonorario = this.calculateFeeDetails(installment, installmentOutstandingAmount, transactionDate);
                         remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
                     } else {
-                        feeCalculationHonorario = this.calculateFeeDetails(installment, remainingAmount.getAmount());
+                        feeCalculationHonorario = this.calculateFeeDetails(installment, remainingAmount.getAmount(), transactionDate);
                         remainingAmount = remainingAmount.zero();
                     }
                     feeHono = feeHono.add(feeCalculationHonorario.getFeeBasis());
