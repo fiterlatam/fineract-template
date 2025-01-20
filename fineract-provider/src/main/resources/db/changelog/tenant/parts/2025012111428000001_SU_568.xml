@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet author="fineract" id="1">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="m_partial_invoiced_transaction"/>
+            </not>
+        </preConditions>
+        <createTable tableName="m_partial_invoiced_transaction">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="repayment_transaction_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="accrual_transaction_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="interest" type="decimal(19,6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="honorarios" type="decimal(19,6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="honorarios_vat" type="decimal(19,6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="mandatory_insurance" type="decimal(19,6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="mandatory_insurance_vat" type="decimal(19,6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="voluntary_insurance" type="decimal(19,6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="voluntary_insurance_vat" type="decimal(19,6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="penalty" type="decimal(19,6)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="penalty_vat" type="decimal(19,6)">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="m_partial_invoiced_transaction"
+                                 baseColumnNames="accrual_transaction_id"
+                                 constraintName="fk_m_partial_invoiced_transaction_accrual_id"
+                                 referencedTableName="m_loan_transaction"
+                                 referencedColumnNames="id"/>
+        <addForeignKeyConstraint baseTableName="m_partial_invoiced_transaction"
+                                 baseColumnNames="repayment_transaction_id"
+                                 constraintName="fk_m_partial_invoiced_transaction_repayment_id"
+                                 referencedTableName="m_loan_transaction"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="2" author="fineract">
+        <addColumn tableName="m_loan_transaction">
+            <column name="is_partially_ivoiced" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>

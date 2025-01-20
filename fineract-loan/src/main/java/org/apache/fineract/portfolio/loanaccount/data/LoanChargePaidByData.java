@@ -42,6 +42,16 @@ public class LoanChargePaidByData {
     private BigDecimal penalty;
     private boolean penaltyCharge;
 
+    // Invoice related fields
+    private BigDecimal penaltyPortion;
+    private BigDecimal penaltyVatPortion;
+    private BigDecimal honorariosPortion;
+    private BigDecimal honorariosVatPortion;
+    private BigDecimal voluntaryInsurancePortion;
+    private BigDecimal voluntaryInsuranceVatPortion;
+    private BigDecimal mandatoryInsurancePortion;
+    private BigDecimal mandatoryInsuranceVatPortion;
+
     public LoanChargePaidByData(LoanChargePaidBy originalData) {
         this.id = originalData.getId();
         this.amount = originalData.getAmount();

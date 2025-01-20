@@ -155,6 +155,12 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "invoiced_by_transaction_id")
     private Long invoicedByTransactionId;
 
+    @Column(name = "is_partially_ivoiced")
+    private boolean partiallyInvoiced;
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "accrualTransaction", orphanRemoval = true, fetch = FetchType.EAGER)
+    private Set<PartialInvoicedTransaction> partialInvoicedTransactions = new HashSet<>();
+
     // This property is added to process vertical payments horizontally for Past Due and Due installments.
     // Advance Payments will be handled through VerticalPayment Scheme
     @Transient
@@ -513,6 +519,18 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean hasOccurredOnSuspendedAccount() {
         return this.occurredOnSuspendedAccount;
+    }
+
+    public boolean isPartiallyInvoiced() {
+        return this.partiallyInvoiced;
+    }
+
+    public void markAsPartiallyInvoiced() {
+        this.partiallyInvoiced = true;
+    }
+
+    public void resetPartiallyInvoiced() {
+        this.partiallyInvoiced = false;
     }
 
     public void resetInvoicedByTransactionId() {
@@ -1196,4 +1214,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return list;
     }
 
+    public Set<PartialInvoicedTransaction> getPartialInvoicedTransactions() {
+        return this.partialInvoicedTransactions;
+    }
 }
