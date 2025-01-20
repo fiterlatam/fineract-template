@@ -36,7 +36,7 @@
             coalesce(vat.amt, 0) AS "Valor IVA",
             COALESCE(cce."NIT", ccp."Cedula") AS "Cédula del cliente",
             ml.id AS "Crédito del cliente",
-            coalesce(delinquent_paid_amounts.overdue_amount,0) - coalesce(hono.amt, 0) - coalesce(vat.amt, 0) AS "Valor porción morosa del pago",
+            coalesce(delinquent_paid_amounts.overdue_amount,0) + coalesce(delinquent_paid_amounts.penaly_paid,0) - coalesce(hono.amt, 0) - coalesce(vat.amt, 0) AS "Valor porción morosa del pago",
             coalesce(delinquent_paid_amounts.penaly_paid,0) AS "Valor interés de mora pagado",
             coalesce(delinquent_paid_amounts.overdue_non_penalty_amount, 0) - coalesce(hono.amt, 0) - coalesce(vat.amt, 0) AS "Valor de las cuotas morosas pagadas"
         from
