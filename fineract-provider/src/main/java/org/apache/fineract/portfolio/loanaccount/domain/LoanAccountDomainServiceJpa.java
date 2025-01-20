@@ -88,7 +88,6 @@ import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
-import org.apache.fineract.portfolio.delinquency.data.DelinquencyRangeData;
 import org.apache.fineract.portfolio.delinquency.domain.DelinquencyRange;
 import org.apache.fineract.portfolio.delinquency.domain.LoanDelinquencyAction;
 import org.apache.fineract.portfolio.delinquency.helper.DelinquencyEffectivePauseHelper;
@@ -335,7 +334,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
     @Override
     public FeeCalculationHonorario calculateFeeHonorario(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
-                                                         BigDecimal repaymentAmount, LocalDate transactionDate) {
+            BigDecimal repaymentAmount, LocalDate transactionDate) {
         BigDecimal delinquencyValue = BigDecimal.ZERO;
         Integer ageOverdue = loanRepaymentScheduleInstallment.getLoan().getAgeOfOverdueDays(transactionDate).intValue();
 
@@ -362,6 +361,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         // Return results as an object
         return new FeeCalculationHonorario(delinquentPortion, feeWithTax, feeBasis, feeVat, feeHono);
     }
+
     @Override
     public FeeCalculationHonorario calculateFeeHonorario(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
             BigDecimal repaymentAmount) {
@@ -370,8 +370,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
     @Override
     public FeeCalculationHonorario updateCalculationHonoLoanChargeOverDueVat(BigDecimal repaymentAmount,
-            LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
-            Integer installmentNumberToBeCharged, Long version, LocalDate transactionDate) {
+            LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, Integer installmentNumberToBeCharged, Long version,
+            LocalDate transactionDate) {
         FeeCalculationHonorario feeCalculationHonorario = new FeeCalculationHonorario(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO);
         if (loanRepaymentScheduleInstallment.isObligationsMet()) {

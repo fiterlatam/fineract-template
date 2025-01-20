@@ -237,7 +237,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
         }
 
-
         // Calculate delinquent portion, fee with VAT, fee basis, and fee VAT
         BigDecimal delinquencyRate = delinquencyValue.divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
         BigDecimal delinquentPortion = repaymentAmount
