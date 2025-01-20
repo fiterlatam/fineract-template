@@ -156,11 +156,15 @@ public class Charge extends AbstractPersistableCustom {
     @Embedded
     private ChargeInsuranceDetail chargeInsuranceDetail;
 
+    private static final String ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP = "error.msg.charge.not.setup.correctly";
+    private static final String ERROR_MESSAGE_INCORRECT_CHARGE_SETUP = "Charge not setup correctly";
+    private static final String AMOUNT_PARAM = "amount";
+
     public static Charge fromJson(final JsonCommand command, final GLAccount account, final TaxGroup taxGroup,
             final PaymentType paymentType) {
 
         final String name = command.stringValueOfParameterNamed("name");
-        final BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount");
+        final BigDecimal amount = command.bigDecimalValueOfParameterNamed(Charge.AMOUNT_PARAM);
         final String currencyCode = command.stringValueOfParameterNamed("currencyCode");
 
         final ChargeAppliesTo chargeAppliesTo = ChargeAppliesTo.fromInt(command.integerValueOfParameterNamed("chargeAppliesTo"));
@@ -530,6 +534,7 @@ public class Charge extends AbstractPersistableCustom {
         return getPercentageFromTable;
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     public Map<String, Object> update(final JsonCommand command) {
         final Map<String, Object> actualChanges = new LinkedHashMap<>(7);
 
@@ -552,7 +557,7 @@ public class Charge extends AbstractPersistableCustom {
             this.currencyCode = newValue;
         }
 
-        final String amountParamName = "amount";
+        final String amountParamName = Charge.AMOUNT_PARAM;
         if (command.isChangeInBigDecimalParameterNamed(amountParamName, this.amount)) {
             final BigDecimal newValue = command.bigDecimalValueOfParameterNamed(amountParamName, locale);
             actualChanges.put(amountParamName, newValue);
@@ -684,7 +689,8 @@ public class Charge extends AbstractPersistableCustom {
         }
 
         if (BigDecimal.ZERO.equals(amount) && !isLoanCharge() && !isMandatoryInsurance()) {
-            baseDataValidator.reset().parameter("amount").value(this.amount).failWithCodeNoParameterAddedToErrorCode("zero.amount");
+            baseDataValidator.reset().parameter(Charge.AMOUNT_PARAM).value(this.amount)
+                    .failWithCodeNoParameterAddedToErrorCode("zero.amount");
         }
         // validate only for loan charge
         if (isLoanCharge()) {
@@ -1003,6 +1009,7 @@ public class Charge extends AbstractPersistableCustom {
         }
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     public void validateChargeIsSetupCorrectly() {
         if (this.isLoanCharge()) {
             final ChargeCalculationType chargeCalculationType = ChargeCalculationType.fromInt(this.getChargeCalculation());
@@ -1012,12 +1019,12 @@ public class Charge extends AbstractPersistableCustom {
             }
             if (this.isPenalty()) {
                 if (!ChargeTimeType.fromInt(this.getChargeTimeType()).isOverdueInstallment()) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
-                            this.getName());
+                    throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
+                            Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
                 }
                 if (this.interestRate == null) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
-                            this.getName());
+                    throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
+                            Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
                 }
                 if (this.isCustomPercentageBasedOfAnotherCharge()) {
                     verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.PERCENT_OF_ANOTHER_CHARGE.getIndex(), null, null,
@@ -1057,27 +1064,26 @@ public class Charge extends AbstractPersistableCustom {
                 verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
                         ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(), null, null, null);
             } else {
-                throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
-                        this.getName());
+                throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
+                        Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
             }
 
             if (!this.isPenalty() && !ChargeTimeType.fromInt(this.getChargeTimeType()).isInstalmentFee() && !this.isDisbursementCharge()) {
-                throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
-                        this.getName());
+                throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
+                        Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
             }
         }
     }
 
     private void verifyChargeConfiguration(String code, Integer index1, Integer index2, Integer index3, Integer index4, Integer index5) {
-        if (this.isAvalCharge() && !this.isPenalty()) {
-            if (!this.isGetPercentageFromTable()) {
-                throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
-                        this.getName());
-            }
+        if (this.isAvalCharge() && !this.isPenalty() && !this.isGetPercentageFromTable()) {
+            throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
+                    Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
         }
+
         if (!this.isPenalty() && !this.isInstallmentFee() && !this.isDisbursementCharge()) {
-            throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
-                    this.getName());
+            throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
+                    Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
         }
         char[] codeArray = code.toCharArray();
         codeArray[index1] = '0';
@@ -1096,8 +1102,8 @@ public class Charge extends AbstractPersistableCustom {
         }
         code = String.valueOf(codeArray);
         if (code.indexOf('1') != -1) {
-            throw new GeneralPlatformDomainRuleException("error.msg.charge.not.setup.correctly", "Charge not setup correctly",
-                    this.getName());
+            throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
+                    Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
         }
     }
 

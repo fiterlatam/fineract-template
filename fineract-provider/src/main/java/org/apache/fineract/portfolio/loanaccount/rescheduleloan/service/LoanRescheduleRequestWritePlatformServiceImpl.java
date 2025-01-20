@@ -271,6 +271,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
         }
     }
 
+    @SuppressWarnings({ "squid:S3776", "squid:S107" })
     private void createLoanTermVariationsForRegularLoans(final Loan loan, final Integer graceOnPrincipal, final Integer graceOnInterest,
             final Integer extraTerms, final Integer rediferirTerms, final BigDecimal interestRate, LocalDate rescheduleFromDate,
             LocalDate adjustedDueDate, final LoanRescheduleRequest loanRescheduleRequest,
@@ -391,6 +392,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
         loanRescheduleRequest.updateLoanRescheduleRequestToTermVariationMappings(loanRescheduleRequestToTermVariationMappings);
     }
 
+    @SuppressWarnings({ "squid:S3776", "squid:S107" })
     private LoanTermVariations createLoanTermVariations(LoanRescheduleRequest loanRescheduleRequest, final Integer termType,
             final Loan loan, LocalDate rescheduleFromDate, LocalDate adjustedDueDate,
             List<LoanRescheduleRequestToTermVariationMapping> loanRescheduleRequestToTermVariationMappings, final Boolean isActive,
@@ -403,6 +405,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
         return loanTermVariation;
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     @Override
     @Transactional
     public CommandProcessingResult approve(JsonCommand jsonCommand) {
@@ -485,7 +488,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 mapping.getLoanTermVariations().updateIsActive(true);
             }
             if (!rediferirVariations.isEmpty()) {
-                if (Boolean.FALSE.equals(isJobTriggered) && !loanProduct.getCustomAllowReferido()) {
+                if (Boolean.FALSE.equals(isJobTriggered) && Boolean.TRUE.equals(!loanProduct.getCustomAllowReferido())) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.not.allowed",
                             "Rediferir is not allowed on this product");
                 }
@@ -525,29 +528,16 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     this.loanRescheduleRequestRepository.saveAndFlush(loanRescheduleRequest);
                 }
             }
-            if (Boolean.FALSE.equals(isJobTriggered) && rediferirVariations.isEmpty()) {
-                if (!loanProduct.getCustomAllowRefinance()) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.not.allowed.on.product",
-                            "Reschedule is not allowed on this product");
-                }
+            if (Boolean.FALSE.equals(isJobTriggered) && rediferirVariations.isEmpty()
+                    && Boolean.FALSE.equals(loanProduct.getCustomAllowRefinance())) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.not.allowed.on.product",
+                        "Reschedule is not allowed on this product");
             }
 
             BigDecimal annualNominalInterestRate = null;
             final List<LoanTermVariationsData> loanTermVariations = new ArrayList<>();
             loan.constructLoanTermVariations(scheduleGeneratorDTO.getFloatingRateDTO(), annualNominalInterestRate, loanTermVariations);
             loanApplicationTerms.getLoanTermVariations().setExceptionData(loanTermVariations);
-
-            /*
-             * for (LoanTermVariationsData loanTermVariation :
-             * loanApplicationTerms.getLoanTermVariations().getDueDateVariation( )) { if
-             * (rescheduleFromDate.isBefore(loanTermVariation. getTermApplicableFrom())) { LocalDate applicableDate =
-             * this.scheduledDateGenerator.generateNextRepaymentDate( rescheduleFromDate, loanApplicationTerms, false,
-             * loanApplicationTerms.getHolidayDetailDTO()); if
-             * (loanTermVariation.getTermApplicableFrom().equals(applicableDate) ) { LocalDate adjustedDate =
-             * this.scheduledDateGenerator.generateNextRepaymentDate( adjustedApplicableDate, loanApplicationTerms,
-             * false, loanApplicationTerms.getHolidayDetailDTO());
-             * loanTermVariation.setApplicableFromDate(adjustedDate); } } }
-             */
 
             final MathContext mathContext = MoneyHelper.getMathContext();
             final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.loanRepaymentScheduleTransactionProcessorFactory
@@ -595,20 +585,10 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 if (overdueInstallmentCharge != null) {
                     Integer installmentNumber = overdueInstallmentCharge.getInstallment().getInstallmentNumber();
                     LoanRepaymentScheduleInstallment installment = loan.fetchRepaymentScheduleInstallment(installmentNumber);
-                    if (installment.getInstallmentNumber() == 0) {
-                        System.out.println("here is zero ");
-                    }
                     overdueInstallmentCharge.updateLoanRepaymentScheduleInstallment(installment);
                 }
             }
-            // update the status of the request
             loanRescheduleRequest.approve(appUser, approvedOnDate);
-
-            /***
-             * TODO Vishwas Batch save is giving me a HibernateOptimisticLockingFailureException, looping and saving for
-             * the time being, not a major issue for now as this loop is entered only in edge cases (when a adjustment
-             * is made before the latest payment recorded against the loan)
-             ***/
             if (changedTransactionDetail != null) {
                 for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
                     loanAccountDomainService.saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.getValue());

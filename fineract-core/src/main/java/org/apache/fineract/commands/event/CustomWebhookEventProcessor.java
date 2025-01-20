@@ -23,20 +23,6 @@ import org.apache.fineract.useradministration.domain.AppUser;
 
 public interface CustomWebhookEventProcessor {
 
-    /**
-     * Transforms the given result into a map representation based on the entity and action.
-     *
-     * @param entityName
-     *            the name of the entity
-     * @param actionName
-     *            the action performed
-     * @param command
-     *            the JSON command associated with the operation
-     * @param result
-     *            the result object to be transformed
-     * @return a map representation of the transformation, or an empty map if the result is not supported
-     */
-
     Map<String, Object> transform(String entityName, String actionName, JsonCommand command, Object result);
 
     void publish(Map<String, Object> transformedPayload, String entityName, String actionName, AppUser user,

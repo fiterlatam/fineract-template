@@ -44,6 +44,9 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteService {
 
+    private static final String LOAN_CHARGE_ID = "chargeId";
+    private static final String WRITE_OFF_AMOUNT = "writeOffAmount";
+
     private final LoanCreditNoteRepository loanCreditNoteRepository;
     private final LoanAssembler loanAssembler;
     private final DocumentRepository documentRepository;
@@ -62,7 +65,7 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
         final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loan.getId());
         final Long daysInArrears = collectionData.getPastDueDays();
         final LoanProduct loanProduct = loan.loanProduct();
-        if (!loanProduct.getCustomAllowCreditNote()) {
+        if (Boolean.FALSE.equals(loanProduct.getCustomAllowCreditNote())) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.credit.note.not.allowed",
                     "Credit note is not allowed for this loan product");
         }
@@ -170,6 +173,7 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
 
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private List<Map<String, Object>> generateChargesForSpecialWriteOff(Loan loan, LoanCreditNote creditNote) {
         List<Map<String, Object>> charges = new ArrayList<>();
         boolean writeOffCharge = creditNote.includesCharges();
@@ -186,8 +190,9 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                 LoanCharge arrearCharge = loanCharges.stream().filter(LoanCharge::isPenaltyCharge).findFirst().orElse(null);
 
                 if (arrearCharge != null) {
-                    charges.add(Map.of("chargeId", Objects.requireNonNull(arrearCharge.getCharge().getId()), "writeOffAmount",
-                            creditNote.getArrearInterest()));
+                    charges.add(
+                            Map.of(LoanCreditNoteWriteServiceImpl.LOAN_CHARGE_ID, Objects.requireNonNull(arrearCharge.getCharge().getId()),
+                                    LoanCreditNoteWriteServiceImpl.WRITE_OFF_AMOUNT, creditNote.getArrearInterest()));
                 } else {
                     creditNote.setArrearInterest(BigDecimal.ZERO);
                 }
@@ -199,11 +204,12 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                 LoanCharge insuranceCharge = loanCharges.stream().filter(loanCharge -> loanCharge.getCharge().isVoluntaryInsurance())
                         .findFirst().orElse(null);
                 if (insuranceCharge != null) {
-                    BigDecimal vatAmountToBePaid = BigDecimal.ZERO;
+                    BigDecimal vatAmountToBePaid;
                     vatAmountToBePaid = calculateVatAmount(loanCharges, insuranceCharge, insuranceCharge.amountOutstanding(),
                             loan.getCurrency(), charges);
                     BigDecimal chargeAmount = creditNote.getInsurance().subtract(vatAmountToBePaid);
-                    charges.add(Map.of("chargeId", Objects.requireNonNull(insuranceCharge.getCharge().getId()), "writeOffAmount",
+                    charges.add(Map.of(LoanCreditNoteWriteServiceImpl.LOAN_CHARGE_ID,
+                            Objects.requireNonNull(insuranceCharge.getCharge().getId()), LoanCreditNoteWriteServiceImpl.WRITE_OFF_AMOUNT,
                             chargeAmount));
                 } else {
                     creditNote.setInsurance(BigDecimal.ZERO);
@@ -219,11 +225,12 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                 log.info(" is charge present {}", insuranceCharge);
                 // check if insurance is present
                 if (insuranceCharge != null) {
-                    BigDecimal vatAmountToBePaid = BigDecimal.ZERO;
+                    BigDecimal vatAmountToBePaid;
                     vatAmountToBePaid = calculateVatAmount(loanCharges, insuranceCharge, insuranceCharge.amountOutstanding(),
                             loan.getCurrency(), charges);
                     BigDecimal chargeAmount = creditNote.getMandatoryInsurance().subtract(vatAmountToBePaid);
-                    charges.add(Map.of("chargeId", Objects.requireNonNull(insuranceCharge.getCharge().getId()), "writeOffAmount",
+                    charges.add(Map.of(LoanCreditNoteWriteServiceImpl.LOAN_CHARGE_ID,
+                            Objects.requireNonNull(insuranceCharge.getCharge().getId()), LoanCreditNoteWriteServiceImpl.WRITE_OFF_AMOUNT,
                             chargeAmount));
                 } else {
                     creditNote.setMandatoryInsurance(BigDecimal.ZERO);
@@ -235,7 +242,8 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                 LoanCharge honorariosCharge = loanCharges.stream().filter(loanCharge -> loanCharge.getCharge().isFlatHono()).findFirst()
                         .orElse(null);
                 if (honorariosCharge != null) {
-                    charges.add(Map.of("chargeId", Objects.requireNonNull(honorariosCharge.getCharge().getId()), "writeOffAmount",
+                    charges.add(Map.of(LoanCreditNoteWriteServiceImpl.LOAN_CHARGE_ID,
+                            Objects.requireNonNull(honorariosCharge.getCharge().getId()), LoanCreditNoteWriteServiceImpl.WRITE_OFF_AMOUNT,
                             creditNote.getHonorarios()));
                 } else {
                     creditNote.setHonorarios(BigDecimal.ZERO);
@@ -247,11 +255,13 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                 LoanCharge avalCharge = loanCharges.stream().filter(loanCharge -> loanCharge.getCharge().isAvalCharge()).findFirst()
                         .orElse(null);
                 if (avalCharge != null) {
-                    BigDecimal vatAmountToBePaid = BigDecimal.ZERO;
+                    BigDecimal vatAmountToBePaid;
                     vatAmountToBePaid = calculateVatAmount(loanCharges, avalCharge, avalCharge.amountOutstanding(), loan.getCurrency(),
                             charges);
                     BigDecimal chargeAmount = creditNote.getAval().subtract(vatAmountToBePaid);
-                    charges.add(Map.of("chargeId", Objects.requireNonNull(avalCharge.getCharge().getId()), "writeOffAmount", chargeAmount));
+                    charges.add(
+                            Map.of(LoanCreditNoteWriteServiceImpl.LOAN_CHARGE_ID, Objects.requireNonNull(avalCharge.getCharge().getId()),
+                                    LoanCreditNoteWriteServiceImpl.WRITE_OFF_AMOUNT, chargeAmount));
                 } else {
                     creditNote.setAval(BigDecimal.ZERO);
                 }
@@ -269,14 +279,13 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
         return Money.of(currency, newAmount).getAmount();
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private BigDecimal calculateVatAmount(Collection<LoanCharge> loanCharges, LoanCharge parentCharge, BigDecimal amount,
             MonetaryCurrency currency, List<Map<String, Object>> charges) {
         BigDecimal vatAmount = BigDecimal.ZERO;
         BigDecimal parentChargeAmount = BigDecimal.ZERO;
         for (LoanInstallmentCharge installmentCharge : parentCharge.installmentCharges()) {
-            if (installmentCharge.isPaid()) {
-                continue;
-            } else {
+            if (!installmentCharge.isPaid()) {
                 parentChargeAmount = installmentCharge.getAmountOutstanding();
                 break;
             }
@@ -285,9 +294,7 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
             if (Objects.equals(parentCharge.getCharge().getId(), vatCharge.getCharge().getParentChargeId())) {
                 BigDecimal outstandingVatAmount = BigDecimal.ZERO;
                 for (LoanInstallmentCharge installmentCharge : vatCharge.installmentCharges()) {
-                    if (installmentCharge.isPaid()) {
-                        continue;
-                    } else {
+                    if (!installmentCharge.isPaid()) {
                         outstandingVatAmount = installmentCharge.getAmountOutstanding();
                         break;
                     }
@@ -301,7 +308,8 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                 }
                 vatAmount = outstandingVatAmount;
                 if (vatAmount.compareTo(BigDecimal.ZERO) > 0) {
-                    charges.add(Map.of("chargeId", Objects.requireNonNull(vatCharge.getCharge().getId()), "writeOffAmount", vatAmount));
+                    charges.add(Map.of(LoanCreditNoteWriteServiceImpl.LOAN_CHARGE_ID, Objects.requireNonNull(vatCharge.getCharge().getId()),
+                            LoanCreditNoteWriteServiceImpl.WRITE_OFF_AMOUNT, vatAmount));
                 }
                 break;
             }

@@ -23,7 +23,7 @@ import java.math.MathContext;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.SortedMap;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
@@ -73,34 +73,29 @@ public class CumulativeDecliningBalanceInterestLoanScheduleGenerator extends Abs
     @Override
     public PrincipalInterest calculatePrincipalInterestComponentsForPeriod(final PaymentPeriodsInOneYearCalculator calculator,
             final BigDecimal interestCalculationGraceOnRepaymentPeriodFraction, final Money totalCumulativePrincipal,
-            @SuppressWarnings("unused") final Money totalCumulativeInterest,
-            @SuppressWarnings("unused") final Money totalInterestDueForLoan, final Money cumulatingInterestPaymentDueToGrace,
+            final Money totalCumulativeInterest, final Money totalInterestDueForLoan, final Money cumulatingInterestPaymentDueToGrace,
             final Money outstandingBalance, final LoanApplicationTerms loanApplicationTerms, final int periodNumber, final MathContext mc,
-            final TreeMap<LocalDate, Money> principalVariation, final Map<LocalDate, Money> compoundingMap, final LocalDate periodStartDate,
-            final LocalDate periodEndDate, final Collection<LoanTermVariationsData> termVariations) {
-
+            final SortedMap<LocalDate, Money> principalVariation, final Map<LocalDate, Money> compoundingMap,
+            final LocalDate periodStartDate, final LocalDate periodEndDate, final Collection<LoanTermVariationsData> termVariations) {
         Money accruedInterestByAdvancePmt = Money.zero(loanApplicationTerms.getCurrency());
         return calculatePrincipalInterestComponentsForPeriod(calculator, interestCalculationGraceOnRepaymentPeriodFraction,
                 totalCumulativePrincipal, totalCumulativeInterest, totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace,
                 outstandingBalance, loanApplicationTerms, periodNumber, mc, principalVariation, compoundingMap, periodStartDate,
                 periodEndDate, termVariations, accruedInterestByAdvancePmt);
-
     }
 
     @Override
     public PrincipalInterest calculatePrincipalInterestComponentsForPeriod(final PaymentPeriodsInOneYearCalculator calculator,
             final BigDecimal interestCalculationGraceOnRepaymentPeriodFraction, final Money totalCumulativePrincipal,
-            @SuppressWarnings("unused") final Money totalCumulativeInterest,
-            @SuppressWarnings("unused") final Money totalInterestDueForLoan, final Money cumulatingInterestPaymentDueToGrace,
+            final Money totalCumulativeInterest, final Money totalInterestDueForLoan, final Money cumulatingInterestPaymentDueToGrace,
             final Money outstandingBalance, final LoanApplicationTerms loanApplicationTerms, final int periodNumber, final MathContext mc,
-            final TreeMap<LocalDate, Money> principalVariation, final Map<LocalDate, Money> compoundingMap, final LocalDate periodStartDate,
-            final LocalDate periodEndDate, final Collection<LoanTermVariationsData> termVariations,
-            final Money accruedInterestByAdvancePmt) {
-
+            final SortedMap<LocalDate, Money> principalVariation, final Map<LocalDate, Money> compoundingMap,
+            final LocalDate periodStartDate, final LocalDate periodEndDate, final Collection<LoanTermVariationsData> termVariations,
+            final Money accruedInterestForAdvancePmt) {
         PrincipalInterestCalculator principalInterestCalculator = new PrincipalInterestCalculator();
         return principalInterestCalculator.principalInterestComponentsForDecliningBalanceLoan(calculator,
                 interestCalculationGraceOnRepaymentPeriodFraction, totalCumulativePrincipal, totalCumulativeInterest,
                 totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms, periodNumber, mc,
-                principalVariation, compoundingMap, periodStartDate, periodEndDate, termVariations, accruedInterestByAdvancePmt);
+                principalVariation, compoundingMap, periodStartDate, periodEndDate, termVariations, accruedInterestForAdvancePmt);
     }
 }

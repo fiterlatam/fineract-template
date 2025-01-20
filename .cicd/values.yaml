@@ -1,0 +1,101 @@
+# Default values for helm-chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: 'fineract-backend'
+replicaCount: 1
+
+image:
+  pullPolicy: Always
+
+keyVault:
+  name: ''
+  tenantId: ''
+  secret:
+    fineract-hikari-username: FINERACT_HIKARI_USERNAME
+    fineract-hikari-password: FINERACT_HIKARI_PASSWORD
+    fineract-default-tenantdb-hostname: FINERACT_DEFAULT_TENANTDB_HOSTNAME
+    fineract-default-tenantdb-uid: FINERACT_DEFAULT_TENANTDB_UID
+    fineract-default-tenantdb-pwd: FINERACT_DEFAULT_TENANTDB_PWD
+
+
+
+
+env:
+  CSP: 'AZURE'
+  SERVICE_NAME: 'fineract-backend'
+  SERVICE_PORT: 8080
+
+
+configMap:
+
+secret:
+
+serviceAccount:
+  create: true
+  annotations:
+  name: 'fineract-backend'
+
+deployment:
+  labels:
+    aadpodidbinding: pod-identity-rbac
+  probePath: /fineract-provider/actuator/health
+  probePort: 8080
+  probeScheme: HTTP
+  livenessInitialDelaySeconds: 360  
+  livenessPeriodSeconds: 240       
+  livenessFailureThreshold: 60     
+  readinessInitialDelaySeconds: 30  
+  readinessPeriodSeconds: 240      
+  readinessFailureThreshold: 60    
+  startupInitialDelaySeconds: 360  
+  startupPeriodSeconds: 240       
+  startupFailureThreshold: 60     
+  podPort: 8080
+  podAnnotations:
+    sidecar.istio.io/inject: 'true'
+    sidecar.istio.io/proxyCPULimit: 250m
+    sidecar.istio.io/proxyMemoryLimit: 256Mi
+  resources:
+    limits:
+      cpu: 500m
+      memory: 2000Mi
+    requests:
+      cpu: 250m
+      memory: 1209Mi
+  nodeSelector:
+    agentpool: fineract
+  tolerations:
+    - key: kubernetes.azure.com/scalesetpriority
+      operator: Equal
+      value: spot
+      effect: NoSchedule
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 90
+  targetMemoryUtilizationPercentage: 90
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  redirectSSL: false
+  privateIp: false
+  annotations:
+    appgw.ingress.kubernetes.io/backend-path-prefix: /
+    appgw.ingress.kubernetes.io/request-timeout: '300'
+    cert-manager.io/issuer: cert-manager-issuer
+    kubernetes.io/ingress.class: azure/application-gateway
+  paths:
+    - path: /
+      pathType: Prefix
+  tls:
+    secretName: 'fineract-backend-cert'
+
+podDisruptionBudgets:
+  enabled: false

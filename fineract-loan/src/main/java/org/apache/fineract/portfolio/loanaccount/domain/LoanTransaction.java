@@ -162,11 +162,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     // Transient variable to hold details of loan charge amounts paid by original transaction for this installment
     @Transient
-    List<LoanChargePaidByData> chargesPaidByOriginalTransaction;
+    transient List<LoanChargePaidByData> chargesPaidByOriginalTransaction;
 
     // Transient variable to hold original interest amount paid by the original transaction
     @Transient
-    private HashMap<Integer, BigDecimal> interestPaidByOriginalTransaction = new HashMap<>();
+    private Map<Integer, BigDecimal> interestPaidByOriginalTransaction = new HashMap<>();
 
     public static LoanTransaction incomePosting(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
             final BigDecimal interestPortion, final BigDecimal feeChargesPortion, final BigDecimal penaltyChargesPortion,
@@ -779,7 +779,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         if (isChargePayment()) {
             for (final LoanChargePaidBy chargePaidBy : this.loanChargesPaid) {
                 isPenalty = chargePaidBy.getLoanCharge().isPenaltyCharge();
-                break;
             }
         }
         return isPenalty;
@@ -791,18 +790,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isChargeOff() {
         return getTypeOf().isChargeOff() && isNotReversed();
-    }
-
-    public boolean isIdentifiedBy(final Long identifier) {
-        return getId().equals(identifier);
-    }
-
-    public boolean isBelongingToLoanOf(final Loan check) {
-        return this.loan.getId().equals(check.getId());
-    }
-
-    public boolean isNotBelongingToLoanOf(final Loan check) {
-        return !isBelongingToLoanOf(check);
     }
 
     public boolean isNonZero() {
@@ -941,7 +928,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean isNotRefundForActiveLoan() {
-        // TODO Auto-generated method stub
         return !isRefundForActiveLoan();
     }
 
@@ -976,8 +962,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
             if (updatedrepaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getId() != null
                     && repaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getDueDate()
                             .equals(updatedrepaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getDueDate())
-                    && updatedrepaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getId()
-                            .equals(repaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getId())) {
+                    && Objects.equals(updatedrepaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getId(),
+                            repaymentScheduleMapping.getLoanRepaymentScheduleInstallment().getId())) {
                 repaymentScheduleMapping.setComponents(updatedrepaymentScheduleMapping.getPrincipalPortion(),
                         updatedrepaymentScheduleMapping.getInterestPortion(), updatedrepaymentScheduleMapping.getFeeChargesPortion(),
                         updatedrepaymentScheduleMapping.getPenaltyChargesPortion());
@@ -1025,10 +1011,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public LocalDate getSubmittedOnDate() {
         return submittedOnDate;
-    }
-
-    public boolean hasLoanTransactionRelations() {
-        return (loanTransactionRelations != null && loanTransactionRelations.size() > 0);
     }
 
     public boolean hasChargebackLoanTransactionRelations() {
@@ -1086,7 +1068,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public BigDecimal getAdvancePrincipalAmountPaidForInstallment(Integer installmentNumber) {
-        BigDecimal principalPortion = BigDecimal.ZERO;
+        BigDecimal principalPortionV2 = BigDecimal.ZERO;
         if (this.loanTransactionToRepaymentScheduleMappings != null) {
             Optional<LoanTransactionToRepaymentScheduleMapping> optionalMapping = this.loanTransactionToRepaymentScheduleMappings.stream()
                     .filter(i -> i.getLoanRepaymentScheduleInstallment().getInstallmentNumber().equals(installmentNumber)
@@ -1096,10 +1078,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
                             && i.getPenaltyChargesPortion(this.loan.getCurrency()).isZero())
                     .findFirst();
             if (optionalMapping.isPresent()) {
-                principalPortion = optionalMapping.get().getPrincipalPortion();
+                principalPortionV2 = optionalMapping.get().getPrincipalPortion();
             }
         }
-        return principalPortion;
+        return principalPortionV2;
     }
 
     public boolean isDailyAccrual() {
@@ -1164,9 +1146,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         this.doNotProcessAdvanceInstallments = doNotProcessAdvanceInstallments;
     }
 
-    // TODO missing hashCode(), equals(Object obj), but probably OK as long as
-    // this is never stored in a Collection.
-
     public List<LoanChargePaidByData> chargesPaidByOriginalTransaction() {
         return Objects.requireNonNullElseGet(this.chargesPaidByOriginalTransaction, ArrayList::new);
     }
@@ -1175,11 +1154,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         this.chargesPaidByOriginalTransaction = chargesPaidByOriginalTransaction;
     }
 
-    public HashMap<Integer, BigDecimal> interestPaidByOriginalTransaction() {
+    public Map<Integer, BigDecimal> interestPaidByOriginalTransaction() {
         return interestPaidByOriginalTransaction;
     }
 
-    public void setInterestPaidByOriginalTransaction(HashMap<Integer, BigDecimal> interestPaidByOriginalTransaction) {
+    public void setInterestPaidByOriginalTransaction(Map<Integer, BigDecimal> interestPaidByOriginalTransaction) {
         this.interestPaidByOriginalTransaction = interestPaidByOriginalTransaction;
     }
 

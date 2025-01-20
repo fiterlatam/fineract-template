@@ -3,7 +3,6 @@ package org.apache.fineract.portfolio.collectionhousemanagement.service;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.util.*;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -34,6 +33,7 @@ public class CollectionHouseHistoryReadWriteServiceImpl implements CollectionHou
     private final AccountDetailsReadPlatformService accountDetailsReadPlatformService;
     private final ClientRepositoryWrapper clientRepositoryWrapper;
 
+    @SuppressWarnings({ "squid:S3776", "squid:S1141" })
     @Override
     public CommandProcessingResult createCollectionHouseHistory(JsonCommand command) {
         collectionHouseHistoryValidator.validateForCreateCollectionHouse(command.json());
@@ -52,7 +52,7 @@ public class CollectionHouseHistoryReadWriteServiceImpl implements CollectionHou
 
                 try {
                     Client client = clientRepositoryWrapper.getClientByAccountNumber(clientAccountNo);
-                    Boolean hasLoanAccountsInArrears = false;
+                    boolean hasLoanAccountsInArrears = false;
                     if (client != null) {
                         AccountSummaryCollectionData clientAccount = accountDetailsReadPlatformService
                                 .retrieveClientAccountDetails(client.getId());
@@ -61,12 +61,11 @@ public class CollectionHouseHistoryReadWriteServiceImpl implements CollectionHou
                             for (LoanAccountSummaryData loanAccountSummaryData : loanAccounts) {
                                 LoanStatusEnumData statusEnumData = loanAccountSummaryData.getStatus();
                                 Long status = statusEnumData.getId();
-                                if (loanAccountSummaryData.getInArrears() == true && LoanStatus.fromInt(status.intValue()).isActive()) {
+                                if (Boolean.TRUE.equals(loanAccountSummaryData.getInArrears())
+                                        && LoanStatus.fromInt(status.intValue()).isActive()) {
                                     hasLoanAccountsInArrears = true;
                                 }
                             }
-                        } else {
-                            hasLoanAccountsInArrears = false;
                         }
                     }
 
@@ -90,7 +89,7 @@ public class CollectionHouseHistoryReadWriteServiceImpl implements CollectionHou
                 map.put("collectionHouseCode", colletionHouseHistory.getCollectionCode());
                 map.put("collectionNit", colletionHouseHistory.getCollectionNit());
                 return map;
-            }).collect(Collectors.toList());
+            }).toList();
 
         } catch (Exception e) {
             log.error("Error during collection house history refresh", e);
@@ -105,16 +104,11 @@ public class CollectionHouseHistoryReadWriteServiceImpl implements CollectionHou
     public ColletionHouseHistory findCollectionHouseHistoryByAcctountNo(String accountNo) {
         Optional<ColletionHouseHistory> getColletionHouseHistory = collectionHouseHistoryRepository
                 .getCollectionHouseHistoryByAccountNo((accountNo));
-        if (getColletionHouseHistory.isPresent()) {
-            ColletionHouseHistory colletionHouseHistory = getColletionHouseHistory.get();
-            return colletionHouseHistory;
-        }
-        return null;
+        return getColletionHouseHistory.orElse(null);
     }
 
     @Override
     public List<ColletionHouseHistory> findAllCollectionHouseHistory() {
-        List<ColletionHouseHistory> colletionHouseHistories = collectionHouseHistoryRepository.findAll();
-        return colletionHouseHistories;
+        return collectionHouseHistoryRepository.findAll();
     }
 }

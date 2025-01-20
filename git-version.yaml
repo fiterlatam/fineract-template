@@ -1,0 +1,62 @@
+mode: Mainline
+major-version-bump-message: '\+major'
+minor-version-bump-message: '\+f'
+patch-version-bump-message: '\+b'
+branches:
+  develop:
+    regex: ^develop$
+    mode: ContinuousDelivery
+    tag: ""
+    increment: Minor
+    prevent-increment-of-merged-branch-version: true
+    track-merge-target: false
+    tracks-release-branches: false
+    is-release-branch: false
+    is-mainline: true
+
+  hotfix:
+    regex: ^hotfix/
+    mode: ContinuousDelivery
+    tag: useBranchName
+    increment: Patch
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: false
+    tracks-release-branches: false
+    is-release-branch: false
+    source-branches:
+      - develop
+
+  release:
+    regex: ^release/
+    mode: ContinuousDelivery
+    tag: useBranchName
+    increment: Patch
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: false
+    tracks-release-branches: false
+    is-release-branch: false
+    source-branches:
+      - develop
+
+  bugfix:
+    regex: ^bugfix/
+    mode: ContinuousDelivery
+    tag: useBranchName
+    increment: Patch
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: false
+    tracks-release-branches: false
+    is-release-branch: false
+    source-branches:
+      - develop
+
+  feat/ynorena/ci-pipeline:
+    regex: ^feat/ynorena/ci-pipeline$
+    mode: ContinuousDelivery
+    tag: ""
+    increment: Minor
+    prevent-increment-of-merged-branch-version: true
+    track-merge-target: false
+    tracks-release-branches: false
+    is-release-branch: false
+    is-mainline: false

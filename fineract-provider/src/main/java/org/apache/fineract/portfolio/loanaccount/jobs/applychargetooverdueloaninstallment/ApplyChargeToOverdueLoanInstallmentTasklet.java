@@ -91,6 +91,7 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
         return RepeatStatus.FINISHED;
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private void applyPenaltiesToOverdueInstallments(List<OverdueLoanScheduleData> overdueLoanScheduledInstallments, int threadPoolSize,
             int pageSize, Long maxLoanId, Long penaltyWaitPeriodValue, Boolean backdatePenalties) {
         List<Callable<Void>> posters = new ArrayList<>();
@@ -210,6 +211,7 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
             }
         } catch (InterruptedException e1) {
             log.error("Interrupted while Applying Penalties to Overdue Loans", e1);
+            Thread.currentThread().interrupt();
         } catch (ExecutionException e2) {
             log.error("Execution exception while Applying Penalties to Overdue Loans", e2);
         }

@@ -93,6 +93,7 @@ public class RecalculateInterestForMaximumLegalRateTasklet implements Tasklet {
         return RepeatStatus.FINISHED;
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     private void recalculateInterestForMaximumLegalRate(List<LoanRescheduleData> loanRescheduleInstallments, int threadPoolSize,
             int pageSize, Long maxLoanId, MaximumCreditRateConfigurationData maximumCreditRateConfigurationData) {
         List<Callable<Void>> posters = new ArrayList<>();
@@ -213,6 +214,7 @@ public class RecalculateInterestForMaximumLegalRateTasklet implements Tasklet {
             }
         } catch (InterruptedException e1) {
             log.error("Interrupted while Recalculating Loan Interest After Maximum Legal Rate Change", e1);
+            Thread.currentThread().interrupt();
         } catch (ExecutionException e2) {
             log.error("Execution exception while Recalculating Loan Interest After Maximum Legal Rate Change", e2);
         }
