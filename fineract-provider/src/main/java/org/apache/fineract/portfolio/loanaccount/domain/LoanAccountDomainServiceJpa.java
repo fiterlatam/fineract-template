@@ -88,7 +88,6 @@ import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
-import org.apache.fineract.portfolio.delinquency.data.DelinquencyRangeData;
 import org.apache.fineract.portfolio.delinquency.domain.DelinquencyRange;
 import org.apache.fineract.portfolio.delinquency.domain.LoanDelinquencyAction;
 import org.apache.fineract.portfolio.delinquency.helper.DelinquencyEffectivePauseHelper;
@@ -335,34 +334,20 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
     @Override
     public FeeCalculationHonorario calculateFeeHonorario(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
-            BigDecimal repaymentAmount) {
-        // SU-529 Get maximum age of any of the client's loan
-        List<Loan> clientActiveLoans = this.loanRepositoryWrapper
-                .findActiveLoansByClientId(loanRepaymentScheduleInstallment.getLoan().getClientId());
-        Integer ageOverdue = 0;
-        for (Loan loan : clientActiveLoans) {
-            int overdue = loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
-            if (overdue > ageOverdue) {
-                ageOverdue = overdue;
-            }
-        }
+            BigDecimal repaymentAmount, LocalDate transactionDate) {
         BigDecimal delinquencyValue = BigDecimal.ZERO;
+        Integer ageOverdue = loanRepaymentScheduleInstallment.getLoan().getAgeOfOverdueDays(transactionDate).intValue();
 
         // Retrieve VAT configuration and percentage
         Integer vatConfig = configurationDomainService.retriveIvaConfiguration();
         BigDecimal vatPercentage = BigDecimal.valueOf(vatConfig).divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
 
         // Retrieve delinquency percentage
-        DelinquencyRangeData delinquencyRangeData = delinquencyReadPlatformService
-                .retrieveCurrentDelinquencyTag(loanRepaymentScheduleInstallment.getLoan().getId());
-        if (delinquencyRangeData != null) {
-            delinquencyValue = BigDecimal.valueOf(delinquencyRangeData.getPercentageValue());
-        } else {
-            DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
-            if (delinquencyRange != null) {
-                delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
-            }
+        DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
+        if (delinquencyRange != null) {
+            delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
         }
+
         // Calculate delinquent portion, fee with VAT, fee basis, and fee VAT
         BigDecimal delinquencyRate = delinquencyValue.divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
         BigDecimal delinquentPortion = repaymentAmount
@@ -378,8 +363,15 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     }
 
     @Override
+    public FeeCalculationHonorario calculateFeeHonorario(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
+            BigDecimal repaymentAmount) {
+        return calculateFeeHonorario(loanRepaymentScheduleInstallment, repaymentAmount, null);
+    }
+
+    @Override
     public FeeCalculationHonorario updateCalculationHonoLoanChargeOverDueVat(BigDecimal repaymentAmount,
-            LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, Integer installmentNumberToBeCharged, Long version) {
+            LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, Integer installmentNumberToBeCharged, Long version,
+            LocalDate transactionDate) {
         FeeCalculationHonorario feeCalculationHonorario = new FeeCalculationHonorario(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO);
         if (loanRepaymentScheduleInstallment.isObligationsMet()) {
@@ -394,7 +386,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             Optional<LoanCharge> vatCharge = loan.getActiveCharges().stream().filter(vt -> vt.isCustomPercentageBasedOfAnotherCharge()
                     && vt.getCharge().getParentChargeId().equals(chargeHono.getCharge().getId())).findFirst();
 
-            feeCalculationHonorario = this.calculateFeeHonorario(loanRepaymentScheduleInstallment, repaymentAmount);
+            feeCalculationHonorario = this.calculateFeeHonorario(loanRepaymentScheduleInstallment, repaymentAmount, transactionDate);
 
             CustomChargeHonorarioMap newCustomChargeHonorarioMap = new CustomChargeHonorarioMap();
             newCustomChargeHonorarioMap.setNit("120843958");
@@ -1127,12 +1119,12 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     if (remainingAmount.isGreaterThanZero()
                             && remainingAmount.isGreaterThanOrEqualTo(installment.getTotalOutstanding(loan.getCurrency()))) {
                         fee = this.updateCalculationHonoLoanChargeOverDueVat(installmentOutstandingAmount, installment, installmentNumber,
-                                version);
+                                version, transactionDate);
                         remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
 
                     } else {
                         fee = this.updateCalculationHonoLoanChargeOverDueVat(remainingAmount.getAmount(), installment, installmentNumber,
-                                version);
+                                version, transactionDate);
                     }
                     cumulativeHonoFee = cumulativeHonoFee.add(fee.getFeeBasis());
                     if (vatChargeOptional.isPresent()) {

@@ -8132,6 +8132,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public Long getAgeOfOverdueDays(LocalDate baseDate) {
         Long ageOfOverdueDays = 0L;
+        if (baseDate == null) {
+            baseDate = DateUtils.getBusinessLocalDate();
+        }
 
         List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
         for (final LoanRepaymentScheduleInstallment installment : installments) {

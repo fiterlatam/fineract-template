@@ -221,17 +221,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     private FeeCalculationHonorario calculateFeeDetails(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
-            BigDecimal repaymentAmount) {
-        // SU-529 Get maximum age of any of the client's loan
-        List<Loan> clientActiveLoans = this.loanRepositoryWrapper
-                .findActiveLoansByClientId(loanRepaymentScheduleInstallment.getLoan().getClientId());
-        Integer ageOverdue = 0;
-        for (Loan loan : clientActiveLoans) {
-            int overdue = loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
-            if (overdue > ageOverdue) {
-                ageOverdue = overdue;
-            }
-        }
+            BigDecimal repaymentAmount, LocalDate transactionDate) {
+
+        Integer ageOverdue = loanRepaymentScheduleInstallment.getLoan().getAgeOfOverdueDays(transactionDate).intValue();
 
         BigDecimal delinquencyValue = BigDecimal.ZERO;
         // Retrieve VAT configuration and percentage
@@ -239,15 +231,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         BigDecimal vatPercentage = BigDecimal.valueOf(vatConfig).divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
 
         // Retrieve delinquency percentage
-        DelinquencyRangeData delinquencyRangeData = delinquencyReadPlatformService
-                .retrieveCurrentDelinquencyTag(loanRepaymentScheduleInstallment.getLoan().getId());
-        if (delinquencyRangeData != null) {
-            delinquencyValue = BigDecimal.valueOf(delinquencyRangeData.getPercentageValue());
-        } else {
-            DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
-            if (delinquencyRange != null) {
-                delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
-            }
+
+        DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
+        if (delinquencyRange != null) {
+            delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
         }
 
         // Calculate delinquent portion, fee with VAT, fee basis, and fee VAT
@@ -427,15 +414,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             }
         }
         Integer ageOverdue = loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
-        DelinquencyRangeData delinquencyRangeData = delinquencyReadPlatformService.retrieveCurrentDelinquencyTag(loan.getId());
         BigDecimal delinquencyValue = BigDecimal.ZERO;
-        if (delinquencyRangeData != null) {
-            delinquencyValue = BigDecimal.valueOf(delinquencyRangeData.getPercentageValue());
-        } else {
-            DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
-            if (delinquencyRange != null) {
-                delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
-            }
+        DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
+        if (delinquencyRange != null) {
+            delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
         }
         BigDecimal deliquncyrange = delinquencyValue.divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
         Integer vatConfig = configurationDomainService.retriveIvaConfiguration();
@@ -463,9 +445,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public BigDecimal calculateHonorariosAmount(Long loanId, BigDecimal repaymentAmount) {
+    public BigDecimal calculateHonorariosAmount(Long loanId, BigDecimal repaymentAmount, LocalDate transactionDate) {
         Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
-        return calculateHonoChargeAmount(loan, DateUtils.getBusinessLocalDate(), repaymentAmount);
+        return calculateHonoChargeAmount(loan, transactionDate, repaymentAmount);
     }
 
     @Override
@@ -2065,7 +2047,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public Collection<OverdueLoanScheduleData> retrieveAllOverdueInstallmentsForLoan(final Loan loan) {
+    public Collection<OverdueLoanScheduleData> retrieveAllOverdueInstallmentsForLoan(final Loan loan, final LocalDate businessDate) {
         Collection<OverdueLoanScheduleData> list = new ArrayList<>();
 
         if (!loan.isOpen()) {
@@ -2079,8 +2061,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 continue;
             }
 
-            boolean isPenaltyDue = installment.isOverdueOn(DateUtils.getBusinessLocalDate().minusDays(penaltyWaitPeriod).plusDays(1));
-            boolean isDueToday = installment.getDueDate().equals(DateUtils.getBusinessLocalDate().minusDays(penaltyWaitPeriod));
+            boolean isPenaltyDue = installment.isOverdueOn(businessDate.minusDays(penaltyWaitPeriod).plusDays(1));
+            boolean isDueToday = installment.getDueDate().equals(businessDate.minusDays(penaltyWaitPeriod));
 
             if (isPenaltyDue) {
                 if (!backdatePenalties && !isDueToday) {
@@ -3982,7 +3964,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         return this.jdbcTemplate.query(sqlBuilder.toString(), objectArray, loanReclaimMapper);
     }
 
-    private BigDecimal calculateHonoChargeAmount(Loan loan, LocalDate transactionDate, BigDecimal repaymentAmount) {
+    public BigDecimal calculateHonoChargeAmount(Loan loan, LocalDate transactionDate, BigDecimal repaymentAmount) {
         BigDecimal feeHono = BigDecimal.ZERO;
         Optional<LoanCharge> haveHonoCharge = loan.getActiveCharges().stream().filter(charge -> charge.isFlatHono()).findFirst();
         if (haveHonoCharge.isPresent() && loan.getAgeOfOverdueDays(transactionDate) > 0) {
@@ -4000,10 +3982,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     BigDecimal installmentOutstandingAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount();
                     if (remainingAmount.isGreaterThanZero()
                             && remainingAmount.isGreaterThanOrEqualTo(installment.getTotalOutstanding(loan.getCurrency()))) {
-                        feeCalculationHonorario = this.calculateFeeDetails(installment, installmentOutstandingAmount);
+                        feeCalculationHonorario = this.calculateFeeDetails(installment, installmentOutstandingAmount, transactionDate);
                         remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
                     } else {
-                        feeCalculationHonorario = this.calculateFeeDetails(installment, remainingAmount.getAmount());
+                        feeCalculationHonorario = this.calculateFeeDetails(installment, remainingAmount.getAmount(), transactionDate);
                         remainingAmount = remainingAmount.zero();
                     }
                     feeHono = feeHono.add(feeCalculationHonorario.getFeeBasis());

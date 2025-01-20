@@ -20,6 +20,7 @@ package org.apache.fineract.cob.loan;
 
 import java.util.Collection;
 import lombok.RequiredArgsConstructor;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeWritePlatformService;
@@ -36,7 +37,7 @@ public class ApplyChargeToOverdueLoansBusinessStep implements LoanCOBBusinessSte
     @Override
     public Loan execute(Loan loan) {
         final Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList = loanReadPlatformService
-                .retrieveAllOverdueInstallmentsForLoan(loan);
+                .retrieveAllOverdueInstallmentsForLoan(loan, DateUtils.getBusinessLocalDate());
 
         loanChargeWritePlatformService.applyOverdueChargesForLoan(loan.getId(), overdueLoanScheduleDataList);
         return loan;

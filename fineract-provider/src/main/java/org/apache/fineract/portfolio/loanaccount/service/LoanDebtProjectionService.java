@@ -33,12 +33,21 @@ import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanDebtProjectionData;
+import org.apache.fineract.portfolio.loanaccount.data.RepaymentScheduleRelatedLoanData;
+import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainServiceJpa;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleCalculationPlatformService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -51,16 +60,53 @@ public class LoanDebtProjectionService {
     private final ChargeReadPlatformService chargeReadPlatformService;
     private final ChargeRepositoryWrapper chargeRepository;
     private final LoanAccountDomainServiceJpa loanAccountDomainServiceJpa;
+    private final LoanUtilService loanUtilService;
+    private final LoanReadPlatformService loanReadPlatformService;
+    private final LoanScheduleCalculationPlatformService calculationPlatformService;
 
     public LoanDebtProjectionData calculateDebtProjection(Long loanId, String projectionDate, String dateFormat) {
-        // Find the loan and validate
-        Loan loan = validateLoanForProjection(loanId);
-        LocalDate projectedFutureDate = DateUtils.parseLocalDate(projectionDate, dateFormat);
-        // projectedFutureDate can not be in the past
+        final Loan loan = validateLoanForProjection(loanId);
+        final LocalDate projectedFutureDate = DateUtils.parseLocalDate(projectionDate, dateFormat);
         if (projectedFutureDate.isBefore(DateUtils.getLocalDateOfTenant())) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.projection.date.in.past", "Projection date cannot be in the past",
                     loan.getId());
         }
+        final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
+        final LoanRepaymentScheduleInstallment loanForeclosureDetail = loan.fetchLoanForeclosureDetail(projectedFutureDate, scheduleGeneratorDTO);
+        final LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(loanId);
+        final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData = loanBasicDetails.getTimeline()
+                .repaymentScheduleRelatedData(loanBasicDetails.getCurrency(), loanBasicDetails.getPrincipal(),
+                        loanBasicDetails.getApprovedPrincipal(), loanBasicDetails.getInArrearsTolerance(),
+                        loanBasicDetails.getFeeChargesAtDisbursementCharged());
+        final Collection<DisbursementData> disbursementData = this.loanReadPlatformService.retrieveLoanDisbursementDetails(loanId);
+        final LoanScheduleData repaymentSchedule = this.loanReadPlatformService.retrieveRepaymentSchedule(loanId, repaymentScheduleRelatedData,
+                disbursementData, loanBasicDetails.isInterestRecalculationEnabled(),
+                LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
+        this.calculationPlatformService.getFeeChargesDetail(repaymentSchedule, loanId);
+        final List<LoanSchedulePeriodData> projectedRepaymentPeriods = repaymentSchedule.getPeriods().stream()
+                .filter(period -> period.getPeriod() != null && !period.getComplete())
+                .filter(period -> !DateUtils.isAfter(period.getDueDate(), projectedFutureDate)).toList();
+        final BigDecimal interestProjected = loanForeclosureDetail.getInterestOutstanding(loan.getCurrency()).getAmount();
+        final BigDecimal principalProjected = projectedRepaymentPeriods.stream().map(LoanSchedulePeriodData::getPrincipalOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+        final BigDecimal avalProjected = projectedRepaymentPeriods.stream().map(LoanSchedulePeriodData::getAvalOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+        final BigDecimal mandatoryInsuranceProjected = projectedRepaymentPeriods.stream().map(LoanSchedulePeriodData::getMandatoryInsuranceOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+        final BigDecimal voluntaryInsuranceProjected = projectedRepaymentPeriods.stream().map(LoanSchedulePeriodData::getVoluntaryInsuranceOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+        final BigDecimal penaltyProjected = projectedRepaymentPeriods.stream().map(LoanSchedulePeriodData::getPenaltyChargesOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+        System.out.println("interestProjected: " + interestProjected);
+        System.out.println("principalProjected: " + principalProjected);
+        System.out.println("avalProjected: " + avalProjected);
+        System.out.println("mandatoryInsuranceProjected: " + mandatoryInsuranceProjected);
+        System.out.println("voluntaryInsuranceProjected: " + voluntaryInsuranceProjected);
+        System.out.println("penaltyProjected: " + penaltyProjected);
+        final BigDecimal totalRepayment = interestProjected.add(principalProjected).add(avalProjected).add(mandatoryInsuranceProjected).add(voluntaryInsuranceProjected).add(penaltyProjected);
+        final BigDecimal honorariosProjected =  this.loanReadPlatformService.calculateHonorariosAmount(loanId, totalRepayment, projectedFutureDate);
+        System.out.println("honorariosProjected: " + honorariosProjected);
+
+        final Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList = loanReadPlatformService
+                .retrieveAllOverdueInstallmentsForLoan(loan, projectedFutureDate);
+
+
+
 
         // Get overdue and future installments
         List<LoanRepaymentScheduleInstallment> overdueInstallments = getOverdueInstallments(loan, projectedFutureDate);

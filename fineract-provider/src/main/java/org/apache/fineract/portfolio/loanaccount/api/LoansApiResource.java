@@ -86,6 +86,7 @@ import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSeria
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.CommandParameterUtil;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
@@ -1521,7 +1522,7 @@ public class LoansApiResource {
     public BigDecimal calculateHonorariosAmount(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
             @QueryParam("amount") @Parameter(description = "amount") final BigDecimal amount, @Context final UriInfo uriInfo) {
         this.context.authenticatedUser();
-        return this.loanReadPlatformService.calculateHonorariosAmount(loanId, amount);
+        return this.loanReadPlatformService.calculateHonorariosAmount(loanId, amount, DateUtils.getBusinessLocalDate());
     }
 
 }
