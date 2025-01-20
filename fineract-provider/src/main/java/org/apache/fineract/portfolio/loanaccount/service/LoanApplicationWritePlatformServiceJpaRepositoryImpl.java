@@ -1334,6 +1334,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
             }
 
+            if (command.parameterExists(LoanApiConstants.datatables)) {
+                this.entityDatatableChecksWritePlatformService.saveDatatables(StatusEnum.CREATE.getCode().longValue(),
+                        EntityTables.LOAN.getName(), existingLoanApplication.getId(), existingLoanApplication.productId(),
+                        command.arrayOfParameterNamed(LoanApiConstants.datatables));
+            }
+
             Long allyId = this.fromJsonHelper.extractLongNamed(LoanApiConstants.AllYID, command.parsedJson());
             Optional<ClientBuyProcess> existingClientByProses = clientBuyProcessRepository.findClienByProsesLoanByLoanId(loanId);
             if (allyId != null && pointOfSaleCode != null) {

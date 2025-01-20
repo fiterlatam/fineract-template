@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import lombok.Getter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.savings.data.SavingsProductData;
@@ -29,6 +30,7 @@ import org.apache.fineract.portfolio.savings.data.SavingsProductData;
 /**
  * Immutable data object for role data.
  */
+@Getter
 public class EntityDataTableChecksTemplateData implements Serializable {
 
     private final List<String> entities;
