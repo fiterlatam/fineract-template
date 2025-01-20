@@ -111,10 +111,13 @@ public interface LoanAccountDomainService {
     LoanTransaction writeoffPunishLoan(Loan loan, LocalDate writeOffDate, String noteText, ExternalId externalId,
             Map<String, Object> changes);
 
+    FeeCalculationHonorario calculateFeeHonorario(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
+                                                  BigDecimal repaymentAmount, LocalDate transactionDate);
+
     FeeCalculationHonorario calculateFeeHonorario(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, BigDecimal repayment);
 
     FeeCalculationHonorario updateCalculationHonoLoanChargeOverDueVat(BigDecimal repaymentAmount,
-            LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, Integer installmentNumberToBeCharged, Long version);
+            LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, Integer installmentNumberToBeCharged, Long version, LocalDate transactionDate);
 
     void updateRepaymentInstalmentCharge(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, Integer numberOfRepayment);
 
