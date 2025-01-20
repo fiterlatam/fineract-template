@@ -415,15 +415,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             }
         }
         Integer ageOverdue = loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()).intValue();
-        DelinquencyRangeData delinquencyRangeData = delinquencyReadPlatformService.retrieveCurrentDelinquencyTag(loan.getId());
         BigDecimal delinquencyValue = BigDecimal.ZERO;
-        if (delinquencyRangeData != null) {
-            delinquencyValue = BigDecimal.valueOf(delinquencyRangeData.getPercentageValue());
-        } else {
-            DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
-            if (delinquencyRange != null) {
-                delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
-            }
+        DelinquencyRange delinquencyRange = delinquencyReadPlatformService.retrieveDelinquencyRangeCategeory(ageOverdue);
+        if (delinquencyRange != null) {
+            delinquencyValue = BigDecimal.valueOf(delinquencyRange.getPercentageValue());
         }
         BigDecimal deliquncyrange = delinquencyValue.divide(new BigDecimal(100), 2, MoneyHelper.getRoundingMode());
         Integer vatConfig = configurationDomainService.retriveIvaConfiguration();
