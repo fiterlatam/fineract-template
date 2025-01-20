@@ -65,5 +65,38 @@
         </sql>
     </changeSet>
 
+    <changeSet author="danielsta@fiter.io" id="40">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'CREATE_Informacion Bancaria', 'Informacion Bancaria', 'CREATE', true);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'CREATE_Informacion Bancaria_CHECKER', 'Informacion Bancaria', 'CREATE', false);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'READ_Informacion Bancaria', 'Informacion Bancaria', 'READ', false);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'UPDATE_Informacion Bancaria', 'Informacion Bancaria', 'UPDATE', true);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'UPDATE_Informacion Bancaria_CHECKER', 'Informacion Bancaria', 'UPDATE', false);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'DELETE_Informacion Bancaria', 'Informacion Bancaria', 'DELETE', true);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'DELETE_Informacion Bancaria_CHECKER', 'Informacion Bancaria', 'DELETE', false);
+            ]]>
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>

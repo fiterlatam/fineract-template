@@ -149,4 +149,38 @@
         </sql>
     </changeSet>
 
+    <changeSet author="danielsta@fiter.io" id="40">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'CREATE_Detalle garanta', 'Detalle garanta', 'CREATE', true);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'CREATE_Detalle garanta_CHECKER', 'Detalle garanta', 'CREATE', false);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'READ_Detalle garanta', 'Detalle garanta', 'READ', false);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'UPDATE_Detalle garanta', 'Detalle garanta', 'UPDATE', true);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'UPDATE_Detalle garanta_CHECKER', 'Detalle garanta', 'UPDATE', false);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'DELETE_Detalle garanta', 'Detalle garanta', 'DELETE', true);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'DELETE_Detalle garanta_CHECKER', 'Detalle garanta', 'DELETE', false);
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

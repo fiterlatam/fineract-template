@@ -114,5 +114,38 @@
         </sql>
     </changeSet>
 
+    <changeSet author="danielsta@fiter.io" id="40">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'CREATE_Validacion Operacion', 'Validacion Operacion', 'CREATE', true);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'CREATE_Validacion Operacion_CHECKER', 'Validacion Operacion', 'CREATE', false);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'READ_Validacion Operacion', 'Validacion Operacion', 'READ', false);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'UPDATE_Validacion Operacion', 'Validacion Operacion', 'UPDATE', true);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'UPDATE_Validacion Operacion_CHECKER', 'Validacion Operacion', 'UPDATE', false);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'DELETE_Validacion Operacion', 'Validacion Operacion', 'DELETE', true);
+
+                INSERT INTO m_permission
+                ("grouping", code, entity_name, action_name, can_maker_checker)
+                VALUES('datatable', 'DELETE_Validacion Operacion_CHECKER', 'Validacion Operacion', 'DELETE', false);
+            ]]>
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>
