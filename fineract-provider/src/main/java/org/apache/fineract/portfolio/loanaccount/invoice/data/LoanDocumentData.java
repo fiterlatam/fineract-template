@@ -88,9 +88,13 @@ public class LoanDocumentData {
     /** Loan Paid amount fields */
     private BigDecimal interestPaid;
     private BigDecimal mandatoryInsurancePaid;
+    private BigDecimal mandatoryInsuranceVatPaid;
     private BigDecimal voluntaryInsurancePaid;
+    private BigDecimal voluntaryInsuranceVatPaid;
     private BigDecimal honorariosPaid;
+    private BigDecimal honorariosVatPaid;
     private BigDecimal penaltyChargesPaid;
+    private BigDecimal penaltyChargesVatPaid;
     private BigDecimal totalPaid;
     private String voluntaryInsuranceCode;
     private String mandatoryInsuranceCode;
