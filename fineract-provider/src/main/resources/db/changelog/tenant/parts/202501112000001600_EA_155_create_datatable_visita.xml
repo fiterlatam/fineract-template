@@ -118,7 +118,7 @@
     </changeSet>
 
 
-    <changeSet author="danielsta@fiter.io" id="20">
+    <changeSet author="danielsta@fiter.io" id="202">
         <sql>
             <![CDATA[
                 COMMENT ON COLUMN "Visita".loan_id IS 'Identificador Unico Prestamo';
