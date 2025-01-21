@@ -406,7 +406,7 @@ select distinct
 		else null
 	end charge_name,
 	case
-		when cpc_monto_aval > 0 then round(cpc_monto_aval/(1+(cpc_porcentaje_iva/100)))
+		when cpc_monto_aval > 0 then cpc_monto_aval --round(cpc_monto_aval/(1+(cpc_porcentaje_iva/100)))
 		else
 		null
 	end charge_amount,
@@ -665,3 +665,12 @@ from
 	group by loan_id
 ) txn
 where ml.id = txn.loan_id
+
+-- Validate Aval amounts match source data after migration
+select count(*) from (
+select ml.id loan_id, ml.external_id, mlrs.installment, mlrs.fee_charges_amount, tcm.cpc_monto_aval from m_loan ml 
+join m_loan_repayment_schedule mlrs on ml.id = mlrs.loan_id 
+join tmp_creditos_migrar tcm on ml.external_id = tcm.external_id and tcm.cuo_nrocuota = mlrs.installment 
+where mlrs.fee_charges_amount != tcm.cpc_monto_aval 
+order by ml.external_id, mlrs.installment 
+) x;
