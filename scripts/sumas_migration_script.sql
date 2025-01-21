@@ -325,10 +325,10 @@ VALUES('iva aval migrar', 'COP', 1, 8, 342, 0, 19.000000, NULL, NULL, NULL, fals
 update m_client set activation_date = '2021-01-01', submittedon_date = '2021-01-01', office_joining_date = '2021-01-01';
 
 ---- update product interest rate
-update m_product_loan set min_nominal_interest_rate_per_period = 10, max_nominal_interest_rate_per_period = 40 where id in (1,2,3, 4)
+update m_product_loan set min_nominal_interest_rate_per_period = 0, max_nominal_interest_rate_per_period = 40 where id in (1,2,3, 4)
 
 --- update product start date
-update m_product_loan set start_date = '2024-07-01' where id in (1,2,3, 4)
+update m_product_loan set start_date = '2021-01-01' where id in (1,2,3, 4)
 
 -- Update cupo amount to high value so that loans can be processed. Revert this limit back to the original limit
 update campos_cliente_persona set "Cupo solicitado" = 10000000, "Cupo aprobado" = 10000000;
@@ -455,7 +455,7 @@ inner join tmp_clientes_migrar tcm on mc.external_id = cast(tcm.external_id as t
 where ccp.client_id = mc.id
 
 -- Reinstate is_advance field on m_product_loan id 3
-update m_product_loan set is_advance = true where id = 3;
+update m_product_loan set is_advance = true where id in (3,9);
 
 
 ----------------------------------- Loan Transactions ----------------------------------------------
@@ -485,6 +485,7 @@ mlrs.principal_amount, mlrs.interest_amount, mlrs.fee_charges_amount, mlrs.penal
 from m_loan_repayment_schedule mlrs join m_loan ml on mlrs.loan_id = ml.id
 join m_client mc on ml.client_id = mc.id
 where mlrs.completed_derived = true
+and mlrs.installment > 0
 order by mlrs.installment;
 
 -- Insert transaction to schedule mapping
@@ -492,7 +493,7 @@ INSERT INTO m_loan_transaction_repayment_schedule_mapping(
 	loan_transaction_id, loan_repayment_schedule_id, amount, principal_portion_derived, interest_portion_derived, fee_charges_portion_derived, penalty_charges_portion_derived)
 select mlt.id, mlrs.id, mlt.amount, mlt.principal_portion_derived, mlt.interest_portion_derived, mlt.fee_charges_portion_derived, mlt.penalty_charges_portion_derived
 from m_loan_repayment_schedule mlrs join m_loan_transaction mlt on mlrs.id = mlt.installment_id
-where mlrs.completed_derived = true
+where mlrs.completed_derived = true and mlrs.installment > 0
 
 
 -- Update loan balance in transactions (took about 7 minutes for 25K loans; took 27 minutes for 200K loans)
@@ -596,7 +597,7 @@ INSERT INTO public.m_loan_charge
 (loan_id, charge_id, is_penalty, charge_time_enum, due_for_collection_as_of_date, charge_calculation_enum, charge_payment_mode_enum, calculation_percentage, calculation_on_amount, charge_amount_or_percentage, amount, amount_outstanding_derived, is_paid_derived, is_active, submitted_on_date, applicable_from_installment, created_on_utc, last_modified_on_utc, created_by, last_modified_by)
 select ml.id loan_id, mc.id charge_id, mc.is_penalty, mc.charge_time_enum, null::date due_for_collection_as_of_date, mc.charge_calculation_enum, mc.charge_payment_mode_enum, NULL::numeric calculation_percentage, NULL::numeric calculation_on_amount, 0 charge_amount_or_percentage, 0 amount, 0 amount_outstanding_derived, true is_paid_derived, true is_active, ml.disbursedon_date submitted_on_date, 1 applicable_from_installment, ml.disbursedon_date created_on_utc, ml.disbursedon_date last_modified_on_utc, 1 created_by, 1 last_modified_by from m_loan ml
 join m_charge mc on mc.charge_calculation_enum = 1009
-where ml.id not in (select loan_id from m_loan_charge mlc where mlc.charge_id = mc.id)
+where ml.id not in (select mlc.loan_id from m_loan_charge mlc join m_charge mc on mlc.charge_id = mc.id where mc.charge_calculation_enum = 1009)
 and ml.loan_status_id = 300
 
 -- insert iva honorarios (assumption here is that there's only one Honorarios charge)
@@ -604,7 +605,7 @@ INSERT INTO public.m_loan_charge
 (loan_id, charge_id, is_penalty, charge_time_enum, due_for_collection_as_of_date, charge_calculation_enum, charge_payment_mode_enum, calculation_percentage, calculation_on_amount, charge_amount_or_percentage, amount, amount_outstanding_derived, is_paid_derived, is_active, submitted_on_date, applicable_from_installment, created_on_utc, last_modified_on_utc, created_by, last_modified_by)
 select ml.id loan_id, mc.id charge_id, mc.is_penalty, mc.charge_time_enum, null::date due_for_collection_as_of_date, mc.charge_calculation_enum, mc.charge_payment_mode_enum, mc.amount calculation_percentage, ml.principal_amount calculation_on_amount, mc.amount charge_amount_or_percentage, 0 amount, 0 amount_outstanding_derived, false is_paid_derived, true is_active, ml.disbursedon_date submitted_on_date, 1 applicable_from_installment, ml.disbursedon_date created_on_utc, ml.disbursedon_date last_modified_on_utc, 1 created_by, 1 last_modified_by from m_loan ml
 join m_charge mc on mc.parent_charge_id = (select id from m_charge where charge_calculation_enum = 1009)
-where ml.id not in (select loan_id from m_loan_charge mlc where mlc.charge_id = mc.id)
+where ml.id not in (select mlc.loan_id from m_loan_charge mlc join m_charge mc on mlc.charge_id = mc.id where mc.parent_charge_id = (select id from m_charge where charge_calculation_enum = 1009))
 and ml.loan_status_id = 300
 
 -- insert m_loan_installment_charge for honorarios charges
@@ -612,7 +613,7 @@ INSERT INTO m_loan_installment_charge
 (loan_charge_id, loan_schedule_id, due_date, amount)
 select mlc.id loan_charge_id, mlrs.id loan_schedule_id, null::date due_date, 0 amount from m_loan ml join m_loan_charge mlc on ml.id = mlc.loan_id
 join m_loan_repayment_schedule mlrs on ml.id = mlrs.loan_id
-where mlc.charge_id in (3,4)
+where mlc.charge_id in (4,5) -- (3,4) -- in UAT
 and mlc.id not in (select loan_charge_id from m_loan_installment_charge where loan_charge_id = mlc.id and loan_schedule_id = mlrs.id)
 order by mlc.id, mlrs.installment;
 
@@ -636,9 +637,12 @@ select * from m_blocking_reason_setting mbrs where level = 'CLIENT';
 -- Afterwards run these queries with the appropriate values for each status
 update m_client mc1
 set blocking_reason_id = case
-	when tcm.estadocli = 'BLOQUEO POR INCONSISTENCIA EN INFORMACIÓN' then 24
-	when tcm.estadocli = 'MORA' then 6
-	when tcm.estadocli = 'BLOQUEO RIESGO DE CRÉDITO' then 3
+ 	--when tcm.estadocli = 'BLOQUEO POR INCONSISTENCIA EN INFORMACIÓN' then 24
+    --when tcm.estadocli = 'MORA' then 6
+	--when tc
+	when tcm.estadocli = 'BLOQUEO POR INCONSISTENCIA EN INFORMACIÓN' then 11
+	when tcm.estadocli = 'MORA' then 7
+	when tcm.estadocli = 'BLOQUEO RIESGO DE CRÉDITO' then 9
 	else null
 end
 from m_client mc2
