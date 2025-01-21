@@ -88,6 +88,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariationType;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariations;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
@@ -137,6 +138,7 @@ public class LoanScheduleAssembler {
     private final CalendarInstanceRepository calendarInstanceRepository;
     private final PlatformSecurityContext context;
     private final LoanUtilService loanUtilService;
+    private final LoanRepositoryWrapper loanRepository;
 
     @Autowired
     public LoanScheduleAssembler(final FromJsonHelper fromApiJsonHelper, final LoanProductRepository loanProductRepository,
@@ -149,7 +151,7 @@ public class LoanScheduleAssembler {
             final FloatingRatesReadPlatformService floatingRatesReadPlatformService,
             final VariableLoanScheduleFromApiJsonValidator variableLoanScheduleFromApiJsonValidator,
             final CalendarInstanceRepository calendarInstanceRepository, final PlatformSecurityContext context,
-            final LoanUtilService loanUtilService) {
+            final LoanUtilService loanUtilService,final LoanRepositoryWrapper loanRepository) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.loanProductRepository = loanProductRepository;
         this.applicationCurrencyRepository = applicationCurrencyRepository;
@@ -167,6 +169,7 @@ public class LoanScheduleAssembler {
         this.calendarInstanceRepository = calendarInstanceRepository;
         this.context = context;
         this.loanUtilService = loanUtilService;
+        this.loanRepository = loanRepository;
     }
 
     public LoanApplicationTerms assembleLoanTerms(final JsonElement element) {
@@ -231,7 +234,19 @@ public class LoanScheduleAssembler {
 
         // disbursement details
         final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
-        final Money principalMoney = Money.of(currency, principal);
+        final Boolean isTopup = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isTopup, element);
+        BigDecimal topupAmount = BigDecimal.ZERO;
+        if (Boolean.TRUE.equals(isTopup)){
+            final Long loanId = this.fromApiJsonHelper.extractLongNamed("loanId", element);
+            final Loan loan = this.loanRepository.findOneWithNotFoundDetection(loanId);
+            if (!loan.isOpen()) {
+                throw new IllegalStateException("error.msg.loan.topup.not.active");
+            }
+            //total amount of topup loan must include the outstanding on the topup loan
+            final BigDecimal outstanding = loan.getSummary().getTotalOutstanding();
+            topupAmount = topupAmount.add(outstanding);
+        }
+        final Money principalMoney = Money.of(currency, principal.add(topupAmount));
 
         final LocalDate expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed("expectedDisbursementDate", element);
         final LocalDate repaymentsStartingFromDate = this.fromApiJsonHelper.extractLocalDateNamed("repaymentsStartingFromDate", element);

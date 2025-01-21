@@ -521,4 +521,14 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         }
         return property.getValue();
     }
+
+    @Override
+    public Long getMaximumBackDateDaysAllowed() {
+        final String propertyName = "maximum-backdate-days-for-manual-gl-entries";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        if (property.getValue() == null) {
+            return Long.valueOf(0);
+        }
+        return property.getValue();
+    }
 }

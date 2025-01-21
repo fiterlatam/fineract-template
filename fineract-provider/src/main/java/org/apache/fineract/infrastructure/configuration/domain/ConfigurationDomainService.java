@@ -130,4 +130,6 @@ public interface ConfigurationDomainService {
     Long getLoanForeclosureFeeThreshold();
 
     long getNumberOfDaysToKeepRunningBalance();
+
+    Long getMaximumBackDateDaysAllowed();
 }
