@@ -3177,8 +3177,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         // Check outstandingBalance.isZero() in case customer pays exact amount equal to outstanding
                         // balance
                         // If overpaid in advance then add the last installment to keep track of advance payment amount
-                        outstandingBalanceAsPerRest = outstandingBalance.zero();
-                        outstandingBalance = outstandingBalance.zero();
                         BigDecimal remainingLoanPrincipal = principalToBeScheduled.getAmount();
                         for (LoanRepaymentScheduleInstallment inst : loan.getRepaymentScheduleInstallments()) {
                             if (inst.getInstallmentNumber().intValue() < installment.getInstallmentNumber()) {
@@ -3187,6 +3185,28 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                                                 .subtract(inst.getAdvancePrincipalAmount()));
                             }
                         }
+                        // SU-579 When doing repayment which is exactly equal to foreclosure amount and in such a way that previous transaction has paid some
+                        // principal in advance for the installment then in this case we need to find out the advance principal paid for the last installment before
+                        // the last transaction so that it can be subtracted from the remaining principal amount
+                        BigDecimal advancePaid = BigDecimal.ZERO;
+                        if (outstandingBalance.isZero()) {
+                            final List<LoanTransaction> repayments = loan.retrieveListOfRepaymentTransactions();
+                            int index = 1;
+                            for (LoanTransaction trx : repayments) {
+                                if (index < repayments.size() && trx.hasPaidInstallmentInAdvance(installment.getInstallmentNumber())) {
+                                    Set<LoanTransactionToRepaymentScheduleMapping> mappings = trx.getLoanTransactionToRepaymentScheduleMappings();
+                                    for (LoanTransactionToRepaymentScheduleMapping mapping : mappings) {
+                                        if (mapping.getLoanRepaymentScheduleInstallment().getInstallmentNumber() == installment.getInstallmentNumber()) {
+                                            advancePaid = advancePaid.add(mapping.getPrincipalPortion());
+                                        }
+                                    }
+                                }
+                                index++;
+                            }
+                        }
+                        outstandingBalanceAsPerRest = outstandingBalance.zero();
+                        outstandingBalance = outstandingBalance.zero();
+                        remainingLoanPrincipal = remainingLoanPrincipal.subtract(advancePaid);
                         installment.setPrincipal(remainingLoanPrincipal);
                         installment.setInterestCharged(BigDecimal.ZERO);
                         installment.setFeeChargesCharged(BigDecimal.ZERO);
