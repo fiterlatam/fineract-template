@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="1" author="fineract">
+        <sql>
+            <![CDATA[
+
+                DROP VIEW IF EXISTS vw_report_client_general;
+
+                CREATE OR REPLACE VIEW vw_report_client_general AS
+                    SELECT
+                        mc.*
+
+                        , cce."NIT"                                                                         	AS "cce.NIT"
+                        , cce."Tipo ID_cd_Tipo ID"                                                          	AS "cce.Tipo ID_cd_Tipo ID"
+                        , fn_core_codevalue_getdescription(cce."Tipo ID_cd_Tipo ID")                        	AS "cce.Tipo ID"
+                        , cce."Regimen IVA_cd_Regimen IVA"                                                  	AS "cce.Regimen IVA_cd_Regimen IVA"
+                        , fn_core_codevalue_getdescription(cce."Regimen IVA_cd_Regimen IVA")                	AS "cce.Regimen IVA"
+                        , cce."Direccion"                                                                   	AS "cce.Direccion"
+                        , cce."Departamento_cd_Departamento"                                                	AS "cce.Departamento_cd_Departamento"
+                        , fn_core_codevalue_getdescription(cce."Departamento_cd_Departamento")              	AS "cce.Departamento"
+                        , cce."Ciudad_cd_Ciudad"                                                            	AS "cce.Ciudad_cd_Ciudad"
+                        , fn_core_codevalue_getdescription(cce."Ciudad_cd_Ciudad")                          	AS "cce.Ciudad"
+                        , cce."Telefono"                                                                    	AS "cce.Telefono"
+                        , cce."Retencion"                                                                   	AS "cce.Retencion"
+                        , cce."Cupo"                                                                        	AS "cce.Cupo"
+                --        , cce."Cupo outros prestamos"                                                       AS "cce.Cupo outros prestamos"
+                        , cce."Fecha Cupo"                                                                  	AS "cce.Fecha Cupo"
+                        , cce."Segmento_cd_Segmento"                                                        	AS "cce.Segmento_cd_Segmento"
+                        , fn_core_codevalue_getdescription(cce."Segmento_cd_Segmento")                      	AS "cce.Segmento"
+                        , cce."CIIU_cd_CIIU"                                                                	AS "cce.CIIU_cd_CIIU"
+                        , fn_core_codevalue_getdescription(cce."CIIU_cd_CIIU")                              	AS "cce.CIIU"
+                        , cce."Negocio_cd_Negocio"                                                          	AS "cce.Negocio_cd_Negocio"
+                        , fn_core_codevalue_getdescription(cce."Negocio_cd_Negocio")                        	AS "cce.Negocio"
+                        , cce."Categoria_cd_Categoria"                                                      	AS "cce.Categoria_cd_Categoria"
+                        , fn_core_codevalue_getdescription(cce."Categoria_cd_Categoria")                    	AS "cce.Categoria"
+                        , cce."NIT confirming"                                                              	AS "cce.NIT confirming"
+                        , cce."Nombre codeudor 1"                                                           	AS "cce.Nombre codeudor 1"
+                        , cce."Cedula codeudor 1"                                                           	AS "cce.Cedula codeudor 1"
+                        , cce."Rep legal codeudor_cd_Rep legal codeudor 1"                                  	AS "cce.Rep legal codeudor_cd_Rep legal codeudor 1"
+                        , fn_core_codevalue_getdescription(cce."Rep legal codeudor_cd_Rep legal codeudor 1") 	AS "cce.Rep legal codeudor 1"
+                        , cce."Nombre codeudor 2"                                                           	AS "cce.Nombre codeudor 2"
+                        , cce."Cedula codeudor 2"                                                           	AS "cce.Cedula codeudor 2"
+                        , fn_core_codevalue_getdescription(cce."Rep legal codeudor_cd_Rep legal codeudor 2") 	AS "cce.Rep legal codeudor 2"
+                        , cce."Nombre codeudor 3"                                                           	AS "cce.Nombre codeudor 3"
+                        , cce."Cedula codeudor 3"                                                           	AS "cce.Cedula codeudor 3"
+                        , cce."Rep legal codeudor_cd_Rep legal codeudor 3"                                  	AS "cce.Rep legal codeudor_cd_Rep legal codeudor 3"
+                        , fn_core_codevalue_getdescription(cce."Rep legal codeudor_cd_Rep legal codeudor 3") 	AS "cce.Rep legal codeudor 3"
+                        , cce.created_at                                                                    	AS "cce.created_at"
+                        , cce.updated_at                                                                    	AS "cce.updated_at"
+                        , cce."Customer Identifier_cd_Tipo identificacion Representante Legal"              	AS "cce.Customer Identifier_cd_Tipo identificacion Representante Legal"
+                        , fn_core_codevalue_getdescription(cce."Customer Identifier_cd_Tipo identificacion Representante Legal") AS "cce.Tipo identificacion Representante Legal"
+
+                        , ccp.client_id                                                                     	AS "ccp.client_id"
+                        , ccp."Cedula"                                                                      	AS "ccp.Cedula"
+                        , ccp."Estado Civil_cd_Estado civil"                                                	AS "ccp.Estado Civil_cd_Estado civil"
+                        , fn_core_codevalue_getdescription(ccp."Estado Civil_cd_Estado civil")              	AS "ccp.Estado civil"
+                        , ccp."Edad"                                                                        	AS "ccp.Edad"
+                        , ccp."Estrato"                                                                     	AS "ccp.Estrato"
+                        , ccp."Ciudad_cd_Ciudad"                                                            	AS "ccp.Ciudad_cd_Ciudad"
+                        , fn_core_codevalue_getdescription(ccp."Ciudad_cd_Ciudad")                          	AS "ccp.Ciudad"
+                --        , ccp."Tiene vehiculo proprio"                                                      AS "ccp.Tiene vehiculo proprio"
+                        , ccp."Tipo Vehiculo_cd_Tipo de vehiculo"                                           	AS "ccp.Tipo Vehiculo_cd_Tipo de vehiculo"
+                        , fn_core_codevalue_getdescription(ccp."Tipo Vehiculo_cd_Tipo de vehiculo")         	AS "ccp.Tipo de vehiculo"
+                        , ccp."Nivel Academico_cd_Nivel academico"                                          	AS "ccp.Nivel Academico_cd_Nivel academico"
+                        , ccp."Actividad Laboral_cd_Actividad laboral"                                      	AS "ccp.Actividad Laboral_cd_Actividad laboral"
+                        , ccp."Media de ingresos"                                                           	AS "ccp.Media de ingresos"
+                        , ccp."Nombre empresa"                                                             		AS "ccp.Nombre empresa"
+                        , ccp."Direccion"                                                                  		AS "ccp.Direccion"
+                        , ccp."Telefono"                                                                   		AS "ccp.Telefono"
+                        , ccp."Cupo solicitado"                                                            		AS "ccp.Cupo solicitado"
+                        , ccp."Cupo score"                                                                 		AS "ccp.Cupo score"
+                        , ccp."Valor score"                                                                		AS "ccp.Valor score"
+                        , ccp."Modelo score"                                                               		AS "ccp.Modelo score"
+                        , ccp."Referencia"                                                                 		AS "ccp.Referencia"
+                        , ccp."Celular Referencia"                                                         		AS "ccp.Celular Referencia"
+                        , ccp."Parentesco_cd_Parentesco"                                                   		AS "ccp.Parentesco_cd_Parentesco"
+                        , fn_core_codevalue_getdescription(ccp."Parentesco_cd_Parentesco")                 		AS "ccp.Parentesco"
+                        , ccp."Customer Identifier_cd_Tipo identificacion"                                  	AS "ccp.Customer Identifier_cd_Tipo identificacion"
+                        , fn_core_codevalue_getdescription(ccp."Customer Identifier_cd_Tipo identificacion") 	AS "ccp.Tipo identificacion"
+                        , ccp."Telefono domicilio"                                                        		AS "ccp.Telefono domicilio"
+                        , ccp."Numero Celular Secundario"                                                 		AS "ccp.Numero Celular Secundario"
+                        , ccp.created_at                                                                   		AS "ccp.created_at"
+                        , ccp.updated_at                                                                   		AS "ccp.updated_at"
+
+                /*
+                        , nc."Telefono domicilio" 																AS "nc.Telefono domicilio"
+                        , nc."Numero Celular Secundario" 														AS "nc.Numero Celular Secundario"
+                        , nc.created_at 																		AS "nc.created_at"
+                        , nc.updated_at 																		AS "nc.updated_at"
+                */
+                        , dc."YesNo_cd_Requiere Visita"
+                        , fn_core_codevalue_getdescription(dc."YesNo_cd_Requiere Visita") 						AS "dc.Requiere Visita"
+                        , dc."Canal de visita_cd_Canal de visita"
+                        , fn_core_codevalue_getdescription(dc."Canal de visita_cd_Canal de visita") 			AS "Canal de visita"
+                        , dc."Causal Rechazo Visita_cd_Causal Rechazo Visita" as "dc.Causal Rechazo Visita_cd_Causal Rechazo Visita"
+                        , fn_core_codevalue_getdescription(dc."Causal Rechazo Visita_cd_Causal Rechazo Visita") AS "dc.Causal Rechazo Visita"
+                        , dc."Observacion Rechazo Visita"
+                        , dc."Usuario asignado"                                                                 AS "dc.Usuario asignado"
+                        , dc."Correo Usuario Asignado"
+                        , dc."Fecha Inicio Contactabilidad"
+                        , dc."Validacion contactabilidad"                                                       AS "dc.Validacion contactabilidad"
+                        , dc."Causal Rechazo Contactabilidad"
+                        , dc."Observacion Rechazo Contactabilidad"                                              AS "dc.Observacion Rechazo Contactabilidad"
+                        , dc."Observacion Contactabilidad"
+                        , dc."Segunda Observacion Contactabilidad"                                              AS "dc.Segunda Observacion Contactabilidad"
+                        , dc."Tercera Observacion Contactabilidad"                                              AS "dc.Tercera Observacion Contactabilidad"
+                        , dc."Telefono de Contactabilidad"                                                      AS "dc.Telefono de Contactabilidad"
+                        , dc."Fecha Fin Contactabilidad"                                                        AS "dc.Fecha Fin Contactabilidad"
+                        , dc.created_at AS dc_created_at
+                        , dc.updated_at AS dc_updated_at
+
+                        , cd."YesNo_cd_Requiere Visita" as "contactabilidad.YesNo_cd_Requiere Visita"
+                        , fn_core_codevalue_getdescription(cd."YesNo_cd_Requiere Visita") 						AS "Requiere Visita"
+                        , cd."Canal de visita_cd_Canal de visita" as "contactabilidad.Canal de visita_cd_Canal de visita"
+                        , fn_core_codevalue_getdescription(cd."Canal de visita_cd_Canal de visita") 			AS "cd.Canal de visita"
+                        , cd."Causal Rechazo Visita_cd_Causal Rechazo Visita" as "contactabilidad.Canal de visita.Causal Rechazo Visita_cd_Causal Rechazo Visita"
+                        , fn_core_codevalue_getdescription(cd."Causal Rechazo Visita_cd_Causal Rechazo Visita") AS "Causal Rechazo Visita"
+                        , cd."Observacion Rechazo Visita"                                                       AS "cd.Observacion Rechazo Visita"
+                        , cd."Usuario asignado"
+                        , cd."Correo Usuario Asignado"                                                          AS "cd.Correo Usuario Asignado"
+                        , cd."Fecha Inicio Contactabilidad"                                                     AS "cd.Fecha Inicio Contactabilidad"
+                        , cd."Validacion contactabilidad"
+                        , cd."Causal Rechazo Contactabilidad"                                                   AS "cd.Causal Rechazo Contactabilidad"
+                        , cd."Observacion Rechazo Contactabilidad"
+                        , cd."Observacion Contactabilidad"                                                      AS "cd.Observacion Contactabilidad"
+                        , cd."Segunda Observacion Contactabilidad"
+                        , cd."Tercera Observacion Contactabilidad"
+                        , cd."Telefono de Contactabilidad"
+                        , cd."Fecha Fin Contactabilidad"
+                --        , cd.created_at																		AS "cd.created_at_cd"
+                --        , cd.updated_at 																		AS "cd.created_at_cd"
+
+                    FROM
+                        m_client mc
+                    LEFT JOIN campos_cliente_empresas cce
+                        ON mc.id = cce.client_id
+                    LEFT JOIN campos_cliente_persona ccp
+                        ON mc.id = ccp.client_id
+                --    LEFT JOIN "Numeros_de_clientes" nc
+                --        ON mc.id = nc.client_id
+                    LEFT JOIN "Detalles de Contacto" dc
+                        ON mc.id = dc.client_id
+                    LEFT JOIN contactabilidad cd
+                        ON mc.id = cd.client_id
+                    ;
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
