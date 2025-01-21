@@ -4340,10 +4340,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         .plus(scheduledRepayment.getInterestWaived(currency));
                 // Do not add advance payment amount if installment was overpaid
                 if (!scheduledRepayment.isLastInstallmentOverpaidInActual()) {
-                    // SU-579 This is special case when advance pmt of exact amount as of foreclosure is made while the last installment has
-                    // advance principal paid from a previous transaction. In this case total advance pmt is greater than installment amount so using
-                    // the advance amount instead of installment principal to make sure loan is not calculated as overpaid
-                    cumulativeTotalPaidOnInstallments = cumulativeTotalPaidOnInstallments.plus(scheduledRepayment.getAdvancePrincipalAmount()).minus(scheduledRepayment.getPrincipalCompleted(currency));
+                    // SU-579 This is special case when advance pmt of exact amount as of foreclosure is made while the
+                    // last installment has
+                    // advance principal paid from a previous transaction. In this case total advance pmt is greater
+                    // than installment amount so using
+                    // the advance amount instead of installment principal to make sure loan is not calculated as
+                    // overpaid
+                    cumulativeTotalPaidOnInstallments = cumulativeTotalPaidOnInstallments
+                            .plus(scheduledRepayment.getAdvancePrincipalAmount()).minus(scheduledRepayment.getPrincipalCompleted(currency));
                 }
                 continue;
             } else {

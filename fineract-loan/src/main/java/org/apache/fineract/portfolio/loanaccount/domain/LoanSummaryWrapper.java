@@ -40,7 +40,8 @@ public final class LoanSummaryWrapper {
             total = total.plus(installment.getPrincipalCompleted(currency));
             if (installment.isLastInstallment(repaymentScheduleInstallments) && installment.isOverpaidInAdvance(currency)
                     && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
-                // SU-579 if last advance repayment transaction was exact foreclosure amount and there is a previous advance principal paid for last installment then
+                // SU-579 if last advance repayment transaction was exact foreclosure amount and there is a previous
+                // advance principal paid for last installment then
                 // use the advance paid amount
                 if (!installment.isLastInstallmentOverpaidInActual()) {
                     total = total.minus(installment.getPrincipalCompleted(currency)).plus(installment.getAdvancePrincipalAmount());
