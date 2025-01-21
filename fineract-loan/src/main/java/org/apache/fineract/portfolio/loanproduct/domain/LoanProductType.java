@@ -28,7 +28,8 @@ public enum LoanProductType {
     SUMAS_EMPRESSAS("SU+ Empresas"), //
     SUMAS_VEHICULOS("SU+ Vehiculos"), //
     SUMAS_PRESTAMOS("SU+ Préstamos"), //
-    SUMAS_CASTIGADO("SU+ Castigado"); //
+    SUMAS_CASTIGADO("SU+ Castigado"), //
+    CREDITO_ROTATIVO("Crédito rotativo"); //
 
     private final String code;
 

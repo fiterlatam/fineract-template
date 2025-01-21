@@ -190,6 +190,12 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                         .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME);
                 loanProduct.setUseOtherLoansCupo(useOtherLoansCupo);
             }
+            boolean isLoanProductCreditoRotativo = productType !=null && LoanProductType.CREDITO_ROTATIVO.getCode().equalsIgnoreCase(productType.getLabel());
+            if (isLoanProductCreditoRotativo && loanProduct.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType() == null) {
+              // Validate that repayment type was set
+                    throw new PlatformDataIntegrityException("error.msg.loan.product.repayment.type.required.for.credit.revolving.loan",
+                            "Repayment type is required for credit revolving loan", "repaymentPeriodFrequencyType");
+            }
             loanProduct.setProductType(productType);
 
             if (command.parameterExists("delinquencyBucketId")) {
