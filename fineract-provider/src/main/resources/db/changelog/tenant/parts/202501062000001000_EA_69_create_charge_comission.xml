@@ -105,4 +105,11 @@
         </sql>
     </changeSet>
 
+    <changeSet author="danielsta@fiter.io" id="90">
+        <sql>
+            <![CDATA[
+                UPDATE m_charge SET charge_calculation_enum = 231 WHERE id = (SELECT id FROM m_charge WHERE "name" = 'Comision Mi Pyme >= 4SMLV');
+            ]]>
+        </sql>
+    </changeSet>
 </databaseChangeLog>

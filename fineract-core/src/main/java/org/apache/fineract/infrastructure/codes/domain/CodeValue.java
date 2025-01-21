@@ -26,6 +26,8 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -42,7 +44,9 @@ import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @Accessors(chain = true)
+@Builder
 public class CodeValue extends AbstractPersistableCustom {
 
     @Column(name = "code_value", length = 100)

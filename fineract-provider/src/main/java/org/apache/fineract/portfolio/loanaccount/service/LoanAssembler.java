@@ -302,18 +302,18 @@ public class LoanAssembler {
                     fund, loanOfficer, loanPurpose, transactionProcessingStrategyCode, loanProductRelatedDetail, loanCharges, null,
                     syncDisbursementWithMeeting, fixedEmiAmount, disbursementDetails, maxOutstandingLoanBalance,
                     createStandingInstructionAtDisbursement, isFloatingInterestRate, interestRateDifferential, rates,
-                    fixedPrincipalPercentagePerInstallment);
+                    fixedPrincipalPercentagePerInstallment, loanAdditionalDetail);
         } else if (group != null) {
             loanApplication = Loan.newGroupLoanApplication(accountNo, group, loanType.getId().intValue(), loanProduct, fund, loanOfficer,
                     loanPurpose, transactionProcessingStrategyCode, loanProductRelatedDetail, loanCharges, null,
                     syncDisbursementWithMeeting, fixedEmiAmount, disbursementDetails, maxOutstandingLoanBalance,
                     createStandingInstructionAtDisbursement, isFloatingInterestRate, interestRateDifferential, rates,
-                    fixedPrincipalPercentagePerInstallment);
+                    fixedPrincipalPercentagePerInstallment, loanAdditionalDetail);
         } else if (client != null) {
             loanApplication = Loan.newIndividualLoanApplication(accountNo, client, loanType.getId().intValue(), loanProduct, fund,
                     loanOfficer, loanPurpose, transactionProcessingStrategyCode, loanProductRelatedDetail, loanCharges, collateral,
                     fixedEmiAmount, disbursementDetails, maxOutstandingLoanBalance, createStandingInstructionAtDisbursement,
-                    isFloatingInterestRate, interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment);
+                    isFloatingInterestRate, interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, loanAdditionalDetail);
         } else {
             loanApplication = null;
         }

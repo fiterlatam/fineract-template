@@ -1543,18 +1543,38 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         return deleteDatatableEntries(dataTableName, appTableId, datatableId, command);
     }
 
+    @SuppressWarnings({ "squid:S6809" })
     private CommandProcessingResult deleteDatatableEntries(final String dataTableName, final Long appTableId, final Long datatableId,
             JsonCommand command) {
+        final EntityTables entityTable = queryForApplicationEntity(dataTableName);
+        final CommandProcessingResult commandProcessingResult = checkMainResourceExistsWithinScope(entityTable, appTableId);
+
+        Long id = deleteDatatableEntries(dataTableName, appTableId, datatableId);
+
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withEntityId(id) //
+                .withOfficeId(commandProcessingResult.getOfficeId()) //
+                .withGroupId(commandProcessingResult.getGroupId()) //
+                .withClientId(commandProcessingResult.getClientId()) //
+                .withSavingsId(commandProcessingResult.getSavingsId()) //
+                .withLoanId(commandProcessingResult.getLoanId()) //
+                .withTransactionId(commandProcessingResult.getTransactionId()) //
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public Long deleteDatatableEntries(final String dataTableName, final Long appTableId, final Long datatableId) {
         validateDatatableName(dataTableName);
         if (isDatatableAttachedToEntityDatatableCheck(dataTableName)) {
             throw new DatatableEntryRequiredException(dataTableName, appTableId);
         }
         final EntityTables entityTable = queryForApplicationEntity(dataTableName);
-        final CommandProcessingResult commandProcessingResult = checkMainResourceExistsWithinScope(entityTable, appTableId);
 
         String whereColumn;
         Long whereValue;
-        if (datatableId == null) {
+        if (datatableId == null || datatableId == 0) {
             whereColumn = getFKField(entityTable);
             whereValue = appTableId;
         } else {
@@ -1565,16 +1585,8 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 + whereValue;
 
         this.jdbcTemplate.update(sql); // NOSONAR
-        return new CommandProcessingResultBuilder() //
-                .withCommandId(command.commandId()) //
-                .withEntityId(whereValue) //
-                .withOfficeId(commandProcessingResult.getOfficeId()) //
-                .withGroupId(commandProcessingResult.getGroupId()) //
-                .withClientId(commandProcessingResult.getClientId()) //
-                .withSavingsId(commandProcessingResult.getSavingsId()) //
-                .withLoanId(commandProcessingResult.getLoanId()) //
-                .withTransactionId(commandProcessingResult.getTransactionId()) //
-                .build();
+
+        return whereValue;
     }
 
     @Override

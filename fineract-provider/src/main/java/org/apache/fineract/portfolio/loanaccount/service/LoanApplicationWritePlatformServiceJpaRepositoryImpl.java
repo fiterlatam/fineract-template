@@ -24,6 +24,8 @@ import com.google.gson.JsonObject;
 import jakarta.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoField;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
@@ -162,6 +164,15 @@ import org.springframework.util.CollectionUtils;
 public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements LoanApplicationWritePlatformService {
 
     public static final String STRING_PRODUCT_MICROCREDITO = "microcredito";
+    public static final String CLIENT_ID_PARAM = "clientId";
+    public static final String GROUP_ID_PARAM = "groupId";
+    public static final String EXTERNAL_ID_PARAM = "externalId";
+    public static final String TOTAL_LOAN_PARAM = "totalLoan";
+    public static final String LOAN_TYPE_PARAM = "loanType";
+    public static final String RECALCULATE_LOAN_SCHEDULE_PARAM = "recalculateLoanSchedule";
+    public static final String REPAYMENT_FREQUENCY_NTH_DAY_TYPE_ID_PARAM = "repaymentFrequencyNthDayType";
+    public static final String EXPECTED_DISBURSEMENT_DATE_PARAM = "expectedDisbursementDate";
+    public static final String ERROR_MESSAGE_LABEL_LOAN_DISBURSAL_DATE = "error.msg.loan.disbursal.date.should.be.after.last.transaction.date.of.loan.to.be.closed";
     private final PlatformSecurityContext context;
     private final FromJsonHelper fromJsonHelper;
     private final LoanApplicationTransitionApiJsonValidator loanApplicationTransitionApiJsonValidator;
@@ -209,13 +220,16 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
     private final ConfigurationDomainServiceJpa configurationDomainServiceJpa;
 
+    @SuppressWarnings({ "squid:S3776" })
     @Transactional
     @Override
     public CommandProcessingResult submitApplication(final JsonCommand command) {
 
         try {
-            final Long clientId = this.fromJsonHelper.extractLongNamed("clientId", command.parsedJson());
-            final Long groupId = this.fromJsonHelper.extractLongNamed("groupId", command.parsedJson());
+            final Long clientId = this.fromJsonHelper.extractLongNamed(LoanApplicationWritePlatformServiceJpaRepositoryImpl.CLIENT_ID_PARAM,
+                    command.parsedJson());
+            final Long groupId = this.fromJsonHelper.extractLongNamed(LoanApplicationWritePlatformServiceJpaRepositoryImpl.GROUP_ID_PARAM,
+                    command.parsedJson());
 
             final Long entityId = clientId != null ? clientId : groupId;
             boolean isTopUp = false;
@@ -271,7 +285,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             this.fromApiJsonDeserializer.validateForCreate(command.json(), isMeetingMandatoryForJLGLoans, loanProduct);
 
             // Validate If the externalId is already registered
-            final String externalIdStr = this.fromJsonHelper.extractStringNamed("externalId", command.parsedJson());
+            final String externalIdStr = this.fromJsonHelper
+                    .extractStringNamed(LoanApplicationWritePlatformServiceJpaRepositoryImpl.EXTERNAL_ID_PARAM, command.parsedJson());
             ExternalId externalId = ExternalIdFactory.produce(externalIdStr);
             if (!externalId.isEmpty()) {
                 final boolean existByExternalId = this.loanRepositoryWrapper.existLoanByExternalId(externalId);
@@ -376,9 +391,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     final LocalDate lastUserTransactionOnLoanToClose = loanToClose.getLastUserTransactionDate();
                     if (DateUtils.isBefore(newLoanApplication.getDisbursementDate(), lastUserTransactionOnLoanToClose)) {
                         throw new GeneralPlatformDomainRuleException(
-                                "error.msg.loan.disbursal.date.should.be.after.last.transaction.date.of.loan.to.be.closed",
-                                "Disbursal date of this loan application " + newLoanApplication.getDisbursementDate()
-                                        + " should be after last transaction date of loan to be closed "
+                                LoanApplicationWritePlatformServiceJpaRepositoryImpl.ERROR_MESSAGE_LABEL_LOAN_DISBURSAL_DATE,
+                                "Disbursal date of this loan application: " + newLoanApplication.getDisbursementDate()
+                                        + " should be after last transaction date of the loan to be closed "
                                         + lastUserTransactionOnLoanToClose);
                     }
 
@@ -418,33 +433,14 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     }
 
                     if (command.booleanObjectValueOfParameterNamed("isParentAccount") != null) {
-
-                        // empty table check
-                        if (glimRepository.count() != 0) {
-                            // **************Parent-Not an empty
-                            // table********************
-                            accountNumber = this.accountNumberGenerator.generate(newLoanApplication, accountNumberFormat);
-                            newLoanApplication.updateAccountNo(accountNumber + "1");
-                            glimAccountInfoWritePlatformService.addGLIMAccountInfo(accountNumber, group,
-                                    command.bigDecimalValueOfParameterNamedDefaultToNullIfZero("totalLoan"), Long.valueOf(1), true,
-                                    LoanStatus.SUBMITTED_AND_PENDING_APPROVAL.getValue(), applicationId);
-                            newLoanApplication.setGlim(glimRepository.findOneByAccountNumber(accountNumber));
-                            this.loanRepositoryWrapper.save(newLoanApplication);
-
-                        } else {
-                            // ************** Parent-empty
-                            // table********************
-
-                            accountNumber = this.accountNumberGenerator.generate(newLoanApplication, accountNumberFormat);
-                            newLoanApplication.updateAccountNo(accountNumber + "1");
-                            glimAccountInfoWritePlatformService.addGLIMAccountInfo(accountNumber, group,
-                                    command.bigDecimalValueOfParameterNamedDefaultToNullIfZero("totalLoan"), Long.valueOf(1), true,
-                                    LoanStatus.SUBMITTED_AND_PENDING_APPROVAL.getValue(), applicationId);
-                            newLoanApplication.setGlim(glimRepository.findOneByAccountNumber(accountNumber));
-                            this.loanRepositoryWrapper.save(newLoanApplication);
-
-                        }
-
+                        accountNumber = this.accountNumberGenerator.generate(newLoanApplication, accountNumberFormat);
+                        newLoanApplication.updateAccountNo(accountNumber + "1");
+                        glimAccountInfoWritePlatformService.addGLIMAccountInfo(accountNumber, group,
+                                command.bigDecimalValueOfParameterNamedDefaultToNullIfZero(
+                                        LoanApplicationWritePlatformServiceJpaRepositoryImpl.TOTAL_LOAN_PARAM),
+                                Long.valueOf(1), true, LoanStatus.SUBMITTED_AND_PENDING_APPROVAL.getValue(), applicationId);
+                        newLoanApplication.setGlim(glimRepository.findOneByAccountNumber(accountNumber));
+                        this.loanRepositoryWrapper.save(newLoanApplication);
                     } else {
 
                         if (glimRepository.count() != 0) {
@@ -465,8 +461,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                             accountNumber = this.accountNumberGenerator.generate(newLoanApplication, accountNumberFormat);
                             newLoanApplication.updateAccountNo(accountNumber + "1");
                             glimAccountInfoWritePlatformService.addGLIMAccountInfo(accountNumber, group,
-                                    command.bigDecimalValueOfParameterNamedDefaultToNullIfZero("totalLoan"), Long.valueOf(1), true,
-                                    LoanStatus.SUBMITTED_AND_PENDING_APPROVAL.getValue(), applicationId);
+                                    command.bigDecimalValueOfParameterNamedDefaultToNullIfZero(
+                                            LoanApplicationWritePlatformServiceJpaRepositoryImpl.TOTAL_LOAN_PARAM),
+                                    Long.valueOf(1), true, LoanStatus.SUBMITTED_AND_PENDING_APPROVAL.getValue(), applicationId);
                             newLoanApplication.setGlim(glimRepository.findOneByAccountNumber(accountNumber));
                             this.loanRepositoryWrapper.save(newLoanApplication);
 
@@ -474,7 +471,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
                         // reset in cases of last child application of glim
 
-                        if (isLastChildApplication) {
+                        if (Boolean.TRUE.equals(isLastChildApplication)) {
                             this.glimAccountInfoWritePlatformService
                                     .resetIsAcceptingChild(glimRepository.findOneByIsAcceptingChildAndApplicationId(true, applicationId));
                         }
@@ -504,7 +501,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 this.calendarInstanceRepository.save(calendarInstance);
             } else {
                 final LoanApplicationTerms loanApplicationTerms = this.loanScheduleAssembler.assembleLoanTerms(command.parsedJson());
-                final Integer repaymentFrequencyNthDayType = command.integerValueOfParameterNamed("repaymentFrequencyNthDayType");
+                final Integer repaymentFrequencyNthDayType = command.integerValueOfParameterNamed(
+                        LoanApplicationWritePlatformServiceJpaRepositoryImpl.REPAYMENT_FREQUENCY_NTH_DAY_TYPE_ID_PARAM);
                 if (loanApplicationTerms.getRepaymentPeriodFrequencyType() == PeriodFrequencyType.MONTHS
                         && repaymentFrequencyNthDayType != null) {
                     final String title = "loan_schedule_" + newLoanApplication.getId();
@@ -536,9 +534,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
                     List<GroupSavingsIndividualMonitoringAccountData> childSavings = (List<GroupSavingsIndividualMonitoringAccountData>) gsimReadPlatformService
                             .findGSIMAccountsByGSIMId(savingsAccountId);
-                    // List<SavingsAccountSummaryData>
-                    // childSavings=gsimAccount.getChildGSIMAccounts();
-                    List<BigDecimal> gsimClientMembers = new ArrayList<BigDecimal>();
+                    List<BigDecimal> gsimClientMembers = new ArrayList<>();
                     Map<BigDecimal, BigDecimal> clientAccountMappings = new HashMap<>();
                     for (GroupSavingsIndividualMonitoringAccountData childSaving : childSavings) {
                         gsimClientMembers.add(childSaving.getClientId());
@@ -589,10 +585,20 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             if (allyId != null && pointOfSaleCode != null) {
                 final String ipDetails = context.getApiRequestClientIP();
+                LocalDateTime createdOnLocalDateTime = null;
+                final Optional<OffsetDateTime> optionalOffsetDateTime = newLoanApplication.getCreatedDate();
+                if (optionalOffsetDateTime.isPresent()) {
+                    createdOnLocalDateTime = optionalOffsetDateTime.get().toLocalDateTime();
+                }
+                Long createdBy = null;
+                Optional<Long> createdByOptional = newLoanApplication.getCreatedBy();
+                if (createdByOptional.isPresent()) {
+                    createdBy = createdByOptional.get();
+                }
                 ClientBuyProcess clientBuyProcess = new ClientBuyProcess(mifosChannelId, clientId, pointOfSalesId, productId,
                         newLoanApplication.getId(), newLoanApplication.getSubmittedOnDate(), newLoanApplication.getPrincipal().getAmount(),
-                        newLoanApplication.getTermFrequency().longValue(), newLoanApplication.getCreatedDate().get().toLocalDateTime(),
-                        newLoanApplication.getCreatedBy().get().longValue(), ipDetails, null, null, mifosChannelHash);
+                        newLoanApplication.getTermFrequency().longValue(), createdOnLocalDateTime, createdBy, ipDetails, null, null,
+                        mifosChannelHash);
                 clientBuyProcess.setStatus(newLoanApplication.getPlainStatus());
                 clientBuyProcess.setLoanId(newLoanApplication.getId());
                 clientBuyProcessRepository.saveAndFlush(clientBuyProcess);
@@ -629,11 +635,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             activeLoansLoanProductIds = this.loanRepositoryWrapper.findActiveLoansLoanProductIdsByClient(loan.getClientId(),
                     LoanStatus.ACTIVE.getValue());
         }
-        checkForProductMixRestrictions(activeLoansLoanProductIds, productId, loan.loanProduct().productName());
+        checkForProductMixRestrictions(activeLoansLoanProductIds, productId);
     }
 
-    private void checkForProductMixRestrictions(final List<Long> activeLoansLoanProductIds, final Long productId,
-            final String productName) {
+    private void checkForProductMixRestrictions(final List<Long> activeLoansLoanProductIds, final Long productId) {
 
         if (!CollectionUtils.isEmpty(activeLoansLoanProductIds)) {
             final Collection<LoanProductData> restrictedPrdouctsList = this.loanProductReadPlatformService
@@ -661,30 +666,30 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final Boolean transactionProcessingStrategy = loan.loanProduct().getLoanProductConfigurableAttributes()
                 .getTransactionProcessingStrategyBoolean();
 
-        if (!amortization) {
+        if (Boolean.FALSE.equals(amortization)) {
             productRelatedDetail.setAmortizationMethod(loan.loanProduct().getLoanProductRelatedDetail().getAmortizationMethod());
         }
-        if (!arrearsTolerance) {
+        if (Boolean.FALSE.equals(arrearsTolerance)) {
             productRelatedDetail.setInArrearsTolerance(loan.loanProduct().getLoanProductRelatedDetail().getArrearsTolerance());
         }
-        if (!graceOnArrearsAging) {
+        if (Boolean.FALSE.equals(graceOnArrearsAging)) {
             productRelatedDetail.setGraceOnArrearsAgeing(loan.loanProduct().getLoanProductRelatedDetail().getGraceOnArrearsAgeing());
         }
-        if (!interestCalcPeriod) {
+        if (Boolean.FALSE.equals(interestCalcPeriod)) {
             productRelatedDetail.setInterestCalculationPeriodMethod(
                     loan.loanProduct().getLoanProductRelatedDetail().getInterestCalculationPeriodMethod());
         }
-        if (!interestMethod) {
+        if (Boolean.FALSE.equals(interestMethod)) {
             productRelatedDetail.setInterestMethod(loan.loanProduct().getLoanProductRelatedDetail().getInterestMethod());
         }
-        if (!graceOnPrincipalAndInterestPayment) {
+        if (Boolean.FALSE.equals(graceOnPrincipalAndInterestPayment)) {
             productRelatedDetail.setGraceOnInterestPayment(loan.loanProduct().getLoanProductRelatedDetail().getGraceOnInterestPayment());
             productRelatedDetail.setGraceOnPrincipalPayment(loan.loanProduct().getLoanProductRelatedDetail().getGraceOnPrincipalPayment());
         }
-        if (!repaymentEvery) {
+        if (Boolean.FALSE.equals(repaymentEvery)) {
             productRelatedDetail.setRepayEvery(loan.loanProduct().getLoanProductRelatedDetail().getRepayEvery());
         }
-        if (!transactionProcessingStrategy) {
+        if (Boolean.FALSE.equals(transactionProcessingStrategy)) {
             loan.updateTransactionProcessingStrategy(loan.loanProduct().getRepaymentStrategy(),
                     this.loanRepaymentScheduleTransactionProcessorFactory.determineProcessor(loan.loanProduct().getRepaymentStrategy())
                             .getName());
@@ -773,11 +778,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 .retrieveMaximumCreditRateConfigurationData();
         final LocalDate appliedOnDate = maximumCreditRateConfigurationData.getAppliedOnDate();
         LocalDate expectedDisbursementDate = loanApplication.getExpectedDisbursedOnLocalDate();
-        if (appliedOnDate != null && expectedDisbursementDate != null) {
-            if (expectedDisbursementDate.isBefore(appliedOnDate)) {
-                return;
-            }
+        if (appliedOnDate != null && expectedDisbursementDate != null && expectedDisbursementDate.isBefore(appliedOnDate)) {
+            return;
         }
+
         switch (interestPeriodFrequencyType) {
             case MONTHS -> {
                 final BigDecimal monthlyNominalRate = maximumCreditRateConfigurationData.getMonthlyNominalRate();
@@ -795,9 +799,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                             "nominalInterestRatePerPeriod", nominalInterestRatePerPeriod, annualNominalRate);
                 }
             }
+            default -> log.info("Interest period frequency type is not monthly or yearly");
         }
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     @Transactional
     @Override
     public CommandProcessingResult modifyApplication(final Long loanId, final JsonCommand command) {
@@ -817,16 +823,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             }
 
             LoanProduct loanProductForValidations = newLoanProduct == null ? existingLoanApplication.loanProduct() : newLoanProduct;
-
             this.fromApiJsonDeserializer.validateForModify(command.json(), loanProductForValidations, existingLoanApplication);
-            boolean isAjuste = false;
-            boolean isMifosChannel = false;
             Long mifosChannelId = null;
             String mifosChannelHash = null;
             List<Channel> channels = existingLoanApplication.getLoanProduct().getRepaymentChannels();
             for (Channel channel : channels) {
                 if (channel.getName().equals("Mifos")) {
-                    isMifosChannel = true;
                     mifosChannelId = channel.getId();
                     mifosChannelHash = channel.getHash();
                 }
@@ -875,10 +877,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
              * If there are any charges already present, which are now not passed in as a part of the request, deem the
              * charges as modified
              **/
-            if (!possiblyModifedLoanCharges.isEmpty()) {
-                if (!possiblyModifedLoanCharges.containsAll(existingCharges)) {
-                    isChargeModified = true;
-                }
+            if (!possiblyModifedLoanCharges.isEmpty() && !possiblyModifedLoanCharges.containsAll(existingCharges)) {
+                isChargeModified = true;
             }
 
             /**
@@ -898,8 +898,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             Set<LoanCollateralManagement> possiblyModifedLoanCollateralItems = null;
 
-            if (command.parameterExists("loanType")) {
-                final String loanTypeStr = command.stringValueOfParameterNamed("loanType");
+            if (command.parameterExists(LoanApplicationWritePlatformServiceJpaRepositoryImpl.LOAN_TYPE_PARAM)) {
+                final String loanTypeStr = command
+                        .stringValueOfParameterNamed(LoanApplicationWritePlatformServiceJpaRepositoryImpl.LOAN_TYPE_PARAM);
                 final AccountType loanType = AccountType.fromName(loanTypeStr);
 
                 if (!StringUtils.isBlank(loanTypeStr) && loanType.isIndividualAccount()) {
@@ -910,11 +911,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final Map<String, Object> changes = existingLoanApplication.loanApplicationModification(command, possiblyModifedLoanCharges,
                     possiblyModifedLoanCollateralItems, this.aprCalculator, isChargeModified, loanProductForValidations);
 
-            if (changes.containsKey("expectedDisbursementDate")) {
+            if (changes.containsKey(LoanApplicationWritePlatformServiceJpaRepositoryImpl.EXPECTED_DISBURSEMENT_DATE_PARAM)) {
                 this.loanAssembler.validateExpectedDisbursementForHolidayAndNonWorkingDay(existingLoanApplication);
             }
 
-            final String clientIdParamName = "clientId";
+            final String clientIdParamName = LoanApplicationWritePlatformServiceJpaRepositoryImpl.CLIENT_ID_PARAM;
             if (changes.containsKey(clientIdParamName)) {
                 final Long clientId = command.longValueOfParameterNamed(clientIdParamName);
                 final Client client = this.clientRepository.findOneWithNotFoundDetection(clientId);
@@ -925,7 +926,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 existingLoanApplication.updateClient(client);
             }
 
-            final String groupIdParamName = "groupId";
+            final String groupIdParamName = LoanApplicationWritePlatformServiceJpaRepositoryImpl.GROUP_ID_PARAM;
             if (changes.containsKey(groupIdParamName)) {
                 final Long groupId = command.longValueOfParameterNamed(groupIdParamName);
                 final Group group = this.groupRepository.findOneWithNotFoundDetection(groupId);
@@ -944,8 +945,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
                 final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan");
                 if (newLoanProduct.useBorrowerCycle()) {
-                    final Long clientId = this.fromJsonHelper.extractLongNamed("clientId", command.parsedJson());
-                    final Long groupId = this.fromJsonHelper.extractLongNamed("groupId", command.parsedJson());
+                    final Long clientId = this.fromJsonHelper
+                            .extractLongNamed(LoanApplicationWritePlatformServiceJpaRepositoryImpl.CLIENT_ID_PARAM, command.parsedJson());
+                    final Long groupId = this.fromJsonHelper
+                            .extractLongNamed(LoanApplicationWritePlatformServiceJpaRepositoryImpl.GROUP_ID_PARAM, command.parsedJson());
                     Integer cycleNumber = 0;
                     if (clientId != null) {
                         cycleNumber = this.loanReadPlatformService.retriveLoanCounter(clientId, newLoanProduct.getId());
@@ -990,7 +993,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     LoanTopupDetails existingLoanTopupDetails = existingLoanApplication.getTopupLoanDetails();
                     if (existingLoanTopupDetails == null
                             || (existingLoanTopupDetails != null && !existingLoanTopupDetails.getLoanIdToClose().equals(loanIdToClose))
-                            || changes.containsKey("submittedOnDate") || changes.containsKey("expectedDisbursementDate")
+                            || changes.containsKey("submittedOnDate")
+                            || changes.containsKey(LoanApplicationWritePlatformServiceJpaRepositoryImpl.EXPECTED_DISBURSEMENT_DATE_PARAM)
                             || changes.containsKey("principal") || changes.containsKey(LoanApiConstants.disbursementDataParameterName)) {
                         Long existingLoanIdToClose = null;
                         if (existingLoanTopupDetails != null) {
@@ -1022,7 +1026,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         final LocalDate lastUserTransactionOnLoanToClose = loanToClose.getLastUserTransactionDate();
                         if (DateUtils.isBefore(existingLoanApplication.getDisbursementDate(), lastUserTransactionOnLoanToClose)) {
                             throw new GeneralPlatformDomainRuleException(
-                                    "error.msg.loan.disbursal.date.should.be.after.last.transaction.date.of.loan.to.be.closed",
+                                    LoanApplicationWritePlatformServiceJpaRepositoryImpl.ERROR_MESSAGE_LABEL_LOAN_DISBURSAL_DATE,
                                     "Disbursal date of this loan application " + existingLoanApplication.getDisbursementDate()
                                             + " should be after last transaction date of loan to be closed "
                                             + lastUserTransactionOnLoanToClose);
@@ -1035,7 +1039,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                                     "Topup loan amount should be greater than outstanding amount of loan to be closed.");
                         }
 
-                        if (!existingLoanIdToClose.equals(loanIdToClose)) {
+                        if (!Objects.equals(existingLoanIdToClose, loanIdToClose)) {
                             final LoanTopupDetails topupDetails = new LoanTopupDetails(existingLoanApplication, loanIdToClose);
                             existingLoanApplication.setTopupLoanDetails(topupDetails);
                             changes.put(LoanApiConstants.loanIdToClose, loanIdToClose);
@@ -1093,11 +1097,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 existingLoanApplication.updateTransactionProcessingStrategy(strategy, loanRepaymentScheduleTransactionProcessor.getName());
             }
 
-            /**
-             * TODO: Allow other loan types if needed.
-             */
-            if (command.parameterExists("loanType")) {
-                final String loanTypeStr = command.stringValueOfParameterNamed("loanType");
+            if (command.parameterExists(LoanApplicationWritePlatformServiceJpaRepositoryImpl.LOAN_TYPE_PARAM)) {
+                final String loanTypeStr = command
+                        .stringValueOfParameterNamed(LoanApplicationWritePlatformServiceJpaRepositoryImpl.LOAN_TYPE_PARAM);
                 final AccountType loanType = AccountType.fromName(loanTypeStr);
 
                 if (!StringUtils.isBlank(loanTypeStr) && loanType.isIndividualAccount()) {
@@ -1113,8 +1115,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 existingLoanApplication.updateLoanCharges(possiblyModifedLoanCharges);
             }
 
-            if (changes.containsKey("recalculateLoanSchedule")) {
-                changes.remove("recalculateLoanSchedule");
+            if (changes.containsKey(LoanApplicationWritePlatformServiceJpaRepositoryImpl.RECALCULATE_LOAN_SCHEDULE_PARAM)) {
+                changes.remove(LoanApplicationWritePlatformServiceJpaRepositoryImpl.RECALCULATE_LOAN_SCHEDULE_PARAM);
 
                 final JsonElement parsedQuery = this.fromJsonHelper.parse(command.json());
                 final JsonQuery query = JsonQuery.from(command.json(), parsedQuery, this.fromJsonHelper);
@@ -1192,8 +1194,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         this.calendarInstanceRepository.delete(existingCalendarInstance);
                     }
                 }
-                if (changes.containsKey("repaymentFrequencyNthDayType") || changes.containsKey("repaymentFrequencyDayOfWeekType")) {
-                    if (changes.get("repaymentFrequencyNthDayType") == null) {
+                if (changes.containsKey(LoanApplicationWritePlatformServiceJpaRepositoryImpl.REPAYMENT_FREQUENCY_NTH_DAY_TYPE_ID_PARAM)
+                        || changes.containsKey("repaymentFrequencyDayOfWeekType")) {
+                    if (changes
+                            .get(LoanApplicationWritePlatformServiceJpaRepositoryImpl.REPAYMENT_FREQUENCY_NTH_DAY_TYPE_ID_PARAM) == null) {
                         if (ciList != null && !ciList.isEmpty()) {
                             final CalendarInstance calendarInstance = ciList.get(0);
                             final boolean isCalendarAssociatedWithEntity = this.calendarReadPlatformService.isCalendarAssociatedWithEntity(
@@ -1206,44 +1210,44 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         }
                     } else {
                         Integer repaymentFrequencyTypeInt = command.integerValueOfParameterNamed("repaymentFrequencyType");
-                        if (repaymentFrequencyTypeInt != null) {
-                            if (PeriodFrequencyType.fromInt(repaymentFrequencyTypeInt) == PeriodFrequencyType.MONTHS) {
-                                final String title = "loan_schedule_" + existingLoanApplication.getId();
-                                final Integer typeId = CalendarType.COLLECTION.getValue();
-                                final CalendarFrequencyType repaymentFrequencyType = CalendarFrequencyType.MONTHLY;
-                                final Integer interval = command.integerValueOfParameterNamed("repaymentEvery");
-                                LocalDate startDate = command.localDateValueOfParameterNamed("repaymentsStartingFromDate");
-                                if (startDate == null) {
-                                    startDate = command.localDateValueOfParameterNamed("expectedDisbursementDate");
-                                }
-                                final Calendar newCalendar = Calendar.createRepeatingCalendar(title, startDate, typeId,
-                                        repaymentFrequencyType, interval, (Integer) changes.get("repaymentFrequencyDayOfWeekType"),
-                                        (Integer) changes.get("repaymentFrequencyNthDayType"));
-                                if (ciList != null && !ciList.isEmpty()) {
-                                    final CalendarInstance calendarInstance = ciList.get(0);
-                                    final boolean isCalendarAssociatedWithEntity = this.calendarReadPlatformService
-                                            .isCalendarAssociatedWithEntity(calendarInstance.getEntityId(),
-                                                    calendarInstance.getCalendar().getId(),
-                                                    CalendarEntityType.LOANS.getValue().longValue());
-                                    if (isCalendarAssociatedWithEntity) {
-                                        final Calendar existingCalendar = calendarInstance.getCalendar();
-                                        if (existingCalendar != null) {
-                                            String existingRecurrence = existingCalendar.getRecurrence();
-                                            if (!existingRecurrence.equals(newCalendar.getRecurrence())) {
-                                                existingCalendar.setRecurrence(newCalendar.getRecurrence());
-                                                this.calendarRepository.save(existingCalendar);
-                                            }
+                        if (repaymentFrequencyTypeInt != null
+                                && PeriodFrequencyType.fromInt(repaymentFrequencyTypeInt) == PeriodFrequencyType.MONTHS) {
+                            final String title = "loan_schedule_" + existingLoanApplication.getId();
+                            final Integer typeId = CalendarType.COLLECTION.getValue();
+                            final CalendarFrequencyType repaymentFrequencyType = CalendarFrequencyType.MONTHLY;
+                            final Integer interval = command.integerValueOfParameterNamed("repaymentEvery");
+                            LocalDate startDate = command.localDateValueOfParameterNamed("repaymentsStartingFromDate");
+                            if (startDate == null) {
+                                startDate = command.localDateValueOfParameterNamed(
+                                        LoanApplicationWritePlatformServiceJpaRepositoryImpl.EXPECTED_DISBURSEMENT_DATE_PARAM);
+                            }
+                            final Calendar newCalendar = Calendar.createRepeatingCalendar(title, startDate, typeId, repaymentFrequencyType,
+                                    interval, (Integer) changes.get("repaymentFrequencyDayOfWeekType"), (Integer) changes.get(
+                                            LoanApplicationWritePlatformServiceJpaRepositoryImpl.REPAYMENT_FREQUENCY_NTH_DAY_TYPE_ID_PARAM));
+                            if (ciList != null && !ciList.isEmpty()) {
+                                final CalendarInstance calendarInstance = ciList.get(0);
+                                final boolean isCalendarAssociatedWithEntity = this.calendarReadPlatformService
+                                        .isCalendarAssociatedWithEntity(calendarInstance.getEntityId(),
+                                                calendarInstance.getCalendar().getId(), CalendarEntityType.LOANS.getValue().longValue());
+                                if (isCalendarAssociatedWithEntity) {
+                                    final Calendar existingCalendar = calendarInstance.getCalendar();
+                                    if (existingCalendar != null) {
+                                        String existingRecurrence = existingCalendar.getRecurrence();
+                                        if (!existingRecurrence.equals(newCalendar.getRecurrence())) {
+                                            existingCalendar.setRecurrence(newCalendar.getRecurrence());
+                                            this.calendarRepository.save(existingCalendar);
                                         }
                                     }
-                                } else {
-                                    this.calendarRepository.save(newCalendar);
-                                    final Integer calendarEntityType = CalendarEntityType.LOANS.getValue();
-                                    final CalendarInstance calendarInstance = new CalendarInstance(newCalendar,
-                                            existingLoanApplication.getId(), calendarEntityType);
-                                    this.calendarInstanceRepository.save(calendarInstance);
                                 }
+                            } else {
+                                this.calendarRepository.save(newCalendar);
+                                final Integer calendarEntityType = CalendarEntityType.LOANS.getValue();
+                                final CalendarInstance calendarInstance = new CalendarInstance(newCalendar, existingLoanApplication.getId(),
+                                        calendarEntityType);
+                                this.calendarInstanceRepository.save(calendarInstance);
                             }
                         }
+
                     }
                 }
             }
@@ -1304,13 +1308,13 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             if ((command.longValueOfParameterNamed(productIdParamName) != null)
                     || (command.longValueOfParameterNamed(clientIdParamName) != null)
                     || (command.longValueOfParameterNamed(groupIdParamName) != null)) {
-                Long OfficeId = null;
+                Long officeId = null;
                 if (existingLoanApplication.getClient() != null) {
-                    OfficeId = existingLoanApplication.getClient().getOffice().getId();
+                    officeId = existingLoanApplication.getClient().getOffice().getId();
                 } else if (existingLoanApplication.getGroup() != null) {
-                    OfficeId = existingLoanApplication.getGroup().getOffice().getId();
+                    officeId = existingLoanApplication.getGroup().getOffice().getId();
                 }
-                officeSpecificLoanProductValidation(existingLoanApplication.getLoanProduct().getId(), OfficeId);
+                officeSpecificLoanProductValidation(existingLoanApplication.getLoanProduct().getId(), officeId);
             }
             existingLoanApplication.getLoanCustomizationDetail().recordActivity();
 
@@ -1334,6 +1338,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
             }
 
+            if (command.parameterExists(LoanApiConstants.datatables)) {
+                this.entityDatatableChecksWritePlatformService.saveDatatables(StatusEnum.CREATE.getCode().longValue(),
+                        EntityTables.LOAN.getName(), existingLoanApplication.getId(), existingLoanApplication.productId(),
+                        command.arrayOfParameterNamed(LoanApiConstants.datatables));
+            }
+
             Long allyId = this.fromJsonHelper.extractLongNamed(LoanApiConstants.AllYID, command.parsedJson());
             Optional<ClientBuyProcess> existingClientByProses = clientBuyProcessRepository.findClienByProsesLoanByLoanId(loanId);
             if (allyId != null && pointOfSaleCode != null) {
@@ -1348,12 +1358,21 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     oldClientBuyProses.setCreditId(loanId);
                     clientBuyProcessRepository.saveAndFlush(oldClientBuyProses);
                 } else {
+                    LocalDateTime createdOnLocalDateTime = null;
+                    final Optional<OffsetDateTime> optionalOffsetDateTime = existingLoanApplication.getCreatedDate();
+                    if (optionalOffsetDateTime.isPresent()) {
+                        createdOnLocalDateTime = optionalOffsetDateTime.get().toLocalDateTime();
+                    }
+                    Long createdBy = null;
+                    Optional<Long> createdByOptional = existingLoanApplication.getCreatedBy();
+                    if (createdByOptional.isPresent()) {
+                        createdBy = createdByOptional.get();
+                    }
                     ClientBuyProcess clientBuyProcess = new ClientBuyProcess(mifosChannelId, existingLoanApplication.getClientId(),
                             pointOfSalesId, existingLoanApplication.productId(), existingLoanApplication.getId(),
                             existingLoanApplication.getSubmittedOnDate(), existingLoanApplication.getPrincipal().getAmount(),
-                            existingLoanApplication.getTermFrequency().longValue(),
-                            existingLoanApplication.getCreatedDate().get().toLocalDateTime(),
-                            existingLoanApplication.getCreatedBy().get().longValue(), ipDetails, null, null, mifosChannelHash);
+                            existingLoanApplication.getTermFrequency().longValue(), createdOnLocalDateTime, createdBy, ipDetails, null,
+                            null, mifosChannelHash);
                     clientBuyProcess.setStatus(existingLoanApplication.getPlainStatus());
                     clientBuyProcess.setLoanId(existingLoanApplication.getId());
                     clientBuyProcessRepository.saveAndFlush(clientBuyProcess);
@@ -1404,9 +1423,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     "Loan with accountNo `" + accountNo + "` already exists", "accountNo", accountNo);
         } else if (realCause.getMessage().contains("loan_externalid_UNIQUE")
                 || (realCause.getCause() != null && realCause.getCause().getMessage().contains("loan_externalid_UNIQUE"))) {
-            final String externalId = command.stringValueOfParameterNamed("externalId");
+            final String externalId = command
+                    .stringValueOfParameterNamed(LoanApplicationWritePlatformServiceJpaRepositoryImpl.EXTERNAL_ID_PARAM);
             throw new PlatformDataIntegrityException("error.msg.loan.duplicate.externalId",
-                    "Loan with externalId `" + externalId + "` already exists", "externalId", externalId);
+                    "Loan with externalId `" + externalId + "` already exists",
+                    LoanApplicationWritePlatformServiceJpaRepositoryImpl.EXTERNAL_ID_PARAM, externalId);
         }
 
         log.error("Error occured.", dve);
@@ -1467,6 +1488,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         }
     }
 
+    @SuppressWarnings("all")
     @Transactional
     @Override
     public CommandProcessingResult approveGLIMLoanAppication(final Long loanId, final JsonCommand command) {
@@ -1513,6 +1535,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         return result;
     }
 
+    @SuppressWarnings({ "squid:S3776" })
     @Transactional
     @Override
     public CommandProcessingResult approveApplication(final Long loanId, final JsonCommand command) {
@@ -1548,11 +1571,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             if (calendarInstance != null) {
                 calendar = calendarInstance.getCalendar();
             }
-            // final Calendar calendar = calendarInstance.getCalendar();
             boolean isSkipRepaymentOnFirstMonthEnabled = this.configurationDomainService.isSkippingMeetingOnFirstDayOfMonthEnabled();
             if (isSkipRepaymentOnFirstMonthEnabled) {
                 isSkipRepaymentOnFirstMonth = this.loanUtilService.isLoanRepaymentsSyncWithMeeting(loan.group(), calendar);
-                if (isSkipRepaymentOnFirstMonth) {
+                if (Boolean.TRUE.equals(isSkipRepaymentOnFirstMonth)) {
                     numberOfDays = configurationDomainService.retreivePeroidInNumberOfDaysForSkipMeetingDate().intValue();
                 }
             }
@@ -1571,8 +1593,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             // If loan approved amount less than loan demanded amount, then need
             // to recompute the schedule
-            if (changes.containsKey(LoanApiConstants.approvedLoanAmountParameterName) || changes.containsKey("recalculateLoanSchedule")
-                    || changes.containsKey("expectedDisbursementDate")) {
+            if (changes.containsKey(LoanApiConstants.approvedLoanAmountParameterName)
+                    || changes.containsKey(LoanApplicationWritePlatformServiceJpaRepositoryImpl.RECALCULATE_LOAN_SCHEDULE_PARAM)
+                    || changes.containsKey(LoanApplicationWritePlatformServiceJpaRepositoryImpl.EXPECTED_DISBURSEMENT_DATE_PARAM)) {
                 LocalDate recalculateFrom = null;
                 ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
                 loan.regenerateRepaymentSchedule(scheduleGeneratorDTO);
@@ -1589,19 +1612,19 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 final LocalDate lastUserTransactionOnLoanToClose = loanToClose.getLastUserTransactionDate();
                 if (DateUtils.isBefore(loan.getDisbursementDate(), lastUserTransactionOnLoanToClose)) {
                     throw new GeneralPlatformDomainRuleException(
-                            "error.msg.loan.disbursal.date.should.be.after.last.transaction.date.of.loan.to.be.closed",
+                            LoanApplicationWritePlatformServiceJpaRepositoryImpl.ERROR_MESSAGE_LABEL_LOAN_DISBURSAL_DATE,
                             "Disbursal date of this loan application " + loan.getDisbursementDate()
                                     + " should be after last transaction date of loan to be closed " + lastUserTransactionOnLoanToClose);
                 }
                 BigDecimal loanOutstanding = this.loanReadPlatformService
                         .retrieveLoanForeclosureTemplate(loanIdToClose, expectedDisbursementDate, false).getAmount();
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
-                if (loanToClose.claimType() == null || !loanToClose.claimType().equals("castigado")) {
-                    if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
-                        throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
-                                "Topup loan amount should be greater than outstanding amount of loan to be closed.");
-                    }
+                if ((loanToClose.claimType() == null || !loanToClose.claimType().equals("castigado"))
+                        && loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
+                            "Topup loan amount should be greater than outstanding amount of loan to be closed.");
                 }
+
                 BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(loanOutstanding);
                 loan.adjustNetDisbursalAmount(netDisbursalAmount);
             }
@@ -1632,6 +1655,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 .build();
     }
 
+    @SuppressWarnings("all")
     @Transactional
     @Override
     public CommandProcessingResult undoGLIMLoanApplicationApproval(final Long loanId, final JsonCommand command) {
@@ -1709,6 +1733,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 .build();
     }
 
+    @SuppressWarnings("all")
     @Transactional
     @Override
     public CommandProcessingResult rejectGLIMApplicationApproval(final Long glimId, final JsonCommand command) {
@@ -1864,17 +1889,15 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
     private void checkClientOrGroupActive(final Loan loan) {
         final Client client = loan.client();
-        if (client != null) {
-            if (client.isNotActive()) {
-                throw new ClientNotActiveException(client.getId());
-            }
+        if (client != null && client.isNotActive()) {
+            throw new ClientNotActiveException(client.getId());
         }
+
         final Group group = loan.group();
-        if (group != null) {
-            if (group.isNotActive()) {
-                throw new GroupNotActiveException(group.getId());
-            }
+        if (group != null && group.isNotActive()) {
+            throw new GroupNotActiveException(group.getId());
         }
+
     }
 
     private void saveAndFlushLoanWithDataIntegrityViolationChecks(final Loan loan) {
@@ -1885,7 +1908,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
             final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("loan.application");
             if (realCause.getMessage().toLowerCase().contains("external_id_unique")) {
-                baseDataValidator.reset().parameter("externalId").failWithCode("value.must.be.unique");
+                baseDataValidator.reset().parameter(LoanApplicationWritePlatformServiceJpaRepositoryImpl.EXTERNAL_ID_PARAM)
+                        .failWithCode("value.must.be.unique");
             }
             if (!dataValidationErrors.isEmpty()) {
                 throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
@@ -1926,13 +1950,13 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         "Loan repayment strategy can not be different than Advanced Payment Allocation");
             }
             // CUMULATIVE: Repayment strategy CANNOT be "advanced payment allocation"
-        } else if (loanScheduleType.equals(LoanScheduleType.CUMULATIVE)) {
-            if (loanRepaymentStrategy.equals(LoanProductConstants.ADVANCED_PAYMENT_ALLOCATION_STRATEGY)) {
-                throw new GeneralPlatformDomainRuleException(
-                        "error.msg.loan.repayment.strategy.can.not.be.equal.to.advanced.payment.allocation",
-                        "Loan repayment strategy can not be equal to Advanced Payment Allocation");
-            }
+        } else if (loanScheduleType.equals(LoanScheduleType.CUMULATIVE)
+                && loanRepaymentStrategy.equals(LoanProductConstants.ADVANCED_PAYMENT_ALLOCATION_STRATEGY)) {
+            throw new GeneralPlatformDomainRuleException(
+                    "error.msg.loan.repayment.strategy.can.not.be.equal.to.advanced.payment.allocation",
+                    "Loan repayment strategy can not be equal to Advanced Payment Allocation");
         }
+
     }
 
     private void validateAllChargesAreSetupCorrectly(Loan loan) {

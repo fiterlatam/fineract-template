@@ -132,7 +132,7 @@
         <modifyDataType tableName="m_interest_rate" columnName="current_rate" newDataType="DECIMAL(10,8)"/>
     </changeSet>
 
-    <changeSet author="fineract" id="5" >
+    <changeSet author="fineract" id="11" >
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="Detalles de Contacto"/>
             <sqlCheck expectedResult="0">
@@ -146,7 +146,7 @@
         <addPrimaryKey columnNames="client_id" tableName="Detalles de Contacto" constraintName="detalles_de_contacto_pk1"/>
     </changeSet>
 
-    <changeSet author="fineract" id="6" >
+    <changeSet author="fineract" id="12" >
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="Detalles_de_Contacto"/>
             <sqlCheck expectedResult="0">

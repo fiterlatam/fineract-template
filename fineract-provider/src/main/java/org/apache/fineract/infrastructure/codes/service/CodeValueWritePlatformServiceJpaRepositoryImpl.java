@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.codes.service;
 
 import java.util.Map;
+import java.util.Objects;
 import org.apache.fineract.infrastructure.codes.domain.Code;
 import org.apache.fineract.infrastructure.codes.domain.CodeRepository;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
@@ -93,6 +94,30 @@ public class CodeValueWritePlatformServiceJpaRepositoryImpl implements CodeValue
         }
     }
 
+    @Transactional
+    @Override
+    @CacheEvict(value = "code_values", allEntries = true)
+    public void createCodeValue(Code code, String label, String description, Long appUserId) {
+
+        try {
+            this.context.authenticatedUser();
+
+            if (Objects.isNull(label) || Objects.isNull(description) || label.isEmpty() || description.isEmpty()) {
+                throw new PlatformDataIntegrityException("error.msg.user.code.codevalue.data.integrity.issue",
+                        "Error whislt creating new Code Value from user name");
+            }
+
+            final CodeValue codeValue = CodeValue.builder().code(code).label(label).description(description).score(appUserId.toString())
+                    .isActive(true).build();
+
+            this.codeValueRepository.saveAndFlush(codeValue);
+
+        } catch (final JpaSystemException | DataIntegrityViolationException dve) {
+            throw new PlatformDataIntegrityException("error.msg.user.code.codevalue.data.integrity.issue",
+                    "Error whislt creating new Code Value from user name");
+        }
+    }
+
     /*
      * Guaranteed to throw an exception no matter what the data integrity issue is.
      */
@@ -163,7 +188,6 @@ public class CodeValueWritePlatformServiceJpaRepositoryImpl implements CodeValue
                     .withSubEntityId(codeValueId)//
                     .build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
-            LOG.error("Error occured.", dve);
             final Throwable realCause = dve.getMostSpecificCause();
             if (realCause.getMessage().contains("code_value")) {
                 throw new PlatformDataIntegrityException("error.msg.codeValue.in.use", "This code value is in use", codeValueId, dve);

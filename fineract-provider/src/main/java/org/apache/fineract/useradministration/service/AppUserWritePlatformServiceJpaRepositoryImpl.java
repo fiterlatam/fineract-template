@@ -31,12 +31,20 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.domain.Code;
+import org.apache.fineract.infrastructure.codes.domain.CodeRepository;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
+import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
+import org.apache.fineract.infrastructure.codes.service.CodeValueWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -84,6 +92,10 @@ import org.springframework.util.ObjectUtils;
 @RequiredArgsConstructor
 public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWritePlatformService {
 
+    public static final String STRING_DATATABLE_CODE_NAME_USUARIO_ASIGNADO = "Usuario Asignado";
+    public static final String OFFICE_ID_PARAM = "officeId";
+    public static final String ROLES_ID_PARAM = "roles";
+    public static final String STAFF_ID_PARAM = "staffId";
     private final PlatformSecurityContext context;
     private final UserDomainService userDomainService;
     private final PlatformPasswordEncoder platformPasswordEncoder;
@@ -98,6 +110,10 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
     private final RoleReadPlatformService roleReadPlatformService;
     private final StaffReadPlatformService staffReadPlatformService;
     private final JdbcTemplate jdbcTemplate;
+    private final CodeRepository codeRepository;
+    private final CodeValueRepository codeValueRepository;
+    private final CodeValueReadPlatformService codeValueReadPlatformService;
+    private final CodeValueWritePlatformService codeValueWritePlatformService;
 
     @Override
     @Transactional
@@ -108,15 +124,15 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             final String usuarioCreacionNombre = authenticatedUser.getUsername();
             this.fromApiJsonDeserializer.validateForCreate(command.json());
 
-            final String officeIdParamName = "officeId";
+            final String officeIdParamName = AppUserWritePlatformServiceJpaRepositoryImpl.OFFICE_ID_PARAM;
             final Long officeId = command.longValueOfParameterNamed(officeIdParamName);
 
             final Office userOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
 
-            final String[] roles = command.arrayValueOfParameterNamed("roles");
+            final String[] roles = command.arrayValueOfParameterNamed(AppUserWritePlatformServiceJpaRepositoryImpl.ROLES_ID_PARAM);
             final Set<Role> allRoles = assembleSetOfRoles(roles);
 
-            final String staffIdParamName = "staffId";
+            final String staffIdParamName = AppUserWritePlatformServiceJpaRepositoryImpl.STAFF_ID_PARAM;
             final Long staffId = command.longValueOfParameterNamed(staffIdParamName);
 
             Staff linkedStaff;
@@ -144,6 +160,8 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
 
             final Boolean sendPasswordToEmail = command.booleanObjectValueOfParameterNamed("sendPasswordToEmail");
             this.userDomainService.create(appUser, sendPasswordToEmail);
+
+            insertAppUserCodeValue(appUser);
 
             final Set<Role> userRoles = appUser.getRoles();
             final String roleIDs = userRoles.stream().map(r -> String.valueOf(r.getId())).collect(Collectors.joining(", "));
@@ -205,14 +223,14 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
 
             final Map<String, Object> changes = userToUpdate.update(command, this.platformPasswordEncoder, clients);
 
-            if (changes.containsKey("officeId")) {
-                final Long officeId = (Long) changes.get("officeId");
+            if (changes.containsKey(AppUserWritePlatformServiceJpaRepositoryImpl.OFFICE_ID_PARAM)) {
+                final Long officeId = (Long) changes.get(AppUserWritePlatformServiceJpaRepositoryImpl.OFFICE_ID_PARAM);
                 final Office office = this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
                 userToUpdate.changeOffice(office);
             }
 
-            if (changes.containsKey("staffId")) {
-                final Long staffId = (Long) changes.get("staffId");
+            if (changes.containsKey(AppUserWritePlatformServiceJpaRepositoryImpl.STAFF_ID_PARAM)) {
+                final Long staffId = (Long) changes.get(AppUserWritePlatformServiceJpaRepositoryImpl.STAFF_ID_PARAM);
                 Staff linkedStaff = null;
                 if (staffId != null) {
                     linkedStaff = this.staffRepositoryWrapper.findByOfficeWithNotFoundDetection(staffId, userToUpdate.getOffice().getId());
@@ -220,8 +238,8 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                 userToUpdate.changeStaff(linkedStaff);
             }
 
-            if (changes.containsKey("roles")) {
-                final String[] roleIds = (String[]) changes.get("roles");
+            if (changes.containsKey(AppUserWritePlatformServiceJpaRepositoryImpl.ROLES_ID_PARAM)) {
+                final String[] roleIds = (String[]) changes.get(AppUserWritePlatformServiceJpaRepositoryImpl.ROLES_ID_PARAM);
                 final Set<Role> allRoles = assembleSetOfRoles(roleIds);
 
                 userToUpdate.updateRoles(allRoles);
@@ -234,7 +252,9 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                     this.appUserPreviewPasswordRepository.save(currentPasswordToSaveAsPreview);
                 }
 
+                updateAppUserCodeValue(userToUpdate);
             }
+
             final Set<Role> userRoles = userToUpdate.getRoles();
             final String roleIDs = userRoles.stream().map(r -> String.valueOf(r.getId())).collect(Collectors.joining(", "));
             final String roleNames = userRoles.stream().map(Role::getName).collect(Collectors.joining(", "));
@@ -314,6 +334,9 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             if (user.isDeleted()) {
                 throw new UserNotFoundException(userId);
             }
+
+            deleteAppUserCodeValue(userId);
+
             user.delete();
             this.appUserRepository.save(user);
             return new CommandProcessingResultBuilder().withEntityId(userId).withOfficeId(user.getOffice().getId())
@@ -355,6 +378,9 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             } else {
                 user.deactivatePermanently();
             }
+
+            activateAppUserCodeValue(userId, false);
+
             this.appUserRepository.save(user);
             final String registroPosterior = objectMapper.writeValueAsString(user);
             final Set<Role> userRoles = user.getRoles();
@@ -390,6 +416,9 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             }
             final String registroAnteriorJson = objectMapper.writeValueAsString(user);
             user.activate();
+
+            activateAppUserCodeValue(userId, true);
+
             this.appUserRepository.save(user);
             final Set<Role> userRoles = user.getRoles();
             final String roleIDs = userRoles.stream().map(r -> String.valueOf(r.getId())).collect(Collectors.joining(", "));
@@ -420,7 +449,7 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                 this.roleReadPlatformService, this.staffReadPlatformService);
         final String activateSQL = "SELECT " + mapper.schema()
                 + " AND u.status_enum = 400 AND u.deactivated_to_date <= ? ORDER BY u.username";
-        List<AppUserData> inAppUsers = this.jdbcTemplate.query(activateSQL, mapper, new Object[] { hierarchySearchString, localDate });
+        List<AppUserData> inAppUsers = this.jdbcTemplate.query(activateSQL, mapper, hierarchySearchString, localDate);
         if (!CollectionUtils.isEmpty(inAppUsers)) {
             for (final AppUserData appUserData : inAppUsers) {
                 final Long userId = appUserData.getId();
@@ -432,8 +461,7 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
 
         final String deactivateSQL = "SELECT " + mapper.schema()
                 + " AND u.status_enum = 300 AND u.deactivated_from_date <= ? ORDER BY u.username";
-        List<AppUserData> activeAppUsers = this.jdbcTemplate.query(deactivateSQL, mapper,
-                new Object[] { hierarchySearchString, localDate });
+        List<AppUserData> activeAppUsers = this.jdbcTemplate.query(deactivateSQL, mapper, hierarchySearchString, localDate);
         if (!CollectionUtils.isEmpty(activeAppUsers)) {
             for (final AppUserData appUserData : activeAppUsers) {
                 final Long userId = appUserData.getId();
@@ -448,15 +476,11 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
      * Return an exception to throw, no matter what the data integrity issue is.
      */
     private RuntimeException handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
-        // TODO: this needs to be fixed. The error condition should be independent from the underlying message and
-        // naming of the constraint
         if (StringUtils.contains(realCause.getMessage(), "username_org")) {
             final String username = command.stringValueOfParameterNamed("username");
             final String defaultMessage = "User with username " + username + " already exists.";
             return new PlatformDataIntegrityException("error.msg.user.duplicate.username", defaultMessage, "username", username);
         }
-        // TODO: this needs to be fixed. The error condition should be independent from the underlying message and
-        // naming of the constraint
         if (StringUtils.contains(realCause.getMessage(), "unique_self_client")) {
             return new PlatformDataIntegrityException("error.msg.user.self.service.user.already.exist",
                     "Self Service User Id is already created. Go to Admin->Users to edit or delete the self-service user.");
@@ -464,5 +488,75 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
 
         log.error("handleDataIntegrityIssues: Neither duplicate username nor existing user; unknown error occured", dve);
         return ErrorHandler.getMappable(dve, "error.msg.unknown.data.integrity.issue", "Unknown data integrity issue with resource.");
+    }
+
+    private void insertAppUserCodeValue(AppUser appUser) {
+        Code code = codeRepository.findOneByName(STRING_DATATABLE_CODE_NAME_USUARIO_ASIGNADO);
+
+        List<CodeValueData> usersCodeValues = (List<CodeValueData>) codeValueReadPlatformService.retrieveAllCodeValues(code.getId());
+
+        Optional<CodeValueData> exists = usersCodeValues.stream().filter(nm -> nm.getName().equalsIgnoreCase(appUser.getUsername()))
+                .findFirst();
+        if (exists.isPresent()) {
+            throw new PlatformDataIntegrityException("error.msg.user.code.codevalue.user.already.exist", "This user name already exists");
+        } else {
+            codeValueWritePlatformService.createCodeValue(code, appUser.getDisplayName(), appUser.getUsername(), appUser.getId());
+        }
+    }
+
+    private void updateAppUserCodeValue(AppUser userToUpdate) {
+        Code code = codeRepository.findOneByName(STRING_DATATABLE_CODE_NAME_USUARIO_ASIGNADO);
+
+        List<CodeValueData> usersCodeValues = (List<CodeValueData>) codeValueReadPlatformService.retrieveAllCodeValues(code.getId());
+
+        Optional<CodeValueData> codeValueDataOpt = usersCodeValues.stream()
+                .filter(id -> id.getScore().compareTo(userToUpdate.getId().intValue()) == 0).findFirst();
+        if (codeValueDataOpt.isPresent()) {
+            Optional<CodeValue> codeValueOpt = codeValueRepository.findById(codeValueDataOpt.get().getId());
+
+            if (codeValueOpt.isPresent()) {
+                CodeValue currObj = codeValueOpt.get();
+                currObj.setLabel(userToUpdate.getDisplayName());
+                currObj.setDescription(userToUpdate.getUsername());
+                currObj.setActive(userToUpdate.isActive());
+
+                codeValueRepository.save(currObj);
+            }
+        }
+    }
+
+    private void deleteAppUserCodeValue(Long userId) {
+        Code code = codeRepository.findOneByName(STRING_DATATABLE_CODE_NAME_USUARIO_ASIGNADO);
+
+        List<CodeValueData> usersCodeValues = (List<CodeValueData>) codeValueReadPlatformService.retrieveAllCodeValues(code.getId());
+
+        Optional<CodeValueData> codeValueDataOpt = usersCodeValues.stream().filter(id -> id.getScore().compareTo(userId.intValue()) == 0)
+                .findFirst();
+        if (codeValueDataOpt.isPresent()) {
+            Optional<CodeValue> codeValueOpt = codeValueRepository.findById(codeValueDataOpt.get().getId());
+
+            if (codeValueOpt.isPresent()) {
+                CodeValue currObj = codeValueOpt.get();
+                codeValueRepository.delete(currObj);
+            }
+        }
+    }
+
+    private void activateAppUserCodeValue(Long userId, boolean newStatus) {
+        Code code = codeRepository.findOneByName(STRING_DATATABLE_CODE_NAME_USUARIO_ASIGNADO);
+
+        List<CodeValueData> usersCodeValues = (List<CodeValueData>) codeValueReadPlatformService.retrieveAllCodeValues(code.getId());
+
+        Optional<CodeValueData> codeValueDataOpt = usersCodeValues.stream().filter(id -> id.getScore().compareTo(userId.intValue()) == 0)
+                .findFirst();
+        if (codeValueDataOpt.isPresent()) {
+            Optional<CodeValue> codeValueOpt = codeValueRepository.findById(codeValueDataOpt.get().getId());
+
+            if (codeValueOpt.isPresent()) {
+                CodeValue currObj = codeValueOpt.get();
+                currObj.setActive(newStatus);
+                codeValueRepository.save(currObj);
+            }
+        }
     }
 }

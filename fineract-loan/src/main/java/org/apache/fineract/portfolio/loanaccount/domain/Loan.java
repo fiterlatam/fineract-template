@@ -556,11 +556,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final Set<LoanCharge> loanCharges, final Set<LoanCollateralManagement> collateral, final BigDecimal fixedEmiAmount,
             final List<LoanDisbursementDetails> disbursementDetails, final BigDecimal maxOutstandingLoanBalance,
             final Boolean createStandingInstructionAtDisbursement, final Boolean isFloatingInterestRate,
-            final BigDecimal interestRateDifferential, final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment) {
+            final BigDecimal interestRateDifferential, final List<Rate> rates, final BigDecimal fixedPrincipalPercentagePerInstallment,
+            final LoanCustomizationDetail loanAdditionalDetail) {
         return new Loan(accountNo, client, null, loanType, fund, officer, loanPurpose, transactionProcessingStrategyCode, loanProduct,
                 loanRepaymentScheduleDetail, null, loanCharges, collateral, null, fixedEmiAmount, disbursementDetails,
                 maxOutstandingLoanBalance, createStandingInstructionAtDisbursement, isFloatingInterestRate, interestRateDifferential, rates,
-                fixedPrincipalPercentagePerInstallment);
+                fixedPrincipalPercentagePerInstallment, loanAdditionalDetail);
     }
 
     @SuppressWarnings({ "squid:S107" })
@@ -571,11 +572,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final BigDecimal fixedEmiAmount, final List<LoanDisbursementDetails> disbursementDetails,
             final BigDecimal maxOutstandingLoanBalance, final Boolean createStandingInstructionAtDisbursement,
             final Boolean isFloatingInterestRate, final BigDecimal interestRateDifferential, final List<Rate> rates,
-            final BigDecimal fixedPrincipalPercentagePerInstallment) {
+            final BigDecimal fixedPrincipalPercentagePerInstallment, final LoanCustomizationDetail loanAdditionalDetail) {
         return new Loan(accountNo, null, group, loanType, fund, officer, loanPurpose, transactionProcessingStrategyCode, loanProduct,
                 loanRepaymentScheduleDetail, null, loanCharges, collateral, syncDisbursementWithMeeting, fixedEmiAmount,
                 disbursementDetails, maxOutstandingLoanBalance, createStandingInstructionAtDisbursement, isFloatingInterestRate,
-                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment);
+                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, loanAdditionalDetail);
     }
 
     @SuppressWarnings({ "squid:S107" })
@@ -586,11 +587,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final BigDecimal fixedEmiAmount, final List<LoanDisbursementDetails> disbursementDetails,
             final BigDecimal maxOutstandingLoanBalance, final Boolean createStandingInstructionAtDisbursement,
             final Boolean isFloatingInterestRate, final BigDecimal interestRateDifferential, final List<Rate> rates,
-            final BigDecimal fixedPrincipalPercentagePerInstallment) {
+            final BigDecimal fixedPrincipalPercentagePerInstallment, final LoanCustomizationDetail loanAdditionalDetail) {
         return new Loan(accountNo, client, group, loanType, fund, officer, loanPurpose, transactionProcessingStrategyCode, loanProduct,
                 loanRepaymentScheduleDetail, null, loanCharges, collateral, syncDisbursementWithMeeting, fixedEmiAmount,
                 disbursementDetails, maxOutstandingLoanBalance, createStandingInstructionAtDisbursement, isFloatingInterestRate,
-                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment);
+                interestRateDifferential, rates, fixedPrincipalPercentagePerInstallment, loanAdditionalDetail);
     }
 
     protected Loan() {
@@ -605,7 +606,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final BigDecimal fixedEmiAmount, final List<LoanDisbursementDetails> disbursementDetails,
             final BigDecimal maxOutstandingLoanBalance, final Boolean createStandingInstructionAtDisbursement,
             final Boolean isFloatingInterestRate, final BigDecimal interestRateDifferential, final List<Rate> rates,
-            final BigDecimal fixedPrincipalPercentagePerInstallment) {
+            final BigDecimal fixedPrincipalPercentagePerInstallment, final LoanCustomizationDetail loanCustomizationDetail) {
 
         this.loanRepaymentScheduleDetail = loanRepaymentScheduleDetail;
         this.loanRepaymentScheduleDetail.validateRepaymentPeriodWithGraceSettings();

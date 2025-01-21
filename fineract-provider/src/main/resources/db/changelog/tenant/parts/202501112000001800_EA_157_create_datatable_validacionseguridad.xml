@@ -26,38 +26,23 @@
     <changeSet id="1" author="fineract">
         <sql>
             <![CDATA[
-                INSERT INTO m_code (code_name, is_system_defined) VALUES('Resultado Visita', false);
+                INSERT INTO m_code (code_name, is_system_defined) VALUES('Validacion Seguridad', false);
 
                 INSERT INTO m_code_value
                 (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
-                VALUES((SELECT id FROM m_code WHERE code_name='Resultado Visita'), 'Exitosa', 'Exitosa', 0, '0', true, false, NULL);
+                VALUES((SELECT id FROM m_code WHERE code_name='Validacion Seguridad'), 'Viable', 'true', 0, '0', true, false, NULL);
 
                 INSERT INTO m_code_value
                 (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
-                VALUES((SELECT id FROM m_code WHERE code_name='Resultado Visita'), 'Fallida', 'Fallida', 0, '0', true, false, NULL);
+                VALUES((SELECT id FROM m_code WHERE code_name='Validacion Seguridad'), 'No Viable', 'false', 0, '0', true, false, NULL);
 
                 INSERT INTO m_code_value
                 (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
-                VALUES((SELECT id FROM m_code WHERE code_name='Resultado Visita'), 'No Aplica ', 'NA', 0, '0', true, false, NULL);
-            ]]>
-        </sql>
-    </changeSet>
-
-    <changeSet id="2" author="fineract">
-        <sql>
-            <![CDATA[
-                UPDATE m_code SET code_name = CONCAT(code_name, ' --disabled') WHERE code_name = 'Canal de visita';
-
-                INSERT INTO m_code (code_name, is_system_defined) VALUES('Canal de Visita', false);
+                VALUES((SELECT id FROM m_code WHERE code_name='Validacion Seguridad'), 'Validacion Sagrilaft', 'Sagrilaft', 0, '0', true, false, NULL);
 
                 INSERT INTO m_code_value
                 (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
-                VALUES((SELECT id FROM m_code WHERE code_name='Canal de Visita'), 'Presencial', 'Presencial', 0, '0', true, false, NULL);
-
-                INSERT INTO m_code_value
-                (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
-                VALUES((SELECT id FROM m_code WHERE code_name='Canal de Visita'), 'Remoto', 'Remoto', 0, '0', true, false, NULL);
-
+                VALUES((SELECT id FROM m_code WHERE code_name='Validacion Seguridad'), 'Validación lavado de activos', 'lavado', 0, '0', true, false, NULL);
             ]]>
         </sql>
     </changeSet>
@@ -65,71 +50,61 @@
     <changeSet id="3" author="fineract">
         <sql>
             <![CDATA[
-
-                UPDATE m_code SET code_name = CONCAT(code_name, ' --disabled')
-                WHERE code_name = 'Causal Rechazo Visita';
-
-                INSERT INTO m_code (code_name, is_system_defined) VALUES('Causal Rechazo Visita', false);
+                INSERT INTO m_code (code_name, is_system_defined) VALUES('Causal Rechazo Seguridad', false);
 
                 INSERT INTO m_code_value
                 (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
-                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Visita'), 'Alerta de ferretería con Coordinación Alianza', 'Alerta1', 0, '0', true, false, NULL);
+                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Seguridad'), 'Selección Intento de suplantación de identidad.', 'Alerta1', 0, '0', true, false, NULL);
 
                 INSERT INTO m_code_value
                 (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
-                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Visita'), 'En proceso de Visita Cliente Desiste de crédito', 'Alerta2', 0, '0', true, false, NULL);
+                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Seguridad'), 'Estado del documento no permite validar la identidad', 'Alerta2', 0, '0', true, false, NULL);
 
                 INSERT INTO m_code_value
                 (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
-                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Visita'), 'Resultado de Visita no es Exitosa', 'Alerta3', 0, '0', true, false, NULL);
+                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Seguridad'), 'Similitud entre rostros no coincide.', 'Alerta3', 0, '0', true, false, NULL);
 
                 INSERT INTO m_code_value
                 (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
-                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Visita'), 'Cliente ilocalizado para visita', 'Alerta4', 0, '0', true, false, NULL);
+                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Seguridad'), 'Presunto intento de suplantación', 'Alerta4', 0, '0', true, false, NULL);
 
                 INSERT INTO m_code_value
                 (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
-                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Visita'), 'En Contacto Visita toma un valor diferente', 'Alerta5', 0, '0', true, false, NULL);
-
+                VALUES((SELECT id FROM m_code WHERE code_name='Causal Rechazo Seguridad'), 'Mal procedimiento en Onboarding', 'Alerta5', 0, '0', true, false, NULL);
             ]]>
         </sql>
     </changeSet>
-
 
     <changeSet author="danielsta@fiter.io" id="10">
         <sql>
             <![CDATA[
-                DROP TABLE if exists "Visita";
+                DROP TABLE if exists "Validacion Seguridad";
 
-                CREATE TABLE "Visita" (
+                CREATE TABLE "Validacion Seguridad" (
                     loan_id bigint PRIMARY KEY,
-                    req_visita BOOLEAN, -- ¿Requiere Visita? (Si = true, No = false)
-                    "Resultado Visita_cd_Resultado Visita" int4, -- Resultado Visita (Exitosa, Fallida, No Aplica)
-                    "Canal de Visita_cd_Canal de Visita" int4, -- Canal de Visita (Presencial, Remoto)
-                    "Causal Rechazo Visita_cd_Causal Rechazo Visita" int4, -- Causal Rechazo Visita
-                    entrevista_fallida TEXT, -- Observación Rechazo Visita
+                    "Validacion Seguridad_cd_Validacion Seguridad" int4,
+                    "Causal Rechazo Seguridad_cd_Causal Rechazo Seguridad" int4,
+                    seguridad_fallida TEXT, -- Observacion Rechazo Seguridad
+                    observacion_seguridad TEXT, -- Observación Seguridad
                     created_at TIMESTAMP,
                     updated_at TIMESTAMP NULL
                 );
-
 
             ]]>
         </sql>
     </changeSet>
 
 
-    <changeSet author="danielsta@fiter.io" id="202">
+    <changeSet author="danielsta@fiter.io" id="20">
         <sql>
             <![CDATA[
-                COMMENT ON COLUMN "Visita".loan_id IS 'Identificador Unico Prestamo';
-                COMMENT ON COLUMN "Visita".loan_id IS 'Identificación';
-                COMMENT ON COLUMN "Visita".req_visita IS '¿Requiere Visita?';
-                COMMENT ON COLUMN "Visita"."Resultado Visita_cd_Resultado Visita" IS 'Resultado Visita';
-                COMMENT ON COLUMN "Visita"."Canal de Visita_cd_Canal de Visita" IS 'Canal de Visita';
-                COMMENT ON COLUMN "Visita"."Causal Rechazo Visita_cd_Causal Rechazo Visita" IS 'Causal Rechazo Visita';
-                COMMENT ON COLUMN "Visita".entrevista_fallida IS 'Observación Rechazo Visita';
-                COMMENT ON COLUMN "Visita".created_at IS 'Creado en';
-                COMMENT ON COLUMN "Visita".updated_at IS 'Actualizado en';
+                COMMENT ON COLUMN "Validacion Seguridad".loan_id IS 'Identificador Unico Prestamo';
+                COMMENT ON COLUMN "Validacion Seguridad"."Validacion Seguridad_cd_Validacion Seguridad" IS 'Validación Seguridad';
+                COMMENT ON COLUMN "Validacion Seguridad"."Causal Rechazo Seguridad_cd_Causal Rechazo Seguridad" IS 'Causal Rechazo Seguridad';
+                COMMENT ON COLUMN "Validacion Seguridad".seguridad_fallida IS 'Observacion Rechazo Seguridad';
+                COMMENT ON COLUMN "Validacion Seguridad".observacion_seguridad IS 'Observación Seguridad';
+                COMMENT ON COLUMN "Validacion Seguridad".created_at IS 'Creado en';
+                COMMENT ON COLUMN "Validacion Seguridad".updated_at IS 'Actualizado en';
             ]]>
         </sql>
     </changeSet>
@@ -139,7 +114,7 @@
             <![CDATA[
                 INSERT INTO x_registered_table
                 (registered_table_name, application_table_name, entity_subtype, category)
-                VALUES('Visita', 'm_loan', 'Entity', 100);
+                VALUES('Validacion Seguridad', 'm_loan', 'Entity', 100);
             ]]>
         </sql>
     </changeSet>
@@ -149,31 +124,31 @@
             <![CDATA[
                 INSERT INTO m_permission
                 ("grouping", code, entity_name, action_name, can_maker_checker)
-                VALUES('datatable', 'CREATE_Visita', 'Visita', 'CREATE', true);
+                VALUES('datatable', 'CREATE_Validacion Seguridad', 'Validacion Seguridad', 'CREATE', true);
 
                 INSERT INTO m_permission
                 ("grouping", code, entity_name, action_name, can_maker_checker)
-                VALUES('datatable', 'CREATE_Visita_CHECKER', 'Visita', 'CREATE', false);
+                VALUES('datatable', 'CREATE_Validacion Seguridad_CHECKER', 'Validacion Seguridad', 'CREATE', false);
 
                 INSERT INTO m_permission
                 ("grouping", code, entity_name, action_name, can_maker_checker)
-                VALUES('datatable', 'READ_Visita', 'Visita', 'READ', false);
+                VALUES('datatable', 'READ_Validacion Seguridad', 'Validacion Seguridad', 'READ', false);
 
                 INSERT INTO m_permission
                 ("grouping", code, entity_name, action_name, can_maker_checker)
-                VALUES('datatable', 'UPDATE_Visita', 'Visita', 'UPDATE', true);
+                VALUES('datatable', 'UPDATE_Validacion Seguridad', 'Validacion Seguridad', 'UPDATE', true);
 
                 INSERT INTO m_permission
                 ("grouping", code, entity_name, action_name, can_maker_checker)
-                VALUES('datatable', 'UPDATE_Visita_CHECKER', 'Visita', 'UPDATE', false);
+                VALUES('datatable', 'UPDATE_Validacion Seguridad_CHECKER', 'Validacion Seguridad', 'UPDATE', false);
 
                 INSERT INTO m_permission
                 ("grouping", code, entity_name, action_name, can_maker_checker)
-                VALUES('datatable', 'DELETE_Visita', 'Visita', 'DELETE', true);
+                VALUES('datatable', 'DELETE_Validacion Seguridad', 'Validacion Seguridad', 'DELETE', true);
 
                 INSERT INTO m_permission
                 ("grouping", code, entity_name, action_name, can_maker_checker)
-                VALUES('datatable', 'DELETE_Visita_CHECKER', 'Visita', 'DELETE', false);
+                VALUES('datatable', 'DELETE_Validacion Seguridad_CHECKER', 'Validacion Seguridad', 'DELETE', false);
             ]]>
         </sql>
     </changeSet>

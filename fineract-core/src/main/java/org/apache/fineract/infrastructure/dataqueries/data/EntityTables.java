@@ -47,6 +47,7 @@ public enum EntityTables {
     SAVINGS("m_savings_account", "savings_account_id", "id", CREATE, APPROVE, ACTIVATE, WITHDRAWN, REJECTED, CLOSE), //
     SAVINGS_TRANSACTION("m_savings_account_transaction", "savings_transaction_id", "id"), //
     SHARE_PRODUCT("m_share_product", "share_product_id", "id"), //
+    LOAN_TRANSACTION("m_loan_transaction", "loan_transaction_id", "id"), //
     ;
 
     public static final EntityTables[] VALUES = values();
