@@ -37,9 +37,10 @@ public final class DatatableData implements Serializable {
     @SuppressWarnings("unused")
     @Setter
     private List<ResultsetColumnHeaderData> columnHeaderData;
+
     @Setter
     @Getter
-    private GenericResultsetData genericResultSet;
+    private transient GenericResultsetData genericResultSet;
 
     public static DatatableData create(final String applicationTableName, final String registeredTableName, final String entitySubType,
             final List<ResultsetColumnHeaderData> columnHeaderData) {

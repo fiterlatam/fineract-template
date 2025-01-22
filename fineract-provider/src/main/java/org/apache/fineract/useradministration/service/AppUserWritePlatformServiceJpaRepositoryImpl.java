@@ -93,6 +93,9 @@ import org.springframework.util.ObjectUtils;
 public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWritePlatformService {
 
     public static final String STRING_DATATABLE_CODE_NAME_USUARIO_ASIGNADO = "Usuario Asignado";
+    public static final String OFFICE_ID_PARAM = "officeId";
+    public static final String ROLES_ID_PARAM = "roles";
+    public static final String STAFF_ID_PARAM = "staffId";
     private final PlatformSecurityContext context;
     private final UserDomainService userDomainService;
     private final PlatformPasswordEncoder platformPasswordEncoder;
@@ -121,15 +124,15 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             final String usuarioCreacionNombre = authenticatedUser.getUsername();
             this.fromApiJsonDeserializer.validateForCreate(command.json());
 
-            final String officeIdParamName = "officeId";
+            final String officeIdParamName = AppUserWritePlatformServiceJpaRepositoryImpl.OFFICE_ID_PARAM;
             final Long officeId = command.longValueOfParameterNamed(officeIdParamName);
 
             final Office userOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
 
-            final String[] roles = command.arrayValueOfParameterNamed("roles");
+            final String[] roles = command.arrayValueOfParameterNamed(AppUserWritePlatformServiceJpaRepositoryImpl.ROLES_ID_PARAM);
             final Set<Role> allRoles = assembleSetOfRoles(roles);
 
-            final String staffIdParamName = "staffId";
+            final String staffIdParamName = AppUserWritePlatformServiceJpaRepositoryImpl.STAFF_ID_PARAM;
             final Long staffId = command.longValueOfParameterNamed(staffIdParamName);
 
             Staff linkedStaff;
@@ -220,14 +223,14 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
 
             final Map<String, Object> changes = userToUpdate.update(command, this.platformPasswordEncoder, clients);
 
-            if (changes.containsKey("officeId")) {
-                final Long officeId = (Long) changes.get("officeId");
+            if (changes.containsKey(AppUserWritePlatformServiceJpaRepositoryImpl.OFFICE_ID_PARAM)) {
+                final Long officeId = (Long) changes.get(AppUserWritePlatformServiceJpaRepositoryImpl.OFFICE_ID_PARAM);
                 final Office office = this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
                 userToUpdate.changeOffice(office);
             }
 
-            if (changes.containsKey("staffId")) {
-                final Long staffId = (Long) changes.get("staffId");
+            if (changes.containsKey(AppUserWritePlatformServiceJpaRepositoryImpl.STAFF_ID_PARAM)) {
+                final Long staffId = (Long) changes.get(AppUserWritePlatformServiceJpaRepositoryImpl.STAFF_ID_PARAM);
                 Staff linkedStaff = null;
                 if (staffId != null) {
                     linkedStaff = this.staffRepositoryWrapper.findByOfficeWithNotFoundDetection(staffId, userToUpdate.getOffice().getId());
@@ -235,8 +238,8 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                 userToUpdate.changeStaff(linkedStaff);
             }
 
-            if (changes.containsKey("roles")) {
-                final String[] roleIds = (String[]) changes.get("roles");
+            if (changes.containsKey(AppUserWritePlatformServiceJpaRepositoryImpl.ROLES_ID_PARAM)) {
+                final String[] roleIds = (String[]) changes.get(AppUserWritePlatformServiceJpaRepositoryImpl.ROLES_ID_PARAM);
                 final Set<Role> allRoles = assembleSetOfRoles(roleIds);
 
                 userToUpdate.updateRoles(allRoles);
@@ -446,7 +449,7 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                 this.roleReadPlatformService, this.staffReadPlatformService);
         final String activateSQL = "SELECT " + mapper.schema()
                 + " AND u.status_enum = 400 AND u.deactivated_to_date <= ? ORDER BY u.username";
-        List<AppUserData> inAppUsers = this.jdbcTemplate.query(activateSQL, mapper, new Object[] { hierarchySearchString, localDate });
+        List<AppUserData> inAppUsers = this.jdbcTemplate.query(activateSQL, mapper, hierarchySearchString, localDate);
         if (!CollectionUtils.isEmpty(inAppUsers)) {
             for (final AppUserData appUserData : inAppUsers) {
                 final Long userId = appUserData.getId();
@@ -458,8 +461,7 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
 
         final String deactivateSQL = "SELECT " + mapper.schema()
                 + " AND u.status_enum = 300 AND u.deactivated_from_date <= ? ORDER BY u.username";
-        List<AppUserData> activeAppUsers = this.jdbcTemplate.query(deactivateSQL, mapper,
-                new Object[] { hierarchySearchString, localDate });
+        List<AppUserData> activeAppUsers = this.jdbcTemplate.query(deactivateSQL, mapper, hierarchySearchString, localDate);
         if (!CollectionUtils.isEmpty(activeAppUsers)) {
             for (final AppUserData appUserData : activeAppUsers) {
                 final Long userId = appUserData.getId();
@@ -474,15 +476,11 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
      * Return an exception to throw, no matter what the data integrity issue is.
      */
     private RuntimeException handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
-        // TODO: this needs to be fixed. The error condition should be independent from the underlying message and
-        // naming of the constraint
         if (StringUtils.contains(realCause.getMessage(), "username_org")) {
             final String username = command.stringValueOfParameterNamed("username");
             final String defaultMessage = "User with username " + username + " already exists.";
             return new PlatformDataIntegrityException("error.msg.user.duplicate.username", defaultMessage, "username", username);
         }
-        // TODO: this needs to be fixed. The error condition should be independent from the underlying message and
-        // naming of the constraint
         if (StringUtils.contains(realCause.getMessage(), "unique_self_client")) {
             return new PlatformDataIntegrityException("error.msg.user.self.service.user.already.exist",
                     "Self Service User Id is already created. Go to Admin->Users to edit or delete the self-service user.");
@@ -500,7 +498,7 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
         Optional<CodeValueData> exists = usersCodeValues.stream().filter(nm -> nm.getName().equalsIgnoreCase(appUser.getUsername()))
                 .findFirst();
         if (exists.isPresent()) {
-            new PlatformDataIntegrityException("error.msg.user.code.codevalue.user.already.exist", "This user name already exists");
+            throw new PlatformDataIntegrityException("error.msg.user.code.codevalue.user.already.exist", "This user name already exists");
         } else {
             codeValueWritePlatformService.createCodeValue(code, appUser.getDisplayName(), appUser.getUsername(), appUser.getId());
         }
