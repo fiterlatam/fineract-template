@@ -3140,7 +3140,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     	mc.display_name AS "displayName",
                     	mc.email_address AS "email",
                     	mc.mobile_no AS "mobileNumber",
-                    	mc.submittedon_date AS LoanReadPlatformServiceImpl.SUBMITTED_ON_DATE_PARAM,
+                    	mc.submittedon_date AS "submittedOnDate",
                     	cce."NIT" AS nit,
                     	mo.name AS officeName
                     FROM m_office mo
