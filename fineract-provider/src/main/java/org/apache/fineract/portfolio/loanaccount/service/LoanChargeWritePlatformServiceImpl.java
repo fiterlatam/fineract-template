@@ -839,6 +839,44 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         }
     }
 
+    @Override
+    public BigDecimal projectOverdueChargesForLoan(final Long loanId,
+            final Collection<OverdueLoanScheduleData> overdueUnsortedLoanScheduleDataList, final LocalDate businessDate) {
+        final Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList = overdueUnsortedLoanScheduleDataList.stream()
+                .sorted(Comparator.comparing(OverdueLoanScheduleData::getPeriodNumber)).toList();
+        final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        final Boolean duplicateNumberInstalment = loan
+                .getRepaymentScheduleInstallments().stream().filter(e -> e.getInstallmentNumber() > 0).collect(Collectors
+                        .groupingBy(schedule -> schedule.getLoan().getId() + "-" + schedule.getInstallmentNumber(), Collectors.counting()))
+                .values().stream().anyMatch(count -> count > 1);
+        BigDecimal penaltyChargesProjected = BigDecimal.ZERO;
+        if (Boolean.FALSE.equals(duplicateNumberInstalment)) {
+            if (loan.isChargedOff()) {
+                return penaltyChargesProjected;
+            }
+            for (final OverdueLoanScheduleData overdueInstallment : overdueLoanScheduleDataList) {
+                if (overdueInstallment.getPeriodNumber() < 1) {
+                    continue;
+                }
+                final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(overdueInstallment.getChargeId());
+                if (chargeDefinition.hasCustomGracePeriodDefined()) {
+                    final LocalDate dueDate = DateUtils.parseLocalDate(overdueInstallment.getDueDate());
+                    final LocalDate applyChargeFromDate = dueDate.plusDays(chargeDefinition.getGraceOnChargePeriodAmount());
+                    if (businessDate.isBefore(applyChargeFromDate)) {
+                        continue;
+                    }
+                }
+                final JsonElement parsedCommand = this.fromApiJsonHelper.parse(overdueInstallment.toString());
+                final JsonCommand command = JsonCommand.from(overdueInstallment.toString(), parsedCommand, this.fromApiJsonHelper, null,
+                        null, null, null, null, loanId, null, null, null, null, null, null, null);
+                BigDecimal installmentPeriodCharge = this.projectChargeToOverdueLoanInstallment(loan, overdueInstallment.getChargeId(),
+                        overdueInstallment.getPeriodNumber(), businessDate, command);
+                penaltyChargesProjected = penaltyChargesProjected.add(installmentPeriodCharge);
+            }
+        }
+        return penaltyChargesProjected;
+    }
+
     private LoanTransaction applyChargeAdjustment(final Loan loan, final LoanCharge loanCharge, final BigDecimal transactionAmount,
             final LocalDate transactionDate, final ExternalId txnExternalId, PaymentDetail paymentDetail) {
         businessEventNotifierService.notifyPreBusinessEvent(new LoanChargeAdjustmentPreBusinessEvent(loan));
@@ -1172,27 +1210,61 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         return new LoanOverdueDTO(loan, runInterestRecalculation, recalculateFrom, lastChargeAppliedDate);
     }
 
-    private void addInstallmentIfPenaltyAppliedAfterLastDueDate(Loan loan, LocalDate lastChargeDate) {
-        if (lastChargeDate != null) {
-            List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments();
-            LoanRepaymentScheduleInstallment lastInstallment = loan.fetchRepaymentScheduleInstallment(installments.size());
-            if (lastInstallment != null && DateUtils.isAfter(lastChargeDate, lastInstallment.getDueDate())) {
-                if (lastInstallment.isRecalculatedInterestComponent()) {
-                    installments.remove(lastInstallment);
-                    lastInstallment = loan.fetchRepaymentScheduleInstallment(installments.size());
-                }
-                boolean recalculatedInterestComponent = true;
-                BigDecimal principal = BigDecimal.ZERO;
-                BigDecimal interest = BigDecimal.ZERO;
-                BigDecimal feeCharges = BigDecimal.ZERO;
-                BigDecimal penaltyCharges = BigDecimal.ONE;
-                final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails = null;
-                LoanRepaymentScheduleInstallment newEntry = new LoanRepaymentScheduleInstallment(loan, installments.size() + 1,
-                        lastInstallment.getDueDate(), lastChargeDate, principal, interest, feeCharges, penaltyCharges,
-                        recalculatedInterestComponent, compoundingDetails);
-                loan.addLoanRepaymentScheduleInstallment(newEntry);
+    private BigDecimal projectChargeToOverdueLoanInstallment(final Loan loan, final Long loanChargeId, final Integer periodNumber,
+            final LocalDate businessDate, final JsonCommand command) {
+        final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(loanChargeId);
+        final Integer feeFrequency = chargeDefinition.feeFrequency();
+        final Integer feeInterval = chargeDefinition.feeInterval();
+        final ScheduledDateGenerator scheduledDateGenerator = new DefaultScheduledDateGenerator();
+        final Map<Integer, LocalDate> scheduleDates = new HashMap<>();
+        final LocalDate penaltyStartDate = configurationDomainService.retrievePenaltyStartDate();
+        Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
+        Long penaltyPostingWaitPeriodValue = this.configurationDomainService.retrieveGraceOnPenaltyPostingPeriod();
+        boolean doesPenaltyExist = loan.hasPenaltiesInRepaymentSchedules();
+        if (doesPenaltyExist) {
+            penaltyPostingWaitPeriodValue = 0L;
+            penaltyWaitPeriodValue = 0L;
+        }
+
+        final LocalDate dueDate = command.localDateValueOfParameterNamed("dueDate");
+        long diff = penaltyWaitPeriodValue + 1 - penaltyPostingWaitPeriodValue;
+        if (diff < 1) {
+            diff = 1L;
+        }
+
+        LocalDate startDate = dueDate.plusDays(penaltyWaitPeriodValue + 1L);
+        int frequencyNumber = 1;
+        if (feeFrequency == null) {
+            scheduleDates.put(frequencyNumber++, startDate.minusDays(diff));
+        } else {
+            while (!DateUtils.isDateInTheFuture(startDate, businessDate)) {
+                scheduleDates.put(frequencyNumber++, startDate.minusDays(diff));
+                startDate = scheduledDateGenerator.getRepaymentPeriodDate(PeriodFrequencyType.fromInt(feeFrequency),
+                        chargeDefinition.feeInterval(), startDate);
             }
         }
+        Long numberOfPenaltyDays = java.time.temporal.ChronoUnit.DAYS.between(dueDate, DateUtils.getBusinessLocalDate());
+        numberOfPenaltyDays = numberOfPenaltyDays + (penaltyWaitPeriodValue + 1L) - diff;
+        if (feeFrequency != null && feeFrequency == 0 && feeInterval != null && feeInterval == 1) {
+            numberOfPenaltyDays = null;
+        }
+        LoanRepaymentScheduleInstallment installment;
+        BigDecimal installmentPeriodCharge = BigDecimal.ZERO;
+        if (!scheduleDates.isEmpty()) {
+            installment = loan.fetchRepaymentScheduleInstallment(periodNumber);
+            for (Map.Entry<Integer, LocalDate> entry : scheduleDates.entrySet()) {
+                final LoanCharge loanCharge = loanChargeAssembler.createNewFromJson(loan, chargeDefinition, command, entry.getValue(),
+                        installment, numberOfPenaltyDays);
+                if (Objects.isNull(loanCharge.amount()) || BigDecimal.ZERO.compareTo(loanCharge.amount()) == 0) {
+                    continue;
+                }
+                if (penaltyStartDate != null && loanCharge.getDueLocalDate().isBefore(penaltyStartDate)) {
+                    continue;
+                }
+                installmentPeriodCharge = installmentPeriodCharge.add(loanCharge.amount());
+            }
+        }
+        return installmentPeriodCharge;
     }
 
     public Loan runScheduleRecalculation(Loan loan, final LocalDate recalculateFrom) {

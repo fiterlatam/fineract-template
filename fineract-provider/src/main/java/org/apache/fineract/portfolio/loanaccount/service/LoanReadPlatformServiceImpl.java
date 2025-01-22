@@ -445,9 +445,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public BigDecimal calculateHonorariosAmount(Long loanId, BigDecimal repaymentAmount) {
+    public BigDecimal calculateHonorariosAmount(Long loanId, BigDecimal repaymentAmount, LocalDate transactionDate) {
         Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
-        return calculateHonoChargeAmount(loan, DateUtils.getBusinessLocalDate(), repaymentAmount);
+        return calculateHonoChargeAmount(loan, transactionDate, repaymentAmount);
     }
 
     @Override
@@ -2047,7 +2047,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public Collection<OverdueLoanScheduleData> retrieveAllOverdueInstallmentsForLoan(final Loan loan) {
+    public Collection<OverdueLoanScheduleData> retrieveAllOverdueInstallmentsForLoan(final Loan loan, final LocalDate businessDate) {
         Collection<OverdueLoanScheduleData> list = new ArrayList<>();
 
         if (!loan.isOpen()) {
@@ -2061,8 +2061,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 continue;
             }
 
-            boolean isPenaltyDue = installment.isOverdueOn(DateUtils.getBusinessLocalDate().minusDays(penaltyWaitPeriod).plusDays(1));
-            boolean isDueToday = installment.getDueDate().equals(DateUtils.getBusinessLocalDate().minusDays(penaltyWaitPeriod));
+            boolean isPenaltyDue = installment.isOverdueOn(businessDate.minusDays(penaltyWaitPeriod).plusDays(1));
+            boolean isDueToday = installment.getDueDate().equals(businessDate.minusDays(penaltyWaitPeriod));
 
             if (isPenaltyDue) {
                 if (!backdatePenalties && !isDueToday) {
@@ -3964,7 +3964,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         return this.jdbcTemplate.query(sqlBuilder.toString(), objectArray, loanReclaimMapper);
     }
 
-    private BigDecimal calculateHonoChargeAmount(Loan loan, LocalDate transactionDate, BigDecimal repaymentAmount) {
+    public BigDecimal calculateHonoChargeAmount(Loan loan, LocalDate transactionDate, BigDecimal repaymentAmount) {
         BigDecimal feeHono = BigDecimal.ZERO;
         Optional<LoanCharge> haveHonoCharge = loan.getActiveCharges().stream().filter(charge -> charge.isFlatHono()).findFirst();
         if (haveHonoCharge.isPresent() && loan.getAgeOfOverdueDays(transactionDate) > 0) {

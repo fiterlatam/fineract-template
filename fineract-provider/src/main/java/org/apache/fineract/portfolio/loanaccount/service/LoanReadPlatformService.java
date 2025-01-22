@@ -89,7 +89,7 @@ public interface LoanReadPlatformService {
     List<LoanRescheduleData> retrieveLoansForInterestRecalculation(MaximumCreditRateConfigurationData maximumCreditRateConfigurationData,
             int pageSize, Long minLoanId);
 
-    Collection<OverdueLoanScheduleData> retrieveAllOverdueInstallmentsForLoan(Loan loan);
+    Collection<OverdueLoanScheduleData> retrieveAllOverdueInstallmentsForLoan(Loan loan, LocalDate businessDate);
 
     Integer retriveLoanCounter(Long groupId, Integer loanType, Long productId);
 
@@ -117,7 +117,7 @@ public interface LoanReadPlatformService {
 
     List<Long> fetchLoansForInterestRecalculation(Integer pageSize, Long maxLoanIdInList, String officeHierarchy);
 
-    BigDecimal calculateHonorariosAmount(Long loanId, BigDecimal repaymentAmount);
+    BigDecimal calculateHonorariosAmount(Long loanId, BigDecimal repaymentAmount, LocalDate transactionDate);
 
     LoanTransactionData retrieveLoanPrePaymentTemplate(LoanTransactionType repaymentTransactionType, Long loanId, LocalDate onDate);
 
