@@ -103,7 +103,7 @@ public class CodeValueWritePlatformServiceJpaRepositoryImpl implements CodeValue
             this.context.authenticatedUser();
 
             if (Objects.isNull(label) || Objects.isNull(description) || label.isEmpty() || description.isEmpty()) {
-                new PlatformDataIntegrityException("error.msg.user.code.codevalue.data.integrity.issue",
+                throw new PlatformDataIntegrityException("error.msg.user.code.codevalue.data.integrity.issue",
                         "Error whislt creating new Code Value from user name");
             }
 
@@ -113,7 +113,7 @@ public class CodeValueWritePlatformServiceJpaRepositoryImpl implements CodeValue
             this.codeValueRepository.saveAndFlush(codeValue);
 
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
-            new PlatformDataIntegrityException("error.msg.user.code.codevalue.data.integrity.issue",
+            throw new PlatformDataIntegrityException("error.msg.user.code.codevalue.data.integrity.issue",
                     "Error whislt creating new Code Value from user name");
         }
     }
@@ -188,7 +188,6 @@ public class CodeValueWritePlatformServiceJpaRepositoryImpl implements CodeValue
                     .withSubEntityId(codeValueId)//
                     .build();
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
-            LOG.error("Error occured.", dve);
             final Throwable realCause = dve.getMostSpecificCause();
             if (realCause.getMessage().contains("code_value")) {
                 throw new PlatformDataIntegrityException("error.msg.codeValue.in.use", "This code value is in use", codeValueId, dve);

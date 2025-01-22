@@ -1543,6 +1543,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         return deleteDatatableEntries(dataTableName, appTableId, datatableId, command);
     }
 
+    @SuppressWarnings({ "squid:S6809" })
     private CommandProcessingResult deleteDatatableEntries(final String dataTableName, final Long appTableId, final Long datatableId,
             JsonCommand command) {
         final EntityTables entityTable = queryForApplicationEntity(dataTableName);
