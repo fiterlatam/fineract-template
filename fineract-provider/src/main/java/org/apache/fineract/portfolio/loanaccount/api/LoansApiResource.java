@@ -1502,14 +1502,10 @@ public class LoansApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveDebtProjection(@PathParam("loanId") final Long loanId, @QueryParam("projectionDate") final String projectionDate,
-            @QueryParam("dateFormat") final String dateFormat, @Context final UriInfo uriInfo) {
-
-        // Verify user has permissions
+            @QueryParam("dateFormat") final String dateFormat) {
         this.context.authenticatedUser();
-
-        // Calculate projection
-        LoanDebtProjectionData projection = this.loanDebtProjectionService.calculateDebtProjection(loanId, projectionDate, dateFormat);
-
+        final LoanDebtProjectionData projection = this.loanDebtProjectionService.calculateDebtProjection(loanId, projectionDate,
+                dateFormat);
         return this.toApiJsonSerializer.serialize(projection);
     }
 

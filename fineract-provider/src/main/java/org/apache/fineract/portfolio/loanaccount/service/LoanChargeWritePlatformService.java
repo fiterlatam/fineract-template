@@ -45,5 +45,6 @@ public interface LoanChargeWritePlatformService {
 
     void applyOverdueChargesForLoan(Long loanId, Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList);
 
-    BigDecimal projectOverdueChargesForLoan(Long loanId, Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList, LocalDate businessDate);
+    BigDecimal projectOverdueChargesForLoan(Long loanId, Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList,
+            LocalDate businessDate);
 }

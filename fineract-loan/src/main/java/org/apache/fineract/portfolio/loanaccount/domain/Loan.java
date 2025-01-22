@@ -3875,6 +3875,18 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return repaymentsOrWaivers;
     }
 
+    public List<LoanTransaction> retrieveListOfRepaymentTransactions() {
+        final List<LoanTransaction> repaymentsOrWaivers = new ArrayList<>();
+        List<LoanTransaction> trans = getLoanTransactions();
+        for (final LoanTransaction transaction : trans) {
+            if (transaction.isNotReversed() && transaction.isRepayment()) {
+                repaymentsOrWaivers.add(transaction);
+            }
+        }
+        repaymentsOrWaivers.sort(LoanTransactionComparator.INSTANCE);
+        return repaymentsOrWaivers;
+    }
+
     public List<LoanTransaction> retrieveListOfTransactionsPostDisbursementExcludeAccruals() {
         final List<LoanTransaction> repaymentsOrWaivers = new ArrayList<>();
         for (final LoanTransaction transaction : this.loanTransactions) {
@@ -4327,6 +4339,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 cumulativeTotalWaivedOnInstallments = cumulativeTotalWaivedOnInstallments
                         .plus(scheduledRepayment.getInterestWaived(currency));
                 // Do not add advance payment amount if installment was overpaid
+                if (!scheduledRepayment.isLastInstallmentOverpaidInActual()) {
+                    // SU-579 This is special case when advance pmt of exact amount as of foreclosure is made while the
+                    // last installment has
+                    // advance principal paid from a previous transaction. In this case total advance pmt is greater
+                    // than installment amount so using
+                    // the advance amount instead of installment principal to make sure loan is not calculated as
+                    // overpaid
+                    cumulativeTotalPaidOnInstallments = cumulativeTotalPaidOnInstallments
+                            .plus(scheduledRepayment.getAdvancePrincipalAmount()).minus(scheduledRepayment.getPrincipalCompleted(currency));
+                }
                 continue;
             } else {
                 cumulativeTotalPaidOnInstallments = cumulativeTotalPaidOnInstallments.plus(scheduledRepayment.getAdvancePrincipalAmount());

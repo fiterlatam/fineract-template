@@ -172,6 +172,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     @Column(name = "migrated_installment")
     private boolean isMigratedInstallment;
 
+    @Transient
+    private boolean isLastInstallmentOverpaidInActual;
+
     public LoanRepaymentScheduleInstallment() {
         this.installmentNumber = null;
         this.fromDate = null;
@@ -1837,5 +1840,13 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             // amount and all other null components
             this.getInstallmentCharges().clear();
         }
+    }
+
+    public boolean isLastInstallmentOverpaidInActual() {
+        return isLastInstallmentOverpaidInActual;
+    }
+
+    public void setLastInstallmentOverpaidInActual(boolean lastInstallmentOverpaidInActual) {
+        isLastInstallmentOverpaidInActual = lastInstallmentOverpaidInActual;
     }
 }

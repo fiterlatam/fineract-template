@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -842,8 +841,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
     @Override
     public BigDecimal projectOverdueChargesForLoan(final Long loanId,
-                                                   final Collection<OverdueLoanScheduleData> overdueUnsortedLoanScheduleDataList,
-                                                   final LocalDate businessDate) {
+            final Collection<OverdueLoanScheduleData> overdueUnsortedLoanScheduleDataList, final LocalDate businessDate) {
         final Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList = overdueUnsortedLoanScheduleDataList.stream()
                 .sorted(Comparator.comparing(OverdueLoanScheduleData::getPeriodNumber)).toList();
         final Loan loan = this.loanAssembler.assembleFrom(loanId);
@@ -872,7 +870,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                 final JsonCommand command = JsonCommand.from(overdueInstallment.toString(), parsedCommand, this.fromApiJsonHelper, null,
                         null, null, null, null, loanId, null, null, null, null, null, null, null);
                 BigDecimal installmentPeriodCharge = this.projectChargeToOverdueLoanInstallment(loan, overdueInstallment.getChargeId(),
-                        overdueInstallment.getPeriodNumber(), command);
+                        overdueInstallment.getPeriodNumber(), businessDate, command);
                 penaltyChargesProjected = penaltyChargesProjected.add(installmentPeriodCharge);
             }
         }
@@ -880,7 +878,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
     }
 
     private LoanTransaction applyChargeAdjustment(final Loan loan, final LoanCharge loanCharge, final BigDecimal transactionAmount,
-                                                  final LocalDate transactionDate, final ExternalId txnExternalId, PaymentDetail paymentDetail) {
+            final LocalDate transactionDate, final ExternalId txnExternalId, PaymentDetail paymentDetail) {
         businessEventNotifierService.notifyPreBusinessEvent(new LoanChargeAdjustmentPreBusinessEvent(loan));
         final List<Long> existingTransactionIds = new ArrayList<>(loan.findExistingTransactionIds());
         final List<Long> existingReversedTransactionIds = new ArrayList<>(loan.findExistingReversedTransactionIds());
@@ -1212,17 +1210,13 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         return new LoanOverdueDTO(loan, runInterestRecalculation, recalculateFrom, lastChargeAppliedDate);
     }
 
-    private BigDecimal projectChargeToOverdueLoanInstallment(final Loan loan,
-                                                             final Long loanChargeId,
-                                                             final Integer periodNumber,
-                                                             final JsonCommand command) {
+    private BigDecimal projectChargeToOverdueLoanInstallment(final Loan loan, final Long loanChargeId, final Integer periodNumber,
+            final LocalDate businessDate, final JsonCommand command) {
         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(loanChargeId);
-        Collection<Integer> frequencyNumbers = loanChargeReadPlatformService.retrieveOverdueInstallmentChargeFrequencyNumber(loan,
-                chargeDefinition, periodNumber);
-        Integer feeFrequency = chargeDefinition.feeFrequency();
-        Integer feeInterval = chargeDefinition.feeInterval();
+        final Integer feeFrequency = chargeDefinition.feeFrequency();
+        final Integer feeInterval = chargeDefinition.feeInterval();
         final ScheduledDateGenerator scheduledDateGenerator = new DefaultScheduledDateGenerator();
-        Map<Integer, LocalDate> scheduleDates = new HashMap<>();
+        final Map<Integer, LocalDate> scheduleDates = new HashMap<>();
         final LocalDate penaltyStartDate = configurationDomainService.retrievePenaltyStartDate();
         Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
         Long penaltyPostingWaitPeriodValue = this.configurationDomainService.retrieveGraceOnPenaltyPostingPeriod();
@@ -1243,15 +1237,11 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         if (feeFrequency == null) {
             scheduleDates.put(frequencyNumber++, startDate.minusDays(diff));
         } else {
-            while (!DateUtils.isDateInTheFuture(startDate)) {
+            while (!DateUtils.isDateInTheFuture(startDate, businessDate)) {
                 scheduleDates.put(frequencyNumber++, startDate.minusDays(diff));
                 startDate = scheduledDateGenerator.getRepaymentPeriodDate(PeriodFrequencyType.fromInt(feeFrequency),
                         chargeDefinition.feeInterval(), startDate);
             }
-        }
-
-        for (Integer frequency : frequencyNumbers) {
-            scheduleDates.remove(frequency);
         }
         Long numberOfPenaltyDays = java.time.temporal.ChronoUnit.DAYS.between(dueDate, DateUtils.getBusinessLocalDate());
         numberOfPenaltyDays = numberOfPenaltyDays + (penaltyWaitPeriodValue + 1L) - diff;

@@ -311,8 +311,16 @@ public final class DateUtils {
         return isAfter(date, getBusinessLocalDate());
     }
 
+    public static boolean isAfterBusinessDate(LocalDate date, final LocalDate businessDate) {
+        return isAfter(date, businessDate);
+    }
+
     public static boolean isDateInTheFuture(final LocalDate localDate) {
         return isAfterBusinessDate(localDate);
+    }
+
+    public static boolean isDateInTheFuture(final LocalDate localDate, final LocalDate businessDate) {
+        return isAfterBusinessDate(localDate, businessDate);
     }
 
     public static int compare(LocalDate first, LocalDate second) {
