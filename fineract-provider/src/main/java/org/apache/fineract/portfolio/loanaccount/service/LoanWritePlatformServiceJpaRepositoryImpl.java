@@ -1565,7 +1565,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     private boolean isTransactionBeforeLastRepaymentTransaction(final LoanTransaction loanTransaction,
-                                                               final List<LoanTransaction> loanTransactions) {
+            final List<LoanTransaction> loanTransactions) {
         boolean isTransactionNotBeforeLastRepaymentTransaction = true;
 
         final LocalDate currentTransactionDate = loanTransaction.getTransactionDate();
@@ -1590,7 +1590,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         Loan loan = this.loanAssembler.assembleFrom(loanId);
 
         if (!isTransactionBeforeLastRepaymentTransaction(transactionToAdjust, loan.getLoanTransactions())) {
-            final String errorMessage = "The transaction date cannot be before last valid transaction: " + loan.getDisbursementDate().toString();
+            final String errorMessage = "The transaction date cannot be before last valid transaction: "
+                    + loan.getDisbursementDate().toString();
             throw new InvalidLoanStateTransitionException("transaction", "cannot.be.before.last.valid.transaction", errorMessage,
                     transactionToAdjust.getTransactionDate(), loan.getDisbursementDate());
         }
