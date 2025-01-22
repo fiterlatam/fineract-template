@@ -186,7 +186,7 @@ public class LoanTransactionsApiResource {
             } else {
                 transactionDate = transactionDateParam.getDate("transactionDate", dateFormat, locale);
             }
-            transactionData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(loanId, transactionDate,isProjection);
+            transactionData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(loanId, transactionDate, isProjection);
         } else if (is(commandParam, "creditBalanceRefund")) {
             transactionData = this.loanReadPlatformService.retrieveCreditBalanceRefundTemplate(loanId);
         } else {

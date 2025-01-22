@@ -1979,9 +1979,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final CurrencyData currencyData = new CurrencyData(currencyCode, currencyName, currencyDigits, inMultiplesOf,
                     currencyDisplaySymbol, currencyNameCode, intCode);
 
-            LoanScheduleAccrualData loanScheduleAccrualData = new LoanScheduleAccrualData(loanId, officeId, installmentNumber, accruedTill, frequency, repayEvery, dueDate, fromDate,
-                    repaymentScheduleId, loanProductId, interestIncome, feeIncome, penaltyIncome, accruedInterestIncome, accruedFeeIncome,
-                    accruedPenaltyIncome, currencyData, interestCalculatedFrom, interestIncomeWaived);
+            LoanScheduleAccrualData loanScheduleAccrualData = new LoanScheduleAccrualData(loanId, officeId, installmentNumber, accruedTill,
+                    frequency, repayEvery, dueDate, fromDate, repaymentScheduleId, loanProductId, interestIncome, feeIncome, penaltyIncome,
+                    accruedInterestIncome, accruedFeeIncome, accruedPenaltyIncome, currencyData, interestCalculatedFrom,
+                    interestIncomeWaived);
             loanScheduleAccrualData.setInterestCompletedIncome(interestCompleted);
             return loanScheduleAccrualData;
         }
@@ -2058,9 +2059,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         bankAccSql = bankAccSql + " where (mo.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mo.hierarchy, '%')) ";
         List<BankAccountData> bankAccounts = this.jdbcTemplate.query(bankAccSql, bankAccountMapper, hierarchy, hierarchy);
 
-        LoanTransactionData loanTransactionData = new LoanTransactionData(null, null, null, transactionType, null, null, null, loan.getTotalWrittenOff(),
-                loan.getNetDisbursalAmount(), null, null, null, null, null, unrecognizedIncomePortion, paymentOptions, null, null, null,
-                outstandingLoanBalance, false);
+        LoanTransactionData loanTransactionData = new LoanTransactionData(null, null, null, transactionType, null, null, null,
+                loan.getTotalWrittenOff(), loan.getNetDisbursalAmount(), null, null, null, null, null, unrecognizedIncomePortion,
+                paymentOptions, null, null, null, outstandingLoanBalance, false);
         loanTransactionData.setBankAccounts(bankAccounts);
         return loanTransactionData;
 
@@ -2440,8 +2441,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         this.context.authenticatedUser();
 
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId, true);
-        if (!Boolean.TRUE.equals(isProjection))
-            loan.validateForForeclosure(transactionDate);
+        if (!Boolean.TRUE.equals(isProjection)) loan.validateForForeclosure(transactionDate);
         final MonetaryCurrency currency = loan.getCurrency();
         final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepository.findOneWithNotFoundDetection(currency);
 

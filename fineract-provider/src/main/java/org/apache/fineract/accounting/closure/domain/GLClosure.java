@@ -75,6 +75,7 @@ public class GLClosure extends AbstractAuditableCustom {
     public Map<String, Object> update(final JsonCommand command) {
         final Map<String, Object> actualChanges = new LinkedHashMap<>(5);
         handlePropertyUpdate(command, actualChanges, GLClosureJsonInputParams.COMMENTS.getValue(), this.comments);
+        handlePropertyUpdate(command, actualChanges, GLClosureJsonInputParams.CLOSING_DATE.getValue(), this.closingDate);
         return actualChanges;
     }
 
@@ -86,6 +87,18 @@ public class GLClosure extends AbstractAuditableCustom {
             // now update actual property
             if (paramName.equals(GLClosureJsonInputParams.COMMENTS.getValue())) {
                 this.comments = newValue;
+            }
+        }
+    }
+
+    private void handlePropertyUpdate(final JsonCommand command, final Map<String, Object> actualChanges, final String paramName,
+            final LocalDate propertyToBeUpdated) {
+        if (command.isChangeInLocalDateParameterNamed(paramName, propertyToBeUpdated)) {
+            final LocalDate newValue = command.localDateValueOfParameterNamed(paramName);
+            actualChanges.put(paramName, newValue);
+            // now update actual property
+            if (paramName.equals(GLClosureJsonInputParams.CLOSING_DATE.getValue())) {
+                this.closingDate = newValue;
             }
         }
     }

@@ -259,7 +259,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     .lastModifiedByUsername(lastModifiedByUsername).clientName(clientName).clientNo(clientNo).groupName(groupName)
                     .loanAccNo(loanAccNo).loanAmount(loanAmount).guaranteeAmount(guaranteeAmount).groupNo(groupNo).guaranteeId(guaranteeId)
                     .caseId(caseId).chequeAmount(chequeAmount).agencyId(agencyId).loanAccId(loanAccId).reassingedCheque(reassinged)
-                    .depositNumber(depositNumber).numeroCliente(numeroCliente).glAccountId(glAccountId).reassignedFrom(reassignedFrom).build();
+                    .depositNumber(depositNumber).numeroCliente(numeroCliente).glAccountId(glAccountId).reassignedFrom(reassignedFrom)
+                    .build();
 
         }
     }

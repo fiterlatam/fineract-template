@@ -572,8 +572,9 @@ public class JournalEntryWritePlatformServiceJpaRepositoryImpl implements Journa
         Long maximumBackDateDaysAllowed = this.configurationDomainService.getMaximumBackDateDaysAllowed();
         LocalDate minimumAllowedDate = transactionDate.plusDays(maximumBackDateDaysAllowed);
 
-        if (transactionDate.isBefore(minimumAllowedDate)){
-            throw new JournalEntryInvalidException(GlJournalEntryInvalidReason.OLD_DATE, transactionDate, String.valueOf(maximumBackDateDaysAllowed), null);
+        if (transactionDate.isBefore(minimumAllowedDate)) {
+            throw new JournalEntryInvalidException(GlJournalEntryInvalidReason.OLD_DATE, transactionDate,
+                    String.valueOf(maximumBackDateDaysAllowed), null);
         }
         // shouldn't be before an accounting closure
         final GLClosure latestGLClosure = this.glClosureRepository.getLatestGLClosureByBranch(command.getOfficeId());

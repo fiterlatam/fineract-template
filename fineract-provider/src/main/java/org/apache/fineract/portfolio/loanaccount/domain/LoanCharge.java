@@ -219,8 +219,8 @@ public class LoanCharge extends AbstractPersistableCustom {
         return newLoanCharge;
     }
 
-    public static LoanCharge createNewFromChargeAmount(final Loan loan, final Charge chargeDefinition,
-                                                       final LocalDate dueDate, final BigDecimal chargeAmount, String receiptNumber) {
+    public static LoanCharge createNewFromChargeAmount(final Loan loan, final Charge chargeDefinition, final LocalDate dueDate,
+            final BigDecimal chargeAmount, String receiptNumber) {
         final ChargeTimeType chargeTime = null;
         final ChargeCalculationType chargeCalculation = null;
         final ChargePaymentMode chargePaymentMode = null;
@@ -249,8 +249,8 @@ public class LoanCharge extends AbstractPersistableCustom {
             }
         }
 
-        LoanCharge newLoanCharge = new LoanCharge(loan, chargeDefinition, amountPercentageAppliedTo, chargeAmount, chargeTime, chargeCalculation,
-                dueDate, chargePaymentMode, null, loanCharge);
+        LoanCharge newLoanCharge = new LoanCharge(loan, chargeDefinition, amountPercentageAppliedTo, chargeAmount, chargeTime,
+                chargeCalculation, dueDate, chargePaymentMode, null, loanCharge);
         final String externalId = receiptNumber;
         newLoanCharge.setExternalId(externalId);
         newLoanCharge.setChargeDisbursementType(chargeDefinition.getChargeDisbursementType());

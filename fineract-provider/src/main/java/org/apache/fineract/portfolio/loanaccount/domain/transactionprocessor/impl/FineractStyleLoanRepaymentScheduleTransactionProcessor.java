@@ -123,11 +123,12 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
             interestPortion = currentInstallment.payInterestComponent(transactionDate, transactionAmountRemaining);
             if (!currentInstallment.getDueDate().isBefore(transactionDate)
                     && currentInstallment.getInterestAccrued(transactionAmountRemaining.getCurrency()).isGreaterThanZero()) {
-                loanTransaction.setIncomeInterestPortion(loanTransaction.getIncomeInterestPortion(transactionAmountRemaining.getCurrency())
-                        .plus(interestPortion
+                loanTransaction.setIncomeInterestPortion(loanTransaction
+                        .getIncomeInterestPortion(transactionAmountRemaining.getCurrency()).plus(interestPortion
                                 .minus(currentInstallment.getInterestAccrued(transactionAmountRemaining.getCurrency())).getAmount())
                         .getAmount());
-                loanTransaction.setReceivableInterestPortion(loanTransaction.getReceivableInterestPortion(transactionAmountRemaining.getCurrency())
+                loanTransaction.setReceivableInterestPortion(loanTransaction
+                        .getReceivableInterestPortion(transactionAmountRemaining.getCurrency())
                         .plus(currentInstallment.getInterestAccrued(transactionAmountRemaining.getCurrency()).getAmount()).getAmount());
             }
             transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
@@ -169,11 +170,12 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
             interestPortion = currentInstallment.unpayInterestComponent(transactionDate, transactionAmountRemaining);
             if (!currentInstallment.getDueDate().isBefore(transactionDate)
                     && currentInstallment.getInterestAccrued(transactionAmountRemaining.getCurrency()).isGreaterThanZero()) {
-                loanTransaction.setIncomeInterestPortion(loanTransaction.getIncomeInterestPortion(transactionAmountRemaining.getCurrency())
-                        .plus(interestPortion
+                loanTransaction.setIncomeInterestPortion(loanTransaction
+                        .getIncomeInterestPortion(transactionAmountRemaining.getCurrency()).plus(interestPortion
                                 .minus(currentInstallment.getInterestAccrued(transactionAmountRemaining.getCurrency())).getAmount())
                         .getAmount());
-                loanTransaction.setReceivableInterestPortion(loanTransaction.getReceivableInterestPortion(transactionAmountRemaining.getCurrency())
+                loanTransaction.setReceivableInterestPortion(loanTransaction
+                        .getReceivableInterestPortion(transactionAmountRemaining.getCurrency())
                         .plus(currentInstallment.getInterestAccrued(transactionAmountRemaining.getCurrency()).getAmount()).getAmount());
             }
             transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);

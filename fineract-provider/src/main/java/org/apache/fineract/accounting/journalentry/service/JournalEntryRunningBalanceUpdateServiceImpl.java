@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.accounting.common.AccountingEnumerations;
@@ -76,8 +75,7 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
                 + "where je.is_running_balance_calculated=false ";
         try {
             LocalDate entityDate = this.jdbcTemplate.queryForObject(dateFinder, LocalDate.class);
-            if (entityDate!=null)
-                updateOrganizationRunningBalance(entityDate);
+            if (entityDate != null) updateOrganizationRunningBalance(entityDate);
         } catch (EmptyResultDataAccessException e) {
             log.debug("No results found for updation of running balance ");
         }
@@ -158,37 +156,36 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
                     (BigDecimal) entry.get("runningBalance"));
         });
 
-            // run a batch update of 1000 SQL statements at a time
+        // run a batch update of 1000 SQL statements at a time
         final Integer batchUpdateSize = 1000;
 
-            // Batch update using JdbcTemplate with PreparedStatement
+        // Batch update using JdbcTemplate with PreparedStatement
         long numberOfDaysToKeepRunningBalance = configurationDomainService.getNumberOfDaysToKeepRunningBalance();
         LocalDate endDate = entityDate.plusDays(numberOfDaysToKeepRunningBalance);
-        String sqlString = numberOfDaysToKeepRunningBalance>0? entryMapper.organizationRunningBalanceSchemaParts():entryMapper.organizationRunningBalanceSchema();
-        try (Stream<JournalEntryData> entryStream = jdbcTemplate.queryForStream(
-                sqlString, entryMapper, entityDate, endDate)) {
+        String sqlString = numberOfDaysToKeepRunningBalance > 0 ? entryMapper.organizationRunningBalanceSchemaParts()
+                : entryMapper.organizationRunningBalanceSchema();
+        try (Stream<JournalEntryData> entryStream = jdbcTemplate.queryForStream(sqlString, entryMapper, entityDate, endDate)) {
 
-                List<JournalEntryData> batch = new ArrayList<>();
-                entryStream.forEach(entry -> {
-                    batch.add(entry);
-                    if (batch.size() == batchUpdateSize) {
-                        processBatch(batch, jdbcTemplate,officesRunningBalance,runningBalanceMap);
-                        batch.clear();
-                    }
-                });
-
-                if (!batch.isEmpty()) {
+            List<JournalEntryData> batch = new ArrayList<>();
+            entryStream.forEach(entry -> {
+                batch.add(entry);
+                if (batch.size() == batchUpdateSize) {
                     processBatch(batch, jdbcTemplate, officesRunningBalance, runningBalanceMap);
+                    batch.clear();
                 }
+            });
+
+            if (!batch.isEmpty()) {
+                processBatch(batch, jdbcTemplate, officesRunningBalance, runningBalanceMap);
+            }
         }
 
     }
 
-    private void processBatch(List<JournalEntryData> batch, JdbcTemplate jdbcTemplate, Map<Long, Map<Long, BigDecimal>> officesRunningBalance, Map<Long, BigDecimal> runningBalanceMap) {
-        jdbcTemplate.batchUpdate(
-                "UPDATE acc_gl_journal_entry SET is_running_balance_calculated=true, "
-                        + "organization_running_balance = ?, office_running_balance = ? WHERE id = ?",
-                batch, 1000, (ps, entryData) -> {
+    private void processBatch(List<JournalEntryData> batch, JdbcTemplate jdbcTemplate,
+            Map<Long, Map<Long, BigDecimal>> officesRunningBalance, Map<Long, BigDecimal> runningBalanceMap) {
+        jdbcTemplate.batchUpdate("UPDATE acc_gl_journal_entry SET is_running_balance_calculated=true, "
+                + "organization_running_balance = ?, office_running_balance = ? WHERE id = ?", batch, 1000, (ps, entryData) -> {
                     Map<Long, BigDecimal> officeRunningBalanceMap = officesRunningBalance.computeIfAbsent(entryData.getOfficeId(),
                             k -> new HashMap<>());
 

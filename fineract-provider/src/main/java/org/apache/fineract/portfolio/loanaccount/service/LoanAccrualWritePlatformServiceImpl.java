@@ -148,7 +148,8 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
 
         int totalNumberOfDays = Math.toIntExact(ChronoUnit.DAYS.between(interestStartDate, accrualData.getDueDateAsLocaldate()));
         double totalInterest = accrualData.getAccruableIncome().doubleValue();
-        double paidInterest = accrualData.getInterestCompletedIncome() != null ? accrualData.getInterestCompletedIncome().doubleValue() : 0.0;
+        double paidInterest = accrualData.getInterestCompletedIncome() != null ? accrualData.getInterestCompletedIncome().doubleValue()
+                : 0.0;
         double remainingInterest = totalInterest - paidInterest;
 
         if (remainingInterest <= 0) {
@@ -233,7 +234,6 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                     totalAccPenalty, tilldate);
         }
     }
-
 
     @Transactional
     public void addAccrualAccounting(LoanScheduleAccrualData scheduleAccrualData) throws Exception {
