@@ -151,7 +151,7 @@ public class LoanScheduleAssembler {
             final FloatingRatesReadPlatformService floatingRatesReadPlatformService,
             final VariableLoanScheduleFromApiJsonValidator variableLoanScheduleFromApiJsonValidator,
             final CalendarInstanceRepository calendarInstanceRepository, final PlatformSecurityContext context,
-            final LoanUtilService loanUtilService,final LoanRepositoryWrapper loanRepository) {
+            final LoanUtilService loanUtilService, final LoanRepositoryWrapper loanRepository) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.loanProductRepository = loanProductRepository;
         this.applicationCurrencyRepository = applicationCurrencyRepository;
@@ -236,13 +236,13 @@ public class LoanScheduleAssembler {
         final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
         final Boolean isTopup = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isTopup, element);
         BigDecimal topupAmount = BigDecimal.ZERO;
-        if (Boolean.TRUE.equals(isTopup)){
+        if (Boolean.TRUE.equals(isTopup)) {
             final Long loanId = this.fromApiJsonHelper.extractLongNamed("loanId", element);
             final Loan loan = this.loanRepository.findOneWithNotFoundDetection(loanId);
             if (!loan.isOpen()) {
                 throw new IllegalStateException("error.msg.loan.topup.not.active");
             }
-            //total amount of topup loan must include the outstanding on the topup loan
+            // total amount of topup loan must include the outstanding on the topup loan
             final BigDecimal outstanding = loan.getSummary().getTotalOutstanding();
             topupAmount = topupAmount.add(outstanding);
         }

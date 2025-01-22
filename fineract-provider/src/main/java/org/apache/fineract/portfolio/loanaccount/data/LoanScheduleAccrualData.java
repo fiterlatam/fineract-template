@@ -21,7 +21,6 @@ package org.apache.fineract.portfolio.loanaccount.data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
-
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -54,7 +53,8 @@ public class LoanScheduleAccrualData {
     private BigDecimal dueDatePenaltyIncome;
     private BigDecimal accruableIncome;
 
-    @Setter@Getter
+    @Setter
+    @Getter
     private BigDecimal interestCompletedIncome;
 
     public LoanScheduleAccrualData(final Long loanId, final Long officeId, final Integer installmentNumber, final LocalDate accruedTill,

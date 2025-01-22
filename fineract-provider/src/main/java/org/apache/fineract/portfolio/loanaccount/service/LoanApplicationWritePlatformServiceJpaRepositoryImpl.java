@@ -369,8 +369,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     }
                 }
 
-                //look for active loan products for client if active loan exists new request has to be a topup.
-                List<Long> activeLoansLoanProductIdsByClient = this.loanRepository.findActiveLoansLoanProductIdsByClient(clientId, LoanStatus.ACTIVE.getValue());
+                // look for active loan products for client if active loan exists new request has to be a topup.
+                List<Long> activeLoansLoanProductIdsByClient = this.loanRepository.findActiveLoansLoanProductIdsByClient(clientId,
+                        LoanStatus.ACTIVE.getValue());
                 if (activeLoansLoanProductIdsByClient.contains(productId) && !Boolean.TRUE.equals(isTopup)) {
                     throw new LoanDisbursalExistingActiveProduct("error.msg.loan.existing.active.loan", loanProduct.getName());
                 }

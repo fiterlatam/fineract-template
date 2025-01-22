@@ -3507,7 +3507,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         changes.put("receiptNumber", receiptNumber);
         changes.put("glAccountId", glAccountId);
 
-        //if declining balance calculation type. add charge to loan before making payment
+        // if declining balance calculation type. add charge to loan before making payment
         if (loan.getLoanRepaymentScheduleDetail().getInterestMethod().equals(InterestMethod.DECLINING_BALANCE)) {
             String completedPaymentsSql = "select count(*) from m_loan_repayment_schedule where loan_id = ? and completed_derived = true";
             Double numberOfPayments = this.jdbcTemplate.queryForObject(completedPaymentsSql, Double.class, loanId);
@@ -3522,8 +3522,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 Charge foreclosureCharge = this.chargeRepositoryWrapper.findOneWithNotFoundDetection("Cargo por ejecución hipotecaria");
                 BigDecimal percentageValue = foreclosureCharge.getAmount();
                 BigDecimal chargeAmount = totalOutstanding.multiply(percentageValue.divide(BigDecimal.valueOf(100)));
-                LoanCharge loanCharge = LoanCharge.createNewFromChargeAmount(loan, foreclosureCharge, transactionDate, chargeAmount, receiptNumber);
-                this.addCharge(loan,foreclosureCharge,loanCharge);
+                LoanCharge loanCharge = LoanCharge.createNewFromChargeAmount(loan, foreclosureCharge, transactionDate, chargeAmount,
+                        receiptNumber);
+                this.addCharge(loan, foreclosureCharge, loanCharge);
             }
         }
 

@@ -156,8 +156,8 @@ public class AccountingProcessorHelper {
                         PortfolioAccountType.LOAN);
             }
             final LoanTransactionDTO transaction = new LoanTransactionDTO(transactionOfficeId, paymentTypeId, transactionId,
-                    transactionDate, transactionType, amount, principal, interest, incomeInterest, receivableInterest , fees, penalties, overPayments, reversed,
-                    penaltyPaymentDetails, feePaymentDetails, isAccountTransfer);
+                    transactionDate, transactionType, amount, principal, interest, incomeInterest, receivableInterest, fees, penalties,
+                    overPayments, reversed, penaltyPaymentDetails, feePaymentDetails, isAccountTransfer);
             transaction.setGlAccountId(transactionGlAccountId != null ? transactionGlAccountId : glAccountId);
             Boolean isLoanToLoanTransfer = (Boolean) accountingBridgeData.get("isLoanToLoanTransfer");
             if (isLoanToLoanTransfer != null && isLoanToLoanTransfer) {
