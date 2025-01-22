@@ -193,18 +193,7 @@ import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.command.LoanUpdateCommand;
 import org.apache.fineract.portfolio.loanaccount.data.*;
 import org.apache.fineract.portfolio.loanaccount.domain.*;
-import org.apache.fineract.portfolio.loanaccount.exception.DateMismatchException;
-import org.apache.fineract.portfolio.loanaccount.exception.ExceedingTrancheCountException;
-import org.apache.fineract.portfolio.loanaccount.exception.InvalidLoanTransactionTypeException;
-import org.apache.fineract.portfolio.loanaccount.exception.InvalidPaidInAdvanceAmountException;
-import org.apache.fineract.portfolio.loanaccount.exception.LoanForeclosureException;
-import org.apache.fineract.portfolio.loanaccount.exception.LoanMultiDisbursementException;
-import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
-import org.apache.fineract.portfolio.loanaccount.exception.LoanOfficerAssignmentException;
-import org.apache.fineract.portfolio.loanaccount.exception.LoanOfficerUnassignmentException;
-import org.apache.fineract.portfolio.loanaccount.exception.LoanTransactionNotFoundException;
-import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementDataNotAllowedException;
-import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementDataRequiredException;
+import org.apache.fineract.portfolio.loanaccount.exception.*;
 import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorDomainService;
 import org.apache.fineract.portfolio.loanaccount.invoice.data.ClasificacionConceptosData;
 import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
@@ -1575,6 +1564,22 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         return changes;
     }
 
+    private boolean isTransactionBeforeLastRepaymentTransaction(final LoanTransaction loanTransaction,
+                                                               final List<LoanTransaction> loanTransactions) {
+        boolean isTransactionNotBeforeLastRepaymentTransaction = true;
+
+        final LocalDate currentTransactionDate = loanTransaction.getTransactionDate();
+        for (final LoanTransaction previousTransaction : loanTransactions) {
+            if (!previousTransaction.isDisbursement() && previousTransaction.isNotReversed() && !previousTransaction.isAccrual()
+                    && DateUtils.compare(loanTransaction.getCreatedDateTime(), previousTransaction.getCreatedDateTime()) < 0
+                    && !Objects.equals(loanTransaction.getId(), previousTransaction.getId())) {
+                isTransactionNotBeforeLastRepaymentTransaction = false;
+                break;
+            }
+        }
+        return isTransactionNotBeforeLastRepaymentTransaction;
+    }
+
     @Transactional
     @Override
     public CommandProcessingResult adjustLoanTransaction(final Long loanId, final Long transactionId, final JsonCommand command) {
@@ -1583,6 +1588,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         LoanTransaction transactionToAdjust = this.loanTransactionRepository.findByIdAndLoanId(command.entityId(), command.getLoanId())
                 .orElseThrow(() -> new LoanTransactionNotFoundException(command.entityId(), command.getLoanId()));
         Loan loan = this.loanAssembler.assembleFrom(loanId);
+
+        if (!isTransactionBeforeLastRepaymentTransaction(transactionToAdjust, loan.getLoanTransactions())) {
+            final String errorMessage = "The transaction date cannot be before last valid transaction: " + loan.getDisbursementDate().toString();
+            throw new InvalidLoanStateTransitionException("transaction", "cannot.be.before.last.valid.transaction", errorMessage,
+                    transactionToAdjust.getTransactionDate(), loan.getDisbursementDate());
+        }
         if (loan.getStatus().isClosed() && loan.getLoanSubStatus() != null
                 && loan.getLoanSubStatus().equals(LoanSubStatus.FORECLOSED.getValue())) {
             final String defaultUserMessage = "The loan cannot reopened as it is foreclosed.";
