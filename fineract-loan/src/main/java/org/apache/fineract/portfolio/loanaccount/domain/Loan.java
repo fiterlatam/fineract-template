@@ -7923,7 +7923,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         newInstallment.updateInstallmentNumber(newInstallments.size() + 1);
         newInstallments.add(newInstallment);
 
-        // SU-579 an installment which gets replaced by the newly created installment somehow does not gets recreated because its references
+        // SU-579 an installment which gets replaced by the newly created installment somehow does not gets recreated
+        // because its references
         // are still present. Below code removes those references for all installments which are deleted
         for (LoanRepaymentScheduleInstallment inst : this.repaymentScheduleInstallments) {
             if (inst.getInstallmentNumber() >= newInstallment.getInstallmentNumber()) {
@@ -7932,8 +7933,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
                 List<LoanTransaction> transactions = this.getLoanTransactions();
                 for (LoanTransaction loanTransaction : transactions) {
-                    if (loanTransaction.isPaymentTransaction()
-                            && loanTransaction.hasPaidInstallment(inst.getInstallmentNumber())) {
+                    if (loanTransaction.isPaymentTransaction() && loanTransaction.hasPaidInstallment(inst.getInstallmentNumber())) {
                         Set<LoanTransactionToRepaymentScheduleMapping> existingMappings = loanTransaction
                                 .getLoanTransactionToRepaymentScheduleMappings();
                         newInstallment.getLoanTransactionToRepaymentScheduleMappings().addAll(existingMappings);
