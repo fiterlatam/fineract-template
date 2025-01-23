@@ -67,6 +67,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -1567,7 +1568,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
     @Transactional
     public Long deleteDatatableEntries(final String dataTableName, final Long appTableId, final Long datatableId) {
         validateDatatableName(dataTableName);
-        if (isDatatableAttachedToEntityDatatableCheck(dataTableName)) {
+        if (isDatatableAttachedToEntityDatatableCheck(dataTableName) && Objects.nonNull(datatableId) && datatableId.compareTo(0L) != 0) {
             throw new DatatableEntryRequiredException(dataTableName, appTableId);
         }
         final EntityTables entityTable = queryForApplicationEntity(dataTableName);
