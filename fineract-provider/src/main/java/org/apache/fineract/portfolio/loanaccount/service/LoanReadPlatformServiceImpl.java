@@ -1481,21 +1481,28 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     fromDate = this.lastDueDate;
                 }
 
-                BigDecimal outstandingPrincipalBalanceOfLoan = this.outstandingLoanPrincipalBalance.subtract(principalDue);
-                if (isAdditional) {
-                    outstandingPrincipalBalanceOfLoan = this.outstandingLoanPrincipalBalance.add(principalDue);
-                }
-
                 // update based on current period values
                 this.lastDueDate = dueDate;
-                this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.subtract(principalDue);
-                if (isAdditional) {
-                    this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(principalDue);
-                }
+
                 BigDecimal advancePrincipalAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "advancePrincipalAmount");
-                if (this.outstandingLoanPrincipalBalance.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal outstandingPrincipalBalanceOfLoan = BigDecimal.ZERO;
+                if (advancePrincipalAmount.equals(this.outstandingLoanPrincipalBalance)) {
                     this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.subtract(advancePrincipalAmount);
-                    outstandingPrincipalBalanceOfLoan = outstandingPrincipalBalanceOfLoan.subtract(advancePrincipalAmount);
+                    outstandingPrincipalBalanceOfLoan = this.outstandingLoanPrincipalBalance;
+                } else {
+                    outstandingPrincipalBalanceOfLoan = this.outstandingLoanPrincipalBalance.subtract(principalDue);
+                    if (isAdditional) {
+                        outstandingPrincipalBalanceOfLoan = this.outstandingLoanPrincipalBalance.add(principalDue);
+                    }
+                    this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.subtract(principalDue);
+                    if (isAdditional) {
+                        this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(principalDue);
+                    }
+
+                    if (this.outstandingLoanPrincipalBalance.compareTo(BigDecimal.ZERO) > 0) {
+                        this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.subtract(advancePrincipalAmount);
+                        outstandingPrincipalBalanceOfLoan = outstandingPrincipalBalanceOfLoan.subtract(advancePrincipalAmount);
+                    }
                 }
                 final boolean isDownPayment = rs.getBoolean("isDownPayment");
 
