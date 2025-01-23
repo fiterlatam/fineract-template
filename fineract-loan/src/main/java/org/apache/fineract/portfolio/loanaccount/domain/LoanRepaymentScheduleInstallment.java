@@ -990,10 +990,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         // installmentCharge.updatePaidAmountBy(feePortionOfTransaction, Money.zero(currency));
         installmentCharge.getLoanCharge().updatePaidAmountBy(feeChargePaid, this.installmentNumber, Money.zero(currency),
                 isWriteOffTransaction);
-        log.info("installmentCharge paid amount : " + installmentCharge.getAmountPaid());
 
         this.feeChargesPaid = defaultToNullIfZero(this.feeChargesPaid);
-        log.info("feeChargesPaid: " + feeChargesPaid);
         checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
 
         trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, feeChargePaid);

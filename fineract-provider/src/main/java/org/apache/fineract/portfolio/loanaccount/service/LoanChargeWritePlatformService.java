@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Collection;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -42,4 +44,7 @@ public interface LoanChargeWritePlatformService {
     CommandProcessingResult adjustmentForLoanCharge(Long loanId, Long loanChargeId, JsonCommand command);
 
     void applyOverdueChargesForLoan(Long loanId, Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList);
+
+    BigDecimal projectOverdueChargesForLoan(Long loanId, Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList,
+            LocalDate businessDate);
 }

@@ -520,20 +520,6 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         }
         // Collections.sort(chargeOrTransactions);
 
-        log.info(
-                "transaction list after next sort in createSortedChargesAndTransactionsList method in AdvancedPaymentScheduleTransactionProcessor.java");
-        for (ChargeOrTransaction t : chargeOrTransactions) {
-            if (t.getLoanTransaction().isPresent()) {
-                LoanTransaction transaction = t.getLoanTransaction().get();
-                if (transaction.isAccrual() || transaction.isDisbursement()) {
-                    continue;
-                } else {
-                    log.info("transaction id :" + transaction.getId());
-                    log.info("tranaction fee paid" + transaction.getFeeChargesPortion());
-                    log.info("transaction interest paid" + transaction.getInterestPortion());
-                }
-            }
-        }
         return chargeOrTransactions;
     }
 
@@ -654,8 +640,6 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             LoanTransaction loanTransaction, Money transactionAmountUnprocessed,
             LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping, Set<LoanCharge> chargesOfInstallment,
             Balances balances, LoanRepaymentScheduleInstallment.PaymentAction action) {
-        log.info(" 6. inside AdvancedPaymentScheduleTransactionProcessor.java : processPaymentAllocation method :"
-                + paymentAllocationType.name());
         LocalDate transactionDate = loanTransaction.getTransactionDate();
         Money zero = transactionAmountUnprocessed.zero();
         final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
@@ -1091,11 +1075,10 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             List<LoanRepaymentScheduleInstallment> installments, Money transactionAmountUnprocessed,
             List<PaymentAllocationType> paymentAllocationTypes, FutureInstallmentAllocationRule futureInstallmentAllocationRule,
             List<LoanTransactionToRepaymentScheduleMapping> transactionMappings, Set<LoanCharge> charges, Balances balances) {
-        log.info(" 5. inside AdvancedPaymentScheduleTransactionProcessor.java : processAllocationsHorizontally method");
-        log.info(" This is the place where the infinite loop could possibly happen");
         Money paidPortion;
         boolean exit = false;
         do {
+            log.info("processing loan id: " + loanTransaction.getLoan().getId());
             if (transactionAmountUnprocessed.isZero()) {
                 exit = true;
                 continue;
@@ -1138,12 +1121,6 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     }
                 }
             }
-            if (oldestPastDueInstallment == null) {
-                log.info(" 5. inside AdvancedPaymentScheduleTransactionProcessor.java : oldestPastDueInstallment : null");
-            } else {
-                log.info(" 5. inside AdvancedPaymentScheduleTransactionProcessor.java : oldestPastDueInstallment :"
-                        + oldestPastDueInstallment.getInstallmentNumber());
-            }
             LoanRepaymentScheduleInstallment dueInstallment = installments.stream()
                     .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
                     .filter(e -> loanTransaction.isOnOrBetween(e.getFromDate(), e.getDueDate()) || loanTransaction.isOn(e.getDueDate()))
@@ -1183,12 +1160,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     }
                 }
             }
-            if (dueInstallment == null) {
-                log.info(" 5. inside AdvancedPaymentScheduleTransactionProcessor.java : dueInstallment : null");
-            } else {
-                log.info(" 5. inside AdvancedPaymentScheduleTransactionProcessor.java : dueInstallment :"
-                        + dueInstallment.getInstallmentNumber());
-            }
+
             // For having similar logic we are populating installment list even when the future installment
             // allocation rule is NEXT_INSTALLMENT or LAST_INSTALLMENT hence the list has only one element.
             // As per SU+ requirements, advance payment goes to outstanding balance so first immediate advance
@@ -1209,13 +1181,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                         .max(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).stream().toList();
             }
 
-            log.info(" 5. inside AdvancedPaymentScheduleTransactionProcessor.java : inAdvanceInstallments list size :"
-                    + inAdvanceInstallments.size());
             int firstNormalInstallmentNumber = LoanRepaymentScheduleProcessingWrapper.fetchFirstNormalInstallmentNumber(installments);
             boolean stopProcessingAdvanceInstallment = false;
             for (PaymentAllocationType paymentAllocationType : paymentAllocationTypes) {
-                log.info(" 5. inside AdvancedPaymentScheduleTransactionProcessor.java : processing component :"
-                        + paymentAllocationType.name());
                 switch (paymentAllocationType.getDueType()) {
                     case PAST_DUE -> {
                         if (oldestPastDueInstallment != null) {
