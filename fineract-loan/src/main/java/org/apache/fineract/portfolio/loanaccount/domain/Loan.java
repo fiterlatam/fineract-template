@@ -7922,6 +7922,26 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 balances[2].getAmount(), isInterestComponent, null);
         newInstallment.updateInstallmentNumber(newInstallments.size() + 1);
         newInstallments.add(newInstallment);
+
+        // SU-579 an installment which gets replaced by the newly created installment somehow does not gets recreated
+        // because its references
+        // are still present. Below code removes those references for all installments which are deleted
+        for (LoanRepaymentScheduleInstallment inst : this.repaymentScheduleInstallments) {
+            if (inst.getInstallmentNumber() >= newInstallment.getInstallmentNumber()) {
+                inst.getInstallmentCharges().clear();
+                inst.getLoanTransactionToRepaymentScheduleMappings().clear();
+
+                List<LoanTransaction> transactions = this.getLoanTransactions();
+                for (LoanTransaction loanTransaction : transactions) {
+                    if (loanTransaction.isPaymentTransaction() && loanTransaction.hasPaidInstallment(inst.getInstallmentNumber())) {
+                        Set<LoanTransactionToRepaymentScheduleMapping> existingMappings = loanTransaction
+                                .getLoanTransactionToRepaymentScheduleMappings();
+                        newInstallment.getLoanTransactionToRepaymentScheduleMappings().addAll(existingMappings);
+                        existingMappings.forEach(c -> c.setInstallment(newInstallment));
+                    }
+                }
+            }
+        }
         updateLoanScheduleOnForeclosure(newInstallments);
 
         Set<LoanCharge> charges = this.getActiveCharges();

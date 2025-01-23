@@ -1105,6 +1105,15 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return found;
     }
 
+    public boolean hasPaidInstallment(Integer installmentNumber) {
+        boolean found = false;
+        if (this.loanTransactionToRepaymentScheduleMappings != null) {
+            found = this.loanTransactionToRepaymentScheduleMappings.stream()
+                    .anyMatch(i -> i.getLoanRepaymentScheduleInstallment().getInstallmentNumber().equals(installmentNumber));
+        }
+        return found;
+    }
+
     public BigDecimal getAdvancePrincipalAmountPaidForInstallment(Integer installmentNumber) {
         BigDecimal principalPortion = BigDecimal.ZERO;
         if (this.loanTransactionToRepaymentScheduleMappings != null) {
