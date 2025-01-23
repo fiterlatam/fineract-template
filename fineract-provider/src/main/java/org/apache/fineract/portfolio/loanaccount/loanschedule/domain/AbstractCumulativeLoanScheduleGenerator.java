@@ -3185,8 +3185,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                                                 .subtract(inst.getAdvancePrincipalAmount()));
                             }
                         }
-                        // SU-579 When doing repayment which is exactly equal to foreclosure amount and in such a way that previous transaction has paid some
-                        // principal in advance for the installment then in this case we need to find out the advance principal paid for the last installment before
+                        // SU-579 When doing repayment which is exactly equal to foreclosure amount and in such a way
+                        // that previous transaction has paid some
+                        // principal in advance for the installment then in this case we need to find out the advance
+                        // principal paid for the last installment before
                         // the last transaction so that it can be subtracted from the remaining principal amount
                         BigDecimal advancePaid = BigDecimal.ZERO;
                         if (outstandingBalance.isZero()) {
@@ -3194,9 +3196,11 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                             int index = 1;
                             for (LoanTransaction trx : repayments) {
                                 if (index < repayments.size() && trx.hasPaidInstallmentInAdvance(installment.getInstallmentNumber())) {
-                                    Set<LoanTransactionToRepaymentScheduleMapping> mappings = trx.getLoanTransactionToRepaymentScheduleMappings();
+                                    Set<LoanTransactionToRepaymentScheduleMapping> mappings = trx
+                                            .getLoanTransactionToRepaymentScheduleMappings();
                                     for (LoanTransactionToRepaymentScheduleMapping mapping : mappings) {
-                                        if (mapping.getLoanRepaymentScheduleInstallment().getInstallmentNumber() == installment.getInstallmentNumber()) {
+                                        if (mapping.getLoanRepaymentScheduleInstallment().getInstallmentNumber() == installment
+                                                .getInstallmentNumber()) {
                                             advancePaid = advancePaid.add(mapping.getPrincipalPortion());
                                         }
                                     }
