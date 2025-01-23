@@ -118,6 +118,8 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         final String transactionId = loanTransactionDTO.getTransactionId();
         final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
         final BigDecimal disbursalAmount = loanTransactionDTO.getAmount();
+        final BigDecimal principal = loanTransactionDTO.getPrincipal();
+        final BigDecimal disbursementCharges = loanTransactionDTO.getFees();
         final boolean isReversed = loanTransactionDTO.isReversed();
         final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
         final Long fundSourceGlAccountId = loanTransactionDTO.getGlAccountId();

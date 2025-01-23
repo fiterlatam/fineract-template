@@ -363,6 +363,21 @@ public class AccountingProcessorHelper {
                 transactionId, transactionDate, amount, fundSourceGlAccountId);
     }
 
+    public void createAccrualBasedJournalEntriesAndReversalsForLoan(final Office office, final String currencyCode,
+            final Integer accountTypeToBeDebited, final Integer accountTypeToBeCredited, final Long loanProductId, final Long paymentTypeId,
+            final Long loanId, final String transactionId, final LocalDate transactionDate, final BigDecimal amount,
+            final Boolean isReversal, final Long fundSourceGlAccountId, BigDecimal principalPortion, BigDecimal feesPortion) {
+        int accountTypeToDebitId = accountTypeToBeDebited;
+        int accountTypeToCreditId = accountTypeToBeCredited;
+        // reverse debits and credits for reversals
+        if (isReversal) {
+            accountTypeToDebitId = accountTypeToBeCredited;
+            accountTypeToCreditId = accountTypeToBeDebited;
+        }
+        createJournalEntriesForLoan(office, currencyCode, accountTypeToDebitId, accountTypeToCreditId, loanProductId, paymentTypeId, loanId,
+                transactionId, transactionDate, amount, fundSourceGlAccountId);
+    }
+
     /**
      * Convenience method that creates a pair of related Debits and Credits for Accrual Based accounting.
      *
