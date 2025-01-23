@@ -1,0 +1,107 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="1" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM m_code WHERE code_name='Canal transaccional'</sqlCheck>
+        </preConditions>
+    <sql>
+    <![CDATA[
+                INSERT INTO m_code (code_name, is_system_defined) VALUES('Canal transaccional', false);
+
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Canal transaccional'), 'Loan restrictions', 'Restricciones de prestamo', 0, '0', true, false, NULL);
+
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Canal transaccional'), 'Desembolsos', 'Desembolsos', 1, '0', true, false, NULL);
+
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Canal transaccional'), 'Oficina_BCS', '03 - Oficina BCS', 2, '0', true, false, NULL);
+
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Canal transaccional'), 'Corresponsal_Bancario_BCS', '13 - Corresponsal Bancario BCS', 3, '0', true, false, NULL);
+
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Canal transaccional'), 'MiPagoAmigo', '15 - MiPagoAmigo', 4, '0', true, false, NULL);
+
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Canal transaccional'), 'Efecty', '99 - Efecty', 5, '0', true, false, NULL);
+
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Canal transaccional'), 'Condonacion', '100 - Condonación', 6, '0', true, false, NULL);
+
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Canal transaccional'), 'Recaudo', 'Recaudo', 7, '0', true, false, NULL);
+
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Canal transaccional'), 'Bemovil', '97 - Bemovil', 8, '0', true, false, NULL);
+
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Canal transaccional'), 'Refacil', '98 - Refacil', 9, '0', true, false, NULL);
+
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Canal transaccional'), 'Reestructurado', '101 - Reestructurado', 10, '0', true, false, NULL);
+
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Canal transaccional'), 'Retanqueo', '102 - Retanqueo', 11, '0', true, false, NULL);
+
+                INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory, parent_id)
+                VALUES((SELECT id FROM m_code WHERE code_name='Canal transaccional'), 'Pago_Aseguradora', '103 - Pago Aseguradora', 12, '0', true, false, NULL);
+            ]]>
+    </sql>
+    </changeSet>
+
+
+    <changeSet id="2" author="fineract" >
+        <createTable tableName="Detalles transacción alianza">
+            <column name="store" type="text" remarks="Tienda">
+                <constraints nullable="true"/>
+            </column>
+            <column name="sticker" type="text" remarks="No Nota Pedido">
+                <constraints nullable="true"/>
+            </column>
+            <column name="value" type="text" remarks="Valor Compra">
+                <constraints nullable="true"/>
+            </column>
+            <column name="commission_value" type="text" remarks="Valor Comisión">
+                <constraints nullable="true"/>
+            </column>
+            <column name="commission_percentage" type="text" remarks="% Comisión">
+                <constraints nullable="true"/>
+            </column>
+            <column name="tax_commission" type="text" remarks="IVA Comision">
+                <constraints nullable="true"/>
+            </column>
+            <column name="providerOrderId" type="text" remarks="No Orden">
+                <constraints nullable="true"/>
+            </column>
+            <column name="loan_transaction_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP" remarks="Creado en">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP" remarks="Actualizado en">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Add foreign key constraint -->
+        <addForeignKeyConstraint baseTableName="Detalles transacción alianza"
+                                 baseColumnNames="loan_transaction_id"
+                                 constraintName="FK__transacciones_alianzas"
+                                 referencedTableName="m_loan_transaction"
+                                 referencedColumnNames="id"/>
+        <!-- Register the table in x_registered_table -->
+        <insert tableName="x_registered_table">
+            <column name="registered_table_name" value="detalles_de_la_transaccion"/>
+            <column name="application_table_name" value="m_loan_transaction"/>
+            <column name="category" value="100"/>
+        </insert>
+    </changeSet>
+
+
+
+
+</databaseChangeLog>
