@@ -60,7 +60,8 @@ public class ClientAdditionalFieldsMapper implements RowMapper<ClientAdditionalF
         final String nit = rs.getString("nit");
         final String cedula = rs.getString("cedula");
         final BigDecimal cupo = rs.getBigDecimal("cupo");
-        final BigDecimal otherLoansCupo = rs.getBigDecimal("otherLoansCupo");
+        final BigDecimal otherLoansCupoValue = rs.getBigDecimal("otherLoansCupo");
+        final BigDecimal otherLoansCupo = otherLoansCupoValue != null ? otherLoansCupoValue : BigDecimal.ZERO;
         final int statusInt = rs.getInt("status");
         final Long blockingReasonId = JdbcSupport.getLong(rs, "blockingReasonId");
         final BigDecimal totalOutstandingPrincipalAmount = rs.getBigDecimal("totalOutstandingPrincipalAmount");
