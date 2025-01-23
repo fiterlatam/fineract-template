@@ -372,5 +372,6 @@
     <include file="parts/202501202000001200_EA_147_vw_report_client_general.xml" relativeToChangelogFile="true" />
     <include file="parts/202501202000001300_EA_181_vw_report_loan_general.xml" relativeToChangelogFile="true" />
     <include file="parts/202501202000001400_EA_181_report_loantgeneralreport.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501222000001000_EA_165_webhook_disbursementguarantee.xml" relativeToChangelogFile="true" />
 
 </databaseChangeLog>
