@@ -20,10 +20,15 @@ package org.apache.fineract.organisation.monetary.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import java.io.Serial;
+import java.io.Serializable;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 
 @Embeddable
-public class MonetaryCurrency {
+public class MonetaryCurrency implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -2874544363760222417L;
 
     @Column(name = "currency_code", length = 3, nullable = false)
     private String code;

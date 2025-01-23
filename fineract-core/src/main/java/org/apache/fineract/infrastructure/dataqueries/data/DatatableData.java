@@ -37,6 +37,7 @@ public final class DatatableData implements Serializable {
     @SuppressWarnings("unused")
     @Setter
     private List<ResultsetColumnHeaderData> columnHeaderData;
+
     @Setter
     @Getter
     private transient GenericResultsetData genericResultSet;

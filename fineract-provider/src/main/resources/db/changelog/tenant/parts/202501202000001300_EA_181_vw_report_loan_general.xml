@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="1" author="fineract">
+        <sql>
+            <![CDATA[
+
+                DROP VIEW IF EXISTS vw_report_loan_general;
+
+                CREATE OR REPLACE VIEW vw_report_loan_general AS
+                SELECT
+                    -- m_loan columns
+                    ml.*,
+
+                    -- Informacion Adicional
+                    ia.codigo_promotor AS "ia.codigo_promotor",
+                    ia.nombre_aliado AS "ia.nombre_aliado",
+                    ia.numero_identificacion_aliado AS "ia.numero_identificacion_aliado",
+                    ia.ciudad_aliado AS "ia.ciudad_aliado",
+                    ia.verificacion_riesgo AS "ia.verificacion_riesgo",
+                    ia.tipo_identificacion AS "ia.tipo_identificacion",
+                    ia.numero_identificacion AS "ia.numero_identificacion",
+                    ia.dias_mora_ini_mes AS "ia.dias_mora_ini_mes",
+                    ia.fecha_registro_dias_mora_ini_mes AS "ia.fecha_registro_dias_mora_ini_mes",
+                    ia.validacion_manual AS "ia.validacion_manual",
+                    ia.fecha_primer_uso AS "ia.fecha_primer_uso",
+                    ia.codigo_promotor_original AS "ia.codigo_promotor_original",
+                    ia.nombre_promotor AS "ia.nombre_promotor",
+                    ia.ciudad_cliente AS "ia.ciudad_cliente",
+                    ia.notificacion_bienvenida AS "ia.notificacion_bienvenida",
+                    ia.departamento_cliente AS "ia.departamento_cliente",
+                    ia.monto_disponible AS "ia.monto_disponible",
+                    ia.fullname_referer AS "ia.fullname_referer",
+                    ia.modelo_externo AS "ia.modelo_externo",
+                    ia.created_at AS "ia.created_at",
+                    ia.updated_at AS "ia.updated_at",
+
+                    -- Informacion Bancaria
+                    ib.entidad_financiera AS "ib.entidad_financiera",
+                    ib.tipo_de_cuenta AS "ib.tipo_de_cuenta",
+                    ib.numero_de_cuenta AS "ib.numero_de_cuenta",
+                    ib.created_at AS "ib.created_at",
+                    ib.updated_at AS "ib.updated_at",
+
+                    -- Informacion Financiera
+                    ifi.ingresos AS "ifi.ingresos",
+                    ifi.activos AS "ifi.activos",
+                    ifi.created_at AS "ifi.created_at",
+                    ifi.updated_at AS "ifi.updated_at",
+
+                    -- Alianzas
+                    al.estado AS "al.estado",
+                    al.valor_real AS "al.valor_real",
+                    al.pendiente_conciliacion AS "al.pendiente_conciliacion",
+                    al.fecha_creacion AS "al.fecha_creacion",
+                    al.valor_real_aprobado AS "al.valor_real_aprobado",
+                    al.store_alliance AS "al.store_alliance",
+                    al.sticker_note AS "al.sticker_note",
+                    al.value_buy AS "al.value_buy",
+                    al.commission_alliance AS "al.commission_alliance",
+                    al.percentage_commission AS "al.percentage_commission",
+                    al.tax_commission_alliance AS "al.tax_commission_alliance",
+                    al.provider_order_id AS "al.provider_order_id",
+                    al.created_at AS "al.created_at",
+                    al.updated_at AS "al.updated_at",
+
+                    -- Estado Cartera
+                    ec."Tipo Bloqueo_cd_Tipo Bloqueo" AS "ec.Tipo Bloqueo_cd_Tipo Bloqueo",
+                    fn_core_codevalue_getdescription(ec."Tipo Bloqueo_cd_Tipo Bloqueo") AS "ec.Tipo Bloqueo_description",
+                    ec.fecha_bloqueo AS "ec.fecha_bloqueo",
+                    ec.reestructurado AS "ec.reestructurado",
+                    ec.fecha_reestructurado AS "ec.fecha_reestructurado",
+                    ec.negociaciones AS "ec.negociaciones",
+                    ec.salvamento AS "ec.salvamento",
+                    ec.obs_salvamento AS "ec.obs_salvamento",
+                    ec."Casa Cobranzas Asignada_cd_Casa Cobranzas Asignada" AS "ec.Casa Cobranzas Asignada_cd_Casa Cobranzas Asignada",
+                    fn_core_codevalue_getdescription(ec."Casa Cobranzas Asignada_cd_Casa Cobranzas Asignada") AS "ec.Cobranzas Asignada",
+                    ec.created_at AS "ec.created_at",
+                    ec.updated_at AS "ec.updated_at",
+
+                    -- Validacion Operacion
+                    vo.correo_validado AS "vo.correo_validado",
+                    vo.no_celular_validado AS "vo.no_celular_validado",
+                    vo.alerta_direccion AS "vo.alerta_direccion",
+                    vo.credito_vigente AS "vo.credito_vigente",
+                    vo.observacion_operaciones AS "vo.observacion_operaciones",
+                    vo."SiNoNoAplica_cd_retanqueo" AS "vo.SiNoNoAplica_cd_retanqueo",
+                    fn_core_codevalue_getdescription(vo."SiNoNoAplica_cd_retanqueo") AS "vo.retanqueo",
+                    vo.fecha_retanqueo AS "vo.fecha_retanqueo",
+                    vo."SiNoNoAplica_cd_Cliente_existe" AS "vo.SiNoNoAplica_cd_Cliente_existe",
+                    fn_core_codevalue_getdescription(vo."SiNoNoAplica_cd_Cliente_existe") AS "vo.Cliente_existe",
+                    vo."Tipo Credito_cd_Tipo Credito" AS "vo.Tipo Credito_cd_Tipo Credito",
+                    fn_core_codevalue_getdescription(vo."Tipo Credito_cd_Tipo Credito") AS "vo.Tipo Credito",
+                    vo.created_at AS "vo.created_at",
+                    vo.updated_at AS "vo.updated_at",
+
+                    -- Visita
+                    vi.req_visita AS "vi.req_visita",
+                    vi."Resultado Visita_cd_Resultado Visita" AS "vi.Resultado Visita_cd_Resultado Visita",
+                    fn_core_codevalue_getdescription(vi."Resultado Visita_cd_Resultado Visita") AS "vi.Resultado Visita",
+                    vi."Canal de Visita_cd_Canal de Visita" AS "vi.Canal de Visita_cd_Canal de Visita",
+                    fn_core_codevalue_getdescription(vi."Canal de Visita_cd_Canal de Visita") AS "vi.Canal de Visita",
+                    vi."Causal Rechazo Visita_cd_Causal Rechazo Visita" AS "vi.Causal Rechazo Visita_cd_Causal Rechazo Visita",
+                    fn_core_codevalue_getdescription(vi."Causal Rechazo Visita_cd_Causal Rechazo Visita") AS "vi.Causal Rechazo Visita",
+                    vi.entrevista_fallida AS "vi.entrevista_fallida",
+                    vi.created_at AS "vi.created_at",
+                    vi.updated_at AS "vi.updated_at",
+
+                    -- Validacion Seguridad
+                    vs."Validacion Seguridad_cd_Validacion Seguridad" AS "vs.Validacion Seguridad_cd_Validacion Seguridad",
+                    fn_core_codevalue_getdescription(vs."Validacion Seguridad_cd_Validacion Seguridad") AS "vs.Validacion Seguridad",
+                    vs."Causal Rechazo Seguridad_cd_Causal Rechazo Seguridad" AS "vs.Causal Rechazo Seguridad_cd_Causal Rechazo Seguridad",
+                    fn_core_codevalue_getdescription(vs."Causal Rechazo Seguridad_cd_Causal Rechazo Seguridad") AS "vs.Causal Rechazo Seguridad",
+                    vs.seguridad_fallida AS "vs.seguridad_fallida",
+                    vs.observacion_seguridad AS "vs.observacion_seguridad",
+                    vs.created_at AS "vs.created_at",
+                    vs.updated_at AS "vs.updated_at",
+
+                    -- Detalle garantia
+                    dg.loan_id AS "dg.loan_id",
+                    dg.aplica_garantia AS "dg.aplica_garantia",
+                    dg."Tipo Garantía_cd_Tipo Garantía" AS "dg.Tipo Garantía_cd_Tipo Garantía",
+                    fn_core_codevalue_getdescription(dg."Tipo Garantía_cd_Tipo Garantía") AS "dg.Tipo Garantía",
+                    dg."Tipo Producto_cd_Tipo Producto" AS "dg.Tipo Producto_cd_Tipo Producto",
+                    fn_core_codevalue_getdescription(dg."Tipo Producto_cd_Tipo Producto") AS "dg.Tipo Producto",
+                    dg.porc_comision AS "dg.porc_comision",
+                    dg.porc_cobertura AS "dg.porc_cobertura",
+                    dg.numero_garantia AS "dg.numero_garantia",
+                    dg.fecha_registro_garantia AS "dg.fecha_registro_garantia",
+                    dg.fecha_reserva AS "dg.fecha_reserva",
+                    dg.fecha_cancelacion AS "dg.fecha_cancelacion",
+                    dg."Estado Garantía_cd_Estado Garantía" AS "dg.Estado Garantía_cd_Estado Garantía",
+                    fn_core_codevalue_getdescription(dg."Estado Garantía_cd_Estado Garantía") AS "dg.Estado Garantía",
+                    dg.obs_estado_garantia AS "dg.obs_estado_garantia",
+                    dg.numero_pagare AS "dg.numero_pagare",
+                    dg.created_at AS "dg.created_at",
+                    dg.updated_at AS "dg.updated_at"
+                FROM
+                    m_loan ml
+                LEFT JOIN "Informacion Adicional" ia ON ml.id = ia.loan_id
+                LEFT JOIN "Informacion Bancaria" ib ON ml.id = ib.loan_id
+                LEFT JOIN "Informacion Financiera" ifi ON ml.id = ifi.loan_id
+                LEFT JOIN "Alianzas" al ON ml.id = al.loan_id
+                LEFT JOIN "Estado Cartera" ec ON ml.id = ec.loan_id
+                LEFT JOIN "Validacion Operacion" vo ON ml.id = vo.loan_id
+                LEFT JOIN "Visita" vi ON ml.id = vi.loan_id
+                LEFT JOIN "Validacion Seguridad" vs ON ml.id = vs.loan_id
+                LEFT JOIN "Detalle garanta" dg ON ml.id = dg.loan_id;
+
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

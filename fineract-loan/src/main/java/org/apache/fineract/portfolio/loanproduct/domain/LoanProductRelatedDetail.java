@@ -23,6 +23,8 @@ import jakarta.persistence.Embeddable;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -48,7 +50,10 @@ import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
  * a {@link Loan}.
  */
 @Embeddable
-public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentScheduleRelatedDetail {
+public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentScheduleRelatedDetail, Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -2874544363760222417L;
 
     @Embedded
     private MonetaryCurrency currency;

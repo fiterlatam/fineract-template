@@ -367,4 +367,12 @@
     <include file="parts/202501021143000003_EA-195_create_transaction_details_table.xml" relativeToChangelogFile="true" />
     <include file="parts/202501112000001800_EA_157_create_datatable_validacionseguridad.xml" relativeToChangelogFile="true" />
     <include file="parts/202501112000001900_EA_158_create_datatable_detallegarantia.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501202000001000_EA_147_fn_core_codevalue_getdescription.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501202000001100_EA_147_report_clientgeneralreport.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501202000001200_EA_147_vw_report_client_general.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501202000001300_EA_181_vw_report_loan_general.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501202000001400_EA_181_report_loantgeneralreport.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501222000001000_EA_165_webhook_disbursementguarantee.xml" relativeToChangelogFile="true" />
+    <include file="parts/2025012111428000001_bug_EA_180_EA_145.xml" relativeToChangelogFile="true" />
+
 </databaseChangeLog>

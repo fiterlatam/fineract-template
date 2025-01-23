@@ -781,7 +781,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         if (appliedOnDate != null && expectedDisbursementDate != null && expectedDisbursementDate.isBefore(appliedOnDate)) {
             return;
         }
-
         switch (interestPeriodFrequencyType) {
             case MONTHS -> {
                 final BigDecimal monthlyNominalRate = maximumCreditRateConfigurationData.getMonthlyNominalRate();
