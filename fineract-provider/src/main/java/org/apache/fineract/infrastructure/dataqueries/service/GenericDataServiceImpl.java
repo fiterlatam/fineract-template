@@ -346,6 +346,7 @@ public class GenericDataServiceImpl implements GenericDataService {
         try {
             return databaseIndependentQueryService.getTableIndexes(dataSource, tableName);
         } catch (IllegalArgumentException e) {
+            e.printStackTrace();
             throw new DatatableNotFoundException(tableName);
         }
     }

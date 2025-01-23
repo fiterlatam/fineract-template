@@ -54,7 +54,7 @@
 
 
     <changeSet id="2" author="fineract" >
-        <createTable tableName="Detalles transacción alianza">
+        <createTable tableName="detalles_transacciones_alianzas" remarks="Detalles transacción alianza">
             <column name="store" type="text" remarks="Tienda">
                 <constraints nullable="true"/>
             </column>
@@ -88,20 +88,33 @@
         </createTable>
 
         <!-- Add foreign key constraint -->
-        <addForeignKeyConstraint baseTableName="Detalles transacción alianza"
+        <addForeignKeyConstraint baseTableName="detalles_transacciones_alianzas"
                                  baseColumnNames="loan_transaction_id"
                                  constraintName="FK__transacciones_alianzas"
                                  referencedTableName="m_loan_transaction"
                                  referencedColumnNames="id"/>
         <!-- Register the table in x_registered_table -->
         <insert tableName="x_registered_table">
-            <column name="registered_table_name" value="detalles_de_la_transaccion"/>
+            <column name="registered_table_name" value="detalles_transacciones_alianzas"/>
             <column name="application_table_name" value="m_loan_transaction"/>
             <column name="category" value="100"/>
         </insert>
+        <!-- Add indexes for better performance -->
+        <createIndex tableName="detalles_transacciones_alianzas" indexName="idx_trans_alianzas_transaction_id">
+            <column name="loan_transaction_id"/>
+        </createIndex>
     </changeSet>
 
-
+    <!-- Rollback -->
+    <changeSet id="3" author="fineract">
+        <comment>Add rollback SQL in case we need to undo these changes</comment>
+        <rollback>
+            <dropTable tableName="detalles_transacciones_alianzas"/>
+            <delete tableName="x_registered_table">
+                <where>registered_table_name='detalles_transacciones_alianzas'</where>
+            </delete>
+        </rollback>
+    </changeSet>
 
 
 </databaseChangeLog>

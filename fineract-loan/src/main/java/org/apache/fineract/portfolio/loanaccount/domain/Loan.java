@@ -375,7 +375,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     private List<LoanTransaction> loanTransactions = new ArrayList<>();
 
     @Embedded
-    private transient LoanSummary summary;
+    private LoanSummary summary;
 
     @Transient
     private boolean accountNumberRequiresAutoGeneration = false;
