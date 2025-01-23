@@ -37,7 +37,7 @@ SELECT pg_terminate_backend(blocking_id);
 
 truncate table m_client cascade;
 
-truncate table campos_cliente_empresas ;
+truncate table campos_cliente_empresas;
 
 truncate table custom.c_client_ally_point_of_sales cascade;
 
@@ -124,6 +124,9 @@ select * from cte where min_inst > 1
 
 SELECT * FROM tmp_creditos_migrar WHERE external_id IN (SELECT external_id FROM tmp_creditos_migrar where cuo_nrocuota = 1 GROUP BY external_id HAVING COUNT(external_id) > 1)
 ORDER BY external_id
+
+-- Check for mismatch in interest rates
+select * from tmp_creditos_migrar tcm where tcm.cuo_porinteres != tcm.cpc_porcentaje_interes
 
 
 ---------------------------------------------------------------------------------------------
@@ -319,7 +322,7 @@ INSERT INTO m_charge
 VALUES('Aval Migrar', 'COP', 1, 8, 286, 0, 500.000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, false, 0, 0, 0, false, NULL, NULL, NULL, 1, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL);
 INSERT INTO m_charge
 ("name", currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, is_free_withdrawal, free_withdrawal_charge_frequency, restart_frequency, restart_frequency_enum, is_payment_type, payment_type_id, income_or_liability_account_id, tax_group_id, grace_on_charge_period_enum, grace_on_charge_period_amount, parent_charge_id, interest_rate_id, insurance_name, insurance_charged_as, insurance_company, insurer_name, insurance_code, insurance_plan, base_value, vat_value, total_value, deadline, is_get_percentage_from_table, days_in_arrears)
-VALUES('iva aval migrar', 'COP', 1, 8, 342, 0, 19.000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, false, NULL, NULL, NULL, false, NULL, NULL, NULL, 1, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL);
+VALUES('iva aval migrar', 'COP', 1, 8, 342, 0, 19.000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, false, NULL, NULL, NULL, false, NULL, NULL, NULL, 1, 0, (select id from m_charge where "name" = 'Aval Migrar'), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL);
 
 ---- Update client activation and submission date to before 2022
 update m_client set activation_date = '2021-01-01', submittedon_date = '2021-01-01', office_joining_date = '2021-01-01';
@@ -343,6 +346,14 @@ ON tmp_creditos_migrar(cli_nroid);
 
  CREATE INDEX idx_cedula_campos_cliente_persona
 ON campos_cliente_persona("Cedula");
+
+-- Backup and update the maximum legal rate data --
+create table m_maximum_credit_rate_configuration_bk as select * from m_maximum_credit_rate_configuration;
+
+select * from m_maximum_credit_rate_configuration_bk;
+
+update m_maximum_credit_rate_configuration
+set annual_nominal_rate = 50, monthly_nominal_rate = 10, daily_nominal_rate = 5, overdue_interest_rate = 32.5;
 
 ----------------------
 -- On uat 15k clients already have been assigned to office 2. So no need to execute this query on uat
@@ -665,3 +676,21 @@ from
 	group by loan_id
 ) txn
 where ml.id = txn.loan_id
+
+
+-- Validate Aval Difference after Migration
+select count(*) from (
+select ml.id loan_id, ml.external_id, mlrs.installment, mlrs.fee_charges_amount, tcm.cpc_monto_aval, abs(tcm.cpc_monto_aval - mlrs.fee_charges_amount) diff from m_loan ml
+join m_loan_repayment_schedule mlrs on ml.id = mlrs.loan_id
+join tmp_creditos_migrar tcm on ml.external_id = tcm.external_id and tcm.cuo_nrocuota = mlrs.installment
+where mlrs.fee_charges_amount != tcm.cpc_monto_aval
+and abs(tcm.cpc_monto_aval - mlrs.fee_charges_amount) > 1
+order by ml.external_id, mlrs.installment
+) x;
+
+--- Restore max legal rate data ---
+delete from m_maximum_credit_rate_configuration;
+
+insert into m_maximum_credit_rate_configuration select * from m_maximum_credit_rate_configuration_bk;
+
+drop table m_maximum_credit_rate_configuration_bk;
