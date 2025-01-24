@@ -22,7 +22,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
-    <changeSet author="fineract" id="1">
+    <changeSet author="fineract" id="2">
         <update tableName="stretchy_report">
             <column name="report_sql">
                 <![CDATA[
@@ -44,8 +44,8 @@
             join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
             join m_loan_transaction mlt on mlt.loan_id = ml.id
             join m_client mc on mc.id = ml.client_id
-            join m_collection_house_history mch on mch.client_account_number = mc.account_no
-            join m_collection_house_configuration mchc on mchc.collection_code = mch.collection_house_code
+            left join m_collection_house_history mch on mch.client_account_number = mc.account_no
+            left join m_collection_house_configuration mchc on mchc.collection_code = mch.collection_house_code
             LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
             LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
             join m_loan_charge mlc on mlc.loan_id = ml.id and mlc.is_penalty = false and mlc.charge_calculation_enum = 1009
