@@ -2018,6 +2018,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         List<OverdueLoanScheduleData> installments;
         if (backdatePenalties) {
             sqlBuilder.append(" limit ").append(pageSize);
+            sqlBuilder.append(" order by ml.id");
             installments = this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, minLoanId);
         } else {
             // Only apply for duedate = yesterday (so that we don't apply
