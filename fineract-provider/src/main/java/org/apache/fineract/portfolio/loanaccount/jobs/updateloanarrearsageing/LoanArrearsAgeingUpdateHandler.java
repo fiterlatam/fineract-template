@@ -78,22 +78,24 @@ public class LoanArrearsAgeingUpdateHandler {
     }
 
     public void updateLoanArrearsAgeingDetailsForAllLoans() {
+        log.info("Starting Update Loan Arrears Ageing Job");
         truncateLoanArrearsAgingDetails();
         String insertSQLStatement = buildQueryForInsertAgeingDetails(Boolean.TRUE);
         List<String> insertStatements = updateLoanArrearsAgeingDetailsWithOriginalScheduleForAllLoans();
         insertStatements.add(0, insertSQLStatement);
         final int[] records = this.jdbcTemplate.batchUpdate(insertStatements.toArray(new String[0]));
-        if (log.isDebugEnabled()) {
+        if (log.isInfoEnabled()) {
             int result = 0;
             for (int record : records) {
                 result += record;
             }
-            log.debug("Records affected by updateLoanArrearsAgeingDetails: {}", result);
+            log.info("Records affected by updateLoanArrearsAgeingDetails: {}", result);
         }
 
         handleBlockingAfterAreasAging();
         handleUnBlockingAfterArrearsAging();
         handleBlockingReasonCreadit();
+        log.info("Update Loan Arrears Ageing Job is successfully completed");
     }
 
     public void updateLoanArrearsAgeingDetails(List<Long> loanIdsForUpdate) {
