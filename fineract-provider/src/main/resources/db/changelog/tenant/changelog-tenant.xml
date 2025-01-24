@@ -374,5 +374,6 @@
     <include file="parts/202501202000001400_EA_181_report_loantgeneralreport.xml" relativeToChangelogFile="true" />
     <include file="parts/202501222000001000_EA_165_webhook_disbursementguarantee.xml" relativeToChangelogFile="true" />
     <include file="parts/2025012111428000001_bug_EA_180_EA_145.xml" relativeToChangelogFile="true" />
+    <include file="parts/20231101123000_EA-196-create_transacciones_alianzas_table.xml" relativeToChangelogFile="true" />
 
 </databaseChangeLog>

@@ -20,6 +20,8 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
@@ -35,8 +37,10 @@ import org.apache.fineract.organisation.monetary.domain.Money;
  */
 @Embeddable
 @Getter
-public class LoanSummary {
+public class LoanSummary implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = -2874544363760222417L;
     // derived totals fields
     @Column(name = "principal_disbursed_derived", scale = 6, precision = 19)
     private BigDecimal totalPrincipalDisbursed;
