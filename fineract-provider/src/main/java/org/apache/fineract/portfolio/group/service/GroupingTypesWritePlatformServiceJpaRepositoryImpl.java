@@ -1116,7 +1116,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                 meetingEndTime, meetingEndTime);
 
         if (groupIds.size() > 0) {
-            GroupGeneralData existingGroup = this.groupReadPlatformService.retrieveOne(groupId);
+            GroupGeneralData existingGroup = this.groupReadPlatformService.retrieveOne(groupIds.get(0));
 
             throw new GroupMeetingTimeCollisionException(existingGroup.getName(), existingGroup.getId(), meetingStartTime, meetingEndTime);
         }
@@ -1126,6 +1126,10 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
         group.updateMeetingEnd(newCenter.getMeetingEnd());
         group.updateOffice(newCenter.getOffice());
         this.groupRepository.saveAndFlush(group);
+        //update office of the members of the group.
+        this.jdbcTemplate.update("UPDATE m_client mc JOIN m_group_client mgc ON mgc.client_id = mc.id " +
+                "JOIN m_group mg ON mg.id = mgc.group_id SET mc.office_id = ? WHERE mg.id = ?; ", newCenter.getOffice().getId(), groupId);
+
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withOfficeId(newCenter.officeId()) //

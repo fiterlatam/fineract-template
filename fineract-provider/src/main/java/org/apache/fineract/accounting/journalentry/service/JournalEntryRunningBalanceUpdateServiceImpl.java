@@ -22,9 +22,11 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.accounting.common.AccountingEnumerations;
@@ -33,6 +35,7 @@ import org.apache.fineract.accounting.journalentry.api.JournalEntryJsonInputPara
 import org.apache.fineract.accounting.journalentry.data.JournalEntryData;
 import org.apache.fineract.accounting.journalentry.data.JournalEntryDataValidator;
 import org.apache.fineract.accounting.journalentry.domain.JournalEntryType;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -63,6 +66,7 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
     private final DatabaseSpecificSQLGenerator sqlGenerator;
 
     private final GLJournalEntryMapper entryMapper = new GLJournalEntryMapper();
+    private final ConfigurationDomainService configurationDomainService;
 
     @Override
     @CronTarget(jobName = JobName.ACCOUNTING_RUNNING_BALANCE_UPDATE)
@@ -71,7 +75,7 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
                 + "where je.is_running_balance_calculated=false ";
         try {
             LocalDate entityDate = this.jdbcTemplate.queryForObject(dateFinder, LocalDate.class);
-            updateOrganizationRunningBalance(entityDate);
+            if (entityDate!=null) updateOrganizationRunningBalance(entityDate);
         } catch (EmptyResultDataAccessException e) {
             log.debug("No results found for updation of running balance ");
         }
@@ -152,31 +156,44 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
                     (BigDecimal) entry.get("runningBalance"));
         });
 
-        List<JournalEntryData> entryDatas = jdbcTemplate.query(entryMapper.organizationRunningBalanceSchema(), entryMapper, entityDate);
-        if (entryDatas.size() > 0) {
-            // run a batch update of 1000 SQL statements at a time
-            final Integer batchUpdateSize = 1000;
+        // run a batch update of 1000 SQL statements at a time
+        final Integer batchUpdateSize = 1000;
 
-            // Batch update using JdbcTemplate with PreparedStatement
-            jdbcTemplate.batchUpdate(
-                    "UPDATE acc_gl_journal_entry SET is_running_balance_calculated=true, "
-                            + "organization_running_balance = ?, office_running_balance = ? WHERE id = ?",
-                    entryDatas, batchUpdateSize, (ps, entryData) -> {
-                        // Use computeIfAbsent to retrieve or initialize the officeRunningBalanceMap
-                        Map<Long, BigDecimal> officeRunningBalanceMap = officesRunningBalance.computeIfAbsent(entryData.getOfficeId(),
-                                k -> new HashMap<>());
+        // Batch update using JdbcTemplate with PreparedStatement
+        long numberOfDaysToKeepRunningBalance = configurationDomainService.getNumberOfDaysToKeepRunningBalance();
+        LocalDate endDate = entityDate.plusDays(numberOfDaysToKeepRunningBalance);
+        String sqlString = numberOfDaysToKeepRunningBalance > 0 ? entryMapper.organizationRunningBalanceSchemaParts() : entryMapper.organizationRunningBalanceSchema();
+        try (Stream<JournalEntryData> entryStream = jdbcTemplate.queryForStream(
+                sqlString, entryMapper, entityDate, endDate)) {
+                List<JournalEntryData> batch = new ArrayList<>();
+                entryStream.forEach(entry -> {
+                    batch.add(entry);
+                    if (batch.size() == batchUpdateSize) {
+                        processBatch(batch, jdbcTemplate, officesRunningBalance, runningBalanceMap);
+                        batch.clear();
+                    }
+                });
 
-                        // Calculate running balances
-                        BigDecimal officeRunningBalance = calculateRunningBalance(entryData, officeRunningBalanceMap);
-                        BigDecimal runningBalance = calculateRunningBalance(entryData, runningBalanceMap);
-
-                        // Set parameters for PreparedStatement
-                        ps.setBigDecimal(1, runningBalance);
-                        ps.setBigDecimal(2, officeRunningBalance);
-                        ps.setLong(3, entryData.getId());
-                    });
+                if (!batch.isEmpty()) {
+                    processBatch(batch, jdbcTemplate, officesRunningBalance, runningBalanceMap);
+                }
         }
+    }
 
+    private void processBatch(List<JournalEntryData> batch, JdbcTemplate jdbcTemplate,
+            Map<Long, Map<Long, BigDecimal>> officesRunningBalance, Map<Long, BigDecimal> runningBalanceMap) {
+        jdbcTemplate.batchUpdate("UPDATE acc_gl_journal_entry SET is_running_balance_calculated=true, "
+                + "organization_running_balance = ?, office_running_balance = ? WHERE id = ?", batch, 1000, (ps, entryData) -> {
+                    Map<Long, BigDecimal> officeRunningBalanceMap = officesRunningBalance.computeIfAbsent(entryData.getOfficeId(),
+                            k -> new HashMap<>());
+
+                    BigDecimal officeRunningBalance = calculateRunningBalance(entryData, officeRunningBalanceMap);
+                    BigDecimal runningBalance = calculateRunningBalance(entryData, runningBalanceMap);
+
+                    ps.setBigDecimal(1, runningBalance);
+                    ps.setBigDecimal(2, officeRunningBalance);
+                    ps.setLong(3, entryData.getId());
+                });
     }
 
     private void updateRunningBalance(Long officeId, LocalDate entityDate) {
@@ -237,6 +254,13 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
                     + "glAccount.classification_enum as classification,je.office_id as officeId  "
                     + "from acc_gl_journal_entry je  JOIN acc_gl_account glAccount on je.account_id = glAccount.id "
                     + "WHERE je.entry_date >= ? order by je.entry_date,je.id";
+        }
+
+        public String organizationRunningBalanceSchemaParts() {
+            return "select je.id as id,je.account_id as glAccountId," + "je.type_enum as entryType,je.amount as amount, "
+                    + "glAccount.classification_enum as classification,je.office_id as officeId  "
+                    + "from acc_gl_journal_entry je  JOIN acc_gl_account glAccount on je.account_id = glAccount.id "
+                    + "WHERE je.entry_date >= ? and je.entry_date < ? order by je.entry_date,je.id";
         }
 
         @Override
