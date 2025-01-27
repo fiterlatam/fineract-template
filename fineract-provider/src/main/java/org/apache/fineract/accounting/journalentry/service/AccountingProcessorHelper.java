@@ -375,7 +375,7 @@ public class AccountingProcessorHelper {
             accountTypeToCreditId = accountTypeToBeDebited;
         }
         createJournalEntriesForLoan(office, currencyCode, accountTypeToDebitId, accountTypeToCreditId, loanProductId, paymentTypeId, loanId,
-                transactionId, transactionDate, amount, fundSourceGlAccountId);
+                transactionId, transactionDate, amount, fundSourceGlAccountId, principalPortion, feesPortion);
     }
 
     /**
@@ -532,6 +532,21 @@ public class AccountingProcessorHelper {
                 transactionId, transactionDate, amount, fundSourceGlAccountId);
     }
 
+    public void createCashBasedJournalEntriesAndReversalsForLoan(final Office office, final String currencyCode,
+            final Integer accountTypeToBeDebited, final Integer accountTypeToBeCredited, final Long loanProductId, final Long paymentTypeId,
+            final Long loanId, final String transactionId, final LocalDate transactionDate, final BigDecimal amount,
+            final Boolean isReversal, final Long fundSourceGlAccountId, BigDecimal principalPortion, BigDecimal chargesPortion) {
+        int accountTypeToDebitId = accountTypeToBeDebited;
+        int accountTypeToCreditId = accountTypeToBeCredited;
+        // reverse debits and credits for reversals
+        if (isReversal) {
+            accountTypeToDebitId = accountTypeToBeCredited;
+            accountTypeToCreditId = accountTypeToBeDebited;
+        }
+        createJournalEntriesForLoan(office, currencyCode, accountTypeToDebitId, accountTypeToCreditId, loanProductId, paymentTypeId, loanId,
+                transactionId, transactionDate, amount, fundSourceGlAccountId, principalPortion, chargesPortion);
+    }
+
     public void createCreditJournalEntryOrReversalForLoan(final Office office, final String currencyCode,
             final CashAccountsForLoan accountMappingType, final Long loanProductId, final Long paymentTypeId, final Long loanId,
             final String transactionId, final LocalDate transactionDate, final BigDecimal amount, final Boolean isReversal) {
@@ -590,6 +605,33 @@ public class AccountingProcessorHelper {
         }
         createDebitJournalEntryForLoan(office, currencyCode, debitAccount, loanId, transactionId, transactionDate, amount);
         createCreditJournalEntryForLoan(office, currencyCode, creditAccount, loanId, transactionId, transactionDate, amount);
+    }
+
+    private void createJournalEntriesForLoan(final Office office, final String currencyCode, final int accountTypeToDebitId,
+            final int accountTypeToCreditId, final Long loanProductId, final Long paymentTypeId, final Long loanId,
+            final String transactionId, final LocalDate transactionDate, final BigDecimal amount, final Long fundSourceGlAccountId,
+            BigDecimal principalPortion, BigDecimal chargesPortion) {
+        GLAccount debitAccount = getLinkedGLAccountForLoanProduct(loanProductId, accountTypeToDebitId, paymentTypeId);
+        if (fundSourceGlAccountId != null
+                && List.of(AccrualAccountsForLoan.FUND_SOURCE.getValue(), FinancialActivity.ASSET_TRANSFER.getValue())
+                        .contains(accountTypeToDebitId)) {
+            debitAccount = this.accountRepositoryWrapper.findOneWithNotFoundDetection(fundSourceGlAccountId);
+        }
+        GLAccount creditAccount = getLinkedGLAccountForLoanProduct(loanProductId, accountTypeToCreditId, paymentTypeId);
+        if (fundSourceGlAccountId != null
+                && List.of(AccrualAccountsForLoan.FUND_SOURCE.getValue(), FinancialActivity.ASSET_TRANSFER.getValue())
+                        .contains(accountTypeToCreditId)) {
+            creditAccount = this.accountRepositoryWrapper.findOneWithNotFoundDetection(fundSourceGlAccountId);
+        }
+        createDebitJournalEntryForLoan(office, currencyCode, debitAccount, loanId, transactionId, transactionDate, amount);
+        if (chargesPortion.compareTo(BigDecimal.ZERO) <= 0) {
+            createCreditJournalEntryForLoan(office, currencyCode, creditAccount, loanId, transactionId, transactionDate, amount);
+        } else {
+            GLAccount feesReceivableGL = getLinkedGLAccountForLoanProduct(loanProductId, AccrualAccountsForLoan.FEES_RECEIVABLE.getValue(),
+                    paymentTypeId);
+            createCreditJournalEntryForLoan(office, currencyCode, creditAccount, loanId, transactionId, transactionDate, principalPortion);
+            createCreditJournalEntryForLoan(office, currencyCode, feesReceivableGL, loanId, transactionId, transactionDate, chargesPortion);
+        }
     }
 
     private void createJournalEntriesForSavings(final Office office, final String currencyCode, final int accountTypeToDebitId,

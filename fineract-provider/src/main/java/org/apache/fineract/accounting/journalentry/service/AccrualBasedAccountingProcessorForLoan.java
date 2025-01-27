@@ -136,7 +136,8 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         } else {
             this.helper.createAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
                     AccrualAccountsForLoan.LOAN_PORTFOLIO.getValue(), AccrualAccountsForLoan.FUND_SOURCE.getValue(), loanProductId,
-                    paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversed, fundSourceGlAccountId);
+                    paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversed, fundSourceGlAccountId, principal,
+                    disbursementCharges);
         }
 
     }

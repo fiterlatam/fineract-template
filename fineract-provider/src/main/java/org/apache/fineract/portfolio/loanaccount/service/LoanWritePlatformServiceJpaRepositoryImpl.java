@@ -551,7 +551,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 LoanTransaction disbursementTransaction = LoanTransaction.disbursement(loan.getOffice(), amountToDisburse, paymentDetail,
                         actualDisbursementDate, txnExternalId);
                 disbursementTransaction.updateLoan(loan);
-                disbursementTransaction.updateComponents(amountToDisburse.minus(totalDisbursementCharges),Money.of(currency,BigDecimal.ZERO),Money.of(currency,totalDisbursementCharges),Money.of(currency,BigDecimal.ZERO));
+                disbursementTransaction.updateComponents(amountToDisburse.minus(totalDisbursementCharges),
+                        Money.of(currency, BigDecimal.ZERO), Money.of(currency, totalDisbursementCharges),
+                        Money.of(currency, BigDecimal.ZERO));
                 loan.addLoanTransaction(disbursementTransaction);
             }
 
@@ -596,8 +598,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
             postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
         }
-
-
 
         final Locale locale = command.extractLocale();
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(locale);
