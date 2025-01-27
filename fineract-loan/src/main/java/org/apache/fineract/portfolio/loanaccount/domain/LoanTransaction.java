@@ -809,6 +809,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return getTypeOf().isWriteOff() && isNotReversed();
     }
 
+    public boolean isCreditNote() {
+        return getTypeOf().isCreditNote() && isNotReversed();
+    }
+
     public boolean isChargeOff() {
         return getTypeOf().isChargeOff() && isNotReversed();
     }
