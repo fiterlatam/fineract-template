@@ -22,10 +22,6 @@ RUN apt-get update -qq && apt-get install -y wget vim unzip
 COPY . fineract
 WORKDIR /fineract
 
-RUN wget -P /fineract/libs/gradle https://services.gradle.org/distributions/gradle-8.5-bin.zip && \
-    ls -l /fineract/libs/gradle/ && \
-    chmod 644 /fineract/libs/gradle/gradle-8.5-bin.zip
-
 RUN unzip -d /opt/gradle /fineract/libs/gradle/gradle-8.5-bin.zip
 
 ENV GRADLE_HOME /opt/gradle/gradle-8.5

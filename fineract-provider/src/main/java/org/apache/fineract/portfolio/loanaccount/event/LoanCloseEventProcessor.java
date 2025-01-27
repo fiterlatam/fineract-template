@@ -76,7 +76,7 @@ public class LoanCloseEventProcessor extends BaseCustomWebhookEventProcessorImpl
                 LEFT JOIN m_code_value cv ON cv.id = ccp."Customer Identifier_cd_Tipo identificacion"
                 where mc.id = ?
                 """;
-        SqlRowSet rs = this.jdbcTemplate.queryForRowSet(sql, new Object[] { client.getId() });
+        SqlRowSet rs = this.jdbcTemplate.queryForRowSet(sql, client.getId());
         while (rs.next()) {
             document = rs.getString("document");
             documentType = rs.getString("documentType");
@@ -96,7 +96,7 @@ public class LoanCloseEventProcessor extends BaseCustomWebhookEventProcessorImpl
                 LEFT JOIN "Informacion Financiera" ifn ON ifn.loan_id = ml.id
                 where ml.id = ?
                 """;
-        rs = this.jdbcTemplate.queryForRowSet(sql, new Object[] { loanId });
+        rs = this.jdbcTemplate.queryForRowSet(sql, loanId);
         while (rs.next()) {
             monthlyIncome = rs.getString("monthlyIncome");
             assets = rs.getString("assets");
@@ -116,7 +116,7 @@ public class LoanCloseEventProcessor extends BaseCustomWebhookEventProcessorImpl
                 LEFT JOIN "Informacion Adicional" ian ON ian.loan_id = ml.id
                 where ml.id = ?
                 """;
-        rs = this.jdbcTemplate.queryForRowSet(sql, new Object[] { loanId });
+        rs = this.jdbcTemplate.queryForRowSet(sql, loanId);
         while (rs.next()) {
             promoterCode = rs.getString("promoterCode");
             promoterCodeOriginal = rs.getString("promoterCodeOriginal");

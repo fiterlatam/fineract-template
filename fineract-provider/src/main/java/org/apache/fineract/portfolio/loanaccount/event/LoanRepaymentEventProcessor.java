@@ -88,13 +88,17 @@ public class LoanRepaymentEventProcessor extends BaseCustomWebhookEventProcessor
             // Loan is not in arrears, default value is already set
             log.warn("No arrears data found for loan ID: {}", loan.getId());
         }
+        Map<String, Object> clientDocument = getClientById(client.getId());
+        if (!clientDocument.isEmpty()) {
+            response.put("document", clientDocument.get("document"));
+            response.put("documentType", clientDocument.get("documentType"));
+        }
 
         response.put("loanId", loanId);
         response.put("amount", transactionAmount);
         response.put("arrearDue", daysInArrears);
         response.put("paymentDate", transactionDate);
-        response.put("document", "123456789");
-        response.put("documentType", "CC");
+
         response.put("fullname", clientName);
         response.put("loanAmount", principalAmount);
         response.put("mobilePhone", mobileNumber);
@@ -102,5 +106,24 @@ public class LoanRepaymentEventProcessor extends BaseCustomWebhookEventProcessor
         response.put("totalDue", loanBalance);
 
         return response;
+    }
+
+    public Map<String, Object> getClientById(Long clientId) {
+        try {
+            String sql = """
+                    SELECT mc.id AS clientId,
+                           ccp."Cedula" AS document,
+                           cv.code_value AS documentType
+                    FROM m_client mc
+                    LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+                    LEFT JOIN m_code_value cv ON cv.id = ccp."Customer Identifier_cd_Tipo identificacion"
+                    WHERE mc.id = ?
+                    """;
+
+            return jdbcTemplate.queryForMap(sql, clientId);
+        } catch (EmptyResultDataAccessException e) {
+            log.error("Client not found with ID: {}", clientId);
+            return Collections.emptyMap();
+        }
     }
 }

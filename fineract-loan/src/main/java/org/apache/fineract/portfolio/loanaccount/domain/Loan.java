@@ -262,7 +262,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     private List<LoanCreditAllocationRule> creditAllocationRules = new ArrayList<>();
 
     @Embedded
-    private transient LoanProductRelatedDetail loanRepaymentScheduleDetail;
+    private LoanProductRelatedDetail loanRepaymentScheduleDetail;
 
     @Column(name = "term_frequency", nullable = false)
     private Integer termFrequency;
@@ -375,7 +375,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     private List<LoanTransaction> loanTransactions = new ArrayList<>();
 
     @Embedded
-    private transient LoanSummary summary;
+    private LoanSummary summary;
 
     @Transient
     private boolean accountNumberRequiresAutoGeneration = false;
