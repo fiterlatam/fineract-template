@@ -1,5 +1,8 @@
 package org.apache.fineract.portfolio.loanaccount.event;
 
+import java.util.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -11,11 +14,6 @@ import org.apache.poi.util.StringUtil;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
-import java.util.*;
 
 @Component
 @Slf4j
@@ -86,7 +84,7 @@ public class LoanDisbursementUpdateLoanOfficerCodeEventProcessor extends BaseCus
             String documentType = null;
             String city = null;
             sql = """
-                    select mc.id AS clientId, ccp."Cedula" AS document, 
+                    select mc.id AS clientId, ccp."Cedula" AS document,
                     cv.code_value as documentType, cvc.code_value as city
                     FROM m_client mc
                     LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
@@ -108,9 +106,9 @@ public class LoanDisbursementUpdateLoanOfficerCodeEventProcessor extends BaseCus
             }
             if (city != null) {
                 response.put("city", city); // client data table - campos_cliente_persona
-            }        
+            }
             return response;
-        } 
+        }
         return response;
     }
 }
