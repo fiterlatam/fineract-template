@@ -3974,7 +3974,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     public BigDecimal calculateHonoChargeAmount(Loan loan, LocalDate transactionDate, BigDecimal repaymentAmount) {
         BigDecimal feeHono = BigDecimal.ZERO;
-        Optional<LoanCharge> haveHonoCharge = loan.getActiveCharges().stream().filter(charge -> charge.isFlatHono()).findFirst();
+        Optional<LoanCharge> haveHonoCharge = loan.getActiveCharges().stream().filter(LoanCharge::isFlatHono).findFirst();
         if (haveHonoCharge.isPresent() && loan.getAgeOfOverdueDays(transactionDate) > 0) {
             LoanCharge honoCharge = haveHonoCharge.get();
             Optional<LoanCharge> vatHono = loan.getActiveCharges().stream().filter(charge -> charge.isCustomPercentageBasedOfAnotherCharge()
@@ -3983,10 +3983,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     .filter(installment -> installment.isOverdueOn(transactionDate)).toList();
 
             Money remainingAmount = Money.of(loan.getCurrency(), repaymentAmount);
-            for (LoanRepaymentScheduleInstallment installment : loanRepaymentScheduleInstallments) {
+            for (final LoanRepaymentScheduleInstallment installment : loanRepaymentScheduleInstallments) {
                 if (installment.isOverdueOn(transactionDate) && !installment.isObligationsMet()) {
-                    FeeCalculationHonorario feeCalculationHonorario = new FeeCalculationHonorario(BigDecimal.ZERO, BigDecimal.ZERO,
-                            BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+                    FeeCalculationHonorario feeCalculationHonorario;
                     BigDecimal installmentOutstandingAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount();
                     if (remainingAmount.isGreaterThanZero()
                             && remainingAmount.isGreaterThanOrEqualTo(installment.getTotalOutstanding(loan.getCurrency()))) {

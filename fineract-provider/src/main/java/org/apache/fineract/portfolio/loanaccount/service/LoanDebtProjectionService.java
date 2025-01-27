@@ -69,38 +69,40 @@ public class LoanDebtProjectionService {
         final List<LoanSchedulePeriodData> projectedRepaymentPeriods = repaymentSchedule.getPeriods().stream()
                 .filter(period -> period.getPeriod() != null && !period.getComplete())
                 .filter(period -> DateUtils.isAfter(projectedFutureDate, period.getFromDate())).toList();
-        final BigDecimal principalOutstanding = loanForeclosureDetail.getPrincipalOutstanding(loan.getCurrency()).getAmount();
-        final BigDecimal interestProjected = loanForeclosureDetail.getInterestOutstanding(loan.getCurrency()).getAmount();
-        final BigDecimal principalProjected = projectedRepaymentPeriods.stream().map(LoanSchedulePeriodData::getPrincipalOutstanding)
+        final Long projectedOverdueDays = calculateProjectedOverdueDays(projectedRepaymentPeriods, projectedFutureDate);
+        final List<LoanSchedulePeriodData> overdueRepaymentPeriods = repaymentSchedule.getPeriods().stream()
+                .filter(period -> period.getPeriod() != null && !period.getComplete())
+                .filter(period -> DateUtils.isAfter(projectedFutureDate, period.getDueDate())).toList();
+        final BigDecimal principalProjected = overdueRepaymentPeriods.stream().map(LoanSchedulePeriodData::getPrincipalOutstanding)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        final BigDecimal avalProjected = projectedRepaymentPeriods.stream().map(LoanSchedulePeriodData::getAvalOutstanding)
+        final BigDecimal interestProjected = overdueRepaymentPeriods.stream().map(LoanSchedulePeriodData::getInterestOutstanding)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        final BigDecimal mandatoryInsuranceProjected = projectedRepaymentPeriods.stream()
+        final BigDecimal avalProjected = overdueRepaymentPeriods.stream().map(LoanSchedulePeriodData::getAvalOutstanding)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        final BigDecimal mandatoryInsuranceProjected = overdueRepaymentPeriods.stream()
                 .map(LoanSchedulePeriodData::getMandatoryInsuranceOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
-        final BigDecimal voluntaryInsuranceProjected = projectedRepaymentPeriods.stream()
+        final BigDecimal voluntaryInsuranceProjected = overdueRepaymentPeriods.stream()
                 .map(LoanSchedulePeriodData::getVoluntaryInsuranceOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
         final Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList = loanReadPlatformService
                 .retrieveAllOverdueInstallmentsForLoan(loan, projectedFutureDate);
         final BigDecimal penaltyChargesProjected = loanChargeWritePlatformService.projectOverdueChargesForLoan(loanId,
                 overdueLoanScheduleDataList, projectedFutureDate);
-        final BigDecimal penaltyChargesAccountedFor = projectedRepaymentPeriods.stream().map(
+        final BigDecimal penaltyChargesAccountedFor = overdueRepaymentPeriods.stream().map(
                 period -> period.getPenaltyChargesPaid().add(period.getPenaltyChargesWaived()).add(period.getPenaltyChargesWrittenOff()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         final BigDecimal penaltyProjected = penaltyChargesProjected.subtract(penaltyChargesAccountedFor);
-        final BigDecimal totalRepayment = interestProjected.add(principalProjected).add(avalProjected).add(mandatoryInsuranceProjected)
-                .add(voluntaryInsuranceProjected).add(penaltyProjected);
-        final BigDecimal honorariosProjected = this.loanReadPlatformService.calculateHonorariosAmount(loanId, totalRepayment,
-                projectedFutureDate);
         final BigDecimal saldoVencidoCuotas = interestProjected.add(principalProjected).add(avalProjected).add(mandatoryInsuranceProjected)
                 .add(voluntaryInsuranceProjected).setScale(2, RoundingMode.HALF_UP);
+        final BigDecimal totalRepayment = saldoVencidoCuotas.add(penaltyProjected);
+        final BigDecimal honorariosProjected = this.loanReadPlatformService.calculateHonorariosAmount(loanId, totalRepayment,
+                projectedFutureDate);
         final BigDecimal saldoVencidoIntMora = penaltyProjected.setScale(2, RoundingMode.HALF_UP);
         final BigDecimal saldoVencidoHonorario = honorariosProjected.setScale(2, RoundingMode.HALF_UP);
         final BigDecimal saldoTotalVencido = saldoVencidoCuotas.add(saldoVencidoIntMora).add(saldoVencidoHonorario).setScale(2,
                 RoundingMode.HALF_UP);
-        final BigDecimal saldoTotal = saldoTotalVencido.add(principalOutstanding.subtract(principalProjected)).setScale(2,
+        final BigDecimal saldoTotal = loanForeclosureDetail.getTotalOutstanding(loan.getCurrency()).getAmount().setScale(2,
                 RoundingMode.HALF_UP);
         final BigDecimal saldoTotalFuturo = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
-        final Long projectedOverdueDays = calculateProjectedOverdueDays(projectedRepaymentPeriods, projectedFutureDate);
         final LoanDebtProjectionData.OverdueBalanceDetails overdueBalanceDetails = new LoanDebtProjectionData.OverdueBalanceDetails(
                 saldoVencidoCuotas, saldoVencidoIntMora, saldoVencidoHonorario);
         final LoanDebtProjectionData.TotalBalanceDetails totalBalanceDetails = new LoanDebtProjectionData.TotalBalanceDetails(
