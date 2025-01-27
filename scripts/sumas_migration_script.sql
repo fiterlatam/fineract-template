@@ -128,6 +128,12 @@ ORDER BY external_id
 -- Check for mismatch in interest rates
 select * from tmp_creditos_migrar tcm where tcm.cuo_porinteres != tcm.cpc_porcentaje_interes
 
+-- Check for missing nit and code
+select * from tmp_creditos_migrar tcm where tcm.cpc_monto_aval is not null and (tcm.nit is null or tcm.code is null);
+
+-- Check for future submit date
+select * from tmp_creditos_migrar tcm where tcm.cre_fechafinancia > current_date;
+
 
 ---------------------------------------------------------------------------------------------
 
@@ -354,6 +360,25 @@ select * from m_maximum_credit_rate_configuration_bk;
 
 update m_maximum_credit_rate_configuration
 set annual_nominal_rate = 50, monthly_nominal_rate = 10, daily_nominal_rate = 5, overdue_interest_rate = 32.5;
+
+----- Insert offices [PROD] ----
+insert into m_office (parent_id, "hierarchy", "name", opening_date)
+values(1, '.2.', 'Migration Office 2', '2009-01-01');
+
+insert into m_office (parent_id, "hierarchy", "name", opening_date)
+values(1, '.3.', 'Migration Office 3', '2009-01-01');
+
+insert into m_office (parent_id, "hierarchy", "name", opening_date)
+values(1, '.4.', 'Migration Office 4', '2009-01-01');
+
+insert into m_office (parent_id, "hierarchy", "name", opening_date)
+values(1, '.5.', 'Migration Office 5', '2009-01-01');
+
+insert into m_office (parent_id, "hierarchy", "name", opening_date)
+values(1, '.6.', 'Migration Office 6', '2009-01-01');
+
+insert into m_office (parent_id, "hierarchy", "name", opening_date)
+values(1, '.7.', 'Migration Office 7', '2009-01-01');
 
 ----------------------
 -- On uat 15k clients already have been assigned to office 2. So no need to execute this query on uat
@@ -684,7 +709,7 @@ select ml.id loan_id, ml.external_id, mlrs.installment, mlrs.fee_charges_amount,
 join m_loan_repayment_schedule mlrs on ml.id = mlrs.loan_id
 join tmp_creditos_migrar tcm on ml.external_id = tcm.external_id and tcm.cuo_nrocuota = mlrs.installment
 where mlrs.fee_charges_amount != tcm.cpc_monto_aval
-and abs(tcm.cpc_monto_aval - mlrs.fee_charges_amount) > 1
+and abs(tcm.cpc_monto_aval - mlrs.fee_charges_amount) > 2
 order by ml.external_id, mlrs.installment
 ) x;
 
