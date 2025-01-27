@@ -1663,6 +1663,13 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                     + getClientOfficeJoinCondition(officeHierarchy, "l") + " where l.id = " + appTableId + ")" + " union all "
                     + "(select o.id as officeId, l.group_id as groupId, l.client_id as clientId, null as savingsId, l.id as loanId, null as transactionId, null as entityId from m_loan l "
                     + getGroupOfficeJoinCondition(officeHierarchy, "l") + " where l.id = " + appTableId + ")" + " ) as x";
+            case LOAN_TRANSACTION -> "select distinct x.* from ( "
+                    + "(select o.id as officeId, l.group_id as groupId, l.client_id as clientId, null as savingsId, l.id as loanId, lt.id as transactionId, null as entityId from m_loan_transaction lt "
+                    + "join m_loan l on l.id = lt.loan_id " + getClientOfficeJoinCondition(officeHierarchy, "l") + " where lt.id = "
+                    + appTableId + ")" + " union all "
+                    + "(select o.id as officeId, l.group_id as groupId, l.client_id as clientId, null as savingsId, l.id as loanId, lt.id as transactionId, null as entityId from m_loan_transaction lt "
+                    + "join m_loan l on l.id = lt.loan_id " + getGroupOfficeJoinCondition(officeHierarchy, "l") + " where lt.id = "
+                    + appTableId + ")" + " ) as x";
             case SAVINGS -> "select distinct x.* from ( "
                     + "(select o.id as officeId, s.group_id as groupId, s.client_id as clientId, s.id as savingsId, null as loanId, null as transactionId, null as entityId "
                     + "from m_savings_account s " + getClientOfficeJoinCondition(officeHierarchy, "s") + " where s.id = " + appTableId + ")"
