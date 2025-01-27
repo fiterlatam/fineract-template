@@ -701,7 +701,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
 
     protected void updateChargesPaidAmountBy(final LoanTransaction loanTransaction, final Money chargeAmount, final Set<LoanCharge> charges,
             final Integer installmentNumber) {
-        final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
+        final boolean isWriteOffTransaction = loanTransaction.isWriteOff() || loanTransaction.isCreditNote();
         Money amountRemaining = chargeAmount;
         while (amountRemaining.isGreaterThanZero()) {
             final LoanCharge unpaidCharge = findEarliestUnpaidChargeFromUnOrderedSet(charges, chargeAmount.getCurrency());
