@@ -29,6 +29,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -190,6 +191,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                         .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME);
                 loanProduct.setUseOtherLoansCupo(useOtherLoansCupo);
             }
+            validateCreditoRotativoRepaymentType(loanProduct, productType);
             loanProduct.setProductType(productType);
 
             if (command.parameterExists("delinquencyBucketId")) {
@@ -465,6 +467,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             if (changes.containsKey(LoanProductConstants.PRODUCT_TYPE)) {
                 final Long parameterTypeId = (Long) changes.get(LoanProductConstants.PRODUCT_TYPE);
                 final CodeValue productType = this.codeValueRepository.findOneWithNotFoundDetection(parameterTypeId);
+                validateCreditoRotativoRepaymentType(product, productType);
                 product.setProductType(productType);
             }
 
@@ -887,5 +890,23 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
 
     private void logAsErrorUnexpectedDataIntegrityException(final Exception dve) {
         log.error("Error occurred.", dve);
+    }
+
+    private void validateCreditoRotativoRepaymentType(LoanProduct loanProduct, CodeValue productType) {
+        boolean isLoanProductCreditoRotativo = productType != null
+                && LoanProductType.CREDITO_ROTATIVO.getCode().equalsIgnoreCase(productType.getLabel());
+        if (isLoanProductCreditoRotativo) {
+            PeriodFrequencyType repaymentPeriodFrequencyType = loanProduct.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType();
+            if (repaymentPeriodFrequencyType == null) {
+                throw new PlatformDataIntegrityException("error.msg.loan.product.repayment.type.required.for.credit.revolving.loan",
+                        "Repayment type is required for credit revolving loan", "repaymentPeriodFrequencyType");
+            }
+            List<PeriodFrequencyType> allowedRepaymentPeriodFrequencyTypes = Arrays.asList(PeriodFrequencyType.DAYS,
+                    PeriodFrequencyType.WEEKS, PeriodFrequencyType.MONTHS);
+            if (!allowedRepaymentPeriodFrequencyTypes.contains(repaymentPeriodFrequencyType)) {
+                throw new PlatformDataIntegrityException("error.msg.loan.product.repayment.type.invalid.for.credit.revolving.loan",
+                        "Repayment type for credit revolving loan must be daily, weekly, or monthly", "repaymentPeriodFrequencyType");
+            }
+        }
     }
 }
