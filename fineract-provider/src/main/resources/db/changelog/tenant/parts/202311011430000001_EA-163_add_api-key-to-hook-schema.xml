@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="1" author="fineract">
+        <comment>Update Hook schema with API KEY</comment>
+        <insert tableName="m_hook_schema">
+            <column name="id" valueComputed="(SELECT COALESCE(MAX(id), 0) + 1 FROM m_hook_schema)"/>
+            <column name="hook_template_id" valueNumeric="1"/>
+            <column name="field_type" value="string"/>
+            <column name="field_name" value="API Key"/>
+            <column name="placeholder" value="API Key/clave de API"/>
+            <column name="optional" valueBoolean="true"/>
+        </insert>
+        <modifyDataType tableName="m_hook_configuration" columnName="field_value" newDataType="TEXT" />
+    </changeSet>
+</databaseChangeLog>

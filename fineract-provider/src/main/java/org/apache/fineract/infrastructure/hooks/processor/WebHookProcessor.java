@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.infrastructure.hooks.processor;
 
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.apiKeyName;
 import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.contentTypeName;
 import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.payloadURLName;
 
@@ -48,6 +49,7 @@ public class WebHookProcessor implements HookProcessor {
 
         String url = "";
         String contentType = "";
+        String apiKey = "";
 
         for (final HookConfiguration conf : config) {
             final String fieldName = conf.getFieldName();
@@ -57,14 +59,19 @@ public class WebHookProcessor implements HookProcessor {
             if (fieldName.equals(contentTypeName)) {
                 contentType = conf.getFieldValue();
             }
+            if (apiKeyName.equalsIgnoreCase(fieldName)) {
+                apiKey = conf.getFieldValue();
+            }
         }
+        Map<String, Object> customHeaders = Map.of("X-API-KEY", apiKey);
+        // we can add other headers based off the configuration
 
-        sendRequest(url, contentType, payload, entityName, actionName, context);
+        sendRequest(url, contentType, payload, entityName, actionName, context, customHeaders);
     }
 
     @SuppressWarnings("unchecked")
     private void sendRequest(final String url, final String contentType, final String payload, final String entityName,
-            final String actionName, final FineractContext context) {
+            final String actionName, final FineractContext context, Map<String, Object> headers) {
 
         final String fineractEndpointUrl = System.getProperty("baseUrl");
         final WebHookService service = processorHelper.createWebHookService(url);
@@ -74,8 +81,8 @@ public class WebHookProcessor implements HookProcessor {
 
         if (contentType.equalsIgnoreCase("json") || contentType.contains("json")) {
             final JsonObject json = JsonParser.parseString(payload).getAsJsonObject();
-            service.sendJsonRequest(entityName, actionName, context.getTenantContext().getTenantIdentifier(), fineractEndpointUrl, json)
-                    .enqueue(callback);
+            service.sendJsonRequest(entityName, actionName, context.getTenantContext().getTenantIdentifier(), fineractEndpointUrl, json,
+                    headers).enqueue(callback);
         } else {
             Map<String, String> map = new HashMap<>();
             map = new Gson().fromJson(payload, map.getClass());

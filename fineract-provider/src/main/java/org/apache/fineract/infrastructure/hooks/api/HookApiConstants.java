@@ -54,7 +54,7 @@ public final class HookApiConstants {
 
     public static final String phoneNumberName = "Phone Number";
 
-    public static final String apiKeyName = "Api Key";
+    public static final String apiKeyName = "API Key";
 
     public static final String configParamName = "config";
 
