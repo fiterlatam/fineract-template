@@ -375,6 +375,6 @@
     <include file="parts/202501222000001000_EA_165_webhook_disbursementguarantee.xml" relativeToChangelogFile="true" />
     <include file="parts/2025012111428000001_bug_EA_180_EA_145.xml" relativeToChangelogFile="true" />
     <include file="parts/20231101123000_EA-196-create_transacciones_alianzas_table.xml" relativeToChangelogFile="true" />
+    <include file="parts/202311011430000001_EA-163_add_api-key-to-hook-schema.xml" relativeToChangelogFile="true" />
     <include file="parts/202501272000001000_EA_167_webhook_disbursementUpdateLoanOfficerCode.xml" relativeToChangelogFile="true" />
-
 </databaseChangeLog>

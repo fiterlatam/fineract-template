@@ -27,6 +27,7 @@ import retrofit2.http.FieldMap;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
+import retrofit2.http.HeaderMap;
 import retrofit2.http.POST;
 
 public interface WebHookService {
@@ -44,7 +45,8 @@ public interface WebHookService {
     // Template - Web
     @POST(".")
     Call<Void> sendJsonRequest(@Header(ENTITY_HEADER) String entityHeader, @Header(ACTION_HEADER) String actionHeader,
-            @Header(TENANT_HEADER) String tenantHeader, @Header(ENDPOINT_HEADER) String endpointHeader, @Body JsonObject result);
+            @Header(TENANT_HEADER) String tenantHeader, @Header(ENDPOINT_HEADER) String endpointHeader, @Body JsonObject result,
+            @HeaderMap Map<String, Object> headers);
 
     @FormUrlEncoded
     @POST(".")
