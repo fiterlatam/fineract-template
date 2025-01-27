@@ -23,6 +23,7 @@ import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.payl
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -74,8 +75,8 @@ public class ElasticSearchHookProcessor implements HookProcessor {
 
         if (contentType.equalsIgnoreCase("json") || contentType.contains("json")) {
             final JsonObject json = new Gson().fromJson(payload, JsonObject.class);
-            service.sendJsonRequest(entityName, actionName, context.getTenantContext().getTenantIdentifier(), fineractEndpointUrl, json)
-                    .enqueue(callback);
+            service.sendJsonRequest(entityName, actionName, context.getTenantContext().getTenantIdentifier(), fineractEndpointUrl, json,
+                    Collections.emptyMap()).enqueue(callback);
         } else {
             Map<String, String> map = new HashMap<>();
             map = new Gson().fromJson(payload, map.getClass());
