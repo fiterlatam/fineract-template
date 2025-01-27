@@ -398,7 +398,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             this.noteRepository.save(note);
         }
 
-        postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer);
+        if (!newPaymentTransaction.isRepaymentAtDisbursement())
+            postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer);
         recalculateAccruals(loan);
         businessEventNotifierService.notifyPostBusinessEvent(new LoanChargePaymentPostBusinessEvent(newPaymentTransaction));
         return newPaymentTransaction;

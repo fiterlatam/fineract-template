@@ -457,6 +457,19 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         loan.validateAccountStatus(LoanEvent.LOAN_DISBURSED);
         boolean canDisburse = loan.canDisburse(actualDisbursementDate);
         ChangedTransactionDetail changedTransactionDetail = null;
+
+        final Set<LoanCharge> loanCharges = loan.charges();
+        BigDecimal totalDisbursementCharges = BigDecimal.ZERO;
+        final Map<Long, BigDecimal> disBuLoanCharges = new HashMap<>();
+        for (final LoanCharge loanCharge : loanCharges) {
+            if (loanCharge.isDueAtDisbursement() && loanCharge.getChargePaymentMode().isPaymentModeAccountTransfer()
+                    && loanCharge.isChargePending()) {
+                disBuLoanCharges.put(loanCharge.getId(), loanCharge.amountOutstanding());
+            } else if (loanCharge.isDueAtDisbursement()) {
+                totalDisbursementCharges = totalDisbursementCharges.add(loanCharge.amountOutstanding());
+            }
+        }
+
         if (canDisburse) {
 
             // Get netDisbursalAmount from disbursal screen field.
@@ -470,6 +483,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             boolean recalculateSchedule = amountBeforeAdjust.isNotEqualTo(loan.getPrincpal());
             final String txnExternalId = command.stringValueOfParameterNamedAllowingNull("externalId");
 
+            MonetaryCurrency currency = loan.getCurrency();
             if (loan.isTopup() && loan.getClientId() != null) {
                 final Long loanIdToClose = loan.getTopupLoanDetails().getLoanIdToClose();
                 final Loan loanToClose = this.loanRepositoryWrapper.findNonClosedLoanThatBelongsToClient(loanIdToClose, loan.getClientId());
@@ -487,7 +501,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final LoanTransactionData waiveInterestTransactionData = this.loanReadPlatformService
                         .retrieveWaiveInterestDetails(loanIdToClose);
                 if (waiveInterestTransactionData != null) {
-                    final Money waiveInterestTransactionAmount = Money.of(loan.getCurrency(), waiveInterestTransactionData.getAmount());
+                    final Money waiveInterestTransactionAmount = Money.of(currency, waiveInterestTransactionData.getAmount());
                     if (waiveInterestTransactionAmount.isGreaterThanZero()) {
                         final BigDecimal transactionAmount = waiveInterestTransactionData.getAmount();
                         final String localeAsString = "en";
@@ -537,6 +551,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 LoanTransaction disbursementTransaction = LoanTransaction.disbursement(loan.getOffice(), amountToDisburse, paymentDetail,
                         actualDisbursementDate, txnExternalId);
                 disbursementTransaction.updateLoan(loan);
+                disbursementTransaction.updateComponents(amountToDisburse.minus(totalDisbursementCharges),
+                        Money.of(currency, BigDecimal.ZERO), Money.of(currency, totalDisbursementCharges),
+                        Money.of(currency, BigDecimal.ZERO));
                 loan.addLoanTransaction(disbursementTransaction);
             }
 
@@ -559,6 +576,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
             loan.adjustNetDisbursalAmount(amountToDisburse.getAmount());
         }
+
         if (!changes.isEmpty()) {
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
@@ -581,15 +599,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
         }
 
-        final Set<LoanCharge> loanCharges = loan.charges();
-        final Map<Long, BigDecimal> disBuLoanCharges = new HashMap<>();
-        for (final LoanCharge loanCharge : loanCharges) {
-            if (loanCharge.isDueAtDisbursement() && loanCharge.getChargePaymentMode().isPaymentModeAccountTransfer()
-                    && loanCharge.isChargePending()) {
-                disBuLoanCharges.put(loanCharge.getId(), loanCharge.amountOutstanding());
-            }
-        }
-
         final Locale locale = command.extractLocale();
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(locale);
         for (final Map.Entry<Long, BigDecimal> entrySet : disBuLoanCharges.entrySet()) {
@@ -599,7 +608,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final boolean isExceptionForBalanceCheck = false;
             final AccountTransferDTO accountTransferDTO = new AccountTransferDTO(actualDisbursementDate, entrySet.getValue(),
                     PortfolioAccountType.SAVINGS, PortfolioAccountType.LOAN, savingAccountData.accountId(), loanId, "Loan Charge Payment",
-                    locale, fmt, null, null, LoanTransactionType.REPAYMENT_AT_DISBURSEMENT.getValue(), entrySet.getKey(), null,
+                    locale, fmt, paymentDetail, null, LoanTransactionType.REPAYMENT_AT_DISBURSEMENT.getValue(), entrySet.getKey(), null,
                     AccountTransferType.CHARGE_PAYMENT.getValue(), null, null, null, null, null, fromSavingsAccount, isRegularTransaction,
                     isExceptionForBalanceCheck);
             this.accountTransfersWritePlatformService.transferFunds(accountTransferDTO);
