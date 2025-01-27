@@ -2017,18 +2017,17 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         List<OverdueLoanScheduleData> installments;
         if (backdatePenalties) {
-            sqlBuilder.append(" limit ").append(pageSize);
             sqlBuilder.append(" order by ml.id");
+            sqlBuilder.append(" limit ").append(pageSize);
             installments = this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, minLoanId);
         } else {
             // Only apply for duedate = yesterday (so that we don't apply
             // penalties on the duedate itself)
             sqlBuilder.append(" and ls.duedate >= ").append(sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "(? + 1)", "day"));
-            // limit resultset
-            sqlBuilder.append(" limit ").append(pageSize);
             // order by loan id
             sqlBuilder.append(" order by ml.id");
-
+            // limit resultset
+            sqlBuilder.append(" limit ").append(pageSize);
             installments = this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, minLoanId, penaltyWaitPeriod);
         }
 
