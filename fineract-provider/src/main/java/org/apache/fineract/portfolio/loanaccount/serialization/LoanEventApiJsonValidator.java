@@ -60,7 +60,7 @@ import org.springframework.stereotype.Component;
 public final class LoanEventApiJsonValidator {
 
     private static final String DATE_FORMAT_PARAM = "dateFormat";
-    private static final String ACTUAL_DISBURSEMENT_DATE_PARAM = "actualDisbursementDate";
+    public static final String ACTUAL_DISBURSEMENT_DATE_PARAM = "actualDisbursementDate";
     private static final String REPAYMENT_BANK_ID_PARAM = "repaymentBankId";
     private static final String IS_IMPORTED_TRANSACTION_PARAM = "isImportedTransaction";
     private static final String TRANSACTION_PROCESSING_STRATEGY_PARAM = "transactionProcessingStrategy";
