@@ -26,12 +26,14 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Objects;
+import lombok.Getter;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 
 @Entity
 @Table(name = "m_loan_disbursement_detail")
+@Getter
 public class LoanDisbursementDetails extends AbstractPersistableCustom {
 
     @ManyToOne

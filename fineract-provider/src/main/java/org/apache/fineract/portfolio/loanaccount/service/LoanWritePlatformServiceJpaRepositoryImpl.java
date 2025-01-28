@@ -352,6 +352,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final LoanProductParameterizationRepository productParameterizationRepository;
     private final CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
+    private final LoanDisbursementDetailsRepository loanDisbursementDetailsRepository;
 
     @PostConstruct
     public void registerForNotification() {
@@ -443,8 +444,47 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         // Fail fast if client/group is not active or actual loan status disallows disbursal
         checkClientOrGroupActive(loan);
 
-        // Fail fast if cupo is not enough
+        // Fail fast if cupo is not enough // TODO: check available amount against this request.
         checkCupo(loan);
+
+        final LocalDate actualDisbursementDate = this.fromApiJsonHelper
+                .extractLocalDateNamed(LoanEventApiJsonValidator.ACTUAL_DISBURSEMENT_DATE_PARAM, command.parsedJson().getAsJsonObject());
+
+        // TODO Check if exists disbursal on same date, if no, add it
+        if (loan.getLoanProduct().isMultiDisburseLoan()) {
+
+            final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(
+                    LoanApiConstants.principalDisbursedParameterName, command.parsedJson().getAsJsonObject());
+
+            BigDecimal disbursementAmountSum = loanDisbursementDetailsRepository.findAllByLoanId(loanId).stream().map(x -> x.getPrincipal())
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal loanTransactionRepaymentSum = loanTransactionRepository.findAllByLoanIdAndTypeOf(loanId, 2).stream()
+                    .filter(nR -> !nR.isReversed()).map(x -> x.getPrincipalPortion()).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal loanApprovedPrincipal = loan.getApprovedPrincipal();
+
+            if (disbursementAmountSum.add(principal).subtract(loanTransactionRepaymentSum).compareTo(loanApprovedPrincipal) > 0) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.exceeds.approved.principal",
+                        "Sum of Loan disbursements (".concat(String.valueOf(disbursementAmountSum)).concat(") + This one (")
+                                .concat(String.valueOf(principal)).concat(") - Repayments (")
+                                .concat(String.valueOf(loanTransactionRepaymentSum)).concat(") exceeds approved principal (")
+                                .concat(String.valueOf(loanApprovedPrincipal)).concat(")."));
+            }
+
+            Optional<LoanDisbursementDetails> loanDisbursementDetailsOpt = loanDisbursementDetailsRepository
+                    .findByLoanIdAndExpectedDisbursementDateAndPrincipal(loanId, actualDisbursementDate, principal);
+
+            if (loanDisbursementDetailsOpt.isEmpty()) {
+                // TODO Check if product is credito rotativo and add the entry at m_loan_disbursement_detail
+                LoanDisbursementDetails details = new LoanDisbursementDetails(actualDisbursementDate, actualDisbursementDate, principal,
+                        null, false);
+                details.updateLoan(loan);
+                loanDisbursementDetailsRepository.saveAndFlush(details);
+
+                loan = this.loanAssembler.assembleFrom(loanId);
+            }
+        }
 
         // validate if the loan product allows creation and disbursement
         if (Boolean.FALSE.equals(loan.loanProduct().getCustomAllowCreateOrDisburse())) {
@@ -452,8 +492,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     "Loan product does not allow creation and disbursement.");
         }
 
-        final LocalDate actualDisbursementDate = command
-                .localDateValueOfParameterNamed(LoanWritePlatformServiceJpaRepositoryImpl.ACTUAL_DISBURSEMENT_DATE_PARAM);
+        // final LocalDate actualDisbursementDate = command
+        // .localDateValueOfParameterNamed(LoanWritePlatformServiceJpaRepositoryImpl.ACTUAL_DISBURSEMENT_DATE_PARAM);
 
         if (loan.isChargedOff() && DateUtils.isBefore(actualDisbursementDate, loan.getChargedOffOnDate())) {
             throw new GeneralPlatformDomainRuleException(
