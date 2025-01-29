@@ -510,6 +510,17 @@ where ml.id = mlrs.loan_id
 and mlrs.installment = tcm.cuo_nrocuota
 and tcm.cpc_fecha_pago_cuota is not null;
 
+-- Validate that all paid installments are migrated as paid; this query should return no results
+-- If it does, treat them accordingly, or re-run the preceeding query.
+-- Don't proceed to the next query until this returns zero records
+select tcm.cpc_fecha_pago_cuota, mlrs.* from m_loan ml join m_loan_repayment_schedule mlrs
+on ml.id = mlrs.loan_id
+join tmp_creditos_migrar tcm on ml.external_id = tcm.external_id
+where mlrs.installment = tcm.cuo_nrocuota
+and tcm.cpc_fecha_pago_cuota is not null
+and mlrs.completed_derived = false
+order by mlrs.installment;
+
 -- Alter loan_transaction add installment_id (we'll drop this after)
 alter table m_loan_transaction add column installment_id bigint;
 
