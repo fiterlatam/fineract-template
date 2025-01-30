@@ -35,6 +35,7 @@ public class AuthenticatedUserData {
 
     @SuppressWarnings("unused")
     private String username;
+    private String email;
     @SuppressWarnings("unused")
     private Long userId;
     @SuppressWarnings("unused")
