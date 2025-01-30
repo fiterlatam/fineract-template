@@ -235,6 +235,11 @@ public class LoanScheduleAssembler {
         // disbursement details
         final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
         final Boolean isTopup = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isTopup, element);
+        final LocalDate expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed("expectedDisbursementDate", element);
+        final LocalDate repaymentsStartingFromDate = this.fromApiJsonHelper.extractLocalDateNamed("repaymentsStartingFromDate", element);
+        LocalDate calculatedRepaymentsStartingFromDate = repaymentsStartingFromDate;
+
+
         BigDecimal topupAmount = BigDecimal.ZERO;
         if (Boolean.TRUE.equals(isTopup)) {
             final Long loanId = this.fromApiJsonHelper.extractLongNamed("loanId", element);
@@ -244,13 +249,21 @@ public class LoanScheduleAssembler {
             }
             // total amount of topup loan must include the outstanding on the topup loan
             final BigDecimal outstanding = loan.getSummary().getTotalOutstanding();
+            LocalDate existingMaturityDate = loan.getMaturityDate();
+            //Compute days between expectedDisbursementAmount and existingMaturityDate
+            long daysBetween = ChronoUnit.DAYS.between(expectedDisbursementDate, existingMaturityDate);
+            if (daysBetween>0) {
+                long loanDuration = ChronoUnit.DAYS.between(loan.getMaturityDate(), DateUtils.getLocalDateOfTenant());
+                BigDecimal totalInterestCharged = loan.getSummary().getTotalInterestCharged();
+                BigDecimal dailyInterest = totalInterestCharged.divide(new BigDecimal(loanDuration));
+                dailyInterest.multiply(BigDecimal.valueOf(daysBetween));
+                topupAmount = topupAmount.add(outstanding);
+            }
+
             topupAmount = topupAmount.add(outstanding);
         }
         final Money principalMoney = Money.of(currency, principal.add(topupAmount));
 
-        final LocalDate expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed("expectedDisbursementDate", element);
-        final LocalDate repaymentsStartingFromDate = this.fromApiJsonHelper.extractLocalDateNamed("repaymentsStartingFromDate", element);
-        LocalDate calculatedRepaymentsStartingFromDate = repaymentsStartingFromDate;
 
         final Boolean synchDisbursement = this.fromApiJsonHelper.extractBooleanNamed("syncDisbursementWithMeeting", element);
         final Long calendarId = this.fromApiJsonHelper.extractLongNamed("calendarId", element);
