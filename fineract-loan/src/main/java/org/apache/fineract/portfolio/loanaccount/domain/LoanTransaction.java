@@ -1220,7 +1220,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         List<LoanChargePaidByData> list = new ArrayList<>();
         if (originalList != null && !originalList.isEmpty()) {
             for (LoanChargePaidBy paidBy : originalList) {
-                log.info("copy transaction charge amount paid by original transaction:" + paidBy.getAmount());
+                log.debug("copy transaction charge amount paid by original transaction:" + paidBy.getAmount());
                 list.add(new LoanChargePaidByData(paidBy));
             }
         }

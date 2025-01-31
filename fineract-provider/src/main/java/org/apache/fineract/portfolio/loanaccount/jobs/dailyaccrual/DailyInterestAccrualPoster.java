@@ -42,6 +42,7 @@ public class DailyInterestAccrualPoster {
     public void postDailyInterestAccruals() throws JobExecutionException {
         List<Throwable> errors = new ArrayList<>();
         if (!loanIds.isEmpty()) {
+            log.info("Running Devengo de Interés diario for loans batch with maximum loanId {}", loanIds.get(loanIds.size() - 1));
             for (Long loanId : loanIds) {
                 try {
                     this.loanWritePlatformService.persistDailyInterestAccrual(loanId, accrualDate);
@@ -54,6 +55,7 @@ public class DailyInterestAccrualPoster {
                 log.error("Failed to run Daily Accrual for loans on {}", accrualDate, errors.get(0));
                 throw new JobExecutionException(errors);
             }
+            log.info("Completed Devengo de Interés diario for loans batch with maximum loanId {}", loanIds.get(loanIds.size() - 1));
         }
     }
 }
