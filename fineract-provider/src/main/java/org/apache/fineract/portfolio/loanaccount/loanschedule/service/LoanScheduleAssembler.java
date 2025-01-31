@@ -91,6 +91,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleIns
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariationType;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariations;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanApplicationDateException;
 import org.apache.fineract.portfolio.loanaccount.exception.MinDaysBetweenDisbursalAndFirstRepaymentViolationException;
@@ -101,6 +102,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanSchedul
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
 import org.apache.fineract.portfolio.loanaccount.serialization.VariableLoanScheduleFromApiJsonValidator;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeAssembler;
+import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
@@ -139,6 +141,7 @@ public class LoanScheduleAssembler {
     private final PlatformSecurityContext context;
     private final LoanUtilService loanUtilService;
     private final LoanRepositoryWrapper loanRepository;
+    private final LoanReadPlatformService loanReadPlatformService;
 
     @Autowired
     public LoanScheduleAssembler(final FromJsonHelper fromApiJsonHelper, final LoanProductRepository loanProductRepository,
@@ -151,7 +154,8 @@ public class LoanScheduleAssembler {
             final FloatingRatesReadPlatformService floatingRatesReadPlatformService,
             final VariableLoanScheduleFromApiJsonValidator variableLoanScheduleFromApiJsonValidator,
             final CalendarInstanceRepository calendarInstanceRepository, final PlatformSecurityContext context,
-            final LoanUtilService loanUtilService, final LoanRepositoryWrapper loanRepository) {
+            final LoanUtilService loanUtilService, final LoanRepositoryWrapper loanRepository,
+            final LoanReadPlatformService loanReadPlatformService) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.loanProductRepository = loanProductRepository;
         this.applicationCurrencyRepository = applicationCurrencyRepository;
@@ -170,6 +174,7 @@ public class LoanScheduleAssembler {
         this.context = context;
         this.loanUtilService = loanUtilService;
         this.loanRepository = loanRepository;
+        this.loanReadPlatformService = loanReadPlatformService;
     }
 
     public LoanApplicationTerms assembleLoanTerms(final JsonElement element) {
@@ -242,25 +247,16 @@ public class LoanScheduleAssembler {
 
         BigDecimal topupAmount = BigDecimal.ZERO;
         if (Boolean.TRUE.equals(isTopup)) {
-            final Long loanId = this.fromApiJsonHelper.extractLongNamed("loanId", element);
+            final Long loanId = this.fromApiJsonHelper.extractLongNamed("loanIdToClose", element);
             final Loan loan = this.loanRepository.findOneWithNotFoundDetection(loanId);
             if (!loan.isOpen()) {
                 throw new IllegalStateException("error.msg.loan.topup.not.active");
             }
             // total amount of topup loan must include the outstanding on the topup loan
-            final BigDecimal outstanding = loan.getSummary().getTotalOutstanding();
-            LocalDate existingMaturityDate = loan.getMaturityDate();
-            //Compute days between expectedDisbursementAmount and existingMaturityDate
-            long daysBetween = ChronoUnit.DAYS.between(expectedDisbursementDate, existingMaturityDate);
-            if (daysBetween>0) {
-                long loanDuration = ChronoUnit.DAYS.between(loan.getMaturityDate(), DateUtils.getLocalDateOfTenant());
-                BigDecimal totalInterestCharged = loan.getSummary().getTotalInterestCharged();
-                BigDecimal dailyInterest = totalInterestCharged.divide(new BigDecimal(loanDuration));
-                dailyInterest.multiply(BigDecimal.valueOf(daysBetween));
-                topupAmount = topupAmount.add(outstanding);
-            }
+            BigDecimal loanOutstanding = this.loanReadPlatformService
+                    .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanId, expectedDisbursementDate).getAmount();
 
-            topupAmount = topupAmount.add(outstanding);
+            topupAmount = topupAmount.add(loanOutstanding);
         }
         final Money principalMoney = Money.of(currency, principal.add(topupAmount));
 
