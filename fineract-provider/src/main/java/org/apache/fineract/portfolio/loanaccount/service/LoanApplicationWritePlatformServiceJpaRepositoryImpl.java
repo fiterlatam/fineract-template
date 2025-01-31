@@ -373,7 +373,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 List<Long> activeLoansLoanProductIdsByClient = this.loanRepository.findActiveLoansLoanProductIdsByClient(clientId,
                         LoanStatus.ACTIVE.getValue());
                 if (activeLoansLoanProductIdsByClient.contains(productId) && !Boolean.TRUE.equals(isTopup)) {
-                    throw new LoanDisbursalExistingActiveProduct("error.msg.loan.existing.active.loan", loanProduct.getName());
+                    throw new LoanDisbursalExistingActiveProduct(loanProduct.getName());
                 }
             }
             final Long groupId = this.fromJsonHelper.extractLongNamed("groupId", command.parsedJson());
