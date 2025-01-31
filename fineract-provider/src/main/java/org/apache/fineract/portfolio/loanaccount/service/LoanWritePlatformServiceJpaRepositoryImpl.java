@@ -5181,12 +5181,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         LocalDate lastAccrualDate = loan.getAccruedTill() != null ? loan.getAccruedTill() : loan.getDisbursementDate();
         // Loop through the days between the last accrual date and accrual date and process interest accrual for each
         // day
-        log.info("Persisting daily accrual for loan: {}", loan.getId());
+        log.debug("Persisting daily accrual for loan: {}", loan.getId());
         while (lastAccrualDate.isBefore(accrualDate)) {
             lastAccrualDate = lastAccrualDate.plusDays(1);
             this.processInterestAccrualForDate(lastAccrualDate, loan);
         }
-        log.info("Daily accrual persisted for loan: {}", loan.getId());
+        log.debug("Daily accrual persisted for loan: {}", loan.getId());
     }
 
     private void processInterestAccrualForDate(final LocalDate accrualDate, Loan loan) {
@@ -5310,7 +5310,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     @Transactional
     public void persistInstallmentalChargeAccrual(Long loanId, LocalDate localDate, Long minimumDaysInArrearsToSuspendLoanAccount) {
         Loan loan = this.loanAssembler.assembleFrom(loanId);
-        log.info("Persisting Installment charge accrual for loan: {}", loan.getId());
+        log.debug("Persisting Installment charge accrual for loan: {}", loan.getId());
         List<LoanCharge> charges = filterInstallmentCharges(loan.getActiveCharges());
 
         if (minimumDaysInArrearsToSuspendLoanAccount == null) {
@@ -5321,7 +5321,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final boolean hasOccurredOnSuspendedAccount = daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount;
         loan.handleChargeAppliedTransactionPerInstallment(charges, localDate, hasOccurredOnSuspendedAccount);
         loanRepository.saveAndFlush(loan);
-        log.info("Installment  charge accrual persisted for loan: {}", loan.getId());
+        log.debug("Installment  charge accrual persisted for loan: {}", loan.getId());
     }
 
     private List<LoanCharge> filterInstallmentCharges(Set<LoanCharge> charges) {

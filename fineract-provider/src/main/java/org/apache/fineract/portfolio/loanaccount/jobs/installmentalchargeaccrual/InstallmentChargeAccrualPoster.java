@@ -43,19 +43,21 @@ public class InstallmentChargeAccrualPoster {
     public void postInstallmentChargeAccruals() throws JobExecutionException {
         List<Throwable> errors = new ArrayList<>();
         if (!loanIds.isEmpty()) {
+            log.info("Running Devengo de seguro Job for loans batch with maximum loanId {}", loanIds.get(loanIds.size() - 1));
             for (Long loanId : loanIds) {
                 try {
                     this.loanWritePlatformService.persistInstallmentalChargeAccrual(loanId, accrualDate,
                             minimumDaysInArrearsToSuspendLoanAccount);
                 } catch (Exception e) {
-                    log.error("Failed to run Daily Accrual for loan id {}", loanId, e);
+                    log.error("Failed to run Devengo de seguro Job for loan id {}", loanId, e);
                     errors.add(e);
                 }
             }
             if (!errors.isEmpty()) {
-                log.error("Failed to run Daily Accrual for loans on {}", accrualDate, errors.get(0));
+                log.error("Failed to run Devengo de seguro Job for loans on {}", accrualDate, errors.get(0));
                 throw new JobExecutionException(errors);
             }
+            log.info("Completed Devengo de seguro Job for loans batch with maximum loanId {}", loanIds.get(loanIds.size() - 1));
         }
     }
 }
