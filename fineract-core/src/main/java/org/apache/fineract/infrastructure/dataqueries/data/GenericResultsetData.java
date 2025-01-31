@@ -18,13 +18,14 @@
  */
 package org.apache.fineract.infrastructure.dataqueries.data;
 
+import java.io.Serializable;
 import java.util.List;
 import org.apache.fineract.infrastructure.core.service.database.JdbcJavaType;
 
 /**
  * Immutable data object for generic resultset data.
  */
-public final class GenericResultsetData {
+public final class GenericResultsetData implements Serializable {
 
     private final List<ResultsetColumnHeaderData> columnHeaders;
     private final List<ResultsetRowData> data;

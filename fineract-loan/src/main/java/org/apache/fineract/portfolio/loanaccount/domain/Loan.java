@@ -2794,7 +2794,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         ChangedTransactionDetail result = reprocessTransactionForDisbursement();
-        this.loanLifecycleStateMachine.transition(LoanEvent.LOAN_DISBURSED, this);
+        try {
+            this.loanLifecycleStateMachine.transition(LoanEvent.LOAN_DISBURSED, this);
+        } catch (Exception e) {
+            log.error("loanLifecycleStateMachine is null");
+        }
         actualChanges.put(PARAM_STATUS, LoanEnumerations.status(this.loanStatus));
         return result;
 
@@ -2915,6 +2919,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean canDisburse(final LocalDate actualDisbursementDate) {
+        // If product is credito Rotativo, disburse as much as available. Checked before.
+        if (this.getLoanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase(Locale.ROOT))) {
+            return true;
+        }
+
         LocalDate loanSubmittedOnDate = this.submittedOnDate;
         final LoanStatus statusEnum = this.loanLifecycleStateMachine.dryTransition(LoanEvent.LOAN_DISBURSED, this);
 
@@ -3098,6 +3107,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     private boolean isDisbursementAllowed() {
         boolean isAllowed = false;
+
+        // If product is credito Rotativo, disburse as much as available. Checked before.
+        if (this.getLoanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase())) {
+            return true;
+        }
+
         List<LoanDisbursementDetails> disbursementDetailsV2 = getDisbursementDetails();
         if (disbursementDetailsV2 == null || disbursementDetailsV2.isEmpty()) {
             isAllowed = true;
@@ -5732,8 +5747,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             break;
             case LOAN_DISBURSED:
-                if ((!(isApproved() && isNotDisbursed()) && !this.loanProduct.isMultiDisburseLoan()) || (Boolean.FALSE
-                        .equals(this.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode()))
+                if ((!(isApproved() && isNotDisbursed()) && !this.loanProduct.isMultiDisburseLoan()) || (Boolean.FALSE.equals(
+                        this.getLoanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase()))
                         && this.loanProduct.isMultiDisburseLoan() && !isAllTranchesNotDisbursed())) {
                     final String defaultUserMessage = "Loan Disbursal is not allowed. Loan Account is not in approved and not disbursed state.";
                     final ApiParameterError error = ApiParameterError

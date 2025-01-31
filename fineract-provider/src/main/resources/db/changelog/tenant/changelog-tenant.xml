@@ -377,4 +377,5 @@
     <include file="parts/20231101123000_EA-196-create_transacciones_alianzas_table.xml" relativeToChangelogFile="true" />
     <include file="parts/202311011430000001_EA-163_add_api-key-to-hook-schema.xml" relativeToChangelogFile="true" />
     <include file="parts/202501272000001000_EA_167_webhook_disbursementUpdateLoanOfficerCode.xml" relativeToChangelogFile="true" />
+    <include file="parts/202501282000001000_EA_187_creditorotativo_laon_product.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

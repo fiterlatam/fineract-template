@@ -18,9 +18,10 @@
  */
 package org.apache.fineract.infrastructure.dataqueries.data;
 
+import java.io.Serializable;
 import java.util.List;
 
-public final class ResultsetRowData {
+public final class ResultsetRowData implements Serializable {
 
     private final List<Object> row;
 
