@@ -51,15 +51,15 @@ import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncod
  */
 public final class JsonCommand {
 
-    private final String jsonCommand;
+    private String jsonCommand;
     private final JsonElement parsedCommand;
-    private final FromJsonHelper fromApiJsonHelper;
+    private FromJsonHelper fromApiJsonHelper;
     private final Long commandId;
-    private final Long resourceId;
+    private Long resourceId;
     private final Long subresourceId;
     private final Long groupId;
     private final Long clientId;
-    private final Long loanId;
+    private Long loanId;
     private final Long savingsId;
     private final String entityName;
     private final String transactionId;
@@ -629,4 +629,19 @@ public final class JsonCommand {
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, requestDataParameters);
     }
 
+    public void setLoanId(Long loanId) {
+        this.loanId = loanId;
+    }
+
+    public void setJsonCommand(String jsonCommand) {
+        this.jsonCommand = jsonCommand;
+    }
+
+    public void setFromApiJsonHelper(FromJsonHelper fromApiJsonHelper) {
+        this.fromApiJsonHelper = fromApiJsonHelper;
+    }
+
+    public void setResourceId(Long resourceId) {
+        this.resourceId = resourceId;
+    }
 }

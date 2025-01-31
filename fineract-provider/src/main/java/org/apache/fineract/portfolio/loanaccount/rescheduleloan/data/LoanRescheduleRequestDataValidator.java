@@ -46,6 +46,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.RescheduleLoansApiConstants;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain.LoanRescheduleRequest;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -193,7 +194,8 @@ public class LoanRescheduleRequestDataValidator {
             }
         }
         if (loan.isMultiDisburmentLoan()) {
-            if (!loan.loanProduct().isDisallowExpectedDisbursements()) {
+            if (!loan.loanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase())
+                    && !loan.loanProduct().isDisallowExpectedDisbursements()) {
                 dataValidatorBuilder.reset().failWithCodeNoParameterAddedToErrorCode(
                         RescheduleLoansApiConstants.resheduleForMultiDisbursementNotSupportedErrorCode,
                         "Loan rescheduling is not supported for multidisbursement tranche loans");

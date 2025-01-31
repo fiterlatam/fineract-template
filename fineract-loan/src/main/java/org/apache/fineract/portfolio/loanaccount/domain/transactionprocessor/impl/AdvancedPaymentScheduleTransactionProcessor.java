@@ -116,10 +116,12 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
     }
 
     @Override
-    protected Money handleTransactionThatIsOnTimePaymentOfInstallment(LoanRepaymentScheduleInstallment currentInstallment,
+    public Money handleTransactionThatIsOnTimePaymentOfInstallment(LoanRepaymentScheduleInstallment currentInstallment,
             LoanTransaction loanTransaction, Money transactionAmountUnprocessed,
             List<LoanTransactionToRepaymentScheduleMapping> transactionMappings, Set<LoanCharge> charges) {
-        throw new NotImplementedException();
+
+        return new CreocoreLoanRepaymentScheduleTransactionProcessor().handleTransactionThatIsOnTimePaymentOfInstallment(currentInstallment,
+                loanTransaction, transactionAmountUnprocessed, transactionMappings, charges);
     }
 
     @Override
