@@ -35,10 +35,10 @@ public enum ChargeCalculationTypeBaseItemsEnum {
                                             "% Of another charge", "ACHG", "percentofanothercharge"), SEGURO_VOLUNTARIO(10,
                                                     "Seguro voluntario/asistencia", "VOLUNTARIO", "segurovoluntario");
 
-    private int index;
-    private String description;
-    private String acronym;
-    private String code;
+    private final int index;
+    private final String description;
+    private final String acronym;
+    private final String code;
 
     public Boolean isFlat() {
         return this.index == FLAT.index;

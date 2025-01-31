@@ -30,9 +30,6 @@ public class ChargeCalculationTypeEnumComposer {
 
     public static Map<String, String> generateCombinations() {
         Map<String, String> combinations = new HashMap<>();
-
-        Map<String, String> combinationsForDropDown = new HashMap<>();
-
         ChargeCalculationTypeBaseItemsEnum[] values = ChargeCalculationTypeBaseItemsEnum.values();
         int totalCombinations = (int) Math.pow(2, values.length);
 
