@@ -2274,6 +2274,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             LocalDate expecteddisbursementDate = this.expectedDisbursementDate;
 
             BigDecimal approvedLoanAmount = command.bigDecimalValueOfParameterNamed(LoanApiConstants.approvedLoanAmountParameterName);
+            if (this.isTopup){
+                approvedLoanAmount = this.proposedPrincipal;
+            }
+
             if (approvedLoanAmount != null) {
                 compareApprovedToProposedPrincipal(approvedLoanAmount);
 

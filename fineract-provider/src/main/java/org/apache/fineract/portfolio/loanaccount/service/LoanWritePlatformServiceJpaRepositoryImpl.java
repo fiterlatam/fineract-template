@@ -498,6 +498,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             "Disbursal date of this loan application " + loan.getDisbursementDate()
                                     + " should be after last transaction date of loan to be closed " + lastUserTransactionOnLoanToClose);
                 }
+                BigDecimal loanOutstanding = this.loanReadPlatformService
+                        .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose, actualDisbursementDate).getAmount();
+
                 final LoanTransactionData waiveInterestTransactionData = this.loanReadPlatformService
                         .retrieveWaiveInterestDetails(loanIdToClose);
                 if (waiveInterestTransactionData != null) {
@@ -528,8 +531,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
                     }
                 }
-                BigDecimal loanOutstanding = this.loanReadPlatformService
-                        .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose, actualDisbursementDate).getAmount();
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
                 if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
