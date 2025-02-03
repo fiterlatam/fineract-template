@@ -453,6 +453,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         endPrincipalInterestForThisPeriod.interestPaymentDueToGrace());
             }
 
+            /*
             // TODO dstanca Error when disbursing a multitranch lioan - uncomment?
             // will check for EMI amount greater than interest calculated
             // if (loanApplicationTerms.getFixedEmiAmount() != null
@@ -465,6 +466,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             // principalInterestForThisPeriod.interest().getAmount(),
             // loanApplicationTerms.getFixedEmiAmount());
             // }
+             */
 
             // update cumulative fields for principal & interest
             currentPeriodParams.setInterestForThisPeriod(principalInterestForThisPeriod.interest());

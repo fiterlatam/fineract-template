@@ -520,11 +520,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                     loanRepository.saveAndFlush(loan);
                     loan = this.loanAssembler.assembleFrom(loanId);
-                    //
-                    // Approve it
-                    // createRescheduleRequestCommand = approveRescheduleRequestAction(fromApiJsonHelper,
-                    // actualDisbursementDate, result.getResourceId());
-                    // result = loanRescheduleRequestWritePlatformService.approve(createRescheduleRequestCommand);
+
+                    /*
+                     Approve it
+                     createRescheduleRequestCommand = approveRescheduleRequestAction(fromApiJsonHelper,
+                     actualDisbursementDate, result.getResourceId());
+                     result = loanRescheduleRequestWritePlatformService.approve(createRescheduleRequestCommand);
+                     */
 
                 } catch (JsonProcessingException ex) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.does.cannot.create.extension",
@@ -538,9 +540,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             throw new GeneralPlatformDomainRuleException("error.msg.loan.product.does.not.allow.creation.nor.disbursement",
                     "Loan product does not allow creation and disbursement.");
         }
-
-        // final LocalDate actualDisbursementDate = command
-        // .localDateValueOfParameterNamed(LoanWritePlatformServiceJpaRepositoryImpl.ACTUAL_DISBURSEMENT_DATE_PARAM);
 
         if (loan.isChargedOff() && DateUtils.isBefore(actualDisbursementDate, loan.getChargedOffOnDate())) {
             throw new GeneralPlatformDomainRuleException(
