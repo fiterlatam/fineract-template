@@ -471,15 +471,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
             // If credito rotativo mensual, accepted repayment dates are 5,10,20
             if (loan.getLoanProduct().getName().toLowerCase(Locale.ROOT)
-                        .contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase(Locale.ROOT))
-                && actualDisbursementDate.getDayOfMonth() != 5
-                && actualDisbursementDate.getDayOfMonth() != 10
-                && actualDisbursementDate.getDayOfMonth() != 20) {
+                    .contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase(Locale.ROOT))
+                    && actualDisbursementDate.getDayOfMonth() != 5 && actualDisbursementDate.getDayOfMonth() != 10
+                    && actualDisbursementDate.getDayOfMonth() != 20) {
 
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.date.must.be.day.1.10.20",
                         "Disbursement date must be 5, 10 or 20");
             }
-
 
             final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(
                     LoanApiConstants.principalDisbursedParameterName, command.parsedJson().getAsJsonObject());
@@ -512,13 +510,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                 List<CodeValueData> codeValueList = Lists
                         .newArrayList(codeValueReadPlatformService.retrieveCodeValuesByCode("LoanRescheduleReason"));
-        Long loanRescheduleReasonId =
-            codeValueList.stream()
-                .filter(p -> p.getName().equals("Nuevo desembolso de Crédito Rotativo"))
-                .findFirst()
-                .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.reason.not.found",
-                    "Loan reschedule reason not found.")).getId();
-
+                Long loanRescheduleReasonId = codeValueList.stream().filter(p -> p.getName().equals("Nuevo desembolso de Crédito Rotativo"))
+                        .findFirst().orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.reason.not.found",
+                                "Loan reschedule reason not found."))
+                        .getId();
 
                 // Check how many installments were paid
                 Integer productNrOfRepayments = loan.getLoanProduct().getNumberOfRepayments();
@@ -529,16 +524,15 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     // create a reschedule request with "increase nr of installments"
                     JsonCommand createRescheduleRequestCommand = createResqueduleRequestAction(fromApiJsonHelper, null, loanId,
                             actualDisbursementDate, loanRescheduleReasonId, nrOfInstallmentsToAdd);
-                   loanRescheduleRequestWritePlatformService.create(createRescheduleRequestCommand);
+                    loanRescheduleRequestWritePlatformService.create(createRescheduleRequestCommand);
 
                     loanRepository.saveAndFlush(loan);
                     loan = this.loanAssembler.assembleFrom(loanId);
 
                     /*
-                     Approve it
-                     createRescheduleRequestCommand = approveRescheduleRequestAction(fromApiJsonHelper,
-                     actualDisbursementDate, result.getResourceId());
-                     result = loanRescheduleRequestWritePlatformService.approve(createRescheduleRequestCommand);
+                     * Approve it createRescheduleRequestCommand = approveRescheduleRequestAction(fromApiJsonHelper,
+                     * actualDisbursementDate, result.getResourceId()); result =
+                     * loanRescheduleRequestWritePlatformService.approve(createRescheduleRequestCommand);
                      */
 
                 } catch (JsonProcessingException ex) {
@@ -5097,7 +5091,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         Long insuranceCode = command.longValueOfParameterNamed("codigoSeguro");
         LocalDate cancellationDate = command.localDateValueOfParameterNamed("date");
 
-        LoanCharge loanCharge ;
+        LoanCharge loanCharge;
 
         Loan loan = this.loanAssembler.assembleFrom(loanId);
 

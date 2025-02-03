@@ -194,13 +194,13 @@ public class LoanRescheduleRequestDataValidator {
                         .failWithCode("repayment.schedule.installment.obligation.met", "Repayment schedule installment obligation met");
             }
         }
-        if (loan.isMultiDisburmentLoan() && !loan.loanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase())
-                    && !loan.loanProduct().isDisallowExpectedDisbursements()) {
-                dataValidatorBuilder.reset().failWithCodeNoParameterAddedToErrorCode(
-                        RescheduleLoansApiConstants.resheduleForMultiDisbursementNotSupportedErrorCode,
-                        "Loan rescheduling is not supported for multidisbursement tranche loans");
-            }
-
+        if (loan.isMultiDisburmentLoan()
+                && !loan.loanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase())
+                && !loan.loanProduct().isDisallowExpectedDisbursements()) {
+            dataValidatorBuilder.reset().failWithCodeNoParameterAddedToErrorCode(
+                    RescheduleLoansApiConstants.resheduleForMultiDisbursementNotSupportedErrorCode,
+                    "Loan rescheduling is not supported for multidisbursement tranche loans");
+        }
 
         validateForOverdueCharges(dataValidatorBuilder, loan, installment);
         if (!dataValidationErrors.isEmpty()) {

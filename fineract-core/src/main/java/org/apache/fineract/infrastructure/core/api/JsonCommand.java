@@ -112,9 +112,9 @@ public final class JsonCommand {
     }
 
     public JsonCommand(final Long commandId, final String jsonCommandString, final JsonElement parsedCommand,
-                       final FromJsonHelper fromApiJsonHelper, final String entityName, final Long resourceId, final Long subresourceId,
-                       final Long groupId, final Long clientId, final Long loanId, final Long savingsId, final String transactionId, final String url,
-                       final Long productId, final Long creditBureauId, final Long organisationCreditBureauId, final String jobName) {
+            final FromJsonHelper fromApiJsonHelper, final String entityName, final Long resourceId, final Long subresourceId,
+            final Long groupId, final Long clientId, final Long loanId, final Long savingsId, final String transactionId, final String url,
+            final Long productId, final Long creditBureauId, final Long organisationCreditBureauId, final String jobName) {
 
         this.commandId = commandId;
         this.jsonCommandString = jsonCommandString;

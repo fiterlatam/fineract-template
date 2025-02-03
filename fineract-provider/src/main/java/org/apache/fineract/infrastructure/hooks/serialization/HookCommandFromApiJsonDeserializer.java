@@ -66,7 +66,8 @@ public class HookCommandFromApiJsonDeserializer {
 
         if (this.fromApiJsonHelper.parameterExists(HookApiConstants.TEMPLATE_ID_PARAM_NAME, element)) {
             final Long templateId = this.fromApiJsonHelper.extractLongNamed(HookApiConstants.TEMPLATE_ID_PARAM_NAME, element);
-            baseDataValidator.reset().parameter(HookApiConstants.TEMPLATE_ID_PARAM_NAME).value(templateId).notNull().integerGreaterThanZero();
+            baseDataValidator.reset().parameter(HookApiConstants.TEMPLATE_ID_PARAM_NAME).value(templateId).notNull()
+                    .integerGreaterThanZero();
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
@@ -91,7 +92,8 @@ public class HookCommandFromApiJsonDeserializer {
 
         if (this.fromApiJsonHelper.parameterExists(HookApiConstants.TEMPLATE_ID_PARAM_NAME, element)) {
             final Long templateId = this.fromApiJsonHelper.extractLongNamed(HookApiConstants.TEMPLATE_ID_PARAM_NAME, element);
-            baseDataValidator.reset().parameter(HookApiConstants.TEMPLATE_ID_PARAM_NAME).value(templateId).notNull().integerGreaterThanZero();
+            baseDataValidator.reset().parameter(HookApiConstants.TEMPLATE_ID_PARAM_NAME).value(templateId).notNull()
+                    .integerGreaterThanZero();
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
