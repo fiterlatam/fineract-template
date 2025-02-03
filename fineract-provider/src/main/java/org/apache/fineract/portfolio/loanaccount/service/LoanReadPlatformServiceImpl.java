@@ -2043,9 +2043,17 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         final Collection<PaymentTypeData> paymentOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
         BigDecimal outstandingLoanBalance = null;
         final BigDecimal unrecognizedIncomePortion = null;
-        return new LoanTransactionData(null, null, null, transactionType, null, null, null, loan.getTotalWrittenOff(),
+        String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
+        BankAccountReadPlatformServiceImpl.BankAccountMapper bankAccountMapper = new BankAccountReadPlatformServiceImpl.BankAccountMapper();
+        String bankAccSql = "select " + bankAccountMapper.schema();
+        bankAccSql = bankAccSql + " where (mo.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mo.hierarchy, '%')) ";
+        List<BankAccountData> bankAccounts = this.jdbcTemplate.query(bankAccSql, bankAccountMapper, hierarchy, hierarchy);
+
+        LoanTransactionData loanTransactionData = new LoanTransactionData(null, null, null, transactionType, null, null, null, loan.getTotalWrittenOff(),
                 loan.getNetDisbursalAmount(), null, null, null, null, null, unrecognizedIncomePortion, paymentOptions, null, null, null,
                 outstandingLoanBalance, false);
+        loanTransactionData.setBankAccounts(bankAccounts);
+        return loanTransactionData;
 
     }
 
