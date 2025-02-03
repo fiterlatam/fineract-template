@@ -5028,7 +5028,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         for (DefaultOrCancelInsuranceInstallmentData data : defaultInsuranceIds) {
             Loan loan = this.loanAssembler.assembleFrom(data.loanId());
-            LoanCharge loanCharge = null;
+            LoanCharge loanCharge;
             Optional<LoanCharge> loanChargeOptional = loan.getLoanCharges().stream()
                     .filter(lc -> Objects.equals(lc.getId(), data.loanChargeId())).findFirst();
             if (loanChargeOptional.isPresent()) {
@@ -5092,7 +5092,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         Long insuranceCode = command.longValueOfParameterNamed("codigoSeguro");
         LocalDate cancellationDate = command.localDateValueOfParameterNamed("date");
 
-        LoanCharge loanCharge = null;
+        LoanCharge loanCharge ;
 
         Loan loan = this.loanAssembler.assembleFrom(loanId);
 
@@ -5276,8 +5276,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         map.put("extraTerms", String.valueOf(nrOfNewInstallments));
         map.put("newInterestRate", "");
         map.put(DATE_FORMAT_PARAM, DateUtils.DEFAULT_DATE_FORMAT);
-        map.put("locale", "es");
-        map.put("loanId", String.valueOf(loanId));
+        map.put(LOCALE_PARAM, "es");
+        map.put(LOAN_ID_PARAM, String.valueOf(loanId));
 
         JsonCommand jsonCommand = createJsonCommand(map);
         jsonCommand.setLoanId(loanId);
