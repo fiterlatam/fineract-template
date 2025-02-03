@@ -92,9 +92,12 @@ public class LoanArrearsAgeingUpdateHandler {
             log.info("Records affected by updateLoanArrearsAgeingDetails: {}", result);
         }
 
+        log.info("Updating Client and Loan Statuses...");
         handleBlockingAfterAreasAging();
         handleUnBlockingAfterArrearsAging();
-        handleBlockingReasonCreadit();
+        handleBlockingReasonCredit();
+        handleUnblockingReasonCreditAfterArrearsAging();
+        log.info("Done updating Client and Loan Statuses");
         log.info("Update Loan Arrears Ageing Job is successfully completed");
     }
 
@@ -119,7 +122,8 @@ public class LoanArrearsAgeingUpdateHandler {
 
         handleBlockingAfterAreasAging();
         handleUnBlockingAfterArrearsAging();
-        handleBlockingReasonCreadit();
+        handleBlockingReasonCredit();
+        handleUnblockingReasonCreditAfterArrearsAging();
         if (log.isDebugEnabled()) {
             int result = 0;
             for (int recordWithoutOriginalSchedule : recordsUpdatedWithoutOriginalSchedule) {
@@ -305,7 +309,7 @@ public class LoanArrearsAgeingUpdateHandler {
         }
     }
 
-    public void handleBlockingAfterAreasAging() {
+    private void handleBlockingAfterAreasAging() {
 
         final String query = """
                     select distinct l.client_id from m_loan_arrears_aging mlaa
@@ -326,7 +330,7 @@ public class LoanArrearsAgeingUpdateHandler {
 
     }
 
-    public void handleUnBlockingAfterArrearsAging() {
+    private void handleUnBlockingAfterArrearsAging() {
 
         final String query = """
                    SELECT DISTINCT mcbr.client_id
@@ -347,7 +351,7 @@ public class LoanArrearsAgeingUpdateHandler {
 
     }
 
-    public void handleBlockingReasonCreadit() {
+    private void handleBlockingReasonCredit() {
         BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
                 .getSingleBlockingReasonSettingByReason(BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
         final String query = """
@@ -377,4 +381,24 @@ public class LoanArrearsAgeingUpdateHandler {
         }
     }
 
+    private void handleUnblockingReasonCreditAfterArrearsAging() {
+
+        // Delete all the records from m_credit_blocking_reason table where loan_id is not in m_loan_arrears_aging
+        String query = """
+                    delete from m_credit_blocking_reason where loan_id in
+                     (
+                     	select ml.id from m_loan ml where ml.block_status_id = (select id from m_blocking_reason_setting where name_of_reason = ? and level = ?)
+                     	and ml.id not in (select loan_id from m_loan_arrears_aging)
+                     )
+                """;
+
+        jdbcTemplate.update(query, BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
+
+        // Update m_loan table block_status_id to null where id is not in m_loan_arrears_aging
+        query = """
+                update m_loan set block_status_id = null where block_status_id = (select id from m_blocking_reason_setting where name_of_reason = ? and level = ?)
+                      and id not in (select loan_id from m_loan_arrears_aging)
+                """;
+        jdbcTemplate.update(query, BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
+    }
 }
