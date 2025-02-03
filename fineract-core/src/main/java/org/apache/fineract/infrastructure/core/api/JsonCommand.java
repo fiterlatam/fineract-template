@@ -50,7 +50,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncod
  * an existing value.
  */
 @SuppressWarnings("java:S107")
-public final class JsonCommand {
+public final class JsonCommand {//NOSONAR
 
     private String jsonCommandString;
     private final JsonElement parsedCommand;
