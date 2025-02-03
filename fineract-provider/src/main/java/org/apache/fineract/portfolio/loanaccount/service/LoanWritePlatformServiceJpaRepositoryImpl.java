@@ -454,8 +454,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         // Fail fast if client/group is not active or actual loan status disallows disbursal
         checkClientOrGroupActive(loan);
-
-        // Fail fast if cupo is not enough // TODO: check available amount against this request.
         checkCupo(loan);
 
         final LocalDate actualDisbursementDate = this.fromApiJsonHelper
@@ -485,7 +483,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     .filter(nR -> !nR.isReversed()).map(x -> x.getPrincipalPortion()).reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal loanApprovedPrincipal = loan.getApprovedPrincipal();
-            // TODO Enable approal validation
             if (disbursementAmountSum.add(principal).subtract(loanTransactionRepaymentSum).compareTo(loanApprovedPrincipal) > 0) {
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.exceeds.approved.principal",
                         "Sum of Loan disbursements (".concat(String.valueOf(disbursementAmountSum)).concat(") + This one (")
@@ -518,8 +515,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 try {
                     // create a reschedule request with "increase nr of installments"
                     JsonCommand createRescheduleRequestCommand = createResqueduleRequestAction(fromApiJsonHelper, null, loanId,
-                            actualDisbursementDate, loanRescheduleReasonId, nrOfInstallmentsToAdd.intValue());
-                    CommandProcessingResult result = loanRescheduleRequestWritePlatformService.create(createRescheduleRequestCommand);
+                            actualDisbursementDate, loanRescheduleReasonId, nrOfInstallmentsToAdd);
+                   loanRescheduleRequestWritePlatformService.create(createRescheduleRequestCommand);
 
                     loanRepository.saveAndFlush(loan);
                     loan = this.loanAssembler.assembleFrom(loanId);
