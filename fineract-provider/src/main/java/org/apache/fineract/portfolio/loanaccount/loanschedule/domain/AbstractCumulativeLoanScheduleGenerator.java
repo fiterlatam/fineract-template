@@ -1513,7 +1513,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
      */
     private LoanTermVariationParams applyExceptionLoanTermVariations(final LoanApplicationTerms loanApplicationTerms,
             final LocalDate scheduledDueDate, final ListIterator<LoanTermVariationsData> exceptionDataListIterator, int instalmentNumber,
-            Money totalCumulativePrincipal, Money totalCumulativeInterest, MathContext mc) {
+            Money totalCumulativePrincipal, Money totalCumulativeInterest, MathContext mc, LoanRepaymentScheduleInstallment installment) {
         boolean skipPeriod = false;
         boolean recalculateAmounts = false;
         LocalDate modifiedScheduledDueDate = scheduledDueDate;
@@ -1523,7 +1523,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             if (variation.isApplicable(modifiedScheduledDueDate) && variation.getDecimalValue() != null && !variation.isProcessed()) {
                 loanApplicationTerms.updateAnnualNominalInterestRate(variation.getDecimalValue());
                 if (loanApplicationTerms.getInterestMethod().isDecliningBalance()) {
-                    adjustInstallmentOrPrincipalAmount(loanApplicationTerms, totalCumulativePrincipal, instalmentNumber, mc);
+                    if (!installment.isMigratedInstallment()) {
+                        adjustInstallmentOrPrincipalAmount(loanApplicationTerms, totalCumulativePrincipal, instalmentNumber, mc);
+                    }
                 } else {
                     loanApplicationTerms.setTotalPrincipalAccountedForInterestCalculation(totalCumulativePrincipal);
                     loanApplicationTerms.updateExcludePeriodsForCalculation(instalmentNumber - 1);
@@ -2821,7 +2823,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         }
 
                         loanTermVariationParams = applyExceptionLoanTermVariations(loanApplicationTerms, lastInstallmentDate,
-                                exceptionDataListIterator, instalmentNumber, totalCumulativePrincipal, totalCumulativeInterest, mc);
+                                exceptionDataListIterator, instalmentNumber, totalCumulativePrincipal, totalCumulativeInterest, mc, installment);
                     } while (loanTermVariationParams != null && loanTermVariationParams.skipPeriod());
 
                     periodNumber++;
@@ -3270,7 +3272,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         }
 
                         loanTermVariationParams = applyExceptionLoanTermVariations(loanApplicationTerms, lastInstallmentDate,
-                                exceptionDataListIterator, instalmentNumber, totalCumulativePrincipal, totalCumulativeInterest, mc);
+                                exceptionDataListIterator, instalmentNumber, totalCumulativePrincipal, totalCumulativeInterest, mc, installment);
                     } while (loanTermVariationParams != null && loanTermVariationParams.skipPeriod());
 
                     periodNumber++;
@@ -3491,7 +3493,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             MonetaryCurrency currency) {
         List<LoanRepaymentScheduleInstallment> newRepaymentScheduleInstallments = new ArrayList<>();
         for (LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
-            if (DateUtils.isOnOrBefore(installment.getFromDate(), rescheduleFrom)) {
+            if (DateUtils.isOnOrBefore(installment.getFromDate(), rescheduleFrom) || installment.isMigratedInstallment()) {
                 newRepaymentScheduleInstallments.add(installment);
             } else {
                 // Check if there is any installment having advance payment then add the installment to calculate
