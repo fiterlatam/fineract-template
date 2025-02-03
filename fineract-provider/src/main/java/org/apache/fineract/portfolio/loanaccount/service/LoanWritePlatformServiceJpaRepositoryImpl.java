@@ -5301,7 +5301,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         ObjectMapper objectMapper = new ObjectMapper();
         String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonMap);
         JsonCommand ret = new JsonCommand(null, JsonParser.parseString(json));
-        ret.setJsonCommand(json);
+        ret.setJsonCommandString(json);
         return ret;
     }
 }

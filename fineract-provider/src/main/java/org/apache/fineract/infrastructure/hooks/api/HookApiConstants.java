@@ -28,52 +28,49 @@ public final class HookApiConstants {
 
     public static final String HOOK_RESOURCE_NAME = "HOOK";
 
-    public static final String nameParamName = "name";
+    public static final String NAME_PARAM_NAME = "name";
 
-    public static final String displayNameParamName = "displayName";
+    public static final String DISPLAY_NAME_PARAM_NAME = "displayName";
 
-    public static final String isActiveParamName = "isActive";
+    public static final String IS_ACTIVE_PARAM_NAME = "isActive";
 
-    public static final String webTemplateName = "Web";
+    public static final String WEB_TEMPLATE_NAME = "Web";
 
-    public static final String elasticSearchTemplateName = "Elastic Search";
+    public static final String ELASTIC_SEARCH_TEMPLATE_NAME = "Elastic Search";
 
-    public static final String httpSMSTemplateName = "Message Gateway";
+    public static final String HTTP_SMS_TEMPLATE_NAME = "Message Gateway";
 
-    public static final String smsTemplateName = "SMS Bridge";
+    public static final String SMS_TEMPLATE_NAME = "SMS Bridge";
 
-    public static final String payloadURLName = "Payload URL";
+    public static final String PAYLOAD_URL_NAME = "Payload URL";
 
-    public static final String contentTypeName = "Content Type";
+    public static final String CONTENT_TYPE_NAME = "Content Type";
 
-    public static final String smsProviderName = "SMS Provider";
+    public static final String SMS_PROVIDER_NAME = "SMS Provider";
 
-    public static final String smsProviderAccountIdName = "SMS Provider Account Id";
+    public static final String SMS_PROVIDER_ACCOUNT_ID_NAME = "SMS Provider Account Id";
 
-    public static final String smsProviderTokenIdName = "SMS Provider Token";
+    public static final String SMS_PROVIDER_TOKEN_ID_NAME = "SMS Provider Token";
 
-    public static final String phoneNumberName = "Phone Number";
+    public static final String PHONE_NUMBER_NAME = "Phone Number";
 
-    public static final String apiKeyName = "API Key";
+    public static final String API_KEY_NAME = "API Key";
 
-    public static final String configParamName = "config";
+    public static final String CONFIG_PARAM_NAME = "config";
 
-    public static final String eventsParamName = "events";
+    public static final String EVENTS_PARAM_NAME = "events";
 
-    public static final String entityNameParamName = "entityName";
+    public static final String ENTITY_NAME_PARAM_NAME = "entityName";
 
-    public static final String actionNameParamName = "actionName";
+    public static final String ACTION_NAME_PARAM_NAME = "actionName";
 
-    public static final String templateIdParamName = "templateId";
+    public static final String TEMPLATE_ID_PARAM_NAME = "templateId";
 
-    public static final String templateNameParamName = "templateName";
+    public static final String TEMPLATE_NAME_PARAM_NAME = "templateName";
 
-    public static final String SMSProviderIdParamName = "SMS Provider Id";
+    public static final String SMS_PROVIDER_ID_PARAM_NAME = "SMS Provider Id";
 
-    public static final Set<String> RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(nameParamName, displayNameParamName,
-            templateIdParamName, isActiveParamName, configParamName, eventsParamName, templateNameParamName));
-
-    public static final Set<String> UPDATE_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(nameParamName, displayNameParamName,
-            templateIdParamName, isActiveParamName, configParamName, eventsParamName, templateNameParamName));
+    static final Set<String> RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(NAME_PARAM_NAME, DISPLAY_NAME_PARAM_NAME,
+            TEMPLATE_ID_PARAM_NAME, IS_ACTIVE_PARAM_NAME, CONFIG_PARAM_NAME, EVENTS_PARAM_NAME, TEMPLATE_NAME_PARAM_NAME));
 
 }

@@ -18,7 +18,7 @@
  */
 package org.apache.fineract.infrastructure.hooks.processor;
 
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.apiKeyName;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.API_KEY_NAME;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -66,14 +66,14 @@ public class TwilioHookProcessor implements HookProcessor {
         @SuppressWarnings("rawtypes")
         final Callback callback = processorHelper.createCallback(smsProviderData.getUrl());
 
-        String apiKey = this.hookConfigurationRepository.findOneByHookIdAndFieldName(hook.getId(), apiKeyName);
+        String apiKey = this.hookConfigurationRepository.findOneByHookIdAndFieldName(hook.getId(), API_KEY_NAME);
         if (apiKey == null) {
             smsProviderData.setUrl(null);
             smsProviderData.setEndpoint(System.getProperty("baseUrl"));
             smsProviderData.setTenantId(context.getTenantContext().getTenantIdentifier());
             smsProviderData.setMifosToken(context.getAuthTokenContext());
             apiKey = service.sendSmsBridgeConfigRequest(smsProviderData).execute().body();
-            final HookConfiguration apiKeyEntry = HookConfiguration.createNew(hook, "string", apiKeyName, apiKey);
+            final HookConfiguration apiKeyEntry = HookConfiguration.createNew(hook, "string", API_KEY_NAME, apiKey);
             this.hookConfigurationRepository.save(apiKeyEntry);
         }
 
