@@ -9,6 +9,8 @@ public interface CollectionHouseHistoryReadWriteService {
 
     CommandProcessingResult createCollectionHouseHistory(JsonCommand command);
 
+    CommandProcessingResult updateCollectionHouseHistory(JsonCommand command);
+
     ColletionHouseHistory findCollectionHouseHistoryByAcctountNo(String accountNo);
 
     List<ColletionHouseHistory> findAllCollectionHouseHistory();

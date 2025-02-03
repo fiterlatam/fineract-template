@@ -102,6 +102,12 @@ public class CollectionHouseHistoryReadWriteServiceImpl implements CollectionHou
     }
 
     @Override
+    public CommandProcessingResult updateCollectionHouseHistory(JsonCommand command) {
+        this.collectionHouseHistoryRepository.updateCollectionHouseHistory();
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(command.entityId()).build();
+    }
+
+    @Override
     public ColletionHouseHistory findCollectionHouseHistoryByAcctountNo(String accountNo) {
         Optional<ColletionHouseHistory> getColletionHouseHistory = collectionHouseHistoryRepository
                 .getCollectionHouseHistoryByAccountNo((accountNo));

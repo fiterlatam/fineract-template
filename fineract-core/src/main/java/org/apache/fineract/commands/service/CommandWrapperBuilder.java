@@ -4130,4 +4130,12 @@ public class CommandWrapperBuilder {
         this.href = "/collectionhousehistory";
         return this;
     }
+
+    public CommandWrapperBuilder updateCollectionHouseHistory() {
+        this.actionName = "UPDATE";
+        this.entityName = "COLLECTIONHOUSEHISTORY";
+        this.entityId = null;
+        this.href = "/collectionhousehistory";
+        return this;
+    }
 }
