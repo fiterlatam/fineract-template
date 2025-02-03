@@ -396,9 +396,9 @@ public class LoanArrearsAgeingUpdateHandler {
 
         // Update m_loan table block_status_id to null where id is not in m_loan_arrears_aging
         query = """
-                update m_loan set block_status_id = null where block_status_id = (select id from m_blocking_reason_setting where name_of_reason = 'MORA' and level = 'CREDIT')
+                update m_loan set block_status_id = null where block_status_id = (select id from m_blocking_reason_setting where name_of_reason = ? and level = ?)
                       and id not in (select loan_id from m_loan_arrears_aging)
                 """;
-        jdbcTemplate.update(query);
+        jdbcTemplate.update(query, BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
     }
 }
