@@ -464,14 +464,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (loan.getLoanProduct().isMultiDisburseLoan()) {
 
             // If credito rotativo mensual, accepted repayment dates are 5,10,20
-            if (loan.getLoanProduct().getName().toLowerCase()
-                    .contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase(Locale.ROOT))) {
-                if (actualDisbursementDate.getDayOfMonth() != 5 && actualDisbursementDate.getDayOfMonth() != 10
-                        && actualDisbursementDate.getDayOfMonth() != 20) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.date.must.be.day.1.10.20",
-                            "Disbursement date must be 5, 10 or 20");
-                }
+            if (loan.getLoanProduct().getName().toLowerCase(Locale.ROOT)
+                        .contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase(Locale.ROOT))
+                && actualDisbursementDate.getDayOfMonth() != 5
+                && actualDisbursementDate.getDayOfMonth() != 10
+                && actualDisbursementDate.getDayOfMonth() != 20) {
+
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.date.must.be.day.1.10.20",
+                        "Disbursement date must be 5, 10 or 20");
             }
+
 
             final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(
                     LoanApiConstants.principalDisbursedParameterName, command.parsedJson().getAsJsonObject());
@@ -504,8 +506,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                 List<CodeValueData> codeValueList = Lists
                         .newArrayList(codeValueReadPlatformService.retrieveCodeValuesByCode("LoanRescheduleReason"));
-                Long loanRescheduleReasonId = codeValueList.stream().filter(p -> p.getName().equals("Nuevo desembolso de Crédito Rotativo"))
-                        .findFirst().get().getId();
+        Long loanRescheduleReasonId =
+            codeValueList.stream()
+                .filter(p -> p.getName().equals("Nuevo desembolso de Crédito Rotativo"))
+                .findFirst()
+                .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.reason.not.found",
+                    "Loan reschedule reason not found.")).getId();
+
 
                 // Check how many installments were paid
                 Integer productNrOfRepayments = loan.getLoanProduct().getNumberOfRepayments();
@@ -5268,7 +5275,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         map.put("graceOnInterest", "");
         map.put("extraTerms", String.valueOf(nrOfNewInstallments));
         map.put("newInterestRate", "");
-        map.put("dateFormat", DateUtils.DEFAULT_DATE_FORMAT);
+        map.put(DATE_FORMAT_PARAM, DateUtils.DEFAULT_DATE_FORMAT);
         map.put("locale", "es");
         map.put("loanId", String.valueOf(loanId));
 
@@ -5286,7 +5293,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         Map<String, Object> map = new HashMap<>();
 
         map.put("approvedOnDate", DateUtils.format(startDate, DateUtils.DEFAULT_DATE_FORMAT));
-        map.put("dateFormat", DateUtils.DEFAULT_DATE_FORMAT);
+        map.put(DATE_FORMAT_PARAM, DateUtils.DEFAULT_DATE_FORMAT);
         map.put("locale", "es");
 
         JsonCommand jsonCommand = createJsonCommand(map);
