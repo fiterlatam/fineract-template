@@ -55,7 +55,8 @@ public class LoanDebtProjectionService {
                     loan.getId());
         }
         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
-        final LoanRepaymentScheduleInstallment loanForeclosureDetail = loan.fetchLoanForeclosureDetail(projectedFutureDate,
+        final LocalDate currentBusinessDate = DateUtils.getBusinessLocalDate();
+        final LoanRepaymentScheduleInstallment loanForeclosureDetail = loan.fetchLoanForeclosureDetail(currentBusinessDate,
                 scheduleGeneratorDTO);
         final LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(loanId);
         final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData = loanBasicDetails.getTimeline().repaymentScheduleRelatedData(
