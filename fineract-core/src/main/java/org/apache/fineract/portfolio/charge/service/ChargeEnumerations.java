@@ -19,7 +19,11 @@
 package org.apache.fineract.portfolio.charge.service;
 
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.portfolio.charge.domain.*;
+import org.apache.fineract.portfolio.charge.domain.ChargeAppliesTo;
+import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
+import org.apache.fineract.portfolio.charge.domain.ChargeInsuranceType;
+import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
+import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 
 public final class ChargeEnumerations {

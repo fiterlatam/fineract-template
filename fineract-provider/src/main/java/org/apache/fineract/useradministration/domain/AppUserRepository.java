@@ -19,6 +19,7 @@
 package org.apache.fineract.useradministration.domain;
 
 import java.util.Collection;
+import java.util.Optional;
 import org.apache.fineract.infrastructure.security.domain.PlatformUserRepository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -31,4 +32,7 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long>, JpaSpec
     AppUser findAppUserByName(@Param("username") String username);
 
     Collection<AppUser> findByOfficeId(Long officeId);
+
+    @Query("Select appUser from AppUser appUser where appUser.email = :email")
+    Optional<AppUser> findAppUserByEmail(@Param("email") String email);
 }

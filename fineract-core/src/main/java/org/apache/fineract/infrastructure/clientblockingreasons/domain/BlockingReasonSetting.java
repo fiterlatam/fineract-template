@@ -24,6 +24,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -83,14 +84,7 @@ public class BlockingReasonSetting extends AbstractPersistableCustom {
         if (this.affectsClientLevel != null) {
             affected = 1;
         }
-        return this.affectsClientLevel == affected;
+        return Objects.equals(this.affectsClientLevel, affected);
     }
 
-    public boolean isAffectsCreditLevel() {
-        Integer affected = 0;
-        if (this.affectsCreditLevel != null) {
-            affected = 1;
-        }
-        return this.affectsCreditLevel == affected;
-    }
 }

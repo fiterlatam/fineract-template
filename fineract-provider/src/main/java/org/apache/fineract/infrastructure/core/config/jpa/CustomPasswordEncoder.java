@@ -16,19 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.commands.event;
+package org.apache.fineract.infrastructure.core.config.jpa;
 
 import java.util.Map;
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.domain.FineractContext;
-import org.apache.fineract.useradministration.domain.AppUser;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-public interface CustomWebhookEventProcessor {
+public class CustomPasswordEncoder extends DelegatingPasswordEncoder {
 
-    Map<String, Object> transform(String entityName, String actionName, JsonCommand command, Object result);
+    public CustomPasswordEncoder(String idForEncode, Map<String, PasswordEncoder> idToPasswordEncoder) {
+        super(idForEncode, idToPasswordEncoder);
+    }
 
-    void publish(Map<String, Object> transformedPayload, String entityName, String actionName, AppUser user,
-            FineractContext fineractContext);
+    @Override
+    public boolean matches(CharSequence rawPassword, String prefixEncodedPassword) {
+        final boolean isMatch = super.matches(rawPassword, prefixEncodedPassword);
+        return rawPassword.toString().equals(prefixEncodedPassword) || isMatch;
+    }
 
-    boolean supports(String entityName, String actionName);
 }

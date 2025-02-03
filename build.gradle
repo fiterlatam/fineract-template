@@ -208,6 +208,12 @@ allprojects  {
         outputDir = "$projectDir/licenses"
     }
 
+    sonarqube {
+        properties {
+            property "sonar.exclusions", "sonar.exclusions, **/test/**, **/generated/**, **/build/**, **/bin/**, **/out/**, **/target/**, **/node_modules/**, **/src/main/resources/**, **/src/main/templates"
+        }
+    }
+
     // Configuration for Apache Release Audit Tool task
     // https://github.com/eskatos/creadur-rat-gradle
     rat {
@@ -296,7 +302,15 @@ allprojects  {
             ".mailmap",
             '**/images/diag-*.svg',
             '**/*.avsc',
-            "**/generated/**/*MapperImpl.java"
+            "**/generated/**/*MapperImpl.java",
+            "**/pentahoReports/**",
+            "**/pentahoReportsPostgres/**",
+            "**/.cicd/**",
+            "**/kubernetes/**",
+            "**/generate-playbook.sh",
+            "**/thirdparty/**",
+            "**/git-version.yaml",
+            "**/Jenkinsfile"
         ]
     }
 }
@@ -480,7 +494,7 @@ configure(project.fineractJavaProjects) {
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
         options.errorprone {
-            enabled = project.gradle.startParameter.taskNames.contains('build') || project.gradle.startParameter.taskNames.contains('check')
+            enabled = false
             disableWarningsInGeneratedCode = true
             excludedPaths = ".*/build/.*"
             disable(
