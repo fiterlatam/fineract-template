@@ -1403,7 +1403,10 @@ public class LoansApiResource {
                     loanId, "", null);
 
             name.setColumnHeaderData(null);
-            name.setGenericResultSet(results);
+
+            if (Boolean.FALSE.equals(results.getData().isEmpty())) {
+                name.setGenericResultSet(results);
+            }
         });
 
         loanAccount.setDatatables(datatableNamesList);
