@@ -303,6 +303,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private static final String LOAN_DESCRIPTION = "Loan: ";
     private static final String SUBMITTED_ON_DATE = "submittedOnDate";
     private static final String EXTRA_TERMS = "extraTerms";
+    private static final String ADJUSTED_DUE_DATE_PARAM = "adjustedDueDate";
+    private static final String APPROVED_DATE_PARAM = "approvedOnDate";
+    private static final String GRACE_ON_PRINCIPAL_PARAM = "graceOnPrincipal";
 
     private final PlatformSecurityContext context;
     private final LoanEventApiJsonValidator loanEventApiJsonValidator;
@@ -528,12 +531,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                     loanRepository.saveAndFlush(loan);
                     loan = this.loanAssembler.assembleFrom(loanId);
-
-                    /*
-                     * Approve it createRescheduleRequestCommand = approveRescheduleRequestAction(fromApiJsonHelper,
-                     * actualDisbursementDate, result.getResourceId()); result =
-                     * loanRescheduleRequestWritePlatformService.approve(createRescheduleRequestCommand);
-                     */
 
                 } catch (JsonProcessingException ex) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.does.cannot.create.extension",
@@ -4197,8 +4194,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             rescheduleJsonObject.addProperty(LoanWritePlatformServiceJpaRepositoryImpl.LOCALE_PARAM, locale);
             rescheduleJsonObject.addProperty(RESCHEDULE_REASON_ID_PARAM, rescheduleReasonId);
             rescheduleJsonObject.addProperty(SUBMITTED_ON_DATE, submittedOnDate);
-            rescheduleJsonObject.addProperty("adjustedDueDate", "");
-            rescheduleJsonObject.addProperty("graceOnPrincipal", "");
+            rescheduleJsonObject.addProperty(ADJUSTED_DUE_DATE_PARAM, "");
+            rescheduleJsonObject.addProperty(GRACE_ON_PRINCIPAL_PARAM, "");
             rescheduleJsonObject.addProperty(EXTRA_TERMS, "");
 
             for (final LoanRescheduleData loanRescheduleData : loanLoanRescheduleDataList) {
@@ -4243,7 +4240,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         approvalJsonObject.addProperty(LoanWritePlatformServiceJpaRepositoryImpl.DATE_FORMAT_PARAM, dateFormat);
                         approvalJsonObject.addProperty(LoanWritePlatformServiceJpaRepositoryImpl.LOCALE_PARAM, locale);
                         approvalJsonObject.addProperty("isJobTriggered", isJobTriggered);
-                        approvalJsonObject.addProperty("approvedOnDate", submittedOnDate);
+                        approvalJsonObject.addProperty(APPROVED_DATE_PARAM, submittedOnDate);
                         final String approvalRequestBodyAsJson = approvalJsonObject.toString();
                         commandWrapper = new CommandWrapperBuilder()
                                 .approveLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, loanRescheduleId)
@@ -4834,8 +4831,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 rescheduleJsonObject.addProperty(SUBMITTED_ON_DATE, submittedOnDate);
                 rescheduleJsonObject.addProperty(RESCHEDULE_REASON_COMMENT_PARAM,
                         LoanWritePlatformServiceJpaRepositoryImpl.MAXIMUM_LEGAL_RATE_RECALCULATION);
-                rescheduleJsonObject.addProperty("adjustedDueDate", "");
-                rescheduleJsonObject.addProperty("graceOnPrincipal", "");
+                rescheduleJsonObject.addProperty(ADJUSTED_DUE_DATE_PARAM, "");
+                rescheduleJsonObject.addProperty(GRACE_ON_PRINCIPAL_PARAM, "");
                 rescheduleJsonObject.addProperty(EXTRA_TERMS, "");
                 rescheduleJsonObject.addProperty(NEW_INTEREST_RATE_PARAM, currentRate);
                 final String rescheduleFromDateString = DateUtils.format(appliedOnDate, dateFormat, Locale.forLanguageTag(locale));
@@ -4853,7 +4850,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     approvalJsonObject.addProperty(LoanWritePlatformServiceJpaRepositoryImpl.DATE_FORMAT_PARAM, dateFormat);
                     approvalJsonObject.addProperty(LoanWritePlatformServiceJpaRepositoryImpl.LOCALE_PARAM, locale);
                     approvalJsonObject.addProperty("isJobTriggered", isJobTriggered);
-                    approvalJsonObject.addProperty("approvedOnDate", submittedOnDate);
+                    approvalJsonObject.addProperty(APPROVED_DATE_PARAM, submittedOnDate);
                     final String approvalRequestBodyAsJson = approvalJsonObject.toString();
                     commandWrapper = new CommandWrapperBuilder()
                             .approveLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, loanRescheduleId)
@@ -5268,8 +5265,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         map.put(RESCHEDULE_REASON_ID_PARAM, String.valueOf(rescheduleReasonIdCodeValueId));
         map.put(SUBMITTED_ON_DATE, DateUtils.format(startDate, DateUtils.DEFAULT_DATE_FORMAT));
         map.put(RESCHEDULE_REASON_COMMENT_PARAM, "");
-        map.put("adjustedDueDate", "");
-        map.put("graceOnPrincipal", "");
+        map.put(ADJUSTED_DUE_DATE_PARAM, "");
+        map.put(GRACE_ON_PRINCIPAL_PARAM, "");
         map.put("rediferirTerms", "");
         map.put("graceOnInterest", "");
         map.put(EXTRA_TERMS, String.valueOf(nrOfNewInstallments));
@@ -5291,7 +5288,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         Map<String, Object> map = new HashMap<>();
 
-        map.put("approvedOnDate", DateUtils.format(startDate, DateUtils.DEFAULT_DATE_FORMAT));
+        map.put(APPROVED_DATE_PARAM, DateUtils.format(startDate, DateUtils.DEFAULT_DATE_FORMAT));
         map.put(DATE_FORMAT_PARAM, DateUtils.DEFAULT_DATE_FORMAT);
         map.put(LOCALE_PARAM, "es");
 

@@ -111,6 +111,7 @@ public final class JsonCommand {
                 command.jobName);
     }
 
+    // NOSONAR: Allow this time to be used in the constructor
     public JsonCommand(final Long commandId, final String jsonCommandString, final JsonElement parsedCommand,
             final FromJsonHelper fromApiJsonHelper, final String entityName, final Long resourceId, final Long subresourceId,
             final Long groupId, final Long clientId, final Long loanId, final Long savingsId, final String transactionId, final String url,
