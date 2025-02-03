@@ -406,8 +406,7 @@ public final class JsonCommand {
 
     public Map<String, Object> mapObjectValueOfParameterNamed(final String json) {
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
-        final Map<String, Object> value = this.fromApiJsonHelper.extractObjectMap(typeOfMap, json);
-        return value;
+        return this.fromApiJsonHelper.extractObjectMap(typeOfMap, json);
     }
 
     public boolean isChangeInBigDecimalParameterNamedDefaultingZeroToNull(final String parameterName, final BigDecimal existingValue) {
