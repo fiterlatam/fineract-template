@@ -55,6 +55,7 @@ public class LoanDisbursementUpdateLoanOfficerCodeEventProcessor extends BaseCus
         return Collections.emptyMap();
     }
 
+    @SuppressWarnings("squid:S3776")
     public Map<String, Object> generateSuccessResponse(CommandProcessingResult successResult) {
         Map<String, Object> response = new HashMap<>();
         Long loanId = successResult.getLoanId();
