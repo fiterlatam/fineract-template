@@ -18,9 +18,9 @@
  */
 package org.apache.fineract.infrastructure.hooks.processor;
 
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.apiKeyName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.contentTypeName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.payloadURLName;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.API_KEY_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.CONTENT_TYPE_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.PAYLOAD_URL_NAME;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -53,13 +53,13 @@ public class WebHookProcessor implements HookProcessor {
 
         for (final HookConfiguration conf : config) {
             final String fieldName = conf.getFieldName();
-            if (fieldName.equals(payloadURLName)) {
+            if (fieldName.equals(PAYLOAD_URL_NAME)) {
                 url = conf.getFieldValue();
             }
-            if (fieldName.equals(contentTypeName)) {
+            if (fieldName.equals(CONTENT_TYPE_NAME)) {
                 contentType = conf.getFieldValue();
             }
-            if (apiKeyName.equalsIgnoreCase(fieldName)) {
+            if (API_KEY_NAME.equalsIgnoreCase(fieldName)) {
                 apiKey = conf.getFieldValue();
             }
         }

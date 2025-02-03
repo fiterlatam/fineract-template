@@ -64,9 +64,10 @@ public class HookCommandFromApiJsonDeserializer {
         final String name = this.fromApiJsonHelper.extractStringNamed("name", element);
         baseDataValidator.reset().parameter("name").value(name).notBlank().notExceedingLengthOf(100);
 
-        if (this.fromApiJsonHelper.parameterExists(HookApiConstants.templateIdParamName, element)) {
-            final Long templateId = this.fromApiJsonHelper.extractLongNamed(HookApiConstants.templateIdParamName, element);
-            baseDataValidator.reset().parameter(HookApiConstants.templateIdParamName).value(templateId).notNull().integerGreaterThanZero();
+        if (this.fromApiJsonHelper.parameterExists(HookApiConstants.TEMPLATE_ID_PARAM_NAME, element)) {
+            final Long templateId = this.fromApiJsonHelper.extractLongNamed(HookApiConstants.TEMPLATE_ID_PARAM_NAME, element);
+            baseDataValidator.reset().parameter(HookApiConstants.TEMPLATE_ID_PARAM_NAME).value(templateId).notNull()
+                    .integerGreaterThanZero();
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
@@ -89,9 +90,10 @@ public class HookCommandFromApiJsonDeserializer {
             baseDataValidator.reset().parameter("name").value(name).notBlank().notExceedingLengthOf(100);
         }
 
-        if (this.fromApiJsonHelper.parameterExists(HookApiConstants.templateIdParamName, element)) {
-            final Long templateId = this.fromApiJsonHelper.extractLongNamed(HookApiConstants.templateIdParamName, element);
-            baseDataValidator.reset().parameter(HookApiConstants.templateIdParamName).value(templateId).notNull().integerGreaterThanZero();
+        if (this.fromApiJsonHelper.parameterExists(HookApiConstants.TEMPLATE_ID_PARAM_NAME, element)) {
+            final Long templateId = this.fromApiJsonHelper.extractLongNamed(HookApiConstants.TEMPLATE_ID_PARAM_NAME, element);
+            baseDataValidator.reset().parameter(HookApiConstants.TEMPLATE_ID_PARAM_NAME).value(templateId).notNull()
+                    .integerGreaterThanZero();
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);

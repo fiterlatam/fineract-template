@@ -18,10 +18,10 @@
  */
 package org.apache.fineract.infrastructure.hooks.processor;
 
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.elasticSearchTemplateName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.httpSMSTemplateName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.smsTemplateName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.webTemplateName;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.ELASTIC_SEARCH_TEMPLATE_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.HTTP_SMS_TEMPLATE_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.SMS_TEMPLATE_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.WEB_TEMPLATE_NAME;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.hooks.domain.Hook;
@@ -37,13 +37,13 @@ public class HookProcessorProvider {
     public HookProcessor getProcessor(final Hook hook) {
         HookProcessor processor;
         final String templateName = hook.getTemplate().getName();
-        if (templateName.equalsIgnoreCase(smsTemplateName)) {
+        if (templateName.equalsIgnoreCase(SMS_TEMPLATE_NAME)) {
             processor = this.applicationContext.getBean("twilioHookProcessor", TwilioHookProcessor.class);
-        } else if (templateName.equals(webTemplateName)) {
+        } else if (templateName.equals(WEB_TEMPLATE_NAME)) {
             processor = this.applicationContext.getBean("webHookProcessor", WebHookProcessor.class);
-        } else if (templateName.equals(elasticSearchTemplateName)) {
+        } else if (templateName.equals(ELASTIC_SEARCH_TEMPLATE_NAME)) {
             processor = this.applicationContext.getBean("elasticSearchHookProcessor", ElasticSearchHookProcessor.class);
-        } else if (templateName.equals(httpSMSTemplateName)) {
+        } else if (templateName.equals(HTTP_SMS_TEMPLATE_NAME)) {
             processor = this.applicationContext.getBean("messageGatewayHookProcessor", MessageGatewayHookProcessor.class);
         } else {
             processor = null;

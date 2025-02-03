@@ -82,7 +82,7 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
         ValidacionContactaDatatableData validacionContactaData = getValidacionContacta(loan);
 
         // Check the business rules and set the responseBody
-        if (Objects.nonNull(validacionContactaData.getLoanId()) //
+        if (validacionContactaData != null && camposClienteEmpresaYPersona != null && Objects.nonNull(validacionContactaData.getLoanId()) //
                 && Objects.nonNull(camposClienteEmpresaYPersona.getClientId()) //
                 && Objects.nonNull(validacionContactaData.getUsuarioAsignadoCdUsuarioAsignado()) //
                 && validacionContactaData.getUsuarioAsignadoCdUsuarioAsignado().compareTo(0L) > 0 //

@@ -453,18 +453,15 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         endPrincipalInterestForThisPeriod.interestPaymentDueToGrace());
             }
 
-            // TODO dstanca Error when disbursing a multitranch lioan - uncomment?
-            // will check for EMI amount greater than interest calculated
-            // if (loanApplicationTerms.getFixedEmiAmount() != null
-            // &&
-            // loanApplicationTerms.getFixedEmiAmount().compareTo(principalInterestForThisPeriod.interest().getAmount())
-            // < 0) {
-            // String errorMsg = "EMI amount must be greater than : " +
-            // principalInterestForThisPeriod.interest().getAmount();
-            // throw new MultiDisbursementEmiAmountException(errorMsg,
-            // principalInterestForThisPeriod.interest().getAmount(),
-            // loanApplicationTerms.getFixedEmiAmount());
-            // }
+            /*
+             * // TODO dstanca Error when disbursing a multitranch lioan - uncomment? // will check for EMI amount
+             * greater than interest calculated // if (loanApplicationTerms.getFixedEmiAmount() != null // && //
+             * loanApplicationTerms.getFixedEmiAmount().compareTo(principalInterestForThisPeriod.interest().getAmount())
+             * // < 0) { // String errorMsg = "EMI amount must be greater than : " + //
+             * principalInterestForThisPeriod.interest().getAmount(); // throw new
+             * MultiDisbursementEmiAmountException(errorMsg, // principalInterestForThisPeriod.interest().getAmount(),
+             * // loanApplicationTerms.getFixedEmiAmount()); // }
+             */
 
             // update cumulative fields for principal & interest
             currentPeriodParams.setInterestForThisPeriod(principalInterestForThisPeriod.interest());

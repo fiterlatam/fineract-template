@@ -81,6 +81,7 @@ public class LoanRescheduleRequestDataValidator {
      *            the JSON command object (instance of the JsonCommand class)
      *
      **/
+    @SuppressWarnings("squid:S3776")
     public void validateForCreateAction(final JsonCommand jsonCommand, final Loan loan) {
 
         final String jsonString = jsonCommand.json();
@@ -193,13 +194,12 @@ public class LoanRescheduleRequestDataValidator {
                         .failWithCode("repayment.schedule.installment.obligation.met", "Repayment schedule installment obligation met");
             }
         }
-        if (loan.isMultiDisburmentLoan()) {
-            if (!loan.loanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase())
-                    && !loan.loanProduct().isDisallowExpectedDisbursements()) {
-                dataValidatorBuilder.reset().failWithCodeNoParameterAddedToErrorCode(
-                        RescheduleLoansApiConstants.resheduleForMultiDisbursementNotSupportedErrorCode,
-                        "Loan rescheduling is not supported for multidisbursement tranche loans");
-            }
+        if (loan.isMultiDisburmentLoan()
+                && !loan.loanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase())
+                && !loan.loanProduct().isDisallowExpectedDisbursements()) {
+            dataValidatorBuilder.reset().failWithCodeNoParameterAddedToErrorCode(
+                    RescheduleLoansApiConstants.resheduleForMultiDisbursementNotSupportedErrorCode,
+                    "Loan rescheduling is not supported for multidisbursement tranche loans");
         }
 
         validateForOverdueCharges(dataValidatorBuilder, loan, installment);
