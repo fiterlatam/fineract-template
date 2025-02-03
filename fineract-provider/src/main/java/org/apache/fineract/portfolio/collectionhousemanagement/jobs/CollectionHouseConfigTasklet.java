@@ -30,7 +30,9 @@ public class CollectionHouseConfigTasklet implements Tasklet {
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
         try {
+            JsonArray updatesArray = new JsonArray();
             // Fetch all collection house history records
+            /*
             List<ColletionHouseHistory> collectionHouseHistoryList = collectionHouseHistoryReadWriteService.findAllCollectionHouseHistory();
 
             JsonArray updatesArray = new JsonArray();
@@ -41,11 +43,12 @@ public class CollectionHouseConfigTasklet implements Tasklet {
                 jsonObject.addProperty("collectionHouseCode", colletionHouseHistory.getCollectionCode());
                 updatesArray.add(jsonObject);
             }
+            */
 
             JsonObject jsonCommandData = new JsonObject();
             jsonCommandData.add("collectionHouseUpdates", updatesArray);
 
-            CommandWrapper commandRequest = new CommandWrapperBuilder().createCollectionHouseHistory()
+            CommandWrapper commandRequest = new CommandWrapperBuilder().updateCollectionHouseHistory()
 
                     .withJson(jsonCommandData.toString()).build();
 
