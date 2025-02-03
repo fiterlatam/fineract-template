@@ -2823,7 +2823,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         }
 
                         loanTermVariationParams = applyExceptionLoanTermVariations(loanApplicationTerms, lastInstallmentDate,
-                                exceptionDataListIterator, instalmentNumber, totalCumulativePrincipal, totalCumulativeInterest, mc, installment);
+                                exceptionDataListIterator, instalmentNumber, totalCumulativePrincipal, totalCumulativeInterest, mc,
+                                installment);
                     } while (loanTermVariationParams != null && loanTermVariationParams.skipPeriod());
 
                     periodNumber++;
@@ -3272,7 +3273,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         }
 
                         loanTermVariationParams = applyExceptionLoanTermVariations(loanApplicationTerms, lastInstallmentDate,
-                                exceptionDataListIterator, instalmentNumber, totalCumulativePrincipal, totalCumulativeInterest, mc, installment);
+                                exceptionDataListIterator, instalmentNumber, totalCumulativePrincipal, totalCumulativeInterest, mc,
+                                installment);
                     } while (loanTermVariationParams != null && loanTermVariationParams.skipPeriod());
 
                     periodNumber++;
