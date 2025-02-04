@@ -45,6 +45,12 @@ truncate table custom.c_client_ally cascade;
 
 truncate table m_loan cascade;
 
+-- Disable the following Jobs Before Migration --
+-- Arrears Job
+-- Penalties Job
+-- Daily Accruals Job
+-- Daily Charge Accruals Job
+
 -- product start date needs to be moved back
 -- client activation date needs to be moved back
 
@@ -730,3 +736,13 @@ delete from m_maximum_credit_rate_configuration;
 insert into m_maximum_credit_rate_configuration select * from m_maximum_credit_rate_configuration_bk;
 
 drop table m_maximum_credit_rate_configuration_bk;
+
+-- Re-enable the following Jobs Before Migration --
+-- Arrears Job
+-- Penalties Job
+-- Daily Accruals Job
+-- Daily Charge Accruals Job
+
+Run these scripts after the jobs run after migration
+update m_ally_purchase_settlement set settlement_status = true;
+update m_ally_collection_settlement set settlement_status = true;
