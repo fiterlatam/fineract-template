@@ -49,7 +49,8 @@ import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncod
  * Wraps the provided JSON with convenience functions for extracting parameter values and checking for changes against
  * an existing value.
  */
-public final class JsonCommand {
+@SuppressWarnings("java:S107")
+public final class JsonCommand {// NOSONAR
 
     private String jsonCommandString;
     private final JsonElement parsedCommand;

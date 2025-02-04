@@ -124,53 +124,23 @@ public class HookWritePlatformServiceJpaRepositoryImpl implements HookWritePlatf
     @Override
     @CacheEvict(value = "hooks", allEntries = true)
     public CommandProcessingResult updateHook(final Long hookId, final JsonCommand command) {
-
         try {
             this.context.authenticatedUser();
-
             this.fromApiJsonDeserializer.validateForUpdate(command.json());
 
             final Hook hook = retrieveHookBy(hookId);
             final HookTemplate template = hook.getTemplate();
             final Map<String, Object> changes = hook.update(command);
 
+            processTemplateUpdate(command, changes, hook);
+            processEventUpdate(command, changes, hook);
+            processConfigUpdate(command, changes, hook, template);
+
             if (!changes.isEmpty()) {
-
-                if (changes.containsKey(TEMPLATE_ID_PARAM_NAME)) {
-                    final Long ugdTemplateId = command.longValueOfParameterNamed(TEMPLATE_ID_PARAM_NAME);
-                    final Template ugdTemplate = this.ugdTemplateRepository.findById(ugdTemplateId).orElse(null);
-                    if (ugdTemplate == null) {
-                        changes.remove(TEMPLATE_ID_PARAM_NAME);
-                        throw new TemplateNotFoundException(ugdTemplateId);
-                    }
-                    hook.setUgdTemplate(ugdTemplate);
-                }
-
-                if (changes.containsKey(EVENTS_PARAM_NAME)) {
-                    final Set<HookResource> events = assembleSetOfEvents(command.arrayOfParameterNamed(EVENTS_PARAM_NAME));
-                    final boolean updated = hook.updateEvents(events);
-                    if (!updated) {
-                        changes.remove(EVENTS_PARAM_NAME);
-                    }
-                }
-
-                if (changes.containsKey(CONFIG_PARAM_NAME)) {
-                    final String configJson = command.jsonFragment(CONFIG_PARAM_NAME);
-                    final Set<HookConfiguration> config = assembleConfig(command.mapValueOfParameterNamed(configJson), template);
-                    final boolean updated = hook.updateConfig(config);
-                    if (!updated) {
-                        changes.remove(CONFIG_PARAM_NAME);
-                    }
-                }
-
                 this.hookRepository.saveAndFlush(hook);
             }
 
-            return new CommandProcessingResultBuilder() //
-                    .withCommandId(command.commandId()) //
-                    .withEntityId(hookId) //
-                    .with(changes) //
-                    .build();
+            return buildCommandProcessingResult(command, hookId, changes);
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             handleHookDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
@@ -178,6 +148,41 @@ public class HookWritePlatformServiceJpaRepositoryImpl implements HookWritePlatf
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             handleHookDataIntegrityIssues(command, throwable, dve);
             return CommandProcessingResult.empty();
+        }
+    }
+
+    private void processTemplateUpdate(JsonCommand command, Map<String, Object> changes, Hook hook) {
+        if (changes.containsKey(TEMPLATE_ID_PARAM_NAME)) {
+            final Long ugdTemplateId = command.longValueOfParameterNamed(TEMPLATE_ID_PARAM_NAME);
+            final Template ugdTemplate = this.ugdTemplateRepository.findById(ugdTemplateId).orElse(null);
+            if (ugdTemplate == null) {
+                changes.remove(TEMPLATE_ID_PARAM_NAME);
+                throw new TemplateNotFoundException(ugdTemplateId);
+            }
+            hook.setUgdTemplate(ugdTemplate);
+        }
+    }
+
+    private void processConfigUpdate(JsonCommand command, Map<String, Object> changes, Hook hook, HookTemplate template) {
+        if (changes.containsKey(CONFIG_PARAM_NAME)) {
+            final String configJson = command.jsonFragment(CONFIG_PARAM_NAME);
+            final Set<HookConfiguration> config = assembleConfig(command.mapValueOfParameterNamed(configJson), template);
+            if (!hook.updateConfig(config)) {
+                changes.remove(CONFIG_PARAM_NAME);
+            }
+        }
+    }
+
+    private CommandProcessingResult buildCommandProcessingResult(JsonCommand command, Long hookId, Map<String, Object> changes) {
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(hookId).with(changes).build();
+    }
+
+    private void processEventUpdate(JsonCommand command, Map<String, Object> changes, Hook hook) {
+        if (changes.containsKey(EVENTS_PARAM_NAME)) {
+            final Set<HookResource> events = assembleSetOfEvents(command.arrayOfParameterNamed(EVENTS_PARAM_NAME));
+            if (!hook.updateEvents(events)) {
+                changes.remove(EVENTS_PARAM_NAME);
+            }
         }
     }
 
@@ -249,58 +254,64 @@ public class HookWritePlatformServiceJpaRepositoryImpl implements HookWritePlatf
     }
 
     private void validateHookRules(final HookTemplate template, final Set<HookConfiguration> config, Set<HookResource> events) {
-
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("hook");
 
-        if (!template.getName().equalsIgnoreCase(WEB_TEMPLATE_NAME) && this.hookRepository.findOneByTemplateId(template.getId()) != null) {
-            final String errorMessage = "multiple.non.web.template.hooks.not.supported";
-            baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode(errorMessage);
-        }
-
-        for (final HookConfiguration conf : config) {
-            final String fieldValue = conf.getFieldValue();
-            if (conf.getFieldName().equals(CONTENT_TYPE_NAME)) {
-                if ((!fieldValue.equalsIgnoreCase("json") && !fieldValue.equalsIgnoreCase("form"))) {
-                    final String errorMessage = "content.type.must.be.json.or.form";
-                    baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode(errorMessage);
-                }
-            }
-
-            if (conf.getFieldName().equals(PAYLOAD_URL_NAME)) {
-                try {
-                    final WebHookService service = processorHelper.createWebHookService(fieldValue);
-                    service.sendEmptyRequest().execute();
-                } catch (IOException re) {
-                    String errorMessage = "url.invalid";
-                    baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode(errorMessage);
-                }
-            }
-        }
-
-        if (events == null || events.isEmpty()) {
-            final String errorMessage = "registered.events.cannot.be.empty";
-            baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode(errorMessage);
-        }
-
-        final Set<Schema> fields = template.getFields();
-        for (final Schema field : fields) {
-            if (!field.isOptional()) {
-                boolean found = false;
-                for (final HookConfiguration conf : config) {
-                    if (field.getFieldName().equals(conf.getFieldName())) {
-                        found = true;
-                    }
-                }
-                if (!found) {
-                    final String errorMessage = "required.config.field." + "not.provided";
-                    baseDataValidator.reset().value(field.getFieldName()).failWithCodeNoParameterAddedToErrorCode(errorMessage);
-                }
-            }
-        }
+        validateTemplateRules(template, baseDataValidator);
+        validateConfigRules(config, baseDataValidator);
+        validateEvents(events, baseDataValidator);
+        validateRequiredFields(template, config, baseDataValidator);
 
         if (!dataValidationErrors.isEmpty()) {
             throw new PlatformApiDataValidationException(dataValidationErrors);
+        }
+    }
+
+    private void validateTemplateRules(final HookTemplate template, DataValidatorBuilder baseDataValidator) {
+        if (!template.getName().equalsIgnoreCase(WEB_TEMPLATE_NAME) && this.hookRepository.findOneByTemplateId(template.getId()) != null) {
+            baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode("multiple.non.web.template.hooks.not.supported");
+        }
+    }
+
+    private void validateConfigRules(final Set<HookConfiguration> config, DataValidatorBuilder baseDataValidator) {
+        for (final HookConfiguration conf : config) {
+            validateContentType(conf, baseDataValidator);
+            validatePayloadUrl(conf, baseDataValidator);
+        }
+    }
+
+    private void validateContentType(final HookConfiguration conf, DataValidatorBuilder baseDataValidator) {
+        if (conf.getFieldName().equals(CONTENT_TYPE_NAME) && !conf.getFieldValue().equalsIgnoreCase("json")
+                && !conf.getFieldValue().equalsIgnoreCase("form")) {
+
+            baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode("content.type.must.be.json.or.form");
+        }
+    }
+
+    private void validateEvents(Set<HookResource> events, DataValidatorBuilder baseDataValidator) {
+        if (events == null || events.isEmpty()) {
+            baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode("registered.events.cannot.be.empty");
+        }
+    }
+
+    private void validateRequiredFields(final HookTemplate template, final Set<HookConfiguration> config,
+            DataValidatorBuilder baseDataValidator) {
+        for (final Schema field : template.getFields()) {
+            if (!field.isOptional() && config.stream().noneMatch(conf -> field.getFieldName().equals(conf.getFieldName()))) {
+                baseDataValidator.reset().value(field.getFieldName())
+                        .failWithCodeNoParameterAddedToErrorCode("required.config.field.not.provided");
+            }
+        }
+    }
+
+    private void validatePayloadUrl(final HookConfiguration conf, DataValidatorBuilder baseDataValidator) {
+        if (conf.getFieldName().equals(PAYLOAD_URL_NAME)) {
+            try {
+                final WebHookService service = processorHelper.createWebHookService(conf.getFieldValue());
+                service.sendEmptyRequest().execute();
+            } catch (IOException re) {
+                baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode("url.invalid");
+            }
         }
     }
 
