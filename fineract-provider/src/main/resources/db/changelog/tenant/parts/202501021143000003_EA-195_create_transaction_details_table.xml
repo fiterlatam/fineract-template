@@ -1,4 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
@@ -88,6 +108,68 @@
                 <where>registered_table_name='detalles_de_la_transaccion'</where>
             </delete>
         </rollback>
+    </changeSet>
+    <changeSet id="3" author="fineract">
+        <comment>Add column comments to detalles_de_la_transaccion table</comment>
+
+        <sql>
+            COMMENT ON COLUMN detalles_de_la_transaccion.identifier_transaction_channel IS 'Identificador';
+            COMMENT ON COLUMN detalles_de_la_transaccion.bank_number_transaction_channel IS 'Código del Banco';
+            COMMENT ON COLUMN detalles_de_la_transaccion.account_type IS 'Tipo Cuenta';
+            COMMENT ON COLUMN detalles_de_la_transaccion.account_number_transaction IS 'Nº Cuenta';
+            COMMENT ON COLUMN detalles_de_la_transaccion.receipt_number IS 'Nº de Recibo';
+            COMMENT ON COLUMN detalles_de_la_transaccion.check_number_transaction IS 'Nº de Cheque';
+            COMMENT ON COLUMN detalles_de_la_transaccion.account_name_transaction IS 'Nombre de la Cuenta';
+            COMMENT ON COLUMN detalles_de_la_transaccion.routing_number_transaction IS 'Enrutamiento num.';
+            COMMENT ON COLUMN detalles_de_la_transaccion.business_establishment_name IS 'Nombre Establecimiento Comercial';
+            COMMENT ON COLUMN detalles_de_la_transaccion.id_establishment IS 'Identificación Establecimiento Comercial';
+            COMMENT ON COLUMN detalles_de_la_transaccion.disbursement_type IS 'Tipo Desembolso';
+            COMMENT ON COLUMN detalles_de_la_transaccion.transaction_id IS 'ID TRANSACTION';
+            COMMENT ON COLUMN detalles_de_la_transaccion.loan_transaction_id IS 'ID Transacción Préstamo';
+            COMMENT ON COLUMN detalles_de_la_transaccion.created_at IS 'Creado en';
+            COMMENT ON COLUMN detalles_de_la_transaccion.updated_at IS 'Actualizado en';
+        </sql>
+
+        <rollback>
+            <sql>
+                COMMENT ON COLUMN detalles_de_la_transaccion.identifier_transaction_channel IS NULL;
+                COMMENT ON COLUMN detalles_de_la_transaccion.bank_number_transaction_channel IS NULL;
+                COMMENT ON COLUMN detalles_de_la_transaccion.account_type IS NULL;
+                COMMENT ON COLUMN detalles_de_la_transaccion.account_number_transaction IS NULL;
+                COMMENT ON COLUMN detalles_de_la_transaccion.receipt_number IS NULL;
+                COMMENT ON COLUMN detalles_de_la_transaccion.check_number_transaction IS NULL;
+                COMMENT ON COLUMN detalles_de_la_transaccion.account_name_transaction IS NULL;
+                COMMENT ON COLUMN detalles_de_la_transaccion.routing_number_transaction IS NULL;
+                COMMENT ON COLUMN detalles_de_la_transaccion.business_establishment_name IS NULL;
+                COMMENT ON COLUMN detalles_de_la_transaccion.id_establishment IS NULL;
+                COMMENT ON COLUMN detalles_de_la_transaccion.disbursement_type IS NULL;
+                COMMENT ON COLUMN detalles_de_la_transaccion.transaction_id IS NULL;
+                COMMENT ON COLUMN detalles_de_la_transaccion.loan_transaction_id IS NULL;
+                COMMENT ON COLUMN detalles_de_la_transaccion.created_at IS NULL;
+                COMMENT ON COLUMN detalles_de_la_transaccion.updated_at IS NULL;
+            </sql>
+        </rollback>
+    </changeSet>
+    <changeSet id="4" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="detalles_de_la_transaccion"/>
+            <columnExists tableName="detalles_de_la_transaccion" columnName="id"/>
+        </preConditions>
+
+        <comment>Remove ID column from detalles_de_la_transaccion table</comment>
+
+        <dropPrimaryKey tableName="detalles_de_la_transaccion"/>
+
+        <!-- Drop the ID column -->
+        <dropColumn tableName="detalles_de_la_transaccion">
+            <column name="id"/>
+        </dropColumn>
+
+        <!-- Drop the sequence if it exists -->
+        <sql>
+            DROP SEQUENCE IF EXISTS detalles_de_la_transaccion_id_seq;
+        </sql>
+
     </changeSet>
 
 </databaseChangeLog>

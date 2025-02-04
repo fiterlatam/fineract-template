@@ -54,7 +54,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.Loa
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleDTO;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleModelDownPaymentPeriod;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleParams;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.MultiDisbursementEmiAmountException;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.MultiDisbursementOutstandingAmoutException;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.ScheduleDateException;
 import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
@@ -452,14 +451,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                  */
                 principalInterestForThisPeriod = new PrincipalInterest(totalPrincipal, totalInterestRate,
                         endPrincipalInterestForThisPeriod.interestPaymentDueToGrace());
-            }
-
-            // will check for EMI amount greater than interest calculated
-            if (loanApplicationTerms.getFixedEmiAmount() != null
-                    && loanApplicationTerms.getFixedEmiAmount().compareTo(principalInterestForThisPeriod.interest().getAmount()) < 0) {
-                String errorMsg = "EMI amount must be greater than : " + principalInterestForThisPeriod.interest().getAmount();
-                throw new MultiDisbursementEmiAmountException(errorMsg, principalInterestForThisPeriod.interest().getAmount(),
-                        loanApplicationTerms.getFixedEmiAmount());
             }
 
             // update cumulative fields for principal & interest

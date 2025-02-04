@@ -703,7 +703,11 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         // This changes the component amount and when reprocessing the transaction more amount is paid for
         // component than the original transaction
         // causing the original transaction to be reversed.
-        List<LoanChargePaidByData> paidByOriginalTransactionList = loanTransaction.chargesPaidByOriginalTransaction();
+
+        List<LoanChargePaidByData> paidByOriginalTransactionList = new ArrayList<>();
+        if (Objects.nonNull(loanTransaction)) {
+            paidByOriginalTransactionList = loanTransaction.chargesPaidByOriginalTransaction();
+        }
         Money amountPaidByOriginalTransaction = Money.zero(currency);
         if (!paidByOriginalTransactionList.isEmpty()) {
             for (LoanChargePaidByData data : paidByOriginalTransactionList) {
@@ -1109,7 +1113,12 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         // component than the original transaction
         // causing the original transaction to be reversed.
 
-        Map<Integer, BigDecimal> interestMap = loanTransaction.interestPaidByOriginalTransaction();
+        Map<Integer, BigDecimal> interestMap = new HashMap<>();
+
+        if (Objects.nonNull(loanTransaction)) {
+            interestMap = loanTransaction.interestPaidByOriginalTransaction();
+        }
+
         if (interestMap != null && !interestMap.isEmpty() && interestMap.get(this.installmentNumber) != null) {
             // SU-533 Avoid reprocessing of transaction paying different amount than originally paid.
             interestDue = Money.of(currency, interestMap.get(this.installmentNumber));

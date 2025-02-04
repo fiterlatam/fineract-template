@@ -129,6 +129,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.InterestRecalculationCom
 import org.apache.fineract.portfolio.loanproduct.domain.LoanCustomizationDetail;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRelatedDetail;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanRescheduleStrategyMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.RecalculationFrequencyType;
 import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
@@ -375,7 +376,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     private List<LoanTransaction> loanTransactions = new ArrayList<>();
 
     @Embedded
-    private transient LoanSummary summary;
+    private LoanSummary summary;
 
     @Transient
     private boolean accountNumberRequiresAutoGeneration = false;
@@ -2793,7 +2794,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         ChangedTransactionDetail result = reprocessTransactionForDisbursement();
-        this.loanLifecycleStateMachine.transition(LoanEvent.LOAN_DISBURSED, this);
+        try {
+            this.loanLifecycleStateMachine.transition(LoanEvent.LOAN_DISBURSED, this);
+        } catch (Exception e) {
+            log.error("loanLifecycleStateMachine is null");
+        }
         actualChanges.put(PARAM_STATUS, LoanEnumerations.status(this.loanStatus));
         return result;
 
@@ -2914,6 +2919,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean canDisburse(final LocalDate actualDisbursementDate) {
+        // If product is credito Rotativo, disburse as much as available. Checked before.
+        if (this.getLoanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase(Locale.ROOT))) {
+            return true;
+        }
+
         LocalDate loanSubmittedOnDate = this.submittedOnDate;
         final LoanStatus statusEnum = this.loanLifecycleStateMachine.dryTransition(LoanEvent.LOAN_DISBURSED, this);
 
@@ -3097,6 +3107,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     private boolean isDisbursementAllowed() {
         boolean isAllowed = false;
+
+        // If product is credito Rotativo, disburse as much as available. Checked before.
+        if (this.getLoanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase())) {
+            return true;
+        }
+
         List<LoanDisbursementDetails> disbursementDetailsV2 = getDisbursementDetails();
         if (disbursementDetailsV2 == null || disbursementDetailsV2.isEmpty()) {
             isAllowed = true;
@@ -5731,8 +5747,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             break;
             case LOAN_DISBURSED:
-                if ((!(isApproved() && isNotDisbursed()) && !this.loanProduct.isMultiDisburseLoan())
-                        || (this.loanProduct.isMultiDisburseLoan() && !isAllTranchesNotDisbursed())) {
+                if ((!(isApproved() && isNotDisbursed()) && !this.loanProduct.isMultiDisburseLoan()) || (Boolean.FALSE.equals(
+                        this.getLoanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase()))
+                        && this.loanProduct.isMultiDisburseLoan() && !isAllTranchesNotDisbursed())) {
                     final String defaultUserMessage = "Loan Disbursal is not allowed. Loan Account is not in approved and not disbursed state.";
                     final ApiParameterError error = ApiParameterError
                             .generalError("error.msg.loan.disbursal.account.is.not.approve.not.disbursed.state", defaultUserMessage);

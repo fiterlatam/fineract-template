@@ -70,4 +70,6 @@ public interface LoanTransactionRepository extends JpaRepository<LoanTransaction
 
     @Query(FIND_LOAN_ID_BY_ID)
     Optional<Long> findLoanIdById(@Param("id") Long id);
+
+    List<LoanTransaction> findAllByLoanIdAndTypeOf(Long loanId, Integer typeOf);
 }

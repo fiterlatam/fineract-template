@@ -434,7 +434,7 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
         return populateGrantedAuthorities();
     }
 
-    private List<GrantedAuthority> populateGrantedAuthorities() {
+    public List<GrantedAuthority> populateGrantedAuthorities() {
         final List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
         for (final Role role : this.roles) {
             final Collection<Permission> permissions = role.getPermissions();

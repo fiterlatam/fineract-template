@@ -49,17 +49,18 @@ import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncod
  * Wraps the provided JSON with convenience functions for extracting parameter values and checking for changes against
  * an existing value.
  */
-public final class JsonCommand {
+@SuppressWarnings("java:S107")
+public final class JsonCommand {// NOSONAR
 
-    private final String jsonCommand;
+    private String jsonCommandString;
     private final JsonElement parsedCommand;
-    private final FromJsonHelper fromApiJsonHelper;
+    private FromJsonHelper fromApiJsonHelper;
     private final Long commandId;
-    private final Long resourceId;
+    private Long resourceId;
     private final Long subresourceId;
     private final Long groupId;
     private final Long clientId;
-    private final Long loanId;
+    private Long loanId;
     private final Long savingsId;
     private final String entityName;
     private final String transactionId;
@@ -111,13 +112,13 @@ public final class JsonCommand {
                 command.jobName);
     }
 
-    public JsonCommand(final Long commandId, final String jsonCommand, final JsonElement parsedCommand,
+    public JsonCommand(final Long commandId, final String jsonCommandString, final JsonElement parsedCommand,
             final FromJsonHelper fromApiJsonHelper, final String entityName, final Long resourceId, final Long subresourceId,
             final Long groupId, final Long clientId, final Long loanId, final Long savingsId, final String transactionId, final String url,
             final Long productId, final Long creditBureauId, final Long organisationCreditBureauId, final String jobName) {
 
         this.commandId = commandId;
-        this.jsonCommand = jsonCommand;
+        this.jsonCommandString = jsonCommandString;
         this.parsedCommand = parsedCommand;
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.entityName = entityName;
@@ -148,7 +149,7 @@ public final class JsonCommand {
         this.parsedCommand = parsedCommand;
         this.resourceId = resourceId;
         this.commandId = null;
-        this.jsonCommand = null;
+        this.jsonCommandString = null;
         this.fromApiJsonHelper = null;
         this.entityName = null;
         this.subresourceId = null;
@@ -168,7 +169,7 @@ public final class JsonCommand {
         this.parsedCommand = parsedCommand;
         this.resourceId = resourceId;
         this.commandId = null;
-        this.jsonCommand = null;
+        this.jsonCommandString = null;
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.entityName = null;
         this.subresourceId = null;
@@ -198,7 +199,7 @@ public final class JsonCommand {
     }
 
     public String json() {
-        return this.jsonCommand;
+        return this.jsonCommandString;
     }
 
     public JsonElement parsedJson() {
@@ -406,8 +407,7 @@ public final class JsonCommand {
 
     public Map<String, Object> mapObjectValueOfParameterNamed(final String json) {
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
-        final Map<String, Object> value = this.fromApiJsonHelper.extractObjectMap(typeOfMap, json);
-        return value;
+        return this.fromApiJsonHelper.extractObjectMap(typeOfMap, json);
     }
 
     public boolean isChangeInBigDecimalParameterNamedDefaultingZeroToNull(final String parameterName, final BigDecimal existingValue) {
@@ -629,4 +629,19 @@ public final class JsonCommand {
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, requestDataParameters);
     }
 
+    public void setLoanId(Long loanId) {
+        this.loanId = loanId;
+    }
+
+    public void setJsonCommandString(String jsonCommandString) {
+        this.jsonCommandString = jsonCommandString;
+    }
+
+    public void setFromApiJsonHelper(FromJsonHelper fromApiJsonHelper) {
+        this.fromApiJsonHelper = fromApiJsonHelper;
+    }
+
+    public void setResourceId(Long resourceId) {
+        this.resourceId = resourceId;
+    }
 }

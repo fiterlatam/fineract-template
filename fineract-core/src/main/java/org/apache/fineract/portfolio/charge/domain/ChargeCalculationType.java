@@ -1641,6 +1641,7 @@ public enum ChargeCalculationType {
         return isPercentageOfInsurance() && isFlat();
     }
 
+    @SuppressWarnings("all")
     public boolean isPercentageBasedMandatoryInsurance() {
         // Any charge which is percentage based and distributed among the installments will be added here
         return this.equals(DISB_SEGO) && isPercentageOfInsurance() && (isPercentageOfDisbursement());

@@ -18,7 +18,7 @@
  */
 package org.apache.fineract.infrastructure.hooks.processor;
 
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.SMSProviderIdParamName;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.SMS_PROVIDER_ID_PARAM_NAME;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -66,7 +66,7 @@ public class MessageGatewayHookProcessor implements HookProcessor {
 
         for (final HookConfiguration conf : config) {
             final String fieldName = conf.getFieldName();
-            if (fieldName.equals(SMSProviderIdParamName)) {
+            if (fieldName.equals(SMS_PROVIDER_ID_PARAM_NAME)) {
                 SMSProviderId = Integer.parseInt(conf.getFieldValue());
             }
         }

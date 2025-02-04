@@ -18,10 +18,18 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface LoanDisbursementDetailsRepository
         extends JpaRepository<LoanDisbursementDetails, Long>, JpaSpecificationExecutor<LoanDisbursementDetails> {
 
+    Optional<LoanDisbursementDetails> findByLoanIdAndExpectedDisbursementDateAndPrincipal(Long loanId, LocalDate expectedDisbursementDate,
+            BigDecimal principal);
+
+    List<LoanDisbursementDetails> findAllByLoanId(Long loanId);
 }

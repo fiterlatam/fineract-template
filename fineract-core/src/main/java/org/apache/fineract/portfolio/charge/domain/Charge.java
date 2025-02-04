@@ -18,7 +18,14 @@
  */
 package org.apache.fineract.portfolio.charge.domain;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.MonthDay;
 import java.util.ArrayList;
@@ -680,15 +687,14 @@ public class Charge extends AbstractPersistableCustom {
                             .failWithCodeNoParameterAddedToErrorCode(
                                     "charge.calculation.type.percentage.allowed.only.for.withdrawal.or.noactivity");
                 }
-            } else if (isClientCharge()) {
-                if (!isAllowedClientChargeCalculationType()) {
-                    baseDataValidator.reset().parameter("chargeCalculationType").value(this.chargeCalculation)
-                            .failWithCodeNoParameterAddedToErrorCode("not.allowed.charge.calculation.type.for.client");
-                }
+            } else if (isClientCharge() && !isAllowedClientChargeCalculationType()) {
+                baseDataValidator.reset().parameter("chargeCalculationType").value(this.chargeCalculation)
+                        .failWithCodeNoParameterAddedToErrorCode("not.allowed.charge.calculation.type.for.client");
             }
+
         }
 
-        if (BigDecimal.ZERO.equals(amount) && !isLoanCharge() && !isMandatoryInsurance()) {
+        if (BigDecimal.ZERO.compareTo(amount) == 0 && !isLoanCharge() && !isMandatoryInsurance()) {
             baseDataValidator.reset().parameter(Charge.AMOUNT_PARAM).value(this.amount)
                     .failWithCodeNoParameterAddedToErrorCode("zero.amount");
         }
