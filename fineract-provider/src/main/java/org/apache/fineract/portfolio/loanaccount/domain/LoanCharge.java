@@ -467,6 +467,7 @@ public class LoanCharge extends AbstractPersistableCustom {
                 case PERCENT_OF_AMOUNT_AND_INTEREST:
                 case PERCENT_OF_INTEREST:
                 case PERCENT_OF_DISBURSEMENT_AMOUNT:
+                    this.amountPercentageAppliedTo = loanPrincipal;
                     if (this.loan != null && isDisbursementCharge() && this.isAddOnDisbursementType()) {
                         LocalDate disbursementDate = this.loan.getDisbursementDate();
                         LocalDate firstRepaymentDate = this.loan.fetchRepaymentScheduleInstallment(1).getDueDate();
@@ -482,7 +483,6 @@ public class LoanCharge extends AbstractPersistableCustom {
                             loanCharge = percentageOf(this.amountPercentageAppliedTo);
                         }
                     }
-                    this.amountPercentageAppliedTo = loanPrincipal;
                     this.amount = minimumAndMaximumCap(loanCharge);
                 break;
             }
