@@ -6429,7 +6429,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     }
                 }
             } else {
-                amount = getPrincpal().getAmount();
+                amount = getApprovedPrincipal();
             }
         }
         return amount;
