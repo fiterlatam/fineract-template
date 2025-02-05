@@ -1402,7 +1402,7 @@ public class LoansApiResource {
         final List<DatatableData> datatableNamesList = this.readWriteNonCoreDataService.retrieveDatatableNames("m_loan");
         datatableNamesList.stream().forEach(name -> {
             GenericResultsetData results = this.readWriteNonCoreDataService.retrieveDataTableGenericResultSet(name.getRegisteredTableName(),
-                    loanId, "", null);
+                    resolvedLoanId, "", null);
 
             name.setColumnHeaderData(null);
 
