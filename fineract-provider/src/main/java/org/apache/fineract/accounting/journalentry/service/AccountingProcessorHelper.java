@@ -627,7 +627,7 @@ public class AccountingProcessorHelper {
         if (chargesPortion==null || chargesPortion.compareTo(BigDecimal.ZERO) <= 0) {
             createCreditJournalEntryForLoan(office, currencyCode, creditAccount, loanId, transactionId, transactionDate, amount);
         } else {
-            GLAccount feesReceivableGL = getLinkedGLAccountForLoanProduct(loanProductId, AccrualAccountsForLoan.FEES_RECEIVABLE.getValue(),
+            GLAccount feesReceivableGL = getLinkedGLAccountForLoanProduct(loanProductId, AccrualAccountsForLoan.INCOME_FROM_FEES.getValue(),
                     paymentTypeId);
             createCreditJournalEntryForLoan(office, currencyCode, creditAccount, loanId, transactionId, transactionDate, principalPortion);
             createCreditJournalEntryForLoan(office, currencyCode, feesReceivableGL, loanId, transactionId, transactionDate, chargesPortion);
