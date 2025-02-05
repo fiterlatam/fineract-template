@@ -139,6 +139,7 @@ import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigura
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRelatedDetail;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.loanproduct.domain.RecalculationFrequencyType;
 import org.apache.fineract.portfolio.loanproduct.exception.LinkedAccountRequiredException;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
@@ -401,6 +402,17 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     newLoanApplication.setTopupLoanDetails(topupDetails);
                 }
             }
+
+            // If credito rotativo mensual, accepted repayment dates are 5,10,20
+            if (newLoanApplication.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+                if (newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 5
+                        && newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 10
+                        && newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 20) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.date.must.be.day.1.10.20",
+                            "Disbursement date must be 5, 10 or 20");
+                }
+            }
+
             validateAllChargesAreSetupCorrectly(newLoanApplication); // Just a remark here before calling validate
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
 

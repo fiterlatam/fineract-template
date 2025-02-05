@@ -161,6 +161,7 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanBlockReadPlatformSe
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanDebtProjectionService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
@@ -351,6 +352,7 @@ public class LoansApiResource {
     private final LoanDebtProjectionService loanDebtProjectionService;
     private final ConfigurationDomainServiceJpa configurationDomainServiceJpa;
     private final ReadWriteNonCoreDataService readWriteNonCoreDataService;
+    private final LoanWritePlatformService loanWritePlatformService;
 
     @GET
     @Path("{loanId}/template")
@@ -1446,7 +1448,7 @@ public class LoansApiResource {
             final String apiRequestBodyAsJson) {
         ExternalId loanExternalId = ExternalIdFactory.produce(loanExternalIdStr);
         Long resolvedLoanId = getResolvedLoanId(loanId, loanExternalId);
-        final CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
+        CommandWrapperBuilder builder = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson);
         CommandWrapper commandRequest = null;
         if (CommandParameterUtil.is(commandParam, "reject")) {
             commandRequest = builder.rejectLoanApplication(resolvedLoanId).build();
@@ -1478,6 +1480,11 @@ public class LoansApiResource {
             throw new UnrecognizedQueryParamException("command", commandParam);
         }
         CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        // Check here if there is any pending reschedule request associated with this Credito Rotativo and approve it.
+        if (CommandParameterUtil.is(commandParam, "disburse")) {
+            loanWritePlatformService.approveRescheduleRequest(loanId, result.getResourceId(), null);
+        }
 
         return this.toApiJsonSerializer.serialize(result);
     }
