@@ -17,7 +17,7 @@ keyVault:
     fineract-default-tenantdb-hostname: FINERACT_DEFAULT_TENANTDB_HOSTNAME
     fineract-default-tenantdb-uid: FINERACT_DEFAULT_TENANTDB_UID
     fineract-default-tenantdb-pwd: FINERACT_DEFAULT_TENANTDB_PWD
-
+    fineract-azure-ad-client-secret: FINERACT_AZURE_AD_CLIENT_SECRET
 
 
 

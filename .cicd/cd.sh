@@ -90,6 +90,9 @@ helm package \
       --set env.JAVA_HOME="$JAVA_HOME" \
       --set env.TZ="$TZ" \
       --set env.FINERACT_SERVER_PORT="$FINERACT_SERVER_PORT" \
+      --set env.FINERACT_AZURE_AD_TENANT_ID="$FINERACT_AZURE_AD_TENANT_ID" \
+      --set env.FINERACT_AZURE_AD_APP_CLIENT_ID="$FINERACT_AZURE_AD_APP_CLIENT_ID" \
+      --set env.FINERACT_AZURE_AD_REDIRECT_URL="$FINERACT_AZURE_AD_REDIRECT_URL" \
       \
       --set deployment.resources.limits.cpu="$POD_LIMITS_CPU" \
       --set deployment.resources.limits.memory="$POD_LIMITS_MEMORY" \
