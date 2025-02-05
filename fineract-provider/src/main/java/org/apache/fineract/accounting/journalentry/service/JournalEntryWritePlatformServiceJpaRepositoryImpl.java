@@ -570,7 +570,7 @@ public class JournalEntryWritePlatformServiceJpaRepositoryImpl implements Journa
         }
 
         Long maximumBackDateDaysAllowed = this.configurationDomainService.getMaximumBackDateDaysAllowed();
-        LocalDate minimumAllowedDate = transactionDate.plusDays(maximumBackDateDaysAllowed);
+        LocalDate minimumAllowedDate = DateUtils.getBusinessLocalDate().plusDays(-1*maximumBackDateDaysAllowed);
 
         if (transactionDate.isBefore(minimumAllowedDate)) {
             throw new JournalEntryInvalidException(GlJournalEntryInvalidReason.OLD_DATE, transactionDate,
