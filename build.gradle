@@ -211,6 +211,7 @@ allprojects  {
     sonarqube {
         properties {
             property "sonar.exclusions", "sonar.exclusions, **/test/**, **/generated/**, **/build/**, **/bin/**, **/out/**, **/target/**, **/node_modules/**, **/src/main/resources/**, **/src/main/templates"
+            property "sonar.inclusions", "**/fineract-provider/src/main/java/org/apache/fineract/portfolio/loanaccount/domain/LoanAccountDomainServiceJpa.java"
         }
     }
 

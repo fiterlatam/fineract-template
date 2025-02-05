@@ -181,7 +181,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         this.loanCollateralManagementRepository.saveAll(loanCollateralManagementSet);
     }
 
-    @SuppressWarnings({ "squid:S3776", "squid:S6809" })
+    // @SuppressWarnings({ "squid:S3776", "squid:S6809" })
+    // @SuppressWarnings({ "squid:S3776", "squid:S6809" }) v1
+    // @SuppressWarnings({ "squid:S3776", "squid:S6809" }) v2
     @Transactional
     @Override
     public LoanTransaction makeRepayment(final LoanTransactionType repaymentTransactionType, Loan loan, final LocalDate transactionDate,
