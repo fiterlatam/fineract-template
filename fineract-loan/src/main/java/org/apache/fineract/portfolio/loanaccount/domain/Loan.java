@@ -1727,7 +1727,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final Money recoveredAmount = calculateTotalRecoveredPayments();
             this.totalRecovered = recoveredAmount.getAmountDefaultedToNullIfZero();
 
-            final Money principal = this.loanRepaymentScheduleDetail.getPrincipal();
+            Money principal = this.loanRepaymentScheduleDetail.getPrincipal();
+
+            if (this.getLoanProduct().isMultiDisburseLoan()) {
+                principal = Money.of(loanCurrency(),
+                        getDisbursmentData().stream().filter(act -> Objects.nonNull(act.getActualDisbursementDate()))
+                                .map(obj -> obj.getPrincipal()).reduce(BigDecimal.ZERO, BigDecimal::add));
+
+            }
+
             this.summary.updateSummary(loanCurrency(), principal, getRepaymentScheduleInstallments(), this.loanSummaryWrapper,
                     this.charges);
             updateLoanOutstandingBalances();
@@ -8239,5 +8247,4 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public boolean hasPenaltiesInRepaymentSchedules() {
         return this.getRepaymentScheduleInstallments().stream().anyMatch(LoanRepaymentScheduleInstallment::hasPenalties);
     }
-
 }

@@ -115,6 +115,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanSchedu
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.mapper.LoanTransactionRelationMapper;
+import org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain.LoanRescheduleRequestRepository;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanRescheduleRequestReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanRescheduleRequestWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationCommandFromApiJsonHelper;
@@ -468,7 +469,7 @@ public class LoanAccountConfiguration {
             DelinquencyReadPlatformService delinquencyReadPlatformService,
             LoanDisbursementDetailsRepository loanDisbursementDetailsRepository,
             LoanRescheduleRequestWritePlatformService loanRescheduleRequestWritePlatformService,
-            CodeValueReadPlatformService codeValueReadPlatformService) {
+            CodeValueReadPlatformService codeValueReadPlatformService, LoanRescheduleRequestRepository loanRescheduleRequestRepository) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
@@ -488,7 +489,7 @@ public class LoanAccountConfiguration {
                 loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository, loanScheduleFactory,
                 blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository, productParameterizationRepository,
                 customChargeHonorarioMapRepository, delinquencyReadPlatformService, loanDisbursementDetailsRepository,
-                loanRescheduleRequestWritePlatformService, codeValueReadPlatformService);
+                loanRescheduleRequestWritePlatformService, codeValueReadPlatformService, loanRescheduleRequestRepository);
     }
 
     @Bean

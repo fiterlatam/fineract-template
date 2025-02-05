@@ -151,4 +151,6 @@ public interface LoanWritePlatformService {
     void processAndSaveLoanDocument(LoanDocumentData loanDocumentData);
 
     ClasificacionConceptosData getClasificacionConceptosData(String concepto);
+
+    void approveRescheduleRequest(Long loanId, Long RescheduleRequestId, LocalDate actualDisbursementDate);
 }
