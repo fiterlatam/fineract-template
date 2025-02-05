@@ -18,15 +18,15 @@
  */
 package org.apache.fineract.infrastructure.hooks.service;
 
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.actionNameParamName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.configParamName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.contentTypeName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.entityNameParamName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.eventsParamName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.nameParamName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.payloadURLName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.templateIdParamName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.webTemplateName;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.ACTION_NAME_PARAM_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.CONFIG_PARAM_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.CONTENT_TYPE_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.ENTITY_NAME_PARAM_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.EVENTS_PARAM_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.NAME_PARAM_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.PAYLOAD_URL_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.TEMPLATE_ID_PARAM_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.WEB_TEMPLATE_NAME;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -92,14 +92,14 @@ public class HookWritePlatformServiceJpaRepositoryImpl implements HookWritePlatf
 
             this.fromApiJsonDeserializer.validateForCreate(command.json());
 
-            final HookTemplate template = retrieveHookTemplateBy(command.stringValueOfParameterNamed(nameParamName));
-            final String configJson = command.jsonFragment(configParamName);
+            final HookTemplate template = retrieveHookTemplateBy(command.stringValueOfParameterNamed(NAME_PARAM_NAME));
+            final String configJson = command.jsonFragment(CONFIG_PARAM_NAME);
             final Set<HookConfiguration> config = assembleConfig(command.mapValueOfParameterNamed(configJson), template);
-            final JsonArray events = command.arrayOfParameterNamed(eventsParamName);
+            final JsonArray events = command.arrayOfParameterNamed(EVENTS_PARAM_NAME);
             final Set<HookResource> allEvents = assembleSetOfEvents(events);
             Template ugdTemplate = null;
-            if (command.hasParameter(templateIdParamName)) {
-                final Long ugdTemplateId = command.longValueOfParameterNamed(templateIdParamName);
+            if (command.hasParameter(TEMPLATE_ID_PARAM_NAME)) {
+                final Long ugdTemplateId = command.longValueOfParameterNamed(TEMPLATE_ID_PARAM_NAME);
                 ugdTemplate = this.ugdTemplateRepository.findById(ugdTemplateId)
                         .orElseThrow(() -> new TemplateNotFoundException(ugdTemplateId));
             }
@@ -136,30 +136,30 @@ public class HookWritePlatformServiceJpaRepositoryImpl implements HookWritePlatf
 
             if (!changes.isEmpty()) {
 
-                if (changes.containsKey(templateIdParamName)) {
-                    final Long ugdTemplateId = command.longValueOfParameterNamed(templateIdParamName);
+                if (changes.containsKey(TEMPLATE_ID_PARAM_NAME)) {
+                    final Long ugdTemplateId = command.longValueOfParameterNamed(TEMPLATE_ID_PARAM_NAME);
                     final Template ugdTemplate = this.ugdTemplateRepository.findById(ugdTemplateId).orElse(null);
                     if (ugdTemplate == null) {
-                        changes.remove(templateIdParamName);
+                        changes.remove(TEMPLATE_ID_PARAM_NAME);
                         throw new TemplateNotFoundException(ugdTemplateId);
                     }
                     hook.setUgdTemplate(ugdTemplate);
                 }
 
-                if (changes.containsKey(eventsParamName)) {
-                    final Set<HookResource> events = assembleSetOfEvents(command.arrayOfParameterNamed(eventsParamName));
+                if (changes.containsKey(EVENTS_PARAM_NAME)) {
+                    final Set<HookResource> events = assembleSetOfEvents(command.arrayOfParameterNamed(EVENTS_PARAM_NAME));
                     final boolean updated = hook.updateEvents(events);
                     if (!updated) {
-                        changes.remove(eventsParamName);
+                        changes.remove(EVENTS_PARAM_NAME);
                     }
                 }
 
-                if (changes.containsKey(configParamName)) {
-                    final String configJson = command.jsonFragment(configParamName);
+                if (changes.containsKey(CONFIG_PARAM_NAME)) {
+                    final String configJson = command.jsonFragment(CONFIG_PARAM_NAME);
                     final Set<HookConfiguration> config = assembleConfig(command.mapValueOfParameterNamed(configJson), template);
                     final boolean updated = hook.updateConfig(config);
                     if (!updated) {
-                        changes.remove(configParamName);
+                        changes.remove(CONFIG_PARAM_NAME);
                     }
                 }
 
@@ -239,8 +239,8 @@ public class HookWritePlatformServiceJpaRepositoryImpl implements HookWritePlatf
 
             final JsonObject eventElement = eventsArray.get(i).getAsJsonObject();
 
-            final String entityName = this.fromApiJsonHelper.extractStringNamed(entityNameParamName, eventElement);
-            final String actionName = this.fromApiJsonHelper.extractStringNamed(actionNameParamName, eventElement);
+            final String entityName = this.fromApiJsonHelper.extractStringNamed(ENTITY_NAME_PARAM_NAME, eventElement);
+            final String actionName = this.fromApiJsonHelper.extractStringNamed(ACTION_NAME_PARAM_NAME, eventElement);
             final HookResource event = HookResource.createNewWithoutHook(entityName, actionName);
             allEvents.add(event);
         }
@@ -253,21 +253,21 @@ public class HookWritePlatformServiceJpaRepositoryImpl implements HookWritePlatf
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("hook");
 
-        if (!template.getName().equalsIgnoreCase(webTemplateName) && this.hookRepository.findOneByTemplateId(template.getId()) != null) {
+        if (!template.getName().equalsIgnoreCase(WEB_TEMPLATE_NAME) && this.hookRepository.findOneByTemplateId(template.getId()) != null) {
             final String errorMessage = "multiple.non.web.template.hooks.not.supported";
             baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode(errorMessage);
         }
 
         for (final HookConfiguration conf : config) {
             final String fieldValue = conf.getFieldValue();
-            if (conf.getFieldName().equals(contentTypeName)) {
+            if (conf.getFieldName().equals(CONTENT_TYPE_NAME)) {
                 if ((!fieldValue.equalsIgnoreCase("json") && !fieldValue.equalsIgnoreCase("form"))) {
                     final String errorMessage = "content.type.must.be.json.or.form";
                     baseDataValidator.reset().failWithCodeNoParameterAddedToErrorCode(errorMessage);
                 }
             }
 
-            if (conf.getFieldName().equals(payloadURLName)) {
+            if (conf.getFieldName().equals(PAYLOAD_URL_NAME)) {
                 try {
                     final WebHookService service = processorHelper.createWebHookService(fieldValue);
                     service.sendEmptyRequest().execute();

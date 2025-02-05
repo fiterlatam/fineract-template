@@ -18,11 +18,11 @@
  */
 package org.apache.fineract.infrastructure.hooks.processor.data;
 
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.payloadURLName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.phoneNumberName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.smsProviderAccountIdName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.smsProviderName;
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.smsProviderTokenIdName;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.PAYLOAD_URL_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.PHONE_NUMBER_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.SMS_PROVIDER_ACCOUNT_ID_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.SMS_PROVIDER_NAME;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.SMS_PROVIDER_TOKEN_ID_NAME;
 
 import java.util.Set;
 import org.apache.fineract.infrastructure.hooks.domain.HookConfiguration;
@@ -43,19 +43,19 @@ public class SmsProviderData {
 
         for (final HookConfiguration conf : config) {
             final String fieldName = conf.getFieldName();
-            if (fieldName.equals(payloadURLName)) {
+            if (fieldName.equals(PAYLOAD_URL_NAME)) {
                 this.url = conf.getFieldValue();
             }
-            if (fieldName.equals(smsProviderName)) {
+            if (fieldName.equals(SMS_PROVIDER_NAME)) {
                 this.smsProvider = conf.getFieldValue();
             }
-            if (fieldName.equals(smsProviderAccountIdName)) {
+            if (fieldName.equals(SMS_PROVIDER_ACCOUNT_ID_NAME)) {
                 this.smsProviderAccountId = conf.getFieldValue();
             }
-            if (fieldName.equals(smsProviderTokenIdName)) {
+            if (fieldName.equals(SMS_PROVIDER_TOKEN_ID_NAME)) {
                 this.smsProviderToken = conf.getFieldValue();
             }
-            if (fieldName.equals(phoneNumberName)) {
+            if (fieldName.equals(PHONE_NUMBER_NAME)) {
                 this.phoneNo = conf.getFieldValue();
             }
         }

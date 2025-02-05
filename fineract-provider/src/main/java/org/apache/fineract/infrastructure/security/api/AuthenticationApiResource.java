@@ -99,10 +99,10 @@ public class AuthenticationApiResource {
 
     public static class AuthenticateRequest {
 
-        public String username;
-        public String password;
-        public String authorizationCode;
-        public boolean isMicrosoftSsoLogin;
+        private String username;
+        private String password;
+        private String authorizationCode;
+        private boolean isMicrosoftSsoLogin;
     }
 
     @Qualifier("customAuthenticationProvider")

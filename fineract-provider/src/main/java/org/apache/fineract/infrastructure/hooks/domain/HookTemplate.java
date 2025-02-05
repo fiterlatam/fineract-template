@@ -18,7 +18,7 @@
  */
 package org.apache.fineract.infrastructure.hooks.domain;
 
-import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.nameParamName;
+import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.NAME_PARAM_NAME;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -60,7 +60,7 @@ public final class HookTemplate extends AbstractPersistableCustom {
     }
 
     public static HookTemplate fromJson(final JsonCommand command) {
-        final String name = command.stringValueOfParameterNamed(nameParamName);
+        final String name = command.stringValueOfParameterNamed(NAME_PARAM_NAME);
         return new HookTemplate(name);
     }
 }

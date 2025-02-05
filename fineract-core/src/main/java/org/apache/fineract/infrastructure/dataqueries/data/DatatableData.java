@@ -28,6 +28,8 @@ import lombok.Setter;
  */
 public final class DatatableData implements Serializable {
 
+    private static final long serialVersionUID = -1654512341687423123L;
+
     @SuppressWarnings("unused")
     private final String applicationTableName;
     @SuppressWarnings("unused")
@@ -40,7 +42,7 @@ public final class DatatableData implements Serializable {
 
     @Setter
     @Getter
-    private transient GenericResultsetData genericResultSet;
+    private GenericResultsetData genericResultSet;
 
     public static DatatableData create(final String applicationTableName, final String registeredTableName, final String entitySubType,
             final List<ResultsetColumnHeaderData> columnHeaderData) {

@@ -27,6 +27,8 @@ import org.apache.fineract.infrastructure.core.service.database.JdbcJavaType;
  */
 public final class GenericResultsetData implements Serializable {
 
+    private static final long serialVersionUID = 657248965555875623L;
+
     private final List<ResultsetColumnHeaderData> columnHeaders;
     private final List<ResultsetRowData> data;
 
