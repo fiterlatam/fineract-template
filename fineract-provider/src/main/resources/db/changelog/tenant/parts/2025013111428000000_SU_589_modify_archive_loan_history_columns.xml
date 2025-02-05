@@ -31,4 +31,11 @@
             ]]>
         </sql>
     </changeSet>
+
+    <changeSet author="fineract" id="2">
+        <dropNotNullConstraint tableName="c_facturacion_electronica"
+                               columnName="impuesto_item"
+                               columnDataType="numeric(18, 4)"/>
+    </changeSet>
+
 </databaseChangeLog>
