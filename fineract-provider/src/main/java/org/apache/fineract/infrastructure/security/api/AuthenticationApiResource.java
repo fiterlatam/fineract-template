@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
@@ -75,6 +76,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+@Slf4j
 @Component
 @ConditionalOnProperty("fineract.security.basicauth.enabled")
 @Path("/v1/authentication")
@@ -152,6 +154,7 @@ public class AuthenticationApiResource {
             try {
                 apiResponse = restTemplate.exchange(azureTokenEndpoint, HttpMethod.POST, tokenRequest, String.class);
             } catch (final Exception exception) {
+                log.error("Error occurred while trying to authenticate with Microsoft SSO" + body.toString(), exception);
                 throw new GeneralPlatformDomainRuleException("error.msg.microsoft.sso.login.failed", "Microsoft SSO login failed");
             }
             final String apiResponseBody = apiResponse.getBody();
