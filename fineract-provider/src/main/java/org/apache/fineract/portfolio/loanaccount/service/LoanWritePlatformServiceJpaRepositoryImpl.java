@@ -4828,8 +4828,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             facturaElectronicaMensualDuplicate.setPrecio_unitario(interestPaid);
             facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
             facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
-            facturaElectronicaMensualDuplicate.setId_mandante(null);
-            facturaElectronicaMensualDuplicate.setDescripcion_mandante(null);
+            facturaElectronicaMensualDuplicate.setId_mandante(loanDocumentData.getCollectionHouseNit());
+            facturaElectronicaMensualDuplicate.setDescripcion_mandante(loanDocumentData.getCollectionHouseName());
             facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             if (clasificacionConceptosData != null) {
@@ -4870,8 +4870,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             facturaElectronicaMensualDuplicate.setPrecio_unitario(penaltyChargesPaid);
             facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
             facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
-            facturaElectronicaMensualDuplicate.setId_mandante(null);
-            facturaElectronicaMensualDuplicate.setDescripcion_mandante(null);
+            facturaElectronicaMensualDuplicate.setId_mandante(loanDocumentData.getCollectionHouseNit());
+            facturaElectronicaMensualDuplicate.setDescripcion_mandante(loanDocumentData.getCollectionHouseName());
             facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             if (clasificacionConceptosData != null) {
@@ -4915,9 +4915,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             if (clasificacionConceptosData != null) {
-                final String idMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getMandatoryInsuranceCode() : null;
+                final String idMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getMandatoryInsuranceCode() : loanDocumentData.getCollectionHouseNit();
                 final String descripcionMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getMandatoryInsuranceName()
-                        : null;
+                        : loanDocumentData.getCollectionHouseName();
                 facturaElectronicaMensualDuplicate.setId_mandante(idMandante);
                 facturaElectronicaMensualDuplicate.setDescripcion_mandante(descripcionMandante);
                 if (!clasificacionConceptosData.isExcluido() && clasificacionConceptosData.isGravado()) {
@@ -4960,9 +4960,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             if (clasificacionConceptosData != null) {
-                final String idMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getVoluntaryInsuranceCode() : null;
+                final String idMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getVoluntaryInsuranceCode() : loanDocumentData.getCollectionHouseNit();
                 final String descripcionMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getVoluntaryInsuranceName()
-                        : null;
+                        : loanDocumentData.getCollectionHouseName();
                 facturaElectronicaMensualDuplicate.setId_mandante(idMandante);
                 facturaElectronicaMensualDuplicate.setDescripcion_mandante(descripcionMandante);
                 if (clasificacionConceptosData.isExento()) {
