@@ -4915,7 +4915,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             if (clasificacionConceptosData != null) {
-                final String idMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getMandatoryInsuranceCode() : loanDocumentData.getCollectionHouseNit();
+                final String idMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getMandatoryInsuranceCode()
+                        : loanDocumentData.getCollectionHouseNit();
                 final String descripcionMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getMandatoryInsuranceName()
                         : loanDocumentData.getCollectionHouseName();
                 facturaElectronicaMensualDuplicate.setId_mandante(idMandante);
@@ -4960,7 +4961,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             if (clasificacionConceptosData != null) {
-                final String idMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getVoluntaryInsuranceCode() : loanDocumentData.getCollectionHouseNit();
+                final String idMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getVoluntaryInsuranceCode()
+                        : loanDocumentData.getCollectionHouseNit();
                 final String descripcionMandante = clasificacionConceptosData.isMandato() ? loanDocumentData.getVoluntaryInsuranceName()
                         : loanDocumentData.getCollectionHouseName();
                 facturaElectronicaMensualDuplicate.setId_mandante(idMandante);

@@ -598,8 +598,8 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
             String clientCollectionHouseName = rs.getString("clientCollectionHouseName");
             String empressaCollectionHouseNit = rs.getString("empressaCollectionHouseNit");
             String empressaCollectionHouseName = rs.getString("empressaCollectionHouseName");
-            String collectionHouseNit = clientCollectionHouseNit == null? empressaCollectionHouseNit : clientCollectionHouseNit;
-            String collectionHouseName = clientCollectionHouseName == null? empressaCollectionHouseName : clientCollectionHouseName;
+            String collectionHouseNit = clientCollectionHouseNit == null ? empressaCollectionHouseNit : clientCollectionHouseNit;
+            String collectionHouseName = clientCollectionHouseName == null ? empressaCollectionHouseName : clientCollectionHouseName;
             return LoanDocumentData.builder().loanId(rs.getLong("loanId")).clientId(rs.getLong("clientId"))
                     .clientLegalForm(rs.getInt("clientLegalForm")).clientDisplayName(rs.getString("clientDisplayName"))
                     .clientLastName(rs.getString("clientLastName")).clientEmailAddress(rs.getString("clientEmailAddress"))
@@ -632,8 +632,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                     .voluntaryInsuranceCode(rs.getString("voluntaryInsuranceCode"))
                     .voluntaryInsuranceName(rs.getString("voluntaryInsuranceName")).clientFirstName(rs.getString("clientFirstName"))
                     .clientMiddleName(rs.getString("clientMiddleName")).mandatoryInsuranceName(rs.getString("mandatoryInsuranceName"))
-                    .collectionHouseNit(collectionHouseNit).collectionHouseName(collectionHouseName)
-                    .build();
+                    .collectionHouseNit(collectionHouseNit).collectionHouseName(collectionHouseName).build();
         }
     }
 
