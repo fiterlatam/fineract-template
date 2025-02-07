@@ -720,6 +720,7 @@ from
 where ml.id = txn.loan_id
 
 
+--- POST MIGRATION VALIDATIONS -----
 -- Validate Aval Difference after Migration
 select count(*) from (
 select ml.id loan_id, ml.external_id, mlrs.installment, mlrs.fee_charges_amount, tcm.cpc_monto_aval, abs(tcm.cpc_monto_aval - mlrs.fee_charges_amount) diff from m_loan ml
@@ -729,6 +730,9 @@ where mlrs.fee_charges_amount != tcm.cpc_monto_aval
 and abs(tcm.cpc_monto_aval - mlrs.fee_charges_amount) > 2
 order by ml.external_id, mlrs.installment
 ) x;
+
+--- Validate All Loans are Disbursed ---
+select count(*) from m_loan where loan_status_id != 300;
 
 --- Restore max legal rate data ---
 delete from m_maximum_credit_rate_configuration;
