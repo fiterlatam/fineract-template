@@ -29,11 +29,13 @@ public class JournalEntryInvalidException extends AbstractPlatformDomainRuleExce
     /*** enum of reasons for invalid Journal Entry **/
     public enum GlJournalEntryInvalidReason {
 
-        FUTURE_DATE, ACCOUNTING_CLOSED, NO_DEBITS_OR_CREDITS, DEBIT_CREDIT_SUM_MISMATCH_WITH_AMOUNT, DEBIT_CREDIT_SUM_MISMATCH, DEBIT_CREDIT_ACCOUNT_OR_AMOUNT_EMPTY, GL_ACCOUNT_DISABLED, GL_ACCOUNT_MANUAL_ENTRIES_NOT_PERMITTED, INVALID_DEBIT_OR_CREDIT_ACCOUNTS;
+        FUTURE_DATE, OLD_DATE, ACCOUNTING_CLOSED, NO_DEBITS_OR_CREDITS, DEBIT_CREDIT_SUM_MISMATCH_WITH_AMOUNT, DEBIT_CREDIT_SUM_MISMATCH, DEBIT_CREDIT_ACCOUNT_OR_AMOUNT_EMPTY, GL_ACCOUNT_DISABLED, GL_ACCOUNT_MANUAL_ENTRIES_NOT_PERMITTED, INVALID_DEBIT_OR_CREDIT_ACCOUNTS;
 
         public String errorMessage() {
             if (name().toString().equalsIgnoreCase("FUTURE_DATE")) {
                 return "The journal entry cannot be made for a future date";
+            } else if (name().toString().equalsIgnoreCase("OLD_DATE")) {
+                return "The journal entry cannot be made for a very old date";
             } else if (name().toString().equalsIgnoreCase("ACCOUNTING_CLOSED")) {
                 return "Journal entry cannot be made prior to last account closing date for the branch";
             } else if (name().toString().equalsIgnoreCase("NO_DEBITS_OR_CREDITS")) {
@@ -57,6 +59,8 @@ public class JournalEntryInvalidException extends AbstractPlatformDomainRuleExce
         public String errorCode() {
             if (name().toString().equalsIgnoreCase("FUTURE_DATE")) {
                 return "error.msg.glJournalEntry.invalid.future.date";
+            } else if (name().toString().equalsIgnoreCase("OLD_DATE")) {
+                return "error.msg.glJournalEntry.invalid.old.date";
             } else if (name().toString().equalsIgnoreCase("ACCOUNTING_CLOSED")) {
                 return "error.msg.glJournalEntry.invalid.accounting.closed";
             } else if (name().toString().equalsIgnoreCase("NO_DEBITS_OR_CREDITS")) {

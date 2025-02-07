@@ -62,6 +62,7 @@ import org.apache.fineract.accounting.provisioning.domain.ProvisioningEntry;
 import org.apache.fineract.accounting.rule.domain.AccountingRule;
 import org.apache.fineract.accounting.rule.domain.AccountingRuleRepository;
 import org.apache.fineract.accounting.rule.exception.AccountingRuleNotFoundException;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -107,6 +108,7 @@ public class JournalEntryWritePlatformServiceJpaRepositoryImpl implements Journa
     private final PaymentDetailWritePlatformService paymentDetailWritePlatformService;
     private final FinancialActivityAccountRepositoryWrapper financialActivityAccountRepositoryWrapper;
     private final CashBasedAccountingProcessorForClientTransactions accountingProcessorForClientTransactions;
+    private final ConfigurationDomainService configurationDomainService;
 
     @Transactional
     @Override
@@ -565,6 +567,14 @@ public class JournalEntryWritePlatformServiceJpaRepositoryImpl implements Journa
         final LocalDate todaysDate = DateUtils.getBusinessLocalDate();
         if (transactionDate.isAfter(todaysDate)) {
             throw new JournalEntryInvalidException(GlJournalEntryInvalidReason.FUTURE_DATE, transactionDate, null, null);
+        }
+
+        Long maximumBackDateDaysAllowed = this.configurationDomainService.getMaximumBackDateDaysAllowed();
+        LocalDate minimumAllowedDate = DateUtils.getBusinessLocalDate().plusDays(-1 * maximumBackDateDaysAllowed);
+
+        if (transactionDate.isBefore(minimumAllowedDate)) {
+            throw new JournalEntryInvalidException(GlJournalEntryInvalidReason.OLD_DATE, transactionDate,
+                    String.valueOf(maximumBackDateDaysAllowed), null);
         }
         // shouldn't be before an accounting closure
         final GLClosure latestGLClosure = this.glClosureRepository.getLatestGLClosureByBranch(command.getOfficeId());

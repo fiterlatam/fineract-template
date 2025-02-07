@@ -391,7 +391,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         final Locale locale = command.extractLocale();
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(locale);
 
-        final LocalDate transactionDate = command.localDateValueOfParameterNamed("transactionDate");
+        final LocalDate transactionDate = this.fromApiJsonHelper.extractLocalDateNamed("transactionDate", command.parsedJson(),
+                command.dateFormat(), command.extractLocale());
         final BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed("transactionAmount");
 
         this.savingsAccountTransactionDataValidator.validateTransactionWithPivotDate(transactionDate, account);

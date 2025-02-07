@@ -75,7 +75,7 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
                 + "where je.is_running_balance_calculated=false ";
         try {
             LocalDate entityDate = this.jdbcTemplate.queryForObject(dateFinder, LocalDate.class);
-            if (entityDate!=null) updateOrganizationRunningBalance(entityDate);
+            if (entityDate != null) updateOrganizationRunningBalance(entityDate);
         } catch (EmptyResultDataAccessException e) {
             log.debug("No results found for updation of running balance ");
         }
@@ -162,21 +162,21 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
         // Batch update using JdbcTemplate with PreparedStatement
         long numberOfDaysToKeepRunningBalance = configurationDomainService.getNumberOfDaysToKeepRunningBalance();
         LocalDate endDate = entityDate.plusDays(numberOfDaysToKeepRunningBalance);
-        String sqlString = numberOfDaysToKeepRunningBalance > 0 ? entryMapper.organizationRunningBalanceSchemaParts() : entryMapper.organizationRunningBalanceSchema();
-        try (Stream<JournalEntryData> entryStream = jdbcTemplate.queryForStream(
-                sqlString, entryMapper, entityDate, endDate)) {
-                List<JournalEntryData> batch = new ArrayList<>();
-                entryStream.forEach(entry -> {
-                    batch.add(entry);
-                    if (batch.size() == batchUpdateSize) {
-                        processBatch(batch, jdbcTemplate, officesRunningBalance, runningBalanceMap);
-                        batch.clear();
-                    }
-                });
-
-                if (!batch.isEmpty()) {
+        String sqlString = numberOfDaysToKeepRunningBalance > 0 ? entryMapper.organizationRunningBalanceSchemaParts()
+                : entryMapper.organizationRunningBalanceSchema();
+        try (Stream<JournalEntryData> entryStream = jdbcTemplate.queryForStream(sqlString, entryMapper, entityDate, endDate)) {
+            List<JournalEntryData> batch = new ArrayList<>();
+            entryStream.forEach(entry -> {
+                batch.add(entry);
+                if (batch.size() == batchUpdateSize) {
                     processBatch(batch, jdbcTemplate, officesRunningBalance, runningBalanceMap);
+                    batch.clear();
                 }
+            });
+
+            if (!batch.isEmpty()) {
+                processBatch(batch, jdbcTemplate, officesRunningBalance, runningBalanceMap);
+            }
         }
     }
 
