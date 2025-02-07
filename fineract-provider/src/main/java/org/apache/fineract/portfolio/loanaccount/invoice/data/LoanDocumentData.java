@@ -103,6 +103,8 @@ public class LoanDocumentData {
     private Integer loansCount;
     private Integer itemsCount;
     private Long loanTransactionId;
+    private String collectionHouseNit;
+    private String collectionHouseName;
 
     public FacturaElectronicaMensual toEntity() {
         final FacturaElectronicaMensual facturaElectronicaMensual = new FacturaElectronicaMensual();
@@ -160,7 +162,7 @@ public class LoanDocumentData {
 
         // INFORMATION AT COMPANY LEVEL
         final String taxInformation = StringUtils.stripAccents(
-                "RESPONSABLE DEL IVA.  No Somos Grandes Contribuyentes. Autorretenedores Renta según Resol. No. 04314 may 16 de 20028.  Auterretenedores especiales según Decreto No. 2201 dic 30 de 2016.  Autorretenedores de ICA según Resol. No. 202150186360 del 22 de dic de 2021 Medellín.");
+                "RESPONSABLE DEL IVA.  No Somos Grandes Contribuyentes. Autorretenedores Renta según Resol. No. 04314 may 16 de 2008.  Auterretenedores especiales según Decreto No. 2201 dic 30 de 2016.  Autorretenedores de ICA según Resol. No. 202150186360 del 22 de dic de 2021 Medellín.");
         facturaElectronicaMensual.setInf_tributaria(taxInformation);
         facturaElectronicaMensual.setCantidad(BigDecimal.ONE);
         if (LegalForm.fromInt(this.clientLegalForm).isEntity()) {
@@ -183,6 +185,7 @@ public class LoanDocumentData {
             facturaElectronicaMensual.setApellido_cliente(this.clientLastName);
             facturaElectronicaMensual.setDireccion(this.clientAddress);
             facturaElectronicaMensual.setCiudad(this.clientCityName);
+            facturaElectronicaMensual.setCodigopostal(this.clientCityCode);
             facturaElectronicaMensual.setEmail(this.clientEmailAddress);
         }
 

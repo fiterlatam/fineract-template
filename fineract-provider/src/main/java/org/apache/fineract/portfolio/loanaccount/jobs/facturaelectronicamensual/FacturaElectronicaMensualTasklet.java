@@ -197,7 +197,11 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                          	voluntary_insurance_code."codeValue" AS "voluntaryInsuranceCode",
                          	mandatory_insurance_code."codeName" AS "mandatoryInsuranceName",
                           	voluntary_insurance_code."codeName" AS "voluntaryInsuranceName",
-                          	mc.mobile_no AS "clientTelephone"
+                          	mc.mobile_no AS "clientTelephone",
+                          	mchcc.collection_nit as clientCollectionHouseNit,
+                            mchcc.collection_name as clientCollectionHouseName,
+                            mchce.collection_nit as empressaCollectionHouseNit,
+                            mchce.collection_name as empressaCollectionHouseName
                         FROM m_loan ml
                         INNER JOIN m_client mc ON mc.id = ml.client_id
                         INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
@@ -338,11 +342,15 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         LEFT JOIN m_code_value dept ON dept.id = cce."Departamento_cd_Departamento"
                         LEFT JOIN m_code_value companycity ON companycity.id = cce."Ciudad_cd_Ciudad"
                         LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+                        left join m_collection_house_history mchhc on mchhc.collection_nit = ccp."Cedula"
+                        left join m_collection_house_history mchhe on mchhe.collection_nit = cce."NIT"
+                        left join m_collection_house_configuration mchcc on mchcc.collection_code = mchhc.collection_house_code
+                        left join m_collection_house_configuration mchce on mchce.collection_code = mchhe.collection_house_code
                         LEFT JOIN m_code_value clientcity ON clientcity.id = ccp."Ciudad_cd_Ciudad"
                         LEFT JOIN (
                           SELECT mlc.loan_id,
                           MAX(mc.insurance_code) AS "codeValue",
-                          MAX(mc.insurance_name) AS "codeName"
+                          MAX(mc.insurer_name) AS "codeName"
                           FROM m_loan_charge mlc
                           INNER JOIN m_charge mc ON mc.id = mlc.charge_id
                           WHERE mlc.charge_calculation_enum IN (468, 575, 231)
@@ -351,7 +359,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         LEFT JOIN (
                           SELECT mlc.loan_id,
                           MAX(mc.insurance_code) AS "codeValue",
-                          MAX(mc.insurance_name) AS "codeName"
+                          MAX(mc.insurer_name) AS "codeName"
                           FROM m_loan_charge mlc
                           INNER JOIN m_charge mc ON mc.id = mlc.charge_id
                           WHERE mlc.charge_calculation_enum = 1034
@@ -414,7 +422,11 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                      	voluntary_insurance_code."codeValue" AS "voluntaryInsuranceCode",
                      	mandatory_insurance_code."codeName" AS "mandatoryInsuranceName",
                       	voluntary_insurance_code."codeName" AS "voluntaryInsuranceName",
-                      	mc.mobile_no AS "clientTelephone"
+                      	mc.mobile_no AS "clientTelephone",
+                      	mchcc.collection_nit as clientCollectionHouseNit,
+                        mchcc.collection_name as clientCollectionHouseName,
+                        mchce.collection_nit as empressaCollectionHouseNit,
+                        mchce.collection_name as empressaCollectionHouseName
                     FROM m_loan ml
                     INNER JOIN m_client mc ON mc.id = ml.client_id
                     INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
@@ -554,11 +566,15 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                     LEFT JOIN m_code_value dept ON dept.id = cce."Departamento_cd_Departamento"
                     LEFT JOIN m_code_value companycity ON companycity.id = cce."Ciudad_cd_Ciudad"
                     LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+                    left join m_collection_house_history mchhc on mchhc.collection_nit = ccp."Cedula"
+                    left join m_collection_house_history mchhe on mchhe.collection_nit = cce."NIT"
+                    left join m_collection_house_configuration mchcc on mchcc.collection_code = mchhc.collection_house_code
+                    left join m_collection_house_configuration mchce on mchce.collection_code = mchhe.collection_house_code
                     LEFT JOIN m_code_value clientcity ON clientcity.id = ccp."Ciudad_cd_Ciudad"
                     LEFT JOIN (
                       SELECT mlc.loan_id,
                       MAX(mc.insurance_code) AS "codeValue",
-                       MAX(mc.insurance_name) AS "codeName"
+                       MAX(mc.insurer_name) AS "codeName"
                       FROM m_loan_charge mlc
                       INNER JOIN m_charge mc ON mc.id = mlc.charge_id
                       WHERE mlc.charge_calculation_enum IN (468, 575, 231)
@@ -567,7 +583,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                     LEFT JOIN (
                       SELECT mlc.loan_id,
                       MAX(mc.insurance_code) AS "codeValue",
-                      MAX(mc.insurance_name) AS "codeName"
+                      MAX(mc.insurer_name) AS "codeName"
                       FROM m_loan_charge mlc
                       INNER JOIN m_charge mc ON mc.id = mlc.charge_id
                       WHERE mlc.charge_calculation_enum = 1034
@@ -578,6 +594,12 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
 
         @Override
         public LoanDocumentData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
+            String clientCollectionHouseNit = rs.getString("clientCollectionHouseNit");
+            String clientCollectionHouseName = rs.getString("clientCollectionHouseName");
+            String empressaCollectionHouseNit = rs.getString("empressaCollectionHouseNit");
+            String empressaCollectionHouseName = rs.getString("empressaCollectionHouseName");
+            String collectionHouseNit = clientCollectionHouseNit == null ? empressaCollectionHouseNit : clientCollectionHouseNit;
+            String collectionHouseName = clientCollectionHouseName == null ? empressaCollectionHouseName : clientCollectionHouseName;
             return LoanDocumentData.builder().loanId(rs.getLong("loanId")).clientId(rs.getLong("clientId"))
                     .clientLegalForm(rs.getInt("clientLegalForm")).clientDisplayName(rs.getString("clientDisplayName"))
                     .clientLastName(rs.getString("clientLastName")).clientEmailAddress(rs.getString("clientEmailAddress"))
@@ -610,7 +632,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                     .voluntaryInsuranceCode(rs.getString("voluntaryInsuranceCode"))
                     .voluntaryInsuranceName(rs.getString("voluntaryInsuranceName")).clientFirstName(rs.getString("clientFirstName"))
                     .clientMiddleName(rs.getString("clientMiddleName")).mandatoryInsuranceName(rs.getString("mandatoryInsuranceName"))
-                    .build();
+                    .collectionHouseNit(collectionHouseNit).collectionHouseName(collectionHouseName).build();
         }
     }
 
