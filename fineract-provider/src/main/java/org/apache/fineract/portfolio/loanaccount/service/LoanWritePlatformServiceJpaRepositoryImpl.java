@@ -4242,6 +4242,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final Set<LoanTransactionData> invoicedByAccrualTransactionDataSet = new HashSet<>();
             final Set<LoanTransaction> invoicedByAccrualTransactionSet = new HashSet<>();
             final List<LoanTransaction> accrualTransactions = loan.retrieveListOfAccrualTransactions().stream()
+                    .filter(LoanTransaction::hasOccurredOnSuspendedAccount)
                     .filter(ltx -> Objects.isNull(ltx.getInvoicedByTransactionId()) || ltx.isPartiallyInvoiced()).toList();
             for (final LoanTransaction accrualTransaction : accrualTransactions) {
                 final boolean occurredOnSuspendedAccount = accrualTransaction.hasOccurredOnSuspendedAccount();
