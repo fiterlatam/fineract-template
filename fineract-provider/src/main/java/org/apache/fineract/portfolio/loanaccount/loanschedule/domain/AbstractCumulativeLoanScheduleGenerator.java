@@ -511,6 +511,16 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 continue;
             }
 
+            // SU-597: If the period number is greater than number of repayments or if period start date is equal to
+            // or after loan end date, then update the principal, interest, total due of the last installment
+            if (periodNumber > loanApplicationTerms.getNumberOfRepayments()
+                    || !DateUtils.isBefore(scheduleParams.getPeriodStartDate(), loanEndDate)) {
+                LoanScheduleModelPeriod lastInstallment = periods.get(periods.size() - 1);
+                lastInstallment.addPrincipalAmount(currentPeriodParams.getPrincipalForThisPeriod());
+                lastInstallment.addInterestAmount(currentPeriodParams.getInterestForThisPeriod());
+                break;
+            }
+
             // create repayment period from parts
             LoanScheduleModelPeriod installment = LoanScheduleModelRepaymentPeriod.repayment(scheduleParams.getInstalmentNumber(),
                     scheduleParams.getPeriodStartDate(), scheduledDueDate, currentPeriodParams.getPrincipalForThisPeriod(),
@@ -1154,7 +1164,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                             // reduces actual outstanding balance
                             scheduleParams.reduceOutstandingBalance(unprocessed);
                             // if outstanding balance becomes less than zero
-                            // then adjusts the princiapal
+                            // then adjusts the principal
                             Money addToPrincipal = Money.zero(currency);
                             if (!scheduleParams.getOutstandingBalance().isGreaterThanZero()) {
                                 addToPrincipal = addToPrincipal.plus(scheduleParams.getOutstandingBalance());
@@ -2642,12 +2652,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             final LocalDate scheduleTillDate) {
         // Loan transactions to process and find the variation on payments
         Collection<RecalculationDetail> recalculationDetails = new ArrayList<>();
-        List<LoanTransaction> transactions = loan.getLoanTransactions();
+        List<LoanTransaction> transactions = loan.getPaymentTransactions();
         for (LoanTransaction loanTransaction : transactions) {
-            if (loanTransaction.isPaymentTransaction()) {
-                recalculationDetails.add(new RecalculationDetail(loanTransaction.getTransactionDate(),
-                        LoanTransaction.copyTransactionProperties(loanTransaction)));
-            }
+            recalculationDetails.add(new RecalculationDetail(loanTransaction.getTransactionDate(),
+                    LoanTransaction.copyTransactionProperties(loanTransaction)));
         }
         final boolean applyInterestRecalculation = loanApplicationTerms.isInterestRecalculationEnabled();
 
@@ -2995,12 +3003,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         // Loan transactions to process and find the variation on payments
         Collection<RecalculationDetail> recalculationDetails = new ArrayList<>();
         Collection<RecalculationDetail> advancePayments = new ArrayList<>();
-        List<LoanTransaction> transactions = loan.getLoanTransactions();
+        List<LoanTransaction> transactions = loan.getPaymentTransactions();
         for (LoanTransaction loanTransaction : transactions) {
-            if (loanTransaction.isPaymentTransaction()) {
-                recalculationDetails.add(new RecalculationDetail(loanTransaction.getTransactionDate(),
-                        LoanTransaction.copyTransactionProperties(loanTransaction)));
-            }
+            recalculationDetails.add(new RecalculationDetail(loanTransaction.getTransactionDate(),
+                    LoanTransaction.copyTransactionProperties(loanTransaction)));
         }
         final boolean applyInterestRecalculation = loanApplicationTerms.isInterestRecalculationEnabled();
 

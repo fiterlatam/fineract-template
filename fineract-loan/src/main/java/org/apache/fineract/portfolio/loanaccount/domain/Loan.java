@@ -47,6 +47,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
@@ -5585,6 +5587,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     // This method returns copy of all transactions
     public List<LoanTransaction> getLoanTransactions() {
         return this.loanTransactions;
+    }
+
+    public List<LoanTransaction> getPaymentTransactions() {
+        return this.loanTransactions.stream().filter(LoanTransaction::isPaymentTransaction).collect(Collectors.toList());
     }
 
     public void addLoanTransaction(final LoanTransaction loanTransaction) {
