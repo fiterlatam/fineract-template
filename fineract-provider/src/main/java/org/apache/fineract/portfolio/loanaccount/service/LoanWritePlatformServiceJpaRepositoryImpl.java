@@ -498,15 +498,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             "Disbursal date of this loan application " + loan.getDisbursementDate()
                                     + " should be after last transaction date of loan to be closed " + lastUserTransactionOnLoanToClose);
                 }
-                BigDecimal loanOutstanding = this.loanReadPlatformService
-                        .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose, actualDisbursementDate).getAmount();
 
                 final LoanTransactionData waiveInterestTransactionData = this.loanReadPlatformService
                         .retrieveWaiveInterestDetails(loanIdToClose);
+                BigDecimal waiveTransactionAmount = BigDecimal.ZERO;
                 if (waiveInterestTransactionData != null) {
-                    final Money waiveInterestTransactionAmount = Money.of(currency, waiveInterestTransactionData.getAmount());
+                    waiveTransactionAmount = waiveInterestTransactionData.getAmount();
+                    final Money waiveInterestTransactionAmount = Money.of(currency, waiveTransactionAmount);
                     if (waiveInterestTransactionAmount.isGreaterThanZero()) {
-                        final BigDecimal transactionAmount = waiveInterestTransactionData.getAmount();
                         final String localeAsString = "en";
                         final String dateFormat = "dd MMMM yyyy";
                         final JsonObject jsonObject = new JsonObject();
@@ -516,7 +515,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         final String localDateString = localDate.format(dateTimeFormatter);
                         jsonObject.addProperty("locale", localeAsString);
                         jsonObject.addProperty("dateFormat", dateFormat);
-                        jsonObject.addProperty("transactionAmount", transactionAmount);
+                        jsonObject.addProperty("transactionAmount", waiveTransactionAmount);
                         jsonObject.addProperty("transactionDate", localDateString);
                         final String note = "Préstamo complementario " + loanId;
                         jsonObject.addProperty("note", note);
@@ -531,13 +530,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
                     }
                 }
+                BigDecimal loanOutstanding = this.loanReadPlatformService
+                        .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose, actualDisbursementDate).getAmount();
+
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
                 if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
                             "Topup loan amount should be greater than outstanding amount of loan to be closed.");
                 }
 
-                amountToDisburse = disburseAmount.minus(loanOutstanding);
+                amountToDisburse = disburseAmount.minus(loanOutstanding.add(waiveTransactionAmount));
 
                 disburseLoanToLoan(loan, command, loanOutstanding, paymentDetail);
             }
