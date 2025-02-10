@@ -18,13 +18,9 @@
  */
 package org.apache.fineract.portfolio.collectionhousemanagement.service;
 
-import org.apache.fineract.portfolio.collectionhousemanagement.data.CollectionHouseUpdate;
 import org.apache.fineract.portfolio.collectionhousemanagement.data.CollectionHouseUpdates;
 import retrofit2.Call;
 import retrofit2.http.GET;
-import retrofit2.http.POST;
-
-import java.util.List;
 
 public interface CollectionHouseExternalApiService {
 

@@ -1,18 +1,16 @@
 package org.apache.fineract.portfolio.collectionhousemanagement.api;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
+import java.util.List;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.data.CustomChargeHonorarioMapData;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.collectionhousemanagement.data.CollectionHouseUpdate;
@@ -22,8 +20,6 @@ import org.apache.fineract.portfolio.collectionhousemanagement.service.Collectio
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 @Path("/v1/collectionhousehistory")
 @Component
@@ -40,7 +36,8 @@ public class CollectionHouseHistoryApiResource {
     @Autowired
     public CollectionHouseHistoryApiResource(DefaultToApiJsonSerializer<CustomChargeHonorarioMapData> toApiJsonSerializer,
             PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, PlatformSecurityContext context,
-            ApiRequestParameterHelper apiRequestParameterHelper, CollectionHouseHistoryReadWriteService collectionHouseHistoryReadWriteService) {
+            ApiRequestParameterHelper apiRequestParameterHelper,
+            CollectionHouseHistoryReadWriteService collectionHouseHistoryReadWriteService) {
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.context = context;

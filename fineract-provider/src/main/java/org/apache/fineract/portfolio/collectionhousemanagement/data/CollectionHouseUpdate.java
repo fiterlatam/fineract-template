@@ -6,11 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "clientAccountNo",
-        "nit",
-        "collectionHouseCode"
-})
+@JsonPropertyOrder({ "clientAccountNo", "nit", "collectionHouseCode" })
 
 public class CollectionHouseUpdate {
 

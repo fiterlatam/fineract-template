@@ -1,10 +1,8 @@
 package org.apache.fineract.portfolio.collectionhousemanagement.jobs;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.fineract.commands.domain.CommandWrapper;
-import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.portfolio.collectionhousemanagement.data.CollectionHouseUpdate;
 import org.apache.fineract.portfolio.collectionhousemanagement.data.CollectionHouseUpdates;
@@ -13,9 +11,6 @@ import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 public class CollectionHouseConfigTasklet implements Tasklet {

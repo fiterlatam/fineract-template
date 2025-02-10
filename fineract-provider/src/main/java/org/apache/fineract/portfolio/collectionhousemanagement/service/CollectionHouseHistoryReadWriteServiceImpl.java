@@ -2,7 +2,6 @@ package org.apache.fineract.portfolio.collectionhousemanagement.service;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -17,8 +16,8 @@ import org.apache.fineract.portfolio.accountdetails.data.LoanAccountSummaryData;
 import org.apache.fineract.portfolio.accountdetails.service.AccountDetailsReadPlatformService;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
-import org.apache.fineract.portfolio.collectionhousemanagement.data.CollectionHouseUpdate;
 import org.apache.fineract.portfolio.collectionhousemanagement.data.CollectionHouseHistoryValidator;
+import org.apache.fineract.portfolio.collectionhousemanagement.data.CollectionHouseUpdate;
 import org.apache.fineract.portfolio.collectionhousemanagement.data.CollectionHouseUpdates;
 import org.apache.fineract.portfolio.collectionhousemanagement.domain.CollectionHouseHistoryRepository;
 import org.apache.fineract.portfolio.collectionhousemanagement.domain.ColletionHouseHistory;
@@ -171,7 +170,8 @@ public class CollectionHouseHistoryReadWriteServiceImpl implements CollectionHou
     public CollectionHouseUpdates fetchDataFromExternalProvider() throws IOException {
         collectionHouseHistoryExternalRetrofitConfig.apiRequestDetailsRenewal(retrofit);
 
-        CollectionHouseExternalApiService service = collectionHouseHistoryExternalRetrofitConfig.getRetrofitInstance().create(CollectionHouseExternalApiService.class);
+        CollectionHouseExternalApiService service = collectionHouseHistoryExternalRetrofitConfig.getRetrofitInstance()
+                .create(CollectionHouseExternalApiService.class);
 
         Call<CollectionHouseUpdates> call = service.getData();
 

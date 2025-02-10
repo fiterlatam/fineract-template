@@ -18,6 +18,11 @@
  */
 package org.apache.fineract.portfolio.collectionhousemanagement.service;
 
+import java.io.IOException;
+import java.security.cert.CertificateException;
+import java.util.Collection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509TrustManager;
 import lombok.Getter;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -36,12 +41,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.X509TrustManager;
-import java.io.IOException;
-import java.security.cert.CertificateException;
-import java.util.Collection;
 
 @Component
 public class CollectionHouseHistoryExternalRetrofitConfig {
@@ -141,8 +140,8 @@ public class CollectionHouseHistoryExternalRetrofitConfig {
                                     || originalRequest.url().toString().contains(STRING_FALLBACK_URL)) {
 
                                 newRequest = originalRequest.newBuilder().header("API_KEY", apiKey)
-                                        .header("Fineract-Platform-TenantId", "uat")
-                                        .header("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=").build();
+                                        .header("Fineract-Platform-TenantId", "uat").header("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=")
+                                        .build();
                             }
 
                             return chain.proceed(newRequest);
