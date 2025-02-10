@@ -46,6 +46,7 @@ import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.domain.BitaCoraMasterRepository;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
@@ -235,14 +236,19 @@ import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
+import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
+import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.service.RepaymentWithPostDatedChecksAssembler;
 import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
+import org.apache.fineract.portfolio.savings.data.SavingsAccountData;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
+import org.apache.fineract.portfolio.savings.exception.SavingsAccountNotFoundException;
+import org.apache.fineract.portfolio.savings.service.SavingsAccountReadPlatformService;
 import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
 import org.apache.fineract.portfolio.transfer.api.TransferApiConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -309,6 +315,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
     private final LoanScheduleAssembler loanScheduleAssembler;
     private final ClientRepositoryWrapper clientRepository;
+    private final SavingsAccountReadPlatformService savingsAccountReadPlatformService;
+    private final PaymentTypeReadPlatformService paymentTypeReadPlatformService;
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
         final List<LoanStatus> allowedLoanStatuses = Arrays.asList(LoanStatus.values());
@@ -462,11 +470,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         BigDecimal totalDisbursementCharges = BigDecimal.ZERO;
         final Map<Long, BigDecimal> disBuLoanCharges = new HashMap<>();
         for (final LoanCharge loanCharge : loanCharges) {
-            if (loanCharge.isDueAtDisbursement() && loanCharge.getChargePaymentMode().isPaymentModeAccountTransfer()
-                    && loanCharge.isChargePending()) {
-                disBuLoanCharges.put(loanCharge.getId(), loanCharge.amountOutstanding());
-            } else if (loanCharge.isDueAtDisbursement()) {
+            if (loanCharge.isDueAtDisbursement() && loanCharge.isChargePending()) {
                 totalDisbursementCharges = totalDisbursementCharges.add(loanCharge.amountOutstanding());
+                disBuLoanCharges.put(loanCharge.getId(), loanCharge.amountOutstanding());
             }
         }
 
@@ -605,16 +611,50 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final Locale locale = command.extractLocale();
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(locale);
         for (final Map.Entry<Long, BigDecimal> entrySet : disBuLoanCharges.entrySet()) {
-            final PortfolioAccountData savingAccountData = this.accountAssociationsReadPlatformService.retriveLoanLinkedAssociation(loanId);
-            final SavingsAccount fromSavingsAccount = null;
-            final boolean isRegularTransaction = true;
-            final boolean isExceptionForBalanceCheck = false;
-            final AccountTransferDTO accountTransferDTO = new AccountTransferDTO(actualDisbursementDate, entrySet.getValue(),
-                    PortfolioAccountType.SAVINGS, PortfolioAccountType.LOAN, savingAccountData.accountId(), loanId, "Loan Charge Payment",
-                    locale, fmt, paymentDetail, null, LoanTransactionType.REPAYMENT_AT_DISBURSEMENT.getValue(), entrySet.getKey(), null,
-                    AccountTransferType.CHARGE_PAYMENT.getValue(), null, null, null, null, null, fromSavingsAccount, isRegularTransaction,
-                    isExceptionForBalanceCheck);
-            this.accountTransfersWritePlatformService.transferFunds(accountTransferDTO);
+
+
+            if (entrySet.getValue().compareTo(BigDecimal.ZERO)>0){
+                //stream savings accounts. get one with product name as Garantías
+                Collection<SavingsAccountData> savingsAccounts = this.savingsAccountReadPlatformService.retrieveAllForLookup(loan.getClientId());
+
+                SavingsAccountData savingAccountData = savingsAccounts.stream().filter(savingsAccount -> savingsAccount.getSavingsProductName().equalsIgnoreCase("Garantías")).findFirst().orElse(null);
+                if (savingAccountData==null){
+                    throw new SavingsAccountNotFoundException(loan.getClient().getDisplayName(),
+                            "Garantías");
+                }
+
+                final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
+
+                //create a deposit command object to handle the cash deposit
+                final JsonObject jsonObject = new JsonObject();
+                final LocalDate localDate = DateUtils.getBusinessLocalDate();
+                final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(locale);
+                final String localDateString = localDate.format(dateTimeFormatter);
+                jsonObject.addProperty("locale", command.extractLocale().toLanguageTag());
+                jsonObject.addProperty("dateFormat", command.dateFormat());
+                jsonObject.addProperty("transactionAmount", entrySet.getValue());
+                jsonObject.addProperty("transactionDate", localDateString);
+                if (!CollectionUtils.isEmpty(paymentTypeOptions)) {
+                    jsonObject.addProperty("paymentTypeId", new ArrayList<>(paymentTypeOptions).get(0).getId());
+                }
+                jsonObject.addProperty("note", "Charge Repayment Deposit");
+
+                final JsonCommand depositJsonCommand = JsonCommand.fromJsonElement(savingAccountData.id(), jsonObject, this.fromApiJsonHelper);
+                depositJsonCommand.setJsonCommand(jsonObject.toString());
+                this.savingsAccountWritePlatformService.deposit(savingAccountData.id(), depositJsonCommand);
+
+                final SavingsAccount fromSavingsAccount = null;
+                final boolean isRegularTransaction = true;
+                final boolean isExceptionForBalanceCheck = false;
+                final AccountTransferDTO accountTransferDTO = new AccountTransferDTO(actualDisbursementDate, entrySet.getValue(),
+                        PortfolioAccountType.SAVINGS, PortfolioAccountType.LOAN, savingAccountData.id(), loanId, "Loan Charge Payment",
+                        locale, fmt, paymentDetail, null, LoanTransactionType.REPAYMENT_AT_DISBURSEMENT.getValue(), entrySet.getKey(), null,
+                        AccountTransferType.CHARGE_PAYMENT.getValue(), null, null, null, null, null, fromSavingsAccount, isRegularTransaction,
+                        isExceptionForBalanceCheck);
+                this.accountTransfersWritePlatformService.transferFunds(accountTransferDTO);
+            }
+
+
         }
 
         updateRecurringCalendarDatesForInterestRecalculation(loan);
