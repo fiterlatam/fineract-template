@@ -2,6 +2,7 @@ package org.apache.fineract.portfolio.collectionhousemanagement.service;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,8 @@ import org.apache.fineract.portfolio.accountdetails.service.AccountDetailsReadPl
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.collectionhousemanagement.data.CollectionHouseHistoryValidator;
+import org.apache.fineract.portfolio.collectionhousemanagement.data.CollectionHouseUpdate;
+import org.apache.fineract.portfolio.collectionhousemanagement.data.CollectionHouseUpdates;
 import org.apache.fineract.portfolio.collectionhousemanagement.domain.CollectionHouseHistoryRepository;
 import org.apache.fineract.portfolio.collectionhousemanagement.domain.ColletionHouseHistory;
 import org.apache.fineract.portfolio.loanaccount.data.LoanStatusEnumData;
@@ -23,6 +26,9 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
+import retrofit2.Call;
+import retrofit2.Response;
+import retrofit2.Retrofit;
 
 @Service
 @Slf4j
@@ -33,6 +39,8 @@ public class CollectionHouseHistoryReadWriteServiceImpl implements CollectionHou
     private final CollectionHouseHistoryRepository collectionHouseHistoryRepository;
     private final AccountDetailsReadPlatformService accountDetailsReadPlatformService;
     private final ClientRepositoryWrapper clientRepositoryWrapper;
+    private final Retrofit retrofit;
+    private final CollectionHouseHistoryExternalRetrofitConfig collectionHouseHistoryExternalRetrofitConfig;
 
     @Override
     public CommandProcessingResult createCollectionHouseHistory(JsonCommand command) {
@@ -102,6 +110,40 @@ public class CollectionHouseHistoryReadWriteServiceImpl implements CollectionHou
     }
 
     @Override
+    public void createCollectionHouseHistory(List<CollectionHouseUpdate> list) {
+        try {
+            collectionHouseHistoryRepository.deleteAll();
+            collectionHouseHistoryRepository.flush();
+            if (list != null && !list.isEmpty()) {
+                for (CollectionHouseUpdate data : list) {
+                    String clientAccountNo = data.getClientAccountNo();
+                    String nit = data.getNit();
+                    String collectionHouseCode = data.getCollectionHouseCode();
+
+                    try {
+                        Client client = clientRepositoryWrapper.getClientByAccountNumber(clientAccountNo);
+                        Boolean hasLoanAccountsInArrears = false;
+                        if (client != null) {
+                            ColletionHouseHistory colletionHouseHistory = new ColletionHouseHistory();
+                            colletionHouseHistory.setClientAccountNumber(clientAccountNo);
+                            colletionHouseHistory.setCollectionNit(nit);
+                            colletionHouseHistory.setCollectionCode(collectionHouseCode);
+                            collectionHouseHistoryRepository.saveAndFlush(colletionHouseHistory);
+                        }
+                    } catch (final JpaSystemException | DataIntegrityViolationException ex) {
+                        throw new PlatformDataIntegrityException("error.msg.collectionHouseHistory.save.failed",
+                                "Failed to save Collection House History for clientAccountNo: " + clientAccountNo, ex);
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            log.error("Error during collection house history refresh", e);
+            throw e;
+        }
+    }
+
+    @Override
     public CommandProcessingResult updateCollectionHouseHistory(JsonCommand command) {
         this.collectionHouseHistoryRepository.updateCollectionHouseHistory();
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(command.entityId()).build();
@@ -122,5 +164,27 @@ public class CollectionHouseHistoryReadWriteServiceImpl implements CollectionHou
     public List<ColletionHouseHistory> findAllCollectionHouseHistory() {
         List<ColletionHouseHistory> colletionHouseHistories = collectionHouseHistoryRepository.findAll();
         return colletionHouseHistories;
+    }
+
+    @Override
+    public CollectionHouseUpdates fetchDataFromExternalProvider() throws IOException {
+        collectionHouseHistoryExternalRetrofitConfig.apiRequestDetailsRenewal(retrofit);
+
+        CollectionHouseExternalApiService service = collectionHouseHistoryExternalRetrofitConfig.getRetrofitInstance()
+                .create(CollectionHouseExternalApiService.class);
+
+        Call<CollectionHouseUpdates> call = service.getData();
+
+        CollectionHouseUpdates ret = new CollectionHouseUpdates();
+        Response<CollectionHouseUpdates> response = call.execute();
+
+        if (response.isSuccessful()) {
+            ret = response.body();
+        } else {
+            throw new IOException("Request Status " + response.code() + " for " + retrofit.baseUrl()
+                    + " Check if endpoint is correct and if the service is up.");
+        }
+
+        return ret;
     }
 }
