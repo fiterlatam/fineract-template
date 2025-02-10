@@ -33,6 +33,8 @@ public final class ExternalServicesConstants {
     public static final String CUSTOM_CHARGE_HONORARIO_API_KEY = "API_KEY";
 
     public static final String COLLECTION_HOUSE_HISTORY_PROVIDER_SERVICE_NAME = "COLLECTION_HOUSE_HISTORY_PROVIDER";
+    public static final String COLLECTION_HOUSE_HISTORY_URL = "COLLECTION_HOUSE_URL";
+    public static final String COLLECTION_HOUSE_HISTORY_API_KEY = "COLLECTION_HOUSE_API_KEY";
 
     public static final String S3_SERVICE_NAME = "S3";
     public static final String S3_BUCKET_NAME = "s3_bucket_name";
