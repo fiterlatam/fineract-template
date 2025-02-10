@@ -307,6 +307,11 @@ public class Money implements Comparable<Money> {
         return Money.of(monetaryCurrency(), newAmount);
     }
 
+    public Money percentageOfVat(BigDecimal percentage, final RoundingMode roundingMode) {
+        final BigDecimal newAmount = this.amount.multiply(percentage).divide(BigDecimal.valueOf(100), RoundingMode.HALF_UP).divide(BigDecimal.valueOf(1.19), RoundingMode.HALF_UP);
+        return Money.of(monetaryCurrency(), newAmount);
+    }
+
     @Override
     public int compareTo(final Money other) {
         final Money otherMoney = other;
