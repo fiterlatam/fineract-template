@@ -181,7 +181,8 @@ public class CollectionHouseHistoryReadWriteServiceImpl implements CollectionHou
         if (response.isSuccessful()) {
             ret = response.body();
         } else {
-            throw new IOException("Request Status " + response.code() + " for " + collectionHouseHistoryExternalRetrofitConfig.getRetrofitInstance().baseUrl()
+            throw new IOException("Request Status " + response.code() + " for "
+                    + collectionHouseHistoryExternalRetrofitConfig.getRetrofitInstance().baseUrl()
                     + " Check if endpoint is correct and if the service is up.");
         }
 
