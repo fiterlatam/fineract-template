@@ -308,7 +308,8 @@ public class Money implements Comparable<Money> {
     }
 
     public Money percentageOfVat(BigDecimal percentage, final RoundingMode roundingMode) {
-        final BigDecimal newAmount = this.amount.multiply(percentage).divide(BigDecimal.valueOf(100), RoundingMode.HALF_UP).divide(BigDecimal.valueOf(1.19), RoundingMode.HALF_UP);
+        final BigDecimal newAmount = this.amount.multiply(percentage).divide(BigDecimal.valueOf(100), RoundingMode.HALF_UP)
+                .divide(BigDecimal.valueOf(1.19), RoundingMode.HALF_UP);
         return Money.of(monetaryCurrency(), newAmount);
     }
 
