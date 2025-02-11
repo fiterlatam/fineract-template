@@ -140,8 +140,8 @@ public class CollectionHouseHistoryExternalRetrofitConfig {
                                     || originalRequest.url().toString().contains(STRING_FALLBACK_URL)) {
 
                                 newRequest = originalRequest.newBuilder().header("API_KEY", apiKey)
-                                        .header("Fineract-Platform-TenantId", "default").header("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=")
-                                        .build();
+                                        .header("Fineract-Platform-TenantId", "default")
+                                        .header("Authorization", "Basic bWlmb3M6cGFzc3dvcmQ=").build();
                             }
 
                             return chain.proceed(newRequest);
