@@ -79,7 +79,9 @@ public class ApplyChargeToOverdueLoanInstallmentProcessor {
 
             for (Map.Entry<Long, Collection<OverdueLoanScheduleData>> entry : overdueScheduleData.entrySet()) {
                 try {
+                    log.debug("Applying Charges due for overdue loans for account {}", entry.getKey());
                     this.loanChargeWritePlatformService.applyOverdueChargesForLoan(entry.getKey(), entry.getValue());
+                    log.debug("Applied Charges due for overdue loans for account {}", entry.getKey());
 
                 } catch (final PlatformApiDataValidationException e) {
                     final List<ApiParameterError> errors = e.getErrors();
