@@ -2,7 +2,6 @@ package org.apache.fineract.portfolio.collectionhousemanagement.service;
 
 import java.util.Collection;
 import java.util.Optional;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -45,7 +44,8 @@ public class CollectionHouseReadWriteServiceImpl implements CollectionHouseReadW
         try {
             ColletionHouseHistory history = collectionHouseHistoryReadWriteService.findCollectionHouseHistoryByClientNit(clientNit);
             if (history != null) {
-                Optional<CollectionHouseConfiguration>  collectionHouseOptional = collectionHouseConfigRepository.getCollectionByCode(history.getCollectionCode());
+                Optional<CollectionHouseConfiguration> collectionHouseOptional = collectionHouseConfigRepository
+                        .getCollectionByCode(history.getCollectionCode());
                 return collectionHouseOptional.orElse(null);
             } else {
                 return null;

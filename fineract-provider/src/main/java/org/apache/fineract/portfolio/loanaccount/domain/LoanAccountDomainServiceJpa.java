@@ -219,7 +219,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     loan.recalculateEMI());
         }
 
-        ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService.retrieveClientAdditionalData(loan.getClientId());
+        ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
+                .retrieveClientAdditionalData(loan.getClientId());
         String nit = ObjectUtils.defaultIfNull(clientAdditionalInformation.getNit(), clientAdditionalInformation.getCedula());
         CollectionHouseConfiguration collectionHouse = this.collectionHouseReadWriteService.retrieveCollectionHouseByClientFromHistory(nit);
         if (collectionHouse != null) {

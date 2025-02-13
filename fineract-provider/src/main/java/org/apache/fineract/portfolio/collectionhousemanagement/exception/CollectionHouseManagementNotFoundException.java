@@ -9,6 +9,7 @@ public class CollectionHouseManagementNotFoundException extends AbstractPlatform
     }
 
     public CollectionHouseManagementNotFoundException(String clientNit) {
-        super("error.msg.collectionhouse.id.invalid", "Collection House for client with identifier " + clientNit + " does not exist", clientNit);
+        super("error.msg.collectionhouse.id.invalid", "Collection House for client with identifier " + clientNit + " does not exist",
+                clientNit);
     }
 }
