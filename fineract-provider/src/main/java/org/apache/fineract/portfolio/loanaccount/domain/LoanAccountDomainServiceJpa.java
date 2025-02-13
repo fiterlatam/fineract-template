@@ -254,18 +254,12 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         recalculateAccruals(loan);
 
         setLoanDelinquencyTag(loan, transactionDate);
-        Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
-        if (minimumDaysInArrearsToSuspendLoanAccount == null) {
-            minimumDaysInArrearsToSuspendLoanAccount = 90L;
-        }
         if (!repaymentTransactionType.isChargeRefund()) {
             final LoanTransactionBusinessEvent transactionRepaymentEvent = getTransactionRepaymentTypeBusinessEvent(
                     repaymentTransactionType, isRecoveryRepayment, newRepaymentTransaction);
             businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
             businessEventNotifierService.notifyPostBusinessEvent(transactionRepaymentEvent);
-            if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
-                businessEventNotifierService.notifyPostBusinessEvent(new LoanInvoiceGenerationPostBusinessEvent(newRepaymentTransaction));
-            }
+            businessEventNotifierService.notifyPostBusinessEvent(new LoanInvoiceGenerationPostBusinessEvent(newRepaymentTransaction));
         }
 
         // disable all active standing orders linked to this loan if status
