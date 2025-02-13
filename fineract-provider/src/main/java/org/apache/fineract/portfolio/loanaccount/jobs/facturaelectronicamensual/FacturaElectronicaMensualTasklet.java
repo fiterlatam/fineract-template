@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.jetbrains.annotations.NotNull;
@@ -69,12 +70,21 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
         if (businessLocalDate.equals(secondLastDayOfMonth) || enableMonthlyInvoiceGenerationOnJobTrigger) {
             final LoanInvoiceMapper loanInvoiceMapper = new LoanInvoiceMapper();
             final String invoiceQuery = "SELECT " + loanInvoiceMapper.invoiceSchema();
-            final List<LoanDocumentData> loanInvoiceDataList = this.jdbcTemplate.query(invoiceQuery, loanInvoiceMapper, firstDayOfMonth,
+            final List<LoanDocumentData> loanInvoiceDataList = this.jdbcTemplate.query(invoiceQuery, loanInvoiceMapper,
+                    LoanTransactionType.REPAYMENT.getValue(), LoanTransactionType.REPAYMENT.getValue(), firstDayOfMonth,
                     secondLastDayOfMonth);
             final List<LoanDocumentData> groupedLoanInvoices = groupByClientIdAndProductType(loanInvoiceDataList);
             for (final LoanDocumentData groupedLoanInvoice : groupedLoanInvoices) {
                 groupedLoanInvoice.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
                 this.loanWritePlatformService.processAndSaveLoanDocument(groupedLoanInvoice);
+            }
+            final List<LoanDocumentData> loanCreditNoteDataList = this.jdbcTemplate.query(invoiceQuery, loanInvoiceMapper,
+                    LoanTransactionType.CREDIT_NOTE.getValue(), LoanTransactionType.CREDIT_NOTE.getValue(), firstDayOfMonth,
+                    secondLastDayOfMonth);
+            final List<LoanDocumentData> groupedLoanCreditNotes = groupByClientIdAndProductType(loanCreditNoteDataList);
+            for (final LoanDocumentData groupedLoanCreditNote : groupedLoanCreditNotes) {
+                groupedLoanCreditNote.setDocumentType(LoanDocumentData.LoanDocumentType.CREDIT_NOTE);
+                this.loanWritePlatformService.processAndSaveLoanDocument(groupedLoanCreditNote);
             }
         }
         return RepeatStatus.FINISHED;
@@ -147,7 +157,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
 
         public String invoiceSchema() {
             return """
-                        	mc.id AS "clientId",
+                            mc.id AS "clientId",
                         	mc.legal_form_enum AS "clientLegalForm",
                         	ml.id AS "loanId",
                         	mc.firstname AS "clientFirstName",
@@ -209,21 +219,43 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         INNER JOIN (
                         		SELECT
                         			mlt.loan_id AS "loanId",
-                        			SUM(COALESCE(mlt.interest_portion_derived, 0)) AS "interest",
-                        			SUM(COALESCE(mandatory_insurance.amount, 0)) AS "mandatoryInsurance",
-                                    SUM(COALESCE(vat_mandatory_insurance.amount, 0)) AS "mandatoryInsuranceVat",
-                                    SUM(COALESCE(voluntary_insurance.amount, 0)) AS "voluntaryInsurance",
-                                    SUM(COALESCE(vat_voluntary_insurance.amount, 0)) AS "voluntaryInsuranceVat",
-                                    SUM(COALESCE(hono.amount, 0)) AS "honorarios",
-                                    SUM(COALESCE(vat_hono.amount, 0)) AS "honorariosVat",
-                                    SUM(COALESCE(penalty.amount, 0)) AS "penaltyCharges",
-                                    SUM(COALESCE(vat_penalty.amount, 0)) AS "penaltyChargesVat",
-                        			SUM(COALESCE(mlt.interest_portion_derived, 0)
-                        				+ COALESCE(mandatory_insurance.amount, 0) + COALESCE(vat_mandatory_insurance.amount, 0)
-                        				+ COALESCE(voluntary_insurance.amount, 0) + COALESCE(vat_voluntary_insurance.amount, 0)
-                        				+ COALESCE(hono.amount, 0) + COALESCE(vat_hono.amount, 0)
-                        				+ COALESCE(penalty.amount, 0) + COALESCE(vat_penalty.amount, 0)) AS "totalPaid"
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."interestPaid", 0)) ELSE SUM(COALESCE(mlt.interest_portion_derived, 0)) END AS "interest",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsurancePaid", 0)) ELSE SUM(COALESCE(mandatory_insurance.amount, 0)) END AS "mandatoryInsurance",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_mandatory_insurance.amount, 0)) END AS "mandatoryInsuranceVat",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsurancePaid", 0)) ELSE SUM(COALESCE(voluntary_insurance.amount, 0)) END AS "voluntaryInsurance",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_voluntary_insurance.amount, 0)) END AS "voluntaryInsuranceVat",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosPaid", 0)) ELSE SUM(COALESCE(hono.amount, 0)) END AS "honorarios",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosVatPaid", 0)) ELSE SUM(COALESCE(vat_hono.amount, 0)) END AS "honorariosVat",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyPaid", 0)) ELSE SUM(COALESCE(penalty.amount, 0)) END AS "penaltyCharges",
+                            		CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyVatPaid", 0)) ELSE SUM(COALESCE(vat_penalty.amount, 0)) END AS "penaltyChargesVat",
+                        			COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."interestPaid", 0)) ELSE SUM(COALESCE(mlt.interest_portion_derived, 0)) END, 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsurancePaid", 0)) ELSE SUM(COALESCE(mandatory_insurance.amount, 0)) END, 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_mandatory_insurance.amount, 0)) END , 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsurancePaid", 0)) ELSE SUM(COALESCE(voluntary_insurance.amount, 0)) END, 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_voluntary_insurance.amount, 0)) END, 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosPaid", 0)) ELSE SUM(COALESCE(hono.amount, 0)) END, 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosVatPaid", 0)) ELSE SUM(COALESCE(vat_hono.amount, 0)) END, 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyPaid", 0)) ELSE SUM(COALESCE(penalty.amount, 0)) END, 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyVatPaid", 0)) ELSE SUM(COALESCE(vat_penalty.amount, 0)) END, 0) AS "totalPaid"
                         		FROM m_loan_transaction mlt
+                        		LEFT JOIN m_loan_transaction invoiced_by ON invoiced_by.id = mlt.invoiced_by_transaction_id
+                        		LEFT JOIN (
+                        			SELECT
+                        					mpit.accrual_transaction_id AS "accrualTransactionId",
+                        					SUM(COALESCE(mpit.interest, 0)) AS "interestPaid",
+                        					SUM(COALESCE(mpit.honorarios, 0)) AS "honorariosPaid",
+                        					SUM(COALESCE(mpit.honorarios_vat, 0)) AS "honorariosVatPaid",
+                        					SUM(COALESCE(mpit.mandatory_insurance, 0)) AS "mandatoryInsurancePaid",
+                        					SUM(COALESCE(mpit.mandatory_insurance_vat, 0)) AS "mandatoryInsuranceVatPaid",
+                        					SUM(COALESCE(mpit.voluntary_insurance, 0)) AS "voluntaryInsurancePaid",
+                        					SUM(COALESCE(mpit.voluntary_insurance_vat, 0)) AS "voluntaryInsuranceVatPaid",
+                        				    SUM(COALESCE(mpit.penalty, 0)) AS "penaltyPaid",
+                        					SUM(COALESCE(mpit.penalty_vat, 0)) AS "penaltyVatPaid"
+                        			FROM m_partial_invoiced_transaction mpit
+                        			INNER JOIN m_loan_transaction invoiced_by ON invoiced_by.id = mpit.repayment_transaction_id
+                        			WHERE invoiced_by.transaction_type_enum = ?
+                        			GROUP BY mpit.accrual_transaction_id
+                        		) partial_transaction ON partial_transaction."accrualTransactionId" = mlt.id
                         		LEFT JOIN (
                         			SELECT mlcpd.loan_transaction_id,
                         					SUM(mlcpd.amount) amount
@@ -328,8 +360,9 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         		) vat_penalty ON vat_penalty.loan_transaction_id = mlt.id
                         		WHERE mlt.is_reversed = FALSE
                         		AND mlt.transaction_type_enum = 10 AND mlt.occurred_on_suspended_account = FALSE
-                        		AND (mlt.transaction_date BETWEEN ? AND ?)
-                        		GROUP BY mlt.loan_id
+                        		AND (CASE WHEN (? = 2) THEN (invoiced_by.transaction_type_enum = 2 OR invoiced_by.transaction_type_enum IS NULL) ELSE (invoiced_by.transaction_type_enum = 29 AND invoiced_by.transaction_type_enum IS NOT NULL) END)
+                        		AND (mlt.transaction_date BETWEEN ? AND ? )
+                        		GROUP BY mlt.loan_id, mlt.is_partially_ivoiced
                         ) mlt ON mlt."loanId" = ml.id
                         INNER JOIN (
                             SELECT DISTINCT ON (mptp.product_type) *

@@ -28,7 +28,6 @@ import org.apache.fineract.infrastructure.event.business.service.BusinessEventNo
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
-import org.apache.fineract.portfolio.loanaccount.data.CollectionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.SpecialWriteOffPayload;
@@ -59,10 +58,8 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
     public CommandProcessingResult addLoanCreditNote(Long loanId, JsonCommand command) {
         // first assemble the associated loan
         final Loan loan = this.loanAssembler.assembleFrom(loanId);
-        final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loan.getId());
-        final Long daysInArrears = collectionData.getPastDueDays();
         final LoanProduct loanProduct = loan.loanProduct();
-        if (!loanProduct.getCustomAllowCreditNote()) {
+        if (Boolean.FALSE.equals(loanProduct.getCustomAllowCreditNote())) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.credit.note.not.allowed",
                     "Credit note is not allowed for this loan product");
         }
@@ -70,13 +67,7 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
         final LoanCreditNote creditNote = this.assembleLoanCreditNote(loan, command);
         final LoanTransaction loanTransaction = this.loanTransactionRepository.findById(creditNote.getTransactionId())
                 .orElseThrow(() -> new LoanTransactionNotFoundException(creditNote.getTransactionId()));
-        Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
-        if (minimumDaysInArrearsToSuspendLoanAccount == null) {
-            minimumDaysInArrearsToSuspendLoanAccount = 90L;
-        }
-        if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
-            this.businessEventNotifierService.notifyPostBusinessEvent(new LoanCreditNoteBusinessEvent(loanTransaction));
-        }
+        this.businessEventNotifierService.notifyPostBusinessEvent(new LoanCreditNoteBusinessEvent(loanTransaction));
         return CommandProcessingResult.commandOnlyResult(creditNote.getId());
     }
 
