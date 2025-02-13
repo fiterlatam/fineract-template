@@ -5195,7 +5195,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
             // If credito rotativo mensual, accepted repayment dates are 5,10,20
             if (loan.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
-                if (actualDisbursementDate.getDayOfMonth() != 5 && actualDisbursementDate.getDayOfMonth() != 10
+                if (actualDisbursementDate.getDayOfMonth() != 1 && actualDisbursementDate.getDayOfMonth() != 10
                         && actualDisbursementDate.getDayOfMonth() != 20) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.date.must.be.day.1.10.20",
                             "Disbursement date must be 5, 10 or 20");
@@ -5206,7 +5206,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     LoanApiConstants.principalDisbursedParameterName, command.parsedJson().getAsJsonObject());
 
             BigDecimal disbursementAmountSum = loanDisbursementDetailsRepository.findAllByLoanId(loan.getId()).stream()
-                    .map(x -> x.getPrincipal()).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    .filter(disbursed -> Objects.nonNull(disbursed.getDisbursementDate())).map(x -> x.getPrincipal())
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal loanTransactionRepaymentSum = loanTransactionRepository.findAllByLoanIdAndTypeOf(loan.getId(), 2).stream()
                     .filter(nR -> !nR.isReversed()).map(x -> x.getPrincipalPortion()).reduce(BigDecimal.ZERO, BigDecimal::add);
