@@ -2240,7 +2240,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public Map<String, Object> loanApplicationApproval(final AppUser currentUser, final JsonCommand command,
-            final JsonArray disbursementDataArray, final LoanLifecycleStateMachine loanLifecycleStateMachine) {
+            final JsonArray disbursementDataArray, final LoanLifecycleStateMachine loanLifecycleStateMachine, Boolean isRestructuredLoan) {
 
         validateAccountStatus(LoanEvent.LOAN_APPROVED);
 
@@ -2274,7 +2274,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             LocalDate expecteddisbursementDate = this.expectedDisbursementDate;
 
             BigDecimal approvedLoanAmount = command.bigDecimalValueOfParameterNamed(LoanApiConstants.approvedLoanAmountParameterName);
-            if (this.isTopup){
+            if (this.isTopup || isRestructuredLoan) {
                 approvedLoanAmount = this.proposedPrincipal;
             }
 

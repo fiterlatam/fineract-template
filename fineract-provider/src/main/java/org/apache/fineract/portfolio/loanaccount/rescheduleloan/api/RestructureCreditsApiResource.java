@@ -29,6 +29,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -40,6 +41,8 @@ import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamE
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
+import org.apache.fineract.organisation.prequalification.service.PrequalificationReadPlatformService;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
@@ -68,6 +71,7 @@ public class RestructureCreditsApiResource {
     private final LoanReadPlatformService loanReadPlatformService;
     private final LoanProductReadPlatformService loanProductReadPlatformService;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
+    private final PrequalificationReadPlatformService prequalificationReadPlatformService;
 
     @Autowired
     public RestructureCreditsApiResource(
@@ -76,7 +80,8 @@ public class RestructureCreditsApiResource {
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             final RestructureCreditsReadPlatformService restructureCreditsReadPlatformService,
             final ApiRequestParameterHelper apiRequestParameterHelper, final LoanProductReadPlatformService loanProductReadPlatformService,
-            final LoanReadPlatformService loanReadPlatformService, final ClientReadPlatformService clientReadPlatformService) {
+            final LoanReadPlatformService loanReadPlatformService, final ClientReadPlatformService clientReadPlatformService,
+            final PrequalificationReadPlatformService prequalificationReadPlatformService) {
         this.restructureCreditsRequestToApiJsonSerializer = restructureCreditsRequestToApiJsonSerializer;
         this.platformSecurityContext = platformSecurityContext;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
@@ -85,6 +90,7 @@ public class RestructureCreditsApiResource {
         this.loanReadPlatformService = loanReadPlatformService;
         this.clientReadPlatformService = clientReadPlatformService;
         this.loanProductReadPlatformService = loanProductReadPlatformService;
+        this.prequalificationReadPlatformService = prequalificationReadPlatformService;
     }
 
     @GET
@@ -95,14 +101,19 @@ public class RestructureCreditsApiResource {
 
         this.platformSecurityContext.authenticatedUser()
                 .validateHasReadPermission(RescheduleLoansApiConstants.RESTRUCTURE_CREDITS_RESOURCE);
-        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
+        String isextenstion = queryParameters.getFirst("isextenstion");
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
         ClientData clientData = this.clientReadPlatformService.retrieveOneLookup(clientId);
         RestructureCreditsRequestData requestData = this.restructureCreditsReadPlatformService.retrievePendingRestructure(clientId);
         Collection<LoanAccountData> loanAccounts = this.loanReadPlatformService.retrieveClientActiveLoans(clientId);
         Collection<LoanProductData> loanProductData = this.loanProductReadPlatformService.retrieveAllLoanProducts();
-
+        Collection<GroupPrequalificationData> groupPrequalificationData = null;
+        if (Boolean.TRUE.equals(Boolean.valueOf(isextenstion))) {
+            groupPrequalificationData = this.prequalificationReadPlatformService.retrievePrequalificationIndividualMappings(clientId);
+        }
         RestructureCreditsTemplateData templateData = RestructureCreditsTemplateData.instance(clientData, loanAccounts, requestData,
-                loanProductData);
+                loanProductData, groupPrequalificationData);
 
         return this.restructureCreditsRequestToApiJsonSerializer.serialize(settings, templateData);
     }

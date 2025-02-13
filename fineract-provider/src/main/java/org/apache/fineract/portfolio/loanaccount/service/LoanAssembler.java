@@ -350,8 +350,7 @@ public class LoanAssembler {
 
         PrequalificationGroup prequalificationGroup = null;
         final Boolean isBulkImport = this.fromApiJsonHelper.extractBooleanNamed("isBulkImport", element);
-        final Boolean isRestructuredLoan = this.fromApiJsonHelper.extractBooleanNamed("isRestructuredLoan", element);
-        if ((isBulkImport == null || !isBulkImport) && (isRestructuredLoan == null || !isRestructuredLoan)) {
+        if ((isBulkImport == null || !isBulkImport)) {
             final Long prequalificationId = this.fromApiJsonHelper.extractLongNamed("prequalificationId", element);
             prequalificationGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(prequalificationId);
             if (!PrequalificationStatus.BURO_CHECKED.getValue().equals(prequalificationGroup.getStatus())) {

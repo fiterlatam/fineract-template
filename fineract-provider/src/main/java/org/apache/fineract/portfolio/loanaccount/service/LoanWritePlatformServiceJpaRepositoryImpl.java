@@ -612,20 +612,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(locale);
         for (final Map.Entry<Long, BigDecimal> entrySet : disBuLoanCharges.entrySet()) {
 
+            if (entrySet.getValue().compareTo(BigDecimal.ZERO) > 0) {
+                // stream savings accounts. get one with product name as Garantías
+                Collection<SavingsAccountData> savingsAccounts = this.savingsAccountReadPlatformService
+                        .retrieveAllForLookup(loan.getClientId());
 
-            if (entrySet.getValue().compareTo(BigDecimal.ZERO)>0){
-                //stream savings accounts. get one with product name as Garantías
-                Collection<SavingsAccountData> savingsAccounts = this.savingsAccountReadPlatformService.retrieveAllForLookup(loan.getClientId());
-
-                SavingsAccountData savingAccountData = savingsAccounts.stream().filter(savingsAccount -> savingsAccount.getSavingsProductName().equalsIgnoreCase("Garantías")).findFirst().orElse(null);
-                if (savingAccountData==null){
-                    throw new SavingsAccountNotFoundException(loan.getClient().getDisplayName(),
-                            "Garantías");
+                SavingsAccountData savingAccountData = savingsAccounts.stream()
+                        .filter(savingsAccount -> savingsAccount.getSavingsProductName().equalsIgnoreCase("Garantías")).findFirst()
+                        .orElse(null);
+                if (savingAccountData == null) {
+                    throw new SavingsAccountNotFoundException(loan.getClient().getDisplayName(), "Garantías");
                 }
 
                 final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
 
-                //create a deposit command object to handle the cash deposit
+                // create a deposit command object to handle the cash deposit
                 final JsonObject jsonObject = new JsonObject();
                 final LocalDate localDate = DateUtils.getBusinessLocalDate();
                 final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(locale);
@@ -639,7 +640,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
                 jsonObject.addProperty("note", "Charge Repayment Deposit");
 
-                final JsonCommand depositJsonCommand = JsonCommand.fromJsonElement(savingAccountData.id(), jsonObject, this.fromApiJsonHelper);
+                final JsonCommand depositJsonCommand = JsonCommand.fromJsonElement(savingAccountData.id(), jsonObject,
+                        this.fromApiJsonHelper);
                 depositJsonCommand.setJsonCommand(jsonObject.toString());
                 this.savingsAccountWritePlatformService.deposit(savingAccountData.id(), depositJsonCommand);
 
@@ -649,11 +651,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final AccountTransferDTO accountTransferDTO = new AccountTransferDTO(actualDisbursementDate, entrySet.getValue(),
                         PortfolioAccountType.SAVINGS, PortfolioAccountType.LOAN, savingAccountData.id(), loanId, "Loan Charge Payment",
                         locale, fmt, paymentDetail, null, LoanTransactionType.REPAYMENT_AT_DISBURSEMENT.getValue(), entrySet.getKey(), null,
-                        AccountTransferType.CHARGE_PAYMENT.getValue(), null, null, null, null, null, fromSavingsAccount, isRegularTransaction,
-                        isExceptionForBalanceCheck);
+                        AccountTransferType.CHARGE_PAYMENT.getValue(), null, null, null, null, null, fromSavingsAccount,
+                        isRegularTransaction, isExceptionForBalanceCheck);
                 this.accountTransfersWritePlatformService.transferFunds(accountTransferDTO);
             }
-
 
         }
 

@@ -113,6 +113,8 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         }
 
         final Long productId = jsonCommand.longValueOfParameterNamed("productId");
+        final Long prequalificationId = jsonCommand.longValueOfParameterNamed("prequalificationId");
+        final BigDecimal totalRequestedAmount = jsonCommand.bigDecimalValueOfParameterNamed("totalRequestedAmount");
         Optional<LoanProduct> loanProducts = this.loanProductRepository.findById(productId);
         if (loanProducts.isEmpty()) throw new ProductNotFoundException(productId, "loan");
         String disbursementDateString = jsonCommand.stringValueOfParameterNamed("disbursementDate");
@@ -127,10 +129,14 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
 
         String comments = jsonCommand.stringValueOfParameterNamed("comments");
         BigDecimal totalOutstanding = getTotalOutstanding(loanAccounts);
+        if (totalRequestedAmount != null && totalRequestedAmount.compareTo(BigDecimal.ZERO) > 0) {
+            totalOutstanding = totalOutstanding.add(totalRequestedAmount);
+        }
         AppUser appUser = this.platformSecurityContext.authenticatedUser();
         LocalDateTime localDateTimeOfSystem = DateUtils.getLocalDateTimeOfSystem();
         RestructureCreditsRequest request = RestructureCreditsRequest.fromJSON(client, RestructureCreditStatus.PENDING.getValue(),
-                loanProducts.get(), totalOutstanding, disbursementDate, comments, localDateTimeOfSystem, appUser);
+                loanProducts.get(), totalOutstanding, disbursementDate, comments, localDateTimeOfSystem, appUser, prequalificationId,
+                totalRequestedAmount);
         restructureCreditsRequestRepository.save(request);
         List<RestructureCreditsLoanMapping> mappings = createRestructureMappings(loanAccounts, request);
         request.updateMappings(mappings);
@@ -150,6 +156,10 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         Long loanId = openNewLoanAccount(request, command);
         AppUser appUser = this.platformSecurityContext.authenticatedUser();
         request.approve(appUser, DateUtils.getLocalDateTimeOfSystem());
+        creditMappings.forEach(mapping -> {
+            Long mappingId = mapping.getId();
+            jdbcTemplate.update("update m_restructure_credit_loan_mappings set new_loan_id=? where id=?", loanId, mappingId);
+        });
         restructureCreditsRequestRepository.save(request);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(request.getId()).withLoanId(loanId)
                 .build();
@@ -177,6 +187,7 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
 
         String disbursementDate = request.getNewDisbursementDate().toLocalDate().format(simpleDateFormat);
         JsonElement parse = this.fromApiJsonHelper.parse(this.fromApiJsonHelper.getGsonConverter().toJson(disbursementDate));
+        loanObject.addProperty("prequalificationId", request.getPrequalificationId());
         loanObject.add("expectedDisbursementDate", parse);
         loanObject.add("submittedOnDate", parse);
         loanObject.add("principal", this.fromApiJsonHelper.parse(request.getTotalLoanAmount().toPlainString()));
@@ -218,7 +229,7 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
     private BigDecimal getTotalOutstanding(List<Loan> loanAccounts) {
         BigDecimal totalOutstanding = BigDecimal.ZERO;
         for (Loan loan : loanAccounts) {
-            totalOutstanding = totalOutstanding.add(loan.getSummary().getTotalPrincipalOutstanding());
+            totalOutstanding = totalOutstanding.add(loan.getSummary().getTotalOutstanding());
         }
         return totalOutstanding;
     }

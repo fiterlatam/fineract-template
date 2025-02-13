@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.loanaccount.rescheduleloan.data;
 
 import java.util.Collection;
+import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
@@ -34,9 +35,11 @@ public final class RestructureCreditsTemplateData {
     private final RestructureCreditsRequestData requestData;
     private final Collection<LoanAccountData> activeLoans;
     private final Collection<LoanProductData> loanProductData;
+    private final Collection<GroupPrequalificationData> clientPrequalificatoins;
 
     private RestructureCreditsTemplateData(Long id, Long clientId, ClientData clientData, Collection<LoanAccountData> activeLoans,
-            RestructureCreditsRequestData requestData, Collection<LoanProductData> loanProductData) {
+            RestructureCreditsRequestData requestData, Collection<LoanProductData> loanProductData,
+            Collection<GroupPrequalificationData> groupPrequalificationData) {
 
         this.id = id;
         this.clientId = clientId;
@@ -44,6 +47,7 @@ public final class RestructureCreditsTemplateData {
         this.activeLoans = activeLoans;
         this.requestData = requestData;
         this.loanProductData = loanProductData;
+        this.clientPrequalificatoins = groupPrequalificationData;
     }
 
     /**
@@ -53,11 +57,14 @@ public final class RestructureCreditsTemplateData {
      * @param activeLoans
      * @param requestData
      * @param loanProductData
+     * @param groupPrequalificationData
      * @return
      */
     public static RestructureCreditsTemplateData instance(ClientData clientData, Collection<LoanAccountData> activeLoans,
-            RestructureCreditsRequestData requestData, Collection<LoanProductData> loanProductData) {
+            RestructureCreditsRequestData requestData, Collection<LoanProductData> loanProductData,
+            Collection<GroupPrequalificationData> groupPrequalificationData) {
 
-        return new RestructureCreditsTemplateData(null, null, clientData, activeLoans, requestData, loanProductData);
+        return new RestructureCreditsTemplateData(null, null, clientData, activeLoans, requestData, loanProductData,
+                groupPrequalificationData);
     }
 }

@@ -428,7 +428,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             final Loan newLoanApplication = this.loanAssembler.assembleFrom(command);
 
-
             checkForProductMixRestrictions(newLoanApplication);
 
             validateSubmittedOnDate(newLoanApplication);
@@ -2644,8 +2643,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
         }
 
+        String restructureQuery = "select count(*) from m_restructure_credits_loans_mapping where new_loan_id=?";
+        Integer restructureCount = this.jdbcTemplate.queryForObject(restructureQuery, Integer.class, loanId);
+        final Boolean isRestructuredLoan = restructureCount > 0 ? Boolean.TRUE : Boolean.FALSE;
         final Map<String, Object> changes = loan.loanApplicationApproval(currentUser, command, disbursementDataArray,
-                defaultLoanLifecycleStateMachine());
+                defaultLoanLifecycleStateMachine(), isRestructuredLoan);
 
         entityDatatableChecksWritePlatformService.runTheCheckForProduct(loanId, EntityTables.LOAN.getName(),
                 StatusEnum.APPROVE.getCode().longValue(), EntityTables.LOAN.getForeignKeyColumnNameOnDatatable(), loan.productId());

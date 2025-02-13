@@ -244,7 +244,6 @@ public class LoanScheduleAssembler {
         final LocalDate repaymentsStartingFromDate = this.fromApiJsonHelper.extractLocalDateNamed("repaymentsStartingFromDate", element);
         LocalDate calculatedRepaymentsStartingFromDate = repaymentsStartingFromDate;
 
-
         BigDecimal topupAmount = BigDecimal.ZERO;
         if (Boolean.TRUE.equals(isTopup)) {
             final Long loanId = this.fromApiJsonHelper.extractLongNamed("loanIdToClose", element);
@@ -259,7 +258,6 @@ public class LoanScheduleAssembler {
             topupAmount = topupAmount.add(loanOutstanding);
         }
         final Money principalMoney = Money.of(currency, principal.add(topupAmount));
-
 
         final Boolean synchDisbursement = this.fromApiJsonHelper.extractBooleanNamed("syncDisbursementWithMeeting", element);
         final Long calendarId = this.fromApiJsonHelper.extractLongNamed("calendarId", element);

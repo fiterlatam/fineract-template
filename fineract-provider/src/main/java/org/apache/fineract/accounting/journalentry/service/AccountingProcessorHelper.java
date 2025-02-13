@@ -624,7 +624,7 @@ public class AccountingProcessorHelper {
             creditAccount = this.accountRepositoryWrapper.findOneWithNotFoundDetection(fundSourceGlAccountId);
         }
         createDebitJournalEntryForLoan(office, currencyCode, debitAccount, loanId, transactionId, transactionDate, amount);
-        if (chargesPortion==null || chargesPortion.compareTo(BigDecimal.ZERO) <= 0) {
+        if (chargesPortion == null || chargesPortion.compareTo(BigDecimal.ZERO) <= 0) {
             createCreditJournalEntryForLoan(office, currencyCode, creditAccount, loanId, transactionId, transactionDate, amount);
         } else {
             GLAccount feesReceivableGL = getLinkedGLAccountForLoanProduct(loanProductId, AccrualAccountsForLoan.INCOME_FROM_FEES.getValue(),
