@@ -33,6 +33,7 @@ import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.portfolio.account.data.AccountTransferData;
+import org.apache.fineract.portfolio.collectionhousemanagement.domain.CollectionHouseConfiguration;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
@@ -160,6 +161,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "accrualTransaction", orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<PartialInvoicedTransaction> partialInvoicedTransactions = new HashSet<>();
+
+    @JoinColumn(name = "collection_house_id", nullable = false)
+    private CollectionHouseConfiguration collectionHouse;
 
     // This property is added to process vertical payments horizontally for Past Due and Due installments.
     // Advance Payments will be handled through VerticalPayment Scheme
@@ -352,6 +356,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
             }
             newTransaction.setInterestPaidByOriginalTransaction(interestPaidByInstallment);
         }
+        newTransaction.setCollectionHouse(loanTransaction.collectionHouse);
         return newTransaction;
     }
 
@@ -1229,5 +1234,13 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public Set<PartialInvoicedTransaction> getPartialInvoicedTransactions() {
         return this.partialInvoicedTransactions;
+    }
+
+    public CollectionHouseConfiguration collectionHouse() {
+        return collectionHouse;
+    }
+
+    public void setCollectionHouse(CollectionHouseConfiguration collectionHouse) {
+        this.collectionHouse = collectionHouse;
     }
 }

@@ -67,6 +67,8 @@
         <class>org.apache.fineract.portfolio.calendar.domain.Calendar</class>
         <class>org.apache.fineract.portfolio.calendar.domain.CalendarHistory</class>
         <class>org.apache.fineract.portfolio.calendar.domain.CalendarInstance</class>
+        <class>org.apache.fineract.portfolio.collectionhousemanagement.domain.CollectionHouseConfiguration</class>
+        <class>org.apache.fineract.portfolio.collectionhousemanagement.domain.ColletionHouseHistory</class>
         <class>org.apache.fineract.useradministration.domain.AppUser</class>
         <class>org.apache.fineract.useradministration.domain.Role</class>
         <class>org.apache.fineract.useradministration.domain.Permission</class>

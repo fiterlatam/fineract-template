@@ -161,6 +161,13 @@ public class CollectionHouseHistoryReadWriteServiceImpl implements CollectionHou
     }
 
     @Override
+    public ColletionHouseHistory findCollectionHouseHistoryByClientNit(String nit) {
+        Optional<ColletionHouseHistory> getColletionHouseHistory = collectionHouseHistoryRepository
+                .getCollectionHouseHistoryByClientNit((nit));
+        return getColletionHouseHistory.orElse(null);
+    }
+
+    @Override
     public List<ColletionHouseHistory> findAllCollectionHouseHistory() {
         List<ColletionHouseHistory> colletionHouseHistories = collectionHouseHistoryRepository.findAll();
         return colletionHouseHistories;

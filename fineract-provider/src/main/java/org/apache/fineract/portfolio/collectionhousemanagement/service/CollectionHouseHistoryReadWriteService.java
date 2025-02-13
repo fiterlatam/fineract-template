@@ -18,6 +18,8 @@ public interface CollectionHouseHistoryReadWriteService {
 
     ColletionHouseHistory findCollectionHouseHistoryByAcctountNo(String accountNo);
 
+    ColletionHouseHistory findCollectionHouseHistoryByClientNit(String nit);
+
     List<ColletionHouseHistory> findAllCollectionHouseHistory();
 
     CollectionHouseUpdates fetchDataFromExternalProvider() throws IOException;

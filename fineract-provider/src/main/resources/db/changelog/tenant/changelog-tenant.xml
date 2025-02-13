@@ -350,4 +350,5 @@
     <include file="parts/2025013111428000000_SU_589_modify_archive_loan_history_columns.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025013111428000000_SU_601_modify_columns.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025021308508000000_SU_606_add_job_params_for_archivo_cartera_job.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2025130211009140_SU_605_add_collection_house_to_transaction.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -22,7 +22,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
-    <changeSet author="fineract" id="2">
+    <changeSet author="fineract" id="3">
         <update tableName="stretchy_report">
             <column name="report_sql">
                 <![CDATA[
@@ -30,7 +30,7 @@
             '800139398-6' AS "Nit de empresa",
             TO_CHAR(mlt.transaction_date , 'DD/MM/YYYY') AS "Fecha de causación del honorario",
             mchc.collection_nit AS "Nit casa de cobro",
-            mch.collection_house_code  as "Código casa de cobro",
+            mchc.collection_code  as "Código casa de cobro",
             coalesce(hono.amt, 0) + coalesce(vat.amt, 0) as "Valor del honorario",
             coalesce(hono.amt, 0) AS "Valor base",
             coalesce(vat.amt, 0) AS "Valor IVA",
@@ -44,8 +44,7 @@
             join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
             join m_loan_transaction mlt on mlt.loan_id = ml.id
             join m_client mc on mc.id = ml.client_id
-            left join m_collection_house_history mch on mch.client_account_number = mc.account_no
-            left join m_collection_house_configuration mchc on mchc.collection_code = mch.collection_house_code
+            left join m_collection_house_configuration mchc on mchc.id = mlt.collection_house_id
             LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
             LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
             join m_loan_charge mlc on mlc.loan_id = ml.id and mlc.is_penalty = false and mlc.charge_calculation_enum = 1009
@@ -93,8 +92,8 @@
         where
             mlt.transaction_type_enum = 2 and mlt.is_reversed = false
             and mlt.transaction_date between '${startDate}' and '${endDate}'
-            and (mch.collection_nit = '${collectionNit}' or '${collectionNit}' = '-1')
-            and (mch.collection_house_code = '${collectionCode}' or '${collectionCode}' = '-1')
+            and (mchc.collection_nit = '${collectionNit}' or '${collectionNit}' = '-1')
+            and (mchc.collection_code = '${collectionCode}' or '${collectionCode}' = '-1')
                 ]]>
             </column>
             <where> report_name='Reporte de Honorarios' </where>
