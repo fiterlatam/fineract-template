@@ -55,6 +55,9 @@ public class RestructureCreditsLoanMapping extends AbstractPersistableCustom {
     @Column(name = "maturity_Date")
     private LocalDate maturityDate;
 
+    @Column(name = "new_loan_id")
+    private Long newLoanId;
+
     protected RestructureCreditsLoanMapping() {}
 
     /**
@@ -101,5 +104,13 @@ public class RestructureCreditsLoanMapping extends AbstractPersistableCustom {
      **/
     public RestructureCreditsRequest getRestructureCreditsRequest() {
         return this.restructureCreditsRequest;
+    }
+
+    public Long getNewLoanId() {
+        return newLoanId;
+    }
+
+    public void setNewLoanId(Long newLoanId) {
+        this.newLoanId = newLoanId;
     }
 }

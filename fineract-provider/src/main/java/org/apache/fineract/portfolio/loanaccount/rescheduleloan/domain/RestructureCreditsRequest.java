@@ -83,9 +83,6 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
     @Column(name = "extension_amount")
     private BigDecimal extensionAmount;
 
-    @Column(name = "new_loan_id")
-    private Long newLoanId;
-
     @ManyToOne
     @JoinColumn(name = "lastmodifiedby_id")
     private AppUser modifiedByUser;
@@ -225,13 +222,5 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
 
     public void setExtensionAmount(BigDecimal extensionAmount) {
         this.extensionAmount = extensionAmount;
-    }
-
-    public Long getNewLoanId() {
-        return newLoanId;
-    }
-
-    public void setNewLoanId(Long newLoanId) {
-        this.newLoanId = newLoanId;
     }
 }
