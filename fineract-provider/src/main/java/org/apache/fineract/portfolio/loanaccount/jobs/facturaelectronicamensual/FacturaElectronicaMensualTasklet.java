@@ -423,10 +423,10 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                      	mandatory_insurance_code."codeName" AS "mandatoryInsuranceName",
                       	voluntary_insurance_code."codeName" AS "voluntaryInsuranceName",
                       	mc.mobile_no AS "clientTelephone",
-                      	mchcc.collection_nit as clientCollectionHouseNit,
-                        mchcc.collection_name as clientCollectionHouseName,
-                        mchce.collection_nit as empressaCollectionHouseNit,
-                        mchce.collection_name as empressaCollectionHouseName
+                      	mchc.collection_nit as clientCollectionHouseNit,
+                        mchc.collection_name as clientCollectionHouseName,
+                        NULL AS empressaCollectionHouseNit,
+                        NULL AS empressaCollectionHouseName
                     FROM m_loan ml
                     INNER JOIN m_client mc ON mc.id = ml.client_id
                     INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
@@ -435,6 +435,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                     		SELECT
                     			mlt.loan_id AS "loanId",
                     			mlt.id AS "transactionId",
+                    			mlt.collection_house_id,
                     			SUM(COALESCE(mlt.interest_portion_derived, 0)) AS "interest",
                     			SUM(COALESCE(mandatory_insurance.amount, 0)) AS "mandatoryInsurance",
                     			SUM(COALESCE(vat_mandatory_insurance.amount, 0)) AS "mandatoryInsuranceVat",
@@ -566,10 +567,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                     LEFT JOIN m_code_value dept ON dept.id = cce."Departamento_cd_Departamento"
                     LEFT JOIN m_code_value companycity ON companycity.id = cce."Ciudad_cd_Ciudad"
                     LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
-                    left join m_collection_house_history mchhc on mchhc.collection_nit = ccp."Cedula"
-                    left join m_collection_house_history mchhe on mchhe.collection_nit = cce."NIT"
-                    left join m_collection_house_configuration mchcc on mchcc.collection_code = mchhc.collection_house_code
-                    left join m_collection_house_configuration mchce on mchce.collection_code = mchhe.collection_house_code
+                    left join m_collection_house_configuration mchc on mchc.id = mlt.collection_house_id
                     LEFT JOIN m_code_value clientcity ON clientcity.id = ccp."Ciudad_cd_Ciudad"
                     LEFT JOIN (
                       SELECT mlc.loan_id,
