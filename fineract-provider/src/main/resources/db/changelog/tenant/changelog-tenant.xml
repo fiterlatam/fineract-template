@@ -349,4 +349,5 @@
     <include file="parts/20250120011009134_SU_575_update_reports_honorarios.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025013111428000000_SU_589_modify_archive_loan_history_columns.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025013111428000000_SU_601_modify_columns.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2025021308508000000_SU_606_add_job_params_for_archivo_cartera_job.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
