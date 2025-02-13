@@ -18,6 +18,13 @@
  */
 package org.apache.fineract.portfolio.loanaccount.jobs.archiveloanhistory;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -46,14 +53,6 @@ import org.apache.fineract.portfolio.loanproduct.domain.LoanCustomizationDetail;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
 @Slf4j
 @RequiredArgsConstructor
 @Setter
@@ -71,7 +70,8 @@ public class LoanHistoryArchiver {
     public void archiveLoans() throws JobExecutionException {
         List<Throwable> errors = new ArrayList<>();
         if (!loansForArchival.isEmpty()) {
-            log.info("Running Archivo de cartera for loans batch with maximum loanId {}", Long.valueOf(loansForArchival.get(loansForArchival.size() - 1).getNumeroObligacion()));
+            log.info("Running Archivo de cartera for loans batch with maximum loanId {}",
+                    Long.valueOf(loansForArchival.get(loansForArchival.size() - 1).getNumeroObligacion()));
             List<String> archiveLoanId = new ArrayList<>();
             for (LoanArchiveHistoryData dataLoan : loansForArchival) {
                 Loan loan = loanRepository.findOneWithNotFoundDetection(Long.valueOf(dataLoan.getNumeroObligacion()));
@@ -108,7 +108,7 @@ public class LoanHistoryArchiver {
                                         lc.getInstallment().getInstallmentNumber()))
                                 .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
                         BigDecimal avalAmount = avalCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
-                                        lc -> Objects.equals(currentInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                                lc -> Objects.equals(currentInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
                                 .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
 
                         // Calculate term Charge

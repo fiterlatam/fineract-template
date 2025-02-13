@@ -526,11 +526,11 @@ public class LoanAccountConfiguration {
     @Scope("prototype")
     @ConditionalOnMissingBean(LoanHistoryArchiver.class)
     public LoanHistoryArchiver loanHistoryArchiver(LoanArchiveHistoryRepository loanArchiveHistoryRepository,
-                                                   LoanRepositoryWrapper loanRepository, DelinquencyReadPlatformService delinquencyReadPlatformService,
-                                                   ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository, CodeValueRepository codeValueRepository,
-                                                   LoanUtilService loanUtilService) {
-        return new LoanHistoryArchiver(loanArchiveHistoryRepository, loanRepository, delinquencyReadPlatformService, clientAllyPointOfSalesRepository,
-                codeValueRepository, loanUtilService);
+            LoanRepositoryWrapper loanRepository, DelinquencyReadPlatformService delinquencyReadPlatformService,
+            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository, CodeValueRepository codeValueRepository,
+            LoanUtilService loanUtilService) {
+        return new LoanHistoryArchiver(loanArchiveHistoryRepository, loanRepository, delinquencyReadPlatformService,
+                clientAllyPointOfSalesRepository, codeValueRepository, loanUtilService);
     }
 
     @Bean

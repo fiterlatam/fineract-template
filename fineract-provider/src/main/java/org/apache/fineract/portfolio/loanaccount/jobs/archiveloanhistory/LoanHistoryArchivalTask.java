@@ -18,15 +18,14 @@
  */
 package org.apache.fineract.portfolio.loanaccount.jobs.archiveloanhistory;
 
+import java.util.List;
+import java.util.concurrent.Callable;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.portfolio.loanaccount.data.LoanArchiveHistoryData;
-
-import java.util.List;
-import java.util.concurrent.Callable;
 
 @RequiredArgsConstructor
 public class LoanHistoryArchivalTask implements Callable<Void> {

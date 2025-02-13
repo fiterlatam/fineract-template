@@ -1,5 +1,14 @@
 package org.apache.fineract.portfolio.loanaccount.jobs.archiveloanhistory;
 
+import java.time.LocalDate;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -17,16 +26,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDate;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -76,7 +75,8 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
         return RepeatStatus.FINISHED;
     }
 
-    private void archiveLoans(List<LoanArchiveHistoryData> loansForArchival, int threadPoolSize, LocalDate accrualDate, int pageSize, Long maxLoanIdInList) {
+    private void archiveLoans(List<LoanArchiveHistoryData> loansForArchival, int threadPoolSize, LocalDate accrualDate, int pageSize,
+            Long maxLoanIdInList) {
         List<Callable<Void>> posters = new ArrayList<>();
         int fromIndex = 0;
         int size = loansForArchival.size();
