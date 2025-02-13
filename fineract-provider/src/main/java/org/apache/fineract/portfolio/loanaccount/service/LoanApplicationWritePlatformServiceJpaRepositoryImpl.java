@@ -403,15 +403,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 }
             }
 
-            // If credito rotativo mensual, accepted repayment dates are 5,10,20
-            if (newLoanApplication.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
-                if (newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 5
-                        && newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 10
-                        && newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 20) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.date.must.be.day.1.10.20",
-                            "Disbursement date must be 5, 10 or 20");
-                }
-            }
+            // Check the choosend date if is valid for Credit Rotativo (monhtly only)
+            validateAllowedDaysIfCreditoRotativo(newLoanApplication);
 
             validateAllChargesAreSetupCorrectly(newLoanApplication); // Just a remark here before calling validate
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
@@ -632,6 +625,30 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             handleDataIntegrityIssues(command, throwable, dve);
             return CommandProcessingResult.empty();
+        }
+    }
+
+    private void validateAllowedDaysIfCreditoRotativo(Loan newLoanApplication) {
+        // If credito rotativo mensual, accepted repayment dates are 1,10,20
+        if (newLoanApplication.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+
+            if (Objects.isNull(newLoanApplication.getExpectedFirstRepaymentOnDate())) {
+
+                if (newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 1
+                        && newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 10
+                        && newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 20) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.date.must.be.day.1.10.20",
+                            "Disbursement date must be 1, 10 or 20");
+                }
+            } else {
+
+                if (newLoanApplication.getExpectedFirstRepaymentOnDate().getDayOfMonth() != 1
+                        && newLoanApplication.getExpectedFirstRepaymentOnDate().getDayOfMonth() != 10
+                        && newLoanApplication.getExpectedFirstRepaymentOnDate().getDayOfMonth() != 20) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.first.repayment.date.date.must.be.day.1.10.20",
+                            "Disbursement date must be 1, 10 or 20");
+                }
+            }
         }
     }
 

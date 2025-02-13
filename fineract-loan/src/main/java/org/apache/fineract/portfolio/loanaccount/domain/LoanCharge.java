@@ -36,6 +36,7 @@ import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
+import org.apache.fineract.portfolio.charge.domain.ChargeCustomType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeWithoutMandatoryFieldException;
@@ -1436,6 +1437,12 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 installmentCount = BigDecimal.valueOf(numberOfRepayments);
             }
             BigDecimal computedAmount = LoanCharge.percentageOf(outstandingBalance.getAmount(), this.percentage);
+
+            // If charge is Capital Pendiente, do not divide by nr of installments
+            if (this.getCharge().getName().contains(ChargeCustomType.CAPITAL_PENDIENTE_MI_PYME.getRootName())) {
+                installmentCount = BigDecimal.ONE;
+            }
+
             BigDecimal finalAmount = computedAmount.divide(installmentCount, 0, RoundingMode.HALF_UP);
             customAmout = customAmout.add(finalAmount);
         }

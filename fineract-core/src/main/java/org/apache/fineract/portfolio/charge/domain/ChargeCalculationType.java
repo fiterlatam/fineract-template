@@ -1610,7 +1610,8 @@ public enum ChargeCalculationType {
 
     public boolean isPercentageBased() {
         return isPercentageOfInstallmentPrincipal() || isPercentageOfInstallmentPrincipalAndInterest()
-                || isPercentageOfInstallmentInterest() || isPercentageOfDisbursement() || isPercentageOfAnotherCharge();
+                || isPercentageOfInstallmentInterest() || isPercentageOfDisbursement() || isPercentageOfAnotherCharge()
+                || isPercentageOfOutstandingPrincipal();
     }
 
     public boolean isAmountFromExternal() {
