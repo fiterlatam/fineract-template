@@ -158,7 +158,7 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         request.approve(appUser, DateUtils.getLocalDateTimeOfSystem());
         creditMappings.forEach(mapping -> {
             Long mappingId = mapping.getId();
-            jdbcTemplate.update("update m_restructure_credit_loan_mappings set new_loan_id=? where id=?", loanId, mappingId);
+            jdbcTemplate.update("update m_restructure_credits_loans_mapping set new_loan_id=? where id=?", loanId, mappingId);
         });
         restructureCreditsRequestRepository.save(request);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(request.getId()).withLoanId(loanId)
