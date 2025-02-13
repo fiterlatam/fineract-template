@@ -4918,6 +4918,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             facturaElectronicaMensualDuplicate.setPrecio_unitario(honorariosPaid);
             facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
             facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+            facturaElectronicaMensualDuplicate.setId_mandante(loanDocumentData.getCollectionHouseNit());
+            facturaElectronicaMensualDuplicate.setDescripcion_mandante(loanDocumentData.getCollectionHouseName());
             facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, honorariosVatPaid);
