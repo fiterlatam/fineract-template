@@ -40,7 +40,7 @@ public class GroupPrequalificationData {
     private final Long id;
     private final String productName;
 
-    private final Long productId;
+    private Long productId;
     private final String prequalificationNumber;
     private final String groupName;
     private final String portforlioName;
@@ -222,5 +222,9 @@ public class GroupPrequalificationData {
 
     public void updateMembers(Collection<MemberPrequalificationData> groupMembers) {
         this.groupMembers = groupMembers;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
     }
 }

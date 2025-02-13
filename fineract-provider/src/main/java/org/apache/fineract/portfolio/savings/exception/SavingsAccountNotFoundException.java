@@ -33,8 +33,8 @@ public class SavingsAccountNotFoundException extends AbstractPlatformResourceNot
     }
 
     public SavingsAccountNotFoundException(final String externalId, final String productName) {
-        super("error.msg.client.saving.account.not.found", "Savings account with for client " + externalId + " in product "+productName+" not found",
-                externalId,productName);
+        super("error.msg.client.saving.account.not.found",
+                "Savings account with for client " + externalId + " in product " + productName + " not found", externalId, productName);
     }
 
     public SavingsAccountNotFoundException(Long id, EmptyResultDataAccessException e) {
