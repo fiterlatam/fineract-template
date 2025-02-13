@@ -1,13 +1,6 @@
 package org.apache.fineract.portfolio.loanaccount.jobs.archiveloanhistory;
 
-import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
-import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
-import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanArchiveHistoryRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanArchiveHistoryReadWritePlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -26,36 +19,16 @@ public class ArchiveLoansHistoryConfig {
     private JobRepository jobRepository;
     @Autowired
     private PlatformTransactionManager transactionManager;
-    @Autowired
-    private LoanArchiveHistoryReadWritePlatformService loanArchiveHistoryService;
-    @Autowired
-    private LoanArchiveHistoryRepository loanArchiveHistoryRepository;
-    @Autowired
-    private LoanRepositoryWrapper loanRepository;
-    @Autowired
-    private DelinquencyReadPlatformService delinquencyReadPlatformService;
-    @Autowired
-    private ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository;
-    @Autowired
-    private CodeValueRepository codeValueRepository;
-    @Autowired
-    private LoanUtilService loanUtilService;
 
     @Bean
-    protected Step archiveLoanHistoryStep() {
-        return new StepBuilder(JobName.ARCHIVE_LOAN_HISTORY.name(), jobRepository).tasklet(archiveLoansHistoryTasklet(), transactionManager)
+    protected Step archiveLoanHistoryStep(ArchiveLoansHistoryTasklet archiveLoansHistoryTasklet) {
+        return new StepBuilder(JobName.ARCHIVE_LOAN_HISTORY.name(), jobRepository).tasklet(archiveLoansHistoryTasklet, transactionManager)
                 .build();
     }
 
     @Bean
-    public Job archiveLoansHistoryJob() {
-        return new JobBuilder(JobName.ARCHIVE_LOAN_HISTORY.name(), jobRepository).start(archiveLoanHistoryStep())
+    public Job archiveLoansHistoryJob(ArchiveLoansHistoryTasklet archiveLoansHistoryTasklet) {
+        return new JobBuilder(JobName.ARCHIVE_LOAN_HISTORY.name(), jobRepository).start(archiveLoanHistoryStep(archiveLoansHistoryTasklet))
                 .incrementer(new RunIdIncrementer()).build();
-    }
-
-    @Bean
-    public ArchiveLoansHistoryTasklet archiveLoansHistoryTasklet() {
-        return new ArchiveLoansHistoryTasklet(loanArchiveHistoryService, loanArchiveHistoryRepository, loanRepository,
-                delinquencyReadPlatformService, clientAllyPointOfSalesRepository, codeValueRepository, loanUtilService);
     }
 }

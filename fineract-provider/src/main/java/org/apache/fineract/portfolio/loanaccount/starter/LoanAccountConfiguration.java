@@ -32,6 +32,7 @@ import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTyp
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMapRepository;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -86,6 +87,7 @@ import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentRepositor
 import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainServiceJpa;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanArchiveHistoryRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanChargeRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
@@ -100,6 +102,8 @@ import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorDoma
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
 import org.apache.fineract.portfolio.loanaccount.jobs.applychargetooverdueloaninstallment.ApplyChargeToOverdueLoanInstallmentProcessor;
 import org.apache.fineract.portfolio.loanaccount.jobs.applychargetooverdueloaninstallment.ApplyChargeToOverdueLoanInstallmentProcessorTask;
+import org.apache.fineract.portfolio.loanaccount.jobs.archiveloanhistory.LoanHistoryArchivalTask;
+import org.apache.fineract.portfolio.loanaccount.jobs.archiveloanhistory.LoanHistoryArchiver;
 import org.apache.fineract.portfolio.loanaccount.jobs.dailyaccrual.DailyInterestAccrualPoster;
 import org.apache.fineract.portfolio.loanaccount.jobs.dailyaccrual.DailyInterestAccrualPosterTask;
 import org.apache.fineract.portfolio.loanaccount.jobs.installmentalchargeaccrual.InstallmentChargeAccrualPoster;
@@ -516,6 +520,24 @@ public class LoanAccountConfiguration {
     @ConditionalOnMissingBean(DailyInterestAccrualPosterTask.class)
     public DailyInterestAccrualPosterTask dailyAccrualPosterTask(DailyInterestAccrualPoster dailyAccrualPoster) {
         return new DailyInterestAccrualPosterTask(dailyAccrualPoster);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(LoanHistoryArchiver.class)
+    public LoanHistoryArchiver loanHistoryArchiver(LoanArchiveHistoryRepository loanArchiveHistoryRepository,
+                                                   LoanRepositoryWrapper loanRepository, DelinquencyReadPlatformService delinquencyReadPlatformService,
+                                                   ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository, CodeValueRepository codeValueRepository,
+                                                   LoanUtilService loanUtilService) {
+        return new LoanHistoryArchiver(loanArchiveHistoryRepository, loanRepository, delinquencyReadPlatformService, clientAllyPointOfSalesRepository,
+                codeValueRepository, loanUtilService);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(LoanHistoryArchivalTask.class)
+    public LoanHistoryArchivalTask loanHistoryArchivalTask(LoanHistoryArchiver loanHistoryArchiver) {
+        return new LoanHistoryArchivalTask(loanHistoryArchiver);
     }
 
     @Bean
