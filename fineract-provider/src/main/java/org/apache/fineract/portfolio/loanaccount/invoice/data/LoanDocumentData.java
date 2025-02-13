@@ -199,8 +199,8 @@ public class LoanDocumentData {
         }
         facturaElectronicaMensual.setTipo_prod(this.productTypeName);
 
-        facturaElectronicaMensual.setPor_dto(totalPaidAmount);
-        facturaElectronicaMensual.setVal_dto(totalPaidAmount);
+        facturaElectronicaMensual.setPor_dto(BigDecimal.ZERO);
+        facturaElectronicaMensual.setVal_dto(BigDecimal.ZERO);
         facturaElectronicaMensual.setTotal(totalPaidAmount);
         facturaElectronicaMensual.setLoan_transaction_id(this.loanTransactionId);
         facturaElectronicaMensual.setTelefono(this.clientTelephone);
