@@ -26,6 +26,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
@@ -85,8 +86,12 @@ import org.apache.fineract.portfolio.account.domain.AccountTransferTransaction;
 import org.apache.fineract.portfolio.account.domain.StandingInstructionRepository;
 import org.apache.fineract.portfolio.account.domain.StandingInstructionStatus;
 import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
+import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
+import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
+import org.apache.fineract.portfolio.collectionhousemanagement.domain.CollectionHouseConfiguration;
+import org.apache.fineract.portfolio.collectionhousemanagement.service.CollectionHouseReadWriteServiceImpl;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.delinquency.domain.DelinquencyRange;
 import org.apache.fineract.portfolio.delinquency.domain.LoanDelinquencyAction;
@@ -149,6 +154,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final LoanBlockingReasonRepository loanBlockingReasonRepository;
     private final PlatformSecurityContext platformSecurityContext;
     private final JdbcTemplate jdbcTemplate;
+    private final CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService;
+    private final ClientReadPlatformService clientReadPlatformService;
     @Autowired
     private CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
 
@@ -210,6 +217,13 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             newRepaymentTransaction = LoanTransaction.repaymentType(repaymentTransactionType, loan.getOffice(), repaymentAmount,
                     paymentDetail, transactionDate, txnExternalId, chargeRefundChargeType, loan.getRepaymentTransactionProcessingType(),
                     loan.recalculateEMI());
+        }
+
+        ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService.retrieveClientAdditionalData(loan.getClientId());
+        String nit = ObjectUtils.defaultIfNull(clientAdditionalInformation.getNit(), clientAdditionalInformation.getCedula());
+        CollectionHouseConfiguration collectionHouse = this.collectionHouseReadWriteService.retrieveCollectionHouseByClientFromHistory(nit);
+        if (collectionHouse != null) {
+            newRepaymentTransaction.setCollectionHouse(collectionHouse);
         }
 
         LocalDate recalculateFrom = null;

@@ -33,6 +33,9 @@ public interface CollectionHouseHistoryRepository
     @Query("select colletionHouseHistory from ColletionHouseHistory colletionHouseHistory where colletionHouseHistory.clientAccountNumber = :clientAccountNumber")
     Optional<ColletionHouseHistory> getCollectionHouseHistoryByAccountNo(@Param("clientAccountNumber") String clientAccountNumber);
 
+    @Query("select colletionHouseHistory from ColletionHouseHistory colletionHouseHistory where colletionHouseHistory.collectionNit = :clientNit")
+    Optional<ColletionHouseHistory> getCollectionHouseHistoryByClientNit(@Param("clientNit") String clientNit);
+
     @Modifying
     @Query(nativeQuery = true, value = UPDATE_COLLECTION_HISTORY)
     void updateCollectionHouseHistory();

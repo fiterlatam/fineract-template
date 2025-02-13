@@ -1,6 +1,8 @@
 package org.apache.fineract.portfolio.collectionhousemanagement.service;
 
 import java.util.Collection;
+import java.util.Optional;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -9,6 +11,7 @@ import org.apache.fineract.portfolio.collectionhousemanagement.data.CollectionHo
 import org.apache.fineract.portfolio.collectionhousemanagement.data.CollectionHouseConfigValidator;
 import org.apache.fineract.portfolio.collectionhousemanagement.domain.CollectionHouseConfigRepository;
 import org.apache.fineract.portfolio.collectionhousemanagement.domain.CollectionHouseConfiguration;
+import org.apache.fineract.portfolio.collectionhousemanagement.domain.ColletionHouseHistory;
 import org.apache.fineract.portfolio.collectionhousemanagement.exception.CollectionHouseManagementNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -21,6 +24,7 @@ public class CollectionHouseReadWriteServiceImpl implements CollectionHouseReadW
 
     private final CollectionHouseConfigRepository collectionHouseConfigRepository;
     private final CollectionHouseConfigValidator collectionHouseConfigValidator;
+    private final CollectionHouseHistoryReadWriteService collectionHouseHistoryReadWriteService;
 
     @Override
     public Collection<CollectionHouseConfigParameterizationData> retrieveAllCollectionHouseManagement() {
@@ -33,6 +37,21 @@ public class CollectionHouseReadWriteServiceImpl implements CollectionHouseReadW
             return collectionHouseConfigRepository.getReferenceById(collectionId).toData();
         } catch (Exception e) {
             throw new CollectionHouseManagementNotFoundException(collectionId);
+        }
+    }
+
+    @Override
+    public CollectionHouseConfiguration retrieveCollectionHouseByClientFromHistory(String clientNit) {
+        try {
+            ColletionHouseHistory history = collectionHouseHistoryReadWriteService.findCollectionHouseHistoryByClientNit(clientNit);
+            if (history != null) {
+                Optional<CollectionHouseConfiguration>  collectionHouseOptional = collectionHouseConfigRepository.getCollectionByCode(history.getCollectionCode());
+                return collectionHouseOptional.orElse(null);
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            throw new CollectionHouseManagementNotFoundException(clientNit);
         }
     }
 
