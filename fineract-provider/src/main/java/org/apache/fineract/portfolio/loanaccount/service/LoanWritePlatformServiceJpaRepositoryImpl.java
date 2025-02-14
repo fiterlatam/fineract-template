@@ -5088,12 +5088,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         LocalDate lastAccrualDate = loan.getAccruedTill() != null ? loan.getAccruedTill() : loan.getDisbursementDate();
         // Loop through the days between the last accrual date and accrual date and process interest accrual for each
         // day
-        log.debug("Persisting daily accrual for loan: {}", loan.getId());
+        log.info("Persisting daily accrual for loan: {}", loan.getId());
         while (lastAccrualDate.isBefore(accrualDate)) {
             lastAccrualDate = lastAccrualDate.plusDays(1);
             this.processInterestAccrualForDate(lastAccrualDate, loan);
         }
-        log.debug("Daily accrual persisted for loan: {}", loan.getId());
+        log.info("Daily accrual persisted for loan: {}", loan.getId());
     }
 
     private void processInterestAccrualForDate(final LocalDate accrualDate, Loan loan) {

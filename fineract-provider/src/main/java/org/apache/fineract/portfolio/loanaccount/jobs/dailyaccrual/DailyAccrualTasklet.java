@@ -55,6 +55,7 @@ public class DailyAccrualTasklet implements Tasklet {
     @Qualifier(TaskExecutorConstant.CONFIGURABLE_TASK_EXECUTOR_BEAN_NAME)
     private final ThreadPoolTaskExecutor taskExecutor;
     private final LoanReadPlatformService loanReadPlatformService;
+    private boolean dataFetched = false;
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
@@ -63,6 +64,7 @@ public class DailyAccrualTasklet implements Tasklet {
         taskExecutor.setCorePoolSize(threadPoolSize);
         taskExecutor.setMaxPoolSize(threadPoolSize);
         final int batchSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
+        final int pageSize = batchSize * threadPoolSize;
         Long maxLoanIdInList = 0L;
 
         LocalDate accrualDate = DateUtils.getLocalDateOfTenant().minusDays(1);
@@ -70,7 +72,7 @@ public class DailyAccrualTasklet implements Tasklet {
         long start = System.currentTimeMillis();
         log.info("Starting Daily Accrual posting for the date: {}", accrualDate);
         log.debug("Reading Load Ids for accrual processing!");
-        List<Long> loanIds = this.loanReadPlatformService.findLoanIdsForAccrualPosting(accrualDate, batchSize, maxLoanIdInList);
+        List<Long> loanIds = this.loanReadPlatformService.findLoanIdsForAccrualPosting(accrualDate, pageSize, maxLoanIdInList);
         if (loanIds != null && !loanIds.isEmpty()) {
             loanIds = Collections.synchronizedList(loanIds);
             long finish = System.currentTimeMillis();
@@ -87,10 +89,12 @@ public class DailyAccrualTasklet implements Tasklet {
                 } while (!CollectionUtils.isEmpty(queue));
             }
         }
+        log.info("Completed Daily Accrual posting for the date: {}", accrualDate);
         return RepeatStatus.FINISHED;
     }
 
     private void postDailyAccruals(List<Long> loanIds, int threadPoolSize, LocalDate accrualDate, int pageSize, Long maxLoanIdInList) {
+        dataFetched = false;
         List<Callable<Void>> posters = new ArrayList<>();
         int fromIndex = 0;
         int size = loanIds.size();
@@ -117,15 +121,18 @@ public class DailyAccrualTasklet implements Tasklet {
             }
 
             while (queue.size() <= QUEUE_SIZE) {
-                log.debug("Fetching while threads are running!");
+                log.info("Fetching while threads are running!");
                 List<Long> loanIdList = Collections
                         .synchronizedList(this.loanReadPlatformService.findLoanIdsForAccrualPosting(accrualDate, pageSize, maxId));
                 if (loanIdList.isEmpty()) {
+                    log.info("No more loan ids to process");
+                    dataFetched = true;
                     break;
                 }
                 maxId = loanIdList.get(loanIdList.size() - 1);
                 queue.add(loanIdList);
             }
+            dataFetched = true;
             return null;
         };
         posters.add(fetchData);
@@ -139,6 +146,7 @@ public class DailyAccrualTasklet implements Tasklet {
             posters.add(dailyAccrualPosterTask);
 
             if (lastBatch) {
+                log.info("Last batch processed");
                 break;
             }
             if (toIndex + batchSize > size - 1) {
@@ -153,22 +161,16 @@ public class DailyAccrualTasklet implements Tasklet {
 
         List<Future<Void>> responses = new ArrayList<>();
         posters.forEach(poster -> responses.add(taskExecutor.submit(poster)));
-        Long maxId = maxLoanIdInList;
-        if (!queue.isEmpty()) {
-            maxId = Math.max(maxLoanIdInList, queue.element().get(queue.element().size() - 1));
-        }
-
-        while (queue.size() <= QUEUE_SIZE) {
-            log.debug("Fetching while threads are running!..:: this is not supposed to run........");
-            loanIds = Collections.synchronizedList(this.loanReadPlatformService.findLoanIdsForAccrualPosting(accrualDate, pageSize, maxId));
-            if (loanIds.isEmpty()) {
-                break;
+        // delay as data is being fetched.
+        while (!dataFetched) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                log.error("Error while waiting for data fetch", e);
             }
-            maxId = loanIds.get(loanIds.size() - 1);
-            log.debug("Add to the Queue");
-            queue.add(loanIds);
         }
 
+        log.info("Data fetched, checking completion...");
         checkCompletion(responses);
         log.debug("Queue size {}", queue.size());
     }
@@ -201,7 +203,7 @@ public class DailyAccrualTasklet implements Tasklet {
             if (!allThreadsExecuted) {
                 log.error("All threads could not execute.");
             } else {
-                log.info("Daily Interest Accrual Posting Job Completed");
+                log.info("Daily Interest Accrual Job: all threads executed for this batch!!!");
             }
         } catch (InterruptedException e1) {
             log.error("Interrupted while processing daily accruals", e1);

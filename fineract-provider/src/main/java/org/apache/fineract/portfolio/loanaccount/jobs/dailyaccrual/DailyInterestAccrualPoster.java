@@ -26,8 +26,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -38,7 +36,6 @@ public class DailyInterestAccrualPoster {
     private LocalDate accrualDate;
     private final LoanWritePlatformService loanWritePlatformService;
 
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED, rollbackFor = Exception.class)
     public void postDailyInterestAccruals() throws JobExecutionException {
         List<Throwable> errors = new ArrayList<>();
         if (!loanIds.isEmpty()) {
