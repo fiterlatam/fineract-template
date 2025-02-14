@@ -1436,6 +1436,12 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 }
                 installmentCount = BigDecimal.valueOf(numberOfRepayments);
             }
+
+            // avoid NPE for scenario "new loan creation with empty charges" and adding 1st charge dynamically
+            if (Objects.isNull(outstandingBalance)) {
+                outstandingBalance = Money.of(getLoan().getCurrency(), amountPercentageAppliedTo);
+            }
+
             BigDecimal computedAmount = LoanCharge.percentageOf(outstandingBalance.getAmount(), this.percentage);
 
             // If charge is Capital Pendiente, do not divide by nr of installments
