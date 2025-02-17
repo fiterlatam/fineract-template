@@ -4849,8 +4849,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             facturaElectronicaMensualDuplicate.setPrecio_unitario(interestPaid);
             facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
             facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
-            facturaElectronicaMensualDuplicate.setId_mandante(loanDocumentData.getCollectionHouseNit());
-            facturaElectronicaMensualDuplicate.setDescripcion_mandante(loanDocumentData.getCollectionHouseName());
+            facturaElectronicaMensualDuplicate.setId_mandante(null);
+            facturaElectronicaMensualDuplicate.setDescripcion_mandante(null);
             facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, interestVatPaid);
@@ -4867,8 +4867,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             facturaElectronicaMensualDuplicate.setPrecio_unitario(penaltyChargesPaid);
             facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
             facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
-            facturaElectronicaMensualDuplicate.setId_mandante(loanDocumentData.getCollectionHouseNit());
-            facturaElectronicaMensualDuplicate.setDescripcion_mandante(loanDocumentData.getCollectionHouseName());
+            facturaElectronicaMensualDuplicate.setId_mandante(null);
+            facturaElectronicaMensualDuplicate.setDescripcion_mandante(null);
             facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, penaltyChargesVatPaid);
@@ -4885,6 +4885,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             facturaElectronicaMensualDuplicate.setPrecio_unitario(mandatoryInsurancePaid);
             facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
             facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+
+            final String mandatoryInsuranceCode = loanDocumentData.getMandatoryInsuranceCode();
+            final String mandatoryInsuranceName = loanDocumentData.getMandatoryInsuranceName();
+
+            facturaElectronicaMensualDuplicate.setId_mandante(mandatoryInsuranceCode);
+            facturaElectronicaMensualDuplicate.setDescripcion_mandante(mandatoryInsuranceName);
+
             facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, mandatoryInsuranceVatPaid);
@@ -4901,6 +4908,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             facturaElectronicaMensualDuplicate.setPrecio_unitario(voluntaryInsurancePaid);
             facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
             facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+
+            final String voluntaryInsuranceCode = loanDocumentData.getVoluntaryInsuranceCode();
+            final String voluntaryInsuranceName = loanDocumentData.getVoluntaryInsuranceName();
+
+            facturaElectronicaMensualDuplicate.setId_mandante(voluntaryInsuranceCode);
+            facturaElectronicaMensualDuplicate.setDescripcion_mandante(voluntaryInsuranceName);
+
             facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, voluntaryInsuranceVatPaid);
