@@ -99,7 +99,7 @@ public class LoanRescheduleRequestDataValidator {
 
         final JsonElement jsonElement = jsonCommand.parsedJson();
 
-        if (!loan.getStatus().isActive()) {
+        if (!loan.getStatus().isActive() && !loan.getStatus().isApproved()) {
             dataValidatorBuilder.reset().failWithCodeNoParameterAddedToErrorCode("loan.is.not.active", "Loan is not active");
         }
 

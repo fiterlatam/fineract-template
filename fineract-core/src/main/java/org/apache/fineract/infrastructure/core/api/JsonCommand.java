@@ -34,6 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import lombok.Getter;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
@@ -52,6 +53,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncod
 public final class JsonCommand {
 
     private final String jsonCommand;
+    @Getter
     private final JsonElement parsedCommand;
     private final FromJsonHelper fromApiJsonHelper;
     private final Long commandId;
