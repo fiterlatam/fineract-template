@@ -25,6 +25,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -46,6 +47,7 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanInstallmentChargeData;
 
 @Entity
 @Table(name = "m_loan_charge", uniqueConstraints = { @UniqueConstraint(columnNames = { "external_id" }, name = "external_id") })
+@Slf4j
 public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     private static final String DUE_DATE_PARAM = "dueDate";
@@ -1435,7 +1437,12 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 }
                 installmentCount = BigDecimal.valueOf(numberOfRepayments);
             }
+            log.warn(
+                    " according to EA-206 the charge amount is calculated based on the outstanding principal amount . Installment count {} will be ignored ",
+                    installmentCount);
+
             BigDecimal computedAmount = LoanCharge.percentageOf(outstandingBalance.getAmount(), this.percentage);
+
             customAmout = customAmout.add(computedAmount);
         }
         return customAmout;
