@@ -5225,11 +5225,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Optional<LoanDisbursementDetails> loanDisbursementDetailsOpt = loanDisbursementDetailsRepository
                     .findByLoanIdAndExpectedDisbursementDateAndPrincipal(loan.getId(), actualDisbursementDate, principal);
 
+            Long nrOfDisbursalsSoFar = loanDisbursementDetailsRepository.findAllByLoanId(loan.getId()).stream()
+                    .filter(p -> p.getActualDisbursementDate() != null).count();
+
             if (loanDisbursementDetailsOpt.isEmpty()) {
-                LoanDisbursementDetails details = new LoanDisbursementDetails(actualDisbursementDate, actualDisbursementDate, principal,
-                        null, false);
-                details.updateLoan(loan);
-                loanDisbursementDetailsRepository.saveAndFlush(details);
+                if (nrOfDisbursalsSoFar.compareTo(1L) >= 0) {
+                    LoanDisbursementDetails details = new LoanDisbursementDetails(actualDisbursementDate, actualDisbursementDate, principal,
+                            null, false);
+                    details.updateLoan(loan);
+                    loanDisbursementDetailsRepository.saveAndFlush(details);
+                }
 
                 loan = this.loanAssembler.assembleFrom(loan.getId());
 
