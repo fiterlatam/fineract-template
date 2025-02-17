@@ -45,11 +45,13 @@ import org.apache.fineract.organisation.workingdays.data.AdjustedDateDetailsDTO;
 import org.apache.fineract.organisation.workingdays.domain.RepaymentRescheduleType;
 import org.apache.fineract.portfolio.calendar.domain.CalendarInstance;
 import org.apache.fineract.portfolio.calendar.service.CalendarUtils;
+import org.apache.fineract.portfolio.charge.domain.ChargeCustomType;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.domain.*;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleDTO;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleModelDownPaymentPeriod;
@@ -2497,10 +2499,15 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 amount = amount.add(loanCharge.calculateParentChargeAmountForInstallment(loanCharges, installmentNumber, principalDisbursed,
                         numberOfRepayments, outstandingBalance));
             } else if (loanCharge.getChargeCalculation().isCustomPercentageOfOutstandingPrincipalCharge()) {
-                amount = amount.add(loanCharge.getInstallmentLoanCharge(installmentNumber).getAmount());
-            } else {
+                if (loanCharge.getCharge().getName().contains(ChargeCustomType.CAPITAL_PENDIENTE_MI_PYME.getRootName())) {
+                    amount = amount.add(outstandingBalance.getAmount());
+                } else {
+                    amount = amount.add(loanCharge.getInstallmentLoanCharge(installmentNumber).getAmount());
+                }
+            } else if (Boolean.FALSE.equals(loanCharge.getChargeCalculation().isPercentageOfOutstandingPrincipal())) {
                 amount = amount.add(principalInterestForThisPeriod.principal().getAmount());
             }
+
             BigDecimal loanChargeAmt;
             if (loanCharge.isCustomPercentageBasedDistributedCharge()) {
                 loanChargeAmt = loanCharge.calculateCustomFeeChargeToInstallment(installmentNumber, principalDisbursed, numberOfRepayments,

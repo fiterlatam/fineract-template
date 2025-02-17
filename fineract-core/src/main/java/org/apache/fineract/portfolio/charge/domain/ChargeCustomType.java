@@ -18,12 +18,15 @@
  */
 package org.apache.fineract.portfolio.charge.domain;
 
-import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-public interface ChargeRepository extends JpaRepository<Charge, Long>, JpaSpecificationExecutor<Charge> {
-    // no added behaviour
+@AllArgsConstructor
+@Getter
+public enum ChargeCustomType {
 
-    List<Charge> findByChargeAppliesToAndActive(Integer chargeAppliesTo, boolean active);
+    CAPITAL_PENDIENTE_MI_PYME("Capital Pendiente Mi Pyme"), //
+    ;
+
+    private final String rootName;
 }
