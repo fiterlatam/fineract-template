@@ -1198,6 +1198,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 // Skip further processing if the value is 0
                 return BigDecimal.ZERO;
             }
+            if (ChargeCalculationType.DISB_SEGO == loanCharge.getChargeCalculation()) {
+                numberOfInstallments = BigDecimal.ONE;
+            }
+
             BigDecimal computedAmount = LoanCharge.percentageOf(percentOf.getAmount(), percentage);
             BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 0, RoundingMode.HALF_UP);
             amount = amount.plus(finalAmount);
@@ -5730,6 +5734,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         || loanCharge.isCustomPercentageOfOutstandingPrincipalCharge())
                         && loanCharge.getApplicableFromInstallment() > installment.getInstallmentNumber())) {
                     amount = BigDecimal.ZERO;
+                }
+                if (ChargeCalculationType.DISB_SEGO == loanCharge.getChargeCalculation()) {
+                    amount = loanCharge.amount();
                 }
                 final LoanInstallmentCharge loanInstallmentCharge = new LoanInstallmentCharge(amount, loanCharge, installment);
                 installment.getInstallmentCharges().add(loanInstallmentCharge);
