@@ -150,6 +150,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     	mbc.guarantee_amount As guaranteeAmount,
                     	ml.approved_principal as loanAmount,
                         CASE
+                            WHEN coalesce(restructured_loans.outstanding,0) > 0 THEN (ml.net_disbursal_amount - restructured_loans.outstanding)
                             WHEN ml.is_topup = FALSE THEN ml.net_disbursal_amount
                             WHEN ml.is_topup = TRUE THEN (COALESCE(ml.net_disbursal_amount, 0))
                             ELSE mbc.guarantee_amount
@@ -200,6 +201,9 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     LEFT JOIN m_client mc ON mc.id = ml.client_id
                     LEFT JOIN m_loan_topup mltopup ON mltopup.loan_id = ml.id
                     LEFT JOIN m_loan closureloan ON closureloan.id = mltopup.closure_loan_id
+                    LEFT JOIN (
+                    	select new_loan_id, coalesce(sum(outstanding_balance),0) as outstanding from m_restructure_credits_loans_mapping GROUP BY new_loan_id
+                    ) restructured_loans on restructured_loans.new_loan_id = ml.id
                     """;
         }
 
