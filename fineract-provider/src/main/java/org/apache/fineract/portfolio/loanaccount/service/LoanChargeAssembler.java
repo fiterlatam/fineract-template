@@ -260,6 +260,11 @@ public class LoanChargeAssembler {
                                     }
                                 }
                             }
+
+                            if (chargeDefinition.isCustomPercentageBasedDistributedCharge()) {
+                                amount = chargeDefinition.getAmount();
+                            }
+
                             if (amount != null && amount.compareTo(principalFinal) > 0) {
                                 throw new GeneralPlatformDomainRuleException("error.msg.loan.charge.amount.exceeds.principal",
                                         "Loan charge amount exceeds principal amount", amount, principalFinal, chargeDefinition.getName());
