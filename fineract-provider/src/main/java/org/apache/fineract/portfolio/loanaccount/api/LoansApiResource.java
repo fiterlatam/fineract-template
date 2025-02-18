@@ -353,6 +353,7 @@ public class LoansApiResource {
     private final ConfigurationDomainServiceJpa configurationDomainServiceJpa;
     private final ReadWriteNonCoreDataService readWriteNonCoreDataService;
     private final LoanWritePlatformService loanWritePlatformService;
+    private static final String DISBURSE_ACTION = "disburse";
 
     @GET
     @Path("{loanId}/template")
@@ -723,7 +724,7 @@ public class LoansApiResource {
             commandRequest = builder.rejectGLIMApplication(glimId).build();
         } else if (CommandParameterUtil.is(commandParam, "approve")) {
             commandRequest = builder.approveGLIMLoanApplication(glimId).build();
-        } else if (CommandParameterUtil.is(commandParam, "disburse")) {
+        } else if (CommandParameterUtil.is(commandParam, DISBURSE_ACTION)) {
             commandRequest = builder.disburseGlimLoanApplication(glimId).build();
         } else if (CommandParameterUtil.is(commandParam, "glimrepayment")) {
             commandRequest = builder.repaymentGlimLoanApplication(glimId).build();
@@ -1456,7 +1457,7 @@ public class LoansApiResource {
             commandRequest = builder.withdrawLoanApplication(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "approve")) {
             commandRequest = builder.approveLoanApplication(resolvedLoanId).build();
-        } else if (CommandParameterUtil.is(commandParam, "disburse")) {
+        } else if (CommandParameterUtil.is(commandParam, DISBURSE_ACTION)) {
             commandRequest = builder.disburseLoanApplication(resolvedLoanId).build();
         } else if (CommandParameterUtil.is(commandParam, "disburseToSavings")) {
             commandRequest = builder.disburseLoanToSavingsApplication(resolvedLoanId).build();
@@ -1482,7 +1483,7 @@ public class LoansApiResource {
         CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
         // Check here if there is any pending reschedule request associated with this Credito Rotativo and approve it.
-        if (CommandParameterUtil.is(commandParam, "disburse")) {
+        if (CommandParameterUtil.is(commandParam, DISBURSE_ACTION)) {
             loanWritePlatformService.approveRescheduleRequest(loanId, result.getResourceId(), null);
         }
 
