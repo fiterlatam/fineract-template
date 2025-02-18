@@ -96,6 +96,7 @@ public class LoanDocumentData {
     private BigDecimal penaltyChargesPaid;
     private BigDecimal penaltyChargesVatPaid;
     private BigDecimal totalPaid;
+    private String transactionIds;
     private String voluntaryInsuranceCode;
     private String mandatoryInsuranceCode;
     private String voluntaryInsuranceName;
@@ -133,8 +134,6 @@ public class LoanDocumentData {
         facturaElectronicaMensual.setCreatedDate(DateUtils.getAuditOffsetDateTime());
         facturaElectronicaMensual.setNum_resolucion(this.billingResolutionNumber);
         facturaElectronicaMensual.setPrefijo(this.billingPrefix);
-        facturaElectronicaMensual.setFec_desde(this.firstDayOfMonth);
-        facturaElectronicaMensual.setFec_hasta(this.secondLastDayOfMonth);
         facturaElectronicaMensual.setConsecutivo_inicial(this.rangeStartNumber);
         facturaElectronicaMensual.setConsecutivo_final(this.rangeEndNumber);
         facturaElectronicaMensual.setClave_tecnica(this.technicalKey);
