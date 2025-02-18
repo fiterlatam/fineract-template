@@ -2040,9 +2040,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             // Select appropriate charges given the microcredito product type (raw, B or M) AND amount
             List<Charge> chargesList = chargeRepository.findByChargeAppliesToAndActive(1, true).stream()
-                    .filter(name -> Boolean.TRUE.equals(name.getName().toLowerCase().contains(filterCriteria)))
-                    .filter(active -> active.isActive()).sorted(Comparator.comparing(Charge::getParentChargeId))
-                    .collect(Collectors.toList());
+                    .filter(name -> Boolean.TRUE.equals(name.getName().toLowerCase().contains(filterCriteria))).filter(Charge::isActive)
+                    .sorted(Comparator.comparing(Charge::getParentChargeId)).toList();
 
             // Insert new ones based on filter criteria
             for (Charge curr : chargesList) {
