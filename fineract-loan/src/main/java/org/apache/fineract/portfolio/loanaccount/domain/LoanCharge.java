@@ -376,7 +376,12 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     if (numberOfRepayments == null) {
                         numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
                     }
+                    if (ChargeCalculationType.DISB_SEGO == chargeCalculationType) {
+                        // we do not want to update for disbursement based charge
+                        numberOfRepayments = 1;
+                    }
                     updateAmountOrPercentageForDistributedCharge(numberOfRepayments, this.amount);
+
                 }
             }
         }
