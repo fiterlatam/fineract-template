@@ -5193,12 +5193,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private void checkCreditoRotativo(JsonCommand command, Loan loan, LocalDate actualDisbursementDate) {
         if (loan.getLoanProduct().isMultiDisburseLoan()) {
 
-            // If credito rotativo mensual, accepted repayment dates are 5,10,20
+            // Validate if first repayment date was provided and is day of month = 1, 10 or 20
             if (loan.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
-                if (actualDisbursementDate.getDayOfMonth() != 1 && actualDisbursementDate.getDayOfMonth() != 10
-                        && actualDisbursementDate.getDayOfMonth() != 20) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.date.must.be.day.1.10.20",
-                            "Disbursement date must be 5, 10 or 20");
+                LocalDate expectedfirstRepaymentDate = loan.getExpectedFirstRepaymentOnDate();
+
+                if (Objects.isNull(expectedfirstRepaymentDate)) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.creditorotativo.first.repayment.date.mandatory",
+                            "First Repayment date shall be provided when product is Credito Rotativo");
+                } else {
+
+                    if (expectedfirstRepaymentDate.getDayOfMonth() != 1 && expectedfirstRepaymentDate.getDayOfMonth() != 10
+                            && expectedfirstRepaymentDate.getDayOfMonth() != 20) {
+                        throw new GeneralPlatformDomainRuleException(
+                                "error.msg.loan..creditorotativo.first.repayment.date.must.be.day.1.10.20",
+                                "Disbursement date must be 1, 10 or 20");
+                    }
                 }
             }
 

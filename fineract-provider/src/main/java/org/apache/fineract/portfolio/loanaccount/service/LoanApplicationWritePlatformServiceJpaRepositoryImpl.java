@@ -662,21 +662,16 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private void validateAllowedDaysIfCreditoRotativo(Loan newLoanApplication) {
         // If credito rotativo mensual, accepted repayment dates are 1,10,20
         if (newLoanApplication.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+            LocalDate expectedfirstRepaymentDate = newLoanApplication.getExpectedFirstRepaymentOnDate();
 
-            if (Objects.isNull(newLoanApplication.getExpectedFirstRepaymentOnDate())) {
-
-                if (newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 1
-                        && newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 10
-                        && newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 20) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.date.must.be.day.1.10.20",
-                            "Disbursement date must be 1, 10 or 20");
-                }
+            if (Objects.isNull(expectedfirstRepaymentDate)) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.creditorotativo.first.repayment.date.mandatory",
+                        "First Repayment date shall be provided when product is Credito Rotativo");
             } else {
 
-                if (newLoanApplication.getExpectedFirstRepaymentOnDate().getDayOfMonth() != 1
-                        && newLoanApplication.getExpectedFirstRepaymentOnDate().getDayOfMonth() != 10
-                        && newLoanApplication.getExpectedFirstRepaymentOnDate().getDayOfMonth() != 20) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.first.repayment.date.date.must.be.day.1.10.20",
+                if (expectedfirstRepaymentDate.getDayOfMonth() != 1 && expectedfirstRepaymentDate.getDayOfMonth() != 10
+                        && expectedfirstRepaymentDate.getDayOfMonth() != 20) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.creditorotativo.first.repayment.date.must.be.day.1.10.20",
                             "Disbursement date must be 1, 10 or 20");
                 }
             }
@@ -2086,7 +2081,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         filterCriteriaTmp = filterCriteriaTmp.concat(" mi pyme");
 
         // Check if Comision Mi Pyme is set, depending on Loan Amount against SMLV config and microcredito product
-        Long limit = configurationDomainServiceJpa.retrieveSMVLLimit();
+        Long limit = configurationDomainServiceJpa.retrieveSMVLLimit() * 4;
 
         if (loan.getProposedPrincipal().compareTo(new BigDecimal(limit)) >= 0) {
             filterCriteriaTmp = filterCriteriaTmp.concat(" >= 4smlv");
