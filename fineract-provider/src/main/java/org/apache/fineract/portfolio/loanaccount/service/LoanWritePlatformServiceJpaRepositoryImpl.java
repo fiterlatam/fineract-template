@@ -4808,6 +4808,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final Long productTypeParamId = loanDocumentData.getProductTypeParamId();
         final LoanProductParameterization loanProductParameterization = this.productParameterizationRepository.findById(productTypeParamId)
                 .orElseThrow(() -> new LoanProductParameterizationNotFoundException(productTypeParamId));
+
+        final LocalDate generationDate = loanProductParameterization.getGenerationDate();
+        final LocalDate expirationDate = loanProductParameterization.getExpirationDate();
+        facturaElectronicaMensual.setFec_desde(generationDate);
+        facturaElectronicaMensual.setFec_hasta(expirationDate);
+
         final Long rangeStartNumber = loanProductParameterization.getRangeStartNumber();
         final Long invoiceCounter = loanProductParameterization.getInvoiceCounter();
         final Long creditNoteCounter = loanProductParameterization.getCreditNoteCounter();

@@ -86,4 +86,12 @@
             </column>
         </addColumn>
     </changeSet>
+
+    <changeSet id="3" author="fineract">
+        <addColumn tableName="m_loan_transaction">
+            <column name="is_invoiced_generated_by_job" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
