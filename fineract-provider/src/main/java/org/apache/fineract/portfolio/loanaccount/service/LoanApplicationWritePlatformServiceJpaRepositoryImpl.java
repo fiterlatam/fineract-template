@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.service;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import jakarta.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -180,6 +181,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     public static final String REPAYMENT_FREQUENCY_NTH_DAY_TYPE_ID_PARAM = "repaymentFrequencyNthDayType";
     public static final String EXPECTED_DISBURSEMENT_DATE_PARAM = "expectedDisbursementDate";
     public static final String ERROR_MESSAGE_LABEL_LOAN_DISBURSAL_DATE = "error.msg.loan.disbursal.date.should.be.after.last.transaction.date.of.loan.to.be.closed";
+    public static final String PRINCIPAL_PARAM = "principal";
+    public static final String DISBURSEMENT_DATA_PARAM = "disbursementData";
     private final PlatformSecurityContext context;
     private final FromJsonHelper fromJsonHelper;
     private final LoanApplicationTransitionApiJsonValidator loanApplicationTransitionApiJsonValidator;
@@ -231,7 +234,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     @SuppressWarnings({ "squid:S3776" })
     @Transactional
     @Override
-    public CommandProcessingResult submitApplication(final JsonCommand command) {
+    public CommandProcessingResult submitApplication(JsonCommand command) {
 
         try {
             final Long clientId = this.fromJsonHelper.extractLongNamed(LoanApplicationWritePlatformServiceJpaRepositoryImpl.CLIENT_ID_PARAM,
@@ -288,6 +291,24 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             if (groupId != null) {
                 Group group = this.groupRepository.findOneWithNotFoundDetection(groupId);
                 officeSpecificLoanProductValidation(productId, group.getOffice().getId());
+            }
+
+            // If product is Ctredito Rotativo, fill automatically expected disbursement date tranche details
+            if (loanProduct.getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+                final String expectedDisbursementDate = this.fromJsonHelper
+                        .extractStringNamed(LoanApiConstants.expectedDisbursementDateParameterName, command.parsedJson());
+
+                JsonObject parsedCommand = command.getParsedCommand().getAsJsonObject();
+
+                final JsonArray disbursementData = new JsonArray();
+                final JsonObject disbursementDataElement = new JsonObject();
+                disbursementDataElement.addProperty(EXPECTED_DISBURSEMENT_DATE_PARAM, expectedDisbursementDate);
+                disbursementDataElement.addProperty(PRINCIPAL_PARAM, BigDecimal.ONE.toString());
+                disbursementData.add(disbursementDataElement);
+                parsedCommand.add(DISBURSEMENT_DATA_PARAM, disbursementData);
+
+                // Add dynamic disbursal data to command
+                command = new JsonCommand(fromJsonHelper, parsedCommand.toString(), null, JsonParser.parseString(parsedCommand.toString()));
             }
 
             this.fromApiJsonDeserializer.validateForCreate(command.json(), isMeetingMandatoryForJLGLoans, loanProduct);
@@ -641,21 +662,16 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private void validateAllowedDaysIfCreditoRotativo(Loan newLoanApplication) {
         // If credito rotativo mensual, accepted repayment dates are 1,10,20
         if (newLoanApplication.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+            LocalDate expectedfirstRepaymentDate = newLoanApplication.getExpectedFirstRepaymentOnDate();
 
-            if (Objects.isNull(newLoanApplication.getExpectedFirstRepaymentOnDate())) {
-
-                if (newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 1
-                        && newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 10
-                        && newLoanApplication.getExpectedDisbursedOnLocalDate().getDayOfMonth() != 20) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.date.must.be.day.1.10.20",
-                            "Disbursement date must be 1, 10 or 20");
-                }
+            if (Objects.isNull(expectedfirstRepaymentDate)) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.creditorotativo.first.repayment.date.mandatory",
+                        "First Repayment date shall be provided when product is Credito Rotativo");
             } else {
 
-                if (newLoanApplication.getExpectedFirstRepaymentOnDate().getDayOfMonth() != 1
-                        && newLoanApplication.getExpectedFirstRepaymentOnDate().getDayOfMonth() != 10
-                        && newLoanApplication.getExpectedFirstRepaymentOnDate().getDayOfMonth() != 20) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.first.repayment.date.date.must.be.day.1.10.20",
+                if (expectedfirstRepaymentDate.getDayOfMonth() != 1 && expectedfirstRepaymentDate.getDayOfMonth() != 10
+                        && expectedfirstRepaymentDate.getDayOfMonth() != 20) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.creditorotativo.first.repayment.date.must.be.day.1.10.20",
                             "Disbursement date must be 1, 10 or 20");
                 }
             }
@@ -1033,7 +1049,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                             || (existingLoanTopupDetails != null && !existingLoanTopupDetails.getLoanIdToClose().equals(loanIdToClose))
                             || changes.containsKey("submittedOnDate")
                             || changes.containsKey(LoanApplicationWritePlatformServiceJpaRepositoryImpl.EXPECTED_DISBURSEMENT_DATE_PARAM)
-                            || changes.containsKey("principal") || changes.containsKey(LoanApiConstants.disbursementDataParameterName)) {
+                            || changes.containsKey(PRINCIPAL_PARAM)
+                            || changes.containsKey(LoanApiConstants.disbursementDataParameterName)) {
                         Long existingLoanIdToClose = null;
                         if (existingLoanTopupDetails != null) {
                             existingLoanIdToClose = existingLoanTopupDetails.getLoanIdToClose();
@@ -2064,7 +2081,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         filterCriteriaTmp = filterCriteriaTmp.concat(" mi pyme");
 
         // Check if Comision Mi Pyme is set, depending on Loan Amount against SMLV config and microcredito product
-        Long limit = configurationDomainServiceJpa.retrieveSMVLLimit();
+        Long limit = configurationDomainServiceJpa.retrieveSMVLLimit() * 4;
 
         if (loan.getProposedPrincipal().compareTo(new BigDecimal(limit)) >= 0) {
             filterCriteriaTmp = filterCriteriaTmp.concat(" >= 4smlv");

@@ -5193,12 +5193,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private void checkCreditoRotativo(JsonCommand command, Loan loan, LocalDate actualDisbursementDate) {
         if (loan.getLoanProduct().isMultiDisburseLoan()) {
 
-            // If credito rotativo mensual, accepted repayment dates are 5,10,20
+            // Validate if first repayment date was provided and is day of month = 1, 10 or 20
             if (loan.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
-                if (actualDisbursementDate.getDayOfMonth() != 1 && actualDisbursementDate.getDayOfMonth() != 10
-                        && actualDisbursementDate.getDayOfMonth() != 20) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.date.must.be.day.1.10.20",
-                            "Disbursement date must be 5, 10 or 20");
+                LocalDate expectedfirstRepaymentDate = loan.getExpectedFirstRepaymentOnDate();
+
+                if (Objects.isNull(expectedfirstRepaymentDate)) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.creditorotativo.first.repayment.date.mandatory",
+                            "First Repayment date shall be provided when product is Credito Rotativo");
+                } else {
+
+                    if (expectedfirstRepaymentDate.getDayOfMonth() != 1 && expectedfirstRepaymentDate.getDayOfMonth() != 10
+                            && expectedfirstRepaymentDate.getDayOfMonth() != 20) {
+                        throw new GeneralPlatformDomainRuleException(
+                                "error.msg.loan..creditorotativo.first.repayment.date.must.be.day.1.10.20",
+                                "Disbursement date must be 1, 10 or 20");
+                    }
                 }
             }
 
@@ -5225,11 +5234,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Optional<LoanDisbursementDetails> loanDisbursementDetailsOpt = loanDisbursementDetailsRepository
                     .findByLoanIdAndExpectedDisbursementDateAndPrincipal(loan.getId(), actualDisbursementDate, principal);
 
+            Long nrOfDisbursalsSoFar = loanDisbursementDetailsRepository.findAllByLoanId(loan.getId()).stream()
+                    .filter(p -> p.getActualDisbursementDate() != null).count();
+
             if (loanDisbursementDetailsOpt.isEmpty()) {
-                LoanDisbursementDetails details = new LoanDisbursementDetails(actualDisbursementDate, actualDisbursementDate, principal,
-                        null, false);
-                details.updateLoan(loan);
-                loanDisbursementDetailsRepository.saveAndFlush(details);
+                if (nrOfDisbursalsSoFar.compareTo(1L) >= 0) {
+                    LoanDisbursementDetails details = new LoanDisbursementDetails(actualDisbursementDate, actualDisbursementDate, principal,
+                            null, false);
+                    details.updateLoan(loan);
+                    loanDisbursementDetailsRepository.saveAndFlush(details);
+                }
 
                 loan = this.loanAssembler.assembleFrom(loan.getId());
 
