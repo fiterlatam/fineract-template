@@ -127,6 +127,14 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                                     BigDecimal::add);
                             final BigDecimal totalPaid = list.stream().map(LoanDocumentData::getTotalPaid).reduce(BigDecimal.ZERO,
                                     BigDecimal::add);
+                            final BigDecimal penaltyChargesVatPaid = list.stream().map(LoanDocumentData::getPenaltyChargesVatPaid)
+                                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                            final BigDecimal mandatoryInsuranceVatPaid = list.stream().map(LoanDocumentData::getMandatoryInsuranceVatPaid)
+                                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                            final BigDecimal voluntaryInsuranceVatPaid = list.stream().map(LoanDocumentData::getVoluntaryInsuranceVatPaid)
+                                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                            final BigDecimal honorariosVatPaid = list.stream().map(LoanDocumentData::getHonorariosVatPaid)
+                                    .reduce(BigDecimal.ZERO, BigDecimal::add);
                             final Integer loansCount = list.size();
                             final LoanDocumentData loanDocumentData = list.get(0);
                             return LoanDocumentData.builder().clientIdNumber(loanDocumentData.getClientIdNumber())
@@ -148,10 +156,13 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                                     .overdueSinceDate(loanDocumentData.getOverdueSinceDate())
                                     .daysInArrears(loanDocumentData.getDaysInArrears()).interestPaid(interestPaid)
                                     .penaltyChargesPaid(penaltyChargesPaid).mandatoryInsurancePaid(mandatoryInsurancePaid)
-                                    .voluntaryInsurancePaid(voluntaryInsurancePaid).honorariosPaid(honorariosPaid).totalPaid(totalPaid)
-                                    .loansCount(loansCount).firstDayOfMonth(firstDayOfMonth).secondLastDayOfMonth(secondLastDayOfMonth)
-                                    .lastDayOfMonth(lastDayOfMonth).loanProductName(loanDocumentData.getLoanProductName())
-                                    .companyNIT(loanDocumentData.getCompanyNIT()).companyDocType(loanDocumentData.getCompanyDocType())
+                                    .voluntaryInsurancePaid(voluntaryInsurancePaid).honorariosPaid(honorariosPaid)
+                                    .penaltyChargesVatPaid(penaltyChargesVatPaid).mandatoryInsuranceVatPaid(mandatoryInsuranceVatPaid)
+                                    .voluntaryInsuranceVatPaid(voluntaryInsuranceVatPaid).honorariosVatPaid(honorariosVatPaid)
+                                    .totalPaid(totalPaid).loansCount(loansCount).firstDayOfMonth(firstDayOfMonth)
+                                    .secondLastDayOfMonth(secondLastDayOfMonth).lastDayOfMonth(lastDayOfMonth)
+                                    .loanProductName(loanDocumentData.getLoanProductName()).companyNIT(loanDocumentData.getCompanyNIT())
+                                    .companyDocType(loanDocumentData.getCompanyDocType())
                                     .companyDeptCode(loanDocumentData.getCompanyDeptCode())
                                     .companyDeptName(loanDocumentData.getCompanyDeptName())
                                     .companyCityCode(loanDocumentData.getCompanyCityCode())
@@ -477,6 +488,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                     	mlt."penaltyCharges" AS "penaltyChargesPaid",
                     	mlt."penaltyChargesVat" AS "penaltyChargesVatPaid",
                     	mlt."totalPaid" AS "totalPaid",
+                    	mlt."transactionIds" AS "transactionIds",
                     	mandatory_insurance_code."codeValue" AS "mandatoryInsuranceCode",
                      	voluntary_insurance_code."codeValue" AS "voluntaryInsuranceCode",
                      	mandatory_insurance_code."codeName" AS "mandatoryInsuranceName",
@@ -494,6 +506,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                     		SELECT
                     			mlt.loan_id AS "loanId",
                     			mlt.id AS "transactionId",
+                                STRING_AGG(mlt.id::TEXT, ',') AS "transactionIds",
                     			mlt.collection_house_id,
                     			SUM(COALESCE(mlt.interest_portion_derived, 0)) AS "interest",
                     			SUM(COALESCE(mandatory_insurance.amount, 0)) AS "mandatoryInsurance",
