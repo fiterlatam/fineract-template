@@ -817,16 +817,16 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                     // addInstallmentIfPenaltyAppliedAfterLastDueDate(loan, lastChargeDate);
 
                     // SU-613 Do not reprocess transactions when penalty charge is added
-                    /*ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions();
-                    if (changedTransactionDetail != null) {
-                        for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings()
-                                .entrySet()) {
-                            loanAccountDomainService.saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.getValue());
-                            accountTransfersWritePlatformService.updateLoanTransaction(mapEntry.getKey(), mapEntry.getValue());
-                        }
-                        // Trigger transaction replayed event
-                        replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
-                    }*/
+                    /*
+                     * ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions(); if
+                     * (changedTransactionDetail != null) { for (final Map.Entry<Long, LoanTransaction> mapEntry :
+                     * changedTransactionDetail.getNewTransactionMappings() .entrySet()) {
+                     * loanAccountDomainService.saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.getValue())
+                     * ; accountTransfersWritePlatformService.updateLoanTransaction(mapEntry.getKey(),
+                     * mapEntry.getValue()); } // Trigger transaction replayed event
+                     * replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
+                     * }
+                     */
                     loan = loanAccountDomainService.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
                 }
 
