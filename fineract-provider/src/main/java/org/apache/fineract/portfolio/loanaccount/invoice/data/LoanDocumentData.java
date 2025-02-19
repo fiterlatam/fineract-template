@@ -212,14 +212,14 @@ public class LoanDocumentData {
         // Static values for specified fields
         facturaElectronicaMensual.setCod_pais_tienda("CO");
         facturaElectronicaMensual.setNom_pais_tienda("COLOMBIA");
-        facturaElectronicaMensual.setDep_tienda("5");
+        facturaElectronicaMensual.setDep_tienda("05");
         facturaElectronicaMensual.setNom_dep_tienda("ANTIOQUIA");
-        facturaElectronicaMensual.setCod_mun_tienda("5001");
+        facturaElectronicaMensual.setCod_mun_tienda("05001");
         facturaElectronicaMensual.setCiudad_tienda("MEDELLIN");
         facturaElectronicaMensual.setDireccion_tienda("Calle 4 SUR 43AA 30 OFICINA 901");
         facturaElectronicaMensual.setTel_tienda("18000187373");
         facturaElectronicaMensual.setNombre_tienda(null);
-        facturaElectronicaMensual.setEmail_tienda(null);
+        facturaElectronicaMensual.setEmail_tienda("impuestos@gco.com.co");
 
         return facturaElectronicaMensual;
     }

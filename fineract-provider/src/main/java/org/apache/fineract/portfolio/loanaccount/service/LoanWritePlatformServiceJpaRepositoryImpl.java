@@ -4949,10 +4949,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         final BigDecimal totalImpuestoItem = facturaElectronicaMensuals.stream().map(FacturaElectronicaMensual::getImpuesto_item)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        final BigDecimal porcentajeImpuestoItem = facturaElectronicaMensuals.stream().filter(f -> f.getPorcentaje_impuesto_item() != null)
+                .findFirst().orElse(new FacturaElectronicaMensual()).getPorcentaje_impuesto_item();
         for (final FacturaElectronicaMensual facturaElectronicaMensualItem : facturaElectronicaMensuals) {
             final BigDecimal totalValue = facturaElectronicaMensualItem.getTotal().add(totalImpuestoItem);
             facturaElectronicaMensualItem.setTotal(totalValue);
             facturaElectronicaMensualItem.setImpuesto(totalImpuestoItem);
+            facturaElectronicaMensualItem.setPorcentaje_impuesto(porcentajeImpuestoItem);
         }
         this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
         this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
