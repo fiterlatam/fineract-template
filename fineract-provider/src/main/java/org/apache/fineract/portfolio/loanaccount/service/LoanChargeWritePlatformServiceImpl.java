@@ -815,7 +815,9 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                     // No need to add new penalty installment. This has been handled in
                     // SingleLoanChargeRepaymentScheduleProcessingWrapper.reprocess
                     // addInstallmentIfPenaltyAppliedAfterLastDueDate(loan, lastChargeDate);
-                    ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions();
+
+                    // SU-613 Do not reprocess transactions when penalty charge is added
+                    /*ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions();
                     if (changedTransactionDetail != null) {
                         for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings()
                                 .entrySet()) {
@@ -824,7 +826,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                         }
                         // Trigger transaction replayed event
                         replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
-                    }
+                    }*/
                     loan = loanAccountDomainService.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
                 }
 
