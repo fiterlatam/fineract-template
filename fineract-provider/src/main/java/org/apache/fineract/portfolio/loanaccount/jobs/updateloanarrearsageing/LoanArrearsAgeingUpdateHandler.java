@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
@@ -35,11 +34,9 @@ import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingR
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingEnum;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
+import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReason;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
@@ -58,7 +55,11 @@ import org.springframework.stereotype.Component;
 public class LoanArrearsAgeingUpdateHandler {
 
     public static final String BLOCKING_REASON_NAME = BlockingReasonSettingEnum.CLIENT_MORA.getDatabaseString();
+    private static final String BLOCKING_COMMENT = "Cliente bloqueado por defecto";
+    private static final String UNBLOCKING_COMMENT = "Cliente desbloqueado por defecto";//
+    private static final String BLOCKING_REASON_LISTAS_DE_CONTROL = "LISTAS DE CONTROL";
     private final JdbcTemplate jdbcTemplate;
+    private final PlatformSecurityContext context;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final LoanArrearsAgingService loanArrearsAgingService;
     private final ClientWritePlatformService clientWritePlatformService;
@@ -311,74 +312,125 @@ public class LoanArrearsAgeingUpdateHandler {
 
     private void handleBlockingAfterAreasAging() {
 
-        final String query = """
-                    select distinct l.client_id from m_loan_arrears_aging mlaa
+        log.info("Blocking clients with active loans in arrears");
+        log.info("Inserting records into m_client_blocking_reason table for clients with active loans in arrears");
+        String query = """
+                    insert into m_client_blocking_reason (client_id, blocking_reason_id, block_date, block_comment, block_by, created_by)
+                    select distinct l.client_id, (select id from m_blocking_reason_setting where name_of_reason = ? and level = ?), current_date,
+                    ?, ?, ?
+                    from m_loan_arrears_aging mlaa
                     inner join m_loan l on l.id = mlaa.loan_id
                     left join m_client_blocking_reason mcbr
                     on mcbr.client_id = l.client_id
                     left join m_blocking_reason_setting mbrs
                     on mbrs.id = mcbr.blocking_reason_id and mbrs.name_of_reason = ?
-                    where mbrs.id is null;
+                    where mcbr.id is null
                 """;
+        this.jdbcTemplate.update(query, BLOCKING_REASON_NAME, BlockLevel.CLIENT.toString(), BLOCKING_COMMENT,
+                this.context.authenticatedUser().getId(), this.context.authenticatedUser().getId(), BLOCKING_REASON_NAME);
 
-        final List<Long> clientIds = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
-
-        for (Long clientId : clientIds) {
-
-            clientWritePlatformService.blockClientWithInActiveLoan(clientId, BLOCKING_REASON_NAME, "Cliente bloqueado por defecto", false);
-        }
-
+        log.info("Updating m_client table to set the block_status_id to the blocking reason id for clients with active loans in arrears");
+        query = """
+                    update m_client set blocking_reason_id = (select id from m_blocking_reason_setting where name_of_reason = ? and level = ?)
+                    where id in (
+                        select distinct l.client_id
+                        from m_loan_arrears_aging mlaa
+                        inner join m_loan l on l.id = mlaa.loan_id
+                        inner join m_client on m_client.id = l.client_id
+                        left join m_client_blocking_reason mcbr
+                        on mcbr.client_id = l.client_id
+                        left join m_blocking_reason_setting mbrs
+                        on mbrs.id = mcbr.blocking_reason_id and mbrs.name_of_reason = ?
+                    )
+                """;
+        this.jdbcTemplate.update(query, BLOCKING_REASON_NAME, BlockLevel.CLIENT.toString(), BLOCKING_REASON_NAME);
+        log.info("Done blocking clients with active loans in arrears");
     }
 
     private void handleUnBlockingAfterArrearsAging() {
 
-        final String query = """
-                   SELECT DISTINCT mcbr.client_id
-                   FROM m_client_blocking_reason mcbr
-                   JOIN m_blocking_reason_setting mbrs ON mbrs.id = mcbr.blocking_reason_id
-                   AND mbrs.name_of_reason = ?
-                   WHERE mcbr.client_id NOT IN (
-                       SELECT DISTINCT client_id
-                       FROM m_loan_arrears_aging
-                   );
+        log.info("Unblocking clients with no active loans in arrears");
+        log.info(
+                "Updating m_client_blocking_reason table to set the unblock_date to current date for clients with no active loans in arrears");
+        String query = """
+                update m_client_blocking_reason set unblock_date = current_date, unblock_comment = ?, unblock_by = ?
+                where client_id in (
+                    SELECT DISTINCT mcbr.client_id
+                    FROM m_client_blocking_reason mcbr
+                    JOIN m_blocking_reason_setting mbrs ON mbrs.id = mcbr.blocking_reason_id
+                    AND mbrs.name_of_reason = ?
+                    WHERE mcbr.client_id NOT IN (
+                        SELECT DISTINCT client_id
+                        FROM m_loan_arrears_aging
+                    )
+                )
                 """;
+        this.jdbcTemplate.update(query, UNBLOCKING_COMMENT, this.context.authenticatedUser().getId(), BLOCKING_REASON_NAME);
+        log.info("Updating m_client table to set the block_status_id to null for clients with no active loans in arrears");
+        query = """
+                update m_client set blocking_reason_id = null
+                where id in (
+                    SELECT DISTINCT mcbr.client_id
+                    FROM m_client_blocking_reason mcbr
+                    JOIN m_blocking_reason_setting mbrs ON mbrs.id = mcbr.blocking_reason_id
+                    AND mbrs.name_of_reason = ?
+                    WHERE mcbr.client_id NOT IN (
+                        SELECT DISTINCT client_id
+                        FROM m_loan_arrears_aging
+                    )
+                and blocking_reason_id = (select id from m_blocking_reason_setting where name_of_reason = ? and level = ?)
+                )
+                """;
+        this.jdbcTemplate.update(query, BLOCKING_REASON_NAME, BLOCKING_REASON_NAME, BlockLevel.CLIENT.toString());
+        log.info("Done unblocking clients with no active loans in arrears");
 
-        final List<Long> clientIds = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
-        for (Long clientId : clientIds) {
-            clientWritePlatformService.unblockClientBlockingReason(clientId, DateUtils.getLocalDateOfTenant(), BLOCKING_REASON_NAME,
-                    "Cliente desbloqueado por defecto");
-        }
-
+        // Remove clients from m_client_block_list table
+        query = """
+                delete from m_client_block_list where client_id in (
+                        SELECT DISTINCT client_id
+                        FROM m_loan_arrears_aging
+                ) and (SELECT count(id) FROM m_blocking_reason_setting where name_of_reason = ? and level = ?) > 0
+                """;
+        this.jdbcTemplate.update(query, BLOCKING_REASON_LISTAS_DE_CONTROL, BlockLevel.CLIENT.toString());
     }
 
     private void handleBlockingReasonCredit() {
         BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
                 .getSingleBlockingReasonSettingByReason(BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString());
-        final String query = """
-                    SELECT distinct mlaa.loan_id FROM m_loan_arrears_aging mlaa
+
+        log.info("Blocking active loans in arrears");
+        log.info("Inserting records into m_credit_blocking_reason table for loans with active loans in arrears");
+        String query = """
+                    insert into m_credit_blocking_reason (loan_id, blocking_reason_id, "comment", is_active, block_date, createdby_id)
+                    select distinct mlaa.loan_id, ?, ?,
+                    true, current_date, ?
+                    from m_loan_arrears_aging mlaa
                     INNER JOIN m_loan l on l.id = mlaa.loan_id
                     LEFT JOIN m_credit_blocking_reason  mcbr on mcbr.loan_id  = l.id
                     LEFT join m_blocking_reason_setting mbrs
                     on mbrs.id = mcbr.blocking_reason_id and mbrs.name_of_reason = ?
-                    ;
+                    where mcbr.id is null
                 """;
+        this.jdbcTemplate.update(query, blockingReasonSetting.getId(), BLOCKING_COMMENT, this.context.authenticatedUser().getId(),
+                BLOCKING_REASON_NAME);
 
-        final List<Long> loans = jdbcTemplate.queryForList(query, Long.class, BLOCKING_REASON_NAME);
-        for (Long loanId : loans) {
-            final Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository.findExistingBlockingReason(loanId,
-                    blockingReasonSetting.getId());
-            if (!existingBlockingReason.isPresent()) {
-                final Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
-                if (loan.getLoanCustomizationDetail().getBlockStatus() == null
-                        || loan.getLoanCustomizationDetail().getBlockStatus().getPriority() > blockingReasonSetting.getPriority()) {
-                    loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
-                }
-                final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
-                        "Cliente bloqueado por defecto", DateUtils.getLocalDateOfTenant());
-                loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
-            }
-
-        }
+        log.info("Updating m_loan table to set the block_status_id to the blocking reason id for loans with active loans in arrears");
+        query = """
+                    update m_loan set block_status_id = ?
+                    where id in (
+                        select distinct mlaa.loan_id
+                        from m_loan_arrears_aging mlaa
+                        INNER JOIN m_loan l on l.id = mlaa.loan_id
+                        LEFT JOIN m_credit_blocking_reason  mcbr on mcbr.loan_id  = l.id
+                        LEFT join m_blocking_reason_setting mbrs
+                        on mbrs.id = mcbr.blocking_reason_id and mbrs.name_of_reason = ?
+                        where mcbr.id is null
+                    )
+                    and (block_status_id is null or block_status_id in (select id from m_blocking_reason_setting where level = ? and priority > ?))
+                """;
+        this.jdbcTemplate.update(query, blockingReasonSetting.getId(), BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString(),
+                blockingReasonSetting.getPriority());
+        log.info("Done blocking active loans in arrears");
     }
 
     private void handleUnblockingReasonCreditAfterArrearsAging() {
