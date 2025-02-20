@@ -1308,7 +1308,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             this.outstandingBalance = this.outstandingBalance.minus(installment.getPrincipal(this.getCurrency()));
 
             // If charge is Capital Pendiente, do not divide by nr of installments
-            if (loanCharge!=null && loanCharge.getCharge().getName().contains(ChargeCustomType.CAPITAL_PENDIENTE_MI_PYME.getRootName())) {
+            if (loanCharge != null && loanCharge.getCharge().getName().contains(ChargeCustomType.CAPITAL_PENDIENTE_MI_PYME.getRootName())) {
                 numberOfInstallments = BigDecimal.ONE;
             }
 
