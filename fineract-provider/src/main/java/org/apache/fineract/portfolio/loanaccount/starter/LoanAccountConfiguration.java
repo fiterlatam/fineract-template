@@ -464,8 +464,7 @@ public class LoanAccountConfiguration {
             BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper,
             FacturaElectronicMensualRepository facturaElectronicMensualRepository,
             LoanProductParameterizationRepository productParameterizationRepository,
-            CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository,
-            DelinquencyReadPlatformService delinquencyReadPlatformService) {
+            CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
@@ -484,7 +483,7 @@ public class LoanAccountConfiguration {
                 channelReadWritePlatformService, platformSecurityContext, globalConfigurationRepository, loanBlockWritePlatformService,
                 loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository, loanScheduleFactory,
                 blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository, productParameterizationRepository,
-                customChargeHonorarioMapRepository, delinquencyReadPlatformService);
+                customChargeHonorarioMapRepository);
     }
 
     @Bean

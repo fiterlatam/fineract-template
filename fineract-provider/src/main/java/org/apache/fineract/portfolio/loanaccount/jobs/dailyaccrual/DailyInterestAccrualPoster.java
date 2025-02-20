@@ -34,6 +34,7 @@ public class DailyInterestAccrualPoster {
 
     private List<Long> loanIds;
     private LocalDate accrualDate;
+    private Long minimumDaysInArrearsToSuspendLoanAccount;
     private final LoanWritePlatformService loanWritePlatformService;
 
     public void postDailyInterestAccruals() throws JobExecutionException {
@@ -42,7 +43,8 @@ public class DailyInterestAccrualPoster {
             log.info("Running Devengo de Interés diario for loans batch with maximum loanId {}", loanIds.get(loanIds.size() - 1));
             for (Long loanId : loanIds) {
                 try {
-                    this.loanWritePlatformService.persistDailyInterestAccrual(loanId, accrualDate);
+                    this.loanWritePlatformService.persistDailyInterestAccrual(loanId, accrualDate,
+                            minimumDaysInArrearsToSuspendLoanAccount);
                 } catch (Exception e) {
                     log.error("Failed to run Daily Accrual for loan id {}", loanId, e);
                     errors.add(e);
