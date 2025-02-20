@@ -1140,15 +1140,16 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                 INNER JOIN m_loan ml on ml.id = mc.entity_id \
                 INNER JOIN m_client mcl on mcl.id=ml.client_id \
                 set mc.recurrence = (case  \
-                when ml.term_period_frequency_enum=0 then concat( 'FREQ=DAILY;',:dayRange) \
-                when ml.term_period_frequency_enum=1 then concat( 'FREQ=WEEKLY;',:dayRange) \
-                when ml.term_period_frequency_enum=2 then concat( 'FREQ=MONTHLY;',:dayRange) \
-                when ml.term_period_frequency_enum=3 then concat( 'FREQ=YEARLY;',:dayRange) \
-                ELSE concat( 'FREQ=MONTHLY;',:dayRange) END\
-                ) where mcl.id in(select client_id from m_group_client where group_id = :group_id) 
+                when ml.term_period_frequency_enum=0 then concat( 'FREQ=DAILY;',?) \
+                when ml.term_period_frequency_enum=1 then concat( 'FREQ=WEEKLY;',?) \
+                when ml.term_period_frequency_enum=2 then concat( 'FREQ=MONTHLY;',?) \
+                when ml.term_period_frequency_enum=3 then concat( 'FREQ=YEARLY;',?) \
+                ELSE concat( 'FREQ=MONTHLY;',?) END\
+                ) where mcl.id in(select client_id from m_group_client where group_id = ?) 
                 and mci.entity_type_enum = 3 and ml.loan_status_id <=300 
                 """;
-        this.jdbcTemplate.update(updateLoanRanges, "%s%s".formatted(meetingRange, meetingDayCode), groupId);
+        String rangeDay = "%s%s".formatted(meetingRange, meetingDayCode);
+        this.jdbcTemplate.update(updateLoanRanges, rangeDay,rangeDay,rangeDay,rangeDay,rangeDay, groupId);
 
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
