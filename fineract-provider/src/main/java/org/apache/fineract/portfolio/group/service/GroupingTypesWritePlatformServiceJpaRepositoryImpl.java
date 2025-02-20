@@ -1130,12 +1130,65 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
         this.jdbcTemplate.update("UPDATE m_client mc JOIN m_group_client mgc ON mgc.client_id = mc.id " +
                 "JOIN m_group mg ON mg.id = mgc.group_id SET mc.office_id = ? WHERE mg.id = ?; ", newCenter.getOffice().getId(), groupId);
 
+        //update ranges of loans
+        CodeValueData codeValueData = this.codeValueReadPlatformService.retrieveCodeValue(Long.valueOf(group.getMeetingDay()));
+        String meetingDayCode = resolveMeetingDay(codeValueData.getName());
+        String meetingRange = resolveMeetingRange(group.getMeetingStart());
+        String updateLoanRanges = """
+                update m_calendar mc \
+                inner join m_calendar_instance mci on mc.id = mci.calendar_id \
+                INNER JOIN m_loan ml on ml.id = mc.entity_id \
+                INNER JOIN m_client mcl on mcl.id=ml.client_id \
+                set mc.recurrence = (case  \
+                when ml.term_period_frequency_enum=0 then concat( 'FREQ=DAILY;',:dayRange) \
+                when ml.term_period_frequency_enum=1 then concat( 'FREQ=WEEKLY;',:dayRange) \
+                when ml.term_period_frequency_enum=2 then concat( 'FREQ=MONTHLY;',:dayRange) \
+                when ml.term_period_frequency_enum=3 then concat( 'FREQ=YEARLY;',:dayRange) \
+                ELSE concat( 'FREQ=MONTHLY;',:dayRange) END\
+                ) where mcl.id in(select client_id from m_group_client where group_id = :group_id) 
+                and mci.entity_type_enum = 3 and ml.loan_status_id <=300 
+                """;
+        this.jdbcTemplate.update(updateLoanRanges, "%s%s".formatted(meetingRange, meetingDayCode), groupId);
+
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withOfficeId(newCenter.officeId()) //
                 .withGroupId(newCenterId) //
                 .withEntityId(groupId) //
                 .build();
+    }
+
+    private String resolveMeetingRange(Integer meetingStart) {
+        switch (meetingStart)
+        {
+            case 1:
+                return "BYSETPOS=1;";
+            case 8:
+                return "BYSETPOS=2;";
+            case 15:
+                return "BYSETPOS=3;";
+            case 22:
+                return "BYSETPOS=4;";
+            default:
+                return "BYSETPOS=1;";
+        }
+    }
+
+    private String resolveMeetingDay(String name) {
+        switch (name) {
+            case "Lunes":
+                return "BYDAY=TU";
+            case "Martes":
+                return "TU";
+            case "Miércoles":
+                return "WE";
+            case "Jueves":
+                return "TH";
+            case "Viernes":
+                return "FR";
+            default:
+                return "BYDAY=MO";
+        }
     }
 
     @Override
