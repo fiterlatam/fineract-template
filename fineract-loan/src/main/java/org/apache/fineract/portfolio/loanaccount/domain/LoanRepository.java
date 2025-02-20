@@ -104,7 +104,12 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
 
     String FIND_ALL_LOAN_IDS_BY_STATUS_ID = "SELECT loan.id FROM Loan loan WHERE loan.loanStatus = :statusId";
 
-    String UPDATE_LOAN_REPAYMENTS_BY_LOAN_ID = "UPDATE m_loan SET number_of_repayments = number_of_repayments + ?1, term_frequency = term_frequency + ?2 WHERE id = ?3";
+    String INCREASE_LOAN_REPAYMENTS_BY_LOAN_ID = "UPDATE m_loan SET number_of_repayments = number_of_repayments + ?1, term_frequency = term_frequency + ?2 WHERE id = ?3";
+    String UPDATE_LOAN_REPAYMENTS_BY_LOAN_ID = "UPDATE m_loan SET number_of_repayments = ?1, term_frequency = ?2 WHERE id = ?3";
+
+    @Modifying
+    @Query(value = INCREASE_LOAN_REPAYMENTS_BY_LOAN_ID, nativeQuery = true)
+    int increaseRepaymentsAndTermFrequency(Integer nrOfRepaymentsToAdd, Integer nrOfTermFrequency, Long loanId);
 
     @Modifying
     @Query(value = UPDATE_LOAN_REPAYMENTS_BY_LOAN_ID, nativeQuery = true)

@@ -5246,13 +5246,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         Long nrOfDisbursalsSoFar = loanDisbursementDetailsRepository.findAllByLoanId(loan.getId()).stream()
                 .filter(p -> p.getActualDisbursementDate() != null).count();
 
-        if (loanDisbursementDetailsOpt.isEmpty()) {
-            if (nrOfDisbursalsSoFar.compareTo(1L) >= 0) {
-                LoanDisbursementDetails details = new LoanDisbursementDetails(actualDisbursementDate, actualDisbursementDate, principal,
-                        null, false);
-                details.updateLoan(loan);
-                loanDisbursementDetailsRepository.saveAndFlush(details);
-            }
+        if (loanDisbursementDetailsOpt.isEmpty() && nrOfDisbursalsSoFar.compareTo(1L) >= 0) {
+            LoanDisbursementDetails details = new LoanDisbursementDetails(actualDisbursementDate, actualDisbursementDate, principal, null,
+                    false);
+            details.updateLoan(loan);
+            loanDisbursementDetailsRepository.saveAndFlush(details);
 
             loan = this.loanAssembler.assembleFrom(loan.getId());
             Long loanRescheduleReasonId = getLoanRescheduleReasonId();
@@ -5280,7 +5278,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         if (nrOfInstallmentsToAdd.compareTo(0) == 0) {
             loan.removeLoanRepaymentScheduleInstallment(loan.getLoanRepaymentScheduleInstallmentsSize());
-            loanRepository.updateRepaymentsAndTermFrequency(-1, -1, loan.getId());
+            loanRepository.increaseRepaymentsAndTermFrequency(-1, -1, loan.getId());
             loanRepository.save(loan);
             nrOfInstallmentsToAdd = 1;
         }
@@ -5323,7 +5321,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     Integer nrOfInstallmentsToAdd = productNrOfRepayments - notPaidInstallmentNr.intValue();
 
                     if (nrOfInstallmentsToAdd.compareTo(0) == 0) {
-                        loanRepository.updateRepaymentsAndTermFrequency(1, 1, loan.getId());
+                        loanRepository.updateRepaymentsAndTermFrequency(productNrOfRepayments, productNrOfRepayments, loan.getId());
                     }
 
                     loan.updateLoanSummaryDerivedFields();
