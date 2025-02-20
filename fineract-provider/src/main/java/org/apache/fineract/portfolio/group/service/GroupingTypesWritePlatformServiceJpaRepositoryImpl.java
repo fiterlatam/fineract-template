@@ -1137,7 +1137,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
         String updateLoanRanges = """
                 update m_calendar mc \
                 inner join m_calendar_instance mci on mc.id = mci.calendar_id \
-                INNER JOIN m_loan ml on ml.id = mc.entity_id \
+                INNER JOIN m_loan ml on ml.id = mci.entity_id \
                 INNER JOIN m_client mcl on mcl.id=ml.client_id \
                 set mc.recurrence = (case  \
                 when ml.term_period_frequency_enum=0 then concat( 'FREQ=DAILY;',?) \
