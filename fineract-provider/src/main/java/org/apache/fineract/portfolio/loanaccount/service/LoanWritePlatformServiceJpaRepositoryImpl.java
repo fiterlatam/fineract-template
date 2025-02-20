@@ -4228,537 +4228,554 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final List<LoanDocumentData> loanDocumentDataList = this.jdbcTemplate.query(transactionSQL, transactionMapper, loanTransactionId);
         if (!loanDocumentDataList.isEmpty()) {
             final LoanDocumentData loanDocumentData = loanDocumentDataList.get(0);
-            final Loan loan = loanTransaction.getLoan();
-            BigDecimal interestPaidRemaining = loanDocumentData.getInterestPaid();
-            BigDecimal mandatoryInsurancePaidRemaining = loanDocumentData.getMandatoryInsurancePaid();
-            BigDecimal mandatoryInsuranceVatPaidRemaining = loanDocumentData.getMandatoryInsuranceVatPaid();
-            BigDecimal voluntaryInsurancePaidRemaining = loanDocumentData.getVoluntaryInsurancePaid();
-            BigDecimal voluntaryInsuranceVatPaidRemaining = loanDocumentData.getVoluntaryInsuranceVatPaid();
-            BigDecimal honorariosPaidRemaining = loanDocumentData.getHonorariosPaid();
-            BigDecimal honorariosVatPaidRemaining = loanDocumentData.getHonorariosVatPaid();
-            BigDecimal penaltyChargesPaidRemaining = loanDocumentData.getPenaltyChargesPaid();
-            BigDecimal penaltyChargesVatPaidRemaining = loanDocumentData.getPenaltyChargesVatPaid();
-            final Set<LoanTransactionData> invoicedByAccrualTransactionDataSet = new HashSet<>();
-            final Set<LoanTransaction> invoicedByAccrualTransactionSet = new HashSet<>();
-            final List<LoanTransaction> accrualTransactions = loan.retrieveListOfAccrualTransactions().stream()
-                    .filter(ltx -> Objects.isNull(ltx.getInvoicedByTransactionId()) || ltx.isPartiallyInvoiced()).toList();
-            for (final LoanTransaction accrualTransaction : accrualTransactions) {
-                final boolean occurredOnSuspendedAccount = accrualTransaction.hasOccurredOnSuspendedAccount();
-                final boolean isPartiallyInvoicedTransaction = accrualTransaction.isPartiallyInvoiced();
-                final LoanTransactionData loanTransactionData = loanReadPlatformService.retrieveLoanTransaction(loan.getId(),
-                        accrualTransaction.getId());
-                loanTransactionData.setOccurredOnSuspendedAccount(occurredOnSuspendedAccount);
-                loanTransactionData.setPartiallyInvoiced(isPartiallyInvoicedTransaction);
-                final LoanChargePaidByData loanChargePaidByData = loanTransactionData.getLoanChargePaidBySummary();
-                final BigDecimal penaltyPortion = loanChargePaidByData.getPenaltyPortion();
-                final BigDecimal penaltyVatPortion = loanChargePaidByData.getPenaltyVatPortion();
-                final BigDecimal honorariosPortion = loanChargePaidByData.getHonorariosPortion();
-                final BigDecimal honorariosVatPortion = loanChargePaidByData.getHonorariosVatPortion();
-                final BigDecimal mandatoryInsurancePortion = loanChargePaidByData.getMandatoryInsurancePortion();
-                final BigDecimal mandatoryInsuranceVatPortion = loanChargePaidByData.getMandatoryInsuranceVatPortion();
-                final BigDecimal voluntaryInsurancePortion = loanChargePaidByData.getVoluntaryInsurancePortion();
-                final BigDecimal voluntaryInsuranceVatPortion = loanChargePaidByData.getVoluntaryInsuranceVatPortion();
-                final BigDecimal interestPortion = loanTransactionData.getInterestPortion();
+            loanDocumentData.setFirstDayOfMonth(firstDayOfMonth);
+            loanDocumentData.setSecondLastDayOfMonth(secondLastDayOfMonth);
+            loanDocumentData.setLastDayOfMonth(lastDayOfMonth);
+            loanDocumentData.setLoanTransactionId(loanTransactionId);
+            if (!loanTransactionType.isCreditNote()) {
+                final Loan loan = loanTransaction.getLoan();
+                BigDecimal interestPaidRemaining = loanDocumentData.getInterestPaid();
+                BigDecimal mandatoryInsurancePaidRemaining = loanDocumentData.getMandatoryInsurancePaid();
+                BigDecimal mandatoryInsuranceVatPaidRemaining = loanDocumentData.getMandatoryInsuranceVatPaid();
+                BigDecimal voluntaryInsurancePaidRemaining = loanDocumentData.getVoluntaryInsurancePaid();
+                BigDecimal voluntaryInsuranceVatPaidRemaining = loanDocumentData.getVoluntaryInsuranceVatPaid();
+                BigDecimal honorariosPaidRemaining = loanDocumentData.getHonorariosPaid();
+                BigDecimal honorariosVatPaidRemaining = loanDocumentData.getHonorariosVatPaid();
+                BigDecimal penaltyChargesPaidRemaining = loanDocumentData.getPenaltyChargesPaid();
+                BigDecimal penaltyChargesVatPaidRemaining = loanDocumentData.getPenaltyChargesVatPaid();
+                final Set<LoanTransactionData> invoicedByAccrualTransactionDataSet = new HashSet<>();
+                final Set<LoanTransaction> invoicedByAccrualTransactionSet = new HashSet<>();
+                final List<LoanTransaction> accrualTransactions = loan.retrieveListOfAccrualTransactions().stream()
+                        .filter(ltx -> Objects.isNull(ltx.getInvoicedByTransactionId()) || ltx.isPartiallyInvoiced()).toList();
+                for (final LoanTransaction accrualTransaction : accrualTransactions) {
+                    final boolean occurredOnSuspendedAccount = accrualTransaction.hasOccurredOnSuspendedAccount();
+                    final boolean isPartiallyInvoicedTransaction = accrualTransaction.isPartiallyInvoiced();
+                    final LoanTransactionData loanTransactionData = loanReadPlatformService.retrieveLoanTransaction(loan.getId(),
+                            accrualTransaction.getId());
+                    loanTransactionData.setOccurredOnSuspendedAccount(occurredOnSuspendedAccount);
+                    loanTransactionData.setPartiallyInvoiced(isPartiallyInvoicedTransaction);
+                    final LoanChargePaidByData loanChargePaidByData = loanTransactionData.getLoanChargePaidBySummary();
+                    final BigDecimal penaltyPortion = loanChargePaidByData.getPenaltyPortion();
+                    final BigDecimal penaltyVatPortion = loanChargePaidByData.getPenaltyVatPortion();
+                    final BigDecimal honorariosPortion = loanChargePaidByData.getHonorariosPortion();
+                    final BigDecimal honorariosVatPortion = loanChargePaidByData.getHonorariosVatPortion();
+                    final BigDecimal mandatoryInsurancePortion = loanChargePaidByData.getMandatoryInsurancePortion();
+                    final BigDecimal mandatoryInsuranceVatPortion = loanChargePaidByData.getMandatoryInsuranceVatPortion();
+                    final BigDecimal voluntaryInsurancePortion = loanChargePaidByData.getVoluntaryInsurancePortion();
+                    final BigDecimal voluntaryInsuranceVatPortion = loanChargePaidByData.getVoluntaryInsuranceVatPortion();
+                    final BigDecimal interestPortion = loanTransactionData.getInterestPortion();
 
-                final PartialInvoicedTransaction partialInvoicedTransaction = new PartialInvoicedTransaction();
-                partialInvoicedTransaction.setRepaymentTransaction(loanTransaction);
-                partialInvoicedTransaction.setAccrualTransaction(accrualTransaction);
+                    final PartialInvoicedTransaction partialInvoicedTransaction = new PartialInvoicedTransaction();
+                    partialInvoicedTransaction.setRepaymentTransaction(loanTransaction);
+                    partialInvoicedTransaction.setAccrualTransaction(accrualTransaction);
 
-                if (!accrualTransaction.isPartiallyInvoiced()) {
-                    if (interestPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && interestPortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (interestPaidRemaining.compareTo(interestPortion) >= 0) {
-                            interestPaidRemaining = interestPaidRemaining.subtract(interestPortion);
-                        } else {
-                            accrualTransaction.markAsPartiallyInvoiced();
-                            loanTransactionData.markAsPartiallyInvoiced();
-                            partialInvoicedTransaction.setInterest(interestPaidRemaining);
-                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                            interestPaidRemaining = BigDecimal.ZERO;
-                        }
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (penaltyChargesPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && penaltyPortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (penaltyChargesPaidRemaining.compareTo(penaltyPortion) >= 0) {
-                            penaltyChargesPaidRemaining = penaltyChargesPaidRemaining.subtract(penaltyPortion);
-                        } else {
-                            accrualTransaction.markAsPartiallyInvoiced();
-                            loanTransactionData.markAsPartiallyInvoiced();
-                            partialInvoicedTransaction.setPenalty(penaltyChargesPaidRemaining);
-                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                            penaltyChargesPaidRemaining = BigDecimal.ZERO;
-                        }
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (penaltyChargesVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && penaltyVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (penaltyChargesVatPaidRemaining.compareTo(penaltyVatPortion) >= 0) {
-                            penaltyChargesVatPaidRemaining = penaltyChargesVatPaidRemaining.subtract(penaltyVatPortion);
-                        } else {
-                            accrualTransaction.markAsPartiallyInvoiced();
-                            loanTransactionData.markAsPartiallyInvoiced();
-                            partialInvoicedTransaction.setPenaltyVat(penaltyChargesVatPaidRemaining);
-                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                            penaltyChargesVatPaidRemaining = BigDecimal.ZERO;
-                        }
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (mandatoryInsurancePaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                            && mandatoryInsurancePortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (mandatoryInsurancePaidRemaining.compareTo(mandatoryInsurancePortion) >= 0) {
-                            mandatoryInsurancePaidRemaining = mandatoryInsurancePaidRemaining.subtract(mandatoryInsurancePortion);
-                        } else {
-                            accrualTransaction.markAsPartiallyInvoiced();
-                            loanTransactionData.markAsPartiallyInvoiced();
-                            partialInvoicedTransaction.setMandatoryInsurance(mandatoryInsurancePaidRemaining);
-                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                            mandatoryInsurancePaidRemaining = BigDecimal.ZERO;
-                        }
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (mandatoryInsuranceVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                            && mandatoryInsuranceVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (mandatoryInsuranceVatPaidRemaining.compareTo(mandatoryInsuranceVatPortion) >= 0) {
-                            mandatoryInsuranceVatPaidRemaining = mandatoryInsuranceVatPaidRemaining.subtract(mandatoryInsuranceVatPortion);
-                        } else {
-                            accrualTransaction.markAsPartiallyInvoiced();
-                            loanTransactionData.markAsPartiallyInvoiced();
-                            partialInvoicedTransaction.setMandatoryInsuranceVat(mandatoryInsuranceVatPaidRemaining);
-                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                            mandatoryInsuranceVatPaidRemaining = BigDecimal.ZERO;
-                        }
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (voluntaryInsurancePaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                            && voluntaryInsurancePortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (voluntaryInsurancePaidRemaining.compareTo(voluntaryInsurancePortion) >= 0) {
-                            voluntaryInsurancePaidRemaining = voluntaryInsurancePaidRemaining.subtract(voluntaryInsurancePortion);
-                        } else {
-                            accrualTransaction.markAsPartiallyInvoiced();
-                            loanTransactionData.markAsPartiallyInvoiced();
-                            partialInvoicedTransaction.setVoluntaryInsurance(voluntaryInsurancePaidRemaining);
-                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                            voluntaryInsurancePaidRemaining = BigDecimal.ZERO;
-                        }
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (voluntaryInsuranceVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                            && voluntaryInsuranceVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (voluntaryInsuranceVatPaidRemaining.compareTo(voluntaryInsuranceVatPortion) >= 0) {
-                            voluntaryInsuranceVatPaidRemaining = voluntaryInsuranceVatPaidRemaining.subtract(voluntaryInsuranceVatPortion);
-                        } else {
-                            accrualTransaction.markAsPartiallyInvoiced();
-                            loanTransactionData.markAsPartiallyInvoiced();
-                            partialInvoicedTransaction.setVoluntaryInsuranceVat(voluntaryInsuranceVatPaidRemaining);
-                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                            voluntaryInsuranceVatPaidRemaining = BigDecimal.ZERO;
-                        }
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (honorariosPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && honorariosPortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (honorariosPaidRemaining.compareTo(honorariosPortion) >= 0) {
-                            honorariosPaidRemaining = honorariosPaidRemaining.subtract(honorariosPortion);
-                        } else {
-                            accrualTransaction.markAsPartiallyInvoiced();
-                            loanTransactionData.markAsPartiallyInvoiced();
-                            partialInvoicedTransaction.setHonorarios(honorariosPaidRemaining);
-                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                            honorariosPaidRemaining = BigDecimal.ZERO;
-                        }
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (honorariosVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && honorariosVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (honorariosVatPaidRemaining.compareTo(honorariosVatPortion) >= 0) {
-                            honorariosVatPaidRemaining = honorariosVatPaidRemaining.subtract(honorariosVatPortion);
-                        } else {
-                            accrualTransaction.markAsPartiallyInvoiced();
-                            loanTransactionData.markAsPartiallyInvoiced();
-                            partialInvoicedTransaction.setHonorariosVat(honorariosVatPaidRemaining);
-                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                            honorariosVatPaidRemaining = BigDecimal.ZERO;
-                        }
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-                } else {
-                    final Set<PartialInvoicedTransaction> partialInvoicedTransactions = accrualTransaction.getPartialInvoicedTransactions();
-                    final BigDecimal penaltyPortionAccountedFor = partialInvoicedTransactions.stream()
-                            .map(PartialInvoicedTransaction::getPenalty).reduce(BigDecimal.ZERO, BigDecimal::add);
-                    final BigDecimal penaltyVatPortionAccountedFor = partialInvoicedTransactions.stream()
-                            .map(PartialInvoicedTransaction::getPenaltyVat).reduce(BigDecimal.ZERO, BigDecimal::add);
-                    final BigDecimal honorariosPortionAccountedFor = partialInvoicedTransactions.stream()
-                            .map(PartialInvoicedTransaction::getHonorarios).reduce(BigDecimal.ZERO, BigDecimal::add);
-                    final BigDecimal honorariosVatPortionAccountedFor = partialInvoicedTransactions.stream()
-                            .map(PartialInvoicedTransaction::getHonorariosVat).reduce(BigDecimal.ZERO, BigDecimal::add);
-                    final BigDecimal mandatoryInsurancePortionAccountedFor = partialInvoicedTransactions.stream()
-                            .map(PartialInvoicedTransaction::getMandatoryInsurance).reduce(BigDecimal.ZERO, BigDecimal::add);
-                    final BigDecimal mandatoryInsuranceVatPortionAccountedFor = partialInvoicedTransactions.stream()
-                            .map(PartialInvoicedTransaction::getMandatoryInsuranceVat).reduce(BigDecimal.ZERO, BigDecimal::add);
-                    final BigDecimal voluntaryInsurancePortionAccountedFor = partialInvoicedTransactions.stream()
-                            .map(PartialInvoicedTransaction::getVoluntaryInsurance).reduce(BigDecimal.ZERO, BigDecimal::add);
-                    final BigDecimal voluntaryInsuranceVatPortionAccountedFor = partialInvoicedTransactions.stream()
-                            .map(PartialInvoicedTransaction::getVoluntaryInsuranceVat).reduce(BigDecimal.ZERO, BigDecimal::add);
-                    final BigDecimal interestPortionAccountedFor = partialInvoicedTransactions.stream()
-                            .map(PartialInvoicedTransaction::getInterest).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                    interestPaidRemaining = interestPaidRemaining.subtract(interestPortionAccountedFor);
-                    mandatoryInsurancePaidRemaining = mandatoryInsurancePaidRemaining.subtract(mandatoryInsurancePortionAccountedFor);
-                    mandatoryInsuranceVatPaidRemaining = mandatoryInsuranceVatPaidRemaining
-                            .subtract(mandatoryInsuranceVatPortionAccountedFor);
-                    voluntaryInsurancePaidRemaining = voluntaryInsurancePaidRemaining.subtract(voluntaryInsurancePortionAccountedFor);
-                    voluntaryInsuranceVatPaidRemaining = voluntaryInsuranceVatPaidRemaining
-                            .subtract(voluntaryInsuranceVatPortionAccountedFor);
-                    honorariosPaidRemaining = honorariosPaidRemaining.subtract(honorariosPortionAccountedFor);
-                    honorariosVatPaidRemaining = honorariosVatPaidRemaining.subtract(honorariosVatPortionAccountedFor);
-                    penaltyChargesPaidRemaining = penaltyChargesPaidRemaining.subtract(penaltyPortionAccountedFor);
-                    penaltyChargesVatPaidRemaining = penaltyChargesVatPaidRemaining.subtract(penaltyVatPortionAccountedFor);
-
-                    if (interestPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && interestPortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (interestPaidRemaining.compareTo(interestPortion) >= 0) {
-                            partialInvoicedTransaction.setInterest(interestPortion);
-                            interestPaidRemaining = interestPaidRemaining.subtract(interestPortion);
-                        } else {
-                            partialInvoicedTransaction.setInterest(interestPaidRemaining);
-                            interestPaidRemaining = BigDecimal.ZERO;
-                        }
-                        accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (penaltyChargesPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && penaltyPortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (penaltyChargesPaidRemaining.compareTo(penaltyPortion) >= 0) {
-                            partialInvoicedTransaction.setPenalty(penaltyPortion);
-                            penaltyChargesPaidRemaining = penaltyChargesPaidRemaining.subtract(penaltyPortion);
-                        } else {
-                            partialInvoicedTransaction.setPenalty(penaltyChargesPaidRemaining);
-                            penaltyChargesPaidRemaining = BigDecimal.ZERO;
-                        }
-                        accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (penaltyChargesVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && penaltyVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (penaltyChargesVatPaidRemaining.compareTo(penaltyVatPortion) >= 0) {
-                            partialInvoicedTransaction.setPenaltyVat(penaltyVatPortion);
-                            penaltyChargesVatPaidRemaining = penaltyChargesVatPaidRemaining.subtract(penaltyVatPortion);
-                        } else {
-                            partialInvoicedTransaction.setPenaltyVat(penaltyChargesVatPaidRemaining);
-                            penaltyChargesVatPaidRemaining = BigDecimal.ZERO;
-                        }
-                        accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (mandatoryInsurancePaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                            && mandatoryInsurancePortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (mandatoryInsurancePaidRemaining.compareTo(mandatoryInsurancePortion) >= 0) {
-                            partialInvoicedTransaction.setMandatoryInsurance(mandatoryInsurancePortion);
-                            mandatoryInsurancePaidRemaining = mandatoryInsurancePaidRemaining.subtract(mandatoryInsurancePortion);
-                        } else {
-                            partialInvoicedTransaction.setMandatoryInsurance(mandatoryInsurancePaidRemaining);
-                            mandatoryInsurancePaidRemaining = BigDecimal.ZERO;
-                        }
-                        accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (mandatoryInsuranceVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                            && mandatoryInsuranceVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (mandatoryInsuranceVatPaidRemaining.compareTo(mandatoryInsuranceVatPortion) >= 0) {
-                            partialInvoicedTransaction.setMandatoryInsuranceVat(mandatoryInsuranceVatPortion);
-                            mandatoryInsuranceVatPaidRemaining = mandatoryInsuranceVatPaidRemaining.subtract(mandatoryInsuranceVatPortion);
-                        } else {
-                            partialInvoicedTransaction.setMandatoryInsuranceVat(mandatoryInsuranceVatPaidRemaining);
-                            mandatoryInsuranceVatPaidRemaining = BigDecimal.ZERO;
-                        }
-                        accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (voluntaryInsurancePaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                            && voluntaryInsurancePortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (voluntaryInsurancePaidRemaining.compareTo(voluntaryInsurancePortion) >= 0) {
-                            partialInvoicedTransaction.setVoluntaryInsurance(voluntaryInsurancePortion);
-                            voluntaryInsurancePaidRemaining = voluntaryInsurancePaidRemaining.subtract(voluntaryInsurancePortion);
-                        } else {
-                            partialInvoicedTransaction.setVoluntaryInsurance(voluntaryInsurancePaidRemaining);
-                            voluntaryInsurancePaidRemaining = BigDecimal.ZERO;
-                        }
-                        accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (voluntaryInsuranceVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                            && voluntaryInsuranceVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (voluntaryInsuranceVatPaidRemaining.compareTo(voluntaryInsuranceVatPortion) >= 0) {
-                            partialInvoicedTransaction.setVoluntaryInsuranceVat(voluntaryInsuranceVatPortion);
-                            voluntaryInsuranceVatPaidRemaining = voluntaryInsuranceVatPaidRemaining.subtract(voluntaryInsuranceVatPortion);
-                        } else {
-                            partialInvoicedTransaction.setVoluntaryInsuranceVat(voluntaryInsuranceVatPaidRemaining);
-                            voluntaryInsuranceVatPaidRemaining = BigDecimal.ZERO;
-                        }
-                        accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (honorariosPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && honorariosPortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (honorariosPaidRemaining.compareTo(honorariosPortion) >= 0) {
-                            partialInvoicedTransaction.setHonorarios(honorariosPortion);
-                            honorariosPaidRemaining = honorariosPaidRemaining.subtract(honorariosPortion);
-                        } else {
-                            partialInvoicedTransaction.setHonorarios(honorariosPaidRemaining);
-                            honorariosPaidRemaining = BigDecimal.ZERO;
-                        }
-                        accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-
-                    if (honorariosVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && honorariosVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                        if (honorariosVatPaidRemaining.compareTo(honorariosVatPortion) >= 0) {
-                            partialInvoicedTransaction.setHonorariosVat(honorariosVatPortion);
-                            honorariosVatPaidRemaining = honorariosVatPaidRemaining.subtract(honorariosVatPortion);
-                        } else {
-                            partialInvoicedTransaction.setHonorariosVat(honorariosVatPaidRemaining);
-                            honorariosVatPaidRemaining = BigDecimal.ZERO;
-                        }
-                        accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
-                        invoicedByAccrualTransactionDataSet.add(loanTransactionData);
-                        invoicedByAccrualTransactionSet.add(accrualTransaction);
-                    }
-                }
-            }
-
-            if (CollectionUtils.isNotEmpty(invoicedByAccrualTransactionDataSet)) {
-                final BigDecimal interestPaid = invoicedByAccrualTransactionDataSet.stream()
-                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
-                            if (ltd.isPartiallyInvoiced()) {
-                                final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
-                                        .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
-                                if (txOptional.isPresent()) {
-                                    final LoanTransaction tx = txOptional.get();
-                                    final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx.getPartialInvoicedTransactions();
-                                    return partialInvoicedTransactions.stream()
-                                            .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
-                                            .map(PartialInvoicedTransaction::getInterest).reduce(BigDecimal.ZERO, BigDecimal::add);
-                                } else {
-                                    return BigDecimal.ZERO;
-                                }
-                            } else {
-                                return ltd.getInterestPortion();
-                            }
-                        }).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                final BigDecimal mandatoryInsurancePaid = invoicedByAccrualTransactionDataSet.stream()
-                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
-                            if (ltd.isPartiallyInvoiced()) {
-                                final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
-                                        .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
-                                if (txOptional.isPresent()) {
-                                    final LoanTransaction tx = txOptional.get();
-                                    final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx.getPartialInvoicedTransactions();
-                                    return partialInvoicedTransactions.stream()
-                                            .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
-                                            .map(PartialInvoicedTransaction::getMandatoryInsurance)
-                                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-                                } else {
-                                    return BigDecimal.ZERO;
-                                }
-                            } else {
-                                return ltd.getLoanChargePaidBySummary().getMandatoryInsurancePortion();
-                            }
-                        })
-
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-                final BigDecimal mandatoryInsuranceVatPaid = invoicedByAccrualTransactionDataSet.stream()
-                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
-                            if (ltd.isPartiallyInvoiced()) {
-                                final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
-                                        .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
-                                if (txOptional.isPresent()) {
-                                    final LoanTransaction tx = txOptional.get();
-                                    final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx.getPartialInvoicedTransactions();
-                                    return partialInvoicedTransactions.stream()
-                                            .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
-                                            .map(PartialInvoicedTransaction::getMandatoryInsuranceVat)
-                                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-                                } else {
-                                    return BigDecimal.ZERO;
-                                }
-                            } else {
-                                return ltd.getLoanChargePaidBySummary().getMandatoryInsuranceVatPortion();
-                            }
-                        }).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                final BigDecimal voluntaryInsurancePaid = invoicedByAccrualTransactionDataSet.stream()
-                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
-                            if (ltd.isPartiallyInvoiced()) {
-                                final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
-                                        .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
-                                if (txOptional.isPresent()) {
-                                    final LoanTransaction tx = txOptional.get();
-                                    final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx.getPartialInvoicedTransactions();
-                                    return partialInvoicedTransactions.stream()
-                                            .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
-                                            .map(PartialInvoicedTransaction::getVoluntaryInsurance)
-                                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-                                } else {
-                                    return BigDecimal.ZERO;
-                                }
-                            } else {
-                                return ltd.getLoanChargePaidBySummary().getVoluntaryInsurancePortion();
-                            }
-                        }).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                final BigDecimal voluntaryInsuranceVatPaid = invoicedByAccrualTransactionDataSet.stream()
-                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
-                            if (ltd.isPartiallyInvoiced()) {
-                                final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
-                                        .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
-                                if (txOptional.isPresent()) {
-                                    final LoanTransaction tx = txOptional.get();
-                                    final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx.getPartialInvoicedTransactions();
-                                    return partialInvoicedTransactions.stream()
-                                            .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
-                                            .map(PartialInvoicedTransaction::getVoluntaryInsuranceVat)
-                                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-                                } else {
-                                    return BigDecimal.ZERO;
-                                }
-                            } else {
-                                return ltd.getLoanChargePaidBySummary().getVoluntaryInsuranceVatPortion();
-                            }
-                        }).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                final BigDecimal honorariosPaid = invoicedByAccrualTransactionDataSet.stream()
-                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
-                            if (ltd.isPartiallyInvoiced()) {
-                                final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
-                                        .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
-                                if (txOptional.isPresent()) {
-                                    final LoanTransaction tx = txOptional.get();
-                                    final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx.getPartialInvoicedTransactions();
-                                    return partialInvoicedTransactions.stream()
-                                            .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
-                                            .map(PartialInvoicedTransaction::getHonorarios).reduce(BigDecimal.ZERO, BigDecimal::add);
-                                } else {
-                                    return BigDecimal.ZERO;
-                                }
-                            } else {
-                                return ltd.getLoanChargePaidBySummary().getHonorariosPortion();
-                            }
-                        }).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                final BigDecimal honorariosVatPaid = invoicedByAccrualTransactionDataSet.stream()
-                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
-                            if (ltd.isPartiallyInvoiced()) {
-                                final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
-                                        .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
-                                if (txOptional.isPresent()) {
-                                    final LoanTransaction tx = txOptional.get();
-                                    final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx.getPartialInvoicedTransactions();
-                                    return partialInvoicedTransactions.stream()
-                                            .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
-                                            .map(PartialInvoicedTransaction::getHonorariosVat).reduce(BigDecimal.ZERO, BigDecimal::add);
-                                } else {
-                                    return BigDecimal.ZERO;
-                                }
-                            } else {
-                                return ltd.getLoanChargePaidBySummary().getHonorariosVatPortion();
-                            }
-                        }).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                final BigDecimal penaltyChargesPaid = invoicedByAccrualTransactionDataSet.stream()
-                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
-                            if (ltd.isPartiallyInvoiced()) {
-                                final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
-                                        .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
-                                if (txOptional.isPresent()) {
-                                    final LoanTransaction tx = txOptional.get();
-                                    final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx.getPartialInvoicedTransactions();
-                                    return partialInvoicedTransactions.stream()
-                                            .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
-                                            .map(PartialInvoicedTransaction::getPenalty).reduce(BigDecimal.ZERO, BigDecimal::add);
-                                } else {
-                                    return BigDecimal.ZERO;
-                                }
-                            } else {
-                                return ltd.getLoanChargePaidBySummary().getPenaltyPortion();
-                            }
-                        }).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                final BigDecimal penaltyChargesVatPaid = invoicedByAccrualTransactionDataSet.stream()
-                        .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
-                            if (ltd.isPartiallyInvoiced()) {
-                                final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
-                                        .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
-                                if (txOptional.isPresent()) {
-                                    final LoanTransaction tx = txOptional.get();
-                                    final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx.getPartialInvoicedTransactions();
-                                    return partialInvoicedTransactions.stream()
-                                            .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
-                                            .map(PartialInvoicedTransaction::getPenaltyVat).reduce(BigDecimal.ZERO, BigDecimal::add);
-                                } else {
-                                    return BigDecimal.ZERO;
-                                }
-                            } else {
-                                return ltd.getLoanChargePaidBySummary().getPenaltyVatPortion();
-                            }
-                        }).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                loanDocumentData.setInterestPaid(interestPaid);
-
-                loanDocumentData.setMandatoryInsurancePaid(mandatoryInsurancePaid);
-                loanDocumentData.setMandatoryInsuranceVatPaid(mandatoryInsuranceVatPaid);
-
-                loanDocumentData.setVoluntaryInsurancePaid(voluntaryInsurancePaid);
-                loanDocumentData.setVoluntaryInsuranceVatPaid(voluntaryInsuranceVatPaid);
-
-                loanDocumentData.setHonorariosPaid(honorariosPaid);
-                loanDocumentData.setHonorariosVatPaid(honorariosVatPaid);
-
-                loanDocumentData.setPenaltyChargesPaid(penaltyChargesPaid);
-                loanDocumentData.setPenaltyChargesVatPaid(penaltyChargesVatPaid);
-
-                loanDocumentData.setFirstDayOfMonth(firstDayOfMonth);
-                loanDocumentData.setSecondLastDayOfMonth(secondLastDayOfMonth);
-                loanDocumentData.setLastDayOfMonth(lastDayOfMonth);
-                loanDocumentData.setLoanTransactionId(loanTransactionId);
-                if (loanTransactionType.isRepaymentType()) {
-                    loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
-                } else {
-                    loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.CREDIT_NOTE);
-                }
-                processAndSaveLoanDocument(loanDocumentData);
-                loanTransaction.markAsOccurredOnSuspendedAccount();
-                this.loanTransactionRepository.saveAndFlush(loanTransaction);
-                for (final LoanTransaction accrualTransaction : invoicedByAccrualTransactionSet) {
                     if (!accrualTransaction.isPartiallyInvoiced()) {
-                        accrualTransaction.setInvoicedByTransactionId(loanTransactionId);
+                        if (interestPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && interestPortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (interestPaidRemaining.compareTo(interestPortion) >= 0) {
+                                interestPaidRemaining = interestPaidRemaining.subtract(interestPortion);
+                            } else {
+                                accrualTransaction.markAsPartiallyInvoiced();
+                                loanTransactionData.markAsPartiallyInvoiced();
+                                partialInvoicedTransaction.setInterest(interestPaidRemaining);
+                                accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                                interestPaidRemaining = BigDecimal.ZERO;
+                            }
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (penaltyChargesPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && penaltyPortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (penaltyChargesPaidRemaining.compareTo(penaltyPortion) >= 0) {
+                                penaltyChargesPaidRemaining = penaltyChargesPaidRemaining.subtract(penaltyPortion);
+                            } else {
+                                accrualTransaction.markAsPartiallyInvoiced();
+                                loanTransactionData.markAsPartiallyInvoiced();
+                                partialInvoicedTransaction.setPenalty(penaltyChargesPaidRemaining);
+                                accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                                penaltyChargesPaidRemaining = BigDecimal.ZERO;
+                            }
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (penaltyChargesVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && penaltyVatPortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (penaltyChargesVatPaidRemaining.compareTo(penaltyVatPortion) >= 0) {
+                                penaltyChargesVatPaidRemaining = penaltyChargesVatPaidRemaining.subtract(penaltyVatPortion);
+                            } else {
+                                accrualTransaction.markAsPartiallyInvoiced();
+                                loanTransactionData.markAsPartiallyInvoiced();
+                                partialInvoicedTransaction.setPenaltyVat(penaltyChargesVatPaidRemaining);
+                                accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                                penaltyChargesVatPaidRemaining = BigDecimal.ZERO;
+                            }
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (mandatoryInsurancePaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && mandatoryInsurancePortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (mandatoryInsurancePaidRemaining.compareTo(mandatoryInsurancePortion) >= 0) {
+                                mandatoryInsurancePaidRemaining = mandatoryInsurancePaidRemaining.subtract(mandatoryInsurancePortion);
+                            } else {
+                                accrualTransaction.markAsPartiallyInvoiced();
+                                loanTransactionData.markAsPartiallyInvoiced();
+                                partialInvoicedTransaction.setMandatoryInsurance(mandatoryInsurancePaidRemaining);
+                                accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                                mandatoryInsurancePaidRemaining = BigDecimal.ZERO;
+                            }
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (mandatoryInsuranceVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && mandatoryInsuranceVatPortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (mandatoryInsuranceVatPaidRemaining.compareTo(mandatoryInsuranceVatPortion) >= 0) {
+                                mandatoryInsuranceVatPaidRemaining = mandatoryInsuranceVatPaidRemaining
+                                        .subtract(mandatoryInsuranceVatPortion);
+                            } else {
+                                accrualTransaction.markAsPartiallyInvoiced();
+                                loanTransactionData.markAsPartiallyInvoiced();
+                                partialInvoicedTransaction.setMandatoryInsuranceVat(mandatoryInsuranceVatPaidRemaining);
+                                accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                                mandatoryInsuranceVatPaidRemaining = BigDecimal.ZERO;
+                            }
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (voluntaryInsurancePaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && voluntaryInsurancePortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (voluntaryInsurancePaidRemaining.compareTo(voluntaryInsurancePortion) >= 0) {
+                                voluntaryInsurancePaidRemaining = voluntaryInsurancePaidRemaining.subtract(voluntaryInsurancePortion);
+                            } else {
+                                accrualTransaction.markAsPartiallyInvoiced();
+                                loanTransactionData.markAsPartiallyInvoiced();
+                                partialInvoicedTransaction.setVoluntaryInsurance(voluntaryInsurancePaidRemaining);
+                                accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                                voluntaryInsurancePaidRemaining = BigDecimal.ZERO;
+                            }
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (voluntaryInsuranceVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && voluntaryInsuranceVatPortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (voluntaryInsuranceVatPaidRemaining.compareTo(voluntaryInsuranceVatPortion) >= 0) {
+                                voluntaryInsuranceVatPaidRemaining = voluntaryInsuranceVatPaidRemaining
+                                        .subtract(voluntaryInsuranceVatPortion);
+                            } else {
+                                accrualTransaction.markAsPartiallyInvoiced();
+                                loanTransactionData.markAsPartiallyInvoiced();
+                                partialInvoicedTransaction.setVoluntaryInsuranceVat(voluntaryInsuranceVatPaidRemaining);
+                                accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                                voluntaryInsuranceVatPaidRemaining = BigDecimal.ZERO;
+                            }
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (honorariosPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && honorariosPortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (honorariosPaidRemaining.compareTo(honorariosPortion) >= 0) {
+                                honorariosPaidRemaining = honorariosPaidRemaining.subtract(honorariosPortion);
+                            } else {
+                                accrualTransaction.markAsPartiallyInvoiced();
+                                loanTransactionData.markAsPartiallyInvoiced();
+                                partialInvoicedTransaction.setHonorarios(honorariosPaidRemaining);
+                                accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                                honorariosPaidRemaining = BigDecimal.ZERO;
+                            }
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (honorariosVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && honorariosVatPortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (honorariosVatPaidRemaining.compareTo(honorariosVatPortion) >= 0) {
+                                honorariosVatPaidRemaining = honorariosVatPaidRemaining.subtract(honorariosVatPortion);
+                            } else {
+                                accrualTransaction.markAsPartiallyInvoiced();
+                                loanTransactionData.markAsPartiallyInvoiced();
+                                partialInvoicedTransaction.setHonorariosVat(honorariosVatPaidRemaining);
+                                accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                                honorariosVatPaidRemaining = BigDecimal.ZERO;
+                            }
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+                    } else {
+                        final Set<PartialInvoicedTransaction> partialInvoicedTransactions = accrualTransaction
+                                .getPartialInvoicedTransactions();
+                        final BigDecimal penaltyPortionAccountedFor = partialInvoicedTransactions.stream()
+                                .map(PartialInvoicedTransaction::getPenalty).reduce(BigDecimal.ZERO, BigDecimal::add);
+                        final BigDecimal penaltyVatPortionAccountedFor = partialInvoicedTransactions.stream()
+                                .map(PartialInvoicedTransaction::getPenaltyVat).reduce(BigDecimal.ZERO, BigDecimal::add);
+                        final BigDecimal honorariosPortionAccountedFor = partialInvoicedTransactions.stream()
+                                .map(PartialInvoicedTransaction::getHonorarios).reduce(BigDecimal.ZERO, BigDecimal::add);
+                        final BigDecimal honorariosVatPortionAccountedFor = partialInvoicedTransactions.stream()
+                                .map(PartialInvoicedTransaction::getHonorariosVat).reduce(BigDecimal.ZERO, BigDecimal::add);
+                        final BigDecimal mandatoryInsurancePortionAccountedFor = partialInvoicedTransactions.stream()
+                                .map(PartialInvoicedTransaction::getMandatoryInsurance).reduce(BigDecimal.ZERO, BigDecimal::add);
+                        final BigDecimal mandatoryInsuranceVatPortionAccountedFor = partialInvoicedTransactions.stream()
+                                .map(PartialInvoicedTransaction::getMandatoryInsuranceVat).reduce(BigDecimal.ZERO, BigDecimal::add);
+                        final BigDecimal voluntaryInsurancePortionAccountedFor = partialInvoicedTransactions.stream()
+                                .map(PartialInvoicedTransaction::getVoluntaryInsurance).reduce(BigDecimal.ZERO, BigDecimal::add);
+                        final BigDecimal voluntaryInsuranceVatPortionAccountedFor = partialInvoicedTransactions.stream()
+                                .map(PartialInvoicedTransaction::getVoluntaryInsuranceVat).reduce(BigDecimal.ZERO, BigDecimal::add);
+                        final BigDecimal interestPortionAccountedFor = partialInvoicedTransactions.stream()
+                                .map(PartialInvoicedTransaction::getInterest).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                        interestPaidRemaining = interestPaidRemaining.subtract(interestPortionAccountedFor);
+                        mandatoryInsurancePaidRemaining = mandatoryInsurancePaidRemaining.subtract(mandatoryInsurancePortionAccountedFor);
+                        mandatoryInsuranceVatPaidRemaining = mandatoryInsuranceVatPaidRemaining
+                                .subtract(mandatoryInsuranceVatPortionAccountedFor);
+                        voluntaryInsurancePaidRemaining = voluntaryInsurancePaidRemaining.subtract(voluntaryInsurancePortionAccountedFor);
+                        voluntaryInsuranceVatPaidRemaining = voluntaryInsuranceVatPaidRemaining
+                                .subtract(voluntaryInsuranceVatPortionAccountedFor);
+                        honorariosPaidRemaining = honorariosPaidRemaining.subtract(honorariosPortionAccountedFor);
+                        honorariosVatPaidRemaining = honorariosVatPaidRemaining.subtract(honorariosVatPortionAccountedFor);
+                        penaltyChargesPaidRemaining = penaltyChargesPaidRemaining.subtract(penaltyPortionAccountedFor);
+                        penaltyChargesVatPaidRemaining = penaltyChargesVatPaidRemaining.subtract(penaltyVatPortionAccountedFor);
+
+                        if (interestPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && interestPortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (interestPaidRemaining.compareTo(interestPortion) >= 0) {
+                                partialInvoicedTransaction.setInterest(interestPortion);
+                                interestPaidRemaining = interestPaidRemaining.subtract(interestPortion);
+                            } else {
+                                partialInvoicedTransaction.setInterest(interestPaidRemaining);
+                                interestPaidRemaining = BigDecimal.ZERO;
+                            }
+                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (penaltyChargesPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && penaltyPortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (penaltyChargesPaidRemaining.compareTo(penaltyPortion) >= 0) {
+                                partialInvoicedTransaction.setPenalty(penaltyPortion);
+                                penaltyChargesPaidRemaining = penaltyChargesPaidRemaining.subtract(penaltyPortion);
+                            } else {
+                                partialInvoicedTransaction.setPenalty(penaltyChargesPaidRemaining);
+                                penaltyChargesPaidRemaining = BigDecimal.ZERO;
+                            }
+                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (penaltyChargesVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && penaltyVatPortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (penaltyChargesVatPaidRemaining.compareTo(penaltyVatPortion) >= 0) {
+                                partialInvoicedTransaction.setPenaltyVat(penaltyVatPortion);
+                                penaltyChargesVatPaidRemaining = penaltyChargesVatPaidRemaining.subtract(penaltyVatPortion);
+                            } else {
+                                partialInvoicedTransaction.setPenaltyVat(penaltyChargesVatPaidRemaining);
+                                penaltyChargesVatPaidRemaining = BigDecimal.ZERO;
+                            }
+                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (mandatoryInsurancePaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && mandatoryInsurancePortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (mandatoryInsurancePaidRemaining.compareTo(mandatoryInsurancePortion) >= 0) {
+                                partialInvoicedTransaction.setMandatoryInsurance(mandatoryInsurancePortion);
+                                mandatoryInsurancePaidRemaining = mandatoryInsurancePaidRemaining.subtract(mandatoryInsurancePortion);
+                            } else {
+                                partialInvoicedTransaction.setMandatoryInsurance(mandatoryInsurancePaidRemaining);
+                                mandatoryInsurancePaidRemaining = BigDecimal.ZERO;
+                            }
+                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (mandatoryInsuranceVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && mandatoryInsuranceVatPortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (mandatoryInsuranceVatPaidRemaining.compareTo(mandatoryInsuranceVatPortion) >= 0) {
+                                partialInvoicedTransaction.setMandatoryInsuranceVat(mandatoryInsuranceVatPortion);
+                                mandatoryInsuranceVatPaidRemaining = mandatoryInsuranceVatPaidRemaining
+                                        .subtract(mandatoryInsuranceVatPortion);
+                            } else {
+                                partialInvoicedTransaction.setMandatoryInsuranceVat(mandatoryInsuranceVatPaidRemaining);
+                                mandatoryInsuranceVatPaidRemaining = BigDecimal.ZERO;
+                            }
+                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (voluntaryInsurancePaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && voluntaryInsurancePortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (voluntaryInsurancePaidRemaining.compareTo(voluntaryInsurancePortion) >= 0) {
+                                partialInvoicedTransaction.setVoluntaryInsurance(voluntaryInsurancePortion);
+                                voluntaryInsurancePaidRemaining = voluntaryInsurancePaidRemaining.subtract(voluntaryInsurancePortion);
+                            } else {
+                                partialInvoicedTransaction.setVoluntaryInsurance(voluntaryInsurancePaidRemaining);
+                                voluntaryInsurancePaidRemaining = BigDecimal.ZERO;
+                            }
+                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (voluntaryInsuranceVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && voluntaryInsuranceVatPortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (voluntaryInsuranceVatPaidRemaining.compareTo(voluntaryInsuranceVatPortion) >= 0) {
+                                partialInvoicedTransaction.setVoluntaryInsuranceVat(voluntaryInsuranceVatPortion);
+                                voluntaryInsuranceVatPaidRemaining = voluntaryInsuranceVatPaidRemaining
+                                        .subtract(voluntaryInsuranceVatPortion);
+                            } else {
+                                partialInvoicedTransaction.setVoluntaryInsuranceVat(voluntaryInsuranceVatPaidRemaining);
+                                voluntaryInsuranceVatPaidRemaining = BigDecimal.ZERO;
+                            }
+                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (honorariosPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && honorariosPortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (honorariosPaidRemaining.compareTo(honorariosPortion) >= 0) {
+                                partialInvoicedTransaction.setHonorarios(honorariosPortion);
+                                honorariosPaidRemaining = honorariosPaidRemaining.subtract(honorariosPortion);
+                            } else {
+                                partialInvoicedTransaction.setHonorarios(honorariosPaidRemaining);
+                                honorariosPaidRemaining = BigDecimal.ZERO;
+                            }
+                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
+
+                        if (honorariosVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && honorariosVatPortion.compareTo(BigDecimal.ZERO) > 0) {
+                            if (honorariosVatPaidRemaining.compareTo(honorariosVatPortion) >= 0) {
+                                partialInvoicedTransaction.setHonorariosVat(honorariosVatPortion);
+                                honorariosVatPaidRemaining = honorariosVatPaidRemaining.subtract(honorariosVatPortion);
+                            } else {
+                                partialInvoicedTransaction.setHonorariosVat(honorariosVatPaidRemaining);
+                                honorariosVatPaidRemaining = BigDecimal.ZERO;
+                            }
+                            accrualTransaction.getPartialInvoicedTransactions().add(partialInvoicedTransaction);
+                            invoicedByAccrualTransactionDataSet.add(loanTransactionData);
+                            invoicedByAccrualTransactionSet.add(accrualTransaction);
+                        }
                     }
                 }
-                this.loanTransactionRepository.saveAll(invoicedByAccrualTransactionSet);
+
+                if (CollectionUtils.isNotEmpty(invoicedByAccrualTransactionDataSet)) {
+                    final BigDecimal interestPaid = invoicedByAccrualTransactionDataSet.stream()
+                            .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
+                                if (ltd.isPartiallyInvoiced()) {
+                                    final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
+                                            .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
+                                    if (txOptional.isPresent()) {
+                                        final LoanTransaction tx = txOptional.get();
+                                        final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx
+                                                .getPartialInvoicedTransactions();
+                                        return partialInvoicedTransactions.stream()
+                                                .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
+                                                .map(PartialInvoicedTransaction::getInterest).reduce(BigDecimal.ZERO, BigDecimal::add);
+                                    } else {
+                                        return BigDecimal.ZERO;
+                                    }
+                                } else {
+                                    return ltd.getInterestPortion();
+                                }
+                            }).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    final BigDecimal mandatoryInsurancePaid = invoicedByAccrualTransactionDataSet.stream()
+                            .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
+                                if (ltd.isPartiallyInvoiced()) {
+                                    final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
+                                            .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
+                                    if (txOptional.isPresent()) {
+                                        final LoanTransaction tx = txOptional.get();
+                                        final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx
+                                                .getPartialInvoicedTransactions();
+                                        return partialInvoicedTransactions.stream()
+                                                .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
+                                                .map(PartialInvoicedTransaction::getMandatoryInsurance)
+                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                    } else {
+                                        return BigDecimal.ZERO;
+                                    }
+                                } else {
+                                    return ltd.getLoanChargePaidBySummary().getMandatoryInsurancePortion();
+                                }
+                            })
+
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    final BigDecimal mandatoryInsuranceVatPaid = invoicedByAccrualTransactionDataSet.stream()
+                            .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
+                                if (ltd.isPartiallyInvoiced()) {
+                                    final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
+                                            .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
+                                    if (txOptional.isPresent()) {
+                                        final LoanTransaction tx = txOptional.get();
+                                        final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx
+                                                .getPartialInvoicedTransactions();
+                                        return partialInvoicedTransactions.stream()
+                                                .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
+                                                .map(PartialInvoicedTransaction::getMandatoryInsuranceVat)
+                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                    } else {
+                                        return BigDecimal.ZERO;
+                                    }
+                                } else {
+                                    return ltd.getLoanChargePaidBySummary().getMandatoryInsuranceVatPortion();
+                                }
+                            }).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    final BigDecimal voluntaryInsurancePaid = invoicedByAccrualTransactionDataSet.stream()
+                            .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
+                                if (ltd.isPartiallyInvoiced()) {
+                                    final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
+                                            .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
+                                    if (txOptional.isPresent()) {
+                                        final LoanTransaction tx = txOptional.get();
+                                        final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx
+                                                .getPartialInvoicedTransactions();
+                                        return partialInvoicedTransactions.stream()
+                                                .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
+                                                .map(PartialInvoicedTransaction::getVoluntaryInsurance)
+                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                    } else {
+                                        return BigDecimal.ZERO;
+                                    }
+                                } else {
+                                    return ltd.getLoanChargePaidBySummary().getVoluntaryInsurancePortion();
+                                }
+                            }).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    final BigDecimal voluntaryInsuranceVatPaid = invoicedByAccrualTransactionDataSet.stream()
+                            .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
+                                if (ltd.isPartiallyInvoiced()) {
+                                    final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
+                                            .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
+                                    if (txOptional.isPresent()) {
+                                        final LoanTransaction tx = txOptional.get();
+                                        final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx
+                                                .getPartialInvoicedTransactions();
+                                        return partialInvoicedTransactions.stream()
+                                                .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
+                                                .map(PartialInvoicedTransaction::getVoluntaryInsuranceVat)
+                                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                    } else {
+                                        return BigDecimal.ZERO;
+                                    }
+                                } else {
+                                    return ltd.getLoanChargePaidBySummary().getVoluntaryInsuranceVatPortion();
+                                }
+                            }).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    final BigDecimal honorariosPaid = invoicedByAccrualTransactionDataSet.stream()
+                            .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
+                                if (ltd.isPartiallyInvoiced()) {
+                                    final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
+                                            .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
+                                    if (txOptional.isPresent()) {
+                                        final LoanTransaction tx = txOptional.get();
+                                        final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx
+                                                .getPartialInvoicedTransactions();
+                                        return partialInvoicedTransactions.stream()
+                                                .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
+                                                .map(PartialInvoicedTransaction::getHonorarios).reduce(BigDecimal.ZERO, BigDecimal::add);
+                                    } else {
+                                        return BigDecimal.ZERO;
+                                    }
+                                } else {
+                                    return ltd.getLoanChargePaidBySummary().getHonorariosPortion();
+                                }
+                            }).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    final BigDecimal honorariosVatPaid = invoicedByAccrualTransactionDataSet.stream()
+                            .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
+                                if (ltd.isPartiallyInvoiced()) {
+                                    final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
+                                            .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
+                                    if (txOptional.isPresent()) {
+                                        final LoanTransaction tx = txOptional.get();
+                                        final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx
+                                                .getPartialInvoicedTransactions();
+                                        return partialInvoicedTransactions.stream()
+                                                .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
+                                                .map(PartialInvoicedTransaction::getHonorariosVat).reduce(BigDecimal.ZERO, BigDecimal::add);
+                                    } else {
+                                        return BigDecimal.ZERO;
+                                    }
+                                } else {
+                                    return ltd.getLoanChargePaidBySummary().getHonorariosVatPortion();
+                                }
+                            }).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    final BigDecimal penaltyChargesPaid = invoicedByAccrualTransactionDataSet.stream()
+                            .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
+                                if (ltd.isPartiallyInvoiced()) {
+                                    final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
+                                            .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
+                                    if (txOptional.isPresent()) {
+                                        final LoanTransaction tx = txOptional.get();
+                                        final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx
+                                                .getPartialInvoicedTransactions();
+                                        return partialInvoicedTransactions.stream()
+                                                .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
+                                                .map(PartialInvoicedTransaction::getPenalty).reduce(BigDecimal.ZERO, BigDecimal::add);
+                                    } else {
+                                        return BigDecimal.ZERO;
+                                    }
+                                } else {
+                                    return ltd.getLoanChargePaidBySummary().getPenaltyPortion();
+                                }
+                            }).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    final BigDecimal penaltyChargesVatPaid = invoicedByAccrualTransactionDataSet.stream()
+                            .filter(LoanTransactionData::isOccurredOnSuspendedAccount).map(ltd -> {
+                                if (ltd.isPartiallyInvoiced()) {
+                                    final Optional<LoanTransaction> txOptional = invoicedByAccrualTransactionSet.stream()
+                                            .filter(ltx -> Objects.equals(ltx.getId(), ltd.getId())).findFirst();
+                                    if (txOptional.isPresent()) {
+                                        final LoanTransaction tx = txOptional.get();
+                                        final Set<PartialInvoicedTransaction> partialInvoicedTransactions = tx
+                                                .getPartialInvoicedTransactions();
+                                        return partialInvoicedTransactions.stream()
+                                                .filter(i -> Objects.equals(i.getRepaymentTransaction().getId(), loanTransactionId))
+                                                .map(PartialInvoicedTransaction::getPenaltyVat).reduce(BigDecimal.ZERO, BigDecimal::add);
+                                    } else {
+                                        return BigDecimal.ZERO;
+                                    }
+                                } else {
+                                    return ltd.getLoanChargePaidBySummary().getPenaltyVatPortion();
+                                }
+                            }).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    loanDocumentData.setInterestPaid(interestPaid);
+
+                    loanDocumentData.setMandatoryInsurancePaid(mandatoryInsurancePaid);
+                    loanDocumentData.setMandatoryInsuranceVatPaid(mandatoryInsuranceVatPaid);
+
+                    loanDocumentData.setVoluntaryInsurancePaid(voluntaryInsurancePaid);
+                    loanDocumentData.setVoluntaryInsuranceVatPaid(voluntaryInsuranceVatPaid);
+
+                    loanDocumentData.setHonorariosPaid(honorariosPaid);
+                    loanDocumentData.setHonorariosVatPaid(honorariosVatPaid);
+
+                    loanDocumentData.setPenaltyChargesPaid(penaltyChargesPaid);
+                    loanDocumentData.setPenaltyChargesVatPaid(penaltyChargesVatPaid);
+
+                    processAndSaveLoanDocument(loanDocumentData);
+                    this.loanTransactionRepository.saveAndFlush(loanTransaction);
+                    for (final LoanTransaction accrualTransaction : invoicedByAccrualTransactionSet) {
+                        if (!accrualTransaction.isPartiallyInvoiced()) {
+                            accrualTransaction.setInvoicedByTransactionId(loanTransactionId);
+                        }
+                    }
+                    this.loanTransactionRepository.saveAll(invoicedByAccrualTransactionSet);
+                }
+            } else {
+                loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.CREDIT_NOTE);
+                processAndSaveLoanDocument(loanDocumentData);
             }
         }
     }
@@ -4780,6 +4797,34 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         } else {
             facturaElectronicaMensual.setPorcentaje_impuesto_item(null);
             facturaElectronicaMensual.setImpuesto_item(null);
+        }
+    }
+
+    private void knockOffInvoicesRecursively(final List<FacturaElectronicaMensual> invoicesToKnockOff,
+            final FacturaElectronicaMensual currentElectronicaMensual, final List<FacturaElectronicaMensual> facturaElectronicaMensuals) {
+        BigDecimal remainingAmount = currentElectronicaMensual.getCosto_total();
+        if (!invoicesToKnockOff.isEmpty()) {
+            for (final FacturaElectronicaMensual invoiceToKnockOff : invoicesToKnockOff) {
+                final BigDecimal amountToKnockOff = invoiceToKnockOff.getCosto_total();
+                final String lastInvoiceNumber = invoiceToKnockOff.getNumero_doc();
+                final LocalDate lastInvoiceDate = invoiceToKnockOff.getFecha_factura();
+                if (remainingAmount.compareTo(BigDecimal.ZERO) > 0 && amountToKnockOff.compareTo(BigDecimal.ZERO) > 0) {
+                    final FacturaElectronicaMensual creditNoteDocument = currentElectronicaMensual.clone();
+                    BigDecimal creditNoteAmount;
+                    if (remainingAmount.compareTo(amountToKnockOff) >= 0) {
+                        creditNoteAmount = amountToKnockOff;
+                        remainingAmount = remainingAmount.subtract(amountToKnockOff);
+                    } else {
+                        creditNoteAmount = remainingAmount;
+                        remainingAmount = BigDecimal.ZERO;
+                    }
+                    creditNoteDocument.setCosto_total(creditNoteAmount);
+                    creditNoteDocument.setPrecio_unitario(creditNoteAmount);
+                    creditNoteDocument.setNum_facafect(lastInvoiceNumber);
+                    creditNoteDocument.setFec_facafect(lastInvoiceDate);
+                    facturaElectronicaMensuals.add(creditNoteDocument);
+                }
+            }
         }
     }
 
@@ -4819,11 +4864,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final Long rangeEndNumber = loanProductParameterization.getRangeEndNumber();
         long documentNumber;
         Long currentCounter;
+        List<FacturaElectronicaMensual> invoicesToKnockOff = new ArrayList<>();
         final LoanDocumentData.LoanDocumentType documentType = loanDocumentData.getDocumentType();
         if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
             currentCounter = ObjectUtils.defaultIfNull(creditNoteCounter, 0L) + 1L;
             documentNumber = rangeStartNumber + currentCounter;
             loanProductParameterization.setCreditNoteCounter(currentCounter);
+            invoicesToKnockOff = this.facturaElectronicMensualRepository.findById_clienteAndTipo_prod(loanDocumentData.getClientIdNumber(),
+                    loanDocumentData.getProductTypeName());
         } else {
             currentCounter = ObjectUtils.defaultIfNull(invoiceCounter, 0L) + 1L;
             documentNumber = rangeStartNumber + currentCounter;
@@ -4856,7 +4904,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, interestVatPaid);
-            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType) && !invoicesToKnockOff.isEmpty()) {
+                final List<FacturaElectronicaMensual> interestInvoicesToKnockOff = invoicesToKnockOff.stream()
+                        .filter(inv -> loanDocumentConcept.getSku().equals(inv.getSku())).toList();
+                knockOffInvoicesRecursively(interestInvoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
+            } else {
+                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            }
         }
         if (penaltyChargesPaid.compareTo(BigDecimal.ZERO) > 0) {
             final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.INT_DE_MORA;
@@ -4871,7 +4925,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             facturaElectronicaMensualDuplicate.setDescripcion_mandante(null);
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, penaltyChargesVatPaid);
-            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType) && !invoicesToKnockOff.isEmpty()) {
+                final List<FacturaElectronicaMensual> penaltyInvoicesToKnockOff = invoicesToKnockOff.stream()
+                        .filter(inv -> loanDocumentConcept.getSku().equals(inv.getSku())).toList();
+                knockOffInvoicesRecursively(penaltyInvoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
+            } else {
+                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            }
         }
         if (mandatoryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
             final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.SEGURO_OBLIGATORIO;
@@ -4891,7 +4951,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, mandatoryInsuranceVatPaid);
-            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType) && !invoicesToKnockOff.isEmpty()) {
+                final List<FacturaElectronicaMensual> mandatoryInsuranceInvoicesToKnockOff = invoicesToKnockOff.stream()
+                        .filter(inv -> loanDocumentConcept.getSku().equals(inv.getSku())).toList();
+                knockOffInvoicesRecursively(mandatoryInsuranceInvoicesToKnockOff, facturaElectronicaMensualDuplicate,
+                        facturaElectronicaMensuals);
+            } else {
+                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            }
         }
         if (voluntaryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
             final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.SEGUROS_VOLUNTARIOS;
@@ -4911,8 +4978,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, voluntaryInsuranceVatPaid);
-            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
-
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType) && !invoicesToKnockOff.isEmpty()) {
+                final List<FacturaElectronicaMensual> voluntaryInsuranceInvoicesToKnockOff = invoicesToKnockOff.stream()
+                        .filter(inv -> loanDocumentConcept.getSku().equals(inv.getSku())).toList();
+                knockOffInvoicesRecursively(voluntaryInsuranceInvoicesToKnockOff, facturaElectronicaMensualDuplicate,
+                        facturaElectronicaMensuals);
+            } else {
+                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            }
         }
         if (honorariosPaid.compareTo(BigDecimal.ZERO) > 0) {
             final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.HONORARIOS;
@@ -4927,7 +5000,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             facturaElectronicaMensualDuplicate.setDescripcion_mandante(loanDocumentData.getCollectionHouseName());
             final ClasificacionConceptosData clasificacionConceptosData = this.getClasificacionConceptosData(loanDocumentConcept.name());
             this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, honorariosVatPaid);
-            facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType) && !invoicesToKnockOff.isEmpty()) {
+                final List<FacturaElectronicaMensual> honorariosInvoicesToKnockOff = invoicesToKnockOff.stream()
+                        .filter(inv -> loanDocumentConcept.getSku().equals(inv.getSku())).toList();
+                knockOffInvoicesRecursively(honorariosInvoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
+            } else {
+                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+            }
         }
         final BigDecimal totalImpuestoItem = facturaElectronicaMensuals.stream().map(FacturaElectronicaMensual::getImpuesto_item)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
