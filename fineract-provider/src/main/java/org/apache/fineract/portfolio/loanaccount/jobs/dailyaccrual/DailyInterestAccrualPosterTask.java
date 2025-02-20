@@ -47,6 +47,10 @@ public class DailyInterestAccrualPosterTask implements Callable<Void> {
         this.dailyInterestAccrualPoster.setLoanIds(loanIds);
     }
 
+    public void setMinimumDaysInArrearsToSuspendLoanAccount(Long minimumDaysInArrearsToSuspendLoanAccount) {
+        this.dailyInterestAccrualPoster.setMinimumDaysInArrearsToSuspendLoanAccount(minimumDaysInArrearsToSuspendLoanAccount);
+    }
+
     public void setAccrualDate(LocalDate accrualDate) {
         this.dailyInterestAccrualPoster.setAccrualDate(accrualDate);
     }

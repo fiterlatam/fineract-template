@@ -30,6 +30,7 @@ import java.util.concurrent.Future;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.config.TaskExecutorConstant;
 import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -56,6 +57,7 @@ public class DailyAccrualTasklet implements Tasklet {
     private final ThreadPoolTaskExecutor taskExecutor;
     private final LoanReadPlatformService loanReadPlatformService;
     private boolean dataFetched = false;
+    private final ConfigurationDomainService configurationDomainService;
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
@@ -68,6 +70,7 @@ public class DailyAccrualTasklet implements Tasklet {
         Long maxLoanIdInList = 0L;
 
         LocalDate accrualDate = DateUtils.getLocalDateOfTenant().minusDays(1);
+        Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
 
         long start = System.currentTimeMillis();
         log.info("Starting Daily Accrual posting for the date: {}", accrualDate);
@@ -85,7 +88,8 @@ public class DailyAccrualTasklet implements Tasklet {
                     log.debug("Starting Daily Accrual posting - total records - {}", totalFilteredRecords);
                     List<Long> queueElement = queue.element();
                     maxLoanIdInList = queueElement.get(queueElement.size() - 1);
-                    this.postDailyAccruals(queue.remove(), threadPoolSize, accrualDate, batchSize, maxLoanIdInList);
+                    this.postDailyAccruals(queue.remove(), threadPoolSize, accrualDate, batchSize, maxLoanIdInList,
+                            minimumDaysInArrearsToSuspendLoanAccount);
                 } while (!CollectionUtils.isEmpty(queue));
             }
         }
@@ -93,7 +97,8 @@ public class DailyAccrualTasklet implements Tasklet {
         return RepeatStatus.FINISHED;
     }
 
-    private void postDailyAccruals(List<Long> loanIds, int threadPoolSize, LocalDate accrualDate, int pageSize, Long maxLoanIdInList) {
+    private void postDailyAccruals(List<Long> loanIds, int threadPoolSize, LocalDate accrualDate, int pageSize, Long maxLoanIdInList,
+            Long minimumDaysInArrearsToSuspendLoanAccount) {
         dataFetched = false;
         List<Callable<Void>> posters = new ArrayList<>();
         int fromIndex = 0;
@@ -142,6 +147,7 @@ public class DailyAccrualTasklet implements Tasklet {
             DailyInterestAccrualPosterTask dailyAccrualPosterTask = applicationContext.getBean(DailyInterestAccrualPosterTask.class);
             dailyAccrualPosterTask.setLoanIds(subList);
             dailyAccrualPosterTask.setAccrualDate(accrualDate);
+            dailyAccrualPosterTask.setMinimumDaysInArrearsToSuspendLoanAccount(minimumDaysInArrearsToSuspendLoanAccount);
             dailyAccrualPosterTask.setContext(ThreadLocalContextUtil.getContext());
             posters.add(dailyAccrualPosterTask);
 

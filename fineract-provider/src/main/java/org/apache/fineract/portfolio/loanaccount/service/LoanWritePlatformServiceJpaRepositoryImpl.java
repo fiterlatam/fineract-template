@@ -82,6 +82,7 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
+import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
@@ -179,7 +180,6 @@ import org.apache.fineract.portfolio.collectionsheet.command.CollectionSheetBulk
 import org.apache.fineract.portfolio.collectionsheet.command.CollectionSheetBulkRepaymentCommand;
 import org.apache.fineract.portfolio.collectionsheet.command.SingleDisbursalCommand;
 import org.apache.fineract.portfolio.collectionsheet.command.SingleRepaymentCommand;
-import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
 import org.apache.fineract.portfolio.insurance.domain.InsuranceIncident;
@@ -310,7 +310,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final FacturaElectronicMensualRepository facturaElectronicMensualRepository;
     private final LoanProductParameterizationRepository productParameterizationRepository;
     private final CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
-    private final DelinquencyReadPlatformService delinquencyReadPlatformService;
 
     @PostConstruct
     public void registerForNotification() {
@@ -5057,7 +5056,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     @Override
     @Transactional
-    public void persistDailyInterestAccrual(final Long loanId, final LocalDate accrualDate) {
+    public void persistDailyInterestAccrual(final Long loanId, final LocalDate accrualDate, Long minimumDaysInArrearsToSuspendLoanAccount) {
         final Loan loan = this.loanAssembler.assembleFrom(loanId);
         final String claimType = loan.claimType();
         if (claimType != null && claimType.equalsIgnoreCase("guarantor")) {
@@ -5070,12 +5069,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         log.info("Persisting daily accrual for loan: {}", loan.getId());
         while (lastAccrualDate.isBefore(accrualDate)) {
             lastAccrualDate = lastAccrualDate.plusDays(1);
-            this.processInterestAccrualForDate(lastAccrualDate, loan);
+            this.processInterestAccrualForDate(lastAccrualDate, loan, minimumDaysInArrearsToSuspendLoanAccount);
         }
         log.info("Daily accrual persisted for loan: {}", loan.getId());
     }
 
-    private void processInterestAccrualForDate(final LocalDate accrualDate, Loan loan) {
+    private void processInterestAccrualForDate(final LocalDate accrualDate, Loan loan, Long minimumDaysInArrearsToSuspendLoanAccount) {
         final MonetaryCurrency currency = loan.getCurrency();
         ExternalId externalIdentifier = ExternalId.empty();
         if (TemporaryConfigurationServiceContainer.isExternalIdAutoGenerationEnabled()) {
@@ -5085,12 +5084,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         BigDecimal dailyAccrualInterest = null;
         Integer accrualInstallmentNumber = null;
         Money principalLoanBalanceOutstanding = loan.getPrincipal();
-        final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loan.getId());
-        final Long daysInArrears = collectionData.getPastDueDays();
-        Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
-        if (minimumDaysInArrearsToSuspendLoanAccount == null) {
-            minimumDaysInArrearsToSuspendLoanAccount = 90L;
-        }
         for (final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : repaymentScheduleInstallments) {
             if (!accrualDate.isBefore(loanRepaymentScheduleInstallment.getFromDate())
                     && !accrualDate.isAfter(loanRepaymentScheduleInstallment.getDueDate().minusDays(1))) {
@@ -5118,46 +5111,36 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 } else {
                     dailyAccrualInterest = interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2,
                             RoundingMode.HALF_UP);
-                    final ScheduleGeneratorDTO scheduleGeneratorDTO = loanUtilService.buildScheduleGeneratorDTO(loan, null);
-                    final LoanApplicationTerms loanApplicationTerms = loan.constructLoanApplicationTerms(scheduleGeneratorDTO);
-                    final LoanTermVariationsDataWrapper loanTermVariationsDataWrapper = loanApplicationTerms.getLoanTermVariations();
-                    if (loanTermVariationsDataWrapper != null) {
-                        List<LoanTermVariationsData> interestRatesFromInstallment = loanTermVariationsDataWrapper
-                                .getInterestRateFromInstallment();
-                        if (interestRatesFromInstallment != null && !interestRatesFromInstallment.isEmpty()) {
-                            LocalDate periodStartDate = loanRepaymentScheduleInstallment.getFromDate();
-                            LocalDate periodEndDate = accrualDate;
-                            final LocalDate periodEndDateFinal = periodEndDate;
-                            interestRatesFromInstallment = interestRatesFromInstallment.stream().filter(interestRateVariation -> !DateUtils
-                                    .isAfter(interestRateVariation.getTermVariationApplicableFrom(), periodEndDateFinal)).toList();
-                            final List<LoanTermVariationsData> sortedInterestRatesFromInstallment = interestRatesFromInstallment.stream()
-                                    .sorted(Comparator.comparing(LoanTermVariationsData::getLastModifiedDate,
-                                            Comparator.nullsLast(Comparator.reverseOrder())))
-                                    .toList();
-                            if (CollectionUtils.isNotEmpty(sortedInterestRatesFromInstallment)) {
-                                final LoanTermVariationsData interestRateFromInstallment = sortedInterestRatesFromInstallment.get(0);
-                                final LocalDate termVariationApplicableFromDate = interestRateFromInstallment
-                                        .getTermVariationApplicableFrom();
-                                final BigDecimal interestRate = interestRateFromInstallment.getDecimalValue();
-                                if (DateUtils.isAfter(termVariationApplicableFromDate, periodStartDate)) {
-                                    periodStartDate = termVariationApplicableFromDate;
-                                }
-                                loanApplicationTerms.updateAnnualNominalInterestRate(interestRate);
-                            }
-                            final LoanScheduleGenerator loanScheduleGenerator = this.loanScheduleFactory
-                                    .create(loanApplicationTerms.getLoanScheduleType(), loanApplicationTerms.getInterestMethod());
-                            final int periodNumber = loanRepaymentScheduleInstallment.getInstallmentNumber();
-                            if (DateUtils.isEqual(periodStartDate, periodEndDate)) {
-                                periodEndDate = periodEndDate.plusDays(1);
-                            }
-                            final boolean ignoreCurrencyDigitsAfterDecimal = false;
-                            final PrincipalInterest principalInterest = loanScheduleGenerator.calculatePrincipalInterestComponents(
-                                    principalLoanBalanceOutstanding, loanApplicationTerms, periodNumber, periodStartDate, periodEndDate,
-                                    ignoreCurrencyDigitsAfterDecimal);
-                            final int daysDifference = Math.toIntExact(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
-                            dailyAccrualInterest = principalInterest.interest().getAmount().divide(BigDecimal.valueOf(daysDifference), 2,
-                                    RoundingMode.HALF_UP);
+                    LocalDate periodStartDate = loanRepaymentScheduleInstallment.getFromDate();
+                    LocalDate periodEndDate = accrualDate;
+                    LoanTermVariationsData loanTermVariationsData = this.getLoanTermVariationsDataFor(loan.getId(), periodEndDate);
+                    if (loanTermVariationsData != null && loanTermVariationsData.getDecimalValue() != null
+                            && loan.getLoanRepaymentScheduleDetail().getAnnualNominalInterestRate() != null
+                            && loan.getLoanRepaymentScheduleDetail().getAnnualNominalInterestRate()
+                                    .compareTo(loanTermVariationsData.getDecimalValue()) < 0) {
+                        final ScheduleGeneratorDTO scheduleGeneratorDTO = loanUtilService.buildScheduleGeneratorDTO(loan, null);
+                        final LoanApplicationTerms loanApplicationTerms = loan.constructLoanApplicationTerms(scheduleGeneratorDTO);
+
+                        final LocalDate termVariationApplicableFromDate = loanTermVariationsData.getTermVariationApplicableFrom();
+                        final BigDecimal interestRate = loanTermVariationsData.getDecimalValue();
+                        if (DateUtils.isAfter(termVariationApplicableFromDate, periodStartDate)) {
+                            periodStartDate = termVariationApplicableFromDate;
                         }
+                        loanApplicationTerms.updateAnnualNominalInterestRate(interestRate);
+
+                        final LoanScheduleGenerator loanScheduleGenerator = this.loanScheduleFactory
+                                .create(loanApplicationTerms.getLoanScheduleType(), loanApplicationTerms.getInterestMethod());
+                        final int periodNumber = loanRepaymentScheduleInstallment.getInstallmentNumber();
+                        if (DateUtils.isEqual(periodStartDate, periodEndDate)) {
+                            periodEndDate = periodEndDate.plusDays(1);
+                        }
+                        final boolean ignoreCurrencyDigitsAfterDecimal = false;
+                        final PrincipalInterest principalInterest = loanScheduleGenerator.calculatePrincipalInterestComponents(
+                                principalLoanBalanceOutstanding, loanApplicationTerms, periodNumber, periodStartDate, periodEndDate,
+                                ignoreCurrencyDigitsAfterDecimal);
+                        final int daysDifference = Math.toIntExact(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
+                        dailyAccrualInterest = principalInterest.interest().getAmount().divide(BigDecimal.valueOf(daysDifference), 2,
+                                RoundingMode.HALF_UP);
                     }
                 }
                 // Accumulate the daily interest to the installment's accrued interest
@@ -5175,6 +5158,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final Money dailyInterestMoney = Money.of(currency, dailyAccrualInterest);
             final LoanTransaction dailyAccrualTransaction = LoanTransaction.accrueDailyInterest(loan.getOffice(), loan, dailyInterestMoney,
                     accrualDate, externalIdentifier, accrualInstallmentNumber);
+            final long daysInArrears = this.getDaysInArrears(loan.getId());
+            if (minimumDaysInArrearsToSuspendLoanAccount == null) {
+                minimumDaysInArrearsToSuspendLoanAccount = 90L;
+            }
             if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
                 dailyAccrualTransaction.markAsOccurredOnSuspendedAccount();
             }
@@ -5184,6 +5171,31 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         loan.setInterestAccruedTill(accrualDate);
         loanRepository.saveAndFlush(loan);
+    }
+
+    private LoanTermVariationsData getLoanTermVariationsDataFor(Long loanId, LocalDate periodEndDate) {
+        String query = "select decimal_value, applicable_date, is_specific_to_installment from m_loan_term_variations where loan_id = ? "
+                + " and applicable_date <= ? order by last_modified_on_utc desc";
+        List<LoanTermVariationsData> results = this.jdbcTemplate.query(query, (rs, rowNum) -> {
+            final BigDecimal decimalValue = rs.getBigDecimal("decimal_value");
+            final LocalDate applicableDate = JdbcSupport.getLocalDate(rs, "applicable_date");
+            final boolean isSpecificToInstallment = rs.getBoolean("is_specific_to_installment");
+            return new LoanTermVariationsData(loanId, null, applicableDate, decimalValue, null, isSpecificToInstallment);
+        }, loanId, periodEndDate);
+        if (results.isEmpty()) {
+            return null;
+        }
+        return results.get(0);
+    }
+
+    private long getDaysInArrears(final Long loanId) {
+        String query = "SELECT overdue_since_date_derived FROM m_loan_arrears_aging WHERE loan_id = ?";
+        List<LocalDate> results = this.jdbcTemplate.queryForList(query, LocalDate.class, loanId);
+        if (results.isEmpty()) {
+            return 0;
+        }
+        LocalDate overdueSinceDate = results.get(0);
+        return overdueSinceDate != null ? ChronoUnit.DAYS.between(overdueSinceDate, DateUtils.getLocalDateOfTenant()) : 0;
     }
 
     private boolean accrualExistsForDate(final LocalDate accrualDate, final Long loanId) {
@@ -5202,8 +5214,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (minimumDaysInArrearsToSuspendLoanAccount == null) {
             minimumDaysInArrearsToSuspendLoanAccount = 90L;
         }
-        final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loanId);
-        final Long daysInArrears = collectionData.getPastDueDays();
+        final Long daysInArrears = this.getDaysInArrears(loanId);
         final boolean hasOccurredOnSuspendedAccount = daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount;
         loan.handleChargeAppliedTransactionPerInstallment(charges, localDate, hasOccurredOnSuspendedAccount);
         loanRepository.saveAndFlush(loan);
