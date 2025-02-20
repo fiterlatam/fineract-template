@@ -137,6 +137,7 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanBlockingReasonData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanCollateralManagementData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanDebtProjectionData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanInstallmentChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanReclaimData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanSummaryData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
@@ -150,6 +151,7 @@ import org.apache.fineract.portfolio.loanaccount.exception.LoanTemplateTypeRequi
 import org.apache.fineract.portfolio.loanaccount.exception.NotSupportedLoanTemplateTypeException;
 import org.apache.fineract.portfolio.loanaccount.guarantor.data.GuarantorData;
 import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.data.FeeDetails;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
@@ -1212,6 +1214,19 @@ public class LoansApiResource {
                         LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
                 this.calculationPlatformService.getFeeChargesDetail(repaymentSchedule, resolvedLoanId);
 
+                repaymentSchedule.getPeriods().stream().forEach(period -> {
+                    Collection<LoanInstallmentChargeData> loanInstallmentChargeData = this.loanChargeReadPlatformService
+                            .retrieveInstallmentLoanCharges(period.getInstallmentId());
+                    if (!loanInstallmentChargeData.isEmpty()) {
+                        Collection<FeeDetails> feeDetails = new ArrayList<>();
+                        loanInstallmentChargeData.forEach(charge -> {
+                            feeDetails.add(new FeeDetails(charge.getChargeName(), charge.getAmount(), charge.getAmountPaid(),
+                                    charge.getAmountOutstanding()));
+                        });
+                        // update repayment schedule period with fee details
+                        period.setFeeDetails(feeDetails);
+                    }
+                });
                 if (associationParameters.contains(DataTableApiConstant.futureScheduleAssociateParamName)
                         && loanBasicDetails.isInterestRecalculationEnabled()) {
                     mandatoryResponseParameters.add(DataTableApiConstant.futureScheduleAssociateParamName);

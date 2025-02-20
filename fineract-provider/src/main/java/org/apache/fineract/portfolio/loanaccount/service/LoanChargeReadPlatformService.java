@@ -40,6 +40,8 @@ public interface LoanChargeReadPlatformService {
 
     Collection<LoanInstallmentChargeData> retrieveInstallmentLoanCharges(Long loanChargeId, boolean onlyPaymentPendingCharges);
 
+    Collection<LoanInstallmentChargeData> retrieveInstallmentLoanCharges(Long installmentId);
+
     Collection<Integer> retrieveOverdueInstallmentChargeFrequencyNumber(Loan loan, Charge charge, Integer periodNumber);
 
     Collection<LoanChargeData> retrieveLoanChargesForAccrual(Long loanId);

@@ -243,12 +243,20 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
         return this.jdbcTemplate.query(sql, rm, loanChargeId); // NOSONAR
     }
 
+    public Collection<LoanInstallmentChargeData> retrieveInstallmentLoanCharges(Long installmentId) {
+        final LoanInstallmentChargeMapper rm = new LoanInstallmentChargeMapper();
+        String sql = "select " + rm.schema() + "where lic.loan_schedule_id= ? ";
+        sql = sql + " order by lsi.installment";
+        return this.jdbcTemplate.query(sql, rm, installmentId); // NOSONAR
+    }
+
     private static final class LoanInstallmentChargeMapper implements RowMapper<LoanInstallmentChargeData> {
 
         public String schema() {
-            return " lsi.installment as installmentNumber, lsi.duedate as dueAsOfDate, "
-                    + "lic.amount_outstanding_derived as amountOutstanding, lic.amount as  amount, lic.is_paid_derived as paid, "
-                    + "lic.amount_waived_derived as amountWaived, lic.waived as waived from  m_loan_installment_charge lic "
+            return " mchg.name, lsi.installment as installmentNumber, lsi.duedate as dueAsOfDate, "
+                    + "lic.amount_outstanding_derived as amountOutstanding, lic.amount_paid_derived as amountPaid, lic.amount as  amount, lic.is_paid_derived as paid, "
+                    + "lic.amount_waived_derived as amountWaived, lic.waived as waived "
+                    + "from  m_loan_installment_charge lic join m_loan_charge mlch on mlch.id = lic.loan_charge_id join m_charge mchg on mchg.id = mlch.charge_id "
                     + "join m_loan_repayment_schedule lsi on lsi.id = lic.loan_schedule_id ";
         }
 
@@ -258,12 +266,15 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
             final LocalDate dueAsOfDate = JdbcSupport.getLocalDate(rs, "dueAsOfDate");
             final BigDecimal amountOutstanding = rs.getBigDecimal("amountOutstanding");
             final BigDecimal amount = rs.getBigDecimal("amount");
+            final BigDecimal amountPaid = rs.getBigDecimal("amountPaid");
             final BigDecimal amountWaived = rs.getBigDecimal("amountWaived");
+            final String chargeName = rs.getString("name");
             final boolean paid = rs.getBoolean("paid");
             final boolean waived = rs.getBoolean("waived");
 
             return LoanInstallmentChargeData.builder().installmentNumber(installmentNumber).dueDate(dueAsOfDate).amount(amount)
-                    .amountOutstanding(amountOutstanding).amountWaived(amountWaived).paid(paid).waived(waived).build();
+                    .chargeName(chargeName).amountOutstanding(amountOutstanding).amountWaived(amountWaived).paid(paid).waived(waived)
+                    .amountPaid(amountPaid).build();
         }
     }
 

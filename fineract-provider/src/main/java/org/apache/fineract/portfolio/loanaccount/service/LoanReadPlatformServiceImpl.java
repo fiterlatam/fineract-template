@@ -1351,7 +1351,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         public String schema() {
 
-            return " ls.loan_id as loanId, ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, ls.obligations_met_on_date as obligationsMetOnDate, ls.completed_derived as complete,"
+            return " ls.loan_id as loanId,ls.id as installmentId, ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, ls.obligations_met_on_date as obligationsMetOnDate, ls.completed_derived as complete,"
                     + " ls.principal_amount as principalDue, ls.principal_completed_derived as principalPaid, ls.principal_writtenoff_derived as principalWrittenOff, ls.is_additional as isAdditional, "
                     + " ls.interest_amount as interestDue, ls.interest_completed_derived as interestPaid, ls.interest_waived_derived as interestWaived, ls.interest_writtenoff_derived as interestWrittenOff, "
                     + " ls.fee_charges_amount as feeChargesDue, ls.fee_charges_completed_derived as feeChargesPaid, ls.fee_charges_waived_derived as feeChargesWaived, ls.fee_charges_writtenoff_derived as feeChargesWrittenOff, "
@@ -1417,6 +1417,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             while (rs.next()) {
 
                 final Long loanId = rs.getLong(LoanReadPlatformServiceImpl.LOAN_ID_PARAM);
+                final Long installmentId = JdbcSupport.getLong(rs, "installmentId");
                 final Integer period = JdbcSupport.getInteger(rs, "period");
                 LocalDate fromDate = JdbcSupport.getLocalDate(rs, "fromDate");
                 final LocalDate dueDate = JdbcSupport.getLocalDate(rs, LoanReadPlatformServiceImpl.DUE_DATE_PARAM);
@@ -1546,6 +1547,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         totalPaidForPeriod, totalPaidInAdvanceForPeriod, totalPaidLateForPeriod, totalWaivedForPeriod,
                         totalWrittenOffForPeriod, totalOutstandingForPeriod, totalActualCostOfLoanForPeriod, totalInstallmentAmount,
                         credits, isDownPayment);
+
+                periodData.setInstallmentId(installmentId);
 
                 periods.add(periodData);
             }
