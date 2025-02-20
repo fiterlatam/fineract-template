@@ -27,6 +27,7 @@ import lombok.Getter;
 @Builder
 public class LoanInstallmentChargeData {
 
+    private final String chargeName;
     private final Integer installmentNumber;
     private final LocalDate dueDate;
     private final BigDecimal amount;
@@ -36,4 +37,5 @@ public class LoanInstallmentChargeData {
     private final boolean waived;
     private BigDecimal amountAccrued;
     private BigDecimal amountUnrecognized;
+    private BigDecimal amountPaid;
 }

@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.loanschedule.data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -95,6 +96,8 @@ public final class LoanSchedulePeriodData {
     private BigDecimal honorariosWaived;
     private BigDecimal honorariosWrittenOff;
     private BigDecimal honorariosOutstanding;
+    private Collection<FeeDetails> feeDetails;
+    private Long installmentId;
 
     public static LoanSchedulePeriodData disbursementOnlyPeriod(final LocalDate disbursementDate, final BigDecimal principalDisbursed,
             final BigDecimal feeChargesDueAtTimeOfDisbursement, final boolean isDisbursed) {
