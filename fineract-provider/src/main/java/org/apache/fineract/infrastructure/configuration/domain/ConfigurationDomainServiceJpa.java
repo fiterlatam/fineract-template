@@ -59,6 +59,8 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     public static final String REMAINING_INVOICES_THRESHOLD = "Cantidad previa al límte de la numeración de la facturación para notificar";
     public static final String INVOICE_NOTIFICATION_EMAILS = "Correo/s para enviar alerta por factura electrónica por vencer o agotarse";
 
+    private static final String CLIENT_CRAETION_CUPO_DEFAULT_VALUE = "client-creation-cupo-default-value";
+
     private final PermissionRepository permissionRepository;
     private final GlobalConfigurationRepositoryWrapper globalConfigurationRepository;
     private final PlatformCacheRepository cacheTypeRepository;
@@ -621,4 +623,11 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
         return property.getValue();
     }
+
+    @Override
+    public Long retrieveClientCreationDefaultCupoValue() {
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(CLIENT_CRAETION_CUPO_DEFAULT_VALUE);
+        return property.getValue();
+    }
+
 }

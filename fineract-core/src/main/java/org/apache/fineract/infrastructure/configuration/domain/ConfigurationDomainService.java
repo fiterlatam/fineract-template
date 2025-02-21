@@ -165,4 +165,6 @@ public interface ConfigurationDomainService {
     LocalDate retrievePenaltyStartDate();
 
     Long retrieveSMVLLimit();
+
+    Long retrieveClientCreationDefaultCupoValue();
 }
