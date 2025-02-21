@@ -380,4 +380,5 @@
     <include file="parts/202501282000001000_EA_187_creditorotativo_laon_product.xml" relativeToChangelogFile="true" />
     <include file="parts/202502192000001000_EA_33_webhook_disbursement_firstdisbursement.xml" relativeToChangelogFile="true" />
     <include file="parts/202502192000002000_EA_32_webhook_disbursement_creditorotativo.xml" relativeToChangelogFile="true" />
+    <include file="parts/202502202000001000_EA_219_configuration_cupodefaulçtvalue.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.client.service;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import jakarta.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -123,6 +124,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWritePlatformService {
 
+    public static final String DATATABLES_PARAM = "datatables";
+    public static final String REGISTERED_TABLE_NAME_PARAM = "registeredTableName";
+    public static final String CAMPOS_CLIENTE_EMPRESAS_PARAM = "campos_cliente_empresas";
+    public static final String CUPO_PARAM = "Cupo";
+    public static final String FECHA_CUPO_PARAM = "Fecha Cupo";
+    public static final String DATE_FORMAT_PARAM = "dateFormat";
+    public static final String DATA_PARAM = "data";
+
     private final PlatformSecurityContext context;
     private final ClientRepositoryWrapper clientRepository;
     private final ClientNonPersonRepositoryWrapper clientNonPersonRepository;
@@ -214,10 +223,12 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
     @Transactional
     @Override
-    public CommandProcessingResult createClient(final JsonCommand command) {
+    public CommandProcessingResult createClient(JsonCommand command) {
 
         try {
             final AppUser currentUser = this.context.authenticatedUser();
+
+            command = fillDefaultFieldsDinamically(command);
 
             this.fromApiJsonDeserializer.validateForCreate(command.json());
 
@@ -406,7 +417,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                     if (optionalBlockedClient.isPresent()) {
                         JsonObject jsonObject = new JsonObject();
                         jsonObject.addProperty("blockedOnDate", command.stringValueOfParameterNamed("submittedOnDate"));
-                        jsonObject.addProperty("dateFormat", command.dateFormat());
+                        jsonObject.addProperty(DATE_FORMAT_PARAM, command.dateFormat());
                         jsonObject.addProperty("locale", command.locale());
                         final Optional<BlockingReasonSetting> listasDeControlBlockingReason = blockingReasonSettingsRepositoryWrapper
                                 .getBlockingReasonSettingByReason("LISTAS DE CONTROL", "CLIENT").stream().findFirst();
@@ -461,8 +472,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         if (datatables != null && !datatables.isEmpty()) {
             for (JsonElement datatable : datatables) {
                 JsonObject datatableObject = datatable.getAsJsonObject();
-                if (datatableObject.has("data")) {
-                    final JsonElement data = datatableObject.get("data");
+                if (datatableObject.has(DATA_PARAM)) {
+                    final JsonElement data = datatableObject.get(DATA_PARAM);
                     if (data.isJsonObject()) {
                         JsonObject dataObject = data.getAsJsonObject();
                         if (dataObject.has("NIT")) {
@@ -482,8 +493,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         if (datatables != null && !datatables.isEmpty()) {
             for (JsonElement datatable : datatables) {
                 JsonObject datatableObject = datatable.getAsJsonObject();
-                if (datatableObject.has("data")) {
-                    final JsonElement data = datatableObject.get("data");
+                if (datatableObject.has(DATA_PARAM)) {
+                    final JsonElement data = datatableObject.get(DATA_PARAM);
                     if (data.isJsonObject()) {
                         JsonObject dataObject = data.getAsJsonObject();
                         if (dataObject.has("Cedula")) {
@@ -1590,5 +1601,32 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
         unblockClientBlockingReason(currentUser, client, unblockDate, blockReasonSetting.getId(), unblockComment);
 
+    }
+
+    private JsonCommand fillDefaultFieldsDinamically(JsonCommand command) {
+        JsonObject parsedCommand = command.getParsedCommand().getAsJsonObject();
+        JsonArray datatables = parsedCommand.getAsJsonArray(DATATABLES_PARAM);
+
+        if (datatables != null && datatables.size() > 0) {
+            for (int i = 0; i < datatables.size(); i++) {
+                JsonObject datatable = datatables.get(i).getAsJsonObject();
+                String registeredTableName = datatable.get(REGISTERED_TABLE_NAME_PARAM).getAsString();
+
+                if (CAMPOS_CLIENTE_EMPRESAS_PARAM.equals(registeredTableName)) {
+                    JsonObject data = datatable.getAsJsonObject(DATA_PARAM);
+
+                    if (!data.has(CUPO_PARAM)) {
+                        data.addProperty(CUPO_PARAM, configurationDomainService.retrieveClientCreationDefaultCupoValue());
+                    }
+
+                    if (!data.has(FECHA_CUPO_PARAM)) {
+                        String dateFormat = data.get(DATE_FORMAT_PARAM).getAsString();
+                        data.addProperty(FECHA_CUPO_PARAM, DateUtils.format(DateUtils.getLocalDateOfTenant(), dateFormat));
+                    }
+                }
+            }
+        }
+
+        return new JsonCommand(fromApiJsonHelper, parsedCommand.toString(), null, JsonParser.parseString(parsedCommand.toString()));
     }
 }
