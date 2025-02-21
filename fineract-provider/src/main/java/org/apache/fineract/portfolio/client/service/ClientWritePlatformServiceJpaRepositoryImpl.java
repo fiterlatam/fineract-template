@@ -131,6 +131,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     public static final String FECHA_CUPO_PARAM = "Fecha Cupo";
     public static final String DATE_FORMAT_PARAM = "dateFormat";
     public static final String DATA_PARAM = "data";
+    public static final String CUPO_OTROS_PRESTAMOS_PARAM = "Cupo otros prestamos";
 
     private final PlatformSecurityContext context;
     private final ClientRepositoryWrapper clientRepository;
@@ -1617,6 +1618,10 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
                     if (!data.has(CUPO_PARAM)) {
                         data.addProperty(CUPO_PARAM, configurationDomainService.retrieveClientCreationDefaultCupoValue());
+                    }
+
+                    if (!data.has(CUPO_OTROS_PRESTAMOS_PARAM)) {
+                        data.addProperty(CUPO_OTROS_PRESTAMOS_PARAM, configurationDomainService.retrieveClientCreationDefaultCupoValue());
                     }
 
                     if (!data.has(FECHA_CUPO_PARAM)) {
