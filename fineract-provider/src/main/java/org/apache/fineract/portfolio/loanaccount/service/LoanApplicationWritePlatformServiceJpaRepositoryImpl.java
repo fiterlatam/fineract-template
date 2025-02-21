@@ -2032,8 +2032,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             // Remove all mi pyme charges and leave only the ones that are not mi pyme
             List<LoanCharge> removedMiPymeList = new ArrayList<>();
             if (Objects.nonNull(loan.getLoanCharges())) {
-                removedMiPymeList = loan.getLoanCharges().stream().filter(
-                        name -> Boolean.FALSE.equals(name.getCharge().getName().toLowerCase().contains("capital pendientemi mi pyme"))
+                removedMiPymeList = loan.getLoanCharges().stream()
+                        .filter(name -> Boolean.FALSE.equals(name.getCharge().getName().toLowerCase().contains("capital pendiente mi pyme"))
                                 && Boolean.FALSE.equals(name.getCharge().getName().toLowerCase().contains("comision mi pyme")))
                         .collect(Collectors.toList());
             }
