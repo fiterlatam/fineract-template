@@ -403,14 +403,16 @@ public class LoanHistoryArchiver {
                             loanArchiveHistoryRepository.save(loanArchiveHistory);
                         }
                         if (currentInstallment.isObligationsMet()) {
-                            installmentsWithObligationMet.add(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
+                            installmentsWithObligationMet
+                                    .add(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
                         }
 
                     }
                 }
             }
             if (!installmentsWithObligationMet.isEmpty()) {
-                List<LoanArchiveHistory> oldLoanArchiveHistories = loanArchiveHistoryRepository.findByNumeroObligacionMet(installmentsWithObligationMet);
+                List<LoanArchiveHistory> oldLoanArchiveHistories = loanArchiveHistoryRepository
+                        .findByNumeroObligacionMet(installmentsWithObligationMet);
                 loanArchiveHistoryRepository.deleteAll(oldLoanArchiveHistories);
             }
             if (!errors.isEmpty()) {
