@@ -17,6 +17,7 @@ import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.portfolio.loanaccount.data.LoanArchiveHistoryData;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanArchiveHistoryRepository;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanArchiveHistoryReadWritePlatformService;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -33,6 +34,7 @@ import org.springframework.stereotype.Component;
 public class ArchiveLoansHistoryTasklet implements Tasklet {
 
     private final LoanArchiveHistoryReadWritePlatformService loanArchiveHistoryService;
+    private final LoanArchiveHistoryRepository loanArchiveHistoryRepository;
     private static final int QUEUE_SIZE = 1;
     private final Queue<List<LoanArchiveHistoryData>> queue = new ArrayDeque<>();
     private final ApplicationContext applicationContext;
@@ -54,6 +56,8 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
         long start = System.currentTimeMillis();
         LocalDate archiveDate = DateUtils.getLocalDateOfTenant();
         log.info("Running Archivo de cartera for date: {}", archiveDate);
+        log.info("Archivo de cartera: Removing old entries.");
+        loanArchiveHistoryRepository.deleteAll();
         log.debug("Reading Load Ids for archiving!");
         List<LoanArchiveHistoryData> listLoan = loanArchiveHistoryService.getLoanArchiveCollectionData(maxLoanIdInList, pageSize);
         if (listLoan != null && !listLoan.isEmpty()) {

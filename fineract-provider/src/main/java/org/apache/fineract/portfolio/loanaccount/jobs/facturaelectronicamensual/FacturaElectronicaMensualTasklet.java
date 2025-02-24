@@ -18,44 +18,49 @@
  */
 package org.apache.fineract.portfolio.loanaccount.jobs.facturaelectronicamensual;
 
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.Arrays;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Queue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
-import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
+import org.apache.fineract.infrastructure.core.config.TaskExecutorConstant;
+import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
-import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.stereotype.Component;
 
 @Slf4j
+@RequiredArgsConstructor
+@Component
 public class FacturaElectronicaMensualTasklet implements Tasklet {
 
-    private final JdbcTemplate jdbcTemplate;
+    private static final int QUEUE_SIZE = 1;
+    private final Queue<List<LoanDocumentData>> queue = new ArrayDeque<>();
+    private final ApplicationContext applicationContext;
+    @Qualifier(TaskExecutorConstant.CONFIGURABLE_TASK_EXECUTOR_BEAN_NAME)
+    private final ThreadPoolTaskExecutor taskExecutor;
+    private final LoanReadPlatformService loanReadPlatformService;
+    private boolean dataFetched = false;
     private final ConfigurationDomainService configurationDomainService;
-    private final LoanWritePlatformService loanWritePlatformService;
-
-    @Autowired
-    public FacturaElectronicaMensualTasklet(final JdbcTemplate jdbcTemplate, final ConfigurationDomainService configurationDomainService,
-            LoanWritePlatformService loanWritePlatformService) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.configurationDomainService = configurationDomainService;
-        this.loanWritePlatformService = loanWritePlatformService;
-    }
 
     @Override
     public RepeatStatus execute(@NotNull StepContribution contribution, @NotNull ChunkContext chunkContext) throws Exception {
@@ -66,625 +71,157 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
         final LocalDate secondLastDayOfMonth = lastDayOfMonth.minusDays(1);
         final boolean enableMonthlyInvoiceGenerationOnJobTrigger = this.configurationDomainService
                 .enableMonthlyInvoiceGenerationOnJobTrigger();
+        final int threadPoolSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("thread-pool-size"));
+        taskExecutor.setMaxPoolSize(threadPoolSize);
+        taskExecutor.setCorePoolSize(threadPoolSize);
+        final int batchSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
+        final int pageSize = batchSize * threadPoolSize;
+        Long maxLoanIdInList = 0L;
+
         if (businessLocalDate.equals(secondLastDayOfMonth) || enableMonthlyInvoiceGenerationOnJobTrigger) {
-            final LoanInvoiceMapper loanInvoiceMapper = new LoanInvoiceMapper();
-            final String invoiceQuery = "SELECT " + loanInvoiceMapper.invoiceSchema();
-            final List<LoanDocumentData> loanInvoiceDataList = this.jdbcTemplate.query(invoiceQuery, loanInvoiceMapper,
+            long start = System.currentTimeMillis();
+            log.info("Starting FacturaElectronicaMensualTasklet job for the date: {}", businessLocalDate);
+            List<LoanDocumentData> loanInvoiceDataList = this.loanReadPlatformService.retrieveLoanInvoiceDataList(pageSize, maxLoanIdInList,
                     secondLastDayOfMonth);
-            final String invoiceTransactionIds = loanInvoiceDataList.stream().map(LoanDocumentData::getTransactionIds)
-                    .collect(Collectors.joining(","));
-            final List<LoanDocumentData> groupedLoanInvoices = groupByClientIdAndProductType(loanInvoiceDataList);
-            for (final LoanDocumentData groupedLoanInvoice : groupedLoanInvoices) {
-                groupedLoanInvoice.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
-                this.loanWritePlatformService.processAndSaveLoanDocument(groupedLoanInvoice);
-            }
-            if (StringUtils.isNotBlank(invoiceTransactionIds)) {
-                final String updateLoanTransactionSQL = "UPDATE m_loan_transaction SET is_invoiced_generated_by_job = TRUE WHERE id IN ("
-                        + invoiceTransactionIds + ")";
-                final int rows = this.jdbcTemplate.update(updateLoanTransactionSQL);
-                log.info("Updated {} loan transactions as invoiced generated by job", rows);
+            if (loanInvoiceDataList != null && !loanInvoiceDataList.isEmpty()) {
+                loanInvoiceDataList = Collections.synchronizedList(loanInvoiceDataList);
+                long finish = System.currentTimeMillis();
+                log.debug("Done fetching LoanDocumentDataList within {} milliseconds", finish - start);
+                queue.add(loanInvoiceDataList);
+
+                if (!CollectionUtils.isEmpty(queue)) {
+                    do {
+                        int totalFilteredRecords = loanInvoiceDataList.size();
+                        log.debug("Starting FacturaElectronicaMensualTasklet invoice processing - total records - {}",
+                                totalFilteredRecords);
+                        List<LoanDocumentData> queueElement = queue.element();
+                        maxLoanIdInList = queueElement.get(queueElement.size() - 1).getLoanId();
+                        this.processInvoices(queue.remove(), threadPoolSize, secondLastDayOfMonth, batchSize, maxLoanIdInList);
+                    } while (!CollectionUtils.isEmpty(queue));
+                }
             }
         }
+        log.info("Completed FacturaElectronicaMensualTasklet job for the date: {}", businessLocalDate);
         return RepeatStatus.FINISHED;
     }
 
-    private List<LoanDocumentData> groupByClientIdAndProductType(final List<LoanDocumentData> loanDocumentDataList) {
-        final LocalDate businessLocalDate = DateUtils.getBusinessLocalDate();
-        final YearMonth yearMonth = YearMonth.from(businessLocalDate);
-        final LocalDate lastDayOfMonth = yearMonth.atEndOfMonth();
-        final LocalDate firstDayOfMonth = businessLocalDate.withDayOfMonth(1);
-        final LocalDate secondLastDayOfMonth = lastDayOfMonth.minusDays(1);
-        return loanDocumentDataList.stream()
-                .collect(Collectors.groupingBy(li1 -> Arrays.asList(li1.getClientId(), li1.getProductTypeName()),
-                        Collectors.collectingAndThen(Collectors.toList(), list -> {
-                            final BigDecimal interestPaid = list.stream().map(LoanDocumentData::getInterestPaid).reduce(BigDecimal.ZERO,
-                                    BigDecimal::add);
-                            final BigDecimal penaltyChargesPaid = list.stream().map(LoanDocumentData::getPenaltyChargesPaid)
-                                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-                            final BigDecimal mandatoryInsurancePaid = list.stream().map(LoanDocumentData::getMandatoryInsurancePaid)
-                                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-                            final BigDecimal voluntaryInsurancePaid = list.stream().map(LoanDocumentData::getVoluntaryInsurancePaid)
-                                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-                            final BigDecimal honorariosPaid = list.stream().map(LoanDocumentData::getHonorariosPaid).reduce(BigDecimal.ZERO,
-                                    BigDecimal::add);
-                            final BigDecimal totalPaid = list.stream().map(LoanDocumentData::getTotalPaid).reduce(BigDecimal.ZERO,
-                                    BigDecimal::add);
-                            final BigDecimal penaltyChargesVatPaid = list.stream().map(LoanDocumentData::getPenaltyChargesVatPaid)
-                                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-                            final BigDecimal mandatoryInsuranceVatPaid = list.stream().map(LoanDocumentData::getMandatoryInsuranceVatPaid)
-                                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-                            final BigDecimal voluntaryInsuranceVatPaid = list.stream().map(LoanDocumentData::getVoluntaryInsuranceVatPaid)
-                                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-                            final BigDecimal honorariosVatPaid = list.stream().map(LoanDocumentData::getHonorariosVatPaid)
-                                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-                            final Integer loansCount = list.size();
-                            final LoanDocumentData loanDocumentData = list.get(0);
-                            return LoanDocumentData.builder().clientIdNumber(loanDocumentData.getClientIdNumber())
-                                    .productTypeParamId(loanDocumentData.getProductTypeParamId())
-                                    .billingPrefix(loanDocumentData.getBillingPrefix())
-                                    .billingResolutionNumber(loanDocumentData.getBillingResolutionNumber())
-                                    .rangeStartNumber(loanDocumentData.getRangeStartNumber())
-                                    .rangeEndNumber(loanDocumentData.getRangeEndNumber())
-                                    .lastInvoiceNumber(loanDocumentData.getLastInvoiceNumber())
-                                    .lastCreditNoteNumber(loanDocumentData.getLastCreditNoteNumber())
-                                    .lastDebitNoteNumber(loanDocumentData.getLastDebitNoteNumber())
-                                    .technicalKey(loanDocumentData.getTechnicalKey()).nota(loanDocumentData.getNota())
-                                    .nota(loanDocumentData.getNota()).clientDisplayName(loanDocumentData.getClientDisplayName())
-                                    .clientLastName(loanDocumentData.getClientLastName())
-                                    .clientLegalForm(loanDocumentData.getClientLegalForm()).clientId(loanDocumentData.getClientId())
-                                    .clientEmailAddress(loanDocumentData.getClientEmailAddress()).loanId(loanDocumentData.getLoanId())
-                                    .productTypeId(loanDocumentData.getProductTypeId())
-                                    .productTypeName(loanDocumentData.getProductTypeName())
-                                    .overdueSinceDate(loanDocumentData.getOverdueSinceDate())
-                                    .daysInArrears(loanDocumentData.getDaysInArrears()).interestPaid(interestPaid)
-                                    .penaltyChargesPaid(penaltyChargesPaid).mandatoryInsurancePaid(mandatoryInsurancePaid)
-                                    .voluntaryInsurancePaid(voluntaryInsurancePaid).honorariosPaid(honorariosPaid)
-                                    .penaltyChargesVatPaid(penaltyChargesVatPaid).mandatoryInsuranceVatPaid(mandatoryInsuranceVatPaid)
-                                    .voluntaryInsuranceVatPaid(voluntaryInsuranceVatPaid).honorariosVatPaid(honorariosVatPaid)
-                                    .totalPaid(totalPaid).loansCount(loansCount).firstDayOfMonth(firstDayOfMonth)
-                                    .secondLastDayOfMonth(secondLastDayOfMonth).lastDayOfMonth(lastDayOfMonth)
-                                    .loanProductName(loanDocumentData.getLoanProductName()).companyNIT(loanDocumentData.getCompanyNIT())
-                                    .companyDocType(loanDocumentData.getCompanyDocType())
-                                    .companyDeptCode(loanDocumentData.getCompanyDeptCode())
-                                    .companyDeptName(loanDocumentData.getCompanyDeptName())
-                                    .companyCityCode(loanDocumentData.getCompanyCityCode())
-                                    .companyCityName(loanDocumentData.getCompanyCityName())
-                                    .companyAddress(loanDocumentData.getCompanyAddress())
-                                    .companyTelephone(loanDocumentData.getCompanyTelephone())
-                                    .clientCedula(loanDocumentData.getClientCedula()).clientAddress(loanDocumentData.getClientAddress())
-                                    .clientCityCode(loanDocumentData.getClientCityCode())
-                                    .clientCityName(loanDocumentData.getClientCityName())
-                                    .clientFirstName(loanDocumentData.getClientFirstName())
-                                    .clientMiddleName(loanDocumentData.getClientMiddleName())
-                                    .clientTelephone(loanDocumentData.getClientTelephone())
-                                    .collectionHouseName(loanDocumentData.getCollectionHouseName())
-                                    .collectionHouseNit(loanDocumentData.getCollectionHouseNit())
-                                    .voluntaryInsuranceCode(loanDocumentData.getVoluntaryInsuranceCode())
-                                    .voluntaryInsuranceName(loanDocumentData.getVoluntaryInsuranceName())
-                                    .mandatoryInsuranceCode(loanDocumentData.getMandatoryInsuranceCode())
-                                    .mandatoryInsuranceName(loanDocumentData.getMandatoryInsuranceName())
-                                    .transactionIds(loanDocumentData.getTransactionIds()).build();
-                        })))
-                .values().stream().toList();
+    private void processInvoices(List<LoanDocumentData> loanInvoiceDataList, int threadPoolSize, LocalDate secondLastDayOfMonth,
+            int pageSize, Long maxLoanIdInList) {
+        dataFetched = false;
+        List<Callable<Void>> posters = new ArrayList<>();
+        int fromIndex = 0;
+        int size = loanInvoiceDataList.size();
+        int batchSize = (int) Math.ceil((double) size / threadPoolSize);
 
+        if (batchSize == 0) {
+            return;
+        }
+
+        int toIndex = (batchSize > size - 1) ? size : batchSize;
+        while (toIndex < size && loanInvoiceDataList.get(toIndex - 1).getLoanId().equals(loanInvoiceDataList.get(toIndex).getLoanId())) {
+            toIndex++;
+        }
+        boolean lastBatch = false;
+        int loopCount = size / batchSize + 1;
+
+        FineractContext context = ThreadLocalContextUtil.getContext();
+
+        Callable<Void> fetchData = () -> {
+            ThreadLocalContextUtil.init(context);
+            Long maxId = maxLoanIdInList;
+            if (!queue.isEmpty()) {
+                maxId = Math.max(maxLoanIdInList, queue.element().get(queue.element().size() - 1).getLoanId());
+            }
+
+            while (queue.size() <= QUEUE_SIZE) {
+                log.info("Fetching while threads are running!");
+                List<LoanDocumentData> loanDocumentData = Collections
+                        .synchronizedList(this.loanReadPlatformService.retrieveLoanInvoiceDataList(pageSize, maxId, secondLastDayOfMonth));
+                if (loanDocumentData.isEmpty()) {
+                    log.info("No more loanDocumentData to process");
+                    break;
+                }
+                maxId = loanDocumentData.get(loanDocumentData.size() - 1).getLoanId();
+                queue.add(loanDocumentData);
+            }
+            dataFetched = true;
+            return null;
+        };
+        posters.add(fetchData);
+
+        for (long i = 0; i < loopCount; i++) {
+            List<LoanDocumentData> subList = safeSubList(loanInvoiceDataList, fromIndex, toIndex);
+            FacturaElectronicaMensualPosterTask facturaElectronicaMensualPosterTask = applicationContext
+                    .getBean(FacturaElectronicaMensualPosterTask.class);
+            facturaElectronicaMensualPosterTask.setLoanInvoiceDataList(subList);
+            facturaElectronicaMensualPosterTask.setContext(ThreadLocalContextUtil.getContext());
+            posters.add(facturaElectronicaMensualPosterTask);
+
+            if (lastBatch) {
+                log.info("Last batch processed");
+                break;
+            }
+            if (toIndex + batchSize > size - 1) {
+                lastBatch = true;
+            }
+            fromIndex = fromIndex + (toIndex - fromIndex);
+            toIndex = (toIndex + batchSize > size - 1) ? size : toIndex + batchSize;
+            while (toIndex < size
+                    && loanInvoiceDataList.get(toIndex - 1).getLoanId().equals(loanInvoiceDataList.get(toIndex).getLoanId())) {
+                toIndex++;
+            }
+        }
+
+        List<Future<Void>> responses = new ArrayList<>();
+        posters.forEach(poster -> responses.add(taskExecutor.submit(poster)));
+        // delay as data is being fetched.
+        while (!dataFetched) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                log.error("Error while waiting for data fetch", e);
+            }
+        }
+
+        log.info("Data fetched, checking completion...");
+        checkCompletion(responses);
+        log.debug("Queue size {}", queue.size());
     }
 
-    public static class LoanInvoiceMapper implements RowMapper<LoanDocumentData> {
-
-        public String invoiceSchema() {
-            return """
-                            mc.id AS "clientId",
-                        	mc.legal_form_enum AS "clientLegalForm",
-                        	ml.id AS "loanId",
-                        	mc.firstname AS "clientFirstName",
-                        	mc.middlename AS "clientMiddleName",
-                        	mc.display_name AS "clientDisplayName",
-                        	mc.lastname AS "clientLastName",
-                        	mlaa.overdue_since_date_derived AS "overdueSinceDate",
-                        	COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE,0) AS "daysInArrears",
-                        	prodtype.id AS "productTypeId",
-                        	prodtype.code_value AS "productTypeName",
-                        	COALESCE(cce."NIT", ccp."Cedula") AS "clientIdNumber",
-                        	pp.id AS "productTypeParamId",
-                        	pp.billing_prefix AS "billingPrefix",
-                        	pp.billing_resolution_number AS "billingResolutionNumber",
-                        	pp.range_start_number AS "rangeStartNumber",
-                        	pp.range_end_number AS "rangeEndNumber",
-                        	pp.last_invoice_number AS "lastInvoiceNumber",
-                        	pp.last_credit_note_number AS "lastCreditNoteNumber",
-                        	pp.last_debit_note_number AS "lastDebitNoteNumber",
-                        	pp.clave_tecnica AS "technicalKey",
-                        	pp.nota AS nota,
-                        	mpl.name AS "loanProductName",
-                        	cce."NIT" AS "companyNIT",
-                        	dept.code_score AS "companyDeptCode",
-                        	dept.code_value AS "companyDeptName",
-                        	companycity.code_score AS "companyCityCode",
-                        	companycity.code_value AS "companyCityName",
-                        	cce."Direccion" AS "companyAddress",
-                        	mc.email_address AS "clientEmailAddress",
-                        	cce."Telefono" AS "companyTelephone",
-                        	ccp."Cedula" AS "clientCedula",
-                        	ccp."Direccion" AS "clientAddress",
-                        	clientcity.code_score AS "clientCityCode",
-                        	clientcity.code_value AS "clientCityName",
-                        	companydoctype.code_value AS "companyDocType",
-                        	mlt."interest" AS "interestPaid",
-                        	mlt."mandatoryInsurance" AS "mandatoryInsurancePaid",
-                            mlt."mandatoryInsuranceVat" AS "mandatoryInsuranceVatPaid",
-                            mlt."voluntaryInsurance" AS "voluntaryInsurancePaid",
-                            mlt."voluntaryInsuranceVat" AS "voluntaryInsuranceVatPaid",
-                            mlt."honorarios" AS "honorariosPaid",
-                            mlt."honorariosVat" AS "honorariosVatPaid",
-                            mlt."penaltyCharges" AS "penaltyChargesPaid",
-                            mlt."penaltyChargesVat" AS "penaltyChargesVatPaid",
-                            mlt."totalPaid" AS "totalPaid",
-                            mlt."transactionIds" AS "transactionIds",
-                        	mandatory_insurance_code."codeValue" AS "mandatoryInsuranceCode",
-                         	voluntary_insurance_code."codeValue" AS "voluntaryInsuranceCode",
-                         	mandatory_insurance_code."codeName" AS "mandatoryInsuranceName",
-                          	voluntary_insurance_code."codeName" AS "voluntaryInsuranceName",
-                          	mc.mobile_no AS "clientTelephone",
-                          	mchcc.collection_nit as clientCollectionHouseNit,
-                            mchcc.collection_name as clientCollectionHouseName,
-                            mchce.collection_nit as empressaCollectionHouseNit,
-                            mchce.collection_name as empressaCollectionHouseName
-                        FROM m_loan ml
-                        INNER JOIN m_client mc ON mc.id = ml.client_id
-                        INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
-                        INNER JOIN m_code_value prodtype ON prodtype.id = mpl.product_type
-                        INNER JOIN (
-                        		SELECT
-                        			mlt.loan_id AS "loanId",
-                        			STRING_AGG(mlt.id::TEXT, ',') AS "transactionIds",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."interestPaid", 0)) ELSE SUM(COALESCE(mlt.interest_portion_derived, 0)) END AS "interest",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsurancePaid", 0)) ELSE SUM(COALESCE(mandatory_insurance.amount, 0)) END AS "mandatoryInsurance",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_mandatory_insurance.amount, 0)) END AS "mandatoryInsuranceVat",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsurancePaid", 0)) ELSE SUM(COALESCE(voluntary_insurance.amount, 0)) END AS "voluntaryInsurance",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_voluntary_insurance.amount, 0)) END AS "voluntaryInsuranceVat",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosPaid", 0)) ELSE SUM(COALESCE(hono.amount, 0)) END AS "honorarios",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosVatPaid", 0)) ELSE SUM(COALESCE(vat_hono.amount, 0)) END AS "honorariosVat",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyPaid", 0)) ELSE SUM(COALESCE(penalty.amount, 0)) END AS "penaltyCharges",
-                            		CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyVatPaid", 0)) ELSE SUM(COALESCE(vat_penalty.amount, 0)) END AS "penaltyChargesVat",
-                        			COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."interestPaid", 0)) ELSE SUM(COALESCE(mlt.interest_portion_derived, 0)) END, 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsurancePaid", 0)) ELSE SUM(COALESCE(mandatory_insurance.amount, 0)) END, 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_mandatory_insurance.amount, 0)) END , 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsurancePaid", 0)) ELSE SUM(COALESCE(voluntary_insurance.amount, 0)) END, 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_voluntary_insurance.amount, 0)) END, 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosPaid", 0)) ELSE SUM(COALESCE(hono.amount, 0)) END, 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosVatPaid", 0)) ELSE SUM(COALESCE(vat_hono.amount, 0)) END, 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyPaid", 0)) ELSE SUM(COALESCE(penalty.amount, 0)) END, 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyVatPaid", 0)) ELSE SUM(COALESCE(vat_penalty.amount, 0)) END, 0) AS "totalPaid"
-                        		FROM m_loan_transaction mlt
-                        		LEFT JOIN (
-                        			SELECT
-                        					mpit.accrual_transaction_id AS "accrualTransactionId",
-                        					SUM(COALESCE(mpit.interest, 0)) AS "interestPaid",
-                        					SUM(COALESCE(mpit.honorarios, 0)) AS "honorariosPaid",
-                        					SUM(COALESCE(mpit.honorarios_vat, 0)) AS "honorariosVatPaid",
-                        					SUM(COALESCE(mpit.mandatory_insurance, 0)) AS "mandatoryInsurancePaid",
-                        					SUM(COALESCE(mpit.mandatory_insurance_vat, 0)) AS "mandatoryInsuranceVatPaid",
-                        					SUM(COALESCE(mpit.voluntary_insurance, 0)) AS "voluntaryInsurancePaid",
-                        					SUM(COALESCE(mpit.voluntary_insurance_vat, 0)) AS "voluntaryInsuranceVatPaid",
-                        				    SUM(COALESCE(mpit.penalty, 0)) AS "penaltyPaid",
-                        					SUM(COALESCE(mpit.penalty_vat, 0)) AS "penaltyVatPaid"
-                        			FROM m_partial_invoiced_transaction mpit
-                        			INNER JOIN m_loan_transaction invoiced_by ON invoiced_by.id = mpit.repayment_transaction_id
-                        			WHERE invoiced_by.transaction_type_enum = 2
-                        			GROUP BY mpit.accrual_transaction_id
-                        		) partial_transaction ON partial_transaction."accrualTransactionId" = mlt.id
-                        		LEFT JOIN (
-                        			SELECT mlcpd.loan_transaction_id,
-                        					SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			WHERE mlc.charge_calculation_enum IN (468, 575, 231)
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) mandatory_insurance ON mandatory_insurance.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			JOIN m_charge mc ON mc.id = mlc.charge_id
-                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                        			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum IN (468, 575, 231)
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) vat_mandatory_insurance ON vat_mandatory_insurance.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			WHERE mlc.charge_calculation_enum = 1034
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) voluntary_insurance ON voluntary_insurance.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			JOIN m_charge mc ON mc.id = mlc.charge_id
-                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                        			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 1034
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) vat_voluntary_insurance ON vat_voluntary_insurance.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			WHERE mlc.charge_calculation_enum = 41
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) aval ON aval.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			JOIN m_charge mc ON mc.id = mlc.charge_id
-                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                        			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 41
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) vat_aval ON vat_aval.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id ,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			WHERE mlc.charge_calculation_enum = 1009
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) hono ON hono.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			JOIN m_charge mc ON mc.id = mlc.charge_id
-                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                        			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 1009
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) vat_hono ON vat_hono.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id ,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			WHERE mlc.is_penalty = TRUE
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) penalty ON penalty.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			JOIN m_charge mc ON mc.id = mlc.charge_id
-                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                        			WHERE mc.charge_calculation_enum = 342
-                        				AND mc.is_penalty = TRUE
-                        				AND parent.charge_calculation_enum = 1009
-                        				AND parent.is_penalty = TRUE
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) vat_penalty ON vat_penalty.loan_transaction_id = mlt.id
-                        		WHERE mlt.is_reversed = FALSE
-                        		AND mlt.transaction_type_enum = 10 AND mlt.occurred_on_suspended_account = FALSE
-                                AND mlt.is_invoiced_generated_by_job = FALSE
-                        		AND mlt.transaction_date <= ?
-                        		GROUP BY mlt.loan_id, mlt.is_partially_ivoiced
-                        ) mlt ON mlt."loanId" = ml.id
-                        INNER JOIN (
-                            SELECT DISTINCT ON (mptp.product_type) *
-                            FROM m_product_type_parameters mptp
-                            WHERE mptp.expiration_date >= CURRENT_DATE
-                         ) pp ON pp.product_type = prodtype.code_value
-                        LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = ml.id
-                        LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
-                        LEFT JOIN m_code_value companydoctype ON companydoctype.id = cce."Tipo ID_cd_Tipo ID"
-                        LEFT JOIN m_code_value dept ON dept.id = cce."Departamento_cd_Departamento"
-                        LEFT JOIN m_code_value companycity ON companycity.id = cce."Ciudad_cd_Ciudad"
-                        LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
-                        left join m_collection_house_history mchhc on mchhc.collection_nit = ccp."Cedula"
-                        left join m_collection_house_history mchhe on mchhe.collection_nit = cce."NIT"
-                        left join m_collection_house_configuration mchcc on mchcc.collection_code = mchhc.collection_house_code
-                        left join m_collection_house_configuration mchce on mchce.collection_code = mchhe.collection_house_code
-                        LEFT JOIN m_code_value clientcity ON clientcity.id = ccp."Ciudad_cd_Ciudad"
-                        LEFT JOIN (
-                          SELECT mlc.loan_id,
-                          MAX(mc.insurance_code) AS "codeValue",
-                          MAX(mc.insurer_name) AS "codeName"
-                          FROM m_loan_charge mlc
-                          INNER JOIN m_charge mc ON mc.id = mlc.charge_id
-                          WHERE mlc.charge_calculation_enum IN (468, 575, 231)
-                          GROUP BY mlc.loan_id
-                        ) mandatory_insurance_code ON mandatory_insurance_code.loan_id = ml.id
-                        LEFT JOIN (
-                          SELECT mlc.loan_id,
-                          MAX(mc.insurance_code) AS "codeValue",
-                          MAX(mc.insurer_name) AS "codeName"
-                          FROM m_loan_charge mlc
-                          INNER JOIN m_charge mc ON mc.id = mlc.charge_id
-                          WHERE mlc.charge_calculation_enum = 1034
-                          GROUP BY mlc.loan_id
-                        ) voluntary_insurance_code ON voluntary_insurance_code.loan_id = ml.id
-                        WHERE mlt."totalPaid" > 0
-                        ORDER BY mc.id, ml.id
-                    """;
+    private <T> List<T> safeSubList(List<T> list, int fromIndex, int toIndex) {
+        int size = list.size();
+        if (fromIndex >= size || toIndex <= 0 || fromIndex >= toIndex) {
+            return Collections.emptyList();
         }
 
-        public String transactionSchema() {
-            return """
-                    mc.id AS "clientId",
-                    	mc.legal_form_enum AS "clientLegalForm",
-                    	ml.id AS "loanId",
-                    	mc.firstname AS "clientFirstName",
-                    	mc.middlename AS "clientMiddleName",
-                    	mc.display_name AS "clientDisplayName",
-                    	mc.lastname AS "clientLastName",
-                    	mlaa.overdue_since_date_derived AS "overdueSinceDate",
-                    	COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE,0) AS "daysInArrears",
-                    	prodtype.id AS "productTypeId",
-                    	prodtype.code_value AS "productTypeName",
-                    	COALESCE(cce."NIT", ccp."Cedula") AS "clientIdNumber",
-                    	pp.id AS "productTypeParamId",
-                    	pp.billing_prefix AS "billingPrefix",
-                    	pp.billing_resolution_number AS "billingResolutionNumber",
-                    	pp.range_start_number AS "rangeStartNumber",
-                    	pp.range_end_number AS "rangeEndNumber",
-                    	pp.last_invoice_number AS "lastInvoiceNumber",
-                    	pp.last_credit_note_number AS "lastCreditNoteNumber",
-                    	pp.last_debit_note_number AS "lastDebitNoteNumber",
-                    	pp.clave_tecnica AS "technicalKey",
-                    	pp.nota AS nota,
-                    	mpl.name AS "loanProductName",
-                    	cce."NIT" AS "companyNIT",
-                    	dept.code_score AS "companyDeptCode",
-                    	dept.code_value AS "companyDeptName",
-                    	companycity.code_score AS "companyCityCode",
-                    	companycity.code_value AS "companyCityName",
-                    	cce."Direccion" AS "companyAddress",
-                    	mc.email_address AS "clientEmailAddress",
-                    	cce."Telefono" AS "companyTelephone",
-                    	ccp."Cedula" AS "clientCedula",
-                    	ccp."Direccion" AS "clientAddress",
-                    	clientcity.code_score AS "clientCityCode",
-                    	clientcity.code_value AS "clientCityName",
-                    	companydoctype.code_value AS "companyDocType",
-                    	mlt."interest" AS "interestPaid",
-                    	mlt."mandatoryInsurance" AS "mandatoryInsurancePaid",
-                    	mlt."mandatoryInsuranceVat" AS "mandatoryInsuranceVatPaid",
-                    	mlt."voluntaryInsurance" AS "voluntaryInsurancePaid",
-                    	mlt."voluntaryInsuranceVat" AS "voluntaryInsuranceVatPaid",
-                    	mlt."honorarios" AS "honorariosPaid",
-                    	mlt."honorariosVat" AS "honorariosVatPaid",
-                    	mlt."penaltyCharges" AS "penaltyChargesPaid",
-                    	mlt."penaltyChargesVat" AS "penaltyChargesVatPaid",
-                    	mlt."totalPaid" AS "totalPaid",
-                    	mlt."transactionIds" AS "transactionIds",
-                    	mandatory_insurance_code."codeValue" AS "mandatoryInsuranceCode",
-                     	voluntary_insurance_code."codeValue" AS "voluntaryInsuranceCode",
-                     	mandatory_insurance_code."codeName" AS "mandatoryInsuranceName",
-                      	voluntary_insurance_code."codeName" AS "voluntaryInsuranceName",
-                      	mc.mobile_no AS "clientTelephone",
-                      	mchc.collection_nit as clientCollectionHouseNit,
-                        mchc.collection_name as clientCollectionHouseName,
-                        NULL AS empressaCollectionHouseNit,
-                        NULL AS empressaCollectionHouseName
-                    FROM m_loan ml
-                    INNER JOIN m_client mc ON mc.id = ml.client_id
-                    INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
-                    INNER JOIN m_code_value prodtype ON prodtype.id = mpl.product_type
-                    INNER JOIN (
-                    		SELECT
-                    			mlt.loan_id AS "loanId",
-                    			mlt.id AS "transactionId",
-                                STRING_AGG(mlt.id::TEXT, ',') AS "transactionIds",
-                    			mlt.collection_house_id,
-                    			SUM(COALESCE(mlt.interest_portion_derived, 0)) AS "interest",
-                    			SUM(COALESCE(mandatory_insurance.amount, 0)) AS "mandatoryInsurance",
-                    			SUM(COALESCE(vat_mandatory_insurance.amount, 0)) AS "mandatoryInsuranceVat",
-                    			SUM(COALESCE(voluntary_insurance.amount, 0)) AS "voluntaryInsurance",
-                    			SUM(COALESCE(vat_voluntary_insurance.amount, 0)) AS "voluntaryInsuranceVat",
-                    			SUM(COALESCE(hono.amount, 0)) AS "honorarios",
-                    			SUM(COALESCE(vat_hono.amount, 0)) AS "honorariosVat",
-                    			SUM(COALESCE(penalty.amount, 0)) AS "penaltyCharges",
-                    			SUM(COALESCE(vat_penalty.amount, 0)) AS "penaltyChargesVat",
-                    			SUM(COALESCE(mlt.interest_portion_derived, 0)
-                    				+ COALESCE(mandatory_insurance.amount, 0) + COALESCE(vat_mandatory_insurance.amount, 0)
-                    				+ COALESCE(voluntary_insurance.amount, 0) + COALESCE(vat_voluntary_insurance.amount, 0)
-                    				+ COALESCE(hono.amount, 0) + COALESCE(vat_hono.amount, 0)
-                    				+ COALESCE(penalty.amount, 0) + COALESCE(vat_penalty.amount, 0)) AS "totalPaid"
-                    		FROM m_loan_transaction mlt
-                    		LEFT JOIN (
-                    			SELECT mlcpd.loan_transaction_id,
-                    					SUM(mlcpd.amount) amount
-                    			FROM m_loan_charge_paid_by mlcpd
-                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                    			WHERE mlc.charge_calculation_enum IN (468, 575, 231)
-                    			GROUP BY mlcpd.loan_transaction_id
-                    		) mandatory_insurance ON mandatory_insurance.loan_transaction_id = mlt.id
-                    		LEFT JOIN (
-                    			SELECT
-                    				mlcpd.loan_transaction_id,
-                    				SUM(mlcpd.amount) amount
-                    			FROM m_loan_charge_paid_by mlcpd
-                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                    			JOIN m_charge mc ON mc.id = mlc.charge_id
-                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                    			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum IN (468, 575, 231)
-                    			GROUP BY mlcpd.loan_transaction_id
-                    		) vat_mandatory_insurance ON vat_mandatory_insurance.loan_transaction_id = mlt.id
-                    		LEFT JOIN (
-                    			SELECT
-                    				mlcpd.loan_transaction_id,
-                    				SUM(mlcpd.amount) amount
-                    			FROM m_loan_charge_paid_by mlcpd
-                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                    			WHERE mlc.charge_calculation_enum = 1034
-                    			GROUP BY mlcpd.loan_transaction_id
-                    		) voluntary_insurance ON voluntary_insurance.loan_transaction_id = mlt.id
-                    		LEFT JOIN (
-                    			SELECT
-                    				mlcpd.loan_transaction_id,
-                    				SUM(mlcpd.amount) amount
-                    			FROM m_loan_charge_paid_by mlcpd
-                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                    			JOIN m_charge mc ON mc.id = mlc.charge_id
-                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                    			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 1034
-                    			GROUP BY mlcpd.loan_transaction_id
-                    		) vat_voluntary_insurance ON vat_voluntary_insurance.loan_transaction_id = mlt.id
-                    		LEFT JOIN (
-                    			SELECT
-                    				mlcpd.loan_transaction_id,
-                    				SUM(mlcpd.amount) amount
-                    			FROM m_loan_charge_paid_by mlcpd
-                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                    			WHERE mlc.charge_calculation_enum = 41
-                    			GROUP BY mlcpd.loan_transaction_id
-                    		) aval ON aval.loan_transaction_id = mlt.id
-                    		LEFT JOIN (
-                    			SELECT
-                    				mlcpd.loan_transaction_id,
-                    				SUM(mlcpd.amount) amount
-                    			FROM m_loan_charge_paid_by mlcpd
-                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                    			JOIN m_charge mc ON mc.id = mlc.charge_id
-                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                    			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 41
-                    			GROUP BY mlcpd.loan_transaction_id
-                    		) vat_aval ON vat_aval.loan_transaction_id = mlt.id
-                    		LEFT JOIN (
-                    			SELECT
-                    				mlcpd.loan_transaction_id ,
-                    				SUM(mlcpd.amount) amount
-                    			FROM m_loan_charge_paid_by mlcpd
-                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                    			WHERE mlc.charge_calculation_enum = 1009
-                    			GROUP BY mlcpd.loan_transaction_id
-                    		) hono ON hono.loan_transaction_id = mlt.id
-                    		LEFT JOIN (
-                    			SELECT
-                    				mlcpd.loan_transaction_id,
-                    				SUM(mlcpd.amount) amount
-                    			FROM m_loan_charge_paid_by mlcpd
-                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                    			JOIN m_charge mc ON mc.id = mlc.charge_id
-                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                    			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 1009
-                    			GROUP BY mlcpd.loan_transaction_id
-                    		) vat_hono ON vat_hono.loan_transaction_id = mlt.id
-                    		LEFT JOIN (
-                    			SELECT
-                    				mlcpd.loan_transaction_id ,
-                    				SUM(mlcpd.amount) amount
-                    			FROM m_loan_charge_paid_by mlcpd
-                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                    			WHERE mlc.is_penalty = TRUE
-                    			GROUP BY mlcpd.loan_transaction_id
-                    		) penalty ON penalty.loan_transaction_id = mlt.id
-                    		LEFT JOIN (
-                    			SELECT
-                    				mlcpd.loan_transaction_id,
-                    				SUM(mlcpd.amount) amount
-                    			FROM m_loan_charge_paid_by mlcpd
-                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                    			JOIN m_charge mc ON mc.id = mlc.charge_id
-                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                    			WHERE mc.charge_calculation_enum = 342
-                    				AND mc.is_penalty = TRUE
-                    				AND parent.charge_calculation_enum = 1009
-                    				AND parent.is_penalty = TRUE
-                    			GROUP BY mlcpd.loan_transaction_id
-                    		) vat_penalty ON vat_penalty.loan_transaction_id = mlt.id
-                    		WHERE mlt.is_reversed = FALSE
-                    		GROUP BY mlt.loan_id, mlt.id
-                    ) mlt ON mlt."loanId" = ml.id
-                    INNER JOIN (
-                        SELECT DISTINCT ON (mptp.product_type) *
-                        FROM m_product_type_parameters mptp
-                        WHERE mptp.expiration_date >= CURRENT_DATE
-                     ) pp ON pp.product_type = prodtype.code_value
-                    LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = ml.id
-                    LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
-                    LEFT JOIN m_code_value companydoctype ON companydoctype.id = cce."Tipo ID_cd_Tipo ID"
-                    LEFT JOIN m_code_value dept ON dept.id = cce."Departamento_cd_Departamento"
-                    LEFT JOIN m_code_value companycity ON companycity.id = cce."Ciudad_cd_Ciudad"
-                    LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
-                    left join m_collection_house_configuration mchc on mchc.id = mlt.collection_house_id
-                    LEFT JOIN m_code_value clientcity ON clientcity.id = ccp."Ciudad_cd_Ciudad"
-                    LEFT JOIN (
-                      SELECT mlc.loan_id,
-                      MAX(mc.insurance_code) AS "codeValue",
-                       MAX(mc.insurer_name) AS "codeName"
-                      FROM m_loan_charge mlc
-                      INNER JOIN m_charge mc ON mc.id = mlc.charge_id
-                      WHERE mlc.charge_calculation_enum IN (468, 575, 231)
-                      GROUP BY mlc.loan_id
-                    ) mandatory_insurance_code ON mandatory_insurance_code.loan_id = ml.id
-                    LEFT JOIN (
-                      SELECT mlc.loan_id,
-                      MAX(mc.insurance_code) AS "codeValue",
-                      MAX(mc.insurer_name) AS "codeName"
-                      FROM m_loan_charge mlc
-                      INNER JOIN m_charge mc ON mc.id = mlc.charge_id
-                      WHERE mlc.charge_calculation_enum = 1034
-                      GROUP BY mlc.loan_id
-                    ) voluntary_insurance_code ON voluntary_insurance_code.loan_id = ml.id
-                    """;
-        }
+        fromIndex = Math.max(0, fromIndex);
+        toIndex = Math.min(size, toIndex);
 
-        @Override
-        public LoanDocumentData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
-            String clientCollectionHouseNit = rs.getString("clientCollectionHouseNit");
-            String clientCollectionHouseName = rs.getString("clientCollectionHouseName");
-            String empressaCollectionHouseNit = rs.getString("empressaCollectionHouseNit");
-            String empressaCollectionHouseName = rs.getString("empressaCollectionHouseName");
-            String collectionHouseNit = clientCollectionHouseNit == null ? empressaCollectionHouseNit : clientCollectionHouseNit;
-            String collectionHouseName = clientCollectionHouseName == null ? empressaCollectionHouseName : clientCollectionHouseName;
-            return LoanDocumentData.builder().loanId(rs.getLong("loanId")).clientId(rs.getLong("clientId"))
-                    .clientLegalForm(rs.getInt("clientLegalForm")).clientDisplayName(rs.getString("clientDisplayName"))
-                    .clientLastName(rs.getString("clientLastName")).clientEmailAddress(rs.getString("clientEmailAddress"))
-                    .overdueSinceDate(JdbcSupport.getLocalDate(rs, "overdueSinceDate")).daysInArrears(rs.getInt("daysInArrears"))
-                    .productTypeId(rs.getLong("productTypeId")).productTypeName(rs.getString("productTypeName"))
-                    .clientIdNumber(rs.getString("clientIdNumber")).productTypeParamId(rs.getLong("productTypeParamId"))
-                    .billingPrefix(rs.getString("billingPrefix")).billingResolutionNumber(rs.getString("billingResolutionNumber"))
-                    .rangeStartNumber(JdbcSupport.getLong(rs, "rangeStartNumber")).rangeEndNumber(JdbcSupport.getLong(rs, "rangeEndNumber"))
-                    .lastInvoiceNumber(JdbcSupport.getLong(rs, "lastInvoiceNumber"))
-                    .lastCreditNoteNumber(JdbcSupport.getLong(rs, "lastCreditNoteNumber"))
-                    .lastDebitNoteNumber(JdbcSupport.getLong(rs, "lastDebitNoteNumber")).technicalKey(rs.getString("technicalKey"))
-                    .nota(rs.getString("nota")).loanProductName(rs.getString("loanProductName")).companyNIT(rs.getString("companyNIT"))
-                    .companyDocType(rs.getString("companyDocType")).companyDeptCode(rs.getString("companyDeptCode"))
-                    .companyDeptName(rs.getString("companyDeptName")).companyCityCode(rs.getString("companyCityCode"))
-                    .companyCityName(rs.getString("companyCityName")).companyAddress(rs.getString("companyAddress"))
-                    .companyTelephone(rs.getString("companyTelephone")).clientCedula(rs.getString("clientCedula"))
-                    .clientAddress(rs.getString("clientAddress")).clientCityCode(rs.getString("clientCityCode"))
-                    .clientCityName(rs.getString("clientCityName")).clientTelephone(rs.getString("clientTelephone"))
-                    .interestPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "interestPaid"))
-                    .penaltyChargesPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "penaltyChargesPaid"))
-                    .penaltyChargesVatPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "penaltyChargesVatPaid"))
-                    .mandatoryInsurancePaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "mandatoryInsurancePaid"))
-                    .mandatoryInsuranceVatPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "mandatoryInsuranceVatPaid"))
-                    .voluntaryInsurancePaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "voluntaryInsurancePaid"))
-                    .voluntaryInsuranceVatPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "voluntaryInsuranceVatPaid"))
-                    .honorariosPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "honorariosPaid"))
-                    .honorariosVatPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "honorariosVatPaid"))
-                    .totalPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalPaid"))
-                    .mandatoryInsuranceCode(rs.getString("mandatoryInsuranceCode"))
-                    .voluntaryInsuranceCode(rs.getString("voluntaryInsuranceCode"))
-                    .voluntaryInsuranceName(rs.getString("voluntaryInsuranceName")).clientFirstName(rs.getString("clientFirstName"))
-                    .clientMiddleName(rs.getString("clientMiddleName")).mandatoryInsuranceName(rs.getString("mandatoryInsuranceName"))
-                    .collectionHouseNit(collectionHouseNit).collectionHouseName(collectionHouseName)
-                    .transactionIds(rs.getString("transactionIds")).build();
-        }
+        return list.subList(fromIndex, toIndex);
     }
 
+    private void checkCompletion(List<Future<Void>> responses) {
+        try {
+            for (Future<Void> f : responses) {
+                f.get();
+            }
+            boolean allThreadsExecuted;
+            int noOfThreadsExecuted = 0;
+            for (Future<Void> future : responses) {
+                if (future.isDone()) {
+                    noOfThreadsExecuted++;
+                }
+            }
+            allThreadsExecuted = noOfThreadsExecuted == responses.size();
+            if (!allThreadsExecuted) {
+                log.error("All threads could not execute.");
+            } else {
+                log.info("FacturaElectronicaMensualTasklet Job: all threads executed for this batch!!!");
+            }
+        } catch (InterruptedException e1) {
+            log.error("Interrupted while processing invoices for FacturaElectronicaMensualTasklet", e1);
+        } catch (ExecutionException e2) {
+            log.error("Execution exception while processing invoices for FacturaElectronicaMensualTasklet", e2);
+        }
+    }
 }

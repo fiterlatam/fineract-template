@@ -33,6 +33,7 @@ import org.apache.fineract.portfolio.floatingrates.data.InterestRatePeriodData;
 import org.apache.fineract.portfolio.loanaccount.data.*;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
@@ -181,4 +182,8 @@ public interface LoanReadPlatformService {
     List<Long> findLoanIdsForAccrualPosting(LocalDate tillDate, int pageSize, Long minLoanId);
 
     List<Long> retrieveIdsForActiveLoans(int pageSize, Long minLoanId);
+
+    List<LoanDocumentData> retrieveLoanInvoiceDataList(int pageSize, Long minLoanId, LocalDate secondLastDayOfMonth);
+
+    List<LoanDocumentData> retrieveLoanInvoiceDataListByTransactionId(Long loanTransactionId);
 }

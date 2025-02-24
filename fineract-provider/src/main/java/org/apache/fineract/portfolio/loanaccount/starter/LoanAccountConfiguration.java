@@ -106,6 +106,8 @@ import org.apache.fineract.portfolio.loanaccount.jobs.archiveloanhistory.LoanHis
 import org.apache.fineract.portfolio.loanaccount.jobs.archiveloanhistory.LoanHistoryArchiver;
 import org.apache.fineract.portfolio.loanaccount.jobs.dailyaccrual.DailyInterestAccrualPoster;
 import org.apache.fineract.portfolio.loanaccount.jobs.dailyaccrual.DailyInterestAccrualPosterTask;
+import org.apache.fineract.portfolio.loanaccount.jobs.facturaelectronicamensual.FacturaElectronicaMensualPoster;
+import org.apache.fineract.portfolio.loanaccount.jobs.facturaelectronicamensual.FacturaElectronicaMensualPosterTask;
 import org.apache.fineract.portfolio.loanaccount.jobs.installmentalchargeaccrual.InstallmentChargeAccrualPoster;
 import org.apache.fineract.portfolio.loanaccount.jobs.installmentalchargeaccrual.InstallmentChargeAccrualPosterTask;
 import org.apache.fineract.portfolio.loanaccount.jobs.recalculateloaninterestaftermaximumlegalratechange.RecalculateInterestForMLRProcessor;
@@ -114,7 +116,6 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculat
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleAssembler;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleCalculationPlatformService;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.mapper.LoanTransactionRelationMapper;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanRescheduleRequestReadPlatformService;
@@ -392,8 +393,7 @@ public class LoanAccountConfiguration {
             LoanTransactionRelationRepository loanTransactionRelationRepository,
             LoanTransactionRelationMapper loanTransactionRelationMapper,
             LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService,
-            ChannelReadWritePlatformService channelReadWritePlatformService, GlobalConfigurationRepository globalConfigurationRepository,
-            LoanScheduleHistoryReadPlatformService loanScheduleHistoryReadPlatformService) {
+            ChannelReadWritePlatformService channelReadWritePlatformService, GlobalConfigurationRepository globalConfigurationRepository) {
         return new LoanReadPlatformServiceImpl(jdbcTemplate, context, loanRepositoryWrapper, applicationCurrencyRepository,
                 loanProductReadPlatformService, clientReadPlatformService, groupReadPlatformService, loanDropdownReadPlatformService,
                 fundReadPlatformService, chargeReadPlatformService, codeValueReadPlatformService, calendarReadPlatformService,
@@ -401,8 +401,7 @@ public class LoanAccountConfiguration {
                 loanRepaymentScheduleTransactionProcessorFactory, floatingRatesReadPlatformService, loanUtilService,
                 configurationDomainService, accountDetailsReadPlatformService, columnValidator, sqlGenerator,
                 delinquencyReadPlatformService, loanTransactionRepository, loanTransactionRelationRepository, loanTransactionRelationMapper,
-                loanChargePaidByReadPlatformService, channelReadWritePlatformService, globalConfigurationRepository,
-                loanScheduleHistoryReadPlatformService);
+                loanChargePaidByReadPlatformService, channelReadWritePlatformService, globalConfigurationRepository);
     }
 
     @Bean
@@ -537,6 +536,22 @@ public class LoanAccountConfiguration {
     @ConditionalOnMissingBean(LoanHistoryArchivalTask.class)
     public LoanHistoryArchivalTask loanHistoryArchivalTask(LoanHistoryArchiver loanHistoryArchiver) {
         return new LoanHistoryArchivalTask(loanHistoryArchiver);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(FacturaElectronicaMensualPoster.class)
+    public FacturaElectronicaMensualPoster facturaElectronicaMensualPoster(JdbcTemplate jdbcTemplate,
+            LoanWritePlatformService loanWritePlatformService) {
+        return new FacturaElectronicaMensualPoster(jdbcTemplate, loanWritePlatformService);
+    }
+
+    @Bean
+    @Scope("prototype")
+    @ConditionalOnMissingBean(FacturaElectronicaMensualPosterTask.class)
+    public FacturaElectronicaMensualPosterTask facturaElectronicaMensualPosterTask(
+            FacturaElectronicaMensualPoster facturaElectronicaMensualPoster) {
+        return new FacturaElectronicaMensualPosterTask(facturaElectronicaMensualPoster);
     }
 
     @Bean

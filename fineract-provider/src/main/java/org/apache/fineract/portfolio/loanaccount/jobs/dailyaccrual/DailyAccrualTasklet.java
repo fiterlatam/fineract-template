@@ -131,7 +131,6 @@ public class DailyAccrualTasklet implements Tasklet {
                         .synchronizedList(this.loanReadPlatformService.findLoanIdsForAccrualPosting(accrualDate, pageSize, maxId));
                 if (loanIdList.isEmpty()) {
                     log.info("No more loan ids to process");
-                    dataFetched = true;
                     break;
                 }
                 maxId = loanIdList.get(loanIdList.size() - 1);

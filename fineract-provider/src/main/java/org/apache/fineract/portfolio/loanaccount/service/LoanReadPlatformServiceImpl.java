@@ -112,12 +112,12 @@ import org.apache.fineract.portfolio.loanaccount.data.*;
 import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanTransactionNotFoundException;
+import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.mapper.LoanTransactionRelationMapper;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
@@ -131,8 +131,6 @@ import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -152,7 +150,6 @@ import org.xhtmlrenderer.pdf.ITextRenderer;
 public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, LoanReadPlatformServiceCommon {
 
     private static final String ACCRUAL_ON_CHARGE_SUBMITTED_ON_DATE = "submitted-date";
-    private static final Logger log = LoggerFactory.getLogger(LoanReadPlatformServiceImpl.class);
     private final JdbcTemplate jdbcTemplate;
     private final PlatformSecurityContext context;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
@@ -183,7 +180,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     private final LoanChargePaidByReadPlatformService loanChargePaidByReadPlatformService;
     private final ChannelReadWritePlatformService channelReadWritePlatformService;
     private final GlobalConfigurationRepository globalConfigurationRepository;
-    private final LoanScheduleHistoryReadPlatformService loanScheduleHistoryReadPlatformService;
 
     @Override
     public LoanAccountData retrieveOne(final Long loanId) {
@@ -4028,5 +4024,539 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 order by loan.id limit ?;
                 """;
         return this.jdbcTemplate.queryForList(sql, Long.class, LoanStatus.ACTIVE.getValue(), minLoanId, pageSize).stream().toList();
+    }
+
+    @Override
+    public List<LoanDocumentData> retrieveLoanInvoiceDataList(int pageSize, Long minLoanId, LocalDate secondLastDayOfMonth) {
+        final LoanInvoiceMapper loanInvoiceMapper = new LoanInvoiceMapper();
+        final String invoiceQuery = "SELECT " + loanInvoiceMapper.invoiceSchema();
+        return this.jdbcTemplate.query(invoiceQuery, loanInvoiceMapper, secondLastDayOfMonth, minLoanId, pageSize);
+    }
+
+    @Override
+    public List<LoanDocumentData> retrieveLoanInvoiceDataListByTransactionId(Long loanTransactionId) {
+        final LoanInvoiceMapper loanInvoiceMapper = new LoanInvoiceMapper();
+        String transactionSQL = "SELECT " + loanInvoiceMapper.transactionSchema() + " WHERE mlt.\"transactionId\" = ? ";
+        return this.jdbcTemplate.query(transactionSQL, loanInvoiceMapper, loanTransactionId);
+    }
+
+    private static class LoanInvoiceMapper implements RowMapper<LoanDocumentData> {
+
+        public String invoiceSchema() {
+            return """
+                            mc.id AS "clientId",
+                        	mc.legal_form_enum AS "clientLegalForm",
+                        	ml.id AS "loanId",
+                        	mc.firstname AS "clientFirstName",
+                        	mc.middlename AS "clientMiddleName",
+                        	mc.display_name AS "clientDisplayName",
+                        	mc.lastname AS "clientLastName",
+                        	mlaa.overdue_since_date_derived AS "overdueSinceDate",
+                        	COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE,0) AS "daysInArrears",
+                        	prodtype.id AS "productTypeId",
+                        	prodtype.code_value AS "productTypeName",
+                        	COALESCE(cce."NIT", ccp."Cedula") AS "clientIdNumber",
+                        	pp.id AS "productTypeParamId",
+                        	pp.billing_prefix AS "billingPrefix",
+                        	pp.billing_resolution_number AS "billingResolutionNumber",
+                        	pp.range_start_number AS "rangeStartNumber",
+                        	pp.range_end_number AS "rangeEndNumber",
+                        	pp.last_invoice_number AS "lastInvoiceNumber",
+                        	pp.last_credit_note_number AS "lastCreditNoteNumber",
+                        	pp.last_debit_note_number AS "lastDebitNoteNumber",
+                        	pp.clave_tecnica AS "technicalKey",
+                        	pp.nota AS nota,
+                        	mpl.name AS "loanProductName",
+                        	cce."NIT" AS "companyNIT",
+                        	dept.code_score AS "companyDeptCode",
+                        	dept.code_value AS "companyDeptName",
+                        	companycity.code_score AS "companyCityCode",
+                        	companycity.code_value AS "companyCityName",
+                        	cce."Direccion" AS "companyAddress",
+                        	mc.email_address AS "clientEmailAddress",
+                        	cce."Telefono" AS "companyTelephone",
+                        	ccp."Cedula" AS "clientCedula",
+                        	ccp."Direccion" AS "clientAddress",
+                        	clientcity.code_score AS "clientCityCode",
+                        	clientcity.code_value AS "clientCityName",
+                        	companydoctype.code_value AS "companyDocType",
+                        	mlt."interest" AS "interestPaid",
+                        	mlt."mandatoryInsurance" AS "mandatoryInsurancePaid",
+                            mlt."mandatoryInsuranceVat" AS "mandatoryInsuranceVatPaid",
+                            mlt."voluntaryInsurance" AS "voluntaryInsurancePaid",
+                            mlt."voluntaryInsuranceVat" AS "voluntaryInsuranceVatPaid",
+                            mlt."honorarios" AS "honorariosPaid",
+                            mlt."honorariosVat" AS "honorariosVatPaid",
+                            mlt."penaltyCharges" AS "penaltyChargesPaid",
+                            mlt."penaltyChargesVat" AS "penaltyChargesVatPaid",
+                            mlt."totalPaid" AS "totalPaid",
+                            mlt."transactionIds" AS "transactionIds",
+                        	mandatory_insurance_code."codeValue" AS "mandatoryInsuranceCode",
+                         	voluntary_insurance_code."codeValue" AS "voluntaryInsuranceCode",
+                         	mandatory_insurance_code."codeName" AS "mandatoryInsuranceName",
+                          	voluntary_insurance_code."codeName" AS "voluntaryInsuranceName",
+                          	mc.mobile_no AS "clientTelephone",
+                          	mchcc.collection_nit as clientCollectionHouseNit,
+                            mchcc.collection_name as clientCollectionHouseName,
+                            mchce.collection_nit as empressaCollectionHouseNit,
+                            mchce.collection_name as empressaCollectionHouseName
+                        FROM m_loan ml
+                        INNER JOIN m_client mc ON mc.id = ml.client_id
+                        INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                        INNER JOIN m_code_value prodtype ON prodtype.id = mpl.product_type
+                        INNER JOIN (
+                        		SELECT
+                        			mlt.loan_id AS "loanId",
+                        			STRING_AGG(mlt.id::TEXT, ',') AS "transactionIds",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."interestPaid", 0)) ELSE SUM(COALESCE(mlt.interest_portion_derived, 0)) END AS "interest",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsurancePaid", 0)) ELSE SUM(COALESCE(mandatory_insurance.amount, 0)) END AS "mandatoryInsurance",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_mandatory_insurance.amount, 0)) END AS "mandatoryInsuranceVat",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsurancePaid", 0)) ELSE SUM(COALESCE(voluntary_insurance.amount, 0)) END AS "voluntaryInsurance",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_voluntary_insurance.amount, 0)) END AS "voluntaryInsuranceVat",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosPaid", 0)) ELSE SUM(COALESCE(hono.amount, 0)) END AS "honorarios",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosVatPaid", 0)) ELSE SUM(COALESCE(vat_hono.amount, 0)) END AS "honorariosVat",
+                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyPaid", 0)) ELSE SUM(COALESCE(penalty.amount, 0)) END AS "penaltyCharges",
+                            		CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyVatPaid", 0)) ELSE SUM(COALESCE(vat_penalty.amount, 0)) END AS "penaltyChargesVat",
+                        			COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."interestPaid", 0)) ELSE SUM(COALESCE(mlt.interest_portion_derived, 0)) END, 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsurancePaid", 0)) ELSE SUM(COALESCE(mandatory_insurance.amount, 0)) END, 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_mandatory_insurance.amount, 0)) END , 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsurancePaid", 0)) ELSE SUM(COALESCE(voluntary_insurance.amount, 0)) END, 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_voluntary_insurance.amount, 0)) END, 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosPaid", 0)) ELSE SUM(COALESCE(hono.amount, 0)) END, 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosVatPaid", 0)) ELSE SUM(COALESCE(vat_hono.amount, 0)) END, 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyPaid", 0)) ELSE SUM(COALESCE(penalty.amount, 0)) END, 0)
+                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyVatPaid", 0)) ELSE SUM(COALESCE(vat_penalty.amount, 0)) END, 0) AS "totalPaid"
+                        		FROM m_loan_transaction mlt
+                        		LEFT JOIN (
+                        			SELECT
+                        					mpit.accrual_transaction_id AS "accrualTransactionId",
+                        					SUM(COALESCE(mpit.interest, 0)) AS "interestPaid",
+                        					SUM(COALESCE(mpit.honorarios, 0)) AS "honorariosPaid",
+                        					SUM(COALESCE(mpit.honorarios_vat, 0)) AS "honorariosVatPaid",
+                        					SUM(COALESCE(mpit.mandatory_insurance, 0)) AS "mandatoryInsurancePaid",
+                        					SUM(COALESCE(mpit.mandatory_insurance_vat, 0)) AS "mandatoryInsuranceVatPaid",
+                        					SUM(COALESCE(mpit.voluntary_insurance, 0)) AS "voluntaryInsurancePaid",
+                        					SUM(COALESCE(mpit.voluntary_insurance_vat, 0)) AS "voluntaryInsuranceVatPaid",
+                        				    SUM(COALESCE(mpit.penalty, 0)) AS "penaltyPaid",
+                        					SUM(COALESCE(mpit.penalty_vat, 0)) AS "penaltyVatPaid"
+                        			FROM m_partial_invoiced_transaction mpit
+                        			INNER JOIN m_loan_transaction invoiced_by ON invoiced_by.id = mpit.repayment_transaction_id
+                        			WHERE invoiced_by.transaction_type_enum = 2
+                        			GROUP BY mpit.accrual_transaction_id
+                        		) partial_transaction ON partial_transaction."accrualTransactionId" = mlt.id
+                        		LEFT JOIN (
+                        			SELECT mlcpd.loan_transaction_id,
+                        					SUM(mlcpd.amount) amount
+                        			FROM m_loan_charge_paid_by mlcpd
+                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                        			WHERE mlc.charge_calculation_enum IN (468, 575, 231)
+                        			GROUP BY mlcpd.loan_transaction_id
+                        		) mandatory_insurance ON mandatory_insurance.loan_transaction_id = mlt.id
+                        		LEFT JOIN (
+                        			SELECT
+                        				mlcpd.loan_transaction_id,
+                        				SUM(mlcpd.amount) amount
+                        			FROM m_loan_charge_paid_by mlcpd
+                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                        			JOIN m_charge mc ON mc.id = mlc.charge_id
+                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                        			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum IN (468, 575, 231)
+                        			GROUP BY mlcpd.loan_transaction_id
+                        		) vat_mandatory_insurance ON vat_mandatory_insurance.loan_transaction_id = mlt.id
+                        		LEFT JOIN (
+                        			SELECT
+                        				mlcpd.loan_transaction_id,
+                        				SUM(mlcpd.amount) amount
+                        			FROM m_loan_charge_paid_by mlcpd
+                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                        			WHERE mlc.charge_calculation_enum = 1034
+                        			GROUP BY mlcpd.loan_transaction_id
+                        		) voluntary_insurance ON voluntary_insurance.loan_transaction_id = mlt.id
+                        		LEFT JOIN (
+                        			SELECT
+                        				mlcpd.loan_transaction_id,
+                        				SUM(mlcpd.amount) amount
+                        			FROM m_loan_charge_paid_by mlcpd
+                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                        			JOIN m_charge mc ON mc.id = mlc.charge_id
+                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                        			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 1034
+                        			GROUP BY mlcpd.loan_transaction_id
+                        		) vat_voluntary_insurance ON vat_voluntary_insurance.loan_transaction_id = mlt.id
+                        		LEFT JOIN (
+                        			SELECT
+                        				mlcpd.loan_transaction_id,
+                        				SUM(mlcpd.amount) amount
+                        			FROM m_loan_charge_paid_by mlcpd
+                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                        			WHERE mlc.charge_calculation_enum = 41
+                        			GROUP BY mlcpd.loan_transaction_id
+                        		) aval ON aval.loan_transaction_id = mlt.id
+                        		LEFT JOIN (
+                        			SELECT
+                        				mlcpd.loan_transaction_id,
+                        				SUM(mlcpd.amount) amount
+                        			FROM m_loan_charge_paid_by mlcpd
+                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                        			JOIN m_charge mc ON mc.id = mlc.charge_id
+                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                        			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 41
+                        			GROUP BY mlcpd.loan_transaction_id
+                        		) vat_aval ON vat_aval.loan_transaction_id = mlt.id
+                        		LEFT JOIN (
+                        			SELECT
+                        				mlcpd.loan_transaction_id ,
+                        				SUM(mlcpd.amount) amount
+                        			FROM m_loan_charge_paid_by mlcpd
+                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                        			WHERE mlc.charge_calculation_enum = 1009
+                        			GROUP BY mlcpd.loan_transaction_id
+                        		) hono ON hono.loan_transaction_id = mlt.id
+                        		LEFT JOIN (
+                        			SELECT
+                        				mlcpd.loan_transaction_id,
+                        				SUM(mlcpd.amount) amount
+                        			FROM m_loan_charge_paid_by mlcpd
+                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                        			JOIN m_charge mc ON mc.id = mlc.charge_id
+                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                        			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 1009
+                        			GROUP BY mlcpd.loan_transaction_id
+                        		) vat_hono ON vat_hono.loan_transaction_id = mlt.id
+                        		LEFT JOIN (
+                        			SELECT
+                        				mlcpd.loan_transaction_id ,
+                        				SUM(mlcpd.amount) amount
+                        			FROM m_loan_charge_paid_by mlcpd
+                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                        			WHERE mlc.is_penalty = TRUE
+                        			GROUP BY mlcpd.loan_transaction_id
+                        		) penalty ON penalty.loan_transaction_id = mlt.id
+                        		LEFT JOIN (
+                        			SELECT
+                        				mlcpd.loan_transaction_id,
+                        				SUM(mlcpd.amount) amount
+                        			FROM m_loan_charge_paid_by mlcpd
+                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                        			JOIN m_charge mc ON mc.id = mlc.charge_id
+                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                        			WHERE mc.charge_calculation_enum = 342
+                        				AND mc.is_penalty = TRUE
+                        				AND parent.charge_calculation_enum = 1009
+                        				AND parent.is_penalty = TRUE
+                        			GROUP BY mlcpd.loan_transaction_id
+                        		) vat_penalty ON vat_penalty.loan_transaction_id = mlt.id
+                        		WHERE mlt.is_reversed = FALSE
+                        		AND mlt.transaction_type_enum = 10 AND mlt.occurred_on_suspended_account = FALSE
+                                AND mlt.is_invoiced_generated_by_job = FALSE
+                        		AND mlt.transaction_date <= ?
+                        		GROUP BY mlt.loan_id, mlt.is_partially_ivoiced
+                        ) mlt ON mlt."loanId" = ml.id
+                        INNER JOIN (
+                            SELECT DISTINCT ON (mptp.product_type) *
+                            FROM m_product_type_parameters mptp
+                            WHERE mptp.expiration_date >= CURRENT_DATE
+                         ) pp ON pp.product_type = prodtype.code_value
+                        LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = ml.id
+                        LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
+                        LEFT JOIN m_code_value companydoctype ON companydoctype.id = cce."Tipo ID_cd_Tipo ID"
+                        LEFT JOIN m_code_value dept ON dept.id = cce."Departamento_cd_Departamento"
+                        LEFT JOIN m_code_value companycity ON companycity.id = cce."Ciudad_cd_Ciudad"
+                        LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+                        left join m_collection_house_history mchhc on mchhc.collection_nit = ccp."Cedula"
+                        left join m_collection_house_history mchhe on mchhe.collection_nit = cce."NIT"
+                        left join m_collection_house_configuration mchcc on mchcc.collection_code = mchhc.collection_house_code
+                        left join m_collection_house_configuration mchce on mchce.collection_code = mchhe.collection_house_code
+                        LEFT JOIN m_code_value clientcity ON clientcity.id = ccp."Ciudad_cd_Ciudad"
+                        LEFT JOIN (
+                          SELECT mlc.loan_id,
+                          MAX(mc.insurance_code) AS "codeValue",
+                          MAX(mc.insurer_name) AS "codeName"
+                          FROM m_loan_charge mlc
+                          INNER JOIN m_charge mc ON mc.id = mlc.charge_id
+                          WHERE mlc.charge_calculation_enum IN (468, 575, 231)
+                          GROUP BY mlc.loan_id
+                        ) mandatory_insurance_code ON mandatory_insurance_code.loan_id = ml.id
+                        LEFT JOIN (
+                          SELECT mlc.loan_id,
+                          MAX(mc.insurance_code) AS "codeValue",
+                          MAX(mc.insurer_name) AS "codeName"
+                          FROM m_loan_charge mlc
+                          INNER JOIN m_charge mc ON mc.id = mlc.charge_id
+                          WHERE mlc.charge_calculation_enum = 1034
+                          GROUP BY mlc.loan_id
+                        ) voluntary_insurance_code ON voluntary_insurance_code.loan_id = ml.id
+                        WHERE mlt."totalPaid" > 0
+                        AND ml.id > ?
+                        ORDER BY mc.id, ml.id
+                        LIMIT ?
+                    """;
+        }
+
+        public String transactionSchema() {
+            return """
+                    mc.id AS "clientId",
+                    	mc.legal_form_enum AS "clientLegalForm",
+                    	ml.id AS "loanId",
+                    	mc.firstname AS "clientFirstName",
+                    	mc.middlename AS "clientMiddleName",
+                    	mc.display_name AS "clientDisplayName",
+                    	mc.lastname AS "clientLastName",
+                    	mlaa.overdue_since_date_derived AS "overdueSinceDate",
+                    	COALESCE(CURRENT_DATE - mlaa.overdue_since_date_derived::DATE,0) AS "daysInArrears",
+                    	prodtype.id AS "productTypeId",
+                    	prodtype.code_value AS "productTypeName",
+                    	COALESCE(cce."NIT", ccp."Cedula") AS "clientIdNumber",
+                    	pp.id AS "productTypeParamId",
+                    	pp.billing_prefix AS "billingPrefix",
+                    	pp.billing_resolution_number AS "billingResolutionNumber",
+                    	pp.range_start_number AS "rangeStartNumber",
+                    	pp.range_end_number AS "rangeEndNumber",
+                    	pp.last_invoice_number AS "lastInvoiceNumber",
+                    	pp.last_credit_note_number AS "lastCreditNoteNumber",
+                    	pp.last_debit_note_number AS "lastDebitNoteNumber",
+                    	pp.clave_tecnica AS "technicalKey",
+                    	pp.nota AS nota,
+                    	mpl.name AS "loanProductName",
+                    	cce."NIT" AS "companyNIT",
+                    	dept.code_score AS "companyDeptCode",
+                    	dept.code_value AS "companyDeptName",
+                    	companycity.code_score AS "companyCityCode",
+                    	companycity.code_value AS "companyCityName",
+                    	cce."Direccion" AS "companyAddress",
+                    	mc.email_address AS "clientEmailAddress",
+                    	cce."Telefono" AS "companyTelephone",
+                    	ccp."Cedula" AS "clientCedula",
+                    	ccp."Direccion" AS "clientAddress",
+                    	clientcity.code_score AS "clientCityCode",
+                    	clientcity.code_value AS "clientCityName",
+                    	companydoctype.code_value AS "companyDocType",
+                    	mlt."interest" AS "interestPaid",
+                    	mlt."mandatoryInsurance" AS "mandatoryInsurancePaid",
+                    	mlt."mandatoryInsuranceVat" AS "mandatoryInsuranceVatPaid",
+                    	mlt."voluntaryInsurance" AS "voluntaryInsurancePaid",
+                    	mlt."voluntaryInsuranceVat" AS "voluntaryInsuranceVatPaid",
+                    	mlt."honorarios" AS "honorariosPaid",
+                    	mlt."honorariosVat" AS "honorariosVatPaid",
+                    	mlt."penaltyCharges" AS "penaltyChargesPaid",
+                    	mlt."penaltyChargesVat" AS "penaltyChargesVatPaid",
+                    	mlt."totalPaid" AS "totalPaid",
+                    	mlt."transactionIds" AS "transactionIds",
+                    	mandatory_insurance_code."codeValue" AS "mandatoryInsuranceCode",
+                     	voluntary_insurance_code."codeValue" AS "voluntaryInsuranceCode",
+                     	mandatory_insurance_code."codeName" AS "mandatoryInsuranceName",
+                      	voluntary_insurance_code."codeName" AS "voluntaryInsuranceName",
+                      	mc.mobile_no AS "clientTelephone",
+                      	mchc.collection_nit as clientCollectionHouseNit,
+                        mchc.collection_name as clientCollectionHouseName,
+                        NULL AS empressaCollectionHouseNit,
+                        NULL AS empressaCollectionHouseName
+                    FROM m_loan ml
+                    INNER JOIN m_client mc ON mc.id = ml.client_id
+                    INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
+                    INNER JOIN m_code_value prodtype ON prodtype.id = mpl.product_type
+                    INNER JOIN (
+                    		SELECT
+                    			mlt.loan_id AS "loanId",
+                    			mlt.id AS "transactionId",
+                                STRING_AGG(mlt.id::TEXT, ',') AS "transactionIds",
+                    			mlt.collection_house_id,
+                    			SUM(COALESCE(mlt.interest_portion_derived, 0)) AS "interest",
+                    			SUM(COALESCE(mandatory_insurance.amount, 0)) AS "mandatoryInsurance",
+                    			SUM(COALESCE(vat_mandatory_insurance.amount, 0)) AS "mandatoryInsuranceVat",
+                    			SUM(COALESCE(voluntary_insurance.amount, 0)) AS "voluntaryInsurance",
+                    			SUM(COALESCE(vat_voluntary_insurance.amount, 0)) AS "voluntaryInsuranceVat",
+                    			SUM(COALESCE(hono.amount, 0)) AS "honorarios",
+                    			SUM(COALESCE(vat_hono.amount, 0)) AS "honorariosVat",
+                    			SUM(COALESCE(penalty.amount, 0)) AS "penaltyCharges",
+                    			SUM(COALESCE(vat_penalty.amount, 0)) AS "penaltyChargesVat",
+                    			SUM(COALESCE(mlt.interest_portion_derived, 0)
+                    				+ COALESCE(mandatory_insurance.amount, 0) + COALESCE(vat_mandatory_insurance.amount, 0)
+                    				+ COALESCE(voluntary_insurance.amount, 0) + COALESCE(vat_voluntary_insurance.amount, 0)
+                    				+ COALESCE(hono.amount, 0) + COALESCE(vat_hono.amount, 0)
+                    				+ COALESCE(penalty.amount, 0) + COALESCE(vat_penalty.amount, 0)) AS "totalPaid"
+                    		FROM m_loan_transaction mlt
+                    		LEFT JOIN (
+                    			SELECT mlcpd.loan_transaction_id,
+                    					SUM(mlcpd.amount) amount
+                    			FROM m_loan_charge_paid_by mlcpd
+                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                    			WHERE mlc.charge_calculation_enum IN (468, 575, 231)
+                    			GROUP BY mlcpd.loan_transaction_id
+                    		) mandatory_insurance ON mandatory_insurance.loan_transaction_id = mlt.id
+                    		LEFT JOIN (
+                    			SELECT
+                    				mlcpd.loan_transaction_id,
+                    				SUM(mlcpd.amount) amount
+                    			FROM m_loan_charge_paid_by mlcpd
+                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                    			JOIN m_charge mc ON mc.id = mlc.charge_id
+                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                    			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum IN (468, 575, 231)
+                    			GROUP BY mlcpd.loan_transaction_id
+                    		) vat_mandatory_insurance ON vat_mandatory_insurance.loan_transaction_id = mlt.id
+                    		LEFT JOIN (
+                    			SELECT
+                    				mlcpd.loan_transaction_id,
+                    				SUM(mlcpd.amount) amount
+                    			FROM m_loan_charge_paid_by mlcpd
+                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                    			WHERE mlc.charge_calculation_enum = 1034
+                    			GROUP BY mlcpd.loan_transaction_id
+                    		) voluntary_insurance ON voluntary_insurance.loan_transaction_id = mlt.id
+                    		LEFT JOIN (
+                    			SELECT
+                    				mlcpd.loan_transaction_id,
+                    				SUM(mlcpd.amount) amount
+                    			FROM m_loan_charge_paid_by mlcpd
+                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                    			JOIN m_charge mc ON mc.id = mlc.charge_id
+                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                    			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 1034
+                    			GROUP BY mlcpd.loan_transaction_id
+                    		) vat_voluntary_insurance ON vat_voluntary_insurance.loan_transaction_id = mlt.id
+                    		LEFT JOIN (
+                    			SELECT
+                    				mlcpd.loan_transaction_id,
+                    				SUM(mlcpd.amount) amount
+                    			FROM m_loan_charge_paid_by mlcpd
+                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                    			WHERE mlc.charge_calculation_enum = 41
+                    			GROUP BY mlcpd.loan_transaction_id
+                    		) aval ON aval.loan_transaction_id = mlt.id
+                    		LEFT JOIN (
+                    			SELECT
+                    				mlcpd.loan_transaction_id,
+                    				SUM(mlcpd.amount) amount
+                    			FROM m_loan_charge_paid_by mlcpd
+                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                    			JOIN m_charge mc ON mc.id = mlc.charge_id
+                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                    			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 41
+                    			GROUP BY mlcpd.loan_transaction_id
+                    		) vat_aval ON vat_aval.loan_transaction_id = mlt.id
+                    		LEFT JOIN (
+                    			SELECT
+                    				mlcpd.loan_transaction_id ,
+                    				SUM(mlcpd.amount) amount
+                    			FROM m_loan_charge_paid_by mlcpd
+                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                    			WHERE mlc.charge_calculation_enum = 1009
+                    			GROUP BY mlcpd.loan_transaction_id
+                    		) hono ON hono.loan_transaction_id = mlt.id
+                    		LEFT JOIN (
+                    			SELECT
+                    				mlcpd.loan_transaction_id,
+                    				SUM(mlcpd.amount) amount
+                    			FROM m_loan_charge_paid_by mlcpd
+                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                    			JOIN m_charge mc ON mc.id = mlc.charge_id
+                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                    			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 1009
+                    			GROUP BY mlcpd.loan_transaction_id
+                    		) vat_hono ON vat_hono.loan_transaction_id = mlt.id
+                    		LEFT JOIN (
+                    			SELECT
+                    				mlcpd.loan_transaction_id ,
+                    				SUM(mlcpd.amount) amount
+                    			FROM m_loan_charge_paid_by mlcpd
+                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                    			WHERE mlc.is_penalty = TRUE
+                    			GROUP BY mlcpd.loan_transaction_id
+                    		) penalty ON penalty.loan_transaction_id = mlt.id
+                    		LEFT JOIN (
+                    			SELECT
+                    				mlcpd.loan_transaction_id,
+                    				SUM(mlcpd.amount) amount
+                    			FROM m_loan_charge_paid_by mlcpd
+                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                    			JOIN m_charge mc ON mc.id = mlc.charge_id
+                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                    			WHERE mc.charge_calculation_enum = 342
+                    				AND mc.is_penalty = TRUE
+                    				AND parent.charge_calculation_enum = 1009
+                    				AND parent.is_penalty = TRUE
+                    			GROUP BY mlcpd.loan_transaction_id
+                    		) vat_penalty ON vat_penalty.loan_transaction_id = mlt.id
+                    		WHERE mlt.is_reversed = FALSE
+                    		GROUP BY mlt.loan_id, mlt.id
+                    ) mlt ON mlt."loanId" = ml.id
+                    INNER JOIN (
+                        SELECT DISTINCT ON (mptp.product_type) *
+                        FROM m_product_type_parameters mptp
+                        WHERE mptp.expiration_date >= CURRENT_DATE
+                     ) pp ON pp.product_type = prodtype.code_value
+                    LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = ml.id
+                    LEFT JOIN campos_cliente_empresas cce ON cce.client_id = mc.id
+                    LEFT JOIN m_code_value companydoctype ON companydoctype.id = cce."Tipo ID_cd_Tipo ID"
+                    LEFT JOIN m_code_value dept ON dept.id = cce."Departamento_cd_Departamento"
+                    LEFT JOIN m_code_value companycity ON companycity.id = cce."Ciudad_cd_Ciudad"
+                    LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
+                    left join m_collection_house_configuration mchc on mchc.id = mlt.collection_house_id
+                    LEFT JOIN m_code_value clientcity ON clientcity.id = ccp."Ciudad_cd_Ciudad"
+                    LEFT JOIN (
+                      SELECT mlc.loan_id,
+                      MAX(mc.insurance_code) AS "codeValue",
+                       MAX(mc.insurer_name) AS "codeName"
+                      FROM m_loan_charge mlc
+                      INNER JOIN m_charge mc ON mc.id = mlc.charge_id
+                      WHERE mlc.charge_calculation_enum IN (468, 575, 231)
+                      GROUP BY mlc.loan_id
+                    ) mandatory_insurance_code ON mandatory_insurance_code.loan_id = ml.id
+                    LEFT JOIN (
+                      SELECT mlc.loan_id,
+                      MAX(mc.insurance_code) AS "codeValue",
+                      MAX(mc.insurer_name) AS "codeName"
+                      FROM m_loan_charge mlc
+                      INNER JOIN m_charge mc ON mc.id = mlc.charge_id
+                      WHERE mlc.charge_calculation_enum = 1034
+                      GROUP BY mlc.loan_id
+                    ) voluntary_insurance_code ON voluntary_insurance_code.loan_id = ml.id
+                    """;
+        }
+
+        @Override
+        public LoanDocumentData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
+            String clientCollectionHouseNit = rs.getString("clientCollectionHouseNit");
+            String clientCollectionHouseName = rs.getString("clientCollectionHouseName");
+            String empressaCollectionHouseNit = rs.getString("empressaCollectionHouseNit");
+            String empressaCollectionHouseName = rs.getString("empressaCollectionHouseName");
+            String collectionHouseNit = clientCollectionHouseNit == null ? empressaCollectionHouseNit : clientCollectionHouseNit;
+            String collectionHouseName = clientCollectionHouseName == null ? empressaCollectionHouseName : clientCollectionHouseName;
+            return LoanDocumentData.builder().loanId(rs.getLong("loanId")).clientId(rs.getLong("clientId"))
+                    .clientLegalForm(rs.getInt("clientLegalForm")).clientDisplayName(rs.getString("clientDisplayName"))
+                    .clientLastName(rs.getString("clientLastName")).clientEmailAddress(rs.getString("clientEmailAddress"))
+                    .overdueSinceDate(JdbcSupport.getLocalDate(rs, "overdueSinceDate")).daysInArrears(rs.getInt("daysInArrears"))
+                    .productTypeId(rs.getLong("productTypeId")).productTypeName(rs.getString("productTypeName"))
+                    .clientIdNumber(rs.getString("clientIdNumber")).productTypeParamId(rs.getLong("productTypeParamId"))
+                    .billingPrefix(rs.getString("billingPrefix")).billingResolutionNumber(rs.getString("billingResolutionNumber"))
+                    .rangeStartNumber(JdbcSupport.getLong(rs, "rangeStartNumber")).rangeEndNumber(JdbcSupport.getLong(rs, "rangeEndNumber"))
+                    .lastInvoiceNumber(JdbcSupport.getLong(rs, "lastInvoiceNumber"))
+                    .lastCreditNoteNumber(JdbcSupport.getLong(rs, "lastCreditNoteNumber"))
+                    .lastDebitNoteNumber(JdbcSupport.getLong(rs, "lastDebitNoteNumber")).technicalKey(rs.getString("technicalKey"))
+                    .nota(rs.getString("nota")).loanProductName(rs.getString("loanProductName")).companyNIT(rs.getString("companyNIT"))
+                    .companyDocType(rs.getString("companyDocType")).companyDeptCode(rs.getString("companyDeptCode"))
+                    .companyDeptName(rs.getString("companyDeptName")).companyCityCode(rs.getString("companyCityCode"))
+                    .companyCityName(rs.getString("companyCityName")).companyAddress(rs.getString("companyAddress"))
+                    .companyTelephone(rs.getString("companyTelephone")).clientCedula(rs.getString("clientCedula"))
+                    .clientAddress(rs.getString("clientAddress")).clientCityCode(rs.getString("clientCityCode"))
+                    .clientCityName(rs.getString("clientCityName")).clientTelephone(rs.getString("clientTelephone"))
+                    .interestPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "interestPaid"))
+                    .penaltyChargesPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "penaltyChargesPaid"))
+                    .penaltyChargesVatPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "penaltyChargesVatPaid"))
+                    .mandatoryInsurancePaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "mandatoryInsurancePaid"))
+                    .mandatoryInsuranceVatPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "mandatoryInsuranceVatPaid"))
+                    .voluntaryInsurancePaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "voluntaryInsurancePaid"))
+                    .voluntaryInsuranceVatPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "voluntaryInsuranceVatPaid"))
+                    .honorariosPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "honorariosPaid"))
+                    .honorariosVatPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "honorariosVatPaid"))
+                    .totalPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalPaid"))
+                    .mandatoryInsuranceCode(rs.getString("mandatoryInsuranceCode"))
+                    .voluntaryInsuranceCode(rs.getString("voluntaryInsuranceCode"))
+                    .voluntaryInsuranceName(rs.getString("voluntaryInsuranceName")).clientFirstName(rs.getString("clientFirstName"))
+                    .clientMiddleName(rs.getString("clientMiddleName")).mandatoryInsuranceName(rs.getString("mandatoryInsuranceName"))
+                    .collectionHouseNit(collectionHouseNit).collectionHouseName(collectionHouseName)
+                    .transactionIds(rs.getString("transactionIds")).build();
+        }
     }
 }

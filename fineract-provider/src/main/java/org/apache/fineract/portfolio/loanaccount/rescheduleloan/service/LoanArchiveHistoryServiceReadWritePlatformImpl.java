@@ -71,7 +71,7 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
                     + "            LEFT(LPAD(code_score::TEXT, 5, '0'), 2)::INTEGER::VARCHAR\n" + "        ELSE \n"
                     + "            LEFT(LPAD(code_score::TEXT, 5, '0'), 2)\n" + "    END as departement_id\n"
                     + "\tfrom  m_code_value  ciudad where ciudad.code_id =41\n" + "    ) mcv on mcv.id= ccp.\"Ciudad_cd_Ciudad\" "
-                    + "WHERE total_outstanding_derived > 0  \n" + "  and loan_status_id NOT IN (500, 601, 602, 600)\n" + "  AND ml.id > ?\n"
+                    + "WHERE total_outstanding_derived > 0  \n" + "  and loan_status_id IN (300, 700)\n" + "  AND ml.id > ?\n"
                     + "ORDER BY mc.id, ml.id DESC LIMIT ?\n";
         }
 

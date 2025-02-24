@@ -72,7 +72,6 @@ public class LoanHistoryArchiver {
         if (!loansForArchival.isEmpty()) {
             log.info("Running Archivo de cartera for loans batch with maximum loanId {}",
                     Long.valueOf(loansForArchival.get(loansForArchival.size() - 1).getNumeroObligacion()));
-            List<String> archiveLoanId = new ArrayList<>();
             for (LoanArchiveHistoryData dataLoan : loansForArchival) {
                 Loan loan = loanRepository.findOneWithNotFoundDetection(Long.valueOf(dataLoan.getNumeroObligacion()));
                 if (loan != null) {
@@ -88,8 +87,6 @@ public class LoanHistoryArchiver {
                     }
 
                     for (LoanRepaymentScheduleInstallment currentInstallment : currentInstallments) {
-                        Optional<LoanArchiveHistory> existingLoanArchive = loanArchiveHistoryRepository
-                                .findByNumeroObligacion(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
                         Collection<LoanCharge> mandatoryInsuranceCharges = loan.getLoanCharges().stream()
                                 .filter(LoanCharge::isMandatoryInsurance).toList();
                         Collection<LoanCharge> voluntaryInsuranceCharges = loan.getLoanCharges().stream()
@@ -269,75 +266,7 @@ public class LoanHistoryArchiver {
                         BigDecimal writtenOffPenalties = currentInstallment.getPenaltyChargesWrittenOff(loan.getCurrency()).getAmount();
                         BigDecimal totalWrittenOff = writtenOffPrincipal.add(writtenOffInterest).add(writtenOffFees)
                                 .add(writtenOffPenalties);
-
-                        if (existingLoanArchive.isPresent()) {
-
-                            LoanArchiveHistory existingEntry = existingLoanArchive.get();
-                            existingEntry.setIdentificacion(dataLoan.getNitEmpresa());
-                            existingEntry.setPrimerNombre(dataLoan.getPrimerNombre());
-                            existingEntry.setSegundoNombre(dataLoan.getSegundoNombre());
-                            existingEntry.setPrimerApellido(dataLoan.getPrimerApellido());
-                            existingEntry.setSegundoApellido(dataLoan.getSegundoApellido());
-                            existingEntry.setEstadoCliente(estadoCliente);
-                            existingEntry
-                                    .setNumeroObligacion(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
-                            existingEntry.setNitEmpresa("800139398");
-                            existingEntry.setTelefonoSac(dataLoan.getTelefonoSac());
-                            existingEntry.setCelularSac(dataLoan.getCelularSac());
-                            existingEntry.setCelularReferencia(dataLoan.getCelularReferencia());
-                            existingEntry.setEmailSac(dataLoan.getEmailSac());
-                            existingEntry.setDireccionSac(dataLoan.getDireccionSac());
-                            existingEntry.setBarrioSac("OTRO");
-                            existingEntry.setCiudadSac(cityClient);
-                            existingEntry.setTipoCredito(categoryPointOfSales);
-                            existingEntry.setDepartamento(departamentoCity);
-                            existingEntry.setRazonSocial(dataLoan.getRazonSocial());
-                            existingEntry.setNombreFamiliar(dataLoan.getNombreFamiliar());
-                            existingEntry.setGenero(dataLoan.getGenero());
-                            existingEntry.setEmpresaLabora(dataLoan.getEmpresaLabora());
-                            existingEntry.setIngresos(dataLoan.getIngresos());
-                            if (dataLoan.getAntiguedadCliente() != null) {
-                                existingEntry.setAntiguedadCliente(LocalDate.parse(dataLoan.getAntiguedadCliente()));
-                            }
-                            existingEntry.setDiasMora(daysInArrears);
-                            existingEntry.setFechaVencimiento(currentInstallment.getDueDate());
-                            existingEntry.setValorCuota(currentInstallment.getTotalOutstanding(loan.getCurrency()).getAmount()); // get
-                            // outsanding
-                            existingEntry.setCapital(currentInstallment.getPrincipal(loan.getCurrency()).getAmount());
-                            existingEntry.setAval(avalAmount);
-                            existingEntry.setIntereses(currentInstallment.getInterestCharged(loan.getCurrency()).getAmount());
-                            existingEntry
-                                    .setInteresesDeMora(currentInstallment.getPenaltyChargesOutstanding(loan.getCurrency()).getAmount());
-                            existingEntry.setSeguro(mandatoryInsuranceAmount);
-                            existingEntry.setSegurosVoluntarios(voluntaryInsuranceAmount);
-                            existingEntry.setPeriodicidad(PeriodFrequencyType.fromInt(loan.getTermPeriodFrequencyType()).name());
-                            existingEntry.setEmpresaReporta("INTERCREDITO");
-                            existingEntry.setAbono(currentInstallment.getTotalPaid(loan.getCurrency()).getAmount());
-                            existingEntry.setCondonaciones(totalWrittenOff);
-                            existingEntry.setActividadLaboral(actividadLaboral);
-                            existingEntry.setNumeroDeReprogramaciones(numberReschedule);
-                            existingEntry.setCreSaldo(creSaldo);
-                            existingEntry.setCuoSaldo(currentInstallment.getTotalOutstanding(loan.getCurrency()).getAmount());
-                            existingEntry.setMontoInicial(loan.getApprovedPrincipal());
-                            existingEntry.setCuoEstado(cuoEstado);
-                            if (dataLoan.getFechaNacimiento() != null) {
-                                existingEntry.setFechaNacimiento(LocalDate.parse(dataLoan.getFechaNacimiento()));
-                            }
-
-                            existingEntry.setEmpresa(ally);
-                            existingEntry.setMarca(brand);
-                            existingEntry.setCiudadPuntoCredito(cityPoinfsales);
-                            existingEntry.setEstadoCuota(estadoCuota);
-                            existingEntry.setIvaInteresDeMora(BigDecimal.ZERO);
-                            existingEntry.setFechaFinanciacion(loan.getDisbursementDate());
-                            existingEntry.setPuntoDeVenta(pointOfSale);
-                            existingEntry.setTipoDocumento(dataLoan.getTipoDocumento());
-                            existingEntry.setParentescoFamiliar(parentescoFamiliar);
-                            existingEntry.setEstadoCivil(estadoCivil);
-                            existingEntry.setNitEmpresaAliada(dataLoan.getNitEmpresaAliada());
-                            existingEntry.setCreEstado(creEstad);
-                            loanArchiveHistoryRepository.save(existingEntry);
-                        } else {
+                        if (!currentInstallment.isObligationsMet()) {
                             LoanArchiveHistory loanArchiveHistory = new LoanArchiveHistory();
                             loanArchiveHistory.setTitle("Archive Loan " + loan.getId());
                             loanArchiveHistory.setIdentificacion(dataLoan.getNitEmpresa());
@@ -402,17 +331,11 @@ public class LoanHistoryArchiver {
                             loanArchiveHistory.setCreEstado(creEstad);
                             loanArchiveHistoryRepository.save(loanArchiveHistory);
                         }
-                        if (!currentInstallment.isObligationsMet()) {
-                            archiveLoanId.add(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
-                        }
 
                     }
                 }
             }
-            if (archiveLoanId.size() > 0) {
-                List<LoanArchiveHistory> oldLoanArchiveHistories = loanArchiveHistoryRepository.findByNumeroObligacionNotIn(archiveLoanId);
-                loanArchiveHistoryRepository.deleteAll(oldLoanArchiveHistories);
-            }
+
             if (!errors.isEmpty()) {
                 log.error("Error occurred while running Archivo de cartera for loans batch with maximum loanId {}",
                         loansForArchival.get(loansForArchival.size() - 1).getNumeroObligacion());
