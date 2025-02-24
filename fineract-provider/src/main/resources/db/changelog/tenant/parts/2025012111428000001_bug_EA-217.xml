@@ -26,5 +26,11 @@
     <changeSet id="1" author="fineract">
         <renameTable oldTableName="Detalle garanta" newTableName="Detalle garantía"/>
     </changeSet>
+    <changeSet id="2" author="fineract">
+        <update tableName="x_registered_table">
+            <column name="registered_table_name" value="Detalle garantía"/>
+            <where>registered_table_name = 'Detalle garanta'</where>
+        </update>
+    </changeSet>
 
 </databaseChangeLog>
