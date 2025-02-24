@@ -40,6 +40,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
+import org.apache.fineract.accounting.glaccount.data.GLAccountData;
+import org.apache.fineract.accounting.glaccount.domain.GLAccountType;
+import org.apache.fineract.accounting.glaccount.service.GLAccountReadPlatformService;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -64,7 +67,7 @@ public class ChargesApiResource {
             "active", "chargeAppliesTo", "chargeTimeType", "chargeCalculationType", "chargeCalculationTypeOptions",
             "chargeAppliesToOptions", "chargeTimeTypeOptions", "currencyOptions", "loanChargeCalculationTypeOptions",
             "loanChargeTimeTypeOptions", "savingsChargeCalculationTypeOptions", "savingsChargeTimeTypeOptions", "incomeAccount",
-            "clientChargeCalculationTypeOptions", "clientChargeTimeTypeOptions"));
+            "clientChargeCalculationTypeOptions", "clientChargeTimeTypeOptions", "glAccounts"));
 
     private static final String RESOURCE_NAME_FOR_PERMISSIONS = "CHARGE";
 
@@ -73,6 +76,7 @@ public class ChargesApiResource {
     private final DefaultToApiJsonSerializer<ChargeData> toApiJsonSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final GLAccountReadPlatformService glAccountReadPlatformService;
 
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
@@ -110,6 +114,8 @@ public class ChargesApiResource {
         if (settings.isTemplate()) {
             final ChargeData templateData = this.readPlatformService.retrieveNewChargeDetails();
             charge = ChargeData.withTemplate(charge, templateData);
+            List<GLAccountData> glAccounts = this.glAccountReadPlatformService.retrieveAllEnabledDetailGLAccounts(GLAccountType.ASSET);
+            charge.setGlAccounts(glAccounts);
         }
 
         return this.toApiJsonSerializer.serialize(settings, charge, CHARGES_DATA_PARAMETERS);
@@ -128,6 +134,9 @@ public class ChargesApiResource {
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
 
         final ChargeData charge = this.readPlatformService.retrieveNewChargeDetails();
+
+        List<GLAccountData> glAccountData = this.glAccountReadPlatformService.retrieveAllEnabledDetailGLAccounts(GLAccountType.ASSET);
+        charge.setGlAccounts(glAccountData);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, charge, CHARGES_DATA_PARAMETERS);
