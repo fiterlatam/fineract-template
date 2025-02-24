@@ -143,7 +143,7 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
         return validacionContactaData;
     }
 
-    private CamposClienteGenericDatatableData getCamposClienteEmpresaYPersona(CommandProcessingResult result,
+    protected CamposClienteGenericDatatableData getCamposClienteEmpresaYPersona(CommandProcessingResult result,
             EnumOptionData legalFormEnum) {
         CamposClienteGenericDatatableData validacionCamposClienteEmpresaYPersona = CamposClienteGenericDatatableData.builder().build();
 

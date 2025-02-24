@@ -23,8 +23,9 @@ import lombok.Getter;
 
 @Builder
 @Getter
-public class DetalleGarantaDatatableData {
+public class DetalleGarantiaDatatableData {
 
+    private Long loanId;
     private boolean aplicaGarantia;
     private Object fechaRegistroGarantia;
     private String numeroGarantia;
