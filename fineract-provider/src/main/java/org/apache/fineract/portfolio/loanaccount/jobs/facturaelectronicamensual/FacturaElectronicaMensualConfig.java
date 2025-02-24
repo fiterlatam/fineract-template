@@ -18,55 +18,34 @@
  */
 package org.apache.fineract.portfolio.loanaccount.jobs.facturaelectronicamensual;
 
-import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
-import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
+@RequiredArgsConstructor
 public class FacturaElectronicaMensualConfig {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
-    private final JdbcTemplate jdbcTemplate;
-    private final ConfigurationDomainService configurationDomainService;
-    private final LoanWritePlatformService loanWritePlatformService;
-
-    @Autowired
-    public FacturaElectronicaMensualConfig(final JobRepository jobRepository, final PlatformTransactionManager transactionManager,
-            final JdbcTemplate jdbcTemplate, final ConfigurationDomainService configurationDomainService,
-            final LoanWritePlatformService loanWritePlatformService) {
-        this.jobRepository = jobRepository;
-        this.transactionManager = transactionManager;
-        this.jdbcTemplate = jdbcTemplate;
-        this.configurationDomainService = configurationDomainService;
-        this.loanWritePlatformService = loanWritePlatformService;
-    }
 
     @Bean
-    protected Step facturaElectronicaMensualTaskletStep() {
+    protected Step runFacturaElectronicaMensualStep(FacturaElectronicaMensualTasklet facturaElectronicaMensualTasklet) {
         return new StepBuilder(JobName.FACTURA_ELECTRONICA_MENSUAL.name(), jobRepository)
-                .tasklet(facturaElectronicaMensualTaskletStepTasklet(), transactionManager).build();
+                .tasklet(facturaElectronicaMensualTasklet, transactionManager).build();
     }
 
     @Bean
-    public Job facturaElectronicaMensualJob() {
-        return new JobBuilder(JobName.FACTURA_ELECTRONICA_MENSUAL.name(), jobRepository).start(facturaElectronicaMensualTaskletStep())
-                .incrementer(new RunIdIncrementer()).build();
-    }
-
-    @Bean
-    public FacturaElectronicaMensualTasklet facturaElectronicaMensualTaskletStepTasklet() {
-        return new FacturaElectronicaMensualTasklet(jdbcTemplate, configurationDomainService, loanWritePlatformService);
+    public Job runFacturaElectronicaMensualJob(FacturaElectronicaMensualTasklet facturaElectronicaMensualTasklet) {
+        return new JobBuilder(JobName.FACTURA_ELECTRONICA_MENSUAL.name(), jobRepository)
+                .start(runFacturaElectronicaMensualStep(facturaElectronicaMensualTasklet)).incrementer(new RunIdIncrementer()).build();
     }
 }
