@@ -116,6 +116,9 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
     @Setter
     private List<?> chargeFromExternalCalculationList;
 
+    @Setter
+    private List<GLAccountData> glAccounts;
+
     private InterestRateData interestRate;
     private List<InterestRateData> interestRateOptions;
 
