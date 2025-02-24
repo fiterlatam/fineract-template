@@ -200,7 +200,6 @@ import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicaMensual;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.LoanDocumentConcept;
-import org.apache.fineract.portfolio.loanaccount.jobs.facturaelectronicamensual.FacturaElectronicaMensualTasklet;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
@@ -4223,9 +4222,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final LocalDate firstDayOfMonth = transactionDate.withDayOfMonth(1);
         final LocalDate secondLastDayOfMonth = lastDayOfMonth.minusDays(1);
         final LoanTransactionType loanTransactionType = loanTransaction.getTypeOf();
-        final FacturaElectronicaMensualTasklet.LoanInvoiceMapper transactionMapper = new FacturaElectronicaMensualTasklet.LoanInvoiceMapper();
-        final String transactionSQL = "SELECT " + transactionMapper.transactionSchema() + " WHERE mlt.\"transactionId\" = ? ";
-        final List<LoanDocumentData> loanDocumentDataList = this.jdbcTemplate.query(transactionSQL, transactionMapper, loanTransactionId);
+        final List<LoanDocumentData> loanDocumentDataList = this.loanReadPlatformService
+                .retrieveLoanInvoiceDataListByTransactionId(loanTransactionId);
         if (!loanDocumentDataList.isEmpty()) {
             final LoanDocumentData loanDocumentData = loanDocumentDataList.get(0);
             loanDocumentData.setFirstDayOfMonth(firstDayOfMonth);
