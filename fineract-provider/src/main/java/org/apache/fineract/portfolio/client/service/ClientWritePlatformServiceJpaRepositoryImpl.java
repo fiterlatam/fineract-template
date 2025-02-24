@@ -104,7 +104,6 @@ import org.apache.fineract.portfolio.group.exception.GroupMemberCountNotInPermis
 import org.apache.fineract.portfolio.group.exception.GroupNotFoundException;
 import org.apache.fineract.portfolio.insurance.domain.*;
 import org.apache.fineract.portfolio.loanaccount.domain.*;
-import org.apache.fineract.portfolio.loanaccount.exception.LoanBlockingReasonNotFoundException;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountDataDTO;
@@ -380,12 +379,11 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
     }
 
     private void handleClientActivation(Client client, AppUser currentUser) {
-        boolean rollbackTransaction = false;
         if (client.isActive()) {
             validateParentGroupRulesBeforeClientActivation(client);
             runEntityDatatableCheck(client.getId(), client.getLegalForm());
             final CommandWrapper commandWrapper = new CommandWrapperBuilder().activateClient(null).build();
-            rollbackTransaction = this.commandProcessingService.validateRollbackCommand(commandWrapper, currentUser);
+            this.commandProcessingService.validateRollbackCommand(commandWrapper, currentUser);
         }
     }
 
@@ -1587,7 +1585,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final List<Client> clients = this.clientRepository.findAll(clientIdsLong);
             for (Client client : clients) {
                 unblockClientBlockingReason(currentUser, client, unblockDate, blockingReasonId, unblockComment);
-                unblockCreaditLoanisPresent(currentUser, client, blockingReason.getNameOfReason(), unblockDate, unblockComment);
+                unblockCreditLoansIfPresent(currentUser, client, blockingReason.getNameOfReason(), unblockDate, unblockComment);
             }
 
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
@@ -1598,52 +1596,70 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
     }
 
-    public void unblockCreaditLoanisPresent(final AppUser currentUser, final Client client, final String Reason,
+    public void unblockCreditLoansIfPresent(final AppUser currentUser, final Client client, final String reason,
             final LocalDate unblockDate, final String unblockComment) {
-        final Optional<BlockingReasonSetting> listBlockingReasonCreaditClient = blockingReasonSettingsRepositoryWrapper
-                .getBlockingReasonSettingByReason(Reason, "CREDIT").stream().findFirst();
-        if (listBlockingReasonCreaditClient.isPresent()) {
-            final String[] loanBlockIds;
-            loanBlockIds = new String[] { "" + listBlockingReasonCreaditClient.get().getId() };
-            final List<Loan> allLoans = this.loanRepositoryWrapper.findLoanByClientId(client.getId());
-            for (Loan clientloan : allLoans) {
-                Optional<LoanBlockingReason> blockingReason = this.loanBlockingReasonRepository
-                        .findExistingBlockingReason(clientloan.getId(), listBlockingReasonCreaditClient.get().getId());
-                if (blockingReason.isPresent()) {
-                    LoanBlockingReason loanBlockingReason = this.loanBlockingReasonRepository
-                            .findExistingBlockingReason(clientloan.getId(), listBlockingReasonCreaditClient.get().getId())
-                            .orElseThrow(() -> new LoanBlockingReasonNotFoundException(clientloan.getId(),
-                                    listBlockingReasonCreaditClient.get().getId()));
-                    handleDelete(loanBlockingReason, unblockDate, currentUser, unblockComment);
-                    final BlockingReasonSetting blockingReasonSetting = clientloan.getLoanCustomizationDetail().getBlockStatus();
-                    if (blockingReasonSetting != null) {
-                        // Check if the loan is still blocked
-                        if (blockingReasonSetting.equals(loanBlockingReason.getBlockingReasonSetting())) {
-                            clientloan.getLoanCustomizationDetail().setBlockStatus(null);
-                        }
-                    }
+        Optional<BlockingReasonSetting> blockingReasonSettingOpt = getBlockingReasonSetting(reason, "CREDIT");
 
-                    if (clientloan.getLoanCustomizationDetail().getBlockStatus() == null) {
-                        Collection<LoanBlockingReason> loanBlockingReasonCollection = this.loanBlockingReasonRepository
-                                .findAllActiveByLoanId(clientloan.getId());
-                        if (loanBlockingReasonCollection.size() > 0) {
-                            final Optional<LoanBlockingReason> highestPriorityReason = loanBlockingReasonCollection.stream()
-                                    .filter(LoanBlockingReason::isActive)
-                                    .sorted(Comparator.comparingInt(t -> t.getBlockingReasonSetting().getPriority())).findFirst();
+        if (blockingReasonSettingOpt.isPresent()) {
+            BlockingReasonSetting blockingReasonSetting = blockingReasonSettingOpt.get();
+            List<Loan> clientLoans = getLoansByClientId(client.getId());
 
-                            if (highestPriorityReason.isPresent()) {
-                                clientloan.getLoanCustomizationDetail()
-                                        .setBlockStatus(highestPriorityReason.get().getBlockingReasonSetting());
-                            }
-                        }
-                    }
-                    this.loanRepository.save(clientloan);
-                    this.loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
-                }
-
+            for (Loan loan : clientLoans) {
+                unblockLoanIfBlocked(loan, blockingReasonSetting, currentUser, unblockDate, unblockComment);
             }
-
         }
+    }
+
+    private Optional<BlockingReasonSetting> getBlockingReasonSetting(String reason, String type) {
+        return blockingReasonSettingsRepositoryWrapper.getBlockingReasonSettingByReason(reason, type).stream().findFirst();
+    }
+
+    private List<Loan> getLoansByClientId(Long clientId) {
+        return loanRepositoryWrapper.findLoanByClientId(clientId);
+    }
+
+    private void unblockLoanIfBlocked(Loan loan, BlockingReasonSetting blockingReasonSetting, AppUser currentUser, LocalDate unblockDate,
+            String unblockComment) {
+        Optional<LoanBlockingReason> blockingReasonOpt = findExistingBlockingReason(loan.getId(), blockingReasonSetting.getId());
+
+        if (blockingReasonOpt.isPresent()) {
+            LoanBlockingReason blockingReason = blockingReasonOpt.get();
+            handleDelete(blockingReason, unblockDate, currentUser, unblockComment);
+            updateLoanBlockStatus(loan, blockingReason);
+            saveLoanAndBlockingReason(loan, blockingReason);
+        }
+    }
+
+    private Optional<LoanBlockingReason> findExistingBlockingReason(Long loanId, Long blockingReasonId) {
+        return loanBlockingReasonRepository.findExistingBlockingReason(loanId, blockingReasonId);
+    }
+
+    private void updateLoanBlockStatus(Loan loan, LoanBlockingReason blockingReason) {
+        BlockingReasonSetting currentBlockStatus = loan.getLoanCustomizationDetail().getBlockStatus();
+
+        if (currentBlockStatus != null && currentBlockStatus.equals(blockingReason.getBlockingReasonSetting())) {
+            loan.getLoanCustomizationDetail().setBlockStatus(null);
+        }
+
+        if (loan.getLoanCustomizationDetail().getBlockStatus() == null) {
+            setHighestPriorityBlockStatus(loan);
+        }
+    }
+
+    private void setHighestPriorityBlockStatus(Loan loan) {
+        Collection<LoanBlockingReason> activeBlockingReasons = loanBlockingReasonRepository.findAllActiveByLoanId(loan.getId());
+
+        if (!activeBlockingReasons.isEmpty()) {
+            Optional<LoanBlockingReason> highestPriorityReason = activeBlockingReasons.stream().filter(LoanBlockingReason::isActive)
+                    .min(Comparator.comparingInt(t -> t.getBlockingReasonSetting().getPriority()));
+
+            highestPriorityReason.ifPresent(reason -> loan.getLoanCustomizationDetail().setBlockStatus(reason.getBlockingReasonSetting()));
+        }
+    }
+
+    private void saveLoanAndBlockingReason(Loan loan, LoanBlockingReason blockingReason) {
+        loanRepository.save(loan);
+        loanBlockingReasonRepository.saveAndFlush(blockingReason);
     }
 
     private void handleDelete(final LoanBlockingReason blockingReason, final LocalDate unblockDate, final AppUser currentUser,
