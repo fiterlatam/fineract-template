@@ -30,9 +30,6 @@
         <renameTable oldTableName="Detalle garanta" newTableName="Detalle garantía"/>
     </changeSet>
     <changeSet id="2" author="fineract">
-        <preConditions onFail="MARK_RAN">
-            <tableExists tableName="Detalle garanta"/>
-        </preConditions>
         <update tableName="x_registered_table">
             <column name="registered_table_name" value="Detalle garantía"/>
             <where>registered_table_name = 'Detalle garanta'</where>
