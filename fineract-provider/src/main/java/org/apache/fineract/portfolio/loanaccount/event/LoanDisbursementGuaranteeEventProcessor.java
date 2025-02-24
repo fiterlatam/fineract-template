@@ -29,7 +29,7 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
-import org.apache.fineract.custom.infrastructure.dataqueries.data.DetalleGarantaDatatableData;
+import org.apache.fineract.custom.infrastructure.dataqueries.data.DetalleGarantiaDatatableData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
@@ -72,12 +72,12 @@ public class LoanDisbursementGuaranteeEventProcessor extends BaseCustomWebhookEv
                 """;
 
         try {
-            DetalleGarantaDatatableData detalleGaranta = this.jdbcTemplate.queryForObject(query,
-                    new RowMapper<DetalleGarantaDatatableData>() {
+            DetalleGarantiaDatatableData detalleGaranta = this.jdbcTemplate.queryForObject(query,
+                    new RowMapper<DetalleGarantiaDatatableData>() {
 
                         @Override
-                        public DetalleGarantaDatatableData mapRow(ResultSet rs, int rowNum) throws SQLException {
-                            return DetalleGarantaDatatableData.builder().aplicaGarantia(rs.getBoolean("aplica_garantia"))
+                        public DetalleGarantiaDatatableData mapRow(ResultSet rs, int rowNum) throws SQLException {
+                            return DetalleGarantiaDatatableData.builder().aplicaGarantia(rs.getBoolean("aplica_garantia"))
                                     .fechaRegistroGarantia(rs.getObject("fecha_registro_garantia", Timestamp.class))
                                     .numeroGarantia(rs.getString("numero_garantia")).numeroPagare(rs.getString("numero_pagare"))
                                     .tipoGarantia(rs.getString("tipo_garantia"))

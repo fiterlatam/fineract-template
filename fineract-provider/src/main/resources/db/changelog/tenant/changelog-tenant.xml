@@ -382,4 +382,5 @@
     <include file="parts/202502192000002000_EA_32_webhook_disbursement_creditorotativo.xml" relativeToChangelogFile="true" />
     <include file="parts/202502202000001000_EA_219_configuration_cupodefaulçtvalue.xml" relativeToChangelogFile="true" />
     <include file="parts/2025012111428000001_bug_EA-217.xml" relativeToChangelogFile="true" />
+    <include file="parts/202502242000001000_EA_27_webhook_loan_reject.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>
