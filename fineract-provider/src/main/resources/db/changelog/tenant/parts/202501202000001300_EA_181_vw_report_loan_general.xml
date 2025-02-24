@@ -173,4 +173,44 @@
         </sql>
     </changeSet>
 
+    <changeSet id="2" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="Detalle garanta"/>
+        </preConditions>
+        <renameTable oldTableName="Detalle garanta" newTableName="Detalle garantía"/>
+    </changeSet>
+
+    <changeSet id="3" author="fineract">
+        <sql>
+        <![CDATA[
+            DROP VIEW IF EXISTS vw_report_loan_general;
+
+            CREATE OR REPLACE VIEW vw_report_loan_general AS
+            SELECT
+                ml.*,
+                dg.loan_id AS "dg.loan_id",
+                dg.aplica_garantia AS "dg.aplica_garantia",
+                dg."Tipo Garantía_cd_Tipo Garantía" AS "dg.Tipo Garantía_cd_Tipo Garantía",
+                fn_core_codevalue_getdescription(dg."Tipo Garantía_cd_Tipo Garantía") AS "dg.Tipo Garantía",
+                dg."Tipo Producto_cd_Tipo Producto" AS "dg.Tipo Producto_cd_Tipo Producto",
+                fn_core_codevalue_getdescription(dg."Tipo Producto_cd_Tipo Producto") AS "dg.Tipo Producto",
+                dg.porc_comision AS "dg.porc_comision",
+                dg.porc_cobertura AS "dg.porc_cobertura",
+                dg.numero_garantia AS "dg.numero_garantia",
+                dg.fecha_registro_garantia AS "dg.fecha_registro_garantia",
+                dg.fecha_reserva AS "dg.fecha_reserva",
+                dg.fecha_cancelacion AS "dg.fecha_cancelacion",
+                dg."Estado Garantía_cd_Estado Garantía" AS "dg.Estado Garantía_cd_Estado Garantía",
+                fn_core_codevalue_getdescription(dg."Estado Garantía_cd_Estado Garantía") AS "dg.Estado Garantía",
+                dg.obs_estado_garantia AS "dg.obs_estado_garantia",
+                dg.numero_pagare AS "dg.numero_pagare",
+                dg.created_at AS "dg.created_at",
+                dg.updated_at AS "dg.updated_at"
+            FROM
+                m_loan ml
+                    LEFT JOIN "Detalle garantía" dg ON ml.id = dg.loan_id;
+            ]]>
+    </sql>
+    </changeSet>
+
 </databaseChangeLog>

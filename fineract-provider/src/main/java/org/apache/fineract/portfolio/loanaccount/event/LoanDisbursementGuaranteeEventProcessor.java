@@ -67,7 +67,7 @@ public class LoanDisbursementGuaranteeEventProcessor extends BaseCustomWebhookEv
 
         String query = """
                 SELECT *, fn_core_codevalue_getdescription("Tipo Garantía_cd_Tipo Garantía") AS tipo_garantia
-                FROM "Detalle garanta"
+                FROM "Detalle garantía"
                 WHERE loan_id = ?
                 """;
 
