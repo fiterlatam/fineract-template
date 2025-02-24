@@ -13,6 +13,9 @@ public interface LoanArchiveHistoryRepository
     @Query("SELECT lah FROM LoanArchiveHistory lah WHERE lah.numeroObligacion NOT IN :numeroObligacionList")
     List<LoanArchiveHistory> findByNumeroObligacionNotIn(@Param("numeroObligacionList") List<String> numeroObligacionList);
 
+    @Query("SELECT lah FROM LoanArchiveHistory lah WHERE lah.numeroObligacion IN :numeroObligacionList")
+    List<LoanArchiveHistory> findByNumeroObligacionMet(@Param("numeroObligacionList") List<String> numeroObligacionList);
+
     Optional<LoanArchiveHistory> findByTitle(String title);
 
     @Query("SELECT lah FROM LoanArchiveHistory lah WHERE lah.numeroObligacion = :numeroObligacion")
