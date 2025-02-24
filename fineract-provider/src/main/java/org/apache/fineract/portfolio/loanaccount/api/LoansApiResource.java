@@ -1219,10 +1219,8 @@ public class LoansApiResource {
                             .retrieveInstallmentLoanCharges(period.getInstallmentId());
                     if (!loanInstallmentChargeData.isEmpty()) {
                         Collection<FeeDetails> feeDetails = new ArrayList<>();
-                        loanInstallmentChargeData.forEach(charge -> {
-                            feeDetails.add(new FeeDetails(charge.getChargeName(), charge.getAmount(), charge.getAmountPaid(),
-                                    charge.getAmountOutstanding()));
-                        });
+                        loanInstallmentChargeData.forEach(charge -> feeDetails.add(new FeeDetails(charge.getChargeName(),
+                                charge.getAmount(), charge.getAmountPaid(), charge.getAmountOutstanding())));
                         // update repayment schedule period with fee details
                         period.setFeeDetails(feeDetails);
                     }
