@@ -72,7 +72,7 @@ public class LoanHistoryArchiver {
         if (!loansForArchival.isEmpty()) {
             log.info("Running Archivo de cartera for loans batch with maximum loanId {}",
                     Long.valueOf(loansForArchival.get(loansForArchival.size() - 1).getNumeroObligacion()));
-            List<String> archiveLoanId = new ArrayList<>();
+            List<String> installmentsWithObligationMet = new ArrayList<>();
             for (LoanArchiveHistoryData dataLoan : loansForArchival) {
                 Loan loan = loanRepository.findOneWithNotFoundDetection(Long.valueOf(dataLoan.getNumeroObligacion()));
                 if (loan != null) {
@@ -402,15 +402,15 @@ public class LoanHistoryArchiver {
                             loanArchiveHistory.setCreEstado(creEstad);
                             loanArchiveHistoryRepository.save(loanArchiveHistory);
                         }
-                        if (!currentInstallment.isObligationsMet()) {
-                            archiveLoanId.add(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
+                        if (currentInstallment.isObligationsMet()) {
+                            installmentsWithObligationMet.add(dataLoan.getNumeroObligacion() + "+" + currentInstallment.getInstallmentNumber());
                         }
 
                     }
                 }
             }
-            if (archiveLoanId.size() > 0) {
-                List<LoanArchiveHistory> oldLoanArchiveHistories = loanArchiveHistoryRepository.findByNumeroObligacionNotIn(archiveLoanId);
+            if (!installmentsWithObligationMet.isEmpty()) {
+                List<LoanArchiveHistory> oldLoanArchiveHistories = loanArchiveHistoryRepository.findByNumeroObligacionMet(installmentsWithObligationMet);
                 loanArchiveHistoryRepository.deleteAll(oldLoanArchiveHistories);
             }
             if (!errors.isEmpty()) {
