@@ -83,6 +83,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
             log.info("Starting FacturaElectronicaMensualTasklet job for the date: {}", businessLocalDate);
             List<LoanDocumentData> loanInvoiceDataList = this.loanReadPlatformService.retrieveLoanInvoiceDataList(pageSize, maxLoanIdInList,
                     secondLastDayOfMonth);
+            log.info("Fetched LoanDocumentDataList with count of: {}", loanInvoiceDataList.size());
             if (loanInvoiceDataList != null && !loanInvoiceDataList.isEmpty()) {
                 loanInvoiceDataList = Collections.synchronizedList(loanInvoiceDataList);
                 long finish = System.currentTimeMillis();
@@ -92,8 +93,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                 if (!CollectionUtils.isEmpty(queue)) {
                     do {
                         int totalFilteredRecords = loanInvoiceDataList.size();
-                        log.debug("Starting FacturaElectronicaMensualTasklet invoice processing - total records - {}",
-                                totalFilteredRecords);
+                        log.info("Starting FacturaElectronicaMensualTasklet invoice processing - total records - {}", totalFilteredRecords);
                         List<LoanDocumentData> queueElement = queue.element();
                         maxLoanIdInList = queueElement.get(queueElement.size() - 1).getLoanId();
                         this.processInvoices(queue.remove(), threadPoolSize, secondLastDayOfMonth, batchSize, maxLoanIdInList);
@@ -137,6 +137,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                 log.info("Fetching while threads are running!");
                 List<LoanDocumentData> loanDocumentData = Collections
                         .synchronizedList(this.loanReadPlatformService.retrieveLoanInvoiceDataList(pageSize, maxId, secondLastDayOfMonth));
+                log.info("Fetched LoanDocumentDataList with count of: {}", loanDocumentData.size());
                 if (loanDocumentData.isEmpty()) {
                     log.info("No more loanDocumentData to process");
                     break;
