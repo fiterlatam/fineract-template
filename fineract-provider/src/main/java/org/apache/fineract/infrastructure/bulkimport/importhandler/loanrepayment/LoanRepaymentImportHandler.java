@@ -85,7 +85,8 @@ public class LoanRepaymentImportHandler implements ImportHandler {
     }
 
     private LoanTransactionData readLoanRepayment(final Workbook workbook, final Row row, final String locale, final String dateFormat) {
-        final String clientIdNumber = ImportHandlerUtils.readAsString(LoanRepaymentConstants.CLIENT_ID_COL, row);
+        final Long clientId = ImportHandlerUtils.readAsLong(LoanRepaymentConstants.CLIENT_ID_COL, row);
+        final String clientIdNumber = clientId != null ? clientId.toString() : EMPTY_STR;
         final Long loanAccountId = ImportHandlerUtils.readAsLong(LoanRepaymentConstants.LOAN_ACCOUNT_NO_COL, row);
         final BigDecimal repaymentAmount = BigDecimal
                 .valueOf(ImportHandlerUtils.readAsDouble(LoanRepaymentConstants.PAYMENT_AMOUNT_COL, row));
