@@ -309,6 +309,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         return Money.of(currency, this.principal);
     }
 
+    public Money getPrincipalAccountedFor(final MonetaryCurrency currency) {
+        return getPrincipalCompleted(currency).plus(getPrincipalWrittenOff(currency));
+    }
+
     public Money getPrincipalCompleted(final MonetaryCurrency currency) {
         return Money.of(currency, this.principalCompleted);
     }
