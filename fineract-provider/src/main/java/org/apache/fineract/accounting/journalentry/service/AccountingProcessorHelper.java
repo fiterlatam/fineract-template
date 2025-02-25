@@ -1077,10 +1077,11 @@ public class AccountingProcessorHelper {
          * cash and accrual based accounts
          *****/
 
-        //first get charge details and check if charge has specific account defined on it. If true then return specific gl
+        // first get charge details and check if charge has specific account defined on it. If true then return specific
+        // gl
         Charge chargeData = this.chargeRepositoryWrapper.findOneWithNotFoundDetection(chargeId);
 
-        if (chargeData.getAccount()!=null) {
+        if (chargeData.getAccount() != null) {
             return chargeData.getAccount();
         }
 
