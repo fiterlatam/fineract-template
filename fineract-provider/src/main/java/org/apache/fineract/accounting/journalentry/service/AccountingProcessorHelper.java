@@ -66,6 +66,7 @@ import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.office.domain.OfficeRepository;
 import org.apache.fineract.portfolio.account.PortfolioAccountType;
 import org.apache.fineract.portfolio.account.service.AccountTransfersReadPlatformService;
+import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.client.domain.ClientTransaction;
 import org.apache.fineract.portfolio.client.domain.ClientTransactionRepository;
@@ -1075,6 +1076,14 @@ public class AccountingProcessorHelper {
          * loan product). Note the income from fees and income from penalties placeholder ID would be the same for both
          * cash and accrual based accounts
          *****/
+
+        // first get charge details and check if charge has specific account defined on it. If true then return specific
+        // gl
+        Charge chargeData = this.chargeRepositoryWrapper.findOneWithNotFoundDetection(chargeId);
+
+        if (chargeData.getAccount() != null) {
+            return chargeData.getAccount();
+        }
 
         // Vishwas TODO: remove this condition as it should always be true
         if (accountMappingTypeId == CashAccountsForLoan.INCOME_FROM_FEES.getValue()
