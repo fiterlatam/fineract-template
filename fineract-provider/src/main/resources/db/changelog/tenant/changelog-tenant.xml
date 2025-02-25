@@ -386,4 +386,5 @@
     <include file="parts/202502242000001100_EA_223_vw_report_client_general.xml" relativeToChangelogFile="true" />
     <include file="parts/202502242000002000_EA_223_campos_cliente_persona_modify.xml" relativeToChangelogFile="true" />
     <include file="parts/202502242000003000_EA_224_campos_cliente_empresa_modify.xml" relativeToChangelogFile="true" />
+    <include file="parts/202502252000001000_EA_29_webhook_loan_disbursement_approvedamountavailable.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>
