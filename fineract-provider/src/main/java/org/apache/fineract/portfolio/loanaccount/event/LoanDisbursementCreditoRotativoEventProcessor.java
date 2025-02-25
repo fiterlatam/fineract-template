@@ -104,7 +104,7 @@ public class LoanDisbursementCreditoRotativoEventProcessor extends BaseCustomWeb
         return requestBody;
     }
 
-    private InformacionAdicionalDatatableData getInformacionAdicionalDatatableData(Loan loan) {
+    protected InformacionAdicionalDatatableData getInformacionAdicionalDatatableData(Loan loan) {
         InformacionAdicionalDatatableData validacionContactaData = InformacionAdicionalDatatableData.builder().build();
 
         try {
@@ -121,6 +121,7 @@ public class LoanDisbursementCreditoRotativoEventProcessor extends BaseCustomWeb
                             .loanId(rs.getLong("loan_id")) //
                             .validacionManual(rs.getBoolean("validacion_manual")) //
                             .notificacionBienvenida(rs.getBoolean("notificacion_bienvenida")) //
+                            .montoDisponible(rs.getBoolean("monto_disponible")) //
                             .build();
                 }
             }, loan.getId());
