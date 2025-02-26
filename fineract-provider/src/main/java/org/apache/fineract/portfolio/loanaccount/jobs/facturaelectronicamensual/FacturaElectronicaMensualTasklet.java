@@ -96,7 +96,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                         log.info("Starting FacturaElectronicaMensualTasklet invoice processing - total records - {}", totalFilteredRecords);
                         List<LoanDocumentData> queueElement = queue.element();
                         maxLoanIdInList = queueElement.get(queueElement.size() - 1).getLoanId();
-                        this.processInvoices(queue.remove(), threadPoolSize, secondLastDayOfMonth, batchSize, maxLoanIdInList);
+                        this.processInvoices(queue.remove(), threadPoolSize, secondLastDayOfMonth, pageSize, maxLoanIdInList);
                     } while (!CollectionUtils.isEmpty(queue));
                 }
             }
