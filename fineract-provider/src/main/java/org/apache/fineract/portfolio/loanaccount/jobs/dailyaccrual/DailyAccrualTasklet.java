@@ -88,7 +88,7 @@ public class DailyAccrualTasklet implements Tasklet {
                     log.debug("Starting Daily Accrual posting - total records - {}", totalFilteredRecords);
                     List<Long> queueElement = queue.element();
                     maxLoanIdInList = queueElement.get(queueElement.size() - 1);
-                    this.postDailyAccruals(queue.remove(), threadPoolSize, accrualDate, batchSize, maxLoanIdInList,
+                    this.postDailyAccruals(queue.remove(), threadPoolSize, accrualDate, pageSize, maxLoanIdInList,
                             minimumDaysInArrearsToSuspendLoanAccount);
                 } while (!CollectionUtils.isEmpty(queue));
             }
