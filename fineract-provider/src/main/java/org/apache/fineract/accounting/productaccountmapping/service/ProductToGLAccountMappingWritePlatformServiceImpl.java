@@ -69,7 +69,7 @@ public class ProductToGLAccountMappingWritePlatformServiceImpl implements Produc
                 this.loanProductToGLAccountMappingHelper.saveLoanToAssetOrLiabilityAccountMapping(element,
                         LoanProductAccountingParams.FUND_SOURCE.getValue(), loanProductId, CashAccountsForLoan.FUND_SOURCE.getValue());
                 // asset
-                this.loanProductToGLAccountMappingHelper.saveLoanToAssetAccountMapping(element,
+                this.loanProductToGLAccountMappingHelper.saveLoanToAssetOrLiabilityAccountMapping(element,
                         LoanProductAccountingParams.LOAN_PORTFOLIO.getValue(), loanProductId,
                         CashAccountsForLoan.LOAN_PORTFOLIO.getValue());
                 this.loanProductToGLAccountMappingHelper.saveLoanToAssetAccountMapping(element,
