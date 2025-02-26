@@ -249,8 +249,9 @@ public class LoanProductToGLAccountMappingHelper extends ProductToGLAccountMappi
                         CashAccountsForLoan.FUND_SOURCE.getValue(), CashAccountsForLoan.FUND_SOURCE.toString(), changes);
 
                 // asset
-                mergeLoanToAssetAccountMappingChanges(element, LoanProductAccountingParams.LOAN_PORTFOLIO.getValue(), loanProductId,
-                        CashAccountsForLoan.LOAN_PORTFOLIO.getValue(), CashAccountsForLoan.LOAN_PORTFOLIO.toString(), changes);
+                mergeLoanToAssetOrLiabilityAccountMappingChanges(element, LoanProductAccountingParams.LOAN_PORTFOLIO.getValue(),
+                        loanProductId, CashAccountsForLoan.LOAN_PORTFOLIO.getValue(), CashAccountsForLoan.LOAN_PORTFOLIO.toString(),
+                        changes);
                 mergeLoanToAssetAccountMappingChanges(element, LoanProductAccountingParams.TRANSFERS_SUSPENSE.getValue(), loanProductId,
                         CashAccountsForLoan.TRANSFERS_SUSPENSE.getValue(), CashAccountsForLoan.TRANSFERS_SUSPENSE.toString(), changes);
 
