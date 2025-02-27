@@ -712,16 +712,17 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
             if (unpaidCharge == null) {
                 break; // All are trache charges
             }
+            final Integer processedInstallmentNumber = unpaidCharge.findProcessedInstallmentNumber(installmentNumber);
             final Money amountPaidTowardsCharge = unpaidCharge.updatePaidAmountBy(amountRemaining, installmentNumber, feeAmount,
                     isWriteOffTransaction);
-
             // Ideally Java Set should not allow duplicates but here if the transaction is reprocessed then it adds a
             // duplicate.
             // This fix is made to stop that duplicate entry of loanChargepaidByObject
             if (!loanTransaction.getLoanChargesPaid().isEmpty()) {
+
                 long count = loanTransaction.getLoanChargesPaid().stream()
                         .filter(p -> Objects.equals(p.getLoanCharge().getId(), unpaidCharge.getId())
-                                && Objects.equals(p.getInstallmentNumber(), installmentNumber))
+                                && Objects.equals(p.getInstallmentNumber(), processedInstallmentNumber))
                         .count();
                 if (count > 0) {
                     amountRemaining = amountRemaining.minus(amountPaidTowardsCharge);
@@ -740,7 +741,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                     }
                 } else {
                     final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(loanTransaction, unpaidCharge,
-                            amountPaidTowardsCharge.getAmount(), installmentNumber);
+                            amountPaidTowardsCharge.getAmount(), processedInstallmentNumber);
                     chargesPaidBies.add(loanChargePaidBy);
                 }
                 amountRemaining = amountRemaining.minus(amountPaidTowardsCharge);

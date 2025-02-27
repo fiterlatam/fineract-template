@@ -1131,6 +1131,19 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         return amountPaidOnThisCharge;
     }
 
+    public Integer findProcessedInstallmentNumber(final Integer installmentNumber) {
+        Integer processedInstallmentNumber = installmentNumber;
+        if (isInstalmentFee() && installmentNumber == null) {
+            final LoanInstallmentCharge unpaidInstallmentLoanCharge = getUnpaidInstallmentLoanCharge();
+            if (unpaidInstallmentLoanCharge != null) {
+                processedInstallmentNumber = unpaidInstallmentLoanCharge.getRepaymentInstallment() != null
+                        ? unpaidInstallmentLoanCharge.getRepaymentInstallment().getInstallmentNumber()
+                        : null;
+            }
+        }
+        return processedInstallmentNumber;
+    }
+
     public String name() {
         return this.charge.getName();
     }
