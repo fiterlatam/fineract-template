@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
           fetch-depth: 0
+      - name: Fetch all branches
+        run: git fetch --all
       - name: Set up JDK 17
         uses: actions/setup-java@387ac29b308b003ca37ba93a6cab5eb57c8f5f93
         with:
@@ -35,7 +37,13 @@ jobs:
           ./gradlew wrapper --gradle-version=8.5
           ./gradlew wrapper --version
           ./gradlew build -x spotlessGroovyGradle -x checkstyleMain -x spotbugsMain -x compileTestJava -x test -x cucumber -x checkstyleTest -x asciidoctorPdf -x asciidoctor -x buildAsciidoc -x spotbugsTest
-        # ./gradlew sonar -Dsonar.host.url=$ENTRE_AMIGOS_SONAR_HOST_URL -Dsonar.token=$ENTRE_AMIGOS_SONAR_TOKEN -Dsonar.projectKey=$ENTRE_AMIGOS_SONAR_PROJECT_KEY -Dsonar.organization=$ENTRE_AMIGOS_SONAR_ORGANIZATION_KEY
+          ./gradlew sonar \
+          -Dsonar.host.url=$ENTRE_AMIGOS_SONAR_HOST_URL \
+          -Dsonar.token=$ENTRE_AMIGOS_SONAR_TOKEN \
+          -Dsonar.projectKey=$ENTRE_AMIGOS_SONAR_PROJECT_KEY \
+          -Dsonar.organization=$ENTRE_AMIGOS_SONAR_ORGANIZATION_KEY \
+          -Dsonar.qualitygate.wait=true \
+          --info
 
       - name: Run Test Server
         env:
