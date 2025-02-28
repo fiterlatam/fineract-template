@@ -45,6 +45,10 @@ truncate table custom.c_client_ally cascade;
 
 truncate table m_loan cascade;
 
+#Try to restart the pods and if they fail then execute these scripts to get the migrations to pass
+alter table m_loan_transaction drop column is_partially_ivoiced;
+alter table m_loan_transaction drop column is_invoiced_generated_by_job;
+
 -- Disable the following Jobs Before Migration --
 -- Arrears Job
 -- Penalties Job
@@ -68,7 +72,7 @@ select * from tmp_clientes_migrar where mobile_number in (
 select * from tmp_clientes_migrar where gender is null;
 
 -- Missing city
-select external_id, city, ltrim(city, '0') from tmp_clientes_migrar tcm where  ltrim(city, '0') not in (select code_score from m_code_value where code_id = (select id from m_code where code_name = 'Ciudad'));
+select * from tmp_empresa_migrar where city_id not in (select code_score from m_code_value where code_id = (select id from m_code where code_name = 'Ciudad'));
 
 -- Null referencia
 select * from tmp_clientes_migrar where celular_referencia is null;
@@ -80,9 +84,10 @@ select * from tmp_clientes_migrar where referencia is null;
 -- Allies------------
 select * from tmp_empresa_migrar where upper(liquidation_frequency_id)  not in (select upper(code_value) from m_code_value where code_id = (select id from m_code where code_name = 'FrecuenciaLiquidacion'));
 select * from tmp_empresa_migrar where department_id  not in (select code_score from m_code_value where code_id = (select id from m_code where code_name = 'Departamento'));
-select * from tmp_empresa_migrar where ltrim(city_id, '0')  not in (select code_score from m_code_value where code_id = (select id from m_code where code_name = 'Ciudad'));
+select * from tmp_empresa_migrar where city_id not in (select code_score from m_code_value where code_id = (select id from m_code where code_name = 'Ciudad'));
 select * from tmp_empresa_migrar where tax_profile_id is null;
 select * from tmp_empresa_migrar where state_id is null;
+
 
 select * from tmp_empresa_migrar where upper(account_type_id)  not in (select upper(code_value) from m_code_value where code_id = (select id from m_code where code_name = 'TipoCuentaBancaria'));
 
@@ -102,7 +107,7 @@ select * from tmp_empresa_migrar where nit in (select nit from tmp_empresa_migra
 select * from tmp_puntoscredito_migrar where upper(brand_id)  not in (select upper(code_value) from m_code_value where code_id = (select id from m_code where code_name = 'Marca')) 
 order by brand_id;
 
-select * from tmp_puntoscredito_migrar where ltrim(city_id, '0')  not in (select code_score from m_code_value where code_id = (select id from m_code where code_name = 'Ciudad'));
+select * from tmp_puntoscredito_migrar where city_id  not in (select code_score from m_code_value where code_id = (select id from m_code where code_name = 'Ciudad'));
 
 select * from tmp_puntoscredito_migrar where department_id  not in (select code_score from m_code_value where code_id = (select id from m_code where code_name = 'Departamento'));
 
@@ -111,6 +116,36 @@ select * from tmp_puntoscredito_migrar where upper(segment_id)  not in (select u
 select * from tmp_puntoscredito_migrar where upper(type_id)  not in (select upper(code_value) from m_code_value where code_id = (select id from m_code where code_name = 'TipoPuntoDeVenta'));
 
 select * from tmp_puntoscredito_migrar where client_ally_id not in (select nit from tmp_empresa_migrar);
+
+-- check for duplicate POS
+select count(id), code, "name"
+from (
+select
+cca.id ,
+tpm.code,
+tpm."name" ,
+brand_value.id brand_id,
+city_value.id city_id,
+department_value.id department_id,
+category_value.id category_id,
+segment_value.id segment_id,
+type_value.id type_id,
+tpm.settled_comission::double precision ,
+tpm.buy_enabled ,
+tpm.collection_enabled,
+(select id from m_code_value where code_id = (select id from m_code where code_name ='Estado') and upper(code_value) = tpm.state_id) state_id
+from
+tmp_puntoscredito_migrar tpm
+join custom.c_client_ally cca on cca.nit = tpm.client_ally_id
+join m_code_value brand_value on upper(brand_value.code_value) = upper(tpm.brand_id) and brand_value.code_id = (select id from m_code where code_name ='Marca')
+join m_code_value city_value on city_value.code_score = tpm.city_id and city_value.code_id = (select id from m_code where code_name ='Ciudad')
+join m_code_value department_value on department_value.code_score = tpm.department_id and department_value.code_id = (select id from m_code where code_name ='Departamento')
+join m_code_value category_value on upper(category_value.code_value) = upper(tpm.category_id) and category_value.code_id = (select id from m_code where code_name ='CategoriaPuntoDeVenta')
+join m_code_value segment_value on upper(segment_value.code_value) = upper(tpm.segment_id) and segment_value.code_id = (select id from m_code where code_name ='SegmentoPuntoDeVenta')
+join m_code_value type_value on upper(type_value.code_value) = upper(tpm.type_id) and type_value.code_id = (select id from m_code where code_name ='TipoPuntoDeVenta')
+) x group by code, "name"
+having count(id) > 1
+
 
 
 ------------------------------------------------------------------
@@ -186,6 +221,9 @@ select
 -- Individual Client campos data Insert
 -- Below code_value insert queries will probably be not needed for production because before starting production migration code values from uat should be fetched and inserted in production
 
+-- Update the sequence on m_code_value table so that the next inserts can work
+SELECT setval('m_code_value_id_seq',(SELECT GREATEST(MAX(id), nextval('m_code_value_id_seq')-1) FROM m_code_value));
+
 insert into m_code_value (code_id, code_value, order_position, code_score, is_active, is_mandatory)
 values (
  (select id from m_code where code_name ='Parentesco'), 'OTRO', 28, 28, true, false
@@ -194,11 +232,6 @@ values (
 insert into m_code_value (code_id, code_value, order_position, code_score, is_active, is_mandatory)
 values (
  (select id from m_code where code_name ='Parentesco'), 'TBD-35', 35, 35, true, false
-);
-
-insert into m_code_value (code_id, code_value, order_position, code_score, is_active, is_mandatory)
-values (
- (select id from m_code where code_name ='Departamento'), 'TBD', 51, 13, true, false
 );
 
 -- Takes about 3-4 minutes
@@ -241,7 +274,7 @@ tmp_clientes_migrar c
 join m_client mc on mc.external_id = c.external_id::varchar 
  join m_code_value marital_status on marital_status.code_score = c.marital_status::varchar
  join m_code marital_code on marital_code.id = marital_status.code_id and marital_code.code_name ='Estado Civil'
- join m_code_value city_value on city_value.code_score = ltrim(c.city, '0')
+ join m_code_value city_value on city_value.code_score = c.city
  join m_code city_code on city_code.id = city_value.code_id and city_code.code_name ='Ciudad'
   left join m_code_value vehicle_value on vehicle_value.code_score = c.type_of_vehicle::varchar and vehicle_value.code_id = (select id from m_code where code_name ='Tipo Vehiculo')
  left join m_code_value academic_value on academic_value.code_score = c.academic_level::varchar and academic_value.code_id = (select id from m_code where code_name ='Nivel Academico')
@@ -281,7 +314,7 @@ tax_value.id as tax_profile_id ,
 state_value.id as state_id 
 from 
 	tmp_empresa_migrar tem
-	join m_code_value city_value on city_value.code_score = ltrim(tem.city_id , '0') and city_value.code_id = (select id from m_code where code_name ='Ciudad')
+	join m_code_value city_value on city_value.code_score = tem.city_id and city_value.code_id = (select id from m_code where code_name ='Ciudad')
 	join m_code_value department_value on department_value.code_score = tem.department_id and department_value.code_id = (select id from m_code where code_name ='Departamento')
 	join m_code_value liquidation_value on upper(liquidation_value.code_value) = upper(tem.liquidation_frequency_id) and liquidation_value.code_id = (select id from m_code where code_name ='FrecuenciaLiquidacion')
 	join m_code_value tax_value on upper(tax_value.code_value) = upper(tem.tax_profile_id) and tax_value.code_id = (select id from m_code where code_name ='PerfilTributarioRegimenIVA')
@@ -316,7 +349,7 @@ from
 tmp_puntoscredito_migrar tpm
 join custom.c_client_ally cca on cca.nit = tpm.client_ally_id 
 join m_code_value brand_value on upper(brand_value.code_value) = upper(tpm.brand_id) and brand_value.code_id = (select id from m_code where code_name ='Marca')
-join m_code_value city_value on city_value.code_score = ltrim(tpm.city_id , '0') and city_value.code_id = (select id from m_code where code_name ='Ciudad')
+join m_code_value city_value on city_value.code_score = tpm.city_id and city_value.code_id = (select id from m_code where code_name ='Ciudad')
 join m_code_value department_value on department_value.code_score = tpm.department_id and department_value.code_id = (select id from m_code where code_name ='Departamento')
 join m_code_value category_value on upper(category_value.code_value) = upper(tpm.category_id) and category_value.code_id = (select id from m_code where code_name ='CategoriaPuntoDeVenta')
 join m_code_value segment_value on upper(segment_value.code_value) = upper(tpm.segment_id) and segment_value.code_id = (select id from m_code where code_name ='SegmentoPuntoDeVenta')
