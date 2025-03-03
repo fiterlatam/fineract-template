@@ -379,7 +379,7 @@ update m_product_loan set min_nominal_interest_rate_per_period = 0, max_nominal_
 update m_product_loan set start_date = '2021-01-01' where id in (1,2,3, 4)
 
 -- Update cupo amount to high value so that loans can be processed. Revert this limit back to the original limit
-update campos_cliente_persona set "Cupo solicitado" = 10000000, "Cupo aprobado" = 10000000;
+update campos_cliente_persona set "Cupo solicitado" = 20000000, "Cupo aprobado" = 20000000;
 
 -- Update is_advance field on m_product_loan id 3 to allow loans to disburse
 update m_product_loan set is_advance = false where id = 3; -- in (3,9); --for production
