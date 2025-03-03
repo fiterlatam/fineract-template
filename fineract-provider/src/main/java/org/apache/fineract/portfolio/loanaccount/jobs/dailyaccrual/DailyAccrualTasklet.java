@@ -70,7 +70,6 @@ public class DailyAccrualTasklet implements Tasklet {
         Long maxLoanIdInList = 0L;
 
         LocalDate accrualDate = DateUtils.getLocalDateOfTenant().minusDays(1);
-        Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
 
         long start = System.currentTimeMillis();
         log.info("Starting Daily Accrual posting for the date: {}", accrualDate);
@@ -88,8 +87,7 @@ public class DailyAccrualTasklet implements Tasklet {
                     log.debug("Starting Daily Accrual posting - total records - {}", totalFilteredRecords);
                     List<Long> queueElement = queue.element();
                     maxLoanIdInList = queueElement.get(queueElement.size() - 1);
-                    this.postDailyAccruals(queue.remove(), threadPoolSize, accrualDate, pageSize, maxLoanIdInList,
-                            minimumDaysInArrearsToSuspendLoanAccount);
+                    this.postDailyAccruals(queue.remove(), threadPoolSize, accrualDate, pageSize, maxLoanIdInList);
                 } while (!CollectionUtils.isEmpty(queue));
             }
         }
@@ -97,8 +95,7 @@ public class DailyAccrualTasklet implements Tasklet {
         return RepeatStatus.FINISHED;
     }
 
-    private void postDailyAccruals(List<Long> loanIds, int threadPoolSize, LocalDate accrualDate, int pageSize, Long maxLoanIdInList,
-            Long minimumDaysInArrearsToSuspendLoanAccount) {
+    private void postDailyAccruals(List<Long> loanIds, int threadPoolSize, LocalDate accrualDate, int pageSize, Long maxLoanIdInList) {
         dataFetched = false;
         List<Callable<Void>> posters = new ArrayList<>();
         int fromIndex = 0;
@@ -146,7 +143,6 @@ public class DailyAccrualTasklet implements Tasklet {
             DailyInterestAccrualPosterTask dailyAccrualPosterTask = applicationContext.getBean(DailyInterestAccrualPosterTask.class);
             dailyAccrualPosterTask.setLoanIds(subList);
             dailyAccrualPosterTask.setAccrualDate(accrualDate);
-            dailyAccrualPosterTask.setMinimumDaysInArrearsToSuspendLoanAccount(minimumDaysInArrearsToSuspendLoanAccount);
             dailyAccrualPosterTask.setContext(ThreadLocalContextUtil.getContext());
             posters.add(dailyAccrualPosterTask);
 

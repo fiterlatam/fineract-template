@@ -32,4 +32,6 @@ public interface LoanAccrualPlatformService {
 
     void addPeriodicAccruals(LocalDate tilldate, Collection<LoanScheduleAccrualData> loanScheduleAccrualDatas) throws MultiException;
 
+    void persistDailyInterestAccrual(Long loanId, LocalDate accrualDate);
+
 }
