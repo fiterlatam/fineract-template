@@ -4247,9 +4247,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         			GROUP BY mlcpd.loan_transaction_id
                         		) vat_penalty ON vat_penalty.loan_transaction_id = mlt.id
                         		WHERE mlt.is_reversed = FALSE
+                        		AND mlt.transaction_date <= ?
                         		AND mlt.transaction_type_enum = 10 AND mlt.occurred_on_suspended_account = FALSE
                                 AND mlt.is_invoiced_generated_by_job = FALSE
-                        		AND mlt.transaction_date <= ?
                         		GROUP BY mlt.loan_id, mlt.is_partially_ivoiced
                         ) mlt ON mlt."loanId" = ml.id
                         INNER JOIN (
