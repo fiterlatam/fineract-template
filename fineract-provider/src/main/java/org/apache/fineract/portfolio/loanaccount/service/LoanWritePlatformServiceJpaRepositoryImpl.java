@@ -5335,6 +5335,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
     }
 
+    @Override
+    public CommandProcessingResult restructureLoans(Long clientId, JsonCommand command) {
+        return null;
+    }
+
     @NotNull
     private JsonCommand createRescheduleRequestAction(FromJsonHelper fromApiJsonHelper, @Nullable String action, Long loanId,
             LocalDate startDate, Long rescheduleReasonIdCodeValueId, Integer nrOfNewInstallments) throws JsonProcessingException {
