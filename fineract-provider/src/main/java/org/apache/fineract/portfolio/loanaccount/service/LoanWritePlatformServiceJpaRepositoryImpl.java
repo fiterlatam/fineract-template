@@ -2451,6 +2451,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     private LoanRepaymentScheduleInstallment fetchRepaymentInstallmentByWrittenOfDate(final LocalDate writtenOffOnDate,
             final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments) {
+        final LoanRepaymentScheduleInstallment lastRepaymentInstallment = repaymentScheduleInstallments.stream()
+                .max(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber))
+                .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.special.write.off.installment.not.found",
+                        "No repayment installment found for the special write off date", writtenOffOnDate));
         LoanRepaymentScheduleInstallment installment = null;
         for (LoanRepaymentScheduleInstallment repaymentScheduleInstallment : repaymentScheduleInstallments) {
             if (DateUtils.isAfter(writtenOffOnDate, repaymentScheduleInstallment.getFromDate())
@@ -2460,6 +2464,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     break;
                 }
             }
+        }
+        if (installment == null && DateUtils.isAfter(writtenOffOnDate, lastRepaymentInstallment.getDueDate())) {
+            installment = lastRepaymentInstallment;
         }
         if (installment == null) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.special.write.off.installment.not.found",
