@@ -827,6 +827,19 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
     }
 
+    @Override
+    public void recalculateInterestAccrualsOnMaximumLegalRate(final Loan loan, final LocalDate rescheduleFromDate) {
+        final LocalDate interestAccruedTillDate = rescheduleFromDate.minusDays(1L);
+        final LocalDate accrualDate = DateUtils.getLocalDateOfTenant().minusDays(1);
+        final List<LoanTransaction> interestAccrualTransactions = loan.getLoanTransactions().stream()
+                .filter(LoanTransaction::isAccrualTransaction).filter(LoanTransaction::isDailyAccrual)
+                .filter(loanTransaction -> !DateUtils.isBefore(loanTransaction.getTransactionDate(), rescheduleFromDate)).toList();
+        interestAccrualTransactions.forEach(LoanTransaction::reverse);
+        loan.setInterestAccruedTill(interestAccruedTillDate);
+        this.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+        this.loanAccrualPlatformService.persistDailyInterestAccrual(loan.getId(), accrualDate);
+    }
+
     private void generateLoanScheduleAccrualData(final LocalDate accruedTill,
             final Collection<LoanScheduleAccrualData> loanScheduleAccrualDatas, final Long loanId, Long officeId,
             final LocalDate accrualStartDate, final PeriodFrequencyType repaymentFrequency, final Integer repayEvery,

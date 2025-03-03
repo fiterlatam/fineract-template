@@ -596,7 +596,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     Integer installmentNumber = overdueInstallmentCharge.getInstallment().getInstallmentNumber();
                     LoanRepaymentScheduleInstallment installment = loan.fetchRepaymentScheduleInstallment(installmentNumber);
                     if (installment.getInstallmentNumber() == 0) {
-                        System.out.println("here is zero ");
+                        LOG.info("here is zero ");
                     }
                     overdueInstallmentCharge.updateLoanRepaymentScheduleInstallment(installment);
                 }
@@ -624,6 +624,15 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
             loanAccrualTransactionBusinessEventService.raiseBusinessEventForAccrualTransactions(loan, existingTransactionIds);
             this.loanAccountDomainService.recalculateAccruals(loan, true);
+            final boolean isInterestRateFromInstallmentTermType = loanTermVariations.stream()
+                    .anyMatch(loanTermVariationsData -> LoanTermVariationType.INTEREST_RATE_FROM_INSTALLMENT.getValue()
+                            .equals(loanTermVariationsData.getTermType().getId().intValue()));
+            if (loanRescheduleRequest.getRescheduleReasonCodeValue() != null
+                    && "Recalcular la tasa de interés al máximo legal"
+                            .equalsIgnoreCase(loanRescheduleRequest.getRescheduleReasonCodeValue().getLabel())
+                    && isInterestRateFromInstallmentTermType) {
+                this.loanAccountDomainService.recalculateInterestAccrualsOnMaximumLegalRate(loan, rescheduleFromDate);
+            }
             if (loan.isTopup()) {
                 businessEventNotifierService
                         .notifyPostBusinessEvent(new LoanRescheduledDueAdjustScheduleBusinessEvent(loan, isJobTriggered));

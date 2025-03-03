@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
-import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualPlatformService;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -34,8 +34,7 @@ public class DailyInterestAccrualPoster {
 
     private List<Long> loanIds;
     private LocalDate accrualDate;
-    private Long minimumDaysInArrearsToSuspendLoanAccount;
-    private final LoanWritePlatformService loanWritePlatformService;
+    private final LoanAccrualPlatformService loanAccrualPlatformService;
 
     public void postDailyInterestAccruals() throws JobExecutionException {
         List<Throwable> errors = new ArrayList<>();
@@ -43,8 +42,7 @@ public class DailyInterestAccrualPoster {
             log.info("Running Devengo de Interés diario for loans batch with maximum loanId {}", loanIds.get(loanIds.size() - 1));
             for (Long loanId : loanIds) {
                 try {
-                    this.loanWritePlatformService.persistDailyInterestAccrual(loanId, accrualDate,
-                            minimumDaysInArrearsToSuspendLoanAccount);
+                    this.loanAccrualPlatformService.persistDailyInterestAccrual(loanId, accrualDate);
                 } catch (Exception e) {
                     log.error("Failed to run Daily Accrual for loan id {}", loanId, e);
                     errors.add(e);

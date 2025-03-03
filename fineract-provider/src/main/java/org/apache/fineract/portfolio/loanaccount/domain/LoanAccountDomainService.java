@@ -103,6 +103,8 @@ public interface LoanAccountDomainService {
 
     void recalculateAccruals(Loan loan, boolean isInterestCalcualtionHappened);
 
+    void recalculateInterestAccrualsOnMaximumLegalRate(Loan loan, LocalDate rescheduleFromDate);
+
     LoanTransaction creditBalanceRefund(Loan loan, LocalDate transactionDate, BigDecimal transactionAmount, String noteText,
             ExternalId externalId, PaymentDetail paymentDetail);
 

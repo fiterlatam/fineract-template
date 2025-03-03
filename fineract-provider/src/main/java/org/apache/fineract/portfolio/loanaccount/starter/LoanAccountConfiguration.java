@@ -187,7 +187,7 @@ public class LoanAccountConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(BulkLoansReadPlatformService.class)
-    public BulkLoansReadPlatformService bulkLoansReadPlatformServicev(JdbcTemplate jdbcTemplate, PlatformSecurityContext context,
+    public BulkLoansReadPlatformService bulkLoansReadPlatformService(JdbcTemplate jdbcTemplate, PlatformSecurityContext context,
             AccountDetailsReadPlatformService accountDetailsReadPlatformService) {
         return new BulkLoansReadPlatformServiceImpl(jdbcTemplate, context, accountDetailsReadPlatformService);
     }
@@ -210,9 +210,12 @@ public class LoanAccountConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(LoanAccrualPlatformService.class)
-    public LoanAccrualPlatformService loanAccrualPlatformService(LoanReadPlatformService loanReadPlatformService,
-            LoanAccrualWritePlatformService loanAccrualWritePlatformService) {
-        return new LoanAccrualPlatformServiceImpl(loanReadPlatformService, loanAccrualWritePlatformService);
+    public LoanAccrualPlatformService loanAccrualPlatformService(final LoanReadPlatformService loanReadPlatformService,
+            final LoanAccrualWritePlatformService loanAccrualWritePlatformService, final LoanAssembler loanAssembler,
+            final LoanRepository loanRepository, final LoanUtilService loanUtilService, final JdbcTemplate jdbcTemplate,
+            final LoanScheduleGeneratorFactory loanScheduleFactory, final ConfigurationDomainService configurationDomainService) {
+        return new LoanAccrualPlatformServiceImpl(loanReadPlatformService, loanAccrualWritePlatformService, loanAssembler, loanRepository,
+                loanUtilService, jdbcTemplate, loanScheduleFactory, configurationDomainService);
     }
 
     @Bean
@@ -509,8 +512,8 @@ public class LoanAccountConfiguration {
     @Bean
     @Scope("prototype")
     @ConditionalOnMissingBean(DailyInterestAccrualPoster.class)
-    public DailyInterestAccrualPoster dailyAccrualPoster(LoanWritePlatformService loanWritePlatformService) {
-        return new DailyInterestAccrualPoster(loanWritePlatformService);
+    public DailyInterestAccrualPoster dailyAccrualPoster(LoanAccrualPlatformService loanAccrualPlatformService) {
+        return new DailyInterestAccrualPoster(loanAccrualPlatformService);
     }
 
     @Bean
