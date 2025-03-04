@@ -29,9 +29,6 @@ import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
 import org.apache.fineract.custom.infrastructure.dataqueries.data.InformacionAdicionalDatatableData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.portfolio.client.data.ClientData;
-import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
@@ -47,7 +44,6 @@ public class LoanDisbursementApprovedAmountAvailableEventProcessor extends BaseC
     public static final String PRODUCT_NAME_PARAM = "productName";
     public static final String LOAN_AMOUNT_PARAM = "loanAmount";
 
-    private final ClientReadPlatformService clientReadPlatformService;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
     private final LoanDisbursementCreditoRotativoEventProcessor loanDisbursementCreditoRotativoEventProcessor;
 
@@ -72,10 +68,6 @@ public class LoanDisbursementApprovedAmountAvailableEventProcessor extends BaseC
         if (loan.getLoanProduct().getName().equals(LoanProductType.CREDITO_ROTATIVO.getCode())
                 || loan.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode())) {
 
-            // Check if client is Persona o Empresa
-            ClientData clientData = clientReadPlatformService.retrieveOne(result.getClientId());
-            EnumOptionData legalFormEnum = clientData.getLegalForm();
-
             // Informacion Adicional data
             InformacionAdicionalDatatableData informacionAdicional = loanDisbursementCreditoRotativoEventProcessor
                     .getInformacionAdicionalDatatableData(loan);
@@ -91,7 +83,7 @@ public class LoanDisbursementApprovedAmountAvailableEventProcessor extends BaseC
             InformacionAdicionalDatatableData informacionAdicional) {
 
         // If Monto Disponible is checked, send the request body
-        if (informacionAdicional.getMontoDisponible()) {
+        if (Boolean.TRUE.equals(informacionAdicional.getMontoDisponible())) {
             requestBody.put(LOAN_ID_PARAM, result.getLoanId());
 
             requestBody.put(PRODUCT_NAME_PARAM, loan.getLoanProduct().getName());
