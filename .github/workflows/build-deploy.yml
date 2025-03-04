@@ -33,6 +33,7 @@ jobs:
           ENTRE_AMIGOS_SONAR_PROJECT_KEY: ${{ secrets.ENTRE_AMIGOS_SONAR_PROJECT_KEY }}
           ENTRE_AMIGOS_SONAR_ORGANIZATION_KEY: ${{ secrets.ENTRE_AMIGOS_SONAR_ORGANIZATION_KEY }}
         run: |
+#          git diff origin/fiter/entreamigos/dev
           gradle wrapper
           ./gradlew wrapper --gradle-version=8.5
           ./gradlew wrapper --version
