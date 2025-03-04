@@ -72,10 +72,6 @@ public class LoanDisbursementApprovedAmountAvailableEventProcessor extends BaseC
         if (loan.getLoanProduct().getName().equals(LoanProductType.CREDITO_ROTATIVO.getCode())
                 || loan.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode())) {
 
-            // Check if client is Persona o Empresa
-            ClientData clientData = clientReadPlatformService.retrieveOne(result.getClientId());
-            EnumOptionData legalFormEnum = clientData.getLegalForm();
-
             // Informacion Adicional data
             InformacionAdicionalDatatableData informacionAdicional = loanDisbursementCreditoRotativoEventProcessor
                     .getInformacionAdicionalDatatableData(loan);
@@ -90,8 +86,8 @@ public class LoanDisbursementApprovedAmountAvailableEventProcessor extends BaseC
     private void getRequestBody(CommandProcessingResult result, Map<String, Object> requestBody, Loan loan,
             InformacionAdicionalDatatableData informacionAdicional) {
 
-        // If Monto Disponible is checked, send the request body
-        if (informacionAdicional.getMontoDisponible()) {
+    // If Monto Disponible is checked, send the request body
+    if (Boolean.TRUE.equals(informacionAdicional.getMontoDisponible())) {
             requestBody.put(LOAN_ID_PARAM, result.getLoanId());
 
             requestBody.put(PRODUCT_NAME_PARAM, loan.getLoanProduct().getName());
