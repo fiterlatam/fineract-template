@@ -5,6 +5,7 @@ import static org.apache.fineract.infrastructure.core.domain.AuditableFieldsCons
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -21,10 +22,12 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
     @Column(name = CREATED_DATE_DB_FIELD)
     private OffsetDateTime createdDate;
 
-    @Column(name = "num_resolucion")
+    @Column(name = "num_resolucion", length = 50)
+    @Size(max = 50)
     private String num_resolucion;
 
-    @Column(name = "prefijo")
+    @Column(name = "prefijo", length = 6)
+    @Size(max = 6)
     private String prefijo;
 
     @Column(name = "fec_desde")
@@ -39,31 +42,38 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
     @Column(name = "consecutivo_final")
     private Long consecutivo_final;
 
-    @Column(name = "clave_tecnica")
+    @Column(name = "clave_tecnica", length = 100)
+    @Size(max = 100)
     private String clave_tecnica;
 
     @Column(name = "nota")
     private String nota;
 
-    @Column(name = "numero_doc")
+    @Column(name = "numero_doc", length = 35)
+    @Size(max = 35)
     private String numero_doc;
 
-    @Column(name = "tip_doc")
+    @Column(name = "tip_doc", length = 6)
+    @Size(max = 6)
     private String tip_doc;
 
     @Column(name = "fecha_factura")
     private LocalDate fecha_factura;
 
-    @Column(name = "tipo_factura")
+    @Column(name = "tipo_factura", length = 6)
+    @Size(max = 6)
     private String tipo_factura;
 
-    @Column(name = "moneda")
+    @Column(name = "moneda", length = 3)
+    @Size(max = 3)
     private String moneda;
 
-    @Column(name = "forma_pago")
+    @Column(name = "forma_pago", length = 1)
+    @Size(max = 1)
     private String forma_pago;
 
-    @Column(name = "medio_pago")
+    @Column(name = "medio_pago", length = 5)
+    @Size(max = 5)
     private String medio_pago;
 
     @Column(name = "fecha_vence")
@@ -75,88 +85,113 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
     @Column(name = "fecha_final")
     private LocalDate fecha_final;
 
-    @Column(name = "est_fact")
+    @Column(name = "est_fact", length = 1)
+    @Size(max = 1)
     private String est_fact;
 
-    @Column(name = "num_facafect")
+    @Column(name = "num_facafect", length = 35)
+    @Size(max = 35)
     private String num_facafect;
 
     @Column(name = "fec_facafect")
     private LocalDate fec_facafect;
 
-    @Column(name = "total_unidades")
+    @Column(name = "total_unidades", length = 3)
+    @Size(max = 3)
     private String total_unidades;
 
-    @Column(name = "logo")
+    @Column(name = "logo", length = 5)
+    @Size(max = 5)
     private String logo;
 
-    @Column(name = "nit_emisor")
+    @Column(name = "nit_emisor", length = 35)
+    @Size(max = 35)
     private String nit_emisor;
 
-    @Column(name = "nom_emisor")
+    @Column(name = "nom_emisor", length = 100)
+    @Size(max = 100)
     private String nom_emisor;
 
     @Column(name = "inf_tributaria")
     private String inf_tributaria;
 
-    @Column(name = "cod_pais_tienda")
+    @Column(name = "cod_pais_tienda", length = 5)
+    @Size(max = 5)
     private String cod_pais_tienda;
 
-    @Column(name = "nom_pais_tienda")
+    @Column(name = "nom_pais_tienda", length = 40)
+    @Size(max = 40)
     private String nom_pais_tienda;
 
-    @Column(name = "dep_tienda")
+    @Column(name = "dep_tienda", length = 5)
+    @Size(max = 5)
     private String dep_tienda;
 
-    @Column(name = "nom_dep_tienda")
+    @Column(name = "nom_dep_tienda", length = 40)
+    @Size(max = 40)
     private String nom_dep_tienda;
 
-    @Column(name = "cod_mun_tienda")
+    @Column(name = "cod_mun_tienda", length = 10)
+    @Size(max = 10)
     private String cod_mun_tienda;
 
-    @Column(name = "ciudad_tienda")
+    @Column(name = "ciudad_tienda", length = 40)
+    @Size(max = 40)
     private String ciudad_tienda;
 
-    @Column(name = "nombre_tienda")
+    @Column(name = "nombre_tienda", length = 100)
+    @Size(max = 100)
     private String nombre_tienda;
 
-    @Column(name = "direccion_tienda")
+    @Column(name = "direccion_tienda", length = 50)
+    @Size(max = 50)
     private String direccion_tienda;
 
-    @Column(name = "tel_tienda")
+    @Column(name = "tel_tienda", length = 35)
+    @Size(max = 35)
     private String tel_tienda;
 
-    @Column(name = "email_tienda")
+    @Column(name = "email_tienda", length = 100)
+    @Size(max = 100)
     private String email_tienda;
 
-    @Column(name = "id_cliente")
+    @Column(name = "id_cliente", length = 35)
+    @Size(max = 35)
     private String id_cliente;
 
-    @Column(name = "tipo_docid")
+    @Column(name = "tipo_docid", length = 5)
+    @Size(max = 5)
     private String tipo_docid;
 
     @Column(name = "tipo_pers")
     private Long tipo_pers;
 
-    @Column(name = "nombre_cliente")
+    @Column(name = "nombre_cliente", length = 100)
+    @Size(max = 100)
     private String nombre_cliente;
 
-    @Column(name = "apellido_cliente")
+    @Column(name = "apellido_cliente", length = 100)
+    @Size(max = 100)
     private String apellido_cliente;
 
-    @Column(name = "direccion")
+    @Column(name = "direccion", length = 100)
+    @Size(max = 100)
     private String direccion;
 
-    @Column(name = "ciudad")
+    @Column(name = "ciudad", length = 100)
+    @Size(max = 100)
     private String ciudad;
 
-    @Column(name = "codigopostal")
+    @Column(name = "codigopostal", length = 10)
+    @Size(max = 10)
     private String codigopostal;
 
-    @Column(name = "telefono")
+    @Column(name = "telefono", length = 35)
+    @Size(max = 35)
     private String telefono;
 
-    @Column(name = "email")
+    @Column(name = "email", length = 100)
+    @Size(max = 100)
     private String email;
 
     @Column(name = "posicion")
@@ -171,22 +206,28 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
     @Column(name = "precio_unitario")
     private BigDecimal precio_unitario;
 
-    @Column(name = "sku")
+    @Column(name = "sku", length = 150)
+    @Size(max = 150)
     private String sku;
 
-    @Column(name = "nom_articulo")
+    @Column(name = "nom_articulo", length = 150)
+    @Size(max = 150)
     private String nom_articulo;
 
-    @Column(name = "referencia")
+    @Column(name = "referencia", length = 150)
+    @Size(max = 150)
     private String referencia;
 
-    @Column(name = "id_mandante")
+    @Column(name = "id_mandante", length = 150)
+    @Size(max = 150)
     private String id_mandante;
 
-    @Column(name = "descripcion_mandante")
+    @Column(name = "descripcion_mandante", length = 150)
+    @Size(max = 150)
     private String descripcion_mandante;
 
-    @Column(name = "codigo_descuento")
+    @Column(name = "codigo_descuento", length = 3)
+    @Size(max = 3)
     private String codigo_descuento;
 
     @Column(name = "porcentajedescuento")
@@ -201,10 +242,12 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
     @Column(name = "impuesto_item")
     private BigDecimal impuesto_item;
 
-    @Column(name = "iva_codigo")
+    @Column(name = "iva_codigo", length = 2)
+    @Size(max = 2)
     private String iva_codigo;
 
-    @Column(name = "iva_name")
+    @Column(name = "iva_name", length = 3)
+    @Size(max = 3)
     private String iva_name;
 
     @Column(name = "base")
@@ -228,10 +271,12 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
     @Column(name = "nota2")
     private String nota2;
 
-    @Column(name = "tas_cambmon")
+    @Column(name = "tas_cambmon", length = 35)
+    @Size(max = 35)
     private String tas_cambmon;
 
-    @Column(name = "cod_moncamb")
+    @Column(name = "cod_moncamb", length = 3)
+    @Size(max = 3)
     private String cod_moncamb;
 
     @Column(name = "tot_basimpo")
@@ -243,7 +288,8 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
     @Column(name = "tip_factexport")
     private BigDecimal tip_factexport;
 
-    @Column(name = "tipo_prod")
+    @Column(name = "tipo_prod", length = 100)
+    @Size(max = 100)
     private String tipo_prod;
 
     @Column(name = "loan_transaction_id")
