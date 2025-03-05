@@ -174,8 +174,8 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
     @Size(max = 100)
     private String apellido_cliente;
 
-    @Column(name = "direccion", length = 100)
-    @Size(max = 100)
+    @Column(name = "direccion", length = 200)
+    @Size(max = 200)
     private String direccion;
 
     @Column(name = "ciudad", length = 100)
