@@ -364,6 +364,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             }
 
             final Loan newLoanApplication = this.loanAssembler.assembleFrom(command);
+            newLoanApplication.setOriginalNrOfRepayments();
 
             validateMicrocreditoProductCharges(newLoanApplication);
 

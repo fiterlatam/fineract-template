@@ -47,6 +47,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Predicate;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
@@ -550,6 +551,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Column(name = "migrar_cli_nroid")
     private String cedula;
+
+    @Getter
+    @Column(name = "original_number_of_repayments")
+    private Integer originalNumberOfRepayments;
 
     @SuppressWarnings({ "squid:S107" })
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
@@ -3208,6 +3213,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     loanApplicationTerms.getInterestMethod());
         }
 
+        if (this.getRepaymentScheduleInstallments().size() > 0) {
+            loanApplicationTerms.setExistentInstallments(this.getRepaymentScheduleInstallments());
+        }
+
+        loanApplicationTerms.setLoanProductName(this.getLoanProduct().getName());
+
         return loanScheduleGenerator.generate(mc, loanApplicationTerms, getActiveCharges(), scheduleGeneratorDTO.getHolidayDetailDTO());
     }
 
@@ -3706,7 +3717,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             }
 
-            if (isProgressiveLoan()) {
+            if (isProgressiveLoan()
+                    && Boolean.FALSE.equals(this.getLoanProduct().getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode()))) {
                 reprocess = true;
             }
         }
@@ -8260,5 +8272,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean hasPenaltiesInRepaymentSchedules() {
         return this.getRepaymentScheduleInstallments().stream().anyMatch(LoanRepaymentScheduleInstallment::hasPenalties);
+    }
+
+    public void setOriginalNrOfRepayments() {
+        this.originalNumberOfRepayments = this.getNumberOfRepayments();
     }
 }
