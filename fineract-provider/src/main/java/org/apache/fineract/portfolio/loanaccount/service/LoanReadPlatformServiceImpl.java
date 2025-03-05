@@ -4050,4 +4050,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 """;
         return this.jdbcTemplate.queryForList(sql, Long.class, LoanStatus.ACTIVE.getValue(), minLoanId, pageSize).stream().toList();
     }
+
+    @Override
+    public Collection<LoanAccountData> retrieveClientActiveLoans(Long clientId) {
+        final LoanMapper rm = new LoanMapper(delinquencyReadPlatformService);
+
+        final String sql = "select distinct " + rm.loanSchema() + " where l.client_id = ? and l.loan_status_id = ?";
+        return this.jdbcTemplate.query(sql, rm, new Object[] { clientId, LoanStatus.ACTIVE.getValue() });
+    }
 }

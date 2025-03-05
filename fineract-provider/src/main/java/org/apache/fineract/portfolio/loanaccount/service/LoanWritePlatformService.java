@@ -153,4 +153,6 @@ public interface LoanWritePlatformService {
     ClasificacionConceptosData getClasificacionConceptosData(String concepto);
 
     void approveRescheduleRequest(Long loanId, Long rescheduleRequestId, LocalDate actualDisbursementDate);
+
+    CommandProcessingResult restructureLoans(Long clientId, JsonCommand command);
 }
