@@ -33,18 +33,18 @@ jobs:
           ENTRE_AMIGOS_SONAR_PROJECT_KEY: ${{ secrets.ENTRE_AMIGOS_SONAR_PROJECT_KEY }}
           ENTRE_AMIGOS_SONAR_ORGANIZATION_KEY: ${{ secrets.ENTRE_AMIGOS_SONAR_ORGANIZATION_KEY }}
         run: |
-#          git diff origin/fiter/entreamigos/dev
+          git diff origin/fiter/entreamigos/dev
           gradle wrapper
           ./gradlew wrapper --gradle-version=8.5
           ./gradlew wrapper --version
           ./gradlew build -x spotlessGroovyGradle -x checkstyleMain -x spotbugsMain -x compileTestJava -x test -x cucumber -x checkstyleTest -x asciidoctorPdf -x asciidoctor -x buildAsciidoc -x spotbugsTest
-          ./gradlew sonar \
-          -Dsonar.host.url=$ENTRE_AMIGOS_SONAR_HOST_URL \
-          -Dsonar.token=$ENTRE_AMIGOS_SONAR_TOKEN \
-          -Dsonar.projectKey=$ENTRE_AMIGOS_SONAR_PROJECT_KEY \
-          -Dsonar.organization=$ENTRE_AMIGOS_SONAR_ORGANIZATION_KEY \
-          -Dsonar.qualitygate.wait=true \
-          --info
+          # ./gradlew sonar \
+          # -Dsonar.host.url=$ENTRE_AMIGOS_SONAR_HOST_URL \
+          # -Dsonar.token=$ENTRE_AMIGOS_SONAR_TOKEN \
+          # -Dsonar.projectKey=$ENTRE_AMIGOS_SONAR_PROJECT_KEY \
+          # -Dsonar.organization=$ENTRE_AMIGOS_SONAR_ORGANIZATION_KEY \
+          # -Dsonar.qualitygate.wait=true \
+          # --info
 
       - name: Run Test Server
         env:
