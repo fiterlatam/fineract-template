@@ -181,4 +181,6 @@ public interface LoanReadPlatformService {
     List<Long> findLoanIdsForAccrualPosting(LocalDate tillDate, int pageSize, Long minLoanId);
 
     List<Long> retrieveIdsForActiveLoans(int pageSize, Long minLoanId);
+
+    Collection<LoanAccountData> retrieveClientActiveLoans(Long clientId);
 }

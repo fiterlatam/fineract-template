@@ -388,4 +388,5 @@
     <include file="parts/202502242000003000_EA_224_campos_cliente_empresa_modify.xml" relativeToChangelogFile="true" />
     <include file="parts/202502252000001000_EA_29_webhook_loan_disbursement_approvedamountavailable.xml" relativeToChangelogFile="true" />
     <include file="parts/202502252000003000_EA_32_webhook_disbursement_creditorotativo_amountavailable.xml" relativeToChangelogFile="true" />
+    <include file="parts/2025030323288000001_feature_EA_039.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

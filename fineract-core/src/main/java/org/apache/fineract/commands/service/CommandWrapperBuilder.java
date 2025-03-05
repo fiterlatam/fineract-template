@@ -4130,4 +4130,28 @@ public class CommandWrapperBuilder {
         this.href = "/collectionhousehistory";
         return this;
     }
+
+    public CommandWrapperBuilder createRestructureCreditsRequest(Long clientId) {
+        this.actionName = "CREATE";
+        this.entityName = "RESTRUCTURE_LOANS";
+        this.clientId = clientId;
+        this.href = "/restructureloans/" + clientId;
+        return this;
+    }
+
+    public CommandWrapperBuilder approveRestructureCreditsRequest(String restructureCreditsResource, Long clientId) {
+        this.actionName = "APPROVE";
+        this.entityName = "RESTRUCTURE_LOANS";
+        this.clientId = clientId;
+        this.href = "/restructureloans/" + clientId;
+        return this;
+    }
+
+    public CommandWrapperBuilder rejectRestructureCreditsRequest(String restructureCreditsResource, Long clientId) {
+        this.actionName = "REJECT";
+        this.entityName = "RESTRUCTURE_LOANS";
+        this.clientId = clientId;
+        this.href = "/restructureloans/" + clientId;
+        return this;
+    }
 }
