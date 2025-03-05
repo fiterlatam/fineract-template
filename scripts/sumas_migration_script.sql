@@ -741,9 +741,9 @@ select count(*), blocking_reason_id from m_client group by blocking_reason_id;
 -- Update office id back to 1 for all clients
 update m_client set office_id = 1;
 
--- Update accural till date based on last payment date
+-- Update interest_accrued_till date based on last payment date
 update m_loan ml
-set accrued_till = txn.last_payment_date
+set interest_accrued_till = txn.last_payment_date
 from
 (
 	select MAX(transaction_date) last_payment_date, loan_id from m_loan_transaction mlt
