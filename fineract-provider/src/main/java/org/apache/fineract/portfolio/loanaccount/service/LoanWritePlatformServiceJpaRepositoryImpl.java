@@ -5257,7 +5257,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
             Integer nrOfInstallmentsToAdd = calculateInstallmentsToAdd(loan);
 
-            createAndApproveRescheduleRequest(loan, actualDisbursementDate, loanRescheduleReasonId, nrOfInstallmentsToAdd);
+            if (nrOfInstallmentsToAdd.compareTo(0) > 0) {
+                createRescheduleRequest(loan, actualDisbursementDate, loanRescheduleReasonId, nrOfInstallmentsToAdd);
+            }
         }
     }
 
@@ -5272,7 +5274,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     private Integer calculateInstallmentsToAdd(Loan loan) {
-        Integer productNrOfRepayments = loan.getLoanProduct().getNumberOfRepayments();
+        Integer productNrOfRepayments = loan.getOriginalNumberOfRepayments();
         Long notPaidInstallmentNr = loan.getRepaymentScheduleInstallments().stream().filter(p -> !p.isObligationsMet()).count();
         Integer nrOfInstallmentsToAdd = productNrOfRepayments - notPaidInstallmentNr.intValue();
 
@@ -5285,7 +5287,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         return nrOfInstallmentsToAdd;
     }
 
-    private void createAndApproveRescheduleRequest(Loan loan, LocalDate actualDisbursementDate, Long loanRescheduleReasonId,
+    private void createRescheduleRequest(Loan loan, LocalDate actualDisbursementDate, Long loanRescheduleReasonId,
             Integer nrOfInstallmentsToAdd) {
         try {
             JsonCommand createRescheduleRequestCommand = createRescheduleRequestAction(fromApiJsonHelper, null, loan.getId(),
@@ -5305,7 +5307,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 && loan.getDisbursementDetails().size() > 1) {
 
             Optional<LoanRescheduleRequest> rescheduleRequestDataOpt = loanRescheduleRequestRepository.findByLoanId(loanId).stream()
-                    .filter(notApp -> notApp.getStatusEnum().compareTo(300) != 0)
+                    .filter(notApp -> notApp.getStatusEnum().compareTo(300) != 0).filter(t -> Objects.isNull(t.getApprovedOnDate()))
                     .sorted(Comparator.comparing(LoanRescheduleRequest::getId).reversed()).findFirst();
 
             if (rescheduleRequestDataOpt.isPresent()) {
@@ -5316,12 +5318,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             curr.getRescheduleFromDate(), curr.getId());
                     loanRescheduleRequestWritePlatformService.approve(createRescheduleRequestCommand);
 
-                    Integer productNrOfRepayments = loan.getLoanProduct().getNumberOfRepayments();
+                    Integer originalNrOfRepayments = loan.getOriginalNumberOfRepayments();
                     Long notPaidInstallmentNr = loan.getRepaymentScheduleInstallments().stream().filter(p -> !p.isObligationsMet()).count();
-                    Integer nrOfInstallmentsToAdd = productNrOfRepayments - notPaidInstallmentNr.intValue();
+                    Integer nrOfInstallmentsToAdd = originalNrOfRepayments - notPaidInstallmentNr.intValue();
 
-                    if (nrOfInstallmentsToAdd.compareTo(0) == 0) {
-                        loanRepository.updateRepaymentsAndTermFrequency(productNrOfRepayments, productNrOfRepayments, loan.getId());
+                    if (nrOfInstallmentsToAdd.compareTo(0) <= 0) {
+                        loanRepository.updateRepaymentsAndTermFrequency(originalNrOfRepayments, originalNrOfRepayments, loan.getId());
                     }
 
                     loan.updateLoanSummaryDerivedFields();

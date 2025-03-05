@@ -25,10 +25,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.SortedMap;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 
 public class PrincipalInterestCalculator {
 
@@ -160,7 +163,7 @@ public class PrincipalInterestCalculator {
         } else {
             interestForPeriod = cumulatingInterestDueToGrace.minus(cumulatingInterestPaymentDueToGrace);
         }
-
+        // TODO dstanca - It is exactly here the principal value is changed after 3rd disbursal, interest is OK
         Money principalForThisInstallment = loanApplicationTerms.calculateTotalPrincipalForPeriod(calculator, outstandingBalance,
                 periodNumber, mc, interestForPeriod);
         if (loanApplicationTerms.isInterestToBeRecoveredFirstWhenGreaterThanEMIEnabled() && principalForThisInstallment.isLessThanZero()
@@ -173,6 +176,19 @@ public class PrincipalInterestCalculator {
         // update cumulative fields for principal & interest
         final Money interestBroughtFowardDueToGrace = cumulatingInterestDueToGrace;
         final Money totalCumulativePrincipalToDate = totalCumulativePrincipal.plus(principalForThisInstallment);
+
+        // If we are regenerating schedule and installments were paid, then we need to keep the original values
+        if (Objects.nonNull(loanApplicationTerms.getLoanProductName())
+                && loanApplicationTerms.getLoanProductName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())
+                && Objects.nonNull(loanApplicationTerms.getExistentInstallments())
+                && Objects.nonNull(loanApplicationTerms.getExistentInstallments())
+                && loanApplicationTerms.getExistentInstallments().size() >= periodNumber) {
+            LoanRepaymentScheduleInstallment existentInstallment = loanApplicationTerms.getExistentInstallments().get(periodNumber - 1);
+            if (existentInstallment.isObligationsMet()) {
+                principalForThisInstallment = existentInstallment.getPrincipal(principalForThisInstallment.getCurrency());
+                interestForThisInstallment = existentInstallment.getInterestPaid(interestForThisInstallment.getCurrency());
+            }
+        }
 
         // adjust if needed
         principalForThisInstallment = loanApplicationTerms.adjustPrincipalIfLastRepaymentPeriod(principalForThisInstallment,
