@@ -4765,7 +4765,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                     loanDocumentData.setPenaltyChargesPaid(penaltyChargesPaid);
                     loanDocumentData.setPenaltyChargesVatPaid(penaltyChargesVatPaid);
-
+                    loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.CREDIT_NOTE);
                     processAndSaveLoanDocument(loanDocumentData);
                     this.loanTransactionRepository.saveAndFlush(loanTransaction);
                     for (final LoanTransaction accrualTransaction : invoicedByAccrualTransactionSet) {
@@ -4775,9 +4775,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     }
                     this.loanTransactionRepository.saveAll(invoicedByAccrualTransactionSet);
                 }
-            } else {
-                loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.CREDIT_NOTE);
-                processAndSaveLoanDocument(loanDocumentData);
             }
         }
     }
