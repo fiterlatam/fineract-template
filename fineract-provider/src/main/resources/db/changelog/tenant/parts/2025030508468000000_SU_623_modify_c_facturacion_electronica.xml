@@ -30,4 +30,18 @@
         </sql>
     </changeSet>
 
+
+    <changeSet author="fineract" id="2">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="c_client_ally_point_of_sales" columnName="code_tercontable" schemaName="custom"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="c_client_ally_point_of_sales" schemaName="custom">
+            <column name="code_tercontable" type="VARCHAR(6)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

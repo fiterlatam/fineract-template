@@ -833,6 +833,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final LocalDate accrualDate = DateUtils.getLocalDateOfTenant().minusDays(1);
         final List<LoanTransaction> interestAccrualTransactions = loan.getLoanTransactions().stream()
                 .filter(LoanTransaction::isAccrualTransaction).filter(LoanTransaction::isDailyAccrual)
+                .filter(ltx -> ltx.getInterestPortion(loan.getCurrency()).isGreaterThanZero())
                 .filter(loanTransaction -> !DateUtils.isBefore(loanTransaction.getTransactionDate(), rescheduleFromDate)).toList();
         interestAccrualTransactions.forEach(LoanTransaction::reverse);
         loan.setInterestAccruedTill(interestAccruedTillDate);
@@ -1102,6 +1103,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         loanAccrualTransactionBusinessEventService.raiseBusinessEventForAccrualTransactions(loan, existingTransactionIds);
         businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
         businessEventNotifierService.notifyPostBusinessEvent(new LoanForeClosurePostBusinessEvent(payment));
+        businessEventNotifierService.notifyPostBusinessEvent(new LoanInvoiceGenerationPostBusinessEvent(payment));
         return payment;
     }
 

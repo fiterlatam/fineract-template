@@ -144,57 +144,36 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
                     && !accrualDate.isAfter(loanRepaymentScheduleInstallment.getDueDate().minusDays(1))) {
                 final BigDecimal totalAccruedInterestForInstallment = loan
                         .getAccruedInterestForInstallment(loanRepaymentScheduleInstallment.getInstallmentNumber());
-                long daysInPeriod = Math.toIntExact(ChronoUnit.DAYS.between(loanRepaymentScheduleInstallment.getFromDate(),
-                        loanRepaymentScheduleInstallment.getDueDate()));
-                Money interestForInstallment = loanRepaymentScheduleInstallment.getInterestOutstanding(currency);
-                // Adjust interest on the last day of the period to make up the difference
-                if (accrualDate.equals(loanRepaymentScheduleInstallment.getDueDate().minusDays(1))) {
-                    // if the amount is whole number when divided across the days in the period, then do same for
-                    // last
-                    // day
-                    if (interestForInstallment.getAmount().remainder(BigDecimal.valueOf(daysInPeriod)).compareTo(BigDecimal.ZERO) == 0) {
-                        dailyAccrualInterest = interestForInstallment.getAmount().divide(BigDecimal.valueOf(daysInPeriod), 2,
-                                RoundingMode.HALF_UP);
-                    } else {
-                        // This will ensure no rounding differences remain
-                        if (interestForInstallment.getAmount().compareTo(totalAccruedInterestForInstallment) > 0) {
-                            dailyAccrualInterest = interestForInstallment.getAmount().subtract(totalAccruedInterestForInstallment);
-                        } else {
-                            dailyAccrualInterest = BigDecimal.ZERO;
-                        }
+                LocalDate periodStartDate = loanRepaymentScheduleInstallment.getFromDate();
+                LocalDate periodEndDate = accrualDate;
+                LoanTermVariationsData loanTermVariationsData = this.getLoanTermVariationsDataFor(loan.getId(), periodEndDate);
+                BigDecimal annualNominalInterestRate = loan.getLoanRepaymentScheduleDetail().getAnnualNominalInterestRate();
+                if (loanTermVariationsData != null && loanTermVariationsData.getDecimalValue() != null
+                        && loan.getLoanRepaymentScheduleDetail().getAnnualNominalInterestRate() != null) {
+                    annualNominalInterestRate = loanTermVariationsData.getDecimalValue();
+                    final LocalDate termVariationApplicableFromDate = loanTermVariationsData.getTermVariationApplicableFrom();
+                    if (DateUtils.isAfter(termVariationApplicableFromDate, periodStartDate)) {
+                        periodStartDate = termVariationApplicableFromDate;
                     }
-                } else {
-                    LocalDate periodStartDate = loanRepaymentScheduleInstallment.getFromDate();
-                    LocalDate periodEndDate = accrualDate;
-                    LoanTermVariationsData loanTermVariationsData = this.getLoanTermVariationsDataFor(loan.getId(), periodEndDate);
-                    BigDecimal annualNominalInterestRate = loan.getLoanRepaymentScheduleDetail().getAnnualNominalInterestRate();
-                    if (loanTermVariationsData != null && loanTermVariationsData.getDecimalValue() != null
-                            && loan.getLoanRepaymentScheduleDetail().getAnnualNominalInterestRate() != null) {
-                        annualNominalInterestRate = loanTermVariationsData.getDecimalValue();
-                        final LocalDate termVariationApplicableFromDate = loanTermVariationsData.getTermVariationApplicableFrom();
-                        if (DateUtils.isAfter(termVariationApplicableFromDate, periodStartDate)) {
-                            periodStartDate = termVariationApplicableFromDate;
-                        }
-                    }
-                    final ScheduleGeneratorDTO scheduleGeneratorDTO = loanUtilService.buildScheduleGeneratorDTO(loan, null);
-                    final LoanApplicationTerms loanApplicationTerms = loan.constructLoanApplicationTerms(scheduleGeneratorDTO);
-                    loanApplicationTerms.updateAnnualNominalInterestRate(annualNominalInterestRate);
-                    final LoanScheduleGenerator loanScheduleGenerator = this.loanScheduleFactory
-                            .create(loanApplicationTerms.getLoanScheduleType(), loanApplicationTerms.getInterestMethod());
-                    final int periodNumber = loanRepaymentScheduleInstallment.getInstallmentNumber();
-                    if (DateUtils.isEqual(periodStartDate, periodEndDate)) {
-                        periodEndDate = periodEndDate.plusDays(1);
-                    }
-                    final Money principalAccountedFor = loanRepaymentScheduleInstallment.getPrincipalAccountedFor(currency);
-                    principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(principalAccountedFor);
-                    final boolean ignoreCurrencyDigitsAfterDecimal = false;
-                    final PrincipalInterest principalInterest = loanScheduleGenerator.calculatePrincipalInterestComponents(
-                            principalLoanBalanceOutstanding, loanApplicationTerms, periodNumber, periodStartDate, periodEndDate,
-                            ignoreCurrencyDigitsAfterDecimal);
-                    final int daysDifference = Math.toIntExact(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
-                    dailyAccrualInterest = principalInterest.interest().getAmount().divide(BigDecimal.valueOf(daysDifference), 2,
-                            RoundingMode.HALF_UP);
                 }
+                final ScheduleGeneratorDTO scheduleGeneratorDTO = loanUtilService.buildScheduleGeneratorDTO(loan, null);
+                final LoanApplicationTerms loanApplicationTerms = loan.constructLoanApplicationTerms(scheduleGeneratorDTO);
+                loanApplicationTerms.updateAnnualNominalInterestRate(annualNominalInterestRate);
+                final LoanScheduleGenerator loanScheduleGenerator = this.loanScheduleFactory
+                        .create(loanApplicationTerms.getLoanScheduleType(), loanApplicationTerms.getInterestMethod());
+                final int periodNumber = loanRepaymentScheduleInstallment.getInstallmentNumber();
+                if (DateUtils.isEqual(periodStartDate, periodEndDate)) {
+                    periodEndDate = periodEndDate.plusDays(1);
+                }
+                final Money principalAccountedFor = loanRepaymentScheduleInstallment.getPrincipalAccountedFor(currency);
+                principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(principalAccountedFor);
+                final boolean ignoreCurrencyDigitsAfterDecimal = false;
+                final PrincipalInterest principalInterest = loanScheduleGenerator.calculatePrincipalInterestComponents(
+                        principalLoanBalanceOutstanding, loanApplicationTerms, periodNumber, periodStartDate, periodEndDate,
+                        ignoreCurrencyDigitsAfterDecimal);
+                final int daysDifference = Math.toIntExact(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
+                dailyAccrualInterest = principalInterest.interest().getAmount().divide(BigDecimal.valueOf(daysDifference), 2,
+                        RoundingMode.HALF_UP);
                 // Accumulate the daily interest to the installment's accrued interest
                 dailyAccrualInterest = dailyAccrualInterest.setScale(0, RoundingMode.DOWN);
                 final BigDecimal accruedInterest = totalAccruedInterestForInstallment.add(dailyAccrualInterest);
