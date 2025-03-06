@@ -175,6 +175,11 @@ select * from tmp_creditos_migrar tcm where tcm.cpc_monto_aval is not null and (
 -- Check for future submit date
 select * from tmp_creditos_migrar tcm where tcm.cre_fechafinancia > current_date;
 
+-- Check that installments are not completed before any previous installments
+select tcm1.* from tmp_creditos_migrar tcm1 join tmp_creditos_migrar tcm2
+on tcm1.external_id = tcm2.external_id
+where tcm1.cuo_nrocuota < tcm2.cuo_nrocuota 
+and tcm1.cpc_fecha_pago_cuota is null and tcm2.cpc_fecha_pago_cuota is not null;
 
 ---------------------------------------------------------------------------------------------
 
