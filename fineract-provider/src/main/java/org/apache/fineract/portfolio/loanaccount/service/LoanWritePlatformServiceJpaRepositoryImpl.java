@@ -4765,7 +4765,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                     loanDocumentData.setPenaltyChargesPaid(penaltyChargesPaid);
                     loanDocumentData.setPenaltyChargesVatPaid(penaltyChargesVatPaid);
-                    loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.CREDIT_NOTE);
+                    loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
                     processAndSaveLoanDocument(loanDocumentData);
                     this.loanTransactionRepository.saveAndFlush(loanTransaction);
                     for (final LoanTransaction accrualTransaction : invoicedByAccrualTransactionSet) {
