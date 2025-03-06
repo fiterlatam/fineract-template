@@ -77,4 +77,6 @@ public interface ClientReadPlatformService {
 
     ClientMaximumLoanArrearsData retrieveClientMaximumLoanArrearsData(String clientId);
 
+    List<Long> retrieveClientIdsForInvoiceProcessing(Long minClientId, LocalDate secondLastDayOfMonth, int pageSize);
+
 }

@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.jobs.facturaelectronicamensual;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.Callable;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
-import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -43,7 +43,11 @@ public class FacturaElectronicaMensualPosterTask implements Callable<Void> {
         return null;
     }
 
-    public void setLoanInvoiceDataList(List<LoanDocumentData> loanInvoiceDataList) {
-        this.facturaElectronicaMensualPoster.setLoanInvoiceDataList(loanInvoiceDataList);
+    public void setSecondLastDayOfMonth(LocalDate date) {
+        this.facturaElectronicaMensualPoster.setSecondLastDayOfMonth(date);
+    }
+
+    public void setClientIds(List<Long> clientIds) {
+        this.facturaElectronicaMensualPoster.setClientIds(clientIds);
     }
 }

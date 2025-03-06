@@ -136,6 +136,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -4027,10 +4028,27 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public List<LoanDocumentData> retrieveLoanInvoiceDataList(int pageSize, Long minLoanId, LocalDate secondLastDayOfMonth) {
+    public List<LoanDocumentData> retrieveLoanInvoiceDataList(List<Long> loanIds, LocalDate secondLastDayOfMonth) {
         final LoanInvoiceMapper loanInvoiceMapper = new LoanInvoiceMapper();
         final String invoiceQuery = "SELECT " + loanInvoiceMapper.invoiceSchema();
-        return this.jdbcTemplate.query(invoiceQuery, loanInvoiceMapper, secondLastDayOfMonth, minLoanId, pageSize);
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("loanIds", loanIds);
+        parameters.addValue("date", secondLastDayOfMonth);
+        return this.namedParameterJdbcTemplate.query(invoiceQuery, parameters, loanInvoiceMapper);
+    }
+
+    @Override
+    public List<Long> retrieveLoanIdsForInvoiceGenerationByClientId(Long clientId, LocalDate secondLastDayOfMonth) {
+        final String sql = """
+                select distinct ml.id from m_loan_transaction mlt
+                     join m_loan ml on mlt.loan_id = ml.id
+                     where ml.client_id = ?
+                     and mlt.is_reversed = false
+                     AND mlt.transaction_type_enum = 10 AND mlt.occurred_on_suspended_account = FALSE
+                     AND mlt.is_invoiced_generated_by_job = false
+                     AND mlt.transaction_date <= ?
+                """;
+        return this.jdbcTemplate.queryForList(sql, Long.class, clientId, secondLastDayOfMonth).stream().toList();
     }
 
     @Override
@@ -4247,9 +4265,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         			GROUP BY mlcpd.loan_transaction_id
                         		) vat_penalty ON vat_penalty.loan_transaction_id = mlt.id
                         		WHERE mlt.is_reversed = FALSE
-                        		AND mlt.transaction_date <= ?
                         		AND mlt.transaction_type_enum = 10 AND mlt.occurred_on_suspended_account = FALSE
+                        		AND mlt.transaction_date <= :date
                                 AND mlt.is_invoiced_generated_by_job = FALSE
+                                AND mlt.loan_id in (:loanIds)
                         		GROUP BY mlt.loan_id, mlt.is_partially_ivoiced
                         ) mlt ON mlt."loanId" = ml.id
                         INNER JOIN (
@@ -4275,6 +4294,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                           FROM m_loan_charge mlc
                           INNER JOIN m_charge mc ON mc.id = mlc.charge_id
                           WHERE mlc.charge_calculation_enum IN (468, 575, 231)
+                          and mlc.loan_id in (:loanIds)
                           GROUP BY mlc.loan_id
                         ) mandatory_insurance_code ON mandatory_insurance_code.loan_id = ml.id
                         LEFT JOIN (
@@ -4284,12 +4304,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                           FROM m_loan_charge mlc
                           INNER JOIN m_charge mc ON mc.id = mlc.charge_id
                           WHERE mlc.charge_calculation_enum = 1034
+                          and mlc.loan_id in (:loanIds)
                           GROUP BY mlc.loan_id
                         ) voluntary_insurance_code ON voluntary_insurance_code.loan_id = ml.id
                         WHERE mlt."totalPaid" > 0
-                        AND ml.id > ?
+                        AND ml.id IN (:loanIds)
                         ORDER BY mc.id, ml.id
-                        LIMIT ?
                     """;
         }
 

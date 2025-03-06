@@ -545,8 +545,8 @@ public class LoanAccountConfiguration {
     @Scope("prototype")
     @ConditionalOnMissingBean(FacturaElectronicaMensualPoster.class)
     public FacturaElectronicaMensualPoster facturaElectronicaMensualPoster(JdbcTemplate jdbcTemplate,
-            LoanWritePlatformService loanWritePlatformService) {
-        return new FacturaElectronicaMensualPoster(jdbcTemplate, loanWritePlatformService);
+            LoanReadPlatformService loanReadPlatformService, LoanWritePlatformService loanWritePlatformService) {
+        return new FacturaElectronicaMensualPoster(jdbcTemplate, loanReadPlatformService, loanWritePlatformService);
     }
 
     @Bean

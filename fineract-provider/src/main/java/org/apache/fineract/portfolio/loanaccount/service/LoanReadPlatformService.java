@@ -183,7 +183,9 @@ public interface LoanReadPlatformService {
 
     List<Long> retrieveIdsForActiveLoans(int pageSize, Long minLoanId);
 
-    List<LoanDocumentData> retrieveLoanInvoiceDataList(int pageSize, Long minLoanId, LocalDate secondLastDayOfMonth);
+    List<LoanDocumentData> retrieveLoanInvoiceDataList(List<Long> loanIds, LocalDate secondLastDayOfMonth);
 
     List<LoanDocumentData> retrieveLoanInvoiceDataListByTransactionId(Long loanTransactionId);
+
+    List<Long> retrieveLoanIdsForInvoiceGenerationByClientId(Long clientId, LocalDate secondLastDayOfMonth);
 }
