@@ -1075,4 +1075,20 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     .build();
         }
     }
+
+    @Override
+    public List<Long> retrieveClientIdsForInvoiceProcessing(Long minClientId, LocalDate secondLastDayOfMonth, int pageSize) {
+        String sql = """
+                select distinct ml.client_id from m_loan_transaction mlt
+                join m_loan ml on mlt.loan_id = ml.id
+                where mlt.is_reversed = FALSE
+                AND mlt.transaction_type_enum = 10 AND mlt.occurred_on_suspended_account = FALSE
+                AND mlt.is_invoiced_generated_by_job = false
+                AND mlt.transaction_date <= ?
+                and ml.client_id > ?
+                order by ml.client_id
+                limit ?
+                """;
+        return jdbcTemplate.queryForList(sql, Long.class, secondLastDayOfMonth, minClientId, pageSize);
+    }
 }

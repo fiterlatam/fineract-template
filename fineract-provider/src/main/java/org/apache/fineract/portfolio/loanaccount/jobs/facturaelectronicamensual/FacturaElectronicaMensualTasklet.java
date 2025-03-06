@@ -36,8 +36,7 @@ import org.apache.fineract.infrastructure.core.config.TaskExecutorConstant;
 import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
-import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
-import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
+import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -54,11 +53,11 @@ import org.springframework.stereotype.Component;
 public class FacturaElectronicaMensualTasklet implements Tasklet {
 
     private static final int QUEUE_SIZE = 1;
-    private final Queue<List<LoanDocumentData>> queue = new ArrayDeque<>();
+    private final Queue<List<Long>> queue = new ArrayDeque<>();
     private final ApplicationContext applicationContext;
     @Qualifier(TaskExecutorConstant.CONFIGURABLE_TASK_EXECUTOR_BEAN_NAME)
     private final ThreadPoolTaskExecutor taskExecutor;
-    private final LoanReadPlatformService loanReadPlatformService;
+    private final ClientReadPlatformService clientReadPlatformService;
     private boolean dataFetched = false;
     private final ConfigurationDomainService configurationDomainService;
 
@@ -76,27 +75,27 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
         taskExecutor.setCorePoolSize(threadPoolSize);
         final int batchSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
         final int pageSize = batchSize * threadPoolSize;
-        Long maxLoanIdInList = 0L;
+        Long maxClientIdInList = 0L;
 
         if (businessLocalDate.equals(secondLastDayOfMonth) || enableMonthlyInvoiceGenerationOnJobTrigger) {
             long start = System.currentTimeMillis();
             log.info("Starting FacturaElectronicaMensualTasklet job for the date: {}", businessLocalDate);
-            List<LoanDocumentData> loanInvoiceDataList = this.loanReadPlatformService.retrieveLoanInvoiceDataList(pageSize, maxLoanIdInList,
-                    secondLastDayOfMonth);
-            log.info("Fetched LoanDocumentDataList with count of: {}", loanInvoiceDataList.size());
-            if (loanInvoiceDataList != null && !loanInvoiceDataList.isEmpty()) {
-                loanInvoiceDataList = Collections.synchronizedList(loanInvoiceDataList);
+            List<Long> clientIds = this.clientReadPlatformService.retrieveClientIdsForInvoiceProcessing(maxClientIdInList,
+                    secondLastDayOfMonth, pageSize);
+            log.info("Fetched client_ids with count of: {}", clientIds.size());
+            if (clientIds != null && !clientIds.isEmpty()) {
+                clientIds = Collections.synchronizedList(clientIds);
                 long finish = System.currentTimeMillis();
-                log.debug("Done fetching LoanDocumentDataList within {} milliseconds", finish - start);
-                queue.add(loanInvoiceDataList);
+                log.debug("Done fetching client_ids within {} milliseconds", finish - start);
+                queue.add(clientIds);
 
                 if (!CollectionUtils.isEmpty(queue)) {
                     do {
-                        int totalFilteredRecords = loanInvoiceDataList.size();
+                        int totalFilteredRecords = clientIds.size();
                         log.info("Starting FacturaElectronicaMensualTasklet invoice processing - total records - {}", totalFilteredRecords);
-                        List<LoanDocumentData> queueElement = queue.element();
-                        maxLoanIdInList = queueElement.get(queueElement.size() - 1).getLoanId();
-                        this.processInvoices(queue.remove(), threadPoolSize, secondLastDayOfMonth, pageSize, maxLoanIdInList);
+                        List<Long> queueElement = queue.element();
+                        maxClientIdInList = queueElement.get(queueElement.size() - 1);
+                        this.processInvoices(queue.remove(), threadPoolSize, secondLastDayOfMonth, pageSize, maxClientIdInList);
                     } while (!CollectionUtils.isEmpty(queue));
                 }
             }
@@ -105,12 +104,12 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
         return RepeatStatus.FINISHED;
     }
 
-    private void processInvoices(List<LoanDocumentData> loanInvoiceDataList, int threadPoolSize, LocalDate secondLastDayOfMonth,
-            int pageSize, Long maxLoanIdInList) {
+    private void processInvoices(List<Long> clientIdList, int threadPoolSize, LocalDate secondLastDayOfMonth, int pageSize,
+            Long maxClientIdInList) {
         dataFetched = false;
         List<Callable<Void>> posters = new ArrayList<>();
         int fromIndex = 0;
-        int size = loanInvoiceDataList.size();
+        int size = clientIdList.size();
         int batchSize = (int) Math.ceil((double) size / threadPoolSize);
 
         if (batchSize == 0) {
@@ -118,7 +117,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
         }
 
         int toIndex = (batchSize > size - 1) ? size : batchSize;
-        while (toIndex < size && loanInvoiceDataList.get(toIndex - 1).getLoanId().equals(loanInvoiceDataList.get(toIndex).getLoanId())) {
+        while (toIndex < size && clientIdList.get(toIndex - 1).equals(clientIdList.get(toIndex))) {
             toIndex++;
         }
         boolean lastBatch = false;
@@ -128,22 +127,22 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
 
         Callable<Void> fetchData = () -> {
             ThreadLocalContextUtil.init(context);
-            Long maxId = maxLoanIdInList;
+            Long maxId = maxClientIdInList;
             if (!queue.isEmpty()) {
-                maxId = Math.max(maxLoanIdInList, queue.element().get(queue.element().size() - 1).getLoanId());
+                maxId = Math.max(maxClientIdInList, queue.element().get(queue.element().size() - 1));
             }
 
             while (queue.size() <= QUEUE_SIZE) {
                 log.info("Fetching while threads are running!");
-                List<LoanDocumentData> loanDocumentData = Collections
-                        .synchronizedList(this.loanReadPlatformService.retrieveLoanInvoiceDataList(pageSize, maxId, secondLastDayOfMonth));
-                log.info("Fetched LoanDocumentDataList with count of: {}", loanDocumentData.size());
-                if (loanDocumentData.isEmpty()) {
+                List<Long> clientIds = Collections.synchronizedList(
+                        this.clientReadPlatformService.retrieveClientIdsForInvoiceProcessing(maxId, secondLastDayOfMonth, pageSize));
+                log.info("Fetched client_ids with count of: {}", clientIds.size());
+                if (clientIds.isEmpty()) {
                     log.info("No more loanDocumentData to process");
                     break;
                 }
-                maxId = loanDocumentData.get(loanDocumentData.size() - 1).getLoanId();
-                queue.add(loanDocumentData);
+                maxId = clientIds.get(clientIds.size() - 1);
+                queue.add(clientIds);
             }
             dataFetched = true;
             return null;
@@ -151,10 +150,11 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
         posters.add(fetchData);
 
         for (long i = 0; i < loopCount; i++) {
-            List<LoanDocumentData> subList = safeSubList(loanInvoiceDataList, fromIndex, toIndex);
+            List<Long> subList = safeSubList(clientIdList, fromIndex, toIndex);
             FacturaElectronicaMensualPosterTask facturaElectronicaMensualPosterTask = applicationContext
                     .getBean(FacturaElectronicaMensualPosterTask.class);
-            facturaElectronicaMensualPosterTask.setLoanInvoiceDataList(subList);
+            facturaElectronicaMensualPosterTask.setClientIds(subList);
+            facturaElectronicaMensualPosterTask.setSecondLastDayOfMonth(secondLastDayOfMonth);
             facturaElectronicaMensualPosterTask.setContext(ThreadLocalContextUtil.getContext());
             posters.add(facturaElectronicaMensualPosterTask);
 
@@ -167,8 +167,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
             }
             fromIndex = fromIndex + (toIndex - fromIndex);
             toIndex = (toIndex + batchSize > size - 1) ? size : toIndex + batchSize;
-            while (toIndex < size
-                    && loanInvoiceDataList.get(toIndex - 1).getLoanId().equals(loanInvoiceDataList.get(toIndex).getLoanId())) {
+            while (toIndex < size && clientIdList.get(toIndex - 1).equals(clientIdList.get(toIndex))) {
                 toIndex++;
             }
         }
