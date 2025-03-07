@@ -41,5 +41,20 @@
             <where>entity_name = 'Detalle garanta'</where>
         </update>
     </changeSet>
+    <changeSet id="4" author="fineract">
+        <renameTable oldTableName="Detalle garantía" newTableName="Detalle garantia"/>
+    </changeSet>
+    <changeSet id="5" author="fineract">
+        <update tableName="x_registered_table">
+            <column name="registered_table_name" value="Detalle garantia"/>
+            <where>registered_table_name = 'Detalle garantía'</where>
+        </update>
+    </changeSet>
+    <changeSet id="6" author="fineract">
+        <update tableName="m_permission">
+            <column name="entity_name" value="Detalle garantia"/>
+            <where>entity_name = 'Detalle garantía'</where>
+        </update>
+    </changeSet>
 
 </databaseChangeLog>
