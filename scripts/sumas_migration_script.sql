@@ -387,14 +387,14 @@ update m_product_loan set start_date = '2021-01-01' where id in (1,2,3, 4)
 update campos_cliente_persona set "Cupo solicitado" = 20000000, "Cupo aprobado" = 20000000;
 
 -- Update is_advance field on m_product_loan id 3 to allow loans to disburse
-update m_product_loan set is_advance = false where id = 3; -- in (3,9); --for production
+update m_product_loan set is_advance = false where id in (3,9); --for production
 
 
 --- Indexes to speed up retrieval of records --
- CREATE INDEX idx_cedula
+CREATE INDEX idx_cedula
 ON tmp_creditos_migrar(cli_nroid);
 
- CREATE INDEX idx_cedula_campos_cliente_persona
+CREATE INDEX idx_cedula_campos_cliente_persona
 ON campos_cliente_persona("Cedula");
 
 -- Backup and update the maximum legal rate data --
@@ -434,7 +434,7 @@ select distinct id from m_client mc
 join campos_cliente_persona ccp on ccp.client_id = mc.id
 join tmp_creditos_migrar tcm on tcm.cli_nroid = ccp."Cedula"
 where mc.office_id = 1
-limit 15000
+limit 28000
 )
 update m_client mc
 set office_id = 2
@@ -524,6 +524,13 @@ from
  --	 limit 5000 offset 10000 -- next 5k loans for third sheet
  --	 limit 5000 offset 15000 -- next 5k loans for forth sheet
  --	 limit 5000 offset 20000 -- next 5k loans for fifth sheet
+
+ --- Validate All Loans are Disbursed ---
+select count(*) from m_loan where loan_status_id != 300;
+select * from tmp_creditos_migrar tcm where tcm.external_id not in (select external_id from m_loan where loan_status_id = 300);
+
+-- Validate All Loans have point of sale codes ---
+select * from m_loan ml where ml.migrar_code is null;
 
 
 -- Set the original cupo value for client
@@ -768,9 +775,6 @@ where mlrs.fee_charges_amount != tcm.cpc_monto_aval
 and abs(tcm.cpc_monto_aval - mlrs.fee_charges_amount) > 2
 order by ml.external_id, mlrs.installment
 ) x;
-
---- Validate All Loans are Disbursed ---
-select count(*) from m_loan where loan_status_id != 300;
 
 --- Restore max legal rate data ---
 delete from m_maximum_credit_rate_configuration;
