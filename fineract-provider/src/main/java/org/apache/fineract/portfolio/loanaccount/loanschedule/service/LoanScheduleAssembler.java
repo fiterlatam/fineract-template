@@ -79,7 +79,6 @@ import org.apache.fineract.portfolio.floatingrates.exception.FloatingRateNotFoun
 import org.apache.fineract.portfolio.floatingrates.service.FloatingRatesReadPlatformService;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
-import org.apache.fineract.portfolio.interestrates.data.InterestRateHistoryData;
 import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
 import org.apache.fineract.portfolio.interestrates.service.InterestRateReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
@@ -246,19 +245,11 @@ public class LoanScheduleAssembler {
             BigDecimal currentInterestRate = interestRate.getCurrentRate();
             final LocalDate interestRateAppliedOnDate = interestRate.getAppliedOnDate();
             final LocalDate expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed("expectedDisbursementDate", element);
-            if (DateUtils.isAfter(interestRateAppliedOnDate, expectedDisbursementDate)) {
-                final InterestRateHistoryData interestRateHistoryData = this.interestRateReadPlatformService
-                        .retrieveHistoryMatchingParams(interestRateId, expectedDisbursementDate);
-                if (interestRateHistoryData != null) {
-                    currentInterestRate = interestRateHistoryData.getCurrentRate();
-                } else {
-                    throw new GeneralPlatformDomainRuleException(
-                            "error.msg.loan.interest.rate.applied.on.date.not.found.that.matches.disbursement.date",
-                            "The provided disbursement date does not match available interest rate applied on date",
-                            expectedDisbursementDate);
-                }
-            }
+
+            // Always use the most current interest rate, regardless of disbursement date
+            // This ensures compliance with the maximum legal rate
             interestRatePerPeriod = currentInterestRate;
+
             if (requireInterestRatePoint) {
                 interestRatePoints = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.INTEREST_RATE_POINTS, element);
                 if (interestRatePoints == null) {
