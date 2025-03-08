@@ -102,6 +102,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanRescheduleRequestWritePlatformService {
 
     private static final Logger LOG = LoggerFactory.getLogger(LoanRescheduleRequestWritePlatformServiceImpl.class);
+    public static final String MAX_LEGAL_RATE_REASON_FOR_RESCHEDULE = "Recalcular la tasa de interés al máximo legal";
 
     private final CodeValueRepositoryWrapper codeValueRepositoryWrapper;
     private final PlatformSecurityContext platformSecurityContext;
@@ -627,8 +628,8 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             final boolean isInterestRateFromInstallmentTermType = loanTermVariations.stream()
                     .anyMatch(loanTermVariationsData -> LoanTermVariationType.INTEREST_RATE_FROM_INSTALLMENT.getValue()
                             .equals(loanTermVariationsData.getTermType().getId().intValue()));
-            if (loanRescheduleRequest.getRescheduleReasonCodeValue() != null
-                    && "Recalcular la tasa de interés al máximo legal"
+            if (!loan.isMigratedLoan() && loanRescheduleRequest.getRescheduleReasonCodeValue() != null
+                    && MAX_LEGAL_RATE_REASON_FOR_RESCHEDULE
                             .equalsIgnoreCase(loanRescheduleRequest.getRescheduleReasonCodeValue().getLabel())
                     && isInterestRateFromInstallmentTermType) {
                 this.loanAccountDomainService.recalculateInterestAccrualsOnMaximumLegalRate(loan, rescheduleFromDate);
