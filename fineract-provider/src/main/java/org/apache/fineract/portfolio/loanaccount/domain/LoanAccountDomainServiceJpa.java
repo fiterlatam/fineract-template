@@ -838,7 +838,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         interestAccrualTransactions.forEach(LoanTransaction::reverse);
         loan.setInterestAccruedTill(interestAccruedTillDate);
         this.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
-        this.loanAccrualPlatformService.persistDailyInterestAccrual(loan.getId(), accrualDate);
     }
 
     private void generateLoanScheduleAccrualData(final LocalDate accruedTill,
