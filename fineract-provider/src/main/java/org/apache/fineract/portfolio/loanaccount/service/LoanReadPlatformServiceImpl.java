@@ -113,6 +113,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanTransactionNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
+import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanElectronicInvoiceData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
@@ -4049,6 +4050,53 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                      AND mlt.transaction_date <= ?
                 """;
         return this.jdbcTemplate.queryForList(sql, Long.class, clientId, secondLastDayOfMonth).stream().toList();
+    }
+
+    @Override
+    public List<LoanElectronicInvoiceData> retrieveAvailableElectronicInvoicesToBeOffset(String idCliente, String tipoProd, String sku) {
+        final LoanElectronicInvoiceMapper loanElectronicInvoiceMapper = new LoanElectronicInvoiceMapper();
+        final String schemaSQL = "SELECT " + loanElectronicInvoiceMapper.schema();
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("idCliente", idCliente);
+        parameters.addValue("sku", sku);
+        parameters.addValue("tipoProd", tipoProd);
+        return this.namedParameterJdbcTemplate.query(schemaSQL, parameters, loanElectronicInvoiceMapper);
+    }
+
+    private static class LoanElectronicInvoiceMapper implements RowMapper<LoanElectronicInvoiceData> {
+
+        public String schema() {
+            return """
+                            cfe.id,
+                            cfe.sku,
+                        	cfe.precio_unitario,
+                        	cfe.costo_total,
+                        	cfe.id_cliente,
+                        	cfe.tipo_prod,
+                        	cfe.is_fully_offset_by_cn,
+                        	COALESCE(SUM(miobcn.amount), 0) AS "offsetAmount"
+                        FROM c_facturacion_electronica cfe
+                        LEFT JOIN m_invoice_offset_by_credit_note miobcn ON (miobcn.invoice_id = cfe.id AND miobcn.is_active = FALSE)
+                        WHERE cfe.id_cliente = :idCliente AND cfe.tipo_prod = :tipoProd AND cfe.is_fully_offset_by_cn = FALSE  AND cfe.sku = :sku
+                        GROUP BY cfe.id
+
+                    """;
+        }
+
+        @Override
+        public LoanElectronicInvoiceData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
+            final Long id = rs.getLong("id");
+            final String sku = rs.getString("sku");
+            final BigDecimal precioUnitario = rs.getBigDecimal("precio_unitario");
+            final BigDecimal costoTotal = rs.getBigDecimal("costo_total");
+            final String idCliente = rs.getString("id_cliente");
+            final String tipoProd = rs.getString("tipo_prod");
+            final boolean isFullyOffsetByCN = rs.getBoolean("is_fully_offset_by_cn");
+            final BigDecimal offsetAmount = rs.getBigDecimal("offsetAmount");
+            return LoanElectronicInvoiceData.builder().id(id).sku(sku).precioUnitario(precioUnitario).costoTotal(costoTotal)
+                    .idCliente(idCliente).tipoProd(tipoProd).isFullyOffsetByCN(isFullyOffsetByCN).offsetAmountAccountedFor(offsetAmount)
+                    .build();
+        }
     }
 
     @Override

@@ -10,11 +10,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.fineract.custom.infrastructure.core.service.CustomDateUtils;
 import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
-import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
@@ -27,14 +28,21 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.LoanCreditN
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
-import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
+import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
+import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.SpecialWriteOffPayload;
 import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanCreditNoteAmountCannotBeZeroException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanCreditNoteDateCannotBeFutureException;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanCreditNoteNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanTransactionNotFoundException;
+import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
+import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanElectronicInvoiceData;
+import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
+import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicaMensual;
+import org.apache.fineract.portfolio.loanaccount.invoice.domain.LoanDocumentConcept;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.springframework.stereotype.Service;
 
@@ -51,8 +59,8 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
     private final FromJsonHelper fromApiJsonHelper;
     private final BusinessEventNotifierService businessEventNotifierService;
     private final LoanTransactionRepository loanTransactionRepository;
-    private final DelinquencyReadPlatformService delinquencyReadPlatformService;
-    private final ConfigurationDomainService configurationDomainService;
+    private final ClientReadPlatformService clientReadPlatformService;
+    private final FacturaElectronicMensualRepository facturaElectronicMensualRepository;
 
     @Override
     public CommandProcessingResult addLoanCreditNote(Long loanId, JsonCommand command) {
@@ -332,5 +340,137 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
         }
 
         return vatAmount;
+    }
+
+    private BigDecimal processElectronicCreditNoteForConcept(BigDecimal remainingConceptAmountToBeUsed,
+            final LoanDocumentConcept loanDocumentConcept, final String clientIdNumber, final String loanProductType,
+            final LoanCreditNote loanCreditNote) {
+        final List<LoanElectronicInvoiceData> interestInvoicesToBeOffset = loanReadPlatformService
+                .retrieveAvailableElectronicInvoicesToBeOffset(clientIdNumber, loanProductType, loanDocumentConcept.getSku());
+        if (!interestInvoicesToBeOffset.isEmpty()) {
+            for (final LoanElectronicInvoiceData interestInvoiceToBeOffData : interestInvoicesToBeOffset) {
+                final Long invoiceId = interestInvoiceToBeOffData.getId();
+                final FacturaElectronicaMensual facturaElectronicaMensualToBeOffset = this.facturaElectronicMensualRepository
+                        .findById(invoiceId)
+                        .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.credit.note.invoice.not.found",
+                                "Invoice not found {} " + invoiceId));
+                final BigDecimal precioUnitario = interestInvoiceToBeOffData.getPrecioUnitario();
+                final BigDecimal offsetAmountAccountedFor = interestInvoiceToBeOffData.getOffsetAmountAccountedFor();
+                final BigDecimal invoiceAmountToBeOffset = precioUnitario.subtract(offsetAmountAccountedFor);
+                final String offsetInvoiceNumber = facturaElectronicaMensualToBeOffset.getNumero_doc();
+                final LocalDate offsetInvoiceDate = facturaElectronicaMensualToBeOffset.getFecha_factura();
+                if (remainingConceptAmountToBeUsed.compareTo(BigDecimal.ZERO) > 0
+                        && invoiceAmountToBeOffset.compareTo(BigDecimal.ZERO) > 0) {
+                    if (remainingConceptAmountToBeUsed.compareTo(invoiceAmountToBeOffset) >= 0) {
+                        remainingConceptAmountToBeUsed = remainingConceptAmountToBeUsed.subtract(invoiceAmountToBeOffset);
+                        facturaElectronicaMensualToBeOffset.setFullyOffsetByCN(true);
+                        final LoanInvoiceOffsetByCreditNote loanInvoiceOffsetByCreditNote = new LoanInvoiceOffsetByCreditNote();
+                        loanInvoiceOffsetByCreditNote.setLoanCreditNote(loanCreditNote);
+                        loanInvoiceOffsetByCreditNote.setFacturaElectronicaMensual(facturaElectronicaMensualToBeOffset);
+                        loanInvoiceOffsetByCreditNote.adjustPortionByConcept(loanDocumentConcept, invoiceAmountToBeOffset);
+                        loanInvoiceOffsetByCreditNote.setInterestPortion(invoiceAmountToBeOffset);
+                        loanInvoiceOffsetByCreditNote.setActive(true);
+                        loanCreditNote.getLoanInvoiceOffsetByCreditNoteSet().add(loanInvoiceOffsetByCreditNote);
+                        final FacturaElectronicaMensual creditNoteDocument = facturaElectronicaMensualToBeOffset.clone();
+                        creditNoteDocument.setTip_doc(LoanDocumentData.LoanDocumentType.CREDIT_NOTE.getCode());
+                        creditNoteDocument.setCosto_total(invoiceAmountToBeOffset);
+                        creditNoteDocument.setPrecio_unitario(invoiceAmountToBeOffset);
+                        creditNoteDocument.setNum_facafect(offsetInvoiceNumber);
+                        creditNoteDocument.setFec_facafect(offsetInvoiceDate);
+                        this.facturaElectronicMensualRepository
+                                .saveAllAndFlush(List.of(facturaElectronicaMensualToBeOffset, creditNoteDocument));
+                    } else {
+                        final BigDecimal creditNoteAmountToBeUsed = remainingConceptAmountToBeUsed;
+                        remainingConceptAmountToBeUsed = BigDecimal.ZERO;
+                        facturaElectronicaMensualToBeOffset.setFullyOffsetByCN(false);
+                        final LoanInvoiceOffsetByCreditNote loanInvoiceOffsetByCreditNote = new LoanInvoiceOffsetByCreditNote();
+                        loanInvoiceOffsetByCreditNote.setLoanCreditNote(loanCreditNote);
+                        loanInvoiceOffsetByCreditNote.setFacturaElectronicaMensual(facturaElectronicaMensualToBeOffset);
+                        loanInvoiceOffsetByCreditNote.setInterestPortion(remainingConceptAmountToBeUsed);
+                        loanInvoiceOffsetByCreditNote.adjustPortionByConcept(loanDocumentConcept, creditNoteAmountToBeUsed);
+                        loanInvoiceOffsetByCreditNote.setActive(true);
+                        loanCreditNote.getLoanInvoiceOffsetByCreditNoteSet().add(loanInvoiceOffsetByCreditNote);
+                        final FacturaElectronicaMensual creditNoteDocument = facturaElectronicaMensualToBeOffset.clone();
+                        creditNoteDocument.setTip_doc(LoanDocumentData.LoanDocumentType.CREDIT_NOTE.getCode());
+                        creditNoteDocument.setCosto_total(creditNoteAmountToBeUsed);
+                        creditNoteDocument.setPrecio_unitario(creditNoteAmountToBeUsed);
+                        creditNoteDocument.setNum_facafect(offsetInvoiceNumber);
+                        creditNoteDocument.setFec_facafect(offsetInvoiceDate);
+                        this.facturaElectronicMensualRepository
+                                .saveAllAndFlush(List.of(facturaElectronicaMensualToBeOffset, creditNoteDocument));
+                        break;
+                    }
+                }
+            }
+        }
+        return remainingConceptAmountToBeUsed;
+    }
+
+    @Override
+    public void processInvoiceOffsetByCreditNote(final Long creditNoteId) {
+        /* TODO: This will be implemented next */
+        if (!creditNoteId.equals(0L)) {
+            return;
+        }
+        final LoanCreditNote loanCreditNote = this.loanCreditNoteRepository.findById(creditNoteId)
+                .orElseThrow(() -> new LoanCreditNoteNotFoundException(creditNoteId));
+        if (!loanCreditNote.isFullyUsedByInvoice()) {
+            final Long clientId = loanCreditNote.getLoan().getClientId();
+            final ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
+                    .retrieveClientAdditionalData(clientId);
+            final String clientIdNumber = ObjectUtils.defaultIfNull(clientAdditionalInformation.getNit(),
+                    clientAdditionalInformation.getCedula());
+            final String loanProductType = loanCreditNote.getLoan().loanProduct().getProductType().getLabel();
+            final BigDecimal interestPortion = loanCreditNote.getCurrentInterest();
+            final BigDecimal mandatoryInsurancePortion = loanCreditNote.getMandatoryInsurance();
+            final BigDecimal voluntaryInsurancePortion = loanCreditNote.getInsurance();
+            final BigDecimal honorariosPortion = loanCreditNote.getHonorarios();
+            final BigDecimal penaltyPortion = loanCreditNote.getArrearInterest();
+            Set<LoanInvoiceOffsetByCreditNote> loanInvoiceOffsetByCreditNoteSet = loanCreditNote.getLoanInvoiceOffsetByCreditNoteSet();
+
+            final BigDecimal interestPortionAccountedFor = loanInvoiceOffsetByCreditNoteSet.stream()
+                    .filter(LoanInvoiceOffsetByCreditNote::isActive).map(LoanInvoiceOffsetByCreditNote::getInterestPortion)
+                    .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal remainingInterestPortionToBeUsed = interestPortion.subtract(interestPortionAccountedFor);
+            remainingInterestPortionToBeUsed = processElectronicCreditNoteForConcept(remainingInterestPortionToBeUsed,
+                    LoanDocumentConcept.INT_CORRIENTE, clientIdNumber, loanProductType, loanCreditNote);
+
+            final BigDecimal mandatoryPortionAccountedFor = loanInvoiceOffsetByCreditNoteSet.stream()
+                    .filter(LoanInvoiceOffsetByCreditNote::isActive).map(LoanInvoiceOffsetByCreditNote::getMandatoryInsurancePortion)
+                    .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal remainingMandatoryInsurancePortionToBeUsed = mandatoryInsurancePortion.subtract(mandatoryPortionAccountedFor);
+            remainingMandatoryInsurancePortionToBeUsed = processElectronicCreditNoteForConcept(remainingMandatoryInsurancePortionToBeUsed,
+                    LoanDocumentConcept.SEGURO_OBLIGATORIO, clientIdNumber, loanProductType, loanCreditNote);
+
+            final BigDecimal voluntaryPortionAccountedFor = loanInvoiceOffsetByCreditNoteSet.stream()
+                    .filter(LoanInvoiceOffsetByCreditNote::isActive).map(LoanInvoiceOffsetByCreditNote::getVoluntaryInsurancePortion)
+                    .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal remainingVoluntaryInsurancePortionToBeUsed = voluntaryInsurancePortion.subtract(voluntaryPortionAccountedFor);
+            remainingVoluntaryInsurancePortionToBeUsed = processElectronicCreditNoteForConcept(remainingVoluntaryInsurancePortionToBeUsed,
+                    LoanDocumentConcept.SEGUROS_VOLUNTARIOS, clientIdNumber, loanProductType, loanCreditNote);
+
+            final BigDecimal honorariosPortionAccountedFor = loanInvoiceOffsetByCreditNoteSet.stream()
+                    .filter(LoanInvoiceOffsetByCreditNote::isActive).map(LoanInvoiceOffsetByCreditNote::getHonorariosPortion)
+                    .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal remainingHonorariosPortionToBeUsed = honorariosPortion.subtract(honorariosPortionAccountedFor);
+            remainingHonorariosPortionToBeUsed = processElectronicCreditNoteForConcept(remainingHonorariosPortionToBeUsed,
+                    LoanDocumentConcept.HONORARIOS, clientIdNumber, loanProductType, loanCreditNote);
+
+            final BigDecimal penaltyPortionAccountedFor = loanInvoiceOffsetByCreditNoteSet.stream()
+                    .filter(LoanInvoiceOffsetByCreditNote::isActive).map(LoanInvoiceOffsetByCreditNote::getPenaltyPortion)
+                    .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal remainingPenaltyPortionToBeUsed = penaltyPortion.subtract(penaltyPortionAccountedFor);
+            remainingPenaltyPortionToBeUsed = processElectronicCreditNoteForConcept(remainingPenaltyPortionToBeUsed,
+                    LoanDocumentConcept.INT_DE_MORA, clientIdNumber, loanProductType, loanCreditNote);
+
+            if (remainingInterestPortionToBeUsed.compareTo(BigDecimal.ZERO) == 0
+                    && remainingMandatoryInsurancePortionToBeUsed.compareTo(BigDecimal.ZERO) == 0
+                    && remainingVoluntaryInsurancePortionToBeUsed.compareTo(BigDecimal.ZERO) == 0
+                    && remainingHonorariosPortionToBeUsed.compareTo(BigDecimal.ZERO) == 0
+                    && remainingPenaltyPortionToBeUsed.compareTo(BigDecimal.ZERO) == 0) {
+                loanCreditNote.setFullyUsedByInvoice(true);
+            }
+            this.loanCreditNoteRepository.saveAndFlush(loanCreditNote);
+        }
     }
 }

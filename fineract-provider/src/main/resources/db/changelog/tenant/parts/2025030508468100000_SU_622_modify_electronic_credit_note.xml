@@ -36,29 +36,41 @@
             <column name="invoice_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="cred_note_id" type="BIGINT">
+            <column name="credit_note_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
             <column name="amount" type="decimal(19,6)">
                 <constraints nullable="false"/>
             </column>
-            <column name="interest" type="decimal(19,6)">
+            <column name="interest_portion" type="decimal(19,6)">
                 <constraints nullable="true"/>
             </column>
-            <column name="honorarios" type="decimal(19,6)">
+            <column name="honorarios_portion" type="decimal(19,6)">
                 <constraints nullable="true"/>
             </column>
-            <column name="mandatory_insurance" type="decimal(19,6)">
+            <column name="mandatory_insurance_portion" type="decimal(19,6)">
                 <constraints nullable="true"/>
             </column>
-            <column name="voluntary_insurance" type="decimal(19,6)">
+            <column name="voluntary_insurance_portion" type="decimal(19,6)">
                 <constraints nullable="true"/>
             </column>
-            <column name="penalty" type="decimal(19,6)">
+            <column name="penalty_portion" type="decimal(19,6)">
                 <constraints nullable="true"/>
             </column>
-            <column name="is_reversed" type="BOOLEAN" defaultValueBoolean="false">
-                <constraints nullable="true"/>
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_on_utc" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified_by" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified_on_utc" type="DATETIME">
+                <constraints nullable="false"/>
             </column>
         </createTable>
         <addForeignKeyConstraint baseTableName="m_invoice_offset_by_credit_note"
@@ -67,7 +79,7 @@
                                  referencedTableName="c_facturacion_electronica"
                                  referencedColumnNames="id"/>
         <addForeignKeyConstraint baseTableName="m_invoice_offset_by_credit_note"
-                                 baseColumnNames="cred_note_id"
+                                 baseColumnNames="credit_note_id"
                                  constraintName="FK_m_invoice_offset_by_credit_note_cred_note_id"
                                  referencedTableName="m_loan_credit_note"
                                  referencedColumnNames="id"/>
@@ -80,7 +92,7 @@
             </not>
         </preConditions>
         <addColumn tableName="m_loan_credit_note">
-            <column name="is_fully_used" type="BOOLEAN" defaultValueBoolean="false" />
+            <column name="is_fully_used_by_invoice" type="BOOLEAN" defaultValueBoolean="false" />
         </addColumn>
     </changeSet>
 

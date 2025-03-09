@@ -6,4 +6,6 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 public interface LoanCreditNoteWriteService {
 
     CommandProcessingResult addLoanCreditNote(Long loanId, JsonCommand command);
+
+    void processInvoiceOffsetByCreditNote(Long creditNoteId);
 }

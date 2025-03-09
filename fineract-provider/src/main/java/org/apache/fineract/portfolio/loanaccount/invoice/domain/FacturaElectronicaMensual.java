@@ -295,6 +295,9 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
     @Column(name = "loan_transaction_id")
     private Long loan_transaction_id;
 
+    @Column(name = "is_fully_offset_by_cn")
+    private boolean isFullyOffsetByCN;
+
     public BigDecimal getImpuesto_item() {
         return this.impuesto_item == null ? BigDecimal.ZERO : this.impuesto_item;
     }
