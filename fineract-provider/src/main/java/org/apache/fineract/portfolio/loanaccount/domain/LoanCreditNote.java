@@ -1,13 +1,18 @@
 package org.apache.fineract.portfolio.loanaccount.domain;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
@@ -57,6 +62,12 @@ public class LoanCreditNote extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Column(name = "transaction_id", nullable = false)
     private Long transactionId;
+
+    @Column(name = "is_fully_used_by_invoice")
+    private boolean isFullyUsedByInvoice;
+
+    @OneToMany(mappedBy = "loanCreditNote", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private Set<LoanInvoiceOffsetByCreditNote> loanInvoiceOffsetByCreditNoteSet = new HashSet<>();
 
     public LoanCreditNoteData toData() {
         Long documentId = null;

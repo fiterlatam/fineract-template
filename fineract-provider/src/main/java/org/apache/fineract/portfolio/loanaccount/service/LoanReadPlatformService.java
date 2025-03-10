@@ -34,6 +34,7 @@ import org.apache.fineract.portfolio.loanaccount.data.*;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
+import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanElectronicInvoiceData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
@@ -188,4 +189,7 @@ public interface LoanReadPlatformService {
     List<LoanDocumentData> retrieveLoanInvoiceDataListByTransactionId(Long loanTransactionId);
 
     List<Long> retrieveLoanIdsForInvoiceGenerationByClientId(Long clientId, LocalDate secondLastDayOfMonth);
+
+    List<LoanElectronicInvoiceData> retrieveAvailableElectronicInvoicesToBeOffset(String idCliente, String tipoProd, String sku);
+
 }
