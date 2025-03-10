@@ -1821,7 +1821,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             this.businessEventNotifierService.notifyPostBusinessEvent(new LoanTxReversalBusinessEvent(transactionToAdjust));
         }
         final LocalDate previousTransactionDate = transactionToAdjust.getTransactionDate();
-        if (DateUtils.isEqual(previousTransactionDate, transactionDate) && transactionToAdjust.hasOccurredOnSuspendedAccount()) {
+        if (DateUtils.isEqual(previousTransactionDate, transactionDate)) {
             final Long loanTransactionId = transactionToAdjust.getId();
             final List<FacturaElectronicaMensual> facturaElectronicMensuals = this.facturaElectronicMensualRepository
                     .findByLoanTransactionId(loanTransactionId);
