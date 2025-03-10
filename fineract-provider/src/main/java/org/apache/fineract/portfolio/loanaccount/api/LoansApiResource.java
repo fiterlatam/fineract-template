@@ -58,6 +58,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -113,6 +114,7 @@ import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.service.ChargeReadPlatformService;
+import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.collateralmanagement.data.LoanCollateralResponseData;
 import org.apache.fineract.portfolio.collateralmanagement.service.LoanCollateralManagementReadPlatformService;
@@ -592,9 +594,23 @@ public class LoansApiResource {
         if (CommandParameterUtil.is(commandParam, "calculateLoanSchedule")) {
 
             final JsonElement parsedQuery = this.fromJsonHelper.parse(apiRequestBodyAsJson);
+
+            Boolean validateParams = Boolean.TRUE;
+
+            // If there is no attribute client_id, then validateParams is set to false
+            if (Objects.isNull(parsedQuery.getAsJsonObject().get(ClientApiConstants.clientIdParamName))) {
+                validateParams = Boolean.FALSE;
+
+                // If not exists parameter "loanType" with value "individual", add it
+                if (Objects.isNull(parsedQuery.getAsJsonObject().get(LoanApiConstants.loanTypeParameterName))) {
+                    parsedQuery.getAsJsonObject().addProperty(LoanApiConstants.loanTypeParameterName,
+                            ClientApiConstants.CLIENT_TYPE_INDIVIDUAL);
+                }
+            }
+
             final JsonQuery query = JsonQuery.from(apiRequestBodyAsJson, parsedQuery, this.fromJsonHelper);
 
-            final LoanScheduleModel loanSchedule = this.calculationPlatformService.calculateLoanSchedule(query, true);
+            final LoanScheduleModel loanSchedule = this.calculationPlatformService.calculateLoanSchedule(query, validateParams);
 
             final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
             return this.loanScheduleToApiJsonSerializer.serialize(settings, loanSchedule.toData(), new HashSet<>());
