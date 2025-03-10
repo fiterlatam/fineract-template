@@ -368,15 +368,16 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                         loanInvoiceOffsetByCreditNote.setLoanCreditNote(loanCreditNote);
                         loanInvoiceOffsetByCreditNote.setFacturaElectronicaMensual(facturaElectronicaMensualToBeOffset);
                         loanInvoiceOffsetByCreditNote.adjustPortionByConcept(loanDocumentConcept, invoiceAmountToBeOffset);
-                        loanInvoiceOffsetByCreditNote.setInterestPortion(invoiceAmountToBeOffset);
                         loanInvoiceOffsetByCreditNote.setActive(true);
                         loanCreditNote.getLoanInvoiceOffsetByCreditNoteSet().add(loanInvoiceOffsetByCreditNote);
                         final FacturaElectronicaMensual creditNoteDocument = facturaElectronicaMensualToBeOffset.clone();
+                        creditNoteDocument.setId(null);
                         creditNoteDocument.setTip_doc(LoanDocumentData.LoanDocumentType.CREDIT_NOTE.getCode());
                         creditNoteDocument.setCosto_total(invoiceAmountToBeOffset);
                         creditNoteDocument.setPrecio_unitario(invoiceAmountToBeOffset);
                         creditNoteDocument.setNum_facafect(offsetInvoiceNumber);
                         creditNoteDocument.setFec_facafect(offsetInvoiceDate);
+                        creditNoteDocument.setFullyOffsetByCN(false);
                         this.facturaElectronicMensualRepository
                                 .saveAllAndFlush(List.of(facturaElectronicaMensualToBeOffset, creditNoteDocument));
                     } else {
@@ -391,11 +392,13 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                         loanInvoiceOffsetByCreditNote.setActive(true);
                         loanCreditNote.getLoanInvoiceOffsetByCreditNoteSet().add(loanInvoiceOffsetByCreditNote);
                         final FacturaElectronicaMensual creditNoteDocument = facturaElectronicaMensualToBeOffset.clone();
+                        creditNoteDocument.setId(null);
                         creditNoteDocument.setTip_doc(LoanDocumentData.LoanDocumentType.CREDIT_NOTE.getCode());
                         creditNoteDocument.setCosto_total(creditNoteAmountToBeUsed);
                         creditNoteDocument.setPrecio_unitario(creditNoteAmountToBeUsed);
                         creditNoteDocument.setNum_facafect(offsetInvoiceNumber);
                         creditNoteDocument.setFec_facafect(offsetInvoiceDate);
+                        creditNoteDocument.setFullyOffsetByCN(false);
                         this.facturaElectronicMensualRepository
                                 .saveAllAndFlush(List.of(facturaElectronicaMensualToBeOffset, creditNoteDocument));
                         break;
@@ -408,10 +411,6 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
 
     @Override
     public void processInvoiceOffsetByCreditNote(final Long creditNoteId) {
-        /* TODO: This will be implemented next */
-        if (!creditNoteId.equals(0L)) {
-            return;
-        }
         final LoanCreditNote loanCreditNote = this.loanCreditNoteRepository.findById(creditNoteId)
                 .orElseThrow(() -> new LoanCreditNoteNotFoundException(creditNoteId));
         if (!loanCreditNote.isFullyUsedByInvoice()) {
