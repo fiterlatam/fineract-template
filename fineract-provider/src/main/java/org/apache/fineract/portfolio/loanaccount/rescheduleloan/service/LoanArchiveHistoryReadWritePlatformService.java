@@ -5,5 +5,5 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanArchiveHistoryData;
 
 public interface LoanArchiveHistoryReadWritePlatformService {
 
-    List<LoanArchiveHistoryData> getLoanArchiveCollectionData(long minLoanId, int limit);
+    List<LoanArchiveHistoryData> getLoanArchiveCollectionData(long minClientId, int limit);
 }

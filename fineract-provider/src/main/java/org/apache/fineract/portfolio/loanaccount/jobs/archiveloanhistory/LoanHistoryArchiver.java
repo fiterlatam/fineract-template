@@ -78,13 +78,6 @@ public class LoanHistoryArchiver {
                     final CollectionData collectionData = this.delinquencyReadPlatformService.calculateLoanCollectionData(loan.getId());
                     final Long daysInArrears = collectionData.getPastDueDays();
                     List<LoanRepaymentScheduleInstallment> currentInstallments = loan.getRepaymentScheduleInstallments();
-                    List<LoanTransaction> listTransactionLoan = loan.getLoanTransactions();
-                    Integer repaymentCount = 0;
-                    for (LoanTransaction detailTransaction : listTransactionLoan) {
-                        if (detailTransaction.getTypeOf().isRepayment()) {
-                            repaymentCount = repaymentCount + 1;
-                        }
-                    }
 
                     for (LoanRepaymentScheduleInstallment currentInstallment : currentInstallments) {
                         Collection<LoanCharge> mandatoryInsuranceCharges = loan.getLoanCharges().stream()
@@ -134,7 +127,7 @@ public class LoanHistoryArchiver {
                         mandatoryInsuranceAmount = mandatoryInsuranceAmount.add(mandatoryInsuranceTermChargeAmount);
                         voluntaryInsuranceAmount = voluntaryInsuranceAmount.add(voluntaryInsuranceTermChargeAmount);
                         avalAmount = avalAmount.add(avalTermChargeAmount);
-                        Integer numberReschedule = 0;
+                        int numberReschedule = 0;
 
                         for (LoanTermVariations termVariations : loan.getLoanTermVariations()) {
                             if (termVariations.getTermType().isRediferir() || termVariations.getTermType().isInterestRateVariation()
@@ -152,7 +145,6 @@ public class LoanHistoryArchiver {
                         String cityClient = " ";
                         String departamentoCity = " ";
                         String actividadLaboral = "";
-                        String parentescoFamiliar = "";
 
                         if (transaction != null) {
                             if (transaction.getPaymentDetail() != null) {
@@ -203,15 +195,6 @@ public class LoanHistoryArchiver {
                             if (getDepartamento.isPresent()) {
                                 CodeValue departamento = getDepartamento.get();
                                 departamentoCity = departamento.getLabel();
-                            }
-                        }
-
-                        if (dataLoan.getParentescoFamiliar() != null) {
-                            Optional<CodeValue> getParentesco = codeValueRepository
-                                    .findById(Long.valueOf(dataLoan.getParentescoFamiliar()));
-                            if (getParentesco.isPresent()) {
-                                CodeValue parentescoCode = getParentesco.get();
-                                parentescoFamiliar = parentescoCode.getLabel();
                             }
                         }
 
@@ -331,7 +314,6 @@ public class LoanHistoryArchiver {
                             loanArchiveHistory.setCreEstado(creEstad);
                             loanArchiveHistoryRepository.save(loanArchiveHistory);
                         }
-
                     }
                 }
             }

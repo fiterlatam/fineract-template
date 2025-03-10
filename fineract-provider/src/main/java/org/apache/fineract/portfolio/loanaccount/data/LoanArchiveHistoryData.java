@@ -2,6 +2,7 @@ package org.apache.fineract.portfolio.loanaccount.data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Objects;
 import lombok.*;
 
 @AllArgsConstructor
@@ -66,4 +67,16 @@ public class LoanArchiveHistoryData {
     private String celularReferencia;
     private String referencia;
     private String nitEmpresaAliada;
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        LoanArchiveHistoryData that = (LoanArchiveHistoryData) o;
+        return Objects.equals(numeroObligacion, that.numeroObligacion);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(numeroObligacion);
+    }
 }
