@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="fineract" id="1">
+        <sql>
+            <![CDATA[
+                DROP VIEW IF EXISTS vw_report_loan_creditnoteoutstandingamount;
+
+                CREATE OR REPLACE VIEW vw_report_loan_creditnoteoutstandingamount AS
+
+                -- Seguro Obrigatório + IVA
+                SELECT
+                      ml.id
+                    , 10 AS nr_order
+                    , '(+) Seguro Obrigatório + IVA' AS nm_group_charges
+                    , disbursedon_date AS fecha
+                    , fee_charges_charged_derived AS amount
+                FROM
+                    m_loan ml
+
+                UNION ALL
+
+                -- Credit Note
+                SELECT
+                      ml.loan_id
+                    , 20 AS nr_order
+                    , '(-) Credit Note' AS nm_group_charges
+                    , credit_note_date AS fecha
+                    , -1 * (total_amount - current_interest - arrear_interest) AS amount
+                FROM
+                    m_loan_credit_note ml
+                WHERE
+                    total_amount - current_interest - arrear_interest > 0
+
+                UNION ALL
+
+                -- Transaction
+                SELECT
+                      ml.loan_id
+                    , 30 AS nr_order
+                    , '(-) Transaction' AS nm_group_charges
+                    , ml.transaction_date AS fecha
+                    , -1 * (CASE
+                                WHEN transaction_type_enum = 29
+                                THEN fee_charges_portion_derived / 2
+                                ELSE fee_charges_portion_derived
+                             END) AS amount
+                FROM
+                    m_loan_transaction ml
+                WHERE
+                    is_reversed = FALSE
+                    AND transaction_type_enum IN (6, 29)
+                    AND fee_charges_portion_derived IS NOT NULL;
+
+
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

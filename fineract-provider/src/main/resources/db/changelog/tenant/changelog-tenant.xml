@@ -354,5 +354,6 @@
     <include file="parts/2025022412178000000_SU_600_add_job_params_for_factura_electronica_job.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025030314358000000_SU_600_add_indexes_to_speed_up_factura_query.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025030508468000000_SU_623_modify_c_facturacion_electronica.xml" relativeToChangelogFile="true"/>
-    <include file="parts/2025030508468100000_SU_622_modify_electronic_credit_note.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2025030808468000000_SU_676_vw_report_loan_creditnoteoutstandingamount.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2025030808468001000_SU_676_stretchy_report_loan_creditnoteoutstandingamount.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
