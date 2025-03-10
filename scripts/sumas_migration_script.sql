@@ -659,6 +659,7 @@ set
 		and mlrs.loan_id = ml.id
 );
 
+-- Run this query twice
 update m_loan
 set principal_outstanding_derived = principal_disbursed_derived - principal_repaid_derived,
 	interest_outstanding_derived = interest_charged_derived - interest_repaid_derived,
@@ -666,6 +667,13 @@ set principal_outstanding_derived = principal_disbursed_derived - principal_repa
 	penalty_charges_outstanding_derived = penalty_charges_charged_derived - penalty_charges_repaid_derived,
 	total_repayment_derived = principal_repaid_derived + interest_repaid_derived + fee_charges_repaid_derived + penalty_charges_repaid_derived,
 	total_outstanding_derived = principal_outstanding_derived + interest_outstanding_derived + fee_charges_outstanding_derived + penalty_charges_outstanding_derived;
+
+-- Check if any loans are fully paid but are still in active status
+select * from m_loan where total_outstanding_derived = 0 and loan_status_id = 300;
+
+-- If any exists, update the status and closed on date as below.
+-- update m_loan set loan_status_id = 600, closedon_date = '2025-03-01' where id = 249901;
+-- select * from m_loan_repayment_schedule mlrs where mlrs.loan_id = 249901 order by installment;
 
 -------------- Charge Payments -----------------------------
 -- insert m_loan_charge_paid_by
