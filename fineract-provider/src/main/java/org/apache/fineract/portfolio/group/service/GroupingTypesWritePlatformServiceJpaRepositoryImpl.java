@@ -1178,15 +1178,15 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
     private String resolveMeetingDay(String name) {
         switch (name) {
             case "Lunes":
-                return "BYDAY=MO";
-            case "Martes":
                 return "BYDAY=TU";
+            case "Martes":
+                return "TU";
             case "Miércoles":
-                return "BYDAY=WE";
+                return "WE";
             case "Jueves":
-                return "BYDAY=TH";
+                return "TH";
             case "Viernes":
-                return "BYDAY=FR";
+                return "FR";
             default:
                 return "BYDAY=MO";
         }
