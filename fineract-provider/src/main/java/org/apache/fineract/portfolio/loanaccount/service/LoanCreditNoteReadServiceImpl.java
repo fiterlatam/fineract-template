@@ -7,6 +7,7 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanCreditNoteData;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCreditNote;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCreditNoteRepository;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanCreditNoteNotFoundException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 public class LoanCreditNoteReadServiceImpl implements LoanCreditNoteReadService {
 
     private final LoanCreditNoteRepository loanCreditNoteRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public Collection<LoanCreditNoteData> retrieveAllCreditNotesForLoan(Long loanId) {
@@ -30,5 +32,14 @@ public class LoanCreditNoteReadServiceImpl implements LoanCreditNoteReadService 
             return creditNote.toData();
         }
         throw new LoanCreditNoteNotFoundException(creditNoteId, loanId);
+    }
+
+    @Override
+    public List<Long> retrieveCreditNoteIdsForInvoiceProcessing() {
+        final String sql = """
+                select id FROM m_loan_credit_note mlcn
+                WHERE mlcn.is_fully_used_by_invoice = ?;
+                """;
+        return this.jdbcTemplate.queryForList(sql, Long.class, false);
     }
 }

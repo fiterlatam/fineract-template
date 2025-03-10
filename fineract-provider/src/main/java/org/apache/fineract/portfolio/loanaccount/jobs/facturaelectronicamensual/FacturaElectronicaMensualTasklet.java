@@ -37,6 +37,8 @@ import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanCreditNoteReadService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanCreditNoteWriteService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -60,6 +62,8 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
     private final ClientReadPlatformService clientReadPlatformService;
     private boolean dataFetched = false;
     private final ConfigurationDomainService configurationDomainService;
+    private final LoanCreditNoteReadService loanCreditNoteReadService;
+    private final LoanCreditNoteWriteService loanCreditNoteWriteService;
 
     @Override
     public RepeatStatus execute(@NotNull StepContribution contribution, @NotNull ChunkContext chunkContext) throws Exception {
@@ -83,7 +87,7 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
             List<Long> clientIds = this.clientReadPlatformService.retrieveClientIdsForInvoiceProcessing(maxClientIdInList,
                     secondLastDayOfMonth, pageSize);
             log.info("Fetched client_ids with count of: {}", clientIds.size());
-            if (clientIds != null && !clientIds.isEmpty()) {
+            if (!clientIds.isEmpty()) {
                 clientIds = Collections.synchronizedList(clientIds);
                 long finish = System.currentTimeMillis();
                 log.debug("Done fetching client_ids within {} milliseconds", finish - start);
@@ -99,9 +103,17 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                     } while (!CollectionUtils.isEmpty(queue));
                 }
             }
+            this.processInvoicesOffsetByCreditNotes();
         }
         log.info("Completed FacturaElectronicaMensualTasklet job for the date: {}", businessLocalDate);
         return RepeatStatus.FINISHED;
+    }
+
+    private void processInvoicesOffsetByCreditNotes() {
+        List<Long> creditNoteIdsForProcessing = this.loanCreditNoteReadService.retrieveCreditNoteIdsForInvoiceProcessing();
+        log.info("Processing invoices offset by creditNoteIds with count of: {}", creditNoteIdsForProcessing.size());
+        creditNoteIdsForProcessing.forEach(this.loanCreditNoteWriteService::processInvoiceOffsetByCreditNote);
+        log.info("Completed processing invoices offset by creditNoteIds");
     }
 
     private void processInvoices(List<Long> clientIdList, int threadPoolSize, LocalDate secondLastDayOfMonth, int pageSize,

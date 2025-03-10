@@ -368,7 +368,6 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                         loanInvoiceOffsetByCreditNote.setLoanCreditNote(loanCreditNote);
                         loanInvoiceOffsetByCreditNote.setFacturaElectronicaMensual(facturaElectronicaMensualToBeOffset);
                         loanInvoiceOffsetByCreditNote.adjustPortionByConcept(loanDocumentConcept, invoiceAmountToBeOffset);
-                        loanInvoiceOffsetByCreditNote.setInterestPortion(invoiceAmountToBeOffset);
                         loanInvoiceOffsetByCreditNote.setActive(true);
                         loanCreditNote.getLoanInvoiceOffsetByCreditNoteSet().add(loanInvoiceOffsetByCreditNote);
                         final FacturaElectronicaMensual creditNoteDocument = facturaElectronicaMensualToBeOffset.clone();
@@ -378,6 +377,7 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                         creditNoteDocument.setPrecio_unitario(invoiceAmountToBeOffset);
                         creditNoteDocument.setNum_facafect(offsetInvoiceNumber);
                         creditNoteDocument.setFec_facafect(offsetInvoiceDate);
+                        creditNoteDocument.setFullyOffsetByCN(false);
                         this.facturaElectronicMensualRepository
                                 .saveAllAndFlush(List.of(facturaElectronicaMensualToBeOffset, creditNoteDocument));
                     } else {
@@ -398,6 +398,7 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                         creditNoteDocument.setPrecio_unitario(creditNoteAmountToBeUsed);
                         creditNoteDocument.setNum_facafect(offsetInvoiceNumber);
                         creditNoteDocument.setFec_facafect(offsetInvoiceDate);
+                        creditNoteDocument.setFullyOffsetByCN(false);
                         this.facturaElectronicMensualRepository
                                 .saveAllAndFlush(List.of(facturaElectronicaMensualToBeOffset, creditNoteDocument));
                         break;
