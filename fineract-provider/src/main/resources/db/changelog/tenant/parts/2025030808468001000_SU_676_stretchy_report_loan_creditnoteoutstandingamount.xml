@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="fineract" id="1">
+        <sql>
+            <![CDATA[
+                INSERT INTO stretchy_report
+                (report_name, report_type, report_subtype, report_category, report_sql, description, core_report, use_report, self_service_user_report)
+                VALUES('Loan Outstanding Seguro Obrigatorio', 'Table', NULL, 'Loan', 'SELECT loan_id, transaction_date, type, amount FROM ( SELECT id as loan_id, nr_order, nm_group_charges as type, fecha as transaction_date, amount FROM vw_report_loan_creditnoteoutstandingamount WHERE id IN (${loanIds}) UNION ALL SELECT NULL, 90 AS nr_order, ''--------------------------------------------------------------'', CURRENT_DATE, NULL UNION ALL SELECT id, 100 AS nr_order, ''(=) TOTAL OUTSTANDING'', CURRENT_DATE, SUM(amount) FROM vw_report_loan_creditnoteoutstandingamount WHERE id in (${loanIds}) GROUP BY id ) AS qry ORDER BY nr_order', 'Seguro Obrigatorio Usage', false, true, false);
+
+                INSERT INTO stretchy_report_parameter
+                (report_id, parameter_id, report_parameter_name, mandatory_parameter)
+                VALUES((SELECT id FROM stretchy_report where report_name = 'Loan Outstanding Seguro Obrigatorio'), 1034, 'loanIds', true);
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

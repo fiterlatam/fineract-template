@@ -230,10 +230,18 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                             loanCharge -> Objects.equals(insuranceCharge.getCharge().getId(), loanCharge.getCharge().getParentChargeId()))
                             .findFirst().orElse(null);
                     if (vatCharge != null && loanInstallmentCharge != null && vatCharge.getInstallmentLoanCharge(1) != null) {
-                        final LoanInstallmentCharge vatInstallmentCharge = vatCharge.getInstallmentLoanCharge(1);
-                        final BigDecimal divider = loanInstallmentCharge.getAmount().add(vatInstallmentCharge.getAmount());
-                        final BigDecimal vatChargePortion = vatInstallmentCharge.getAmount().multiply(mandatoryInsurance).divide(divider,
-                                RoundingMode.HALF_UP);
+                        BigDecimal vatChargePortion = currentOutstandingLoanCharges.stream()
+                                .filter(loanCharge -> loanCharge.getChargeId().compareTo(vatCharge.getCharge().getId()) == 0)
+                                .map(lc -> lc.getAmountOutstanding()).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                        // If charge is already calculated in DB, use it instead of recalculate
+                        if (BigDecimal.ZERO.compareTo(vatChargePortion) == 0) {
+                            final LoanInstallmentCharge vatInstallmentCharge = vatCharge.getInstallmentLoanCharge(1);
+                            final BigDecimal divider = loanInstallmentCharge.getAmount().add(vatInstallmentCharge.getAmount());
+                            vatChargePortion = vatInstallmentCharge.getAmount().multiply(mandatoryInsurance).divide(divider,
+                                    RoundingMode.HALF_UP);
+                        }
+
                         final BigDecimal chargePortion = mandatoryInsurance.subtract(vatChargePortion);
                         charges.add(Map.of("chargeId", Objects.requireNonNull(insuranceCharge.getCharge().getId()), "writeOffAmount",
                                 chargePortion));
