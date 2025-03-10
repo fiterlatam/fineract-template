@@ -372,6 +372,7 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                         loanInvoiceOffsetByCreditNote.setActive(true);
                         loanCreditNote.getLoanInvoiceOffsetByCreditNoteSet().add(loanInvoiceOffsetByCreditNote);
                         final FacturaElectronicaMensual creditNoteDocument = facturaElectronicaMensualToBeOffset.clone();
+                        creditNoteDocument.setId(null);
                         creditNoteDocument.setTip_doc(LoanDocumentData.LoanDocumentType.CREDIT_NOTE.getCode());
                         creditNoteDocument.setCosto_total(invoiceAmountToBeOffset);
                         creditNoteDocument.setPrecio_unitario(invoiceAmountToBeOffset);
@@ -391,6 +392,7 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                         loanInvoiceOffsetByCreditNote.setActive(true);
                         loanCreditNote.getLoanInvoiceOffsetByCreditNoteSet().add(loanInvoiceOffsetByCreditNote);
                         final FacturaElectronicaMensual creditNoteDocument = facturaElectronicaMensualToBeOffset.clone();
+                        creditNoteDocument.setId(null);
                         creditNoteDocument.setTip_doc(LoanDocumentData.LoanDocumentType.CREDIT_NOTE.getCode());
                         creditNoteDocument.setCosto_total(creditNoteAmountToBeUsed);
                         creditNoteDocument.setPrecio_unitario(creditNoteAmountToBeUsed);
@@ -408,10 +410,6 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
 
     @Override
     public void processInvoiceOffsetByCreditNote(final Long creditNoteId) {
-        /* TODO: This will be implemented next */
-        if (!creditNoteId.equals(0L)) {
-            return;
-        }
         final LoanCreditNote loanCreditNote = this.loanCreditNoteRepository.findById(creditNoteId)
                 .orElseThrow(() -> new LoanCreditNoteNotFoundException(creditNoteId));
         if (!loanCreditNote.isFullyUsedByInvoice()) {

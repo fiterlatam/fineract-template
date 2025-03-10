@@ -4077,7 +4077,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         	COALESCE(SUM(miobcn.amount), 0) AS "offsetAmount"
                         FROM c_facturacion_electronica cfe
                         LEFT JOIN m_invoice_offset_by_credit_note miobcn ON (miobcn.invoice_id = cfe.id AND miobcn.is_active = FALSE)
-                        WHERE cfe.id_cliente = :idCliente AND cfe.tipo_prod = :tipoProd AND cfe.is_fully_offset_by_cn = FALSE  AND cfe.sku = :sku
+                        WHERE cfe.id_cliente = :idCliente
+                            AND cfe.tipo_prod = :tipoProd
+                            AND cfe.is_fully_offset_by_cn = FALSE
+                            AND cfe.sku = :sku
+                            AND cfe.tip_doc = 'INVOIC' 
                         GROUP BY cfe.id
 
                     """;

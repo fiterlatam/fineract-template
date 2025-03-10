@@ -47,8 +47,17 @@ public class LoanInvoiceOffsetByCreditNote extends AbstractAuditableWithUTCDateT
     @Column(name = "is_active")
     private boolean isActive;
 
+    private void resetAllPortions() {
+        this.interestPortion = BigDecimal.ZERO;
+        this.penaltyPortion = BigDecimal.ZERO;
+        this.honorariosPortion = BigDecimal.ZERO;
+        this.mandatoryInsurancePortion = BigDecimal.ZERO;
+        this.voluntaryInsurancePortion = BigDecimal.ZERO;
+    }
+
     public void adjustPortionByConcept(final LoanDocumentConcept loanDocumentConcept, final BigDecimal amountToBeOffset) {
         this.amount = amountToBeOffset;
+        this.resetAllPortions();
         switch (loanDocumentConcept) {
             case INT_CORRIENTE:
                 this.interestPortion = amountToBeOffset;
