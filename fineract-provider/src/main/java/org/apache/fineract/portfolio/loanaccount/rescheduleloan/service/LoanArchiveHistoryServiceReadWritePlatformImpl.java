@@ -28,7 +28,7 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
 
     private static final class ClientLoanArchiveHistoryMaper implements RowMapper<LoanArchiveHistoryData> {
 
-        public String schema() {
+        public String schema(String clientFilter) {
             return "WITH RankedReasons AS (\n" + "    SELECT mcbr.client_id, \n" + "           mbrs.name_of_reason, \n"
                     + "           mbrs.priority,\n"
                     + "           ROW_NUMBER() OVER (PARTITION BY mcbr.client_id ORDER BY mbrs.priority ASC) AS row_num\n"
@@ -71,7 +71,7 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
                     + "            LEFT(LPAD(code_score::TEXT, 5, '0'), 2)::INTEGER::VARCHAR\n" + "        ELSE \n"
                     + "            LEFT(LPAD(code_score::TEXT, 5, '0'), 2)\n" + "    END as departement_id\n"
                     + "\tfrom  m_code_value  ciudad where ciudad.code_id =41\n" + "    ) mcv on mcv.id= ccp.\"Ciudad_cd_Ciudad\" "
-                    + "WHERE total_outstanding_derived > 0  \n" + "  and loan_status_id IN (300, 700)\n" + "  AND ml.id > ?\n"
+                    + "WHERE total_outstanding_derived > 0  \n" + "  and loan_status_id IN (300, 700)\n" + clientFilter + "\n"
                     + "ORDER BY mc.id, ml.id DESC LIMIT ?\n";
         }
 
@@ -97,9 +97,27 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
     }
 
     @Override
-    public List<LoanArchiveHistoryData> getLoanArchiveCollectionData(long minLoanId, int limit) {
+    public List<LoanArchiveHistoryData> getLoanArchiveCollectionData(long minClientId, int limit) {
         final LoanArchiveHistoryServiceReadWritePlatformImpl.ClientLoanArchiveHistoryMaper rm = new LoanArchiveHistoryServiceReadWritePlatformImpl.ClientLoanArchiveHistoryMaper();
-        final String sql = rm.schema() + " ";
-        return this.jdbcTemplate.query(sql, rm, minLoanId, limit);
+        String clientIdOffset = "AND mc.id > ?";
+        String clientFilter = "AND mc.id = ?";
+        String sql = rm.schema(clientIdOffset);
+        List<LoanArchiveHistoryData> loanArchiveHistoryDataList = this.jdbcTemplate.query(sql, rm, minClientId, limit);
+        if (!loanArchiveHistoryDataList.isEmpty()) {
+            sql = sql.replace(clientIdOffset, clientFilter);
+            this.addOtherClientLoansToList(loanArchiveHistoryDataList, sql, rm, limit);
+        }
+        return loanArchiveHistoryDataList;
+    }
+
+    private void addOtherClientLoansToList(List<LoanArchiveHistoryData> loanArchiveHistoryDataList, String sql,
+            LoanArchiveHistoryServiceReadWritePlatformImpl.ClientLoanArchiveHistoryMaper rm, int limit) {
+        long lastClientId = loanArchiveHistoryDataList.get(loanArchiveHistoryDataList.size() - 1).getIdentificacion();
+        List<LoanArchiveHistoryData> otherClientLoans = this.jdbcTemplate.query(sql, rm, lastClientId, limit);
+        for (LoanArchiveHistoryData loan : otherClientLoans) {
+            if (!loanArchiveHistoryDataList.contains(loan)) {
+                loanArchiveHistoryDataList.add(loan);
+            }
+        }
     }
 }
