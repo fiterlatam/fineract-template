@@ -119,7 +119,7 @@ public class LoanRejectionGuaranteeEventProcessor extends BaseCustomWebhookEvent
         try {
             String query = """
                     SELECT *, fn_core_codevalue_getdescription("Tipo Garantía_cd_Tipo Garantía") AS tipo_garantia
-                    FROM "Detalle garantía"
+                    FROM "Detalle garantia"
                     WHERE loan_id = ?
                     """;
 
