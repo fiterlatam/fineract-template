@@ -389,4 +389,5 @@
     <include file="parts/202502252000001000_EA_29_webhook_loan_disbursement_approvedamountavailable.xml" relativeToChangelogFile="true" />
     <include file="parts/202502252000003000_EA_32_webhook_disbursement_creditorotativo_amountavailable.xml" relativeToChangelogFile="true" />
     <include file="parts/2025030323288000001_feature_EA_039.xml" relativeToChangelogFile="true" />
+    <include file="parts/202503112000001000_EA_237_remove_disabled_products.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>
