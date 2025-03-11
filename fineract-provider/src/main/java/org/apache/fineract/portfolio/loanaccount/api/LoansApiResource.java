@@ -1513,7 +1513,7 @@ public class LoansApiResource {
 
         // Check here if there is any pending reschedule request associated with this Credito Rotativo and approve it.
         if (CommandParameterUtil.is(commandParam, DISBURSE_ACTION)) {
-            loanWritePlatformService.approveRescheduleRequest(loanId, result.getResourceId(), null);
+            loanWritePlatformService.approveRescheduleRequest(resolvedLoanId, result.getResourceId(), null);
         }
 
         return this.toApiJsonSerializer.serialize(result);
