@@ -115,6 +115,30 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
         if (claimType != null && claimType.equalsIgnoreCase("guarantor")) {
             return;
         }
+
+        // Check if there are any interest rate changes on or before the accrual date
+        // If so, we need to make sure we're using the correct interest rate
+        LoanTermVariationsData interestRateChange = this.getLoanTermVariationsDataFor(loanId, accrualDate);
+        if (interestRateChange != null && interestRateChange.getDecimalValue() != null) {
+            log.info("Loan {} has interest rate change applicable from {} with rate {}. Accrual date: {}", loan.getId(),
+                    interestRateChange.getTermVariationApplicableFrom(), interestRateChange.getDecimalValue(), accrualDate);
+        }
+
+        // Check if there are any special write-off or Credit Note transactions on the accrual date
+        // If so, we need to make sure we're using the correct principal balance
+        boolean hasSpecialWriteOffOrCreditNoteOnAccrualDate = loan.getLoanTransactions().stream().anyMatch(
+                transaction -> (transaction.isSpecialWriteOff() || transaction.getTypeOf().equals(LoanTransactionType.CREDIT_NOTE))
+                        && !transaction.isReversed() && transaction.getTransactionDate().isEqual(accrualDate));
+
+        // If there are special write-off or Credit Note transactions on the accrual date,
+        // we need to refresh the loan to ensure we have the most up-to-date principal balance
+        if (hasSpecialWriteOffOrCreditNoteOnAccrualDate) {
+            log.info("Loan {} has special write-off or Credit Note transactions on accrual date {}. Refreshing loan data.", loan.getId(),
+                    accrualDate);
+            // Force a refresh of the loan to ensure we have the most up-to-date data
+            this.loanRepository.saveAndFlush(loan);
+        }
+
         final Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
                 .retriveMinimumDaysInArrearsToSuspendLoanAccount();
         LocalDate lastInterestAccrualDate = loan.getInterestAccruedTill() != null ? loan.getInterestAccruedTill()
@@ -138,7 +162,52 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
         final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
         BigDecimal dailyAccrualInterest = null;
         Integer accrualInstallmentNumber = null;
-        Money principalLoanBalanceOutstanding = loan.getPrincipal();
+
+        // Use the actual outstanding principal balance from the loan
+        // This will reflect any payments made against the principal, including special write-offs and Credit Notes
+        Money principalLoanBalanceOutstanding = Money.of(currency, loan.getLoanSummary().getTotalPrincipalOutstanding());
+
+        // Check if the loan has any special write-off or Credit Note transactions on or before the accrual date
+        // If so, we need to make sure we're using the correct principal balance
+        List<LoanTransaction> specialWriteOffOrCreditNoteTransactions = loan.getLoanTransactions().stream()
+                .filter(transaction -> (transaction.isSpecialWriteOff() || transaction.getTypeOf().equals(LoanTransactionType.CREDIT_NOTE))
+                        && !transaction.isReversed() && !transaction.getTransactionDate().isAfter(accrualDate))
+                .sorted((t1, t2) -> t2.getTransactionDate().compareTo(t1.getTransactionDate())) // Sort by date
+                                                                                                // descending (most
+                                                                                                // recent first)
+                .collect(java.util.stream.Collectors.toList());
+
+        if (!specialWriteOffOrCreditNoteTransactions.isEmpty()) {
+            log.debug("Loan {} has {} special write-off or Credit Note transactions. Using actual outstanding principal: {}", loan.getId(),
+                    specialWriteOffOrCreditNoteTransactions.size(), principalLoanBalanceOutstanding.getAmount());
+
+            // If the principal balance is zero after a special write-off or Credit Note, skip accrual calculations
+            if (principalLoanBalanceOutstanding.isZero()) {
+                log.debug("Loan {} has zero principal balance after special write-off or Credit Note. Skipping accrual calculation.",
+                        loan.getId());
+                loan.setInterestAccruedTill(accrualDate);
+                this.loanRepository.saveAndFlush(loan);
+                return;
+            }
+
+            // Force a refresh of the loan summary to ensure we have the most up-to-date principal balance
+            // This is especially important when multiple special write-off transactions occur
+            loan = this.loanAssembler.assembleFrom(loan.getId());
+            principalLoanBalanceOutstanding = Money.of(currency, loan.getLoanSummary().getTotalPrincipalOutstanding());
+            log.debug("Refreshed loan summary for loan {}. Updated outstanding principal: {}", loan.getId(),
+                    principalLoanBalanceOutstanding.getAmount());
+        }
+
+        // Get the applicable interest rate for the accrual date
+        // This ensures we're using the correct interest rate after any rate changes
+        LoanTermVariationsData interestRateChange = this.getLoanTermVariationsDataFor(loan.getId(), accrualDate);
+        BigDecimal annualNominalInterestRate = loan.getLoanRepaymentScheduleDetail().getAnnualNominalInterestRate();
+        if (interestRateChange != null && interestRateChange.getDecimalValue() != null) {
+            annualNominalInterestRate = interestRateChange.getDecimalValue();
+            log.debug("Using interest rate {} for loan {} on accrual date {} (rate change applicable from {})", annualNominalInterestRate,
+                    loan.getId(), accrualDate, interestRateChange.getTermVariationApplicableFrom());
+        }
+
         for (final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : repaymentScheduleInstallments) {
             if (!accrualDate.isBefore(loanRepaymentScheduleInstallment.getFromDate())
                     && !accrualDate.isAfter(loanRepaymentScheduleInstallment.getDueDate().minusDays(1))) {
@@ -146,16 +215,16 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
                         .getAccruedInterestForInstallment(loanRepaymentScheduleInstallment.getInstallmentNumber());
                 LocalDate periodStartDate = loanRepaymentScheduleInstallment.getFromDate();
                 LocalDate periodEndDate = accrualDate;
-                LoanTermVariationsData loanTermVariationsData = this.getLoanTermVariationsDataFor(loan.getId(), periodEndDate);
-                BigDecimal annualNominalInterestRate = loan.getLoanRepaymentScheduleDetail().getAnnualNominalInterestRate();
-                if (loanTermVariationsData != null && loanTermVariationsData.getDecimalValue() != null
-                        && loan.getLoanRepaymentScheduleDetail().getAnnualNominalInterestRate() != null) {
-                    annualNominalInterestRate = loanTermVariationsData.getDecimalValue();
-                    final LocalDate termVariationApplicableFromDate = loanTermVariationsData.getTermVariationApplicableFrom();
+
+                // We've already retrieved the interest rate change above, so we don't need to do it again here
+                // Just use the periodStartDate adjustment logic if needed
+                if (interestRateChange != null && interestRateChange.getDecimalValue() != null) {
+                    final LocalDate termVariationApplicableFromDate = interestRateChange.getTermVariationApplicableFrom();
                     if (DateUtils.isAfter(termVariationApplicableFromDate, periodStartDate)) {
                         periodStartDate = termVariationApplicableFromDate;
                     }
                 }
+
                 final ScheduleGeneratorDTO scheduleGeneratorDTO = loanUtilService.buildScheduleGeneratorDTO(loan, null);
                 final LoanApplicationTerms loanApplicationTerms = loan.constructLoanApplicationTerms(scheduleGeneratorDTO);
                 loanApplicationTerms.updateAnnualNominalInterestRate(annualNominalInterestRate);
@@ -165,8 +234,11 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
                 if (DateUtils.isEqual(periodStartDate, periodEndDate)) {
                     periodEndDate = periodEndDate.plusDays(1);
                 }
-                final Money principalAccountedFor = loanRepaymentScheduleInstallment.getPrincipalAccountedFor(currency);
-                principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(principalAccountedFor);
+
+                // We no longer need to adjust the principal balance here since we're using the actual outstanding
+                // balance
+                // from the loan summary
+
                 final boolean ignoreCurrencyDigitsAfterDecimal = false;
                 final PrincipalInterest principalInterest = loanScheduleGenerator.calculatePrincipalInterestComponents(
                         principalLoanBalanceOutstanding, loanApplicationTerms, periodNumber, periodStartDate, periodEndDate,
@@ -180,9 +252,6 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
                 loanRepaymentScheduleInstallment.setInterestAccrued(accruedInterest);
                 accrualInstallmentNumber = loanRepaymentScheduleInstallment.getInstallmentNumber();
                 break;
-            } else {
-                final Money principalAccountedFor = loanRepaymentScheduleInstallment.getPrincipalAccountedFor(currency);
-                principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(principalAccountedFor);
             }
         }
 
@@ -206,8 +275,12 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
     }
 
     private LoanTermVariationsData getLoanTermVariationsDataFor(Long loanId, LocalDate periodEndDate) {
+        // Modified query to order by applicable_date in descending order to get the most recent applicable interest
+        // rate
+        // This ensures that we get the correct interest rate for the accrual date, even if there are multiple rate
+        // changes
         String query = "select decimal_value, applicable_date, is_specific_to_installment from m_loan_term_variations where loan_id = ? "
-                + " and applicable_date <= ? order by last_modified_on_utc desc";
+                + " and applicable_date <= ? order by applicable_date desc";
         List<LoanTermVariationsData> results = this.jdbcTemplate.query(query, (rs, rowNum) -> {
             final BigDecimal decimalValue = rs.getBigDecimal("decimal_value");
             final LocalDate applicableDate = JdbcSupport.getLocalDate(rs, "applicable_date");
@@ -217,7 +290,13 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
         if (results.isEmpty()) {
             return null;
         }
-        return results.get(0);
+
+        // Log the interest rate change for debugging
+        LoanTermVariationsData result = results.get(0);
+        log.debug("Loan {} has interest rate change applicable from {} with rate {}", loanId, result.getTermVariationApplicableFrom(),
+                result.getDecimalValue());
+
+        return result;
     }
 
     private long getDaysInArrears(final Long loanId) {
