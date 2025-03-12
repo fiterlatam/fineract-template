@@ -283,9 +283,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 .divide(BigDecimal.ONE.add(delinquencyRate.multiply(BigDecimal.ONE.add(vatPercentage))), 2, MoneyHelper.getRoundingMode());
         BigDecimal feeWithTax = delinquentPortion.multiply(delinquencyRate.multiply(BigDecimal.ONE.add(vatPercentage))).setScale(0,
                 RoundingMode.HALF_UP);
-        BigDecimal feeBasis = feeWithTax.divide(BigDecimal.ONE.add(vatPercentage), 0, RoundingMode.HALF_UP);
-        BigDecimal feeVat = feeWithTax.subtract(feeBasis).setScale(0, RoundingMode.HALF_UP);
-        BigDecimal feeHono = feeVat.add(feeBasis).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal feeBasis = feeWithTax.divide(BigDecimal.ONE.add(vatPercentage), 2, RoundingMode.HALF_UP);
+        BigDecimal feeVat = feeWithTax.subtract(feeBasis).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal feeHono = feeVat.add(feeBasis).setScale(2, RoundingMode.HALF_UP);
         // Return results as an object
         return new FeeCalculationHonorario(delinquentPortion, feeWithTax, feeBasis, feeVat, feeHono);
     }

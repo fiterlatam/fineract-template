@@ -1324,7 +1324,7 @@ public final class LoanApplicationTerms {
                 periodStartDate, periodEndDate, useDailyInterestCalculation);
         BigDecimal dueInterest = outstandingBalance.getAmount().multiply(periodicInterestRate);
         if (!ignoreCurrencyDigitsAfterDecimal) {
-            dueInterest = dueInterest.setScale(0, RoundingMode.HALF_UP);
+            dueInterest = dueInterest.setScale(2, RoundingMode.HALF_UP);
         }
         interestDue = interestDue.add(dueInterest);
         return interestDue;

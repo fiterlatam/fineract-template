@@ -1454,7 +1454,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 installmentCount = BigDecimal.ONE;
             }
 
-            BigDecimal finalAmount = computedAmount.divide(installmentCount, 0, RoundingMode.HALF_UP);
+            BigDecimal finalAmount = computedAmount.divide(installmentCount, 2, RoundingMode.HALF_UP);
             customAmout = customAmout.add(finalAmount);
         }
         return customAmout;
