@@ -1208,7 +1208,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
 
             BigDecimal computedAmount = LoanCharge.percentageOf(percentOf.getAmount(), percentage);
-            BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 0, RoundingMode.HALF_UP);
+            BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 2, RoundingMode.HALF_UP);
             amount = amount.plus(finalAmount);
             return amount.getAmount();
         }
@@ -1260,7 +1260,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         BigDecimal computedAmount = LoanCharge.percentageOf(percentOf.getAmount(), percentage);
         BigDecimal finalAmount = computedAmount;
         if (numberOfInstallments.compareTo(BigDecimal.ZERO) > 0) {
-            finalAmount = computedAmount.divide(numberOfInstallments, 0, RoundingMode.HALF_UP);
+            finalAmount = computedAmount.divide(numberOfInstallments, 2, RoundingMode.HALF_UP);
         }
         return amount.plus(finalAmount);
     }
@@ -1299,7 +1299,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (loanCharge != null && loanCharge.isVatChargeOfHonoCharge()) {
                 amount = amount.plus(Money.of(getCurrency(), loanCharge.getVatAmountOfHonoCharge(installment.getInstallmentNumber())));
             } else {
-                amount = amount.plus(percentOf.getAmount().multiply(percentage).divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP));
+                amount = amount.plus(percentOf.getAmount().multiply(percentage).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
             }
         } else if (calculationType.isCustomPercentageOfOutstandingPrincipalCharge()) {
             Integer numberOfRepayments = this.getLoanProductRelatedDetail().getNumberOfRepayments();
@@ -1317,7 +1317,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 numberOfInstallments = BigDecimal.ONE;
             }
 
-            BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 0, RoundingMode.HALF_UP);
+            BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 2, RoundingMode.HALF_UP);
             amount = amount.plus(finalAmount);
         }
         return amount;
