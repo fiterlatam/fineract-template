@@ -12,6 +12,8 @@ import java.time.OffsetDateTime;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.portfolio.loanproductparameterization.domain.LoanProductParameterization;
 
 @Entity
 @Table(name = "c_facturacion_electronica")
@@ -313,5 +315,20 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
         }
+    }
+
+    public void copyValuesFromProductParameterization(final LoanProductParameterization loanProductParameterization) {
+        this.num_resolucion = String.valueOf(loanProductParameterization.getBillingResolutionNumber());
+        this.prefijo = loanProductParameterization.getBillingPrefix();
+        this.consecutivo_inicial = loanProductParameterization.getRangeStartNumber();
+        this.consecutivo_final = loanProductParameterization.getRangeEndNumber();
+        this.clave_tecnica = loanProductParameterization.getTechnicalKey();
+        this.nota = loanProductParameterization.getNote();
+        this.fec_desde = loanProductParameterization.getGenerationDate();
+        this.fec_hasta = loanProductParameterization.getExpirationDate();
+        this.fecha_factura = DateUtils.getBusinessLocalDate();
+        this.fecha_vence = DateUtils.getBusinessLocalDate();
+        this.fecha_inicial = DateUtils.getFirstDayOfCurrentMonth();
+        this.fecha_final = DateUtils.getLastDayOfCurrentMonth();
     }
 }
