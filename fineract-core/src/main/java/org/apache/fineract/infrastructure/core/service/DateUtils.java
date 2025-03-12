@@ -399,6 +399,14 @@ public final class DateUtils {
         return dateTime == null ? null : dateTime.format(getDateTimeFormatter(format, locale));
     }
 
+    public static LocalDate getFirstDayOfCurrentMonth() {
+        return getLocalDateOfTenant().withDayOfMonth(1);
+    }
+
+    public static LocalDate getLastDayOfCurrentMonth() {
+        return getLocalDateOfTenant().withDayOfMonth(getLocalDateOfTenant().lengthOfMonth());
+    }
+
     /**
      * Checks if a specific date falls within a given range (inclusive).
      *
