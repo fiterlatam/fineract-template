@@ -167,4 +167,18 @@
         </sql>
     </changeSet>
 
+    <changeSet author="danielsta@fiter.io" id="50">
+        <sql>
+            <![CDATA[
+
+                ALTER TABLE "Estado Cartera" ADD COLUMN periodo_gracia BOOLEAN DEFAULT false;
+                ALTER TABLE "Estado Cartera" ADD COLUMN cuota_periodo_gracia TEXT DEFAULT NULL;
+
+                COMMENT ON COLUMN "Estado Cartera".periodo_gracia IS 'Periodo de Gracia';
+                COMMENT ON COLUMN "Estado Cartera".cuota_periodo_gracia IS 'Cuota de periodo de gracia';
+
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
