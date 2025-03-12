@@ -508,13 +508,7 @@ from
 	tmp_creditos_migrar tcm
 	join campos_cliente_persona ccp on ccp."Cedula" = tcm.cli_nroid
 	join m_client mc on mc.id = ccp.client_id 
- 	join m_product_loan mpl on mpl.id = 
- 	case 
- 		when tcm.cre_producto_id = 52 then 1
- 		when tcm.cre_producto_id = 53 then 2
- 		when tcm.cre_producto_id = 54 then 3
- 		when tcm.cre_producto_id = 55 then 4
- 	end
+ 	join m_product_loan mpl on mpl.id = tcm.cre_producto_id
  	where
  	mc.office_id = 2
  	-- and tcm.nit = '800069933' and code = '2655' and cre_numerocredito = 208 and cli_nroid = '92541184'
@@ -763,14 +757,14 @@ update m_client set office_id = 1;
 
 -- Update interest_accrued_till date based on last payment date
 update m_loan ml
-set interest_accrued_till = txn.last_payment_date
+set interest_accrued_till = inst.last_accrual_date
 from
 (
-	select MAX(transaction_date) last_payment_date, loan_id from m_loan_transaction mlt
-	where mlt.transaction_type_enum = 2 and mlt.is_reversed = false
-	group by loan_id
-) txn
-where ml.id = txn.loan_id
+	select MAX(mlrs.duedate) last_accrual_date, mlrs.loan_id from m_loan_repayment_schedule mlrs
+	where mlrs.completed_derived = true and mlrs.obligations_met_on_date is not null
+	group by mlrs.loan_id
+) inst
+where ml.id = inst.loan_id
 
 
 --- POST MIGRATION VALIDATIONS -----
