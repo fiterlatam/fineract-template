@@ -107,4 +107,57 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="4">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan_credit_note" columnName="honorarios_vat"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan_credit_note">
+            <column name="honorarios_vat" type="decimal(19,6)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="5">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan_credit_note" columnName="mandatory_insurance_vat"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan_credit_note">
+            <column name="mandatory_insurance_vat" type="decimal(19,6)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="6">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan_credit_note" columnName="voluntary_insurance_vat"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan_credit_note">
+            <column name="voluntary_insurance_vat" type="decimal(19,6)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="fineract" id="7">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan_credit_note" columnName="penalty_vat"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="m_loan_credit_note">
+            <column name="penalty_vat" type="decimal(19,6)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+
 </databaseChangeLog>

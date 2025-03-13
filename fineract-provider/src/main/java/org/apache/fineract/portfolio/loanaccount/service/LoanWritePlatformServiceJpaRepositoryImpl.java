@@ -91,6 +91,7 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
+import org.apache.fineract.infrastructure.creditbureau.exception.CreditReportNotFoundException;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
@@ -307,6 +308,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final FacturaElectronicMensualRepository facturaElectronicMensualRepository;
     private final LoanProductParameterizationRepository productParameterizationRepository;
     private final CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
+    private final LoanCreditNoteRepository loanCreditNoteRepository;
 
     @PostConstruct
     public void registerForNotification() {
@@ -4216,7 +4218,22 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         public void onBusinessEvent(final LoanCreditNoteBusinessEvent event) {
             final LoanTransaction loanTransaction = event.get();
             if (loanTransaction != null) {
-                generateLoanTransactionDocument(loanTransaction);
+                addCreditNoteVatPortions(loanTransaction);
+            }
+        }
+    }
+
+    private void addCreditNoteVatPortions(final LoanTransaction creditNoteTransaction) {
+        if (creditNoteTransaction != null && creditNoteTransaction.isCreditNote()) {
+            final Long loanTransactionId = creditNoteTransaction.getId();
+            final List<LoanDocumentData> loanDocumentDataList = this.loanReadPlatformService
+                    .retrieveLoanInvoiceDataListByTransactionId(loanTransactionId);
+            if (!loanDocumentDataList.isEmpty()) {
+                final LoanDocumentData creditNoteTransactionData = loanDocumentDataList.get(0);
+                final LoanCreditNote loanCreditNote = loanCreditNoteRepository.findByTransactionId(loanTransactionId)
+                        .orElseThrow(() -> new CreditReportNotFoundException(loanTransactionId));
+                loanCreditNote.addPortionsFromLoanTransaction(creditNoteTransactionData);
+                loanCreditNoteRepository.saveAndFlush(loanCreditNote);
             }
         }
     }

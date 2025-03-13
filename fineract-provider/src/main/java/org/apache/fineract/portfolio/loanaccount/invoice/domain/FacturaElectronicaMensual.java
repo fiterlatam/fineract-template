@@ -319,7 +319,6 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
 
     public void copyValuesFromProductParameterization(final LoanProductParameterization loanProductParameterization) {
         this.num_resolucion = String.valueOf(loanProductParameterization.getBillingResolutionNumber());
-        this.prefijo = loanProductParameterization.getBillingPrefix();
         this.consecutivo_inicial = loanProductParameterization.getRangeStartNumber();
         this.consecutivo_final = loanProductParameterization.getRangeEndNumber();
         this.clave_tecnica = loanProductParameterization.getTechnicalKey();
