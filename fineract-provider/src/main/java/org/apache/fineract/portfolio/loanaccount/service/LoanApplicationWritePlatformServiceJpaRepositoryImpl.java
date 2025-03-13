@@ -303,7 +303,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 final JsonArray disbursementData = new JsonArray();
                 final JsonObject disbursementDataElement = new JsonObject();
                 disbursementDataElement.addProperty(EXPECTED_DISBURSEMENT_DATE_PARAM, expectedDisbursementDate);
-                disbursementDataElement.addProperty(PRINCIPAL_PARAM, BigDecimal.ONE.toString());
+
+                // Add principal amount to command
+                disbursementDataElement.addProperty(PRINCIPAL_PARAM,
+                        this.fromJsonHelper.extractStringNamed(LoanApiConstants.principalParamName, command.parsedJson()));
+
                 disbursementData.add(disbursementDataElement);
                 parsedCommand.add(DISBURSEMENT_DATA_PARAM, disbursementData);
 
