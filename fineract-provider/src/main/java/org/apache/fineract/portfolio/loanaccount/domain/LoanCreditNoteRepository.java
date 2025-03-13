@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.loanaccount.domain;
 
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
@@ -27,4 +28,6 @@ public interface LoanCreditNoteRepository extends JpaRepository<LoanCreditNote, 
     LoanCreditNote findByLoan_IdAndId(Long loanId, Long creditNoteId);
 
     List<LoanCreditNote> findByLoan_Id(Long loanId);
+
+    Optional<LoanCreditNote> findByTransactionId(Long transactionId);
 }

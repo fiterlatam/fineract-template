@@ -18,6 +18,7 @@ import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.documentmanagement.domain.Document;
 import org.apache.fineract.portfolio.loanaccount.data.LoanCreditNoteData;
+import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
 
 @Entity
 @Table(name = "m_loan_credit_note")
@@ -66,6 +67,18 @@ public class LoanCreditNote extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "is_fully_used_by_invoice")
     private boolean isFullyUsedByInvoice;
 
+    @Column(name = "mandatory_insurance_vat")
+    private BigDecimal mandatoryInsuranceVat;
+
+    @Column(name = "voluntary_insurance_vat")
+    private BigDecimal voluntaryInsuranceVat;
+
+    @Column(name = "honorarios_vat")
+    private BigDecimal honorariosVat;
+
+    @Column(name = "penalty_vat")
+    private BigDecimal penaltyVat;
+
     @OneToMany(mappedBy = "loanCreditNote", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<LoanInvoiceOffsetByCreditNote> loanInvoiceOffsetByCreditNoteSet = new HashSet<>();
 
@@ -99,4 +112,52 @@ public class LoanCreditNote extends AbstractAuditableWithUTCDateTimeCustom {
         this.mandatoryInsurance = BigDecimal.ZERO;
         this.arrearInterest = BigDecimal.ZERO;
     }
+
+    public void addPortionsFromLoanTransaction(final LoanDocumentData creditNoteTransactionData) {
+        this.arrearInterest = creditNoteTransactionData.getPenaltyChargesPaid();
+        this.penaltyVat = creditNoteTransactionData.getPenaltyChargesVatPaid();
+        this.honorarios = creditNoteTransactionData.getHonorariosPaid();
+        this.honorariosVat = creditNoteTransactionData.getHonorariosVatPaid();
+        this.insurance = creditNoteTransactionData.getVoluntaryInsurancePaid();
+        this.voluntaryInsuranceVat = creditNoteTransactionData.getVoluntaryInsuranceVatPaid();
+        this.mandatoryInsurance = creditNoteTransactionData.getMandatoryInsurancePaid();
+        this.mandatoryInsuranceVat = creditNoteTransactionData.getMandatoryInsuranceVatPaid();
+    }
+
+    public BigDecimal getArrearInterest() {
+        return this.arrearInterest == null ? BigDecimal.ZERO : this.arrearInterest;
+    }
+
+    public BigDecimal getCurrentInterest() {
+        return this.currentInterest == null ? BigDecimal.ZERO : this.currentInterest;
+    }
+
+    public BigDecimal getHonorarios() {
+        return this.honorarios == null ? BigDecimal.ZERO : this.honorarios;
+    }
+
+    public BigDecimal getInsurance() {
+        return this.insurance == null ? BigDecimal.ZERO : this.insurance;
+    }
+
+    public BigDecimal getMandatoryInsurance() {
+        return this.mandatoryInsurance == null ? BigDecimal.ZERO : this.mandatoryInsurance;
+    }
+
+    public BigDecimal getMandatoryInsuranceVat() {
+        return this.mandatoryInsuranceVat == null ? BigDecimal.ZERO : this.mandatoryInsuranceVat;
+    }
+
+    public BigDecimal getVoluntaryInsuranceVat() {
+        return this.voluntaryInsuranceVat == null ? BigDecimal.ZERO : this.voluntaryInsuranceVat;
+    }
+
+    public BigDecimal getHonorariosVat() {
+        return this.honorariosVat == null ? BigDecimal.ZERO : this.honorariosVat;
+    }
+
+    public BigDecimal getPenaltyVat() {
+        return this.penaltyVat == null ? BigDecimal.ZERO : this.penaltyVat;
+    }
+
 }
