@@ -33,7 +33,7 @@ public class UpdateLoanArrearsAgeingTasklet implements Tasklet {
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-        loanArrearsAgeingUpdateHandler.updateLoanArrearsAgeingDetailsForAllLoans();
+        loanArrearsAgeingUpdateHandler.updateLoanArrearsAgeingDetailsForAllLoans(true);
         return RepeatStatus.FINISHED;
     }
 

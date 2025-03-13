@@ -67,7 +67,7 @@ public class LoanArrearsAgeingUpdateHandler {
     private final LoanRepositoryWrapper loanRepositoryWrapper;
     private final LoanBlockingReasonRepository loanBlockingReasonRepository;
 
-    private void truncateLoanArrearsAgingDetails() {
+    public void truncateLoanArrearsAgingDetails() {
         jdbcTemplate.execute("truncate table m_loan_arrears_aging");
     }
 
@@ -78,8 +78,10 @@ public class LoanArrearsAgeingUpdateHandler {
         }
     }
 
-    public void updateLoanArrearsAgeingDetailsForAllLoans() {
-        log.info("Starting Update Loan Arrears Ageing Job");
+    public void updateLoanArrearsAgeingDetailsForAllLoans(boolean updateStatuses) {
+        if (updateStatuses) {
+            log.info("Starting Update Loan Arrears Ageing Job");
+        }
         truncateLoanArrearsAgingDetails();
         String insertSQLStatement = buildQueryForInsertAgeingDetails(Boolean.TRUE);
         List<String> insertStatements = updateLoanArrearsAgeingDetailsWithOriginalScheduleForAllLoans();
@@ -93,13 +95,15 @@ public class LoanArrearsAgeingUpdateHandler {
             log.info("Records affected by updateLoanArrearsAgeingDetails: {}", result);
         }
 
-        log.info("Updating Client and Loan Statuses...");
-        handleBlockingAfterAreasAging();
-        handleUnBlockingAfterArrearsAging();
-        handleBlockingReasonCredit();
-        handleUnblockingReasonCreditAfterArrearsAging();
-        log.info("Done updating Client and Loan Statuses");
-        log.info("Update Loan Arrears Ageing Job is successfully completed");
+        if (updateStatuses) {
+            log.info("Updating Client and Loan Statuses...");
+            handleBlockingAfterAreasAging();
+            handleUnBlockingAfterArrearsAging();
+            handleBlockingReasonCredit();
+            handleUnblockingReasonCreditAfterArrearsAging();
+            log.info("Done updating Client and Loan Statuses");
+            log.info("Update Loan Arrears Ageing Job is successfully completed");
+        }
     }
 
     public void updateLoanArrearsAgeingDetails(List<Long> loanIdsForUpdate) {
