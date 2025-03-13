@@ -118,4 +118,16 @@
         </sql>
     </changeSet>
 
+    <changeSet author="danielsta@fiter.io" id="50">
+        <sql>
+            <![CDATA[
+
+            ALTER TABLE "Alianzas" ADD COLUMN loan_transaction_id TEXT DEFAULT NULL;
+
+            COMMENT ON COLUMN "Alianzas".loan_transaction_id IS 'Loan Transaction Id';
+
+        ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
