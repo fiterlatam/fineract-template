@@ -51,14 +51,12 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
         final int pageSize = batchSize * threadPoolSize;
         int maxClientIdInList = 0;
 
-        LocalDate accrualDate = DateUtils.getLocalDateOfTenant().minusDays(1);
-
         long start = System.currentTimeMillis();
         LocalDate archiveDate = DateUtils.getLocalDateOfTenant();
         log.info("Running Archivo de cartera for date: {}", archiveDate);
         log.info("Archivo de cartera: Removing old entries.");
         loanArchiveHistoryRepository.deleteAll();
-        log.debug("Reading Loans for archiving!");
+        log.info("Reading Loans for archiving!");
         List<LoanArchiveHistoryData> listLoan = loanArchiveHistoryService.getLoanArchiveCollectionData(maxClientIdInList, pageSize);
         if (listLoan != null && !listLoan.isEmpty()) {
             listLoan = Collections.synchronizedList(listLoan);
@@ -68,19 +66,16 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
 
             if (!CollectionUtils.isEmpty(queue)) {
                 do {
-                    int totalFilteredRecords = listLoan.size();
-                    log.debug("Starting Archivo de cartera - total records - {}", totalFilteredRecords);
                     List<LoanArchiveHistoryData> queueElement = queue.element();
                     maxClientIdInList = queueElement.get(queueElement.size() - 1).getIdentificacion();
-                    this.archiveLoans(queue.remove(), threadPoolSize, accrualDate, batchSize, maxClientIdInList);
+                    this.archiveLoans(queue.remove(), threadPoolSize, batchSize, maxClientIdInList);
                 } while (!CollectionUtils.isEmpty(queue));
             }
         }
         return RepeatStatus.FINISHED;
     }
 
-    private void archiveLoans(List<LoanArchiveHistoryData> loansForArchival, int threadPoolSize, LocalDate accrualDate, int pageSize,
-            int maxClientIdInList) {
+    private void archiveLoans(List<LoanArchiveHistoryData> loansForArchival, int threadPoolSize, int pageSize, int maxClientIdInList) {
         List<Callable<Void>> posters = new ArrayList<>();
         int fromIndex = 0;
         int size = loansForArchival.size();
@@ -91,7 +86,8 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
         }
 
         int toIndex = (batchSize > size - 1) ? size : batchSize;
-        while (toIndex < size && loansForArchival.get(toIndex - 1).equals(loansForArchival.get(toIndex))) {
+        while (toIndex < size
+                && loansForArchival.get(toIndex - 1).getIdentificacion().equals(loansForArchival.get(toIndex).getIdentificacion())) {
             toIndex++;
         }
         boolean lastBatch = false;
@@ -107,13 +103,14 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
             }
 
             while (queue.size() <= QUEUE_SIZE) {
-                log.debug("Fetching while threads are running!");
+                log.info("Fetching while threads are running!");
                 List<LoanArchiveHistoryData> loanArchiveHistoryData = Collections
                         .synchronizedList(this.loanArchiveHistoryService.getLoanArchiveCollectionData(maxId, pageSize));
                 if (loanArchiveHistoryData.isEmpty()) {
                     break;
                 }
                 maxId = loanArchiveHistoryData.get(loanArchiveHistoryData.size() - 1).getIdentificacion();
+                log.info("Add to the Queue");
                 queue.add(loanArchiveHistoryData);
             }
             return null;
@@ -148,13 +145,13 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
         }
 
         while (queue.size() <= QUEUE_SIZE) {
-            log.debug("Fetching while threads are running!..:: this is not supposed to run........");
+            log.info("Fetching while threads are running!..:: this is not supposed to run........");
             loansForArchival = Collections.synchronizedList(this.loanArchiveHistoryService.getLoanArchiveCollectionData(maxId, pageSize));
             if (loansForArchival.isEmpty()) {
                 break;
             }
             maxId = loansForArchival.get(loansForArchival.size() - 1).getIdentificacion();
-            log.debug("Add to the Queue");
+            log.info("Add to the Queue");
             queue.add(loansForArchival);
         }
 
