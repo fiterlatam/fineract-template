@@ -1,9 +1,8 @@
 package org.apache.fineract.portfolio.loanaccount.data;
 
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
 
 @NoArgsConstructor
 @AllArgsConstructor

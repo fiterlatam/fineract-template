@@ -4570,7 +4570,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public LoanTransaction writeOff(final LoanRepaymentScheduleInstallmentData loanRepaymentScheduleInstallmentData,
-            final LocalDate writtenOffOnLocalDate, final ExternalId externalId, boolean isCreditNote, LoanCreditNoteChargeData creditNoteChargeData) {
+            final LocalDate writtenOffOnLocalDate, final ExternalId externalId, boolean isCreditNote,
+            LoanCreditNoteChargeData creditNoteChargeData) {
         final MonetaryCurrency currency = loanCurrency();
         final Money principalPortion = Money.of(currency, loanRepaymentScheduleInstallmentData.getPrincipalPortion());
         final Money interestPortion = Money.of(currency, loanRepaymentScheduleInstallmentData.getInterestPortion());

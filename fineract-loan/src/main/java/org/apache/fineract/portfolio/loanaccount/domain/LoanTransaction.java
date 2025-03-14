@@ -464,7 +464,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public static LoanTransaction creditNote(final Loan loan, final Office office, final LocalDate writeOffDate,
-                                             final ExternalId externalId, LoanCreditNoteChargeData loanCreditNoteChargeData) {
+            final ExternalId externalId, LoanCreditNoteChargeData loanCreditNoteChargeData) {
         LoanTransaction transaction = new LoanTransaction(loan, office, LoanTransactionType.CREDIT_NOTE, null, writeOffDate, externalId);
         CreditNoteChargesDetail data = new CreditNoteChargesDetail();
         data.setMandatoryInsurance(loanCreditNoteChargeData.getMandatoryInsurance());

@@ -2,7 +2,6 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-
 import java.math.BigDecimal;
 
 @Embeddable

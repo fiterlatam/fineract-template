@@ -17,8 +17,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.documentmanagement.domain.Document;
-import org.apache.fineract.portfolio.loanaccount.data.LoanCreditNoteData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanCreditNoteChargeData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanCreditNoteData;
 
 @Entity
 @Table(name = "m_loan_credit_note")

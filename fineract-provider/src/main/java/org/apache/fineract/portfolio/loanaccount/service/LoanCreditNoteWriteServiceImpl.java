@@ -324,18 +324,19 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                         .orElse(null);
                 if (avalCharge != null) {
                     for (LoanCharge vatCharge : loanCharges) {
-                        if (Objects.equals(avalCharge.getCharge().getId(),
-                                vatCharge.getCharge().getParentChargeId())) {
+                        if (Objects.equals(avalCharge.getCharge().getId(), vatCharge.getCharge().getParentChargeId())) {
                             Money vatAmount = aval.percentageOfVat(vatCharge.getPercentage(), RoundingMode.HALF_UP);
-                            charges.add(Map.of("chargeId", Objects.requireNonNull(vatCharge.getCharge().getId()), "writeOffAmount", vatAmount.getAmount()));
+                            charges.add(Map.of("chargeId", Objects.requireNonNull(vatCharge.getCharge().getId()), "writeOffAmount",
+                                    vatAmount.getAmount()));
                             aval = aval.minus(vatAmount);
                             break;
                         }
                     }
-                    charges.add(Map.of("chargeId", Objects.requireNonNull(avalCharge.getCharge().getId()), "writeOffAmount", aval.getAmount()));
+                    charges.add(
+                            Map.of("chargeId", Objects.requireNonNull(avalCharge.getCharge().getId()), "writeOffAmount", aval.getAmount()));
                 } else {
-                    throw new GeneralPlatformDomainRuleException("charge.not.found.for.credit.note",
-                            "Loan does not have aval charge", "aval");
+                    throw new GeneralPlatformDomainRuleException("charge.not.found.for.credit.note", "Loan does not have aval charge",
+                            "aval");
                 }
             }
 
@@ -344,35 +345,37 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                         .orElse(null);
                 if (honorariosCharge != null) {
                     for (LoanCharge vatCharge : loanCharges) {
-                        if (Objects.equals(honorariosCharge.getCharge().getId(),
-                                vatCharge.getCharge().getParentChargeId())) {
+                        if (Objects.equals(honorariosCharge.getCharge().getId(), vatCharge.getCharge().getParentChargeId())) {
                             Money vatAmount = honorarios.percentageOfVat(vatCharge.getPercentage(), RoundingMode.HALF_UP);
-                            charges.add(Map.of("chargeId", Objects.requireNonNull(vatCharge.getCharge().getId()), "writeOffAmount", vatAmount.getAmount()));
+                            charges.add(Map.of("chargeId", Objects.requireNonNull(vatCharge.getCharge().getId()), "writeOffAmount",
+                                    vatAmount.getAmount()));
                             honorarios = honorarios.minus(vatAmount);
                             break;
                         }
                     }
-                    charges.add(Map.of("chargeId", Objects.requireNonNull(honorariosCharge.getCharge().getId()), "writeOffAmount", honorarios.getAmount()));
+                    charges.add(Map.of("chargeId", Objects.requireNonNull(honorariosCharge.getCharge().getId()), "writeOffAmount",
+                            honorarios.getAmount()));
                 } else {
-                    throw new GeneralPlatformDomainRuleException("charge.not.found.for.credit.note",
-                            "Loan does not have honorarios charge", "honorarios");
+                    throw new GeneralPlatformDomainRuleException("charge.not.found.for.credit.note", "Loan does not have honorarios charge",
+                            "honorarios");
                 }
             }
 
             if (insurance.isGreaterThanZero()) {
-                LoanCharge insuranceCharge = loanCharges.stream().filter(loanCharge -> loanCharge.getCharge().isVoluntaryInsurance()).findFirst()
-                        .orElse(null);
+                LoanCharge insuranceCharge = loanCharges.stream().filter(loanCharge -> loanCharge.getCharge().isVoluntaryInsurance())
+                        .findFirst().orElse(null);
                 if (insuranceCharge != null) {
                     for (LoanCharge vatCharge : loanCharges) {
-                        if (Objects.equals(insuranceCharge.getCharge().getId(),
-                                vatCharge.getCharge().getParentChargeId())) {
+                        if (Objects.equals(insuranceCharge.getCharge().getId(), vatCharge.getCharge().getParentChargeId())) {
                             Money vatAmount = insurance.percentageOfVat(vatCharge.getPercentage(), RoundingMode.HALF_UP);
-                            charges.add(Map.of("chargeId", Objects.requireNonNull(vatCharge.getCharge().getId()), "writeOffAmount", vatAmount.getAmount()));
+                            charges.add(Map.of("chargeId", Objects.requireNonNull(vatCharge.getCharge().getId()), "writeOffAmount",
+                                    vatAmount.getAmount()));
                             insurance = insurance.minus(vatAmount);
                             break;
                         }
                     }
-                    charges.add(Map.of("chargeId", Objects.requireNonNull(insuranceCharge.getCharge().getId()), "writeOffAmount", insurance.getAmount()));
+                    charges.add(Map.of("chargeId", Objects.requireNonNull(insuranceCharge.getCharge().getId()), "writeOffAmount",
+                            insurance.getAmount()));
                 } else {
                     throw new GeneralPlatformDomainRuleException("charge.not.found.for.credit.note",
                             "Loan does not have voluntary assurance charge", "seguro voluntario");
@@ -380,19 +383,20 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
             }
 
             if (mandatoryInsurance.isGreaterThanZero()) {
-                LoanCharge mandatoryInsuranceCharge = loanCharges.stream().filter(loanCharge -> loanCharge.getCharge().isMandatoryInsurance()).findFirst()
-                        .orElse(null);
+                LoanCharge mandatoryInsuranceCharge = loanCharges.stream()
+                        .filter(loanCharge -> loanCharge.getCharge().isMandatoryInsurance()).findFirst().orElse(null);
                 if (mandatoryInsuranceCharge != null) {
                     for (LoanCharge vatCharge : loanCharges) {
-                        if (Objects.equals(mandatoryInsuranceCharge.getCharge().getId(),
-                                vatCharge.getCharge().getParentChargeId())) {
+                        if (Objects.equals(mandatoryInsuranceCharge.getCharge().getId(), vatCharge.getCharge().getParentChargeId())) {
                             Money vatAmount = mandatoryInsurance.percentageOfVat(vatCharge.getPercentage(), RoundingMode.HALF_UP);
-                            charges.add(Map.of("chargeId", Objects.requireNonNull(vatCharge.getCharge().getId()), "writeOffAmount", vatAmount.getAmount()));
+                            charges.add(Map.of("chargeId", Objects.requireNonNull(vatCharge.getCharge().getId()), "writeOffAmount",
+                                    vatAmount.getAmount()));
                             mandatoryInsurance = mandatoryInsurance.minus(vatAmount);
                             break;
                         }
                     }
-                    charges.add(Map.of("chargeId", Objects.requireNonNull(mandatoryInsuranceCharge.getCharge().getId()), "writeOffAmount", mandatoryInsurance.getAmount()));
+                    charges.add(Map.of("chargeId", Objects.requireNonNull(mandatoryInsuranceCharge.getCharge().getId()), "writeOffAmount",
+                            mandatoryInsurance.getAmount()));
                 } else {
                     throw new GeneralPlatformDomainRuleException("charge.not.found.for.credit.note",
                             "Loan does not have mandatory insurance charge", "seguro obligatorio");
@@ -404,18 +408,19 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                         .orElse(null);
                 if (arrearsCharge != null) {
                     for (LoanCharge vatCharge : loanCharges) {
-                        if (Objects.equals(arrearsCharge.getCharge().getId(),
-                                vatCharge.getCharge().getParentChargeId())) {
+                        if (Objects.equals(arrearsCharge.getCharge().getId(), vatCharge.getCharge().getParentChargeId())) {
                             Money vatAmount = arrearInterest.percentageOfVat(vatCharge.getPercentage(), RoundingMode.HALF_UP);
-                            charges.add(Map.of("chargeId", Objects.requireNonNull(vatCharge.getCharge().getId()), "writeOffAmount", vatAmount.getAmount()));
+                            charges.add(Map.of("chargeId", Objects.requireNonNull(vatCharge.getCharge().getId()), "writeOffAmount",
+                                    vatAmount.getAmount()));
                             arrearInterest = arrearInterest.minus(vatAmount);
                             break;
                         }
                     }
-                    charges.add(Map.of("chargeId", Objects.requireNonNull(arrearsCharge.getCharge().getId()), "writeOffAmount", arrearInterest.getAmount()));
+                    charges.add(Map.of("chargeId", Objects.requireNonNull(arrearsCharge.getCharge().getId()), "writeOffAmount",
+                            arrearInterest.getAmount()));
                 } else {
-                    throw new GeneralPlatformDomainRuleException("charge.not.found.for.credit.note",
-                            "Loan does not have arrears charge", "penalización");
+                    throw new GeneralPlatformDomainRuleException("charge.not.found.for.credit.note", "Loan does not have arrears charge",
+                            "penalización");
                 }
             }
         }
