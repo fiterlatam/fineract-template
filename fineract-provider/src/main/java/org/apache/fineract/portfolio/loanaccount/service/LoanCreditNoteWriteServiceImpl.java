@@ -459,29 +459,10 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                 .orElseThrow(() -> new LoanCreditNoteNotFoundException(creditNoteId));
         if (!loanCreditNote.isFullyUsedByInvoice()) {
             final Long clientId = loanCreditNote.getLoan().getClientId();
-            final String productTypeName = loanCreditNote.getLoan().loanProduct().getProductType() != null
-                    ? loanCreditNote.getLoan().loanProduct().getProductType().getLabel()
-                    : "";
-            final List<LoanProductParameterization> productParameterizations = this.productParameterizationRepository
-                    .findByProductType(productTypeName);
-            if (productParameterizations.isEmpty()) {
-                throw new GeneralPlatformDomainRuleException("error.msg.loan.credit.note.product.parameterization.not.found",
-                        "Product parameterization not found for product type: " + productTypeName);
-            }
-            final LoanProductParameterization loanProductParameterization = productParameterizations.get(0);
-            final Long rangeStartNumber = loanProductParameterization.getRangeStartNumber();
-            final Long creditNoteCounter = loanProductParameterization.getCreditNoteCounter();
-            final Long rangeEndNumber = loanProductParameterization.getRangeEndNumber();
-            final Long currentCounter = ObjectUtils.defaultIfNull(creditNoteCounter, 0L) + 1L;
-            final String documentNumber = String.valueOf(rangeStartNumber + currentCounter);
-            loanProductParameterization.setCreditNoteCounter(currentCounter);
-            final AtomicLong itemCounter = new AtomicLong(0);
-            loanProductParameterization.setCreditNoteCounter(currentCounter);
-            if (currentCounter > rangeEndNumber) {
-                throw new GeneralPlatformDomainRuleException("error.msg.loan.invoice.counter.exceeds.range.end.number",
-                        String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
-                                loanProductParameterization.getProductType()));
-            }
+            final InvoiceGenerationResult invoiceGenerationResult = this.generateInvoiceNumber(loanCreditNote);
+            final AtomicLong itemCounter = invoiceGenerationResult.getItemCounter();
+            final String documentNumber = invoiceGenerationResult.getDocumentNumber();
+            final LoanProductParameterization loanProductParameterization = invoiceGenerationResult.getLoanProductParameterization();
             final ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
                     .retrieveClientAdditionalData(clientId);
             final String clientIdNumber = ObjectUtils.defaultIfNull(clientAdditionalInformation.getNit(),
@@ -564,9 +545,45 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                 }
                 this.facturaElectronicMensualRepository.saveAll(newCreditNoteDocuments);
                 this.loanCreditNoteRepository.saveAndFlush(loanCreditNote);
-                this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
             }
         }
+    }
+
+    private synchronized InvoiceGenerationResult generateInvoiceNumber(LoanCreditNote loanCreditNote) {
+        final String productTypeName = loanCreditNote.getLoan().loanProduct().getProductType() != null
+                ? loanCreditNote.getLoan().loanProduct().getProductType().getLabel()
+                : "";
+        final List<LoanProductParameterization> productParameterizations = this.productParameterizationRepository
+                .findByProductType(productTypeName);
+        if (productParameterizations.isEmpty()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.credit.note.product.parameterization.not.found",
+                    "Product parameterization not found for product type: " + productTypeName);
+        }
+        final LoanProductParameterization loanProductParameterization = productParameterizations.get(0);
+        final Long rangeStartNumber = loanProductParameterization.getRangeStartNumber();
+        final Long creditNoteCounter = loanProductParameterization.getCreditNoteCounter();
+        final Long rangeEndNumber = loanProductParameterization.getRangeEndNumber();
+        final Long currentCounter = ObjectUtils.defaultIfNull(creditNoteCounter, 0L) + 1L;
+        final String documentNumber = String.valueOf(rangeStartNumber + currentCounter);
+        loanProductParameterization.setCreditNoteCounter(currentCounter);
+        final AtomicLong itemCounter = new AtomicLong(0);
+        loanProductParameterization.setCreditNoteCounter(currentCounter);
+        if (currentCounter > rangeEndNumber) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.invoice.counter.exceeds.range.end.number",
+                    String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
+                            loanProductParameterization.getProductType()));
+        }
+        this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
+        return new InvoiceGenerationResult(itemCounter, documentNumber, loanProductParameterization);
+    }
+
+    @lombok.Getter
+    @lombok.RequiredArgsConstructor
+    private static class InvoiceGenerationResult {
+
+        private final AtomicLong itemCounter;
+        private final String documentNumber;
+        private final LoanProductParameterization loanProductParameterization;
     }
 
     @lombok.Data
