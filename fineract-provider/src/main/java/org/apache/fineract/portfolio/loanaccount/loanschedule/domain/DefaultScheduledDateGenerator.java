@@ -232,7 +232,19 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
                 dueRepaymentPeriodDate = startDate.plusWeeks(repaidEvery);
             break;
             case MONTHS:
+                // Check if we're starting from a month-end date
+                boolean isStartDateMonthEnd = startDate.getDayOfMonth() == startDate.lengthOfMonth();
                 dueRepaymentPeriodDate = startDate.plusMonths(repaidEvery);
+                // If we started from a month-end, ensure we maintain month-end dates
+                if (isStartDateMonthEnd) {
+                    dueRepaymentPeriodDate = dueRepaymentPeriodDate.withDayOfMonth(dueRepaymentPeriodDate.lengthOfMonth());
+                } else {
+                    // For non month-end dates, try to maintain the same day of month
+                    int originalDayOfMonth = startDate.getDayOfMonth();
+                    if (originalDayOfMonth > dueRepaymentPeriodDate.lengthOfMonth()) {
+                        dueRepaymentPeriodDate = dueRepaymentPeriodDate.withDayOfMonth(dueRepaymentPeriodDate.lengthOfMonth());
+                    }
+                }
             break;
             case YEARS:
                 dueRepaymentPeriodDate = startDate.plusYears(repaidEvery);
