@@ -112,7 +112,7 @@ public final class LoanApplicationTerms {
      *
      * <b>Note:</b> The loan is <i>interest-free</i> for the period of time indicated.
      */
-    private final Integer interestChargingGrace;
+    private Integer interestChargingGrace;
 
     /**
      * Legacy method of support 'grace' on the charging of interest on a loan.
@@ -2034,5 +2034,9 @@ public final class LoanApplicationTerms {
 
     public void setNumberOfInstallmentsToIgnore(Integer numberOfInstallmentsToIgnore) {
         this.numberOfInstallmentsToIgnore = numberOfInstallmentsToIgnore;
+    }
+
+    public void setInterestChargingGrace(Integer interestChargingGrace) {
+        this.interestChargingGrace = interestChargingGrace;
     }
 }
