@@ -227,6 +227,11 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
 
                 final ScheduleGeneratorDTO scheduleGeneratorDTO = loanUtilService.buildScheduleGeneratorDTO(loan, null);
                 final LoanApplicationTerms loanApplicationTerms = loan.constructLoanApplicationTerms(scheduleGeneratorDTO);
+                if (loan.getLoanProduct().isInterestStartsAfterGracePeriod()) {
+                    // Remove any grace period since this is already defined on the schedule
+                    loanApplicationTerms.getPeriodNumbersApplicableForInterestGrace().clear();
+                    loanApplicationTerms.setInterestChargingGrace(0);
+                }
                 loanApplicationTerms.updateAnnualNominalInterestRate(annualNominalInterestRate);
                 final LoanScheduleGenerator loanScheduleGenerator = this.loanScheduleFactory
                         .create(loanApplicationTerms.getLoanScheduleType(), loanApplicationTerms.getInterestMethod());
