@@ -18,6 +18,7 @@ import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.documentmanagement.domain.Document;
 import org.apache.fineract.portfolio.loanaccount.data.LoanCreditNoteData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanCreditNoteChargeData;
 
 @Entity
 @Table(name = "m_loan_credit_note")
@@ -98,5 +99,16 @@ public class LoanCreditNote extends AbstractAuditableWithUTCDateTimeCustom {
         this.insurance = BigDecimal.ZERO;
         this.mandatoryInsurance = BigDecimal.ZERO;
         this.arrearInterest = BigDecimal.ZERO;
+    }
+
+    public LoanCreditNoteChargeData toChargeData() {
+        LoanCreditNoteChargeData data = new LoanCreditNoteChargeData();
+        data.setAval(this.getAval());
+        data.setArrearInterest(this.arrearInterest);
+        data.setHonorarios(this.honorarios);
+        data.setInsurance(this.insurance);
+        data.setMandatoryInsurance(this.mandatoryInsurance);
+
+        return data;
     }
 }

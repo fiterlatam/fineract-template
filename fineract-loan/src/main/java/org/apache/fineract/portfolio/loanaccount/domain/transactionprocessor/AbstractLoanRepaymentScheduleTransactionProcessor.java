@@ -605,6 +605,22 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
         Money interestAmountRemaining = loanTransaction.getInterestPortion(currency);
         Money feeChargesAmountRemaining = loanTransaction.getFeeChargesPortion(currency);
         Money penaltyChargesAmountRemaining = loanTransaction.getPenaltyChargesPortion(currency);
+
+        Money mandatorayInsuranceChargesAmountRemaining = Money.zero(principalAmountRemaining.getCurrency());
+        Money voluntaryInsuranceChargesAmountRemaining = Money.zero(principalAmountRemaining.getCurrency());
+        Money avalChargesAmountRemaining = Money.zero(principalAmountRemaining.getCurrency());
+        Money honoChargesAmountRemaining = Money.zero(principalAmountRemaining.getCurrency());
+
+        if (loanTransaction.getCreditNoteChargesDetail() != null) {
+            // loanTransaction.getCreditNoteChargesDetail() could be null for older credit notes
+            mandatorayInsuranceChargesAmountRemaining = Money.of(principalAmountRemaining.getCurrency(), loanTransaction.getCreditNoteChargesDetail().getMandatoryInsurance());
+            voluntaryInsuranceChargesAmountRemaining = Money.of(principalAmountRemaining.getCurrency(), loanTransaction.getCreditNoteChargesDetail().getInsurance());
+            avalChargesAmountRemaining = Money.of(principalAmountRemaining.getCurrency(), loanTransaction.getCreditNoteChargesDetail().getAval());
+            honoChargesAmountRemaining = Money.of(principalAmountRemaining.getCurrency(), loanTransaction.getCreditNoteChargesDetail().getHonorarios());
+            penaltyChargesAmountRemaining = Money.of(principalAmountRemaining.getCurrency(), loanTransaction.getCreditNoteChargesDetail().getArrearInterest());
+        }
+
+
         final List<LoanTransactionToRepaymentScheduleMapping> transactionMappings = new ArrayList<>();
         for (final LoanRepaymentScheduleInstallment currentInstallment : repaymentInstallments) {
             if (currentInstallment.isNotFullyPaidOff()) {
@@ -612,6 +628,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                 Money interestPortionWrittenOff = Money.zero(currency);
                 Money feeChargesPortionWrittenOff = Money.zero(currency);
                 Money penaltyChargesPortionWrittenOff = Money.zero(currency);
+                Money feeChargesPortionWrittenOffForCurrentInstallment = Money.zero(currency);
                 if (principalAmountRemaining.isGreaterThanZero()
                         && currentInstallment.getPrincipalOutstanding(currency).isGreaterThanZero()) {
                     principalPortionWrittenOff = currentInstallment.writeOffOutstandingPrincipal(principalAmountRemaining, transactionDate,
@@ -623,20 +640,50 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                             currency);
                     interestAmountRemaining = interestAmountRemaining.minus(interestPortionWrittenOff);
                 }
-                if (feeChargesAmountRemaining.isGreaterThanZero()) {
-                    feeChargesPortionWrittenOff = currentInstallment.writeOffOutstandingFeeCharges(feeChargesAmountRemaining,
+                if (feeChargesAmountRemaining.isGreaterThanZero() && loanTransaction.isCreditNote() && loanTransaction.getCreditNoteChargesDetail() != null) {
+                    if (mandatorayInsuranceChargesAmountRemaining.isGreaterThanZero()) {
+                        feeChargesPortionWrittenOff = currentInstallment.payMandatoryInsuranceChargesComponent(transactionDate, mandatorayInsuranceChargesAmountRemaining,
+                                true, loanTransaction);
+                        feeChargesAmountRemaining = feeChargesAmountRemaining.minus(feeChargesPortionWrittenOff);
+                        mandatorayInsuranceChargesAmountRemaining = mandatorayInsuranceChargesAmountRemaining.minus(feeChargesPortionWrittenOff);
+                        feeChargesPortionWrittenOffForCurrentInstallment = feeChargesPortionWrittenOffForCurrentInstallment.add(feeChargesPortionWrittenOff);
+                    }
+                    if (voluntaryInsuranceChargesAmountRemaining.isGreaterThanZero()) {
+                        feeChargesPortionWrittenOff = currentInstallment.payVoluntaryInsuranceChargesComponent(transactionDate, voluntaryInsuranceChargesAmountRemaining,
+                                true, loanTransaction);
+                        feeChargesAmountRemaining = feeChargesAmountRemaining.minus(feeChargesPortionWrittenOff);
+                        voluntaryInsuranceChargesAmountRemaining = voluntaryInsuranceChargesAmountRemaining.minus(feeChargesPortionWrittenOff);
+                        feeChargesPortionWrittenOffForCurrentInstallment = feeChargesPortionWrittenOffForCurrentInstallment.add(feeChargesPortionWrittenOff);
+                    }
+                    if (avalChargesAmountRemaining.isGreaterThanZero()) {
+                        feeChargesPortionWrittenOff = currentInstallment.payAvalChargesComponent(transactionDate, avalChargesAmountRemaining,
+                                true, loanTransaction);
+                        feeChargesAmountRemaining = feeChargesAmountRemaining.minus(feeChargesPortionWrittenOff);
+                        avalChargesAmountRemaining = avalChargesAmountRemaining.minus(feeChargesPortionWrittenOff);
+                        feeChargesPortionWrittenOffForCurrentInstallment = feeChargesPortionWrittenOffForCurrentInstallment.add(feeChargesPortionWrittenOff);
+                    }
+                    if (honoChargesAmountRemaining.isGreaterThanZero()) {
+                        feeChargesPortionWrittenOff = currentInstallment.payHonorariosChargesComponent(transactionDate, honoChargesAmountRemaining,
+                                true, loanTransaction);
+                        feeChargesAmountRemaining = feeChargesAmountRemaining.minus(feeChargesPortionWrittenOff);
+                        honoChargesAmountRemaining = honoChargesAmountRemaining.minus(feeChargesPortionWrittenOff);
+                        feeChargesPortionWrittenOffForCurrentInstallment = feeChargesPortionWrittenOffForCurrentInstallment.add(feeChargesPortionWrittenOff);
+                    }
+                } else if (feeChargesAmountRemaining.isGreaterThanZero()) {
+                    // Special Write-off
+                    feeChargesPortionWrittenOffForCurrentInstallment = currentInstallment.writeOffOutstandingFeeCharges(feeChargesAmountRemaining,
                             transactionDate, currency);
-                    feeChargesAmountRemaining = feeChargesAmountRemaining.minus(feeChargesPortionWrittenOff);
+                    feeChargesAmountRemaining = feeChargesAmountRemaining.minus(feeChargesPortionWrittenOffForCurrentInstallment);
                 }
                 if (penaltyChargesAmountRemaining.isGreaterThanZero()) {
                     penaltyChargesPortionWrittenOff = currentInstallment.writeOffOutstandingPenaltyCharges(penaltyChargesAmountRemaining,
                             transactionDate, currency);
                     penaltyChargesAmountRemaining = penaltyChargesAmountRemaining.minus(penaltyChargesPortionWrittenOff);
                 }
-                if (principalPortionWrittenOff.plus(interestPortionWrittenOff).plus(feeChargesPortionWrittenOff)
+                if (principalPortionWrittenOff.plus(interestPortionWrittenOff).plus(feeChargesPortionWrittenOffForCurrentInstallment)
                         .plus(penaltyChargesPortionWrittenOff).isGreaterThanZero()) {
                     transactionMappings.add(LoanTransactionToRepaymentScheduleMapping.createFrom(loanTransaction, currentInstallment,
-                            principalPortionWrittenOff, interestPortionWrittenOff, feeChargesPortionWrittenOff,
+                            principalPortionWrittenOff, interestPortionWrittenOff, feeChargesPortionWrittenOffForCurrentInstallment,
                             penaltyChargesPortionWrittenOff));
                 }
             }

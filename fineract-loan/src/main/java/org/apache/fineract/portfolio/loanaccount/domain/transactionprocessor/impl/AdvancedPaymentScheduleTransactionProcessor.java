@@ -642,7 +642,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             Balances balances, LoanRepaymentScheduleInstallment.PaymentAction action) {
         LocalDate transactionDate = loanTransaction.getTransactionDate();
         Money zero = transactionAmountUnprocessed.zero();
-        final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
+        final boolean isWriteOffTransaction = loanTransaction.isWriteOff() || loanTransaction.isCreditNote();
         Money portion = transactionAmountUnprocessed.zero();
 
         if (loanTransaction.claimType() != null && loanTransaction.claimType().equals("insurance")
@@ -1042,7 +1042,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             if (loanTransaction.isNotWaiver() && !loanTransaction.isAccrual()) {
                 Money feeCharges = loanTransaction.getFeeChargesPortion(currency);
                 Money penaltyCharges = loanTransaction.getPenaltyChargesPortion(currency);
-                if (feeCharges.isGreaterThanZero()) {
+                if (!loanTransaction.isCreditNote() && feeCharges.isGreaterThanZero()) {
                     updateChargesPaidAmountBy(loanTransaction, feeCharges, loanFees, null);
                 }
                 if (penaltyCharges.isGreaterThanZero()) {

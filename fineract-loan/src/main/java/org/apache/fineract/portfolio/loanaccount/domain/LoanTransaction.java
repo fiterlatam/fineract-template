@@ -35,6 +35,7 @@ import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.portfolio.account.data.AccountTransferData;
 import org.apache.fineract.portfolio.collectionhousemanagement.domain.CollectionHouseConfiguration;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanCreditNoteChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
@@ -164,6 +165,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     @JoinColumn(name = "collection_house_id", nullable = false)
     private CollectionHouseConfiguration collectionHouse;
+
+    @Embedded
+    private CreditNoteChargesDetail creditNoteChargesDetail;
 
     // This property is added to process vertical payments horizontally for Past Due and Due installments.
     // Advance Payments will be handled through VerticalPayment Scheme
@@ -357,7 +361,23 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
             newTransaction.setInterestPaidByOriginalTransaction(interestPaidByInstallment);
         }
         newTransaction.setCollectionHouse(loanTransaction.collectionHouse);
+        if (loanTransaction.isCreditNote() && loanTransaction.getCreditNoteChargesDetail() != null) {
+            // loanTransaction.getCreditNoteChargesDetail() could be null for older credit notes
+            CreditNoteChargesDetail creditNoteChargesDetail = getCreditNoteChargesDetail(loanTransaction);
+            newTransaction.setCreditNoteChargesDetail(creditNoteChargesDetail);
+        }
+
         return newTransaction;
+    }
+
+    private static CreditNoteChargesDetail getCreditNoteChargesDetail(LoanTransaction loanTransaction) {
+        CreditNoteChargesDetail creditNoteChargesDetail = new CreditNoteChargesDetail();
+        creditNoteChargesDetail.setAval(loanTransaction.getCreditNoteChargesDetail().getAval());
+        creditNoteChargesDetail.setHonorarios(loanTransaction.getCreditNoteChargesDetail().getHonorarios());
+        creditNoteChargesDetail.setMandatoryInsurance(loanTransaction.getCreditNoteChargesDetail().getMandatoryInsurance());
+        creditNoteChargesDetail.setInsurance(loanTransaction.getCreditNoteChargesDetail().getInsurance());
+        creditNoteChargesDetail.setArrearInterest(loanTransaction.getCreditNoteChargesDetail().getArrearInterest());
+        return creditNoteChargesDetail;
     }
 
     public static LoanTransaction accrueLoanCharge(final Loan loan, final Office office, final Money amount, final LocalDate applyDate,
@@ -444,8 +464,17 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public static LoanTransaction creditNote(final Loan loan, final Office office, final LocalDate writeOffDate,
-            final ExternalId externalId) {
-        return new LoanTransaction(loan, office, LoanTransactionType.CREDIT_NOTE, null, writeOffDate, externalId);
+                                             final ExternalId externalId, LoanCreditNoteChargeData loanCreditNoteChargeData) {
+        LoanTransaction transaction = new LoanTransaction(loan, office, LoanTransactionType.CREDIT_NOTE, null, writeOffDate, externalId);
+        CreditNoteChargesDetail data = new CreditNoteChargesDetail();
+        data.setMandatoryInsurance(loanCreditNoteChargeData.getMandatoryInsurance());
+        data.setInsurance(loanCreditNoteChargeData.getInsurance());
+        data.setHonorarios(loanCreditNoteChargeData.getHonorarios());
+        data.setAval(loanCreditNoteChargeData.getAval());
+        data.setArrearInterest(loanCreditNoteChargeData.getArrearInterest());
+        transaction.setCreditNoteChargesDetail(data);
+
+        return transaction;
     }
 
     public static LoanTransaction chargeOff(final Loan loan, final LocalDate chargeOffDate, final ExternalId externalId) {
@@ -1243,4 +1272,13 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     public void setCollectionHouse(CollectionHouseConfiguration collectionHouse) {
         this.collectionHouse = collectionHouse;
     }
+
+    public CreditNoteChargesDetail getCreditNoteChargesDetail() {
+        return creditNoteChargesDetail;
+    }
+
+    public void setCreditNoteChargesDetail(CreditNoteChargesDetail creditNoteChargesDetail) {
+        this.creditNoteChargesDetail = creditNoteChargesDetail;
+    }
+
 }
