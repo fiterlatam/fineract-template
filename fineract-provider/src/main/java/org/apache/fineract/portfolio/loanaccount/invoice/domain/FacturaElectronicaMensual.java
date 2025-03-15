@@ -330,4 +330,12 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
         this.fecha_inicial = DateUtils.getFirstDayOfCurrentMonth();
         this.fecha_final = DateUtils.getLastDayOfCurrentMonth();
     }
+
+    public void setImpuesto_item(BigDecimal impuesto_item) {
+        if (impuesto_item != null && impuesto_item.compareTo(BigDecimal.ZERO) == 0) {
+            this.impuesto_item = null;
+        } else {
+            this.impuesto_item = impuesto_item;
+        }
+    }
 }

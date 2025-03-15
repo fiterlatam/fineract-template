@@ -2099,7 +2099,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final LoanRescheduleMapper rm = new LoanRescheduleMapper();
         final String sql = "SELECT " + rm.schema();
         final Object[] params = new Object[] { appliedOnDate, minLoanId, appliedOnDate, maximumLegalAnnualNominalRateValue,
-                maximumLegalAnnualNominalRateValue, pageSize };
+                maximumLegalAnnualNominalRateValue, maximumLegalAnnualNominalRateValue, pageSize };
         return this.jdbcTemplate.query(sql, rm, params);
     }
 
@@ -2128,11 +2128,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                             WHERE ltv.term_type = 10 AND ltv.is_active = TRUE AND ltv.applied_on_loan_status = 300
                             ORDER BY ltv.loan_id, ltv.id DESC, ltv.applicable_date DESC
                         ) term_variation ON term_variation.loan_id = ml.id
-                        WHERE ml.loan_status_id = 300 AND ml.id > ? AND mlrs.duedate >= ? AND ml.is_charged_off = FALSE AND ml.id = 1525
+                        WHERE ml.loan_status_id = 300 AND ml.id > ? AND mlrs.duedate >= ? AND ml.is_charged_off = FALSE
                             AND (CASE
-                                WHEN term_variation.decimal_value IS NOT NULL THEN term_variation.decimal_value != ?
-                                WHEN term_variation.decimal_value IS NULL THEN ml.annual_nominal_interest_rate > ?
-                            END)
+                                    WHEN (term_variation.decimal_value IS NULL) THEN (ml.annual_nominal_interest_rate > ?)
+                                    WHEN (term_variation.decimal_value =  ml.annual_nominal_interest_rate) THEN (ml.annual_nominal_interest_rate > ?)
+                                    WHEN (term_variation.decimal_value !=  ml.annual_nominal_interest_rate) THEN (term_variation.decimal_value != ?)
+                                END)
                         GROUP BY term_variation.loan_id, ml.annual_nominal_interest_rate, term_variation.decimal_value, ml.id
                         ORDER BY ml.id LIMIT ?
                     """;
