@@ -49,6 +49,8 @@ truncate table m_loan cascade;
 alter table m_loan_transaction drop column is_partially_ivoiced;
 alter table m_loan_transaction drop column is_invoiced_generated_by_job;
 
+
+-----***** VERY IMPORTANT - DO NOT PROCEED BEFORE DISABLING THESE JOBS*****------
 -- Disable the following Jobs Before Migration --
 -- Arrears Job
 -- Penalties Job
