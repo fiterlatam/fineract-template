@@ -376,7 +376,6 @@ public class LoanWorkbookPopulator extends AbstractWorkbookPopulator {
         worksheet.setColumnWidth(LoanConstants.GROUP_ID, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
         worksheet.setColumnWidth(LoanConstants.LINK_ACCOUNT_ID, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
 
-
         writeString(LoanConstants.OFFICE_NAME_COL, rowHeader, "Office Name*");
         writeString(LoanConstants.LOAN_TYPE_COL, rowHeader, "Loan Type*");
         writeString(LoanConstants.CLIENT_NAME_COL, rowHeader, "Client/Group Name*");

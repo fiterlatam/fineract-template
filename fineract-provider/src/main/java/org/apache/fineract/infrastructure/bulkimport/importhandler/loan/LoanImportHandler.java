@@ -271,7 +271,8 @@ public class LoanImportHandler implements ImportHandler {
         String chargeThreeName = ImportHandlerUtils.readAsString(LoanConstants.CHARGE_NAME_3, row);
         String chargeFourName = ImportHandlerUtils.readAsString(LoanConstants.CHARGE_NAME_4, row);
 
-        // If a loan has only one charge then the loan import query duplicates the charge name. It was easy to fix in the code
+        // If a loan has only one charge then the loan import query duplicates the charge name. It was easy to fix in
+        // the code
         if (chargeOneName != null && chargeThreeName != null) {
             if (chargeOneName.equalsIgnoreCase(chargeThreeName)) {
                 chargeThreeName = null;
