@@ -268,6 +268,16 @@ public class LoanImportHandler implements ImportHandler {
 
         String chargeOneName = ImportHandlerUtils.readAsString(LoanConstants.CHARGE_NAME_1, row);
         String chargeTwoName = ImportHandlerUtils.readAsString(LoanConstants.CHARGE_NAME_2, row);
+        String chargeThreeName = ImportHandlerUtils.readAsString(LoanConstants.CHARGE_NAME_3, row);
+        String chargeFourName = ImportHandlerUtils.readAsString(LoanConstants.CHARGE_NAME_4, row);
+
+        // If a loan has only one charge then the loan import query duplicates the charge name. It was easy to fix in the code
+        if (chargeOneName != null && chargeThreeName != null) {
+            if (chargeOneName.equalsIgnoreCase(chargeThreeName)) {
+                chargeThreeName = null;
+                chargeFourName = null;
+            }
+        }
 
         Long chargeOneId = null;
         if (chargeOneName != null) {
@@ -280,18 +290,30 @@ public class LoanImportHandler implements ImportHandler {
                     chargeTwoName);
         }
 
+        Long chargeThreeId = null;
+        if (chargeThreeName != null) {
+            chargeThreeId = ImportHandlerUtils.getIdByName(workbook.getSheet(TemplatePopulateImportConstants.CHARGE_SHEET_NAME),
+                    chargeThreeName);
+        }
+
+        Long chargeFourId = null;
+        if (chargeFourName != null) {
+            chargeFourId = ImportHandlerUtils.getIdByName(workbook.getSheet(TemplatePopulateImportConstants.CHARGE_SHEET_NAME),
+                    chargeFourName);
+        }
+
         Long collateralId = ImportHandlerUtils.readAsLong(LoanConstants.LOAN_COLLATERAL_ID, row);
 
         Long groupId = ImportHandlerUtils.readAsLong(LoanConstants.GROUP_ID, row);
 
         String linkAccountId = ImportHandlerUtils.readAsString(LoanConstants.LINK_ACCOUNT_ID, row);
 
-        String nit = ImportHandlerUtils.readAsString(LoanConstants.NIT, row);
-        String code = ImportHandlerUtils.readAsString(LoanConstants.CODE, row);
-        String loanId = ImportHandlerUtils.readAsString(LoanConstants.LOAN_ID, row);
-        String cedula = ImportHandlerUtils.readAsString(LoanConstants.CEDULA, row);
+        String nit = "";
+        String code = "";
+        String loanId = "";
+        String cedula = "";
 
-        boolean isMigratedLoan = nit != null && code != null && loanId != null && cedula != null;
+        boolean isMigratedLoan = !externalId.isEmpty();
 
         if (chargeOneId != null) {
             if (ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_1, row) != null) {
@@ -343,6 +365,60 @@ public class LoanImportHandler implements ImportHandler {
                 }
             } else {
                 charges.add(new LoanChargeData(chargeTwoId, ImportHandlerUtils.readAsDate(LoanConstants.CHARGE_DUE_DATE_2, row), null));
+            }
+        }
+
+        if (chargeThreeId != null) {
+            if (ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_3, row) != null) {
+                if (!isMigratedLoan) {
+                    EnumOptionData chargeTwoTimeTypeEnum = ImportHandlerUtils
+                            .getChargeTimeTypeEmun(workbook.getSheet(TemplatePopulateImportConstants.CHARGE_SHEET_NAME), chargeTwoName);
+                    EnumOptionData chargeTwoAmountTypeEnum = ImportHandlerUtils
+                            .getChargeAmountTypeEnum(ImportHandlerUtils.readAsString(LoanConstants.CHARGE_AMOUNT_TYPE_2, row));
+
+                    BigDecimal chargeAmount;
+                    BigDecimal amountOrPercentage = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_3, row));
+                    if (chargeTwoTimeTypeEnum.getValue().equalsIgnoreCase("1")) {
+                        chargeAmount = amountOrPercentage;
+                    } else {
+                        chargeAmount = LoanCharge.percentageOf(principal, amountOrPercentage);
+                    }
+
+                    charges.add(new LoanChargeData(chargeThreeId, ImportHandlerUtils.readAsDate(LoanConstants.CHARGE_DUE_DATE_3, row),
+                            chargeAmount, chargeTwoAmountTypeEnum, chargeTwoTimeTypeEnum));
+                } else {
+                    BigDecimal amountOrPercentage = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_3, row));
+                    charges.add(new LoanChargeData(chargeThreeId, amountOrPercentage));
+                }
+            } else {
+                charges.add(new LoanChargeData(chargeThreeId, ImportHandlerUtils.readAsDate(LoanConstants.CHARGE_DUE_DATE_3, row), null));
+            }
+        }
+
+        if (chargeFourId != null) {
+            if (ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_4, row) != null) {
+                if (!isMigratedLoan) {
+                    EnumOptionData chargeTwoTimeTypeEnum = ImportHandlerUtils
+                            .getChargeTimeTypeEmun(workbook.getSheet(TemplatePopulateImportConstants.CHARGE_SHEET_NAME), chargeTwoName);
+                    EnumOptionData chargeTwoAmountTypeEnum = ImportHandlerUtils
+                            .getChargeAmountTypeEnum(ImportHandlerUtils.readAsString(LoanConstants.CHARGE_AMOUNT_TYPE_2, row));
+
+                    BigDecimal chargeAmount;
+                    BigDecimal amountOrPercentage = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_4, row));
+                    if (chargeTwoTimeTypeEnum.getValue().equalsIgnoreCase("1")) {
+                        chargeAmount = amountOrPercentage;
+                    } else {
+                        chargeAmount = LoanCharge.percentageOf(principal, amountOrPercentage);
+                    }
+
+                    charges.add(new LoanChargeData(chargeFourId, ImportHandlerUtils.readAsDate(LoanConstants.CHARGE_DUE_DATE_4, row),
+                            chargeAmount, chargeTwoAmountTypeEnum, chargeTwoTimeTypeEnum));
+                } else {
+                    BigDecimal amountOrPercentage = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.CHARGE_AMOUNT_4, row));
+                    charges.add(new LoanChargeData(chargeFourId, amountOrPercentage));
+                }
+            } else {
+                charges.add(new LoanChargeData(chargeFourId, ImportHandlerUtils.readAsDate(LoanConstants.CHARGE_DUE_DATE_4, row), null));
             }
         }
 
