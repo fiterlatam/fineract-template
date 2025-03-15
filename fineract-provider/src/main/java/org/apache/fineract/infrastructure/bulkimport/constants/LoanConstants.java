@@ -67,19 +67,24 @@ public final class LoanConstants {
     public static final int CHARGE_NAME_2 = 39;// AO
     public static final int CHARGE_AMOUNT_2 = 40;// AO
     public static final int CHARGE_DUE_DATE_2 = 41;// AP
-    public static final int GROUP_ID = 42;// AQ
-    public static final int LOOKUP_CLIENT_NAME_COL = 43;// AR
-    public static final int LOOKUP_CLIENT_EXTERNAL_ID = 44;// AS
-    public static final int LOOKUP_ACTIVATION_DATE_COL = 45;// AT
-    public static final int LINK_ACCOUNT_ID = 46;// AU
-    public static final int LOAN_COLLATERAL_ID = 47;// AV
-    public static final int LOAN_COLLATERAL_QUANTITY = 48;// AW
-    public static final int CHARGE_AMOUNT_TYPE_1 = 49;// AX
-    public static final int CHARGE_AMOUNT_TYPE_2 = 50;// AY
-    public static final int NIT = 51;// AY
-    public static final int CODE = 52;// AY
-    public static final int LOAN_ID = 53;// AY
-    public static final int CEDULA = 54;// AY
+
+    public static final int CHARGE_NAME_3 = 42;// AO
+    public static final int CHARGE_AMOUNT_3 = 43;// AO
+    public static final int CHARGE_DUE_DATE_3 = 44;// AP
+
+    public static final int CHARGE_NAME_4 = 45;// AO
+    public static final int CHARGE_AMOUNT_4 = 46;// AO
+    public static final int CHARGE_DUE_DATE_4 = 47;// AP
+
+    public static final int GROUP_ID = 48;// AQ
+    public static final int LOOKUP_CLIENT_NAME_COL = 49;// AR
+    public static final int LOOKUP_CLIENT_EXTERNAL_ID = 50;// AS
+    public static final int LOOKUP_ACTIVATION_DATE_COL = 51;// AT
+    public static final int LINK_ACCOUNT_ID = 52;// AU
+    public static final int LOAN_COLLATERAL_ID = 53;// AV
+    public static final int LOAN_COLLATERAL_QUANTITY = 54;// AW
+    public static final int CHARGE_AMOUNT_TYPE_1 = 55;// AX
+    public static final int CHARGE_AMOUNT_TYPE_2 = 56;// AY
 
     public static final String LOAN_TYPE_INDIVIDUAL = "Individual";
     public static final String LOAN_TYPE_GROUP = "Group";

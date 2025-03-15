@@ -154,6 +154,12 @@ public class LoanWorkbookPopulator extends AbstractWorkbookPopulator {
         CellRangeAddressList chargeTwoAmountTypeRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
                 LoanConstants.CHARGE_AMOUNT_TYPE_2, LoanConstants.CHARGE_AMOUNT_TYPE_2);
 
+        CellRangeAddressList chargeThreeNameRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
+                LoanConstants.CHARGE_NAME_3, LoanConstants.CHARGE_NAME_3);
+
+        CellRangeAddressList chargeFourNameRange = new CellRangeAddressList(1, SpreadsheetVersion.EXCEL97.getLastRowIndex(),
+                LoanConstants.CHARGE_NAME_4, LoanConstants.CHARGE_NAME_4);
+
         setNames(worksheet);
 
         DataValidationConstraint officeNameConstraint = validationHelper.createFormulaListConstraint("Office");
@@ -222,6 +228,9 @@ public class LoanWorkbookPopulator extends AbstractWorkbookPopulator {
         DataValidationConstraint chargeTwoAmountTypeConstraint = validationHelper
                 .createExplicitListConstraint(new String[] { "Flat", "% Amount" });
 
+        DataValidationConstraint chargeThreeNameConstraint = validationHelper.createFormulaListConstraint("Charges");
+        DataValidationConstraint chargeFourNameConstraint = validationHelper.createFormulaListConstraint("Charges");
+
         DataValidation officeValidation = validationHelper.createValidation(officeNameConstraint, officeNameRange);
         DataValidation loanTypeValidation = validationHelper.createValidation(loanTypeConstraint, loanTypeRange);
         DataValidation clientValidation = validationHelper.createValidation(clientNameConstraint, clientNameRange);
@@ -262,6 +271,9 @@ public class LoanWorkbookPopulator extends AbstractWorkbookPopulator {
         DataValidation chargeTwoAmountTypeValidation = validationHelper.createValidation(chargeTwoAmountTypeConstraint,
                 chargeTwoAmountTypeRange);
 
+        DataValidation chargeThreeNameValidation = validationHelper.createValidation(chargeThreeNameConstraint, chargeThreeNameRange);
+        DataValidation chargeFourNameValidation = validationHelper.createValidation(chargeFourNameConstraint, chargeFourNameRange);
+
         interestFrequencyValidation.setSuppressDropDownArrow(true);
 
         worksheet.addValidationData(officeValidation);
@@ -299,6 +311,9 @@ public class LoanWorkbookPopulator extends AbstractWorkbookPopulator {
         worksheet.addValidationData(chargeTwoNameValidation);
         // worksheet.addValidationData(chargeTwoAmountValidation);
         worksheet.addValidationData(chargeTwoAmountTypeValidation);
+
+        worksheet.addValidationData(chargeThreeNameValidation);
+        worksheet.addValidationData(chargeFourNameValidation);
 
     }
 
@@ -349,6 +364,15 @@ public class LoanWorkbookPopulator extends AbstractWorkbookPopulator {
         worksheet.setColumnWidth(LoanConstants.CHARGE_AMOUNT_2, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
         worksheet.setColumnWidth(LoanConstants.CHARGE_AMOUNT_TYPE_2, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
         worksheet.setColumnWidth(LoanConstants.CHARGE_DUE_DATE_2, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+
+        worksheet.setColumnWidth(LoanConstants.CHARGE_NAME_3, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(LoanConstants.CHARGE_AMOUNT_3, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(LoanConstants.CHARGE_DUE_DATE_3, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+
+        worksheet.setColumnWidth(LoanConstants.CHARGE_NAME_4, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(LoanConstants.CHARGE_AMOUNT_4, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+        worksheet.setColumnWidth(LoanConstants.CHARGE_DUE_DATE_4, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
+
         worksheet.setColumnWidth(LoanConstants.GROUP_ID, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
         worksheet.setColumnWidth(LoanConstants.LINK_ACCOUNT_ID, TemplatePopulateImportConstants.MEDIUM_COL_SIZE);
 
@@ -393,6 +417,15 @@ public class LoanWorkbookPopulator extends AbstractWorkbookPopulator {
         writeString(LoanConstants.CHARGE_AMOUNT_2, rowHeader, "Charged Amount");
         writeString(LoanConstants.CHARGE_AMOUNT_TYPE_2, rowHeader, "Charged Amount Type");
         writeString(LoanConstants.CHARGE_DUE_DATE_2, rowHeader, "Charged On Date");
+
+        writeString(LoanConstants.CHARGE_NAME_3, rowHeader, "Charge Name*");
+        writeString(LoanConstants.CHARGE_AMOUNT_3, rowHeader, "Charged Amount");
+        writeString(LoanConstants.CHARGE_DUE_DATE_3, rowHeader, "Charged On Date");
+
+        writeString(LoanConstants.CHARGE_NAME_4, rowHeader, "Charge Name*");
+        writeString(LoanConstants.CHARGE_AMOUNT_4, rowHeader, "Charged Amount");
+        writeString(LoanConstants.CHARGE_DUE_DATE_4, rowHeader, "Charged On Date");
+
         writeString(LoanConstants.GROUP_ID, rowHeader, "GROUP ID");
         writeString(LoanConstants.LINK_ACCOUNT_ID, rowHeader, "Linked Account No.");
 
