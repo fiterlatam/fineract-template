@@ -34,6 +34,7 @@ import org.apache.fineract.portfolio.collectionsheet.command.CollectionSheetBulk
 import org.apache.fineract.portfolio.loanaccount.data.DefaultOrCancelInsuranceInstallmentData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanCreditNote;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.invoice.data.ClasificacionConceptosData;
@@ -67,7 +68,7 @@ public interface LoanWritePlatformService {
 
     CommandProcessingResult writeOff(Long loanId, JsonCommand command);
 
-    CommandProcessingResult specialWriteOff(Long loanId, JsonCommand command);
+    CommandProcessingResult specialWriteOff(Long loanId, JsonCommand command, LoanCreditNote creditNote);
 
     CommandProcessingResult closeLoan(Long loanId, JsonCommand command);
 

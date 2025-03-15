@@ -17,6 +17,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.documentmanagement.domain.Document;
+import org.apache.fineract.portfolio.loanaccount.data.LoanCreditNoteChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanCreditNoteData;
 import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
 
@@ -160,4 +161,14 @@ public class LoanCreditNote extends AbstractAuditableWithUTCDateTimeCustom {
         return this.penaltyVat == null ? BigDecimal.ZERO : this.penaltyVat;
     }
 
+    public LoanCreditNoteChargeData toChargeData() {
+        LoanCreditNoteChargeData data = new LoanCreditNoteChargeData();
+        data.setAval(this.getAval());
+        data.setArrearInterest(this.arrearInterest);
+        data.setHonorarios(this.honorarios);
+        data.setInsurance(this.insurance);
+        data.setMandatoryInsurance(this.mandatoryInsurance);
+
+        return data;
+    }
 }

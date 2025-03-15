@@ -37,6 +37,6 @@ public class SpecialWriteOffLoanCommandHandler implements NewCommandSourceHandle
     @Transactional
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
-        return this.writePlatformService.specialWriteOff(command.getLoanId(), command);
+        return this.writePlatformService.specialWriteOff(command.getLoanId(), command, null);
     }
 }

@@ -854,6 +854,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     private void updateChargePaidByAmount(Money amountPaidTowardsCharge, LoanTransaction loanTransaction, LoanCharge unpaidCharge) {
+        final boolean isWriteOffTransaction = loanTransaction.isWriteOff() || loanTransaction.isCreditNote();
         if (!amountPaidTowardsCharge.isZero()) {
             // Ideally Java Set should not allow duplicates but here if the transaction is reprocessed then it adds a
             // duplicate.

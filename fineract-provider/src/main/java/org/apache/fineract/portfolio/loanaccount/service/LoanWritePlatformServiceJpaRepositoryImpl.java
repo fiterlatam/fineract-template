@@ -2190,7 +2190,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     @Transactional
     @Override
-    public CommandProcessingResult specialWriteOff(final Long loanId, final JsonCommand command) {
+    public CommandProcessingResult specialWriteOff(final Long loanId, final JsonCommand command, LoanCreditNote creditNote) {
         this.loanEventApiJsonValidator.validateSpecialWriteOff(command.json());
         final Map<String, Object> changes = new LinkedHashMap<>();
         changes.put("locale", command.locale());
@@ -2407,7 +2407,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 saveAndFlushLoanWithIntegrityChecks(loan);
             }
             final boolean isCreditNote = command.booleanPrimitiveValueOfParameterNamed("isCreditNote");
-            writeOffTransaction = loan.writeOff(loanRepaymentScheduleInstallmentData, transactionDate, externalId, isCreditNote);
+            LoanCreditNoteChargeData data = null;
+            if (isCreditNote && creditNote != null) {
+                data = creditNote.toChargeData();
+            }
+            writeOffTransaction = loan.writeOff(loanRepaymentScheduleInstallmentData, transactionDate, externalId, isCreditNote, data);
             currentScheduleInstallment.updateInterestCharged(interestToBeChargedAndWrittenOff.getAmount());
             loan.updateLoanSummaryDerivedFields();
             loan.getRepaymentScheduleInstallments().forEach(rp -> rp.checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency));
