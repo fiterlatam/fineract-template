@@ -629,7 +629,7 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                 BigDecimal vatRatio = this.getVat().divide(this.getBase().add(this.getVat()), RoundingMode.HALF_UP);
                 vatValue = vatRatio.multiply(conceptAmountToBeUsed);
             }
-            return vatValue;
+            return vatValue.compareTo(BigDecimal.ZERO) < 0 ? null : vatValue;
         }
     }
 }
