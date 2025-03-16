@@ -204,6 +204,16 @@ public final class LoanScheduleModelDisbursementPeriod implements LoanScheduleMo
     }
 
     @Override
+    public BigDecimal getTotalLifeInsuranceCharged() {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public void setTotalLifeInsuranceCharged(BigDecimal totalLifeInsuranceCharged) {
+        totalLifeInsuranceCharged = BigDecimal.ZERO;
+    }
+
+    @Override
     public boolean recalculateEMIForInstallment() {
         return false;
     }

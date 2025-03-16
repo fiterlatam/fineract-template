@@ -281,6 +281,7 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
         BigDecimal totalVoluntaryInsuranceCharged = BigDecimal.ZERO;
         BigDecimal totalAvalCharged = BigDecimal.ZERO;
         BigDecimal totalHonorariosCharged = BigDecimal.ZERO;
+        BigDecimal totalLifeInsuranceCharged = BigDecimal.ZERO;
 
         for (LoanRepaymentScheduleInstallment repaymentScheduleInstallment : loan.getRepaymentScheduleInstallmentsIgnoringTotalGrace()) {
 
@@ -293,6 +294,8 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
             final Collection<LoanCharge> honorariosCharges = loan.getLoanCharges().stream().filter(LoanCharge::isFlatHono).toList();
             final Collection<LoanCharge> ivaCharges = loan.getLoanCharges().stream()
                     .filter(LoanCharge::isCustomPercentageBasedOfAnotherCharge).toList();
+
+            final Collection<LoanCharge> lifeInsuranceCharges = loan.getLoanCharges().stream().filter(LoanCharge::isLifeInsurance).toList();
 
             BigDecimal mandatoryInsuranceAmount = mandatoryInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream())
                     .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
@@ -363,6 +366,22 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                     lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmountWrittenOff).reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal honorariosOutstanding = honorariosCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal lifeInsuranceAmount = lifeInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal lifeInsurancePaid = lifeInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal lifeInsuranceWaived = lifeInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWaived).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal lifeInsuranceWrittenOff = lifeInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
+                    lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWrittenOff).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal lifeInsuranceOutstanding = lifeInsuranceCharges.stream().flatMap(lic -> lic.installmentCharges().stream()).filter(
                     lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -506,6 +525,42 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                             lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
 
+            BigDecimal lifeInsuranceChargeAmount = lifeInsuranceCharges.stream()
+                    .filter(lc -> lifeInsuranceCharges.stream()
+                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal lifeInsuranceChargePaid = lifeInsuranceCharges.stream()
+                    .filter(lc -> lifeInsuranceCharges.stream()
+                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal lifeInsuranceChargeWaived = lifeInsuranceCharges.stream()
+                    .filter(lc -> lifeInsuranceCharges.stream()
+                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWaived).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal lifeInsuranceChargeWrittenOff = lifeInsuranceCharges.stream()
+                    .filter(lc -> lifeInsuranceCharges.stream()
+                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountWrittenOff).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal lifeInsuranceChargeOutstanding = lifeInsuranceCharges.stream()
+                    .filter(lc -> lifeInsuranceCharges.stream()
+                            .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
+                    .flatMap(lic -> lic.installmentCharges().stream())
+                    .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            lc.getInstallment().getInstallmentNumber()))
+                    .map(LoanInstallmentCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
+
             mandatoryInsuranceAmount = mandatoryInsuranceAmount.add(mandatoryInsuranceTermChargeAmount);
             mandatoryInsurancePaid = mandatoryInsurancePaid.add(mandatoryInsuranceTermChargePaid);
             mandatoryInsuranceWaived = mandatoryInsuranceWaived.add(mandatoryInsuranceTermChargeWaived);
@@ -529,6 +584,12 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
             honorariosWaived = honorariosWaived.add(honorariosTermChargeWaived);
             honorariosWrittenOff = honorariosWrittenOff.add(honorariosTermChargeWrittenOff);
             honorariosOutstanding = honorariosOutstanding.add(honorariosTermChargeOutstanding);
+
+            lifeInsuranceAmount = lifeInsuranceAmount.add(lifeInsuranceChargeAmount);
+            lifeInsurancePaid = lifeInsurancePaid.add(lifeInsuranceChargePaid);
+            lifeInsuranceWaived = lifeInsuranceWaived.add(lifeInsuranceChargeWaived);
+            lifeInsuranceWrittenOff = lifeInsuranceWrittenOff.add(lifeInsuranceChargeWrittenOff);
+            lifeInsuranceOutstanding = lifeInsuranceOutstanding.add(lifeInsuranceChargeOutstanding);
 
             totalMandatoryInsuranceCharged = totalMandatoryInsuranceCharged.add(mandatoryInsuranceAmount);
             totalVoluntaryInsuranceCharged = totalVoluntaryInsuranceCharged.add(voluntaryInsuranceAmount);
@@ -573,6 +634,13 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                     periodData.setVoluntaryInsuranceWaived(voluntaryInsuranceWaived);
                     periodData.setVoluntaryInsuranceWrittenOff(voluntaryInsuranceWrittenOff);
                     periodData.setVoluntaryInsuranceOutstanding(voluntaryInsuranceOutstanding);
+
+                    periodData.setLifeInsuranceDue(lifeInsuranceAmount);
+                    periodData.setLifeInsurancePaid(lifeInsurancePaid);
+                    periodData.setLifeInsuranceWaived(lifeInsuranceWaived);
+                    periodData.setLifeInsuranceWrittenOff(lifeInsuranceWrittenOff);
+                    periodData.setLifeInsuranceOutstanding(lifeInsuranceOutstanding);
+
                     break;
                 }
             }

@@ -365,6 +365,16 @@ public class LoanAssembler {
         BigDecimal valorDescuento = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("valorDescuento", element);
         loanApplication.updateValorDescuento(valorDescuento);
 
+        // Update Life Insurance Loan charge
+        BigDecimal lifeInsuranceSUM = loanScheduleModel.getPeriods().stream().filter(tli -> tli.getTotalLifeInsuranceCharged() != null)
+                .map(tli -> tli.getTotalLifeInsuranceCharged()).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        loanApplication.getLoanCharges().forEach(loanCharge -> {
+            if (loanCharge.getCharge().isPercentageBasedLifeInsurance()) {
+                loanCharge.updateAmount(lifeInsuranceSUM);
+            }
+        });
+
         /// Migrated loan details
         Boolean isMigratedLoan = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, element);
         if (isMigratedLoan == null) {

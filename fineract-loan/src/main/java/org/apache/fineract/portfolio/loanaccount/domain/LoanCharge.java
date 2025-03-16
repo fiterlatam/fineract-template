@@ -25,6 +25,8 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -51,6 +53,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     private static final String DUE_DATE_PARAM = "dueDate";
 
+    @Getter
     @ManyToOne(optional = false)
     @JoinColumn(name = "loan_id", referencedColumnName = "id", nullable = false)
     private Loan loan;
@@ -74,12 +77,15 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "charge_payment_mode_enum")
     private Integer chargePaymentMode;
 
+    @Setter
     @Column(name = "calculation_percentage", scale = 6, precision = 19, nullable = true)
     private BigDecimal percentage;
 
+    @Setter
     @Column(name = "calculation_on_amount", scale = 6, precision = 19, nullable = true)
     private BigDecimal amountPercentageAppliedTo;
 
+    @Getter
     @Column(name = "charge_amount_or_percentage", scale = 6, precision = 19, nullable = false)
     private BigDecimal amountOrPercentage;
 
@@ -360,7 +366,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     || chargeCalculationType.isPercentageOfInstallmentPrincipalAndInterest()
                     || chargeCalculationType.isPercentageOfInstallmentInterest() || chargeCalculationType.isPercentageOfDisbursement()
                     || chargeCalculationType.isPercentageOfInsurance() || chargeCalculationType.isPercentageOfHonorarios()
-                    || chargeCalculationType.isPercentageOfAnotherCharge()) {
+                    || chargeCalculationType.isPercentageOfAnotherCharge() || chargeCalculationType.isPercentageOfLifeInsurance()) {
                 this.percentage = chargeAmount;
                 this.amountPercentageAppliedTo = amountPercentageAppliedTo;
                 if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
@@ -1494,6 +1500,10 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     public boolean isMandatoryInsurance() {
         // Charge is distributed among the installments
         return getChargeCalculation().isMandatoryInsuranceCharge();
+    }
+
+    public boolean isLifeInsurance() {
+        return getChargeCalculation().isLifeInsurance();
     }
 
     public boolean isVoluntaryInsurance() {

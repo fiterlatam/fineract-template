@@ -96,6 +96,12 @@ public final class LoanSchedulePeriodData {
     private BigDecimal honorariosWaived;
     private BigDecimal honorariosWrittenOff;
     private BigDecimal honorariosOutstanding;
+    private BigDecimal lifeInsuranceDue = BigDecimal.ZERO;
+    private BigDecimal lifeInsurancePaid;
+    private BigDecimal lifeInsuranceWaived;
+    private BigDecimal lifeInsuranceWrittenOff;
+    private BigDecimal lifeInsuranceOutstanding;
+
     private Collection<FeeDetails> feeDetails;
     private Long installmentId;
 

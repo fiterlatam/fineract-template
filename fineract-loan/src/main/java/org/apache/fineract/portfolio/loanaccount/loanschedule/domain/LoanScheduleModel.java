@@ -96,6 +96,7 @@ public final class LoanScheduleModel {
         BigDecimal totalVoluntaryInsuranceCharged = BigDecimal.ZERO;
         BigDecimal totalAvalCharged = BigDecimal.ZERO;
         BigDecimal totalHonorariosCharged = BigDecimal.ZERO;
+        BigDecimal totalLifeInsuranceCharged = BigDecimal.ZERO;
 
         final int decimalPlaces = this.totalPrincipalDisbursed.getCurrencyDigitsAfterDecimal();
         final Integer inMultiplesOf = this.totalPrincipalDisbursed.getCurrencyInMultiplesOf();
@@ -118,6 +119,9 @@ public final class LoanScheduleModel {
             totalMandatoryInsuranceCharged = totalMandatoryInsuranceCharged.add(modelPeriod.getTotalMandatoryInsuranceCharged());
             totalVoluntaryInsuranceCharged = totalVoluntaryInsuranceCharged.add(modelPeriod.getTotalVoluntaryInsuranceCharged());
             totalAvalCharged = totalAvalCharged.add(modelPeriod.getTotalAvalCharged());
+            totalLifeInsuranceCharged = totalLifeInsuranceCharged.add(modelPeriod.getTotalLifeInsuranceCharged());
+
+            periodData.setLifeInsuranceDue(modelPeriod.getTotalLifeInsuranceCharged());
 
             if (modelPeriod.isDisbursementPeriod()) {
                 totalHonorariosCharged = totalHonorariosCharged.add(periodData.getFeeChargesDue());
@@ -142,6 +146,7 @@ public final class LoanScheduleModel {
         loanScheduleData.setTotalVoluntaryInsuranceCharged(totalVoluntaryInsuranceCharged);
         loanScheduleData.setTotalAvalCharged(totalAvalCharged);
         loanScheduleData.setTotalHonorariosCharged(totalHonorariosCharged);
+        loanScheduleData.setTotalLifeInsuranceCharged(totalLifeInsuranceCharged);
 
         return loanScheduleData;
     }

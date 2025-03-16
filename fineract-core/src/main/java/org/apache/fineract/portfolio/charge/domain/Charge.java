@@ -477,6 +477,10 @@ public class Charge extends AbstractPersistableCustom {
         return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageBasedMandatoryInsurance();
     }
 
+    public boolean isPercentageBasedLifeInsurance() {
+        return ChargeCalculationType.fromInt(this.chargeCalculation).isLifeInsurance();
+    }
+
     public boolean isInstallmentFee() {
         return ChargeTimeType.fromInt(this.chargeTimeType).isInstalmentFee();
     }
@@ -1069,6 +1073,8 @@ public class Charge extends AbstractPersistableCustom {
             } else if (this.isAvalChargeFlatForMigration()) {
                 verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
                         ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(), null, null, null);
+            } else if (this.isPercentageBasedLifeInsurance()) {
+                verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_DE_VIDA.getIndex(), null, null, null, null);
             } else {
                 throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
                         Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());

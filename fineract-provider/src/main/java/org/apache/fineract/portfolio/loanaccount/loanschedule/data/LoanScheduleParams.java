@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.loanschedule.data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,6 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
@@ -86,6 +89,18 @@ public final class LoanScheduleParams {
     private final Map<LocalDate, Money> disburseDetailMap;
     private Money principalToBeScheduled;
     private Money outstandingBalance;
+
+    @Getter
+    @Setter
+    private BigDecimal principalApproved;
+
+    @Getter
+    @Setter
+    private BigDecimal principalProposed;
+
+    @Getter
+    @Setter
+    private int installmentDayOfMonth;
 
     // total outstanding balance as per rest for interest calculation.
     private Money outstandingBalanceAsPerRest;

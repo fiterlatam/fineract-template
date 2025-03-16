@@ -1058,8 +1058,9 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
                 chargeCalculationType(ChargeCalculationType.FLAT_DISB_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL), //
                 chargeCalculationType(ChargeCalculationType.FLAT_DISB_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL_ACHG), //
                 chargeCalculationType(ChargeCalculationType.FLAT_DISB_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL_HONO), //
-                chargeCalculationType(ChargeCalculationType.FLAT_DISB_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL_HONO_ACHG) //
-
+                chargeCalculationType(ChargeCalculationType.FLAT_DISB_IPRIN_IINT_OPRIN_OINT_SEGO_AVAL_HONO_ACHG), //
+                chargeCalculationType(ChargeCalculationType.LIIN), //
+                chargeCalculationType(ChargeCalculationType.LIIN_SEGO) //
         );
     }
 
@@ -2142,8 +2143,9 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
                 loanChargeCalculationType(ChargeCalculationType.IPRIN_IINT_AVAL_SEGOVOLUNTARIO),
                 loanChargeCalculationType(ChargeCalculationType.IINT_SEGO_AVAL_SEGOVOLUNTARIO),
                 loanChargeCalculationType(ChargeCalculationType.IPRIN_IINT_SEGO_AVAL_SEGOVOLUNTARIO),
-                loanChargeCalculationType(ChargeCalculationType.SEGOVOLUNTARIO)//
-
+                loanChargeCalculationType(ChargeCalculationType.SEGOVOLUNTARIO), //
+                loanChargeCalculationType(ChargeCalculationType.LIIN), //
+                loanChargeCalculationType(ChargeCalculationType.LIIN_SEGO) //
         );
     }
 
