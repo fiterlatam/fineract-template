@@ -33,7 +33,6 @@ import org.apache.fineract.infrastructure.core.config.TaskExecutorConstant;
 import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
-import org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
@@ -59,7 +58,6 @@ public class RecalculateInterestForMaximumLegalRateTasklet implements Tasklet {
     private final ThreadPoolTaskExecutor taskExecutor;
     private final LoanReadPlatformService loanReadPlatformService;
     private final LoanProductReadPlatformService loanProductReadPlatformService;
-    private final LoanArrearsAgeingUpdateHandler loanArrearsAgeingUpdateHandler;
 
     @Override
     public RepeatStatus execute(@NotNull StepContribution contribution, @NotNull ChunkContext chunkContext) throws Exception {
@@ -78,9 +76,6 @@ public class RecalculateInterestForMaximumLegalRateTasklet implements Tasklet {
         List<LoanRescheduleData> loanScheduleInstallments = loanReadPlatformService
                 .retrieveLoansForInterestRecalculation(maximumCreditRateConfigurationData, pageSize, maximumLoanId);
         if (loanScheduleInstallments != null && !loanScheduleInstallments.isEmpty()) {
-            log.info("Truncating loan arrears");
-            this.loanArrearsAgeingUpdateHandler.truncateLoanArrearsAgingDetails();
-            log.info("Done truncating loan arrears");
             loanScheduleInstallments = Collections.synchronizedList(loanScheduleInstallments);
             long finish = System.currentTimeMillis();
             log.debug("Done fetching loans within {} milliseconds", finish - start);
@@ -94,8 +89,6 @@ public class RecalculateInterestForMaximumLegalRateTasklet implements Tasklet {
                             maximumCreditRateConfigurationData);
                 } while (!CollectionUtils.isEmpty(queue));
             }
-            log.info("Update Loan Arrears Ageing Details for all loans after Max Legal Rate Change");
-            this.loanArrearsAgeingUpdateHandler.updateLoanArrearsAgeingDetailsForAllLoans(false);
         }
         return RepeatStatus.FINISHED;
     }
