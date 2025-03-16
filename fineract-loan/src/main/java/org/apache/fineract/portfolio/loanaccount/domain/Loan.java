@@ -6502,6 +6502,21 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (this.getLoanProductRelatedDetail().hasTotalGracePeriod()) {
             loanApplicationTerms.setNumberOfInstallmentsToIgnore(this.getLoanProductRelatedDetail().getGraceOnPrincipalPayment());
         }
+
+        // For schedule preview, before creating a new loan or for quotation, we can use principal amount
+        // OR before approving new loan, we can use principal amount
+        if (loanApplicationTerms.getApprovedPrincipal().getAmount().compareTo(BigDecimal.ZERO) == 0) {
+            loanApplicationTerms.setPrincipalAmountApproved(getProposedPrincipal());
+        } else {
+            loanApplicationTerms.setPrincipalAmountApproved(getApprovedPrincipal());
+        }
+
+        loanApplicationTerms.setPrincipalAmountProposed(getProposedPrincipal());
+
+        if (Objects.nonNull(this.getExpectedDisbursedOnLocalDate())) {
+            loanApplicationTerms.setInstallmentDayOfMonth(this.getExpectedDisbursedOnLocalDate().getDayOfMonth());
+        }
+
         return loanApplicationTerms;
     }
 

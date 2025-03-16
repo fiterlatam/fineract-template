@@ -48,6 +48,7 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     BigDecimal totalVoluntaryInsuranceCharged = BigDecimal.ZERO;
     BigDecimal totalAvalCharged = BigDecimal.ZERO;
     BigDecimal totalHonorariosCharged = BigDecimal.ZERO;
+    BigDecimal totalLifeInsuranceCharged = BigDecimal.ZERO;
     private boolean recalculateEMIForInstallment;
     private BigDecimal advancePrincipalAmountForInstallment;
 
@@ -243,6 +244,16 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     @Override
     public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged) {
         this.totalMandatoryInsuranceCharged = totalMandatoryInsuranceCharged;
+    }
+
+    @Override
+    public BigDecimal getTotalLifeInsuranceCharged() {
+        return totalLifeInsuranceCharged;
+    }
+
+    @Override
+    public void setTotalLifeInsuranceCharged(BigDecimal totalLifeInsuranceCharged) {
+        this.totalLifeInsuranceCharged = totalLifeInsuranceCharged;
     }
 
     @Override

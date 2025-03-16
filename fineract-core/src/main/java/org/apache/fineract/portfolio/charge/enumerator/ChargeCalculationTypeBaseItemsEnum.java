@@ -33,7 +33,8 @@ public enum ChargeCalculationTypeBaseItemsEnum {
                             "outstandinginterest"), SEGURO_OBRIGATORIO(6, "Seguro Obrigatorio", "SEGO", "seguroobrigatorio"), AVAL(7,
                                     "Aval", "AVAL", "aval"), HOORARIOS(8, "Hoorarios", "HONO", "honorarios"), PERCENT_OF_ANOTHER_CHARGE(9,
                                             "% Of another charge", "ACHG", "percentofanothercharge"), SEGURO_VOLUNTARIO(10,
-                                                    "Seguro voluntario/asistencia", "VOLUNTARIO", "segurovoluntario");
+                                                    "Seguro voluntario/asistencia", "VOLUNTARIO",
+                                                    "segurovoluntario"), SEGURO_DE_VIDA(11, "Seguro de vida", "LIIN", "segurovida");
 
     private final int index;
     private final String description;
@@ -82,5 +83,9 @@ public enum ChargeCalculationTypeBaseItemsEnum {
 
     public Boolean isSeguroVoluntario() {
         return this.index == SEGURO_VOLUNTARIO.index;
+    }
+
+    public static int size() {
+        return values().length;
     }
 }

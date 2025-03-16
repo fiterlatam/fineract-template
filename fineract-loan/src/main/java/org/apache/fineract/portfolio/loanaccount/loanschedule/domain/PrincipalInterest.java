@@ -18,6 +18,9 @@
  */
 package org.apache.fineract.portfolio.loanaccount.loanschedule.domain;
 
+import java.util.HashMap;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.organisation.monetary.domain.Money;
 
 public class PrincipalInterest {
@@ -26,11 +29,15 @@ public class PrincipalInterest {
     private final Money interest;
     private final Money interestPaymentDueToGrace;
     private Money rescheduleInterestPortion;
+    @Getter
+    @Setter
+    private HashMap<String, Object> auxiliaryData;
 
     public PrincipalInterest(final Money principal, final Money interest, final Money interestPaymentDueToGrace) {
         this.principal = principal;
         this.interest = interest;
         this.interestPaymentDueToGrace = interestPaymentDueToGrace;
+        this.auxiliaryData = new HashMap<>();
     }
 
     public Money principal() {
@@ -51,5 +58,13 @@ public class PrincipalInterest {
 
     public void setRescheduleInterestPortion(Money rescheduleInterestPortion) {
         this.rescheduleInterestPortion = rescheduleInterestPortion;
+    }
+
+    public void addAuxiliaryData(String key, Object value) {
+        this.auxiliaryData.put(key, value);
+    }
+
+    public Object getAuxiliaryData(String key) {
+        return this.auxiliaryData.get(key);
     }
 }

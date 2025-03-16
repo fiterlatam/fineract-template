@@ -244,6 +244,18 @@ public final class LoanApplicationTerms {
     @Setter
     private List<LoanRepaymentScheduleInstallment> existentInstallments;
 
+    @Getter
+    @Setter
+    private BigDecimal principalAmountProposed;
+
+    @Getter
+    @Setter
+    private BigDecimal principalAmountApproved;
+
+    @Getter
+    @Setter
+    private int installmentDayOfMonth;
+
     public static LoanApplicationTerms assembleFrom(final ApplicationCurrency currency, final Integer loanTermFrequency,
             final PeriodFrequencyType loanTermPeriodFrequencyType, final Integer numberOfRepayments, final Integer repaymentEvery,
             final PeriodFrequencyType repaymentPeriodFrequencyType, Integer nthDay, DayOfWeekType weekDayType,

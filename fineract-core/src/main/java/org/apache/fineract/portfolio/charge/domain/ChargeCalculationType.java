@@ -1492,6 +1492,8 @@ public enum ChargeCalculationType {
     IPRIN_IINT_SEGO_AVAL_SEGOVOLUNTARIO(1049, "00110011001",
             "installmentprincipal.installmentinterest.seguroobrigatorio.aval.segurovoluntarioasistencia"), //
     SEGOVOLUNTARIO(1050, "00000000001", "segurovoluntarioasistencia"), //
+    LIIN(1051, "000000000001", "lifeinsurance"), //
+    LIIN_SEGO(1052, "000000100001", "seguroobrigatorio.lifeinsurance"), //
 
     ;
 
@@ -1544,59 +1546,73 @@ public enum ChargeCalculationType {
 
     public boolean isFlat() {
         return this.value.equals(ChargeCalculationType.FLAT.getValue())
-                || this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex()) == '1';
+                || getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex()) == '1';
+    }
+
+    public boolean isLifeInsurance() {
+        return this.value.equals(ChargeCalculationType.LIIN.getValue()) || this.value.equals(ChargeCalculationType.LIIN_SEGO.getValue())
+                || getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_DE_VIDA.getIndex()) == '1';
+    }
+
+    // Method contains life insurance
+    public boolean containsLifeInsurance() {
+        return getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_DE_VIDA.getIndex()) == '1';
+    }
+
+    public boolean isPercentageOfLifeInsurance() {
+        return getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_DE_VIDA.getIndex()) == '1';
     }
 
     public boolean isPercentageOfDisbursement() {
         return this.value.equals(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getValue())
-                || this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.DISBURSED_AMOUNT.getIndex()) == '1';
+                || getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.DISBURSED_AMOUNT.getIndex()) == '1';
     }
 
     public boolean isPercentageOfInstallmentPrincipal() {
         return this.value.equals(ChargeCalculationType.PERCENT_OF_AMOUNT.getValue())
-                || this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex()) == '1';
+                || getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex()) == '1';
     }
 
     public boolean isPercentageOfInstallmentPrincipalAndInterest() {
         return this.value.equals(ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST.getValue())
-                || (this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex()) == '1'
-                        && this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.INTEREST_INSTALLMENT.getIndex()) == '1');
+                || (getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex()) == '1'
+                        && getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.INTEREST_INSTALLMENT.getIndex()) == '1');
     }
 
     public boolean isPercentageOfInstallmentInterest() {
         return this.value.equals(ChargeCalculationType.PERCENT_OF_INTEREST.getValue())
-                || this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.INTEREST_INSTALLMENT.getIndex()) == '1';
+                || getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.INTEREST_INSTALLMENT.getIndex()) == '1';
     }
 
     public boolean isPercentageOfOutstandingPrincipal() {
-        return this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.OUTSTANDING_PRINCIPAL.getIndex()) == '1';
+        return getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.OUTSTANDING_PRINCIPAL.getIndex()) == '1';
     }
 
     public boolean isPercentageOfOutstandingInterest() {
-        return this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.OUTSTANDING_INTEREST.getIndex()) == '1';
+        return getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.OUTSTANDING_INTEREST.getIndex()) == '1';
     }
 
     public boolean isPercentageOfInsurance() {
-        return this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex()) == '1';
+        return getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex()) == '1';
     }
 
     public boolean isPercentageOfAval() {
-        return this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()) == '1' && this.equals(DISB_AVAL)
+        return getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()) == '1' && this.equals(DISB_AVAL)
                 && isPercentageOfDisbursement();
     }
 
     public boolean isFlatAvalForMigration() {
-        return this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()) == '1' && this.equals(FLAT_AVAL)
+        return getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex()) == '1' && this.equals(FLAT_AVAL)
                 && isFlat();
     }
 
     public boolean isPercentageOfHonorarios() {
-        return this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex()) == '1'
-                && this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex()) == '1';
+        return getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex()) == '1'
+                && getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex()) == '1';
     }
 
     public boolean isPercentageOfAnotherCharge() {
-        return this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.PERCENT_OF_ANOTHER_CHARGE.getIndex()) == '1'
+        return getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.PERCENT_OF_ANOTHER_CHARGE.getIndex()) == '1'
                 || this.value.equals(ChargeCalculationType.PERCENT_OF_ANOTHER_CHARGE.getValue());
     }
 
@@ -1611,7 +1627,7 @@ public enum ChargeCalculationType {
     public boolean isPercentageBased() {
         return isPercentageOfInstallmentPrincipal() || isPercentageOfInstallmentPrincipalAndInterest()
                 || isPercentageOfInstallmentInterest() || isPercentageOfDisbursement() || isPercentageOfAnotherCharge()
-                || isPercentageOfOutstandingPrincipal();
+                || isPercentageOfOutstandingPrincipal() || isPercentageOfLifeInsurance();
     }
 
     public boolean isAmountFromExternal() {
@@ -1619,11 +1635,11 @@ public enum ChargeCalculationType {
     }
 
     public boolean isVoluntaryInsurance() {
-        String val = this.byteRepresentation;
-        if (this.byteRepresentation.length() == 10) {
+        String val = getByteRepresentation();
+        if (getByteRepresentation().length() == 10) {
             // Adding a leading 0 because voluntaryInsurance has position 10 while byterepresentation of all codes is 10
             // character
-            val = this.byteRepresentation + "0";
+            val = getByteRepresentation() + "0";
         }
         return val.charAt(ChargeCalculationTypeBaseItemsEnum.SEGURO_VOLUNTARIO.getIndex()) == '1'
                 && val.charAt(ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex()) == '1';
@@ -1635,7 +1651,7 @@ public enum ChargeCalculationType {
     }
 
     public boolean isFlatHono() {
-        return isFlat() && this.byteRepresentation.charAt(ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex()) == '1';
+        return isFlat() && getByteRepresentation().charAt(ChargeCalculationTypeBaseItemsEnum.HOORARIOS.getIndex()) == '1';
     }
 
     public boolean isFlatMandatoryInsurance() {
@@ -1666,4 +1682,13 @@ public enum ChargeCalculationType {
         return isFlatMandatoryInsurance() || isPercentageBasedMandatoryInsurance() || isCustomPercentageOfOutstandingPrincipalCharge();
     }
 
+    public String getByteRepresentation() {
+        String paddedByteRepresentation = this.byteRepresentation;
+
+        while (paddedByteRepresentation.length() < ChargeCalculationTypeBaseItemsEnum.size()) {
+            paddedByteRepresentation = paddedByteRepresentation.concat("0");
+        }
+
+        return paddedByteRepresentation;
+    }
 }

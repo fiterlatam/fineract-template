@@ -24,6 +24,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.Objects;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.portfolio.charge.api.ChargesApiConstants;
 
@@ -194,7 +195,7 @@ public class ChargeInsuranceDetail {
             this.totalValue = newValue;
         }
 
-        if (this.insuranceChargedAs.isCargo()) {
+        if (Objects.nonNull(this.insuranceChargedAs) && this.insuranceChargedAs.isCargo()) {
             this.deadline = null;
         } else {
             final String deadlineParamName = ChargesApiConstants.deadlineParamName;

@@ -583,6 +583,11 @@ public class LoanScheduleAssembler {
             loanApplicationTerms.setNumberOfInstallmentsToIgnore(graceOnPrincipalPayment);
         }
 
+        // For schedule preview, before creating a new loan or for quotation, we can use principal amount
+        // OR before approving new loan, we can use principal amount
+        loanApplicationTerms.setPrincipalAmountApproved(principal);
+        loanApplicationTerms.setPrincipalAmountProposed(principal);
+
         return loanApplicationTerms;
     }
 
