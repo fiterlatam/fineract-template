@@ -33,4 +33,14 @@
         </sql>
     </changeSet>
 
+    <changeSet id="20" author="fineract">
+        <sql>
+            <![CDATA[
+                ALTER TABLE m_loan_repayment_schedule
+                   ADD COLUMN life_insurance_charge_portion NUMERIC(19, 6) NULL DEFAULT 0;
+            ]]>
+        </sql>
+    </changeSet>
+
+
 </databaseChangeLog>

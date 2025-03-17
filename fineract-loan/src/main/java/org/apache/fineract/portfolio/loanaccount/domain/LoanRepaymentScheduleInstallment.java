@@ -32,6 +32,8 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -170,6 +172,11 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     @Column(name = "migrated_installment")
     private boolean isMigratedInstallment;
+
+    @Setter
+    @Getter
+    @Column(name = "life_insurance_charge_portion", nullable = true)
+    private BigDecimal lifeInsuranceChargePortion;
 
     public LoanRepaymentScheduleInstallment() {
         this.installmentNumber = null;

@@ -1357,7 +1357,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     + " ls.fee_charges_amount as feeChargesDue, ls.fee_charges_completed_derived as feeChargesPaid, ls.fee_charges_waived_derived as feeChargesWaived, ls.fee_charges_writtenoff_derived as feeChargesWrittenOff, "
                     + " ls.penalty_charges_amount as penaltyChargesDue, ls.penalty_charges_completed_derived as penaltyChargesPaid, ls.penalty_charges_waived_derived as penaltyChargesWaived, "
                     + " ls.penalty_charges_writtenoff_derived as penaltyChargesWrittenOff, ls.total_paid_in_advance_derived as totalPaidInAdvanceForPeriod, "
-                    + " ls.total_paid_late_derived as totalPaidLateForPeriod, ls.credits_amount as totalCredits, ls.is_down_payment isDownPayment, ls.advance_principal_amount advancePrincipalAmount "
+                    + " ls.total_paid_late_derived as totalPaidLateForPeriod, ls.credits_amount as totalCredits, ls.is_down_payment isDownPayment, ls.advance_principal_amount advancePrincipalAmount, life_insurance_charge_portion lifeInsuranceChargePortion "
                     + " from m_loan_repayment_schedule ls ";
         }
 
@@ -1549,6 +1549,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         credits, isDownPayment);
 
                 periodData.setInstallmentId(installmentId);
+                periodData.setLifeInsuranceDue(rs.getBigDecimal("lifeInsuranceChargePortion"));
 
                 periods.add(periodData);
             }

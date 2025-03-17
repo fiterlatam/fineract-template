@@ -707,7 +707,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         BigDecimal honorariosTermChargeAmount = ivaCharges.stream().filter(
                 lc -> honorariosCharges.stream().anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
                 .map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal lifeInsuranceTermChargeAmount = ivaCharges.stream().filter(
+        BigDecimal lifeInsuranceTermChargeAmount = lifeInsuranceCharges.stream().filter(
                 lc -> lifeInsuranceCharges.stream().anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
                 .map(LoanCharge::getInstallmentChargeAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -715,7 +715,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         voluntaryInsuranceAmount = voluntaryInsuranceAmount.add(voluntaryInsuranceTermChargeAmount);
         avalAmount = avalAmount.add(avalTermChargeAmount);
         honorariosAmount = honorariosAmount.add(honorariosTermChargeAmount);
-        lifeInsuranceAmount = lifeInsuranceAmount.add(mandatoryInsuranceTermChargeAmount);
+        lifeInsuranceAmount = lifeInsuranceAmount.add(lifeInsuranceTermChargeAmount);
 
         installment.setTotalMandatoryInsuranceCharged(mandatoryInsuranceAmount);
         installment.setTotalVoluntaryInsuranceCharged(voluntaryInsuranceAmount);

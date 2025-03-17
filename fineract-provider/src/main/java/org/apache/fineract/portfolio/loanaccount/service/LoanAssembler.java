@@ -375,6 +375,10 @@ public class LoanAssembler {
             }
         });
 
+        loanApplication.getRepaymentScheduleInstallments().stream()
+                .forEach(repaymentScheduleInstallment -> repaymentScheduleInstallment.setLifeInsuranceChargePortion(loanScheduleModel
+                        .getPeriods().get(repaymentScheduleInstallment.getInstallmentNumber()).getTotalLifeInsuranceCharged()));
+
         /// Migrated loan details
         Boolean isMigratedLoan = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, element);
         if (isMigratedLoan == null) {
