@@ -1565,6 +1565,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         scheduledLoanInstallment.feeChargesDue(), scheduledLoanInstallment.penaltyChargesDue(),
                         scheduledLoanInstallment.isRecalculatedInterestComponent(), scheduledLoanInstallment.getLoanCompoundingDetails(),
                         scheduledLoanInstallment.rescheduleInterestPortion(), scheduledLoanInstallment.isDownPaymentPeriod());
+                installment.setLifeInsuranceChargePortion(scheduledLoanInstallment.getTotalLifeInsuranceCharged());
                 addLoanRepaymentScheduleInstallment(installment);
             }
         }

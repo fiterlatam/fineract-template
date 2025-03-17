@@ -532,6 +532,11 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                     .filter(lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
                             lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            if (Objects.nonNull(repaymentScheduleInstallment.getLifeInsuranceChargePortion())) {
+                lifeInsuranceChargeAmount = repaymentScheduleInstallment.getLifeInsuranceChargePortion();
+            }
+
             BigDecimal lifeInsuranceChargePaid = lifeInsuranceCharges.stream()
                     .filter(lc -> lifeInsuranceCharges.stream()
                             .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
@@ -595,6 +600,7 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
             totalVoluntaryInsuranceCharged = totalVoluntaryInsuranceCharged.add(voluntaryInsuranceAmount);
             totalAvalCharged = totalAvalCharged.add(avalAmount);
             totalHonorariosCharged = totalHonorariosCharged.add(honorariosAmount);
+            totalLifeInsuranceCharged = totalLifeInsuranceCharged.add(lifeInsuranceAmount);
 
             Integer graceOnChargesPayment = loan.getLoanProductRelatedDetail().getGraceOnChargesPayment();
             boolean hasTotalGracePeriod = loan.getLoanProductRelatedDetail().hasTotalGracePeriod();
@@ -635,7 +641,7 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                     periodData.setVoluntaryInsuranceWrittenOff(voluntaryInsuranceWrittenOff);
                     periodData.setVoluntaryInsuranceOutstanding(voluntaryInsuranceOutstanding);
 
-                    periodData.setLifeInsuranceDue(lifeInsuranceAmount);
+                    periodData.setLifeInsuranceDue(periodData.getLifeInsuranceDue());
                     periodData.setLifeInsurancePaid(lifeInsurancePaid);
                     periodData.setLifeInsuranceWaived(lifeInsuranceWaived);
                     periodData.setLifeInsuranceWrittenOff(lifeInsuranceWrittenOff);
@@ -659,6 +665,7 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
         loanScheduleData.setTotalVoluntaryInsuranceCharged(totalVoluntaryInsuranceCharged);
         loanScheduleData.setTotalAvalCharged(totalAvalCharged);
         loanScheduleData.setTotalHonorariosCharged(totalHonorariosCharged);
+        loanScheduleData.setTotalLifeInsuranceCharged(totalLifeInsuranceCharged);
     }
 
 }
