@@ -349,7 +349,7 @@ public final class LoanEventApiJsonValidator {
                         "pointOfSalesCode", LoanEventApiJsonValidator.IS_IMPORTED_TRANSACTION_PARAM,
                         LoanEventApiJsonValidator.REPAYMENT_CHANNEL_ID_PARAM, LoanEventApiJsonValidator.REPAYMENT_BANK_ID_PARAM,
                         LoanEventApiJsonValidator.TRANSACTION_PROCESSING_STRATEGY_PARAM, LoanEventApiJsonValidator.CLIENT_ID_NUMBER_PARAM,
-                        "reduceInstallmentAmount", LoanEventApiJsonValidator.HONORARIOS_AMOUNT_PARAM));
+                        "reduceInstallmentAmount", LoanEventApiJsonValidator.HONORARIOS_AMOUNT_PARAM, "occurredOnSuspendedAccount"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);
