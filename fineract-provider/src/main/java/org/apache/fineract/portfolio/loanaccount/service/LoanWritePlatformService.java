@@ -147,7 +147,7 @@ public interface LoanWritePlatformService {
     @Transactional
     CommandProcessingResult claimLoan(Long loanId, JsonCommand command);
 
-    void processAndSaveLoanDocument(LoanDocumentData loanDocumentData);
+    void processInvoiceFor(LoanDocumentData loanDocumentData);
 
     ClasificacionConceptosData getClasificacionConceptosData(String concepto);
 }

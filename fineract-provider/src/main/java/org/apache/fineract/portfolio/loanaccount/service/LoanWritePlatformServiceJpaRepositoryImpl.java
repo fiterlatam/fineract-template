@@ -4791,8 +4791,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                     loanDocumentData.setPenaltyChargesPaid(penaltyChargesPaid);
                     loanDocumentData.setPenaltyChargesVatPaid(penaltyChargesVatPaid);
-                    loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
-                    processAndSaveLoanDocument(loanDocumentData);
+                    this.processInvoiceFor(loanDocumentData);
                     this.loanTransactionRepository.saveAndFlush(loanTransaction);
                     for (final LoanTransaction accrualTransaction : invoicedByAccrualTransactionSet) {
                         if (!accrualTransaction.isPartiallyInvoiced()) {
@@ -4825,36 +4824,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
     }
 
-    private void knockOffInvoicesRecursively(final List<FacturaElectronicaMensual> invoicesToKnockOff,
-            final FacturaElectronicaMensual currentElectronicaMensual, final List<FacturaElectronicaMensual> facturaElectronicaMensuals) {
-        BigDecimal remainingAmount = currentElectronicaMensual.getCosto_total();
-        if (!invoicesToKnockOff.isEmpty()) {
-            for (final FacturaElectronicaMensual invoiceToKnockOff : invoicesToKnockOff) {
-                final BigDecimal amountToKnockOff = invoiceToKnockOff.getCosto_total();
-                final String lastInvoiceNumber = invoiceToKnockOff.getNumero_doc();
-                final LocalDate lastInvoiceDate = invoiceToKnockOff.getFecha_factura();
-                if (remainingAmount.compareTo(BigDecimal.ZERO) > 0 && amountToKnockOff.compareTo(BigDecimal.ZERO) > 0) {
-                    final FacturaElectronicaMensual creditNoteDocument = currentElectronicaMensual.clone();
-                    BigDecimal creditNoteAmount;
-                    if (remainingAmount.compareTo(amountToKnockOff) >= 0) {
-                        creditNoteAmount = amountToKnockOff;
-                        remainingAmount = remainingAmount.subtract(amountToKnockOff);
-                    } else {
-                        creditNoteAmount = remainingAmount;
-                        remainingAmount = BigDecimal.ZERO;
-                    }
-                    creditNoteDocument.setCosto_total(creditNoteAmount);
-                    creditNoteDocument.setPrecio_unitario(creditNoteAmount);
-                    creditNoteDocument.setNum_facafect(lastInvoiceNumber);
-                    creditNoteDocument.setFec_facafect(lastInvoiceDate);
-                    facturaElectronicaMensuals.add(creditNoteDocument);
-                }
-            }
-        }
-    }
-
     @Override
-    public void processAndSaveLoanDocument(final LoanDocumentData loanDocumentData) {
+    public void processInvoiceFor(final LoanDocumentData loanDocumentData) {
+        loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
         final List<FacturaElectronicaMensual> facturaElectronicaMensuals = new ArrayList<>();
         final BigDecimal interestPaid = loanDocumentData.getInterestPaid();
         final BigDecimal interestVatPaid = BigDecimal.ZERO;
@@ -4871,12 +4843,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final BigDecimal honorariosPaid = loanDocumentData.getHonorariosPaid();
         final BigDecimal honorariosVatPaid = loanDocumentData.getHonorariosVatPaid();
 
-        List<FacturaElectronicaMensual> invoicesToKnockOff = new ArrayList<>();
-        final LoanDocumentData.LoanDocumentType documentType = loanDocumentData.getDocumentType();
         synchronized (this) {
             log.info("Acquiring lock for loan document processing with client id: {}", loanDocumentData.getClientIdNumber());
             FacturaElectronicaMensual facturaElectronicaMensual = generateInvoice(loanDocumentData,
-                    loanDocumentData.getProductTypeParamId(), documentType, invoicesToKnockOff);
+                    loanDocumentData.getProductTypeParamId());
 
             long itemPosition = 0L;
             if (interestPaid.compareTo(BigDecimal.ZERO) > 0) {
@@ -4894,13 +4864,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final ClasificacionConceptosData clasificacionConceptosData = this
                         .getClasificacionConceptosData(loanDocumentConcept.name());
                 this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, interestVatPaid);
-                if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType) && !invoicesToKnockOff.isEmpty()) {
-                    final List<FacturaElectronicaMensual> interestInvoicesToKnockOff = invoicesToKnockOff.stream()
-                            .filter(inv -> loanDocumentConcept.getSku().equals(inv.getSku())).toList();
-                    knockOffInvoicesRecursively(interestInvoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
-                } else {
-                    facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
-                }
+                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             }
             if (penaltyChargesPaid.compareTo(BigDecimal.ZERO) > 0) {
                 final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.INT_DE_MORA;
@@ -4916,13 +4880,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final ClasificacionConceptosData clasificacionConceptosData = this
                         .getClasificacionConceptosData(loanDocumentConcept.name());
                 this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, penaltyChargesVatPaid);
-                if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType) && !invoicesToKnockOff.isEmpty()) {
-                    final List<FacturaElectronicaMensual> penaltyInvoicesToKnockOff = invoicesToKnockOff.stream()
-                            .filter(inv -> loanDocumentConcept.getSku().equals(inv.getSku())).toList();
-                    knockOffInvoicesRecursively(penaltyInvoicesToKnockOff, facturaElectronicaMensualDuplicate, facturaElectronicaMensuals);
-                } else {
-                    facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
-                }
+                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             }
             if (mandatoryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
                 final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.SEGURO_OBLIGATORIO;
@@ -4943,14 +4901,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final ClasificacionConceptosData clasificacionConceptosData = this
                         .getClasificacionConceptosData(loanDocumentConcept.name());
                 this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, mandatoryInsuranceVatPaid);
-                if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType) && !invoicesToKnockOff.isEmpty()) {
-                    final List<FacturaElectronicaMensual> mandatoryInsuranceInvoicesToKnockOff = invoicesToKnockOff.stream()
-                            .filter(inv -> loanDocumentConcept.getSku().equals(inv.getSku())).toList();
-                    knockOffInvoicesRecursively(mandatoryInsuranceInvoicesToKnockOff, facturaElectronicaMensualDuplicate,
-                            facturaElectronicaMensuals);
-                } else {
-                    facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
-                }
+                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             }
             if (voluntaryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
                 final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.SEGUROS_VOLUNTARIOS;
@@ -4971,14 +4922,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final ClasificacionConceptosData clasificacionConceptosData = this
                         .getClasificacionConceptosData(loanDocumentConcept.name());
                 this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, voluntaryInsuranceVatPaid);
-                if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType) && !invoicesToKnockOff.isEmpty()) {
-                    final List<FacturaElectronicaMensual> voluntaryInsuranceInvoicesToKnockOff = invoicesToKnockOff.stream()
-                            .filter(inv -> loanDocumentConcept.getSku().equals(inv.getSku())).toList();
-                    knockOffInvoicesRecursively(voluntaryInsuranceInvoicesToKnockOff, facturaElectronicaMensualDuplicate,
-                            facturaElectronicaMensuals);
-                } else {
-                    facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
-                }
+                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             }
             if (honorariosPaid.compareTo(BigDecimal.ZERO) > 0) {
                 final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.HONORARIOS;
@@ -4994,14 +4938,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final ClasificacionConceptosData clasificacionConceptosData = this
                         .getClasificacionConceptosData(loanDocumentConcept.name());
                 this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, honorariosVatPaid);
-                if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType) && !invoicesToKnockOff.isEmpty()) {
-                    final List<FacturaElectronicaMensual> honorariosInvoicesToKnockOff = invoicesToKnockOff.stream()
-                            .filter(inv -> loanDocumentConcept.getSku().equals(inv.getSku())).toList();
-                    knockOffInvoicesRecursively(honorariosInvoicesToKnockOff, facturaElectronicaMensualDuplicate,
-                            facturaElectronicaMensuals);
-                } else {
-                    facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
-                }
+                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
             }
             final BigDecimal totalImpuestoItem = facturaElectronicaMensuals.stream().map(FacturaElectronicaMensual::getImpuesto_item)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -5019,8 +4956,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
     }
 
-    private FacturaElectronicaMensual generateInvoice(LoanDocumentData loanDocumentData, Long productTypeParamId,
-            LoanDocumentData.LoanDocumentType documentType, List<FacturaElectronicaMensual> invoicesToKnockOff) {
+    private FacturaElectronicaMensual generateInvoice(LoanDocumentData loanDocumentData, Long productTypeParamId) {
         long documentNumber;
         Long currentCounter;
         final FacturaElectronicaMensual facturaElectronicaMensual = loanDocumentData.toEntity();
@@ -5030,22 +4966,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .orElseThrow(() -> new LoanProductParameterizationNotFoundException(productTypeParamId));
         final Long rangeStartNumber = loanProductParameterization.getRangeStartNumber();
         final Long invoiceCounter = loanProductParameterization.getInvoiceCounter();
-        final Long creditNoteCounter = loanProductParameterization.getCreditNoteCounter();
         final Long rangeEndNumber = loanProductParameterization.getRangeEndNumber();
 
         facturaElectronicaMensual.setFec_desde(loanProductParameterization.getGenerationDate());
         facturaElectronicaMensual.setFec_hasta(loanProductParameterization.getExpirationDate());
-        if (LoanDocumentData.LoanDocumentType.CREDIT_NOTE.equals(documentType)) {
-            currentCounter = ObjectUtils.defaultIfNull(creditNoteCounter, 0L) + 1L;
-            documentNumber = rangeStartNumber + currentCounter;
-            loanProductParameterization.setCreditNoteCounter(currentCounter);
-            invoicesToKnockOff.addAll(this.facturaElectronicMensualRepository
-                    .findById_clienteAndTipo_prod(loanDocumentData.getClientIdNumber(), loanDocumentData.getProductTypeName()));
-        } else {
-            currentCounter = ObjectUtils.defaultIfNull(invoiceCounter, 0L) + 1L;
-            documentNumber = rangeStartNumber + currentCounter;
-            loanProductParameterization.setInvoiceCounter(currentCounter);
-        }
+        currentCounter = ObjectUtils.defaultIfNull(invoiceCounter, 0L) + 1L;
+        documentNumber = rangeStartNumber + invoiceCounter;
+        loanProductParameterization.setInvoiceCounter(currentCounter);
         if (currentCounter > rangeEndNumber) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.invoice.counter.exceeds.range.end.number",
                     String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
