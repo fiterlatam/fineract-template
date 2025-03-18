@@ -5045,13 +5045,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             currentCounter = ObjectUtils.defaultIfNull(invoiceCounter, 0L) + 1L;
             documentNumber = rangeStartNumber + currentCounter;
             loanProductParameterization.setInvoiceCounter(currentCounter);
-            this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
         }
         if (currentCounter > rangeEndNumber) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.invoice.counter.exceeds.range.end.number",
                     String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
                             loanProductParameterization.getProductType()));
         }
+        this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
         facturaElectronicaMensual.setNumero_doc(String.valueOf(documentNumber));
         facturaElectronicaMensual.setReferencia(String.valueOf(documentNumber));
         facturaElectronicaMensual.setCodigo_descuento("0");
