@@ -2949,7 +2949,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean canDisburse(final LocalDate actualDisbursementDate) {
         // If product is credito Rotativo, disburse as much as available. Checked before.
-        if (this.getLoanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase(Locale.ROOT))) {
+        if (this.getLoanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase(Locale.ROOT))
+                || this.getLoanProduct().getName().toLowerCase()
+                        .contains(LoanProductType.NANO_CREDITO.getCode().toLowerCase(Locale.ROOT))) {
             return true;
         }
 
@@ -3137,8 +3139,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     private boolean isDisbursementAllowed() {
         boolean isAllowed = false;
 
-        // If product is credito Rotativo, disburse as much as available. Checked before.
-        if (this.getLoanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase())) {
+        // If product is credito Rotativo or baboo credito, disburse as much as available. Checked before.
+        if (this.getLoanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase())
+                || this.getLoanProduct().getName().toLowerCase().contains(LoanProductType.NANO_CREDITO.getCode().toLowerCase())) {
             return true;
         }
 
@@ -3723,7 +3726,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
 
             if (isProgressiveLoan()
-                    && Boolean.FALSE.equals(this.getLoanProduct().getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode()))) {
+                    && Boolean.FALSE.equals(this.getLoanProduct().getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode()))
+                    && Boolean.FALSE.equals(this.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode()))) {
                 reprocess = true;
             }
         }
@@ -5788,6 +5792,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             case LOAN_DISBURSED:
                 if ((!(isApproved() && isNotDisbursed()) && !this.loanProduct.isMultiDisburseLoan()) || (Boolean.FALSE.equals(
                         this.getLoanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase()))
+                        && Boolean.FALSE.equals(this.getLoanProduct().getName().toLowerCase()
+                                .contains(LoanProductType.NANO_CREDITO.getCode().toLowerCase()))
                         && this.loanProduct.isMultiDisburseLoan() && !isAllTranchesNotDisbursed())) {
                     final String defaultUserMessage = "Loan Disbursal is not allowed. Loan Account is not in approved and not disbursed state.";
                     final ApiParameterError error = ApiParameterError

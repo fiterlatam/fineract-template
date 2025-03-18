@@ -179,8 +179,8 @@ public class PrincipalInterestCalculator {
 
         // If we are regenerating schedule and installments were paid, then we need to keep the original values
         if (Objects.nonNull(loanApplicationTerms.getLoanProductName())
-                && loanApplicationTerms.getLoanProductName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())
-                && Objects.nonNull(loanApplicationTerms.getExistentInstallments())
+                && (loanApplicationTerms.getLoanProductName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())
+                        || loanApplicationTerms.getLoanProductName().contains(LoanProductType.NANO_CREDITO.getCode()))
                 && Objects.nonNull(loanApplicationTerms.getExistentInstallments())
                 && loanApplicationTerms.getExistentInstallments().size() >= periodNumber) {
             LoanRepaymentScheduleInstallment existentInstallment = loanApplicationTerms.getExistentInstallments().get(periodNumber - 1);
