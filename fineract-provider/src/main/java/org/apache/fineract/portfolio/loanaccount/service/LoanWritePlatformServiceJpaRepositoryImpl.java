@@ -5309,7 +5309,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     public void approveRescheduleRequest(Long loanId, Long rescheduleRequestId, LocalDate actualDisbursementDate) {
         Loan loan = this.loanAssembler.assembleFrom(loanId);
 
-        if (loan.getLoanProduct().getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())
+        if ((loan.getLoanProduct().getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())
+                || loan.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode()))
                 && loan.getDisbursementDetails().size() > 1) {
 
             Optional<LoanRescheduleRequest> rescheduleRequestDataOpt = loanRescheduleRequestRepository.findByLoanId(loanId).stream()

@@ -294,7 +294,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             }
 
             // If product is Ctredito Rotativo, fill automatically expected disbursement date tranche details
-            if (loanProduct.getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+            if (loanProduct.getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())
+                    || loanProduct.getName().contains(LoanProductType.NANO_CREDITO.getCode())) {
                 final String expectedDisbursementDate = this.fromJsonHelper
                         .extractStringNamed(LoanApiConstants.expectedDisbursementDateParameterName, command.parsedJson());
 

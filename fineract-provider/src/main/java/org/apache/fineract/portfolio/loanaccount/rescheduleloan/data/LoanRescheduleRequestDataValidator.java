@@ -196,6 +196,7 @@ public class LoanRescheduleRequestDataValidator {
         }
         if (loan.isMultiDisburmentLoan()
                 && !loan.loanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase())
+                && !loan.loanProduct().getName().toLowerCase().contains(LoanProductType.NANO_CREDITO.getCode().toLowerCase())
                 && !loan.loanProduct().isDisallowExpectedDisbursements()) {
             dataValidatorBuilder.reset().failWithCodeNoParameterAddedToErrorCode(
                     RescheduleLoansApiConstants.resheduleForMultiDisbursementNotSupportedErrorCode,

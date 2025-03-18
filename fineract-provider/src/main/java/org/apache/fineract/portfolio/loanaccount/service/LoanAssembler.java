@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -369,11 +370,13 @@ public class LoanAssembler {
         BigDecimal lifeInsuranceSUM = loanScheduleModel.getPeriods().stream().filter(tli -> tli.getTotalLifeInsuranceCharged() != null)
                 .map(tli -> tli.getTotalLifeInsuranceCharged()).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        loanApplication.getLoanCharges().forEach(loanCharge -> {
-            if (loanCharge.getCharge().isPercentageBasedLifeInsurance()) {
-                loanCharge.updateAmount(lifeInsuranceSUM);
-            }
-        });
+        if (Objects.nonNull(loanApplication.getLoanCharges())) {
+            loanApplication.getLoanCharges().forEach(loanCharge -> {
+                if (loanCharge.getCharge().isPercentageBasedLifeInsurance()) {
+                    loanCharge.updateAmount(lifeInsuranceSUM);
+                }
+            });
+        }
 
         loanApplication.getRepaymentScheduleInstallments().stream()
                 .forEach(repaymentScheduleInstallment -> repaymentScheduleInstallment.setLifeInsuranceChargePortion(loanScheduleModel
