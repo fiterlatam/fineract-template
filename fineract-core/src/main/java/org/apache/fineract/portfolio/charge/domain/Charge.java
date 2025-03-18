@@ -1074,7 +1074,8 @@ public class Charge extends AbstractPersistableCustom {
                 verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.AVAL.getIndex(),
                         ChargeCalculationTypeBaseItemsEnum.FLAT.getIndex(), null, null, null);
             } else if (this.isPercentageBasedLifeInsurance()) {
-                verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_DE_VIDA.getIndex(), null, null, null, null);
+                verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_DE_VIDA.getIndex(),
+                        ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(), null, null, null);
             } else {
                 throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
                         Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
