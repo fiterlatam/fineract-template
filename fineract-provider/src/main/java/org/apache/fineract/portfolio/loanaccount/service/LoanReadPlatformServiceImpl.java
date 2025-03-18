@@ -2117,8 +2117,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         INNER JOIN (
                             SELECT sch.*
                             FROM m_loan_repayment_schedule sch
-                            LEFT JOIN m_loan_arrears_aging mlaa ON mlaa.loan_id = sch.loan_id
-                            WHERE sch.completed_derived = FALSE AND sch.duedate >= ? AND (mlaa.overdue_since_date_derived IS NULL OR sch.fromdate > mlaa.overdue_since_date_derived)
+                            WHERE sch.completed_derived = FALSE AND sch.duedate >= ?
                             AND (COALESCE(sch.penalty_charges_amount, 0) - COALESCE(sch.penalty_charges_completed_derived, 0) - COALESCE(sch.penalty_charges_writtenoff_derived, 0) - COALESCE(sch.penalty_charges_waived_derived, 0)) <= 0
                             ORDER BY sch.duedate ASC
                         ) next_schedule ON next_schedule.loan_id = ml.id
