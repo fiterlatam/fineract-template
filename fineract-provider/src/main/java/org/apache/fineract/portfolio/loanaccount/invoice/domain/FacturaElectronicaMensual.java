@@ -338,4 +338,12 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
             this.impuesto_item = impuesto_item;
         }
     }
+
+    public void setImpuesto(BigDecimal impuestoValue) {
+        if (impuestoValue != null && impuestoValue.compareTo(BigDecimal.ZERO) == 0) {
+            this.impuesto = null;
+        } else {
+            this.impuesto = impuestoValue;
+        }
+    }
 }
