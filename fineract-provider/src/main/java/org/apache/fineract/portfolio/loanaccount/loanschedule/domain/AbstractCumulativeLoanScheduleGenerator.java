@@ -725,9 +725,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
         // Reset charge amount to be calculated from zero for next installment
         for (LoanCharge loanCharge : loanCharges) {
-            if (Boolean.FALSE.equals(loanCharge.getChargeCalculation().isLifeInsurance())) {
-                loanCharge.setInstallmentChargeAmount(BigDecimal.ZERO);
-            }
+            loanCharge.setInstallmentChargeAmount(BigDecimal.ZERO);
         }
     }
 
@@ -2584,10 +2582,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 }
                 cumulative = cumulative.plus(calculatedAmount);
             }
-        }
-
-        if (loanCharge.getChargeCalculation().isPercentageOfLifeInsurance()) {
-            loanCharge.setAmount(loanCharge.getAmount(cumulative.getCurrency()).getAmount().add(calculatedAmount));
         }
 
         loanCharge.setInstallmentChargeAmount(loanCharge.getInstallmentChargeAmount().add(calculatedAmount));

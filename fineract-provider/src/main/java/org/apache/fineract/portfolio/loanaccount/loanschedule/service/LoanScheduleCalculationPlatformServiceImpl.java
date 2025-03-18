@@ -533,10 +533,6 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                             lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            if (Objects.nonNull(repaymentScheduleInstallment.getLifeInsuranceChargePortion())) {
-                lifeInsuranceChargeAmount = repaymentScheduleInstallment.getLifeInsuranceChargePortion();
-            }
-
             BigDecimal lifeInsuranceChargePaid = lifeInsuranceCharges.stream()
                     .filter(lc -> lifeInsuranceCharges.stream()
                             .anyMatch(mic -> mic.getCharge().getId().equals(lc.getCharge().getParentChargeId())))
