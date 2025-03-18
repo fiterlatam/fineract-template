@@ -689,7 +689,6 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
         final String documentNumber = String.valueOf(rangeStartNumber + currentCounter);
         loanProductParameterization.setCreditNoteCounter(currentCounter);
         final AtomicLong itemCounter = new AtomicLong(0);
-        loanProductParameterization.setCreditNoteCounter(currentCounter);
         if (currentCounter > rangeEndNumber) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.invoice.counter.exceeds.range.end.number",
                     String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
