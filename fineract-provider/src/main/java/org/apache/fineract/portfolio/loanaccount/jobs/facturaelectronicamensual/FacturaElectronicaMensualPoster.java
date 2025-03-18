@@ -63,8 +63,7 @@ public class FacturaElectronicaMensualPoster {
                         .collect(Collectors.joining(","));
                 final List<LoanDocumentData> groupedLoanInvoices = groupByClientIdAndProductType(loanInvoiceDataList);
                 for (final LoanDocumentData groupedLoanInvoice : groupedLoanInvoices) {
-                    groupedLoanInvoice.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
-                    this.loanWritePlatformService.processAndSaveLoanDocument(groupedLoanInvoice);
+                    this.loanWritePlatformService.processInvoiceFor(groupedLoanInvoice);
                 }
                 if (StringUtils.isNotBlank(invoiceTransactionIds)) {
                     final String updateLoanTransactionSQL = "UPDATE m_loan_transaction SET is_invoiced_generated_by_job = TRUE WHERE id IN ("
