@@ -554,7 +554,7 @@ public class LoanWorkbookPopulator extends AbstractWorkbookPopulator {
             Name chargeAmount = loanWorkbook.createName();
             Name chargeAmountType = loanWorkbook.createName();
 
-            String chargeName = charges.get(i).getName().trim().replaceAll("[ )(]", "_");
+            String chargeName = charges.get(i).getName().trim().replaceAll("[ )(><=]", "_");
 
             chargeColName.setNameName("CHARGE_NAME_" + chargeName);
             chargeColName.setRefersToFormula(TemplatePopulateImportConstants.CHARGE_SHEET_NAME + "!$B$" + (i + 2));
