@@ -616,7 +616,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             case MANDATORY_INSURANCE -> {
                 balances.setAggregatedFeeChargesPortion(balances.getAggregatedFeeChargesPortion().add(portion));
                 addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, zero, zero, portion, zero);
-                Set<LoanCharge> fees = chargesOfInstallment.stream().filter(LoanCharge::isMandatoryInsurance).collect(Collectors.toSet());
+                Set<LoanCharge> fees = chargesOfInstallment.stream().filter(lc -> lc.isMandatoryInsurance() || lc.isLifeInsurance())
+                        .collect(Collectors.toSet());
                 chargesPaidByFunction.accept(loanTransaction, portion, fees, currentInstallment.getInstallmentNumber());
             }
             case VOLUNTARY_INSURANCE -> {
@@ -1210,7 +1211,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
     @NotNull
     private static Set<LoanCharge> getLoanChargesOfInstallment(Set<LoanCharge> charges, LoanRepaymentScheduleInstallment currentInstallment,
             int firstNormalInstallmentNumber) {
-        return charges.stream().filter(loanCharge -> loanCharge.isDueForCollectionForInstallment(currentInstallment))
+        return charges.stream().filter(loanCharge -> loanCharge.isDueForCollectionForInstallment(currentInstallment)
+                || currentInstallment.getInstallmentCharges().stream().filter(li -> li.getLoanCharge().isLifeInsurance()).count() > 0)
                 .collect(Collectors.toSet());
     }
 

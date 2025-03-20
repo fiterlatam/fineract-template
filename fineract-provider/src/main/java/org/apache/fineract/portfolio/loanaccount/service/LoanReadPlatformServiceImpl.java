@@ -1648,7 +1648,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                     select mlcpd.loan_transaction_id , sum(mlcpd.amount) amount from
                                     m_loan_charge_paid_by mlcpd
                                     join m_loan_charge mlc on mlc.id = mlcpd.loan_charge_id
-                                    where mlc.charge_calculation_enum IN (468, 575, 231)
+                                    where mlc.charge_calculation_enum IN (468, 575, 231, 1051, 1052)
                                 group by mlcpd.loan_transaction_id
                                 ) mandatory_insurance on mandatory_insurance.loan_transaction_id = tr.id
                                 left join (

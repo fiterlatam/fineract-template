@@ -878,7 +878,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             return feePortionOfTransaction;
         }
         for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
-            if (installmentCharge.getLoanCharge().getChargeCalculation().isMandatoryInsuranceCharge()) {
+            if (installmentCharge.getLoanCharge().getChargeCalculation().isMandatoryInsuranceCharge()
+                    || installmentCharge.getLoanCharge().getChargeCalculation().isLifeInsurance()) {
 
                 for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
                     if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),

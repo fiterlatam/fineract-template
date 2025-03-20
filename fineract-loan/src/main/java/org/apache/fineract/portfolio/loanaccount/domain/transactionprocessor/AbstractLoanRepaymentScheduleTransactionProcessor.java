@@ -712,20 +712,27 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
             if (unpaidCharge == null) {
                 break; // All are trache charges
             }
-            final Money amountPaidTowardsCharge = unpaidCharge.updatePaidAmountBy(amountRemaining, installmentNumber, feeAmount,
+            Money amountPaidTowardsCharge = unpaidCharge.updatePaidAmountBy(amountRemaining, installmentNumber, feeAmount,
                     isWriteOffTransaction);
 
             // Ideally Java Set should not allow duplicates but here if the transaction is reprocessed then it adds a
             // duplicate.
             // This fix is made to stop that duplicate entry of loanChargepaidByObject
             if (!loanTransaction.getLoanChargesPaid().isEmpty()) {
-                long count = loanTransaction.getLoanChargesPaid().stream()
-                        .filter(p -> Objects.equals(p.getLoanCharge().getId(), unpaidCharge.getId())
-                                && Objects.equals(p.getInstallmentNumber(), installmentNumber))
-                        .count();
-                if (count > 0) {
+                LoanInstallmentCharge loanInstallmentCharge = unpaidCharge.getInstallmentLoanCharge(installmentNumber);
+                if (loanInstallmentCharge.getLoanCharge().isLifeInsurance() && loanInstallmentCharge.isPaid()) {
+                    amountPaidTowardsCharge = loanInstallmentCharge.getAmountPaid(chargeAmount.getCurrency());
                     amountRemaining = amountRemaining.minus(amountPaidTowardsCharge);
                     continue;
+                } else {
+                    long count = loanTransaction.getLoanChargesPaid().stream()
+                            .filter(p -> Objects.equals(p.getLoanCharge().getId(), unpaidCharge.getId())
+                                    && Objects.equals(p.getInstallmentNumber(), installmentNumber))
+                            .count();
+                    if (count > 0) {
+                        amountRemaining = amountRemaining.minus(amountPaidTowardsCharge);
+                        continue;
+                    }
                 }
             }
 
