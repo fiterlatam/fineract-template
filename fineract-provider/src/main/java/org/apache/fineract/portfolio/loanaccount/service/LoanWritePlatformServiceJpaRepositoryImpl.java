@@ -311,6 +311,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final LoanProductParameterizationRepository productParameterizationRepository;
     private final CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
     private final LoanCreditNoteRepository loanCreditNoteRepository;
+    private final LoanAccrualPlatformService loanAccrualPlatformService;
 
     @PostConstruct
     public void registerForNotification() {
@@ -717,11 +718,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             minimumDaysInArrearsToSuspendLoanAccount = 90L;
         }
 
+        if (!loan.isMigratedLoan()) {
+            final LocalDate accrualDate = DateUtils.getLocalDateOfTenant().minusDays(1);
+            this.loanAccrualPlatformService.persistDailyInterestAccrual(loanId, accrualDate);
+        }
+
         for (LoanTransaction transaction : loan.retrieveListOfAccrualTransactions()) {
             long days = loan.getRepaymentScheduleInstallmentsIgnoringTotalGrace().get(0).getDueDate()
                     .until(transaction.getTransactionDate(), ChronoUnit.DAYS);
             if (days >= minimumDaysInArrearsToSuspendLoanAccount) {
                 transaction.markAsOccurredOnSuspendedAccount();
+            } else {
+                transaction.markAsNotOccurredOnSuspendedAccount();
             }
         }
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
