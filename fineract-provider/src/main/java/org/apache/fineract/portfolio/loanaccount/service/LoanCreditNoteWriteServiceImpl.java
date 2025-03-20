@@ -329,8 +329,9 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
             Collection<LoanCharge> loanCharges = loan.getCharges().stream().filter(LoanCharge::isNotFullyPaid).toList();
 
             if (aval.isGreaterThanZero()) {
-                LoanCharge avalCharge = loanCharges.stream().filter(loanCharge -> loanCharge.getCharge().isAvalCharge()).findFirst()
-                        .orElse(null);
+                LoanCharge avalCharge = loanCharges.stream().filter(
+                        loanCharge -> (loanCharge.getCharge().isAvalCharge() || loanCharge.getCharge().isAvalChargeFlatForMigration()))
+                        .findFirst().orElse(null);
                 if (avalCharge != null) {
                     for (LoanCharge vatCharge : loanCharges) {
                         if (Objects.equals(avalCharge.getCharge().getId(), vatCharge.getCharge().getParentChargeId())) {
