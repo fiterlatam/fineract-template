@@ -709,7 +709,21 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         l.grace_interest_free_periods AS graceOnInterestCharged,
                         l.grace_on_arrears_ageing AS graceOnArrearsAgeing,
                         l.nominal_interest_rate_per_period AS interestRatePerPeriod,
+                        COALESCE((SELECT ltv.decimal_value
+                                FROM m_loan_term_variations ltv
+                                WHERE ltv.loan_id = l.id
+                                AND ltv.term_type = 10
+                                AND ltv.is_active = true
+                                ORDER BY ltv.applicable_date DESC
+                                LIMIT 1), l.nominal_interest_rate_per_period) AS effective_interest_rate_per_period,
                         l.annual_nominal_interest_rate AS annualInterestRate,
+                        COALESCE((SELECT ltv.decimal_value
+                                FROM m_loan_term_variations ltv
+                                WHERE ltv.loan_id = l.id
+                                AND ltv.term_type = 10
+                                AND ltv.is_active = true
+                                ORDER BY ltv.applicable_date DESC
+                                LIMIT 1), l.annual_nominal_interest_rate) AS effective_interest_rate,
                         l.repayment_period_frequency_enum AS repaymentFrequencyType,
                         l.interest_period_frequency_enum AS interestRateFrequencyType,
                         l.term_frequency AS termFrequency,
@@ -1004,8 +1018,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
             final Integer numberOfRepayments = JdbcSupport.getInteger(rs, "numberOfRepayments");
             final Integer repaymentEvery = JdbcSupport.getInteger(rs, "repaymentEvery");
-            final BigDecimal interestRatePerPeriod = rs.getBigDecimal("interestRatePerPeriod");
-            final BigDecimal annualInterestRate = rs.getBigDecimal("annualInterestRate");
+            final BigDecimal interestRatePerPeriod = rs.getBigDecimal("effective_interest_rate_per_period");
+            final BigDecimal annualInterestRate = rs.getBigDecimal("effective_interest_rate");
             final BigDecimal interestRateDifferential = rs.getBigDecimal("interestRateDifferential");
             final boolean isFloatingInterestRate = rs.getBoolean("isFloatingInterestRate");
 
@@ -3903,9 +3917,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                   JOIN m_charge mc ON mc.id = mlc.charge_id
                                   JOIN m_charge parent_charge on parent_charge.id = mc.parent_charge_id
                                   WHERE mc.charge_calculation_enum = 342
-                                      AND mc.is_penalty = TRUE
-                                      AND parent_charge.charge_calculation_enum = 1009
-                                      AND parent_charge.is_penalty = TRUE
+                                  AND mc.is_penalty = TRUE
+                                  AND parent_charge.charge_calculation_enum = 1009
+                                  AND parent_charge.is_penalty = TRUE
                                   group by mlc.loan_id
                         	) penalty_vat_chg  ON penalty_vat_chg.loan_id = ml.id
                         WHERE
