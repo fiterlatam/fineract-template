@@ -52,7 +52,6 @@ import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.domain.*;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleDTO;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleModelDownPaymentPeriod;
@@ -2591,12 +2590,13 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     private BigDecimal processLifeInsuranceCharge(PrincipalInterest principalInterestForThisPeriod, BigDecimal amount,
             Integer installmentNumber) {
         BigDecimal principalApprovedAmount = (BigDecimal) principalInterestForThisPeriod.getAuxiliaryData("principalApprovedAmount");
-        int installmentDayOfMonth = (int) principalInterestForThisPeriod.getAuxiliaryData("installmentDayOfMonth");
+        Integer installmentDayOfMonth = (int) principalInterestForThisPeriod.getAuxiliaryData("installmentDayOfMonth");
         LocalDate periodStartDate = (LocalDate) principalInterestForThisPeriod.getAuxiliaryData("periodStartDate");
         LocalDate periodDueDate = (LocalDate) principalInterestForThisPeriod.getAuxiliaryData("periodDueDate");
 
-        boolean isLeapYear = periodDueDate.isLeapYear();
-        int maxDayOfMonth = YearMonth.from(periodDueDate).lengthOfMonth();
+        Integer maxDayOfMonth = YearMonth.from(periodDueDate).lengthOfMonth();
+
+        Boolean isWeeklyRepayment = periodStartDate.until(periodDueDate, ChronoUnit.DAYS) == 7;
 
         // If not daily, add 1 day to periodStartDate
         if (Boolean.FALSE.equals(periodDueDate.isEqual(periodStartDate))) {
@@ -2605,36 +2605,37 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
         Integer installmentDayOfMonthClone = Integer.valueOf(installmentDayOfMonth);
 
-        // Scenario 1: February with installmentDayOfMonth being 29, 30, or 31
-        if ((installmentDayOfMonth == 29 || installmentDayOfMonth == 30 || installmentDayOfMonth == 31)
-                && periodDueDate.getMonthValue() == 2) {
-            if ((isLeapYear && periodDueDate.getDayOfMonth() == 29) || (!isLeapYear && periodDueDate.getDayOfMonth() == 28)) {
-                amount = amount.add(principalApprovedAmount);
+        if (installmentDayOfMonth > maxDayOfMonth) {
+            installmentDayOfMonthClone = maxDayOfMonth;
+        }
+
+        LocalDate referenceDate = LocalDate.of(periodDueDate.getYear(), periodDueDate.getMonthValue(), installmentDayOfMonthClone);
+
+        // If weekly repayment
+        if (isWeeklyRepayment) {
+            // scenario: when month changes within period...
+            if (periodStartDate.getMonth().compareTo(periodDueDate.getMonth()) != 0) {
+                // scenario: when installment due on day 31 (or 30) and month have 28 or 29 days (feb) or 30 days
+                if (installmentDayOfMonthClone.compareTo(YearMonth.from(periodStartDate).lengthOfMonth()) > 0) {
+                    installmentDayOfMonthClone = YearMonth.from(periodStartDate).lengthOfMonth();
+                }
+
+                referenceDate = LocalDate.of(periodStartDate.getYear(), periodStartDate.getMonthValue(), installmentDayOfMonthClone);
             }
 
-            // Scenario 2: installmentDayOfMonth being 31 and periodDueDate in a month with 30 days
-        } else if (installmentDayOfMonth == 31 && maxDayOfMonth == 30) {
-            if (periodDueDate.getDayOfMonth() == 30) {
-                amount = amount.add(principalApprovedAmount);
-            }
-
-        } else {
-            if (installmentDayOfMonth > maxDayOfMonth) {
-                installmentDayOfMonthClone = maxDayOfMonth;
-            }
-
-            LocalDate referenceDate = LocalDate.of(periodDueDate.getYear(), periodDueDate.getMonthValue(), installmentDayOfMonthClone);
-
-            if (installmentDayOfMonth >= 28) {
+        } else { // Daily and Monthly
+            if (installmentNumber.compareTo(1) > 0 && installmentDayOfMonth >= 28) {
                 referenceDate = LocalDate.of(periodStartDate.getYear(), periodStartDate.getMonthValue(),
                         YearMonth.from(periodStartDate).lengthOfMonth());
             }
+        }
 
-            boolean isWithinRange = (referenceDate.isEqual(periodStartDate) || referenceDate.isAfter(periodStartDate))
-                    && (referenceDate.isEqual(periodDueDate) || referenceDate.isBefore(periodDueDate));
-            if (isWithinRange) {
-                amount = amount.add(principalApprovedAmount);
-            }
+        // If charge date is beween periodStartDate and periodDueDate
+        Boolean isWithinRange = (referenceDate.isEqual(periodStartDate) || referenceDate.isAfter(periodStartDate))
+                && (referenceDate.isEqual(periodDueDate) || referenceDate.isBefore(periodDueDate));
+
+        if (isWithinRange) {
+            amount = amount.add(principalApprovedAmount);
         }
 
         return amount;
