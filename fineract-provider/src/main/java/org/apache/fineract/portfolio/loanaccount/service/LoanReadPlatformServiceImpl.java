@@ -4196,6 +4196,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyPaid", 0)) ELSE SUM(COALESCE(penalty.amount, 0)) END, 0)
                         				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyVatPaid", 0)) ELSE SUM(COALESCE(vat_penalty.amount, 0)) END, 0) AS "totalPaid"
                         		FROM m_loan_transaction mlt
+                                INNER JOIN m_loan mlx ON mlx.id = mlt.loan_id
                         		LEFT JOIN (
                         			SELECT
                         					mpit.accrual_transaction_id AS "accrualTransactionId",
@@ -4316,7 +4317,13 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         			GROUP BY mlcpd.loan_transaction_id
                         		) vat_penalty ON vat_penalty.loan_transaction_id = mlt.id
                         		WHERE mlt.is_reversed = FALSE
-                        		AND mlt.transaction_type_enum = 10 AND mlt.occurred_on_suspended_account = FALSE
+                        		AND mlt.transaction_type_enum = 10
+                                 AND (CASE
+                                        WHEN (mlx.loan_status_id = 300) THEN (mlt.occurred_on_suspended_account = FALSE)
+                                        WHEN (mlx.loan_status_id != 300 AND mlt.invoiced_by_transaction_id IS NULL) THEN (mlt.is_invoiced_generated_by_job = FALSE)
+                                        WHEN (mlx.loan_status_id != 300 AND mlt.invoiced_by_transaction_id IS NOT NULL) THEN (mlt.occurred_on_suspended_account = FALSE)
+                                        ELSE FALSE
+                                      END)
                         		AND mlt.transaction_date <= :date
                                 AND mlt.is_invoiced_generated_by_job = FALSE
                                 AND mlt.loan_id in (:loanIds)
