@@ -160,6 +160,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "is_partially_ivoiced")
     private boolean partiallyInvoiced;
 
+    @Column(name = "is_invoiced_generated_by_job")
+    private boolean invoicedGeneratedByJob;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "accrualTransaction", orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<PartialInvoicedTransaction> partialInvoicedTransactions = new HashSet<>();
 
@@ -1285,4 +1288,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         this.creditNoteChargesDetail = creditNoteChargesDetail;
     }
 
+    public boolean isInvoicedNotGeneratedByJob() {
+        return Boolean.FALSE.equals(invoicedGeneratedByJob);
+    }
 }
