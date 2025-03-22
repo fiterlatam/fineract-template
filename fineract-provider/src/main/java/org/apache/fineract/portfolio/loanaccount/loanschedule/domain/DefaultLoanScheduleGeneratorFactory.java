@@ -47,11 +47,8 @@ public class DefaultLoanScheduleGeneratorFactory implements LoanScheduleGenerato
     }
 
     private LoanScheduleGenerator progressiveLoanScheduleGenerator(final InterestMethod interestMethod) {
-        return switch (interestMethod) {
-            case FLAT -> cumulativeFlatInterestLoanScheduleGenerator;
-            case DECLINING_BALANCE -> cumulativeDecliningBalanceInterestLoanScheduleGenerator;
-            case INVALID -> null;
-        };
+        // Always return the progressive loan schedule generator regardless of interest method
+        return progressiveLoanScheduleGenerator;
     }
 
 }
