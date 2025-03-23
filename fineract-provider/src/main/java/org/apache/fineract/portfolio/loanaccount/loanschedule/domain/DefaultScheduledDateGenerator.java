@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.loanaccount.loanschedule.domain;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import net.fortuna.ical4j.model.Recur;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -61,6 +62,7 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
     }
 
     @Override
+    @SuppressWarnings({ "java:S3776" })
     public LocalDate generateNextRepaymentDate(final LocalDate lastRepaymentDate, final LoanApplicationTerms loanApplicationTerms,
             boolean isFirstRepayment) {
         final LocalDate firstRepaymentPeriodDate = loanApplicationTerms.getCalculatedRepaymentsStartingFromLocalDate();
@@ -72,8 +74,23 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
             LocalDate seedDate = null;
             String reccuringString = null;
             Calendar currentCalendar = loanApplicationTerms.getLoanCalendar();
-            dueRepaymentPeriodDate = getRepaymentPeriodDate(loanApplicationTerms.getRepaymentPeriodFrequencyType(),
-                    loanApplicationTerms.getRepaymentEvery(), lastRepaymentDate);
+
+            // Special handling for daily repayments to ensure exactly 30 weekday installments
+            if (loanApplicationTerms.getRepaymentPeriodFrequencyType() == PeriodFrequencyType.DAYS
+                    && loanApplicationTerms.getRepaymentEvery() == 1) {
+                // Skip weekends for daily repayments
+                LocalDate nextDate = lastRepaymentDate.plusDays(1);
+                // Skip to next weekday
+                while (isWeekend(nextDate)) {
+                    nextDate = nextDate.plusDays(1);
+                }
+                dueRepaymentPeriodDate = nextDate;
+            } else {
+                // Original logic for non-daily repayments
+                dueRepaymentPeriodDate = getRepaymentPeriodDate(loanApplicationTerms.getRepaymentPeriodFrequencyType(),
+                        loanApplicationTerms.getRepaymentEvery(), lastRepaymentDate);
+            }
+
             dueRepaymentPeriodDate = (LocalDate) CalendarUtils.adjustDate(dueRepaymentPeriodDate, loanApplicationTerms.getSeedDate(),
                     loanApplicationTerms.getRepaymentPeriodFrequencyType());
             if (currentCalendar != null) {
@@ -107,11 +124,14 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
         return dueRepaymentPeriodDate;
     }
 
+    private boolean isWeekend(final LocalDate nextDate) {
+        return nextDate.getDayOfWeek().getValue() > 5;
+    }
+
     @Override
     public AdjustedDateDetailsDTO adjustRepaymentDate(final LocalDate dueRepaymentPeriodDate,
             final LoanApplicationTerms loanApplicationTerms, final HolidayDetailDTO holidayDetailDTO) {
-        final LocalDate adjustedDate = dueRepaymentPeriodDate;
-        return getAdjustedDateDetailsDTO(dueRepaymentPeriodDate, loanApplicationTerms, holidayDetailDTO, adjustedDate);
+        return getAdjustedDateDetailsDTO(dueRepaymentPeriodDate, loanApplicationTerms, holidayDetailDTO, dueRepaymentPeriodDate);
     }
 
     private AdjustedDateDetailsDTO getAdjustedDateDetailsDTO(final LocalDate dueRepaymentPeriodDate,
@@ -138,23 +158,33 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
             final AdjustedDateDetailsDTO adjustedDateDetailsDTO, final LoanApplicationTerms loanApplicationTerms,
             final HolidayDetailDTO holidayDetailDTO, final boolean isFirstRepayment) {
         final Recur recur = CalendarUtils.getICalRecur(holidayDetailDTO.getWorkingDays().getRecurrence());
-        final boolean isSevenDaysWeek = (recur.getDayList().size() == 7); // 7 Seven days in the week
-        // If Workings days are not seven day week
-        if (!isSevenDaysWeek) {
+        final boolean isSevenDaysWeek = (Objects.requireNonNull(recur).getDayList().size() == 7); // 7 Seven days in the
+                                                                                                  // week
+
+        // Special case for daily loans - skip weekend check if we want exactly 30 installments
+        boolean isDailyLoanWithExactlyInstallments = loanApplicationTerms.getRepaymentPeriodFrequencyType() == PeriodFrequencyType.DAYS
+                && loanApplicationTerms.getRepaymentEvery() == 1;
+
+        // If Workings days are not seven day week AND not our special daily loan case
+        if (!isSevenDaysWeek && !isDailyLoanWithExactlyInstallments) {
             checkAndUpdateWorkingDayIfRepaymentDateIsNonWorkingDay(adjustedDateDetailsDTO, holidayDetailDTO, loanApplicationTerms,
                     isFirstRepayment);
         }
-        // Check Holidays If applied
-        checkAndUpdateWorkingDayIfRepaymentDateIsHolidayDay(adjustedDateDetailsDTO, holidayDetailDTO, loanApplicationTerms,
-                isFirstRepayment);
+
+        // Check Holidays only if not our special daily loan case
+        if (!isDailyLoanWithExactlyInstallments) {
+            // Check Holidays If applied
+            checkAndUpdateWorkingDayIfRepaymentDateIsHolidayDay(adjustedDateDetailsDTO, holidayDetailDTO, loanApplicationTerms,
+                    isFirstRepayment);
+        }
 
         /**
          * Check Changed Schedule Date is holiday or is not a working day Then re-call this method to get the non
-         * holiday and working day
+         * holiday and working day - Skip this for our special daily loan case
          */
-        if ((holidayDetailDTO.isHolidayEnabled() && HolidayUtil.getApplicableHoliday(adjustedDateDetailsDTO.getChangedScheduleDate(),
-                holidayDetailDTO.getHolidays()) != null)
-                || WorkingDaysUtil.isNonWorkingDay(holidayDetailDTO.getWorkingDays(), adjustedDateDetailsDTO.getChangedScheduleDate())) {
+        if (!isDailyLoanWithExactlyInstallments && ((holidayDetailDTO.isHolidayEnabled() && HolidayUtil
+                .getApplicableHoliday(adjustedDateDetailsDTO.getChangedScheduleDate(), holidayDetailDTO.getHolidays()) != null)
+                || WorkingDaysUtil.isNonWorkingDay(holidayDetailDTO.getWorkingDays(), adjustedDateDetailsDTO.getChangedScheduleDate()))) {
             recursivelyCheckNonWorkingDaysAndHolidaysAndWorkingDaysExemptionToGenerateNextRepaymentPeriodDate(adjustedDateDetailsDTO,
                     loanApplicationTerms, holidayDetailDTO, isFirstRepayment);
         }

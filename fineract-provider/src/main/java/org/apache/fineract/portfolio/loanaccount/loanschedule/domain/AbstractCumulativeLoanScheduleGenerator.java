@@ -2587,6 +2587,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         return cumulative;
     }
 
+    @SuppressWarnings({ "squid:S3776", "squid:S00107", "java:S3776" })
     private BigDecimal processLifeInsuranceCharge(PrincipalInterest principalInterestForThisPeriod, BigDecimal amount,
             Integer installmentNumber) {
         BigDecimal principalApprovedAmount = (BigDecimal) principalInterestForThisPeriod.getAuxiliaryData("principalApprovedAmount");
@@ -2596,7 +2597,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
         Integer maxDayOfMonth = YearMonth.from(periodDueDate).lengthOfMonth();
 
-        Boolean isWeeklyRepayment = periodStartDate.until(periodDueDate, ChronoUnit.DAYS) == 7;
+        boolean isWeeklyRepayment = periodStartDate.until(periodDueDate, ChronoUnit.DAYS) == 7;
 
         // If not daily, add 1 day to periodStartDate
         if (Boolean.FALSE.equals(periodDueDate.isEqual(periodStartDate))) {
