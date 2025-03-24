@@ -720,7 +720,11 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
             // This fix is made to stop that duplicate entry of loanChargepaidByObject
             if (!loanTransaction.getLoanChargesPaid().isEmpty()) {
                 LoanInstallmentCharge loanInstallmentCharge = unpaidCharge.getInstallmentLoanCharge(installmentNumber);
-                if (loanInstallmentCharge.getLoanCharge().isLifeInsurance() && loanInstallmentCharge.isPaid()) {
+                if (Objects.nonNull(loanInstallmentCharge) //
+                        && (Objects.nonNull(loanInstallmentCharge.getLoanCharge())) //
+                        && loanInstallmentCharge.getLoanCharge().isLifeInsurance() //
+                        && loanInstallmentCharge.isPaid() //
+                        && unpaidCharge.isLifeInsurance()) {
                     amountPaidTowardsCharge = loanInstallmentCharge.getAmountPaid(chargeAmount.getCurrency());
                     amountRemaining = amountRemaining.minus(amountPaidTowardsCharge);
                     continue;
