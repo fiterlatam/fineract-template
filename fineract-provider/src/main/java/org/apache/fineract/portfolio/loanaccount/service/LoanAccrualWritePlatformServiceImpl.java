@@ -149,15 +149,16 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
         int totalNumberOfDays = Math.toIntExact(ChronoUnit.DAYS.between(interestStartDate, accrualData.getDueDateAsLocaldate()));
         double totalInterest = accrualData.getAccruableIncome().doubleValue();
         double paidInterest = accrualData.getInterestCompletedIncome() != null ? accrualData.getInterestCompletedIncome().doubleValue()
-                : 0.0;
-        double remainingInterest = totalInterest - paidInterest;
+                : 0D;
+        double waivedInterest = accrualData.getWaivedInterestIncome() != null ? accrualData.getWaivedInterestIncome().doubleValue() : 0D;
+        double remainingInterest = totalInterest - paidInterest - waivedInterest;
 
         if (remainingInterest <= 0) {
             return; // No remaining interest to accrue.
         }
 
         double interestPerDay = totalInterest / totalNumberOfDays;
-        int daysPaid = (int) Math.ceil(paidInterest / interestPerDay);
+        int daysPaid = (int) Math.ceil((paidInterest + waivedInterest) / interestPerDay);
 
         // Adjust start date based on paid days
         LocalDate adjustedStartDate = interestStartDate.plusDays(daysPaid);

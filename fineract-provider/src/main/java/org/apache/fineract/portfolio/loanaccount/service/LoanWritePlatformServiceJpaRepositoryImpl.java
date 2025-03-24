@@ -3578,6 +3578,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 LoanCharge loanCharge = LoanCharge.createNewFromChargeAmount(loan, foreclosureCharge, transactionDate, chargeAmount,
                         receiptNumber);
                 this.addCharge(loan, foreclosureCharge, loanCharge);
+                this.loanChargeRepository.saveAndFlush(loanCharge);
+                saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             }
         }
 

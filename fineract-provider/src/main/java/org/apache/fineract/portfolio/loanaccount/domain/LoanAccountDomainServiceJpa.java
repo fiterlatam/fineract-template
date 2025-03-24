@@ -726,7 +726,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         existingTransactionIds.addAll(loan.findExistingTransactionIds());
         existingReversedTransactionIds.addAll(loan.findExistingReversedTransactionIds());
         final ScheduleGeneratorDTO scheduleGeneratorDTO = null;
-        AppUser appUser = getAppUserIfPresent();
+
         final LoanRepaymentScheduleInstallment foreCloseDetail = loan.fetchLoanForeclosureDetail(foreClosureDate);
         if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()
                 && (loan.getAccruedTill() == null || !foreClosureDate.isEqual(loan.getAccruedTill()))) {
@@ -762,20 +762,32 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         Money feePayable = foreCloseDetail.getFeeChargesCharged(currency);
         Money penaltyPayable = foreCloseDetail.getPenaltyChargesCharged(currency);
         Money payPrincipal = foreCloseDetail.getPrincipal(currency);
-        loan.updateInstallmentsPostDate(foreClosureDate);
+        BigDecimal totalInterestOutstanding = loan.getSummary().getTotalInterestOutstanding();
+        Money interestToWaive = Money.of(currency, totalInterestOutstanding.subtract(interestPayable.getAmount()));
+        loan.updateInstallmentsPostDate(foreClosureDate, interestToWaive);
+        Money totalWriteOff = payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable);
 
+        // after updating the installments. waive off the interest that is not accrued yet and pay off the outstanding.
         LoanTransaction payment = null;
+        List<Long> transactionIds = new ArrayList<>();
+        if (interestToWaive.isGreaterThanZero()) {
+            Money receivableInterest = loan.getReceivableInterest(foreClosureDate);
+            Money unrecognizedIncome = interestToWaive.zero();
+            Money interestComponent = receivableInterest;
+            final LoanTransaction waiveInterestTransaction = LoanTransaction.waiver(loan.getOffice(), loan, interestToWaive,
+                    foreClosureDate, interestComponent, unrecognizedIncome);
+            loan.waiveInterest(waiveInterestTransaction, defaultLoanLifecycleStateMachine(), existingTransactionIds,
+                    existingReversedTransactionIds, scheduleGeneratorDTO);
+        }
 
-        if (payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).isGreaterThanZero()) {
+        if (totalWriteOff.isGreaterThanZero()) {
             final PaymentDetail paymentDetail = null;
             String externalId = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.receiptNumberParamName, command.parsedJson());
-            payment = LoanTransaction.repayment(loan.getOffice(), payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable),
-                    paymentDetail, foreClosureDate, externalId);
+            payment = LoanTransaction.repayment(loan.getOffice(), totalWriteOff, paymentDetail, foreClosureDate, externalId);
             payment.updateLoan(loan);
             newTransactions.add(payment);
         }
 
-        List<Long> transactionIds = new ArrayList<>();
         final ChangedTransactionDetail changedTransactionDetail = loan.handleForeClosureTransactions(payment,
                 defaultLoanLifecycleStateMachine(), scheduleGeneratorDTO);
 
