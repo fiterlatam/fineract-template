@@ -43,4 +43,5 @@
   <include relativeToChangelogFile="true" file="parts/1018_SU_377-vertical_loan_priority_update.xml"/>
   <include relativeToChangelogFile="true" file="parts/1019_EA_187_creditorotativo_laon_product.xml"/>
   <include relativeToChangelogFile="true" file="parts/1020_EA_222_laon_originalnrofrepayments.xml"/>
+  <include relativeToChangelogFile="true" file="parts/1021_EA_246_m_product_loan_update.xml"/>
 </databaseChangeLog>
