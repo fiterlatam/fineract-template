@@ -166,4 +166,5 @@
     <include file="parts/0140-ACCOUNTING_MANUAL_ENTRTIES CONFIGURATION.xml" relativeToChangelogFile="true"/>
     <include file="parts/0141-FBR-725_ADD_MAKER_CHECKER_PERMISSION_FOR_GL_CLOSURE.xml" relativeToChangelogFile="true"/>
     <include file="parts/0142-FBR-745_RESTRUCTURE_WITH_EXTENSION.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0143-FBR-720_CONFIGURE_PRODUCT_INTEREST_WAIVER.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -458,6 +458,35 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         return interestPortionOfTransaction;
     }
 
+    public Money payAccruedInterestComponent(final LocalDate transactionDate, final Money transactionAmountRemaining) {
+
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money interestPortionOfTransaction = Money.zero(currency);
+        this.interestPaid = transactionAmountRemaining.zero().getAmount();
+        final Money accruedInterest = getAccruedInterestOutstanding(currency);
+        Money interestDue = accruedInterest.zero();
+        if (getInterestPaid(currency).compareTo(accruedInterest) < 0) {
+            interestDue = accruedInterest.minus(getInterestPaid(currency));
+        }
+        if (interestDue.isGreaterThanZero()) {
+            if (transactionAmountRemaining.isGreaterThanOrEqualTo(interestDue)) {
+                this.interestPaid = getInterestPaid(currency).plus(interestDue).getAmount();
+                interestPortionOfTransaction = interestPortionOfTransaction.plus(interestDue);
+            } else {
+                this.interestPaid = getInterestPaid(currency).plus(transactionAmountRemaining).getAmount();
+                interestPortionOfTransaction = interestPortionOfTransaction.plus(transactionAmountRemaining);
+            }
+        }
+
+        this.interestPaid = defaultToNullIfZero(this.interestPaid);
+
+        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, interestPortionOfTransaction);
+
+        return interestPortionOfTransaction;
+    }
+
     public Money payPrincipalComponent(final LocalDate transactionDate, final Money transactionAmountRemaining) {
 
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();

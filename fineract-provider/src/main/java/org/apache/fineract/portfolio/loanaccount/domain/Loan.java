@@ -6794,7 +6794,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
-    public void updateInstallmentsPostDate(LocalDate transactionDate) {
+    public void updateInstallmentsPostDate(LocalDate transactionDate, Money interestToWaive) {
         List<LoanRepaymentScheduleInstallment> newInstallments = new ArrayList<>(this.repaymentScheduleInstallments);
         final MonetaryCurrency currency = getCurrency();
         Money totalPrincipal = Money.zero(currency);
@@ -6829,9 +6829,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             installmentNumber++;
         }
 
+        BigDecimal interestComponent = balances[0].getAmount().add(interestToWaive.getAmount());
+        BigDecimal chargesComponent = balances[1].getAmount();
+        BigDecimal penaltyComponent = balances[2].getAmount();
         LoanRepaymentScheduleInstallment newInstallment = new LoanRepaymentScheduleInstallment(null, newInstallments.size() + 1,
-                installmentStartDate, transactionDate, totalPrincipal.getAmount(), balances[0].getAmount(), balances[1].getAmount(),
-                balances[2].getAmount(), isInterestComponent, null);
+                installmentStartDate, transactionDate, totalPrincipal.getAmount(), interestComponent, chargesComponent, penaltyComponent,
+                isInterestComponent, null);
         newInstallment.updateInstallmentNumber(newInstallments.size() + 1);
         newInstallments.add(newInstallment);
         updateLoanScheduleOnForeclosure(newInstallments);

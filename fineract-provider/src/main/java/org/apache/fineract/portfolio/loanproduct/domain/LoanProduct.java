@@ -44,6 +44,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -219,6 +220,10 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "required_committee_approval")
     private Boolean requireCommitteeApproval;
 
+    @Getter
+    @Column(name = "waive_interest_on_early_repayment")
+    private Boolean waiveInterestEarlyRepayment;
+
     public static LoanProduct assembleFromJson(final Fund fund, final LoanTransactionProcessingStrategy loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate,
             final List<Rate> productRates) {
@@ -284,6 +289,7 @@ public class LoanProduct extends AbstractPersistableCustom {
 
         final Boolean isVariableInstallmentsAllowed = command
                 .booleanObjectValueOfParameterNamed(LoanProductConstants.allowVariableInstallmentsParamName);
+        final Boolean waiveInterestOnEalyRepayment = command.booleanObjectValueOfParameterNamed("waiveInterest");
         if (isVariableInstallmentsAllowed != null && isVariableInstallmentsAllowed) {
             minimumGapBetweenInstallments = command.integerValueOfParameterNamed(LoanProductConstants.minimumGapBetweenInstallments);
             maximumGapBetweenInstallments = command.integerValueOfParameterNamed(LoanProductConstants.maximumGapBetweenInstallments);
@@ -424,7 +430,7 @@ public class LoanProduct extends AbstractPersistableCustom {
                 isEqualAmortization, productRates, fixedPrincipalPercentagePerInstallment, disallowExpectedDisbursements,
                 allowApprovedDisbursedAmountsOverApplied, overAppliedCalculationType, overAppliedNumber, ageLimitWarning, ageLimitBlock,
                 addNewCyclesEnabled, loanProductOwnerType, daysLimitAddOn, requiredGuaranteePercent, paymentToleranceLimit,
-                requireCommitteeApproval);
+                requireCommitteeApproval, waiveInterestOnEalyRepayment);
 
     }
 
@@ -663,7 +669,7 @@ public class LoanProduct extends AbstractPersistableCustom {
             final boolean allowApprovedDisbursedAmountsOverApplied, final String overAppliedCalculationType,
             final Integer overAppliedNumber, final Integer ageLimitWarning, final Integer ageLimitBlock, final boolean addNewCyclesEnabled,
             final LoanProductOwnerType loanProductOwnerType, final Integer daysLimitAddOn, BigDecimal requiredGuaranteePercent,
-            final BigDecimal paymentToleranceLimit, Boolean requireCommitteeApproval) {
+            final BigDecimal paymentToleranceLimit, Boolean requireCommitteeApproval, Boolean waiveInterestOnEalyRepayment) {
         this.fund = fund;
         this.transactionProcessingStrategy = transactionProcessingStrategy;
         this.name = name.trim();
@@ -748,6 +754,7 @@ public class LoanProduct extends AbstractPersistableCustom {
         this.requiredGuaranteePercent = requiredGuaranteePercent;
         this.paymentToleranceLimit = paymentToleranceLimit;
         this.requireCommitteeApproval = requireCommitteeApproval;
+        this.waiveInterestEarlyRepayment = waiveInterestOnEalyRepayment;
 
         if (loanProductOwnerType != null) {
             this.ownerType = loanProductOwnerType.getValue();
@@ -1303,6 +1310,12 @@ public class LoanProduct extends AbstractPersistableCustom {
             final boolean newValue = command.booleanObjectValueOfParameterNamed(LoanProductConstants.ADD_NEW_CYCLES_ENABLED);
             actualChanges.put(LoanProductConstants.ADD_NEW_CYCLES_ENABLED, newValue);
             this.addNewCycledEnabled = newValue;
+        }
+
+        if (command.isChangeInBooleanParameterNamed("waiveInterest", this.waiveInterestEarlyRepayment)) {
+            final boolean newValue = command.booleanObjectValueOfParameterNamed("waiveInterest");
+            actualChanges.put("waiveInterest", newValue);
+            this.waiveInterestEarlyRepayment = newValue;
         }
 
         return actualChanges;
