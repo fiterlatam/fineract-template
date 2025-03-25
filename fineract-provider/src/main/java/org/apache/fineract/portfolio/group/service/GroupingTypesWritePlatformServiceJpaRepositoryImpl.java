@@ -1132,7 +1132,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                         + "JOIN m_group mg ON mg.id = mgc.group_id SET mc.office_id = ? WHERE mg.id = ?; ",
                 newCenter.getOffice().getId(), groupId);
 
-        //update ranges of loans
+        // update ranges of loans
         CodeValueData codeValueData = this.codeValueReadPlatformService.retrieveCodeValue(Long.valueOf(group.getMeetingDay()));
         String meetingDayCode = resolveMeetingDay(codeValueData.getName());
         String meetingRange = resolveMeetingRange(group.getMeetingStart());
@@ -1147,11 +1147,11 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                 when ml.term_period_frequency_enum=2 then concat( 'FREQ=MONTHLY;',?) \
                 when ml.term_period_frequency_enum=3 then concat( 'FREQ=YEARLY;',?) \
                 ELSE concat( 'FREQ=MONTHLY;',?) END\
-                ) where mcl.id in(select client_id from m_group_client where group_id = ?) 
-                and mci.entity_type_enum = 3 and ml.loan_status_id <=300 
+                ) where mcl.id in(select client_id from m_group_client where group_id = ?)
+                and mci.entity_type_enum = 3 and ml.loan_status_id <=300
                 """;
         String rangeDay = "%s%s".formatted(meetingRange, meetingDayCode);
-        this.jdbcTemplate.update(updateLoanRanges, rangeDay,rangeDay,rangeDay,rangeDay,rangeDay, groupId);
+        this.jdbcTemplate.update(updateLoanRanges, rangeDay, rangeDay, rangeDay, rangeDay, rangeDay, groupId);
 
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
@@ -1162,8 +1162,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
     }
 
     private String resolveMeetingRange(Integer meetingStart) {
-        switch (meetingStart)
-        {
+        switch (meetingStart) {
             case 1:
                 return "BYSETPOS=1;";
             case 8:
@@ -1180,15 +1179,15 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
     private String resolveMeetingDay(String name) {
         switch (name) {
             case "Lunes":
-                return "BYDAY=TU";
+                return "BYDAY=MO";
             case "Martes":
-                return "TU";
+                return "BYDAY=TU";
             case "Miércoles":
-                return "WE";
+                return "BYDAY=WE";
             case "Jueves":
-                return "TH";
+                return "BYDAY=TH";
             case "Viernes":
-                return "FR";
+                return "BYDAY=FR";
             default:
                 return "BYDAY=MO";
         }
