@@ -88,4 +88,15 @@
         </sql>
     </changeSet>
 
+    <changeSet author="fineract" id="20">
+        <sql>
+            <![CDATA[
+                -- restore Mifos channel
+                INSERT INTO custom.c_channel (hash, "name", description, active, channel_type)
+                VALUES ('Mifos', 'Mifos', 'Mifos', true, 1);
+
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
