@@ -64,6 +64,9 @@ import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
 
 public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanScheduleGenerator {
 
+    public static final String STRING_PRINCIPAL_APPROVED_AMOUNT = "principalApprovedAmount";
+    public static final String STRING_PRINCIPAL_PROPOSED_AMOUNT = "principalProposedAmount";
+
     @Override
     public LoanScheduleModel generate(final MathContext mc, final LoanApplicationTerms loanApplicationTerms,
             final Set<LoanCharge> loanCharges, final HolidayDetailDTO holidayDetailDTO) {
@@ -772,14 +775,22 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         PrincipalInterest principalInterest = new PrincipalInterest(currentPeriodParams.getPrincipalForThisPeriod(),
                 currentPeriodParams.getInterestForThisPeriod(), null);
 
-        principalInterest.addAuxiliaryData("principalApprovedAmount", scheduleParams.getPrincipalApproved());
-        if (Objects.isNull(scheduleParams.getPrincipalApproved())) {
-            principalInterest.addAuxiliaryData("principalApprovedAmount", scheduleParams.getPrincipalToBeScheduled().getAmount());
+        if (Boolean.FALSE.equals(loanCharges.isEmpty()) && Objects.nonNull(loanCharges.stream().findFirst().get().getLoan())
+                && Objects.nonNull(loanCharges.stream().findFirst().get().getLoan().getApprovedPrincipal())) {
+            principalInterest.addAuxiliaryData(STRING_PRINCIPAL_APPROVED_AMOUNT,
+                    loanCharges.stream().findFirst().get().getLoan().getApprovedPrincipal());
+
+        } else {
+            principalInterest.addAuxiliaryData(STRING_PRINCIPAL_APPROVED_AMOUNT, scheduleParams.getPrincipalApproved());
+            if (Objects.isNull(scheduleParams.getPrincipalApproved())) {
+                principalInterest.addAuxiliaryData(STRING_PRINCIPAL_APPROVED_AMOUNT,
+                        scheduleParams.getPrincipalToBeScheduled().getAmount());
+            }
         }
 
-        principalInterest.addAuxiliaryData("principalProposedAmount", scheduleParams.getPrincipalProposed());
+        principalInterest.addAuxiliaryData(STRING_PRINCIPAL_PROPOSED_AMOUNT, scheduleParams.getPrincipalProposed());
         if (Objects.isNull(scheduleParams.getPrincipalProposed())) {
-            principalInterest.addAuxiliaryData("principalProposedAmount", scheduleParams.getPrincipalToBeScheduled().getAmount());
+            principalInterest.addAuxiliaryData(STRING_PRINCIPAL_PROPOSED_AMOUNT, scheduleParams.getPrincipalToBeScheduled().getAmount());
         }
 
         if (scheduleParams.getPeriodNumber() == 1) {
@@ -2672,7 +2683,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     installmentDayOfMonthClone = YearMonth.from(periodStartDate).lengthOfMonth();
                 }
 
-                referenceDate = LocalDate.of(periodStartDate.getYear(), periodStartDate.getMonthValue(), installmentDayOfMonthClone);
+                // Case when day is at the beginning of the month, keep periodDueDate as reference date instead
+                if (periodDueDate.getDayOfMonth() >= 7) {
+                    referenceDate = LocalDate.of(periodStartDate.getYear(), periodStartDate.getMonthValue(), installmentDayOfMonthClone);
+                }
             }
 
         } else { // Daily and Monthly
