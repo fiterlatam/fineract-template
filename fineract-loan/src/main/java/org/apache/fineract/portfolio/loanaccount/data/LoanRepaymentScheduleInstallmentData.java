@@ -24,6 +24,7 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 @AllArgsConstructor
 @Getter
@@ -42,10 +43,12 @@ public final class LoanRepaymentScheduleInstallmentData {
     private BigDecimal totalInstallmentAmount;
     private List<LoanChargeData> penaltyCharges;
     private List<LoanChargeData> feeCharges;
+    @Setter
+    private LoanWriteOffChargeData loanWriteOffChargeData;
 
     public static LoanRepaymentScheduleInstallmentData instanceOf(final Long id, final Integer installmentId, final LocalDate date,
             final BigDecimal amount) {
-        return new LoanRepaymentScheduleInstallmentData(id, installmentId, date, amount, null, null, null, null, null, null, null);
+        return new LoanRepaymentScheduleInstallmentData(id, installmentId, date, amount, null, null, null, null, null, null, null, null);
     }
 
 }

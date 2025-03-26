@@ -4457,6 +4457,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final Set<LoanChargeData> penaltyCharges = new HashSet<>();
         final Set<LoanChargeData> feeCharges = new HashSet<>();
         final JsonArray writeOffCharges = command.arrayOfParameterNamed("charges");
+        LoanWriteOffChargeData writeOffChargeData = LoanWriteOffChargeData.initWithZeroAmounts();
         if (writeOffCharges != null && !writeOffCharges.isEmpty()) {
             for (JsonElement jsonElement : writeOffCharges) {
                 final JsonObject jsonObject = jsonElement.getAsJsonObject();
@@ -4478,8 +4479,21 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         }
                         if (loanCharge.getPenalty()) {
                             penaltyCharges.add(writeOffLoanChargeData);
+                            writeOffChargeData.setArrearInterest(writeOffAmount);
                         } else {
                             feeCharges.add(writeOffLoanChargeData);
+                        }
+                        Charge charge = this.getChargeById(chargeId);
+                        if (charge != null) {
+                            if (charge.isAvalCharge() || charge.isAvalChargeFlatForMigration()) {
+                                writeOffChargeData.setAval(writeOffAmount);
+                            } else if (charge.isFlatHono()) {
+                                writeOffChargeData.setHonorarios(writeOffAmount);
+                            } else if (charge.isMandatoryInsurance() || charge.isFlatMandatoryInsurance()) {
+                                writeOffChargeData.setMandatoryInsurance(writeOffAmount);
+                            } else if (charge.isVoluntaryInsurance() || charge.isCustomFlatVoluntaryInsurenceCharge()) {
+                                writeOffChargeData.setInsurance(writeOffAmount);
+                            }
                         }
                     } else {
                         throw new GeneralPlatformDomainRuleException("error.msg.loan.charge.not.found",
@@ -4497,23 +4511,32 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return LoanRepaymentScheduleInstallmentData.builder().principalPortion(principalPortion.getAmount())
                 .interestPortion(interestPortion.getAmount()).penaltyChargesPortion(penaltyChargesPortion)
                 .feeChargesPortion(feeChargesPortion).penaltyCharges(penaltyCharges.stream().toList())
-                .feeCharges(feeCharges.stream().toList()).totalInstallmentAmount(totalInstallmentAmount).build();
+                .feeCharges(feeCharges.stream().toList()).totalInstallmentAmount(totalInstallmentAmount)
+                .loanWriteOffChargeData(writeOffChargeData).build();
+    }
+
+    private Charge getChargeById(final Long chargeId) {
+        if (this.charges != null) {
+            for (final LoanCharge charge : this.charges) {
+                if (charge.getCharge().getId().equals(chargeId)) {
+                    return charge.getCharge();
+                }
+            }
+        }
+        return null;
     }
 
     public LoanTransaction writeOff(final LoanRepaymentScheduleInstallmentData loanRepaymentScheduleInstallmentData,
-            final LocalDate writtenOffOnLocalDate, final ExternalId externalId, boolean isCreditNote,
-            LoanCreditNoteChargeData creditNoteChargeData) {
+            final LocalDate writtenOffOnLocalDate, final ExternalId externalId, boolean isCreditNote) {
         final MonetaryCurrency currency = loanCurrency();
         final Money principalPortion = Money.of(currency, loanRepaymentScheduleInstallmentData.getPrincipalPortion());
         final Money interestPortion = Money.of(currency, loanRepaymentScheduleInstallmentData.getInterestPortion());
         final Money feeChargesPortion = Money.of(currency, loanRepaymentScheduleInstallmentData.getFeeChargesPortion());
         final Money penaltychargesPortion = Money.of(currency, loanRepaymentScheduleInstallmentData.getPenaltyChargesPortion());
+        LoanWriteOffChargeData writeOffChargeData = loanRepaymentScheduleInstallmentData.getLoanWriteOffChargeData();
         LoanTransaction loanTransaction;
-        if (isCreditNote) {
-            loanTransaction = LoanTransaction.creditNote(this, getOffice(), writtenOffOnLocalDate, externalId, creditNoteChargeData);
-        } else {
-            loanTransaction = LoanTransaction.writeoff(this, getOffice(), writtenOffOnLocalDate, externalId);
-        }
+        LoanTransactionType loanTransactionType = isCreditNote ? LoanTransactionType.CREDIT_NOTE : LoanTransactionType.WRITEOFF;
+        loanTransaction = LoanTransaction.creditNoteOrWriteOff(this, getOffice(), writtenOffOnLocalDate, externalId, loanTransactionType, writeOffChargeData);
         loanTransaction.setSpecialWriteOff(true);
         loanTransaction.updateComponentsAndTotal(principalPortion, interestPortion, feeChargesPortion, penaltychargesPortion);
         loanTransaction.updateLoan(this);

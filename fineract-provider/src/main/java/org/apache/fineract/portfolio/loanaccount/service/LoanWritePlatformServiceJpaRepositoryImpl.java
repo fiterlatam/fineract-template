@@ -2417,11 +2417,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 saveAndFlushLoanWithIntegrityChecks(loan);
             }
             final boolean isCreditNote = command.booleanPrimitiveValueOfParameterNamed("isCreditNote");
-            LoanCreditNoteChargeData data = null;
             if (isCreditNote && creditNote != null) {
-                data = creditNote.toChargeData();
+                loanRepaymentScheduleInstallmentData.setLoanWriteOffChargeData(creditNote.toChargeData());
             }
-            writeOffTransaction = loan.writeOff(loanRepaymentScheduleInstallmentData, transactionDate, externalId, isCreditNote, data);
+            writeOffTransaction = loan.writeOff(loanRepaymentScheduleInstallmentData, transactionDate, externalId, isCreditNote);
             currentScheduleInstallment.updateInterestCharged(interestToBeChargedAndWrittenOff.getAmount());
             loan.updateLoanSummaryDerivedFields();
             loan.getRepaymentScheduleInstallments().forEach(rp -> rp.checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency));
