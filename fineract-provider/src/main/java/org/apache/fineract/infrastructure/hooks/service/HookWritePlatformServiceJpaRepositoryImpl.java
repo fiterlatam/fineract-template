@@ -74,6 +74,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class HookWritePlatformServiceJpaRepositoryImpl implements HookWritePlatformService {
 
+    public static final String STRING_PAYLOAD_URL = "Payload URL";
+    public static final String STRING_SLASH = "/";
     private final PlatformSecurityContext context;
     private final HookRepository hookRepository;
     private final HookTemplateRepository hookTemplateRepository;
@@ -219,8 +221,15 @@ public class HookWritePlatformServiceJpaRepositoryImpl implements HookWritePlatf
                 final String fieldName = field.getFieldName();
                 if (fieldName.equalsIgnoreCase(configEntry.getKey())) {
 
-                    final HookConfiguration config = HookConfiguration.createNewWithoutHook(field.getFieldType(), configEntry.getKey(),
-                            configEntry.getValue());
+                    String configKey = configEntry.getKey();
+                    String configValue = configEntry.getValue();
+
+                    if (STRING_PAYLOAD_URL.equalsIgnoreCase(configEntry.getKey())
+                            && Boolean.FALSE.equals(configValue.endsWith(STRING_SLASH))) {
+                        configValue = configValue.concat(STRING_SLASH);
+                    }
+
+                    final HookConfiguration config = HookConfiguration.createNewWithoutHook(field.getFieldType(), configKey, configValue);
                     configuration.add(config);
                     break;
                 }
