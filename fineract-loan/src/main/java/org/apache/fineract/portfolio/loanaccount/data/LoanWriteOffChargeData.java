@@ -73,6 +73,7 @@ public class LoanWriteOffChargeData {
     }
 
     public static LoanWriteOffChargeData initWithZeroAmounts() {
-        return new LoanWriteOffChargeData(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+        return new LoanWriteOffChargeData(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO, BigDecimal.ZERO);
     }
 }

@@ -4536,7 +4536,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         LoanWriteOffChargeData writeOffChargeData = loanRepaymentScheduleInstallmentData.getLoanWriteOffChargeData();
         LoanTransaction loanTransaction;
         LoanTransactionType loanTransactionType = isCreditNote ? LoanTransactionType.CREDIT_NOTE : LoanTransactionType.WRITEOFF;
-        loanTransaction = LoanTransaction.creditNoteOrWriteOff(this, getOffice(), writtenOffOnLocalDate, externalId, loanTransactionType, writeOffChargeData);
+        loanTransaction = LoanTransaction.creditNoteOrWriteOff(this, getOffice(), writtenOffOnLocalDate, externalId, loanTransactionType,
+                writeOffChargeData);
         loanTransaction.setSpecialWriteOff(true);
         loanTransaction.updateComponentsAndTotal(principalPortion, interestPortion, feeChargesPortion, penaltychargesPortion);
         loanTransaction.updateLoan(this);

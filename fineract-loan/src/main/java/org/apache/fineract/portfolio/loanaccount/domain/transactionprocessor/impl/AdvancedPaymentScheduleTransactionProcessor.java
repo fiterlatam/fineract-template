@@ -163,8 +163,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             currentInstallment.updateDerivedFields(currency, disbursementDate);
         }
 
-        List<ChargeOrTransaction> chargeOrTransactions =
-                createSortedChargesAndTransactionsList(loanTransactions.stream().filter(t-> (!t.isAccrualTransaction() && t.isNotReversed())).toList(), charges);
+        List<ChargeOrTransaction> chargeOrTransactions = createSortedChargesAndTransactionsList(
+                loanTransactions.stream().filter(t -> (!t.isAccrualTransaction() && t.isNotReversed())).toList(), charges);
 
         final ChangedTransactionDetail changedTransactionDetail = new ChangedTransactionDetail();
         MoneyHolder overpaymentHolder = new MoneyHolder(Money.zero(currency));

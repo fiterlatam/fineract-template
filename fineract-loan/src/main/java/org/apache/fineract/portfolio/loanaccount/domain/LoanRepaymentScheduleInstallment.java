@@ -1282,7 +1282,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                 this.principalWrittenOff = defaultToZeroIfNull(this.principalWrittenOff).add(defaultToZeroIfNull(principalDue.getAmount()));
                 principalPortionWrittenOff = principalPortionWrittenOff.plus(principalDue);
             } else {
-                this.principalWrittenOff = defaultToZeroIfNull(this.principalWrittenOff).add(defaultToZeroIfNull(principalAmountRemaining.getAmount()));
+                this.principalWrittenOff = defaultToZeroIfNull(this.principalWrittenOff)
+                        .add(defaultToZeroIfNull(principalAmountRemaining.getAmount()));
                 principalPortionWrittenOff = principalPortionWrittenOff.plus(principalAmountRemaining);
             }
             checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
