@@ -1076,7 +1076,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         Money paidPortion;
         boolean exit = false;
         do {
-            log.info("processing loan id: " + loanTransaction.getLoan().getId() + "; transaction id: " + loanTransaction.getId());
+            log.info("processing loan id: " + loanTransaction.getLoan().getId());
             if (transactionAmountUnprocessed.isZero()) {
                 exit = true;
                 continue;
