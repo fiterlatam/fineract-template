@@ -49,8 +49,8 @@ public class LoanRejectionGuaranteeEventProcessor extends BaseCustomWebhookEvent
 
     public static final String LOAN_ID_PARAM = "loanId";
     public static final String EXTERNAL_ID_PARAM = "externalId";
-    public static final String GUARANTEE_NUMBER_PARAM = "guaranteeNumber";
-    public static final String GUARANTEE_TYPE_PARAM = "guaranteeType";
+    public static final String GUARANTEE_NUMBER_PARAM = "idGuaranteeFNG";
+    public static final String GUARANTEE_TYPE_PARAM = "typeGuarantee";
     public static final String DOCUMENT_ID_PARAM = "documentId";
     private final JdbcTemplate jdbcTemplate;
     private final ClientReadPlatformService clientReadPlatformService;

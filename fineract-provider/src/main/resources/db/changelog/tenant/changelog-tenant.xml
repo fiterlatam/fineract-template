@@ -391,4 +391,6 @@
     <include file="parts/2025030323288000001_feature_EA_039.xml" relativeToChangelogFile="true" />
     <include file="parts/202503162000001000_EA_243_charge_lifeinsurance.xml" relativeToChangelogFile="true" />
     <include file="parts/202503252000001000_EA_266_updatechannels.xml" relativeToChangelogFile="true" />
+    <include file="parts/202503262000001000_EA_269_updatewebhooknames.xml" relativeToChangelogFile="true" />
+    <include file="parts/202503262000002000_EA_269_updateinterestratestartdate.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>
