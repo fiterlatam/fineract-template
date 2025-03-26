@@ -165,7 +165,9 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
 
         // Use the actual outstanding principal balance from the loan
         // This will reflect any payments made against the principal, including special write-offs and Credit Notes
-        Money principalLoanBalanceOutstanding = Money.of(currency, loan.getLoanSummary().getTotalPrincipalOutstanding());
+        // final Money principalLoanBalanceOutstanding = Money.of(currency,
+        // loan.getLoanSummary().getTotalPrincipalOutstanding());
+        Money principalLoanBalanceOutstanding = Money.of(currency, loan.getLoanSummary().getTotalPrincipalDisbursed());
 
         // Check if the loan has any special write-off or Credit Note transactions on or before the accrual date
         // If so, we need to make sure we're using the correct principal balance
@@ -175,7 +177,7 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
                 .sorted((t1, t2) -> t2.getTransactionDate().compareTo(t1.getTransactionDate())) // Sort by date
                                                                                                 // descending (most
                                                                                                 // recent first)
-                .collect(java.util.stream.Collectors.toList());
+                .toList();
 
         if (!specialWriteOffOrCreditNoteTransactions.isEmpty()) {
             log.debug("Loan {} has {} special write-off or Credit Note transactions. Using actual outstanding principal: {}", loan.getId(),
@@ -193,7 +195,8 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
             // Force a refresh of the loan summary to ensure we have the most up-to-date principal balance
             // This is especially important when multiple special write-off transactions occur
             loan = this.loanAssembler.assembleFrom(loan.getId());
-            principalLoanBalanceOutstanding = Money.of(currency, loan.getLoanSummary().getTotalPrincipalOutstanding());
+            // principalLoanBalanceOutstanding = Money.of(currency,
+            // loan.getLoanSummary().getTotalPrincipalOutstanding());
             log.debug("Refreshed loan summary for loan {}. Updated outstanding principal: {}", loan.getId(),
                     principalLoanBalanceOutstanding.getAmount());
         }
@@ -243,7 +246,8 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
                 // We no longer need to adjust the principal balance here since we're using the actual outstanding
                 // balance
                 // from the loan summary
-
+                principalLoanBalanceOutstanding = principalLoanBalanceOutstanding
+                        .minus(loanRepaymentScheduleInstallment.getPrincipalAccountedFor(currency));
                 final boolean ignoreCurrencyDigitsAfterDecimal = false;
                 final boolean truncateInterestAmount = true;
                 final PrincipalInterest principalInterest = loanScheduleGenerator.calculatePrincipalInterestComponents(
@@ -258,6 +262,9 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
                 loanRepaymentScheduleInstallment.setInterestAccrued(accruedInterest);
                 accrualInstallmentNumber = loanRepaymentScheduleInstallment.getInstallmentNumber();
                 break;
+            } else {
+                principalLoanBalanceOutstanding = principalLoanBalanceOutstanding
+                        .minus(loanRepaymentScheduleInstallment.getPrincipal(currency));
             }
         }
 
