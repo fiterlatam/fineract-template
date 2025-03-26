@@ -3787,13 +3787,13 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     @Override
     public PrincipalInterest calculatePrincipalInterestComponents(final Money outstandingBalance,
             final LoanApplicationTerms loanApplicationTerms, final int periodNumber, final LocalDate periodStartDate,
-            final LocalDate periodEndDate, boolean ignoreCurrencyDigitsAfterDecimal) {
+            final LocalDate periodEndDate, boolean ignoreCurrencyDigitsAfterDecimal, final boolean truncateInterestAmount) {
         final MathContext mc = MoneyHelper.getMathContext();
         final PaymentPeriodsInOneYearCalculator calculator = getPaymentPeriodsInOneYearCalculator();
         final BigDecimal interestCalculationGraceOnRepaymentPeriodFraction = BigDecimal.ZERO;
         final Money cumulatingInterestPaymentDueToGrace = outstandingBalance.zero();
         return loanApplicationTerms.calculateTotalInterestForPeriod(calculator, interestCalculationGraceOnRepaymentPeriodFraction,
                 periodNumber, mc, cumulatingInterestPaymentDueToGrace, outstandingBalance, periodStartDate, periodEndDate,
-                ignoreCurrencyDigitsAfterDecimal);
+                ignoreCurrencyDigitsAfterDecimal, truncateInterestAmount);
     }
 }

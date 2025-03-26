@@ -7672,9 +7672,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
         final LocalDate currentDatePlusOne = currentDate.plusDays(1);
         final boolean ignoreCurrencyDigitsAfterDecimal = true;
+        final boolean truncateInterestAmount = false;
         final PrincipalInterest principalInterest = loanScheduleGenerator.calculatePrincipalInterestComponents(
                 principalLoanBalanceOutstanding, loanApplicationTerms, periodNumber, currentDate, currentDatePlusOne,
-                ignoreCurrencyDigitsAfterDecimal);
+                ignoreCurrencyDigitsAfterDecimal, truncateInterestAmount);
         return principalInterest.interest();
     }
 

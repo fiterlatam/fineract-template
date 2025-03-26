@@ -49,5 +49,6 @@ public interface LoanScheduleGenerator {
             LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor);
 
     PrincipalInterest calculatePrincipalInterestComponents(Money outstandingBalance, LoanApplicationTerms loanApplicationTerms,
-            int periodNumber, LocalDate periodStartDate, LocalDate periodEndDate, boolean ignoreCurrencyDigitsAfterDecimal);
+            int periodNumber, LocalDate periodStartDate, LocalDate periodEndDate, boolean ignoreCurrencyDigitsAfterDecimal,
+            boolean truncateInterestAmount);
 }

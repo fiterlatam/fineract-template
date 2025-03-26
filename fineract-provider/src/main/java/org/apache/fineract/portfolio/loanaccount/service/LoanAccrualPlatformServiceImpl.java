@@ -245,9 +245,10 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
                 // from the loan summary
 
                 final boolean ignoreCurrencyDigitsAfterDecimal = false;
+                final boolean truncateInterestAmount = true;
                 final PrincipalInterest principalInterest = loanScheduleGenerator.calculatePrincipalInterestComponents(
                         principalLoanBalanceOutstanding, loanApplicationTerms, periodNumber, periodStartDate, periodEndDate,
-                        ignoreCurrencyDigitsAfterDecimal);
+                        ignoreCurrencyDigitsAfterDecimal, truncateInterestAmount);
                 final int daysDifference = Math.toIntExact(ChronoUnit.DAYS.between(periodStartDate, periodEndDate));
                 dailyAccrualInterest = principalInterest.interest().getAmount().divide(BigDecimal.valueOf(daysDifference), 2,
                         RoundingMode.HALF_UP);

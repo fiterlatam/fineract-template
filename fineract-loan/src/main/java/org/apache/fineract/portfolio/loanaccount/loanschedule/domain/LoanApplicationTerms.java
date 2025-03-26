@@ -651,7 +651,7 @@ public final class LoanApplicationTerms {
     public PrincipalInterest calculateTotalInterestForPeriod(final PaymentPeriodsInOneYearCalculator calculator,
             final BigDecimal interestCalculationGraceOnRepaymentPeriodFraction, final int periodNumber, final MathContext mc,
             final Money cumulatingInterestPaymentDueToGrace, final Money outstandingBalance, final LocalDate periodStartDate,
-            final LocalDate periodEndDate, boolean ignoreCurrencyDigitsAfterDecimal) {
+            final LocalDate periodEndDate, boolean ignoreCurrencyDigitsAfterDecimal, final boolean truncateInterestAmount) {
 
         Money interestForInstallment = this.principal.zero();
         Money interestBroughtForwardDueToGrace = cumulatingInterestPaymentDueToGrace.copy();
@@ -690,11 +690,12 @@ public final class LoanApplicationTerms {
             case DECLINING_BALANCE:
 
                 final Money interestForThisInstallmentBeforeGrace = calculateDecliningInterestDueForInstallmentBeforeApplyingGrace(
-                        calculator, mc, outstandingBalance, periodStartDate, periodEndDate, ignoreCurrencyDigitsAfterDecimal);
+                        calculator, mc, outstandingBalance, periodStartDate, periodEndDate, ignoreCurrencyDigitsAfterDecimal,
+                        truncateInterestAmount);
 
                 final Money interestForThisInstallmentAfterGrace = calculateDecliningInterestDueForInstallmentAfterApplyingGrace(calculator,
                         interestCalculationGraceOnRepaymentPeriodFraction, mc, outstandingBalance, periodNumber, periodStartDate,
-                        periodEndDate, ignoreCurrencyDigitsAfterDecimal);
+                        periodEndDate, ignoreCurrencyDigitsAfterDecimal, truncateInterestAmount);
 
                 interestForInstallment = interestForThisInstallmentAfterGrace;
                 if (interestForThisInstallmentAfterGrace.isGreaterThanZero()) {
@@ -1307,14 +1308,18 @@ public final class LoanApplicationTerms {
 
     private Money calculateDecliningInterestDueForInstallmentBeforeApplyingGrace(final PaymentPeriodsInOneYearCalculator calculator,
             final MathContext mc, final Money outstandingBalance, LocalDate periodStartDate, LocalDate periodEndDate,
-            final boolean ignoreCurrencyDigitsAfterDecimal) {
+            final boolean ignoreCurrencyDigitsAfterDecimal, final boolean truncateInterestAmount) {
         Money interestDue = Money.zero(outstandingBalance.getCurrency());
         boolean useDailyInterestCalculation = true;
         final BigDecimal periodicInterestRate = periodicInterestRate(calculator, mc, this.daysInMonthType, this.daysInYearType,
                 periodStartDate, periodEndDate, useDailyInterestCalculation);
         BigDecimal dueInterest = outstandingBalance.getAmount().multiply(periodicInterestRate);
         if (!ignoreCurrencyDigitsAfterDecimal) {
-            dueInterest = dueInterest.setScale(0, RoundingMode.HALF_UP);
+            if (truncateInterestAmount) {
+                dueInterest = dueInterest.setScale(0, RoundingMode.DOWN);
+            } else {
+                dueInterest = dueInterest.setScale(0, RoundingMode.HALF_UP);
+            }
         }
         interestDue = interestDue.add(dueInterest);
         return interestDue;
@@ -1322,10 +1327,10 @@ public final class LoanApplicationTerms {
 
     private Money calculateDecliningInterestDueForInstallmentAfterApplyingGrace(final PaymentPeriodsInOneYearCalculator calculator,
             final BigDecimal interestCalculationGraceOnRepaymentPeriodFraction, final MathContext mc, final Money outstandingBalance,
-            final int periodNumber, LocalDate periodStartDate, LocalDate periodEndDate, final boolean ignoreCurrencyDigitsAfterDecimal) {
-
+            final int periodNumber, LocalDate periodStartDate, LocalDate periodEndDate, final boolean ignoreCurrencyDigitsAfterDecimal,
+            final boolean truncateInterestAmount) {
         Money interest = calculateDecliningInterestDueForInstallmentBeforeApplyingGrace(calculator, mc, outstandingBalance, periodStartDate,
-                periodEndDate, ignoreCurrencyDigitsAfterDecimal);
+                periodEndDate, ignoreCurrencyDigitsAfterDecimal, truncateInterestAmount);
 
         if (isInterestPaymentGraceApplicableForThisPeriod(periodNumber)) {
             interest = interest.zero();

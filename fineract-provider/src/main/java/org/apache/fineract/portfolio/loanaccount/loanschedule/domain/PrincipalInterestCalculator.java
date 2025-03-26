@@ -23,9 +23,10 @@ public class PrincipalInterestCalculator {
             @SuppressWarnings("unused") Collection<LoanTermVariationsData> termVariations) {
 
         final boolean ignoreCurrencyDigitsAfterDecimal = false;
+        final boolean truncateInterestAmount = false;
         final PrincipalInterest result = loanApplicationTerms.calculateTotalInterestForPeriod(calculator,
                 interestCalculationGraceOnRepaymentPeriodFraction, periodNumber, mc, cumulatingInterestPaymentDueToGrace,
-                outstandingBalance, periodStartDate, periodEndDate, ignoreCurrencyDigitsAfterDecimal);
+                outstandingBalance, periodStartDate, periodEndDate, ignoreCurrencyDigitsAfterDecimal, truncateInterestAmount);
         Money interestForThisInstallment = result.interest();
 
         Money principalForThisInstallment = loanApplicationTerms.calculateTotalPrincipalForPeriod(calculator, outstandingBalance,
@@ -92,9 +93,11 @@ public class PrincipalInterestCalculator {
                     int interestForDays = Math.toIntExact(ChronoUnit.DAYS.between(interestStartDate, principal.getKey()));
                     if (interestForDays > 0) {
                         final boolean ignoreCurrencyDigitsAfterDecimal = false;
+                        final boolean truncateInterestAmount = false;
                         final PrincipalInterest result = loanApplicationTerms.calculateTotalInterestForPeriod(calculator,
                                 interestCalculationGraceOnRepaymentPeriodFraction, periodNumber, mc, cumulatingInterestDueToGrace,
-                                balanceForInterestCalculation, interestStartDate, principal.getKey(), ignoreCurrencyDigitsAfterDecimal);
+                                balanceForInterestCalculation, interestStartDate, principal.getKey(), ignoreCurrencyDigitsAfterDecimal,
+                                truncateInterestAmount);
                         interestForThisInstallment = interestForThisInstallment.plus(result.interest());
                         cumulatingInterestDueToGrace = result.interestPaymentDueToGrace();
                         interestStartDate = principal.getKey();
@@ -126,9 +129,10 @@ public class PrincipalInterestCalculator {
         }
 
         final boolean ignoreCurrencyDigitsAfterDecimal = false;
+        final boolean truncateInterestAmount = false;
         final PrincipalInterest result = loanApplicationTerms.calculateTotalInterestForPeriod(calculator,
                 interestCalculationGraceOnRepaymentPeriodFraction, periodNumber, mc, cumulatingInterestDueToGrace,
-                balanceForInterestCalculation, interestStartDate, periodEndDate, ignoreCurrencyDigitsAfterDecimal);
+                balanceForInterestCalculation, interestStartDate, periodEndDate, ignoreCurrencyDigitsAfterDecimal, truncateInterestAmount);
 
         interestForThisInstallment = interestForThisInstallment.plus(result.interest());
 
