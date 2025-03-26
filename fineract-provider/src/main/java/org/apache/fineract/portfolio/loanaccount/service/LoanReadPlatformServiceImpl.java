@@ -1384,7 +1384,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             }
             final LoanSchedulePeriodData disbursementPeriod = LoanSchedulePeriodData.disbursementOnlyPeriod(
                     this.disbursement.disbursementDate(), this.disbursement.getPrincipal(), this.totalFeeChargesDueAtDisbursement,
-                    this.disbursement.isDisbursed());
+                    this.disbursement.isDisbursed(), null);
 
             final List<LoanSchedulePeriodData> periods = new ArrayList<>();
             final MonetaryCurrency monCurrency = new MonetaryCurrency(this.currency.getCode(), this.currency.getDecimalPlaces(),
@@ -1601,7 +1601,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             BigDecimal chargeAmount = data.getChargeAmount() == null ? disbursementChargeAmount
                     : disbursementChargeAmount.add(data.getChargeAmount()).subtract(waivedChargeAmount);
             return LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.getPrincipal(), chargeAmount,
-                    data.isDisbursed());
+                    data.isDisbursed(), null);
         }
 
         private boolean canAddDisbursementData(DisbursementData data, boolean isDueForDisbursement, boolean excludePastUnDisbursed) {

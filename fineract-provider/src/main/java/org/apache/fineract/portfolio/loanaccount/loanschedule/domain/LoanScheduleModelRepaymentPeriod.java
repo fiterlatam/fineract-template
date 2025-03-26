@@ -20,10 +20,12 @@ package org.apache.fineract.portfolio.loanaccount.loanschedule.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanInterestRecalcualtionAdditionalDetails;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.data.FeeDetails;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 
 /**
@@ -51,6 +53,7 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     BigDecimal totalLifeInsuranceCharged = BigDecimal.ZERO;
     private boolean recalculateEMIForInstallment;
     private BigDecimal advancePrincipalAmountForInstallment;
+    private Collection<FeeDetails> feeDetails;
 
     public static LoanScheduleModelRepaymentPeriod repayment(final int periodNumber, final LocalDate startDate,
             final LocalDate scheduledDueDate, final Money principalDue, final Money outstandingLoanBalance, final Money interestDue,
@@ -274,5 +277,15 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     @Override
     public void setAdvancePrincipalAmountForInstallment(BigDecimal advancePrincipalAmountForInstallment) {
         this.advancePrincipalAmountForInstallment = advancePrincipalAmountForInstallment;
+    }
+
+    @Override
+    public void setFeeDetails(Collection<FeeDetails> feeDetails) {
+        this.feeDetails = feeDetails;
+    }
+
+    @Override
+    public Collection<FeeDetails> getFeeDetails() {
+        return this.feeDetails;
     }
 }

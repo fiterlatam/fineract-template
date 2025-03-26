@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
@@ -53,6 +54,7 @@ import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.data.FeeDetails;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleDTO;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleModelDownPaymentPeriod;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleParams;
@@ -112,8 +114,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
         List<LoanScheduleModelPeriod> periods = new ArrayList<>();
         if (!scheduleParams.isPartialUpdate()) {
-            periods = createNewLoanScheduleListWithDisbursementDetails(loanApplicationTerms, scheduleParams,
-                    chargesDueAtTimeOfDisbursement);
+            periods = createNewLoanScheduleListWithDisbursementDetails(loanApplicationTerms, scheduleParams, chargesDueAtTimeOfDisbursement,
+                    loanCharges);
         }
 
         // Determine the total interest owed over the full loan for FLAT
@@ -681,6 +683,11 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         Collection<LoanCharge> lifeInsuranceCharges = loanCharges.stream().filter(lif -> lif.getChargeCalculation().isLifeInsurance())
                 .toList();
 
+        Collection<FeeDetails> feesDetails = loanCharges.stream().filter(charge -> !charge.isDisbursementCharge())
+                .map(charge -> new FeeDetails(charge.name(), charge.getAmountOutstanding(), charge.getAmountPaid(),
+                        charge.getAmountOutstanding()))
+                .collect(Collectors.toList());
+
         BigDecimal mandatoryInsuranceAmount = mandatoryInsuranceCharges.stream().map(LoanCharge::getInstallmentChargeAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal voluntaryInsuranceAmount = voluntaryInsuranceCharges.stream().map(LoanCharge::getInstallmentChargeAmount)
@@ -721,7 +728,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         installment.setTotalAvalCharged(avalAmount);
         installment.setTotalHonorariosCharged(honorariosAmount);
         installment.setTotalLifeInsuranceCharged(lifeInsuranceAmount);
-
+        installment.setFeeDetails(feesDetails);
         // Reset charge amount to be calculated from zero for next installment
         for (LoanCharge loanCharge : loanCharges) {
             loanCharge.setInstallmentChargeAmount(BigDecimal.ZERO);
@@ -2346,6 +2353,50 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         if (!loanApplicationTerms.isMultiDisburseLoan()) {
             final LoanScheduleModelDisbursementPeriod disbursementPeriod = LoanScheduleModelDisbursementPeriod
                     .disbursement(loanApplicationTerms, chargesDueAtTimeOfDisbursement);
+            periods.add(disbursementPeriod);
+            if (loanApplicationTerms.isDownPaymentEnabled()) {
+                final LoanScheduleModelDownPaymentPeriod downPaymentPeriod = createDownPaymentPeriod(loanApplicationTerms,
+                        loanScheduleParams, loanApplicationTerms.getExpectedDisbursementDate(),
+                        loanApplicationTerms.getPrincipal().getAmount());
+                periods.add(downPaymentPeriod);
+            }
+        } else {
+            if (loanApplicationTerms.getDisbursementDatas().isEmpty()) {
+                loanApplicationTerms.getDisbursementDatas()
+                        .add(new DisbursementData(1L, loanApplicationTerms.getExpectedDisbursementDate(),
+                                loanApplicationTerms.getExpectedDisbursementDate(), loanApplicationTerms.getPrincipal().getAmount(), null,
+                                null, null, null));
+            }
+            for (DisbursementData disbursementData : loanApplicationTerms.getDisbursementDatas()) {
+                if (disbursementData.disbursementDate().equals(loanScheduleParams.getPeriodStartDate())) {
+                    final LoanScheduleModelDisbursementPeriod disbursementPeriod = LoanScheduleModelDisbursementPeriod.disbursement(
+                            disbursementData.disbursementDate(),
+                            Money.of(loanScheduleParams.getCurrency(), disbursementData.getPrincipal()), chargesDueAtTimeOfDisbursement);
+                    periods.add(disbursementPeriod);
+                    if (loanApplicationTerms.isDownPaymentEnabled()) {
+                        final LoanScheduleModelDownPaymentPeriod downPaymentPeriod = createDownPaymentPeriod(loanApplicationTerms,
+                                loanScheduleParams, loanApplicationTerms.getExpectedDisbursementDate(), disbursementData.getPrincipal());
+                        periods.add(downPaymentPeriod);
+                    }
+                }
+            }
+        }
+
+        return periods;
+    }
+
+    private List<LoanScheduleModelPeriod> createNewLoanScheduleListWithDisbursementDetails(final LoanApplicationTerms loanApplicationTerms,
+            final LoanScheduleParams loanScheduleParams, final BigDecimal chargesDueAtTimeOfDisbursement,
+            final Set<LoanCharge> loanCharges) {
+        List<LoanScheduleModelPeriod> periods = new ArrayList<>();
+        if (!loanApplicationTerms.isMultiDisburseLoan()) {
+            final LoanScheduleModelDisbursementPeriod disbursementPeriod = LoanScheduleModelDisbursementPeriod
+                    .disbursement(loanApplicationTerms, chargesDueAtTimeOfDisbursement);
+            List<FeeDetails> disbirsementFees = loanCharges
+                    .stream().filter(charge -> charge.isDisbursementCharge()).map(charge -> new FeeDetails(charge.name(),
+                            charge.getAmountOutstanding(), charge.getAmountPaid(), charge.getAmountOutstanding()))
+                    .collect(Collectors.toList());
+            disbursementPeriod.setFeeDetails(disbirsementFees);
             periods.add(disbursementPeriod);
             if (loanApplicationTerms.isDownPaymentEnabled()) {
                 final LoanScheduleModelDownPaymentPeriod downPaymentPeriod = createDownPaymentPeriod(loanApplicationTerms,

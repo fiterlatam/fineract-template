@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.loanaccount.loanschedule.data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Set;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanInterestRecalcualtionAdditionalDetails;
@@ -216,5 +217,15 @@ public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleMod
     @Override
     public void setAdvancePrincipalAmountForInstallment(BigDecimal advancePrincipalAmountForInstallment) {
         return;
+    }
+
+    @Override
+    public void setFeeDetails(Collection<FeeDetails> feeDetails) {
+
+    }
+
+    @Override
+    public Collection<FeeDetails> getFeeDetails() {
+        return null;
     }
 }
