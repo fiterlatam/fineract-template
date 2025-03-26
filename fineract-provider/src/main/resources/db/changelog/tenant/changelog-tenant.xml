@@ -358,4 +358,5 @@
     <include file="parts/2025030808468001000_SU_676_stretchy_report_loan_creditnoteoutstandingamount.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025030508468100000_SU_622_modify_electronic_credit_note.xml" relativeToChangelogFile="true"/>
     <include file="parts/20250314101800_SU_616_loan_transaction_credit_note_components_add.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2025032417528001000_SU_638_loan_transaction_rename_transaction_component_fields.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

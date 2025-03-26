@@ -163,7 +163,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             currentInstallment.updateDerivedFields(currency, disbursementDate);
         }
 
-        List<ChargeOrTransaction> chargeOrTransactions = createSortedChargesAndTransactionsList(loanTransactions, charges);
+        List<ChargeOrTransaction> chargeOrTransactions = createSortedChargesAndTransactionsList(
+                loanTransactions.stream().filter(t -> (!t.isAccrualTransaction() && t.isNotReversed())).toList(), charges);
 
         final ChangedTransactionDetail changedTransactionDetail = new ChangedTransactionDetail();
         MoneyHolder overpaymentHolder = new MoneyHolder(Money.zero(currency));
@@ -1008,12 +1009,6 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     .orElse(defaultPaymentAllocationRule);
             Balances balances = new Balances(zero, zero, zero, zero);
 
-            LoanScheduleProcessingType loanScheduleProcessingType = loanTransaction.getLoan().getLoanProductRelatedDetail()
-                    .getLoanScheduleProcessingType();
-            if (loanTransaction.getLoanScheduleProcessingType() != null) {
-                loanScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();
-            }
-
             // As per requirement under SU-377 vertical loan will now behave similar to Horizontal loans. Below code is
             // commented now
             transactionAmountUnprocessed = processPeriodsHorizontally(loanTransaction, currency, installments, transactionAmountUnprocessed,
@@ -1067,6 +1062,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             transactionAmountUnprocessed = processAllocationsHorizontally(loanTransaction, currency, installments,
                     transactionAmountUnprocessed, paymentAllocationsEntry.getValue(),
                     paymentAllocationRule.getFutureInstallmentAllocationRule(), transactionMappings, charges, balances);
+            if (transactionAmountUnprocessed.isZero()) {
+                break;
+            }
         }
         return transactionAmountUnprocessed;
     }

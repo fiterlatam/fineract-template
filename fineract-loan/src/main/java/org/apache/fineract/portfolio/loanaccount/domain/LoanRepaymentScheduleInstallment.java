@@ -1279,10 +1279,11 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         Money principalPortionWrittenOff = Money.zero(currency);
         if (principalDue.isGreaterThanZero() && principalAmountRemaining.isGreaterThanZero()) {
             if (principalAmountRemaining.isGreaterThan(principalDue)) {
-                this.principalWrittenOff = defaultToZeroIfNull(principalDue.getAmount());
+                this.principalWrittenOff = defaultToZeroIfNull(this.principalWrittenOff).add(defaultToZeroIfNull(principalDue.getAmount()));
                 principalPortionWrittenOff = principalPortionWrittenOff.plus(principalDue);
             } else {
-                this.principalWrittenOff = defaultToZeroIfNull(principalAmountRemaining.getAmount());
+                this.principalWrittenOff = defaultToZeroIfNull(this.principalWrittenOff)
+                        .add(defaultToZeroIfNull(principalAmountRemaining.getAmount()));
                 principalPortionWrittenOff = principalPortionWrittenOff.plus(principalAmountRemaining);
             }
             checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
@@ -1414,7 +1415,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public void checkIfRepaymentPeriodObligationsAreMet(final LocalDate transactionDate, final MonetaryCurrency currency) {
-        this.obligationsMet = getTotalOutstanding(currency).isZero();
+        this.obligationsMet = !getTotalOutstanding(currency).isGreaterThanZero();
         if (this.obligationsMet) {
             this.obligationsMetOnDate = transactionDate;
         } else {

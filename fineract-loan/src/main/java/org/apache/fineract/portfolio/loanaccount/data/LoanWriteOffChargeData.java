@@ -6,10 +6,9 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoanCreditNoteChargeData {
+public class LoanWriteOffChargeData {
 
     private BigDecimal arrearInterest;
-    private BigDecimal currentInterest;
     private BigDecimal honorarios;
     private BigDecimal aval;
     private BigDecimal insurance;
@@ -23,14 +22,6 @@ public class LoanCreditNoteChargeData {
 
     public void setArrearInterest(BigDecimal arrearInterest) {
         this.arrearInterest = arrearInterest;
-    }
-
-    public BigDecimal getCurrentInterest() {
-        return currentInterest;
-    }
-
-    public void setCurrentInterest(BigDecimal currentInterest) {
-        this.currentInterest = currentInterest;
     }
 
     public BigDecimal getHonorarios() {
@@ -79,5 +70,10 @@ public class LoanCreditNoteChargeData {
 
     public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
+    }
+
+    public static LoanWriteOffChargeData initWithZeroAmounts() {
+        return new LoanWriteOffChargeData(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO, BigDecimal.ZERO);
     }
 }
