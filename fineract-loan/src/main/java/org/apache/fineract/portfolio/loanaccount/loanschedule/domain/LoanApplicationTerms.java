@@ -1038,7 +1038,11 @@ public final class LoanApplicationTerms {
         // Variable isForPMT refers to the process flow where EMI is being calculated
         long loanTermPeriodsInOneYear;
         if (isForPMT) {
-            loanTermPeriodsInOneYear = calculator.calculate(PeriodFrequencyType.MONTHS).longValue();
+            if (this.repaymentPeriodFrequencyType.isDaily()) {
+                loanTermPeriodsInOneYear = DaysInYearType.DAYS_365.getValue();
+            } else {
+                loanTermPeriodsInOneYear = calculator.calculate(PeriodFrequencyType.MONTHS).longValue();
+            }
         } else {
             loanTermPeriodsInOneYear = calculatePeriodsInOneYear(calculator);
             if (useDailyInterestCalculation) {
@@ -1052,7 +1056,11 @@ public final class LoanApplicationTerms {
         BigDecimal periodicInterestRate = BigDecimal.ZERO;
         BigDecimal loanTermFrequencyBigDecimal = BigDecimal.ONE;
         if (isForPMT) {
-            loanTermFrequencyBigDecimal = BigDecimal.valueOf(this.repaymentEvery);
+            if (this.repaymentPeriodFrequencyType.isDaily()) {
+                loanTermFrequencyBigDecimal = calculateLoanTermFrequency(periodStartDate, periodEndDate);
+            } else {
+                loanTermFrequencyBigDecimal = BigDecimal.valueOf(this.repaymentEvery);
+            }
         } else {
             loanTermFrequencyBigDecimal = calculateLoanTermFrequency(periodStartDate, periodEndDate);
         }
@@ -1315,8 +1323,13 @@ public final class LoanApplicationTerms {
                     periodsElapsed);
             double installmentAmount = balance.getAmount().doubleValue();
             if (periodsRemaining > 0) {
-                installmentAmount = FinanicalFunctions.pmt(periodicInterestRate.doubleValue(), periodsRemaining.doubleValue(),
-                        principalDouble, futureValue, false);
+                if (this.repaymentPeriodFrequencyType.isDaily()) {
+                    installmentAmount = FinanicalFunctions.pmtForDaily(periodicInterestRate.doubleValue(), periodsRemaining.doubleValue(),
+                            principalDouble, futureValue, false);
+                } else {
+                    installmentAmount = FinanicalFunctions.pmt(periodicInterestRate.doubleValue(), periodsRemaining.doubleValue(),
+                            principalDouble, futureValue, false);
+                }
             }
 
             if (this.installmentAmountInMultiplesOf != null) {
