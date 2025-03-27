@@ -699,6 +699,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
         return penaltyCharges;
     }
 
+    @SuppressWarnings({ "java:S3776", "java:S135" })
     protected void updateChargesPaidAmountBy(final LoanTransaction loanTransaction, final Money chargeAmount, final Set<LoanCharge> charges,
             final Integer installmentNumber) {
         final boolean isWriteOffTransaction = loanTransaction.isWriteOff();

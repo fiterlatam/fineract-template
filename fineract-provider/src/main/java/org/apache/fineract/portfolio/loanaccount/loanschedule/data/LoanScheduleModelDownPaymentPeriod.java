@@ -21,11 +21,14 @@ package org.apache.fineract.portfolio.loanaccount.loanschedule.data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanInterestRecalcualtionAdditionalDetails;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModelPeriod;
 
+@Slf4j
 public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleModelPeriod {
 
     private final int periodNumber;
@@ -221,11 +224,11 @@ public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleMod
 
     @Override
     public void setFeeDetails(Collection<FeeDetails> feeDetails) {
-
+        log.info("empty implementation");
     }
 
     @Override
     public Collection<FeeDetails> getFeeDetails() {
-        return null;
+        return Collections.emptyList();
     }
 }

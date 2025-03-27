@@ -54,6 +54,18 @@ public final class FinanicalFunctions {
         return payment;
     }
 
+    public static double pmtForDaily(final double interestRateFraction, final double numberOfPayments, final double principal) {
+        double payment = 0;
+        final double r1 = interestRateFraction + 1;
+        payment = (principal * interestRateFraction) / (1 - Math.pow(r1, numberOfPayments));
+        if (payment < 0) {
+            return -1 * payment;
+        } else {
+            return payment;
+        }
+
+    }
+
     public static int nop(final double interestRateFraction, final double emiAmount, final double principal, final double futureValue,
             final boolean type) {
         double numberOfPayments = 0;
