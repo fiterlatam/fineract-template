@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
@@ -1073,8 +1074,7 @@ public final class LoanApplicationTerms {
                 switch (this.repaymentPeriodFrequencyType) {
                     case INVALID:
                     break;
-                    case DAYS:
-                    case WEEKS:
+                    case DAYS, WEEKS:
                         if (isForPMT) {
                             periodicInterestRate = oneDayOfYearInterestRate;
                         } else {
@@ -1335,6 +1335,7 @@ public final class LoanApplicationTerms {
         return interestDue;
     }
 
+    @SuppressWarnings({ "java:S107" })
     private Money calculateDecliningInterestDueForInstallmentAfterApplyingGrace(final PaymentPeriodsInOneYearCalculator calculator,
             final BigDecimal interestCalculationGraceOnRepaymentPeriodFraction, final MathContext mc, final Money outstandingBalance,
             final int periodNumber, LocalDate periodStartDate, LocalDate periodEndDate, final boolean ignoreCurrencyDigitsAfterDecimal) {
@@ -2041,10 +2042,7 @@ public final class LoanApplicationTerms {
     }
 
     public Integer getNumberOfInstallmentsToIgnore() {
-        if (numberOfInstallmentsToIgnore == null) {
-            return 0;
-        }
-        return numberOfInstallmentsToIgnore;
+        return Objects.requireNonNullElse(numberOfInstallmentsToIgnore, 0);
     }
 
     public void setNumberOfInstallmentsToIgnore(Integer numberOfInstallmentsToIgnore) {
