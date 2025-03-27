@@ -30,6 +30,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.RecalculationDetail;
@@ -101,6 +102,10 @@ public final class LoanScheduleParams {
     @Getter
     @Setter
     private int installmentDayOfMonth;
+
+    @Getter
+    @Setter
+    private PeriodFrequencyType periodFrequencyType;
 
     // total outstanding balance as per rest for interest calculation.
     private Money outstandingBalanceAsPerRest;
