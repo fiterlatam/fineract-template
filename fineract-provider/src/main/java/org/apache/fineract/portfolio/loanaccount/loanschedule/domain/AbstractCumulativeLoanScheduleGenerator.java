@@ -2666,12 +2666,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
         Integer maxDayOfMonth = YearMonth.from(periodDueDate).lengthOfMonth();
 
-        boolean isWeeklyRepayment = periodFrequencyType.isWeekly();
-
-        // If not daily, add 1 day to periodStartDate
-        if (Boolean.FALSE.equals(periodDueDate.isEqual(periodStartDate))) {
-            periodStartDate = periodStartDate.plusDays(1);
-        }
+        periodStartDate = periodStartDate.plusDays(1);
 
         Integer installmentDayOfMonthClone = Integer.valueOf(installmentDayOfMonth);
 
@@ -2682,7 +2677,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         LocalDate referenceDate = LocalDate.of(periodDueDate.getYear(), periodDueDate.getMonthValue(), installmentDayOfMonthClone);
 
         // If weekly repayment
-        if (isWeeklyRepayment) {
+        if (periodFrequencyType.isWeekly() || periodFrequencyType.isDaily()) {
             // scenario: when month changes within period...
             if (periodStartDate.getMonth().compareTo(periodDueDate.getMonth()) != 0) {
                 // scenario: when installment due on day 31 (or 30) and month have 28 or 29 days (feb) or 30 days
