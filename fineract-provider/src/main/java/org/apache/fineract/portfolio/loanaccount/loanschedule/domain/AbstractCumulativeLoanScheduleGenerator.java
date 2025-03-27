@@ -36,7 +36,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
@@ -692,7 +691,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         Collection<FeeDetails> feesDetails = loanCharges.stream().filter(charge -> !charge.isDisbursementCharge())
                 .map(charge -> new FeeDetails(charge.name(), charge.getAmountOutstanding(), charge.getAmountPaid(),
                         charge.getAmountOutstanding()))
-                .collect(Collectors.toList());
+                .toList();
 
         BigDecimal mandatoryInsuranceAmount = mandatoryInsuranceCharges.stream().map(LoanCharge::getInstallmentChargeAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -2408,10 +2407,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         if (!loanApplicationTerms.isMultiDisburseLoan()) {
             final LoanScheduleModelDisbursementPeriod disbursementPeriod = LoanScheduleModelDisbursementPeriod
                     .disbursement(loanApplicationTerms, chargesDueAtTimeOfDisbursement);
-            List<FeeDetails> disbirsementFees = loanCharges
-                    .stream().filter(charge -> charge.isDisbursementCharge()).map(charge -> new FeeDetails(charge.name(),
-                            charge.getAmountOutstanding(), charge.getAmountPaid(), charge.getAmountOutstanding()))
-                    .collect(Collectors.toList());
+            List<FeeDetails> disbirsementFees = loanCharges.stream().filter(LoanCharge::isDisbursementCharge)
+                    .map(charge -> new FeeDetails(charge.name(), charge.getAmountOutstanding(), charge.getAmountPaid(),
+                            charge.getAmountOutstanding()))
+                    .toList();
             disbursementPeriod.setFeeDetails(disbirsementFees);
             periods.add(disbursementPeriod);
             if (loanApplicationTerms.isDownPaymentEnabled()) {

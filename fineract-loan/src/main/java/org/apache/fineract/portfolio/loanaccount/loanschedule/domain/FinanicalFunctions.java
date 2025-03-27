@@ -55,10 +55,10 @@ public final class FinanicalFunctions {
     }
 
     public static double pmtForDaily(final double interestRateFraction, final double numberOfPayments, final double principal,
-                             final double futureValue, final boolean type) {
+            final double futureValue, final boolean type) {
         double payment = 0;
         final double r1 = interestRateFraction + 1;
-        payment = (principal * interestRateFraction)/(1-Math.pow(r1, numberOfPayments));
+        payment = (principal * interestRateFraction) / (1 - Math.pow(r1, numberOfPayments));
         if (payment < 0) {
             return -1 * payment;
         } else {
