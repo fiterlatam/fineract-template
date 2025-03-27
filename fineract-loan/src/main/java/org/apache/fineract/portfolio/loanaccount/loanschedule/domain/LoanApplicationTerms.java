@@ -1024,21 +1024,14 @@ public final class LoanApplicationTerms {
 
     private BigDecimal periodicInterestRate(final PaymentPeriodsInOneYearCalculator calculator, final MathContext mc,
             final DaysInMonthType daysInMonthType, final DaysInYearType daysInYearType, LocalDate periodStartDate, LocalDate periodEndDate,
-            boolean useDailyInterestCalculation) {
-        return periodicInterestRate(calculator, mc, daysInMonthType, daysInYearType, periodStartDate, periodEndDate, false,
-                useDailyInterestCalculation, true);
-    }
-
-    private BigDecimal periodicInterestRate(final PaymentPeriodsInOneYearCalculator calculator, final MathContext mc,
-            final DaysInMonthType daysInMonthType, final DaysInYearType daysInYearType, LocalDate periodStartDate, LocalDate periodEndDate,
             boolean isForPMT, boolean useDailyInterestCalculation, boolean useAnnualNominalInterestRate) {
 
-        // As per client's formula, EMI is calculated based on Monthly interest rate while intallment interest is
+        // As per client's formula, EMI is calculated based on Monthly interest rate while installment interest is
         // calculated based on Daily interest rate
         // Variable isForPMT refers to the process flow where EMI is being calculated
         long loanTermPeriodsInOneYear;
         if (isForPMT) {
-            if (this.repaymentPeriodFrequencyType.isDaily()) {
+            if (this.repaymentPeriodFrequencyType.isDaily() || this.repaymentPeriodFrequencyType.isWeekly()) {
                 loanTermPeriodsInOneYear = DaysInYearType.DAYS_365.getValue();
             } else {
                 loanTermPeriodsInOneYear = calculator.calculate(PeriodFrequencyType.MONTHS).longValue();
@@ -1056,7 +1049,7 @@ public final class LoanApplicationTerms {
         BigDecimal periodicInterestRate = BigDecimal.ZERO;
         BigDecimal loanTermFrequencyBigDecimal = BigDecimal.ONE;
         if (isForPMT) {
-            if (this.repaymentPeriodFrequencyType.isDaily()) {
+            if (this.repaymentPeriodFrequencyType.isDaily() || this.repaymentPeriodFrequencyType.isWeekly()) {
                 loanTermFrequencyBigDecimal = calculateLoanTermFrequency(periodStartDate, periodEndDate);
             } else {
                 loanTermFrequencyBigDecimal = BigDecimal.valueOf(this.repaymentEvery);
@@ -1081,15 +1074,6 @@ public final class LoanApplicationTerms {
                     case INVALID:
                     break;
                     case DAYS:
-                        if (isForPMT) {
-                            periodicInterestRate = oneDayOfYearInterestRate;
-                        } else {
-                            periodicInterestRate = oneDayOfYearInterestRate.multiply(numberOfDaysInPeriod, mc);
-                        }
-                    // periodicInterestRate =
-                    // calculateCustomPeriodicInterestRate(daysInYearType.getValue().doubleValue(), divisor,
-                    // useAnnualNominalInterestRate);
-                    break;
                     case WEEKS:
                         if (isForPMT) {
                             periodicInterestRate = oneDayOfYearInterestRate;
@@ -1133,17 +1117,11 @@ public final class LoanApplicationTerms {
                 }
             break;
             case SAME_AS_REPAYMENT_PERIOD:
-                // periodicInterestRate = this.annualNominalInterestRate.divide(loanTermPeriodsInYearBigDecimal,
-                // mc).divide(divisor, mc)
-                // .multiply(loanTermFrequencyBigDecimal);
                 if (isForPMT) {
                     periodicInterestRate = oneDayOfYearInterestRate;
                 } else {
                     periodicInterestRate = oneDayOfYearInterestRate.multiply(numberOfDaysInPeriod, mc);
                 }
-            // periodicInterestRate = calculateCustomPeriodicInterestRate(loanTermPeriodsInOneYear, divisor,
-            // useAnnualNominalInterestRate);
-
             break;
         }
 
@@ -1314,7 +1292,6 @@ public final class LoanApplicationTerms {
     }
 
     private double paymentPerPeriod(final BigDecimal periodicInterestRate, final Money balance, final int periodsElapsed) {
-
         if (getFixedEmiAmount() == null) {
             final double futureValue = 0;
             final double principalDouble = balance.getAmount().multiply(BigDecimal.valueOf(-1)).doubleValue();
@@ -1323,7 +1300,8 @@ public final class LoanApplicationTerms {
                     periodsElapsed);
             double installmentAmount = balance.getAmount().doubleValue();
             if (periodsRemaining > 0) {
-                if (this.repaymentPeriodFrequencyType.isDaily()) {
+                // For both daily and weekly payments, use pmtForDaily since they are both short-term frequencies
+                if (this.repaymentPeriodFrequencyType.isDaily() || this.repaymentPeriodFrequencyType.isWeekly()) {
                     installmentAmount = FinanicalFunctions.pmtForDaily(periodicInterestRate.doubleValue(), periodsRemaining.doubleValue(),
                             principalDouble, futureValue, false);
                 } else {
@@ -1345,8 +1323,10 @@ public final class LoanApplicationTerms {
             final boolean ignoreCurrencyDigitsAfterDecimal) {
         Money interestDue = Money.zero(outstandingBalance.getCurrency());
         boolean useDailyInterestCalculation = true;
+        boolean isForPMT = false;
+        boolean useAnnualNominalInterestRate = true;
         final BigDecimal periodicInterestRate = periodicInterestRate(calculator, mc, this.daysInMonthType, this.daysInYearType,
-                periodStartDate, periodEndDate, useDailyInterestCalculation);
+                periodStartDate, periodEndDate, isForPMT, useDailyInterestCalculation, useAnnualNominalInterestRate);
         BigDecimal dueInterest = outstandingBalance.getAmount().multiply(periodicInterestRate);
         if (!ignoreCurrencyDigitsAfterDecimal) {
             dueInterest = dueInterest.setScale(2, RoundingMode.HALF_UP);
