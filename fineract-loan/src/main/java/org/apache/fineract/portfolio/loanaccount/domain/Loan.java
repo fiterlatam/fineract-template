@@ -1319,7 +1319,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
             BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 2, RoundingMode.HALF_UP);
             amount = amount.plus(finalAmount);
-        } else if (calculationType.isPercentageOfLifeInsurance()
+        } else if (calculationType.isPercentageOfLifeInsurance() && Objects.nonNull(installment.getLifeInsuranceChargePortion())
                 && installment.getLifeInsuranceChargePortion().compareTo(BigDecimal.ZERO) > 0) {
             Money amountAux = amount.plus(loanCharge.getAmountPercentageAppliedTo().multiply(percentage).divide(BigDecimal.valueOf(100), 2,
                     RoundingMode.HALF_UP));

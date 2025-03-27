@@ -199,7 +199,7 @@ public class SavingsApiConstants {
     public static final String ERROR_MSG_SAVINGS_ACCOUNT_NOT_ACTIVE = "not.in.active.state";
 
     public static final String accountMappingForPaymentParamName = "accountMappingForPayment";
-    public static final String feesReceivableParamName = "feesReceivableAccountId";
-    public static final String penaltiesReceivableAccountIdParamName = "penaltiesReceivableAccountId";
-    public static final String interestPayableAccountIdParamName = "interestPayableAccountId";
+    public static final String FEES_RECEIVABLE_PARAM_NAME = "feesReceivableAccountId";
+    public static final String PENALTIES_RECEIVABLE_ACCOUNT_ID_PARAM_NAME = "penaltiesReceivableAccountId";
+    public static final String INTEREST_PAYABLE_ACCOUNT_ID_PARAM_NAME = "interestPayableAccountId";
 }

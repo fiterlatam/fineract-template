@@ -106,11 +106,11 @@ public final class LoanSchedulePeriodData {
     private Long installmentId;
 
     public static LoanSchedulePeriodData disbursementOnlyPeriod(final LocalDate disbursementDate, final BigDecimal principalDisbursed,
-            final BigDecimal feeChargesDueAtTimeOfDisbursement, final boolean isDisbursed) {
+            final BigDecimal feeChargesDueAtTimeOfDisbursement, final boolean isDisbursed, Collection<FeeDetails> feeDetails) {
         final Integer periodNumber = null;
         final LocalDate from = null;
         return new LoanSchedulePeriodData(periodNumber, from, disbursementDate, principalDisbursed, feeChargesDueAtTimeOfDisbursement,
-                isDisbursed);
+                isDisbursed, feeDetails);
     }
 
     public static LoanSchedulePeriodData repaymentOnlyPeriod(final Integer periodNumber, final LocalDate fromDate, final LocalDate dueDate,
@@ -176,7 +176,8 @@ public final class LoanSchedulePeriodData {
      * constructor used for creating period on loan schedule that is only a disbursement (typically first period)
      */
     private LoanSchedulePeriodData(final Integer periodNumber, final LocalDate fromDate, final LocalDate dueDate,
-            final BigDecimal principalDisbursed, final BigDecimal chargesDueAtTimeOfDisbursement, final boolean isDisbursed) {
+            final BigDecimal principalDisbursed, final BigDecimal chargesDueAtTimeOfDisbursement, final boolean isDisbursed,
+            Collection<FeeDetails> feeDetails) {
         this.period = periodNumber;
         this.fromDate = fromDate;
         this.dueDate = dueDate;
@@ -234,6 +235,7 @@ public final class LoanSchedulePeriodData {
         this.totalOverdue = DateUtils.isBeforeBusinessDate(dueDate) ? this.totalOutstandingForPeriod : null;
         this.totalCredits = BigDecimal.ZERO;
         this.downPaymentPeriod = false;
+        this.feeDetails = feeDetails;
     }
 
     /*

@@ -139,7 +139,7 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
 
             final LoanSchedulePeriodData disbursementPeriod = LoanSchedulePeriodData.disbursementOnlyPeriod(
                     this.disbursement.disbursementDate(), this.disbursement.getPrincipal(), this.totalFeeChargesDueAtDisbursement,
-                    this.disbursement.isDisbursed());
+                    this.disbursement.isDisbursed(), null);
             disbursementPeriod.setHonorariosDue(disbursementPeriod.getFeeChargesDue());
             disbursementPeriod.setHonorariosPaid(disbursementPeriod.getFeeChargesPaid());
             disbursementPeriod.setHonorariosWaived(disbursementPeriod.getFeeChargesWaived());
@@ -183,14 +183,14 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
                         if (fromDate.equals(this.disbursement.disbursementDate()) && data.disbursementDate().equals(fromDate)) {
                             principal = principal.add(data.getPrincipal());
                             final LoanSchedulePeriodData periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(),
-                                    data.getPrincipal(), this.totalFeeChargesDueAtDisbursement, data.isDisbursed());
+                                    data.getPrincipal(), this.totalFeeChargesDueAtDisbursement, data.isDisbursed(), null);
                             periods.add(periodData);
                             this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(data.getPrincipal());
                         } else if (data.isDueForDisbursement(loanScheduleType, fromDate, dueDate)
                                 && this.outstandingLoanPrincipalBalance.compareTo(BigDecimal.ZERO) > 0) {
                             principal = principal.add(data.getPrincipal());
                             final LoanSchedulePeriodData periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(),
-                                    data.getPrincipal(), BigDecimal.ZERO, data.isDisbursed());
+                                    data.getPrincipal(), BigDecimal.ZERO, data.isDisbursed(), null);
                             periods.add(periodData);
                             this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(data.getPrincipal());
                         }

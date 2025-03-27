@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
@@ -53,6 +54,7 @@ import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.data.FeeDetails;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleDTO;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleModelDownPaymentPeriod;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleParams;
@@ -61,6 +63,10 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.Schedule
 import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
 
 public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanScheduleGenerator {
+
+    public static final String STRING_PRINCIPAL_APPROVED_AMOUNT = "principalApprovedAmount";
+    public static final String STRING_PRINCIPAL_PROPOSED_AMOUNT = "principalProposedAmount";
+    public static final String STRING_PERIOD_FREQUENCY_TYPE = "periodFrequencyType";
 
     @Override
     public LoanScheduleModel generate(final MathContext mc, final LoanApplicationTerms loanApplicationTerms,
@@ -112,8 +118,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
         List<LoanScheduleModelPeriod> periods = new ArrayList<>();
         if (!scheduleParams.isPartialUpdate()) {
-            periods = createNewLoanScheduleListWithDisbursementDetails(loanApplicationTerms, scheduleParams,
-                    chargesDueAtTimeOfDisbursement);
+            periods = createNewLoanScheduleListWithDisbursementDetails(loanApplicationTerms, scheduleParams, chargesDueAtTimeOfDisbursement,
+                    loanCharges);
         }
 
         // Determine the total interest owed over the full loan for FLAT
@@ -496,6 +502,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 isLastInstallmentPeriod = true;
             }
 
+            scheduleParams.setPeriodFrequencyType(loanApplicationTerms.getRepaymentPeriodFrequencyType());
+
             // applies charges for the period
             applyChargesForCurrentPeriod(loanCharges, currency, scheduleParams, scheduledDueDate, currentPeriodParams, mc,
                     isLastInstallmentPeriod, loanApplicationTerms.getActualNumberOfRepayments());
@@ -681,6 +689,11 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         Collection<LoanCharge> lifeInsuranceCharges = loanCharges.stream().filter(lif -> lif.getChargeCalculation().isLifeInsurance())
                 .toList();
 
+        Collection<FeeDetails> feesDetails = loanCharges.stream().filter(charge -> !charge.isDisbursementCharge())
+                .map(charge -> new FeeDetails(charge.name(), charge.getAmountOutstanding(), charge.getAmountPaid(),
+                        charge.getAmountOutstanding()))
+                .collect(Collectors.toList());
+
         BigDecimal mandatoryInsuranceAmount = mandatoryInsuranceCharges.stream().map(LoanCharge::getInstallmentChargeAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal voluntaryInsuranceAmount = voluntaryInsuranceCharges.stream().map(LoanCharge::getInstallmentChargeAmount)
@@ -721,7 +734,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         installment.setTotalAvalCharged(avalAmount);
         installment.setTotalHonorariosCharged(honorariosAmount);
         installment.setTotalLifeInsuranceCharged(lifeInsuranceAmount);
-
+        installment.setFeeDetails(feesDetails);
         // Reset charge amount to be calculated from zero for next installment
         for (LoanCharge loanCharge : loanCharges) {
             loanCharge.setInstallmentChargeAmount(BigDecimal.ZERO);
@@ -765,14 +778,24 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         PrincipalInterest principalInterest = new PrincipalInterest(currentPeriodParams.getPrincipalForThisPeriod(),
                 currentPeriodParams.getInterestForThisPeriod(), null);
 
-        principalInterest.addAuxiliaryData("principalApprovedAmount", scheduleParams.getPrincipalApproved());
-        if (Objects.isNull(scheduleParams.getPrincipalApproved())) {
-            principalInterest.addAuxiliaryData("principalApprovedAmount", scheduleParams.getPrincipalToBeScheduled().getAmount());
+        principalInterest.addAuxiliaryData(STRING_PERIOD_FREQUENCY_TYPE, scheduleParams.getPeriodFrequencyType());
+
+        if (Boolean.FALSE.equals(loanCharges.isEmpty()) && Objects.nonNull(loanCharges.stream().findFirst().get().getLoan())
+                && Objects.nonNull(loanCharges.stream().findFirst().get().getLoan().getApprovedPrincipal())) {
+            principalInterest.addAuxiliaryData(STRING_PRINCIPAL_APPROVED_AMOUNT,
+                    loanCharges.stream().findFirst().get().getLoan().getApprovedPrincipal());
+
+        } else {
+            principalInterest.addAuxiliaryData(STRING_PRINCIPAL_APPROVED_AMOUNT, scheduleParams.getPrincipalApproved());
+            if (Objects.isNull(scheduleParams.getPrincipalApproved())) {
+                principalInterest.addAuxiliaryData(STRING_PRINCIPAL_APPROVED_AMOUNT,
+                        scheduleParams.getPrincipalToBeScheduled().getAmount());
+            }
         }
 
-        principalInterest.addAuxiliaryData("principalProposedAmount", scheduleParams.getPrincipalProposed());
+        principalInterest.addAuxiliaryData(STRING_PRINCIPAL_PROPOSED_AMOUNT, scheduleParams.getPrincipalProposed());
         if (Objects.isNull(scheduleParams.getPrincipalProposed())) {
-            principalInterest.addAuxiliaryData("principalProposedAmount", scheduleParams.getPrincipalToBeScheduled().getAmount());
+            principalInterest.addAuxiliaryData(STRING_PRINCIPAL_PROPOSED_AMOUNT, scheduleParams.getPrincipalToBeScheduled().getAmount());
         }
 
         if (scheduleParams.getPeriodNumber() == 1) {
@@ -2378,6 +2401,50 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         return periods;
     }
 
+    private List<LoanScheduleModelPeriod> createNewLoanScheduleListWithDisbursementDetails(final LoanApplicationTerms loanApplicationTerms,
+            final LoanScheduleParams loanScheduleParams, final BigDecimal chargesDueAtTimeOfDisbursement,
+            final Set<LoanCharge> loanCharges) {
+        List<LoanScheduleModelPeriod> periods = new ArrayList<>();
+        if (!loanApplicationTerms.isMultiDisburseLoan()) {
+            final LoanScheduleModelDisbursementPeriod disbursementPeriod = LoanScheduleModelDisbursementPeriod
+                    .disbursement(loanApplicationTerms, chargesDueAtTimeOfDisbursement);
+            List<FeeDetails> disbirsementFees = loanCharges
+                    .stream().filter(charge -> charge.isDisbursementCharge()).map(charge -> new FeeDetails(charge.name(),
+                            charge.getAmountOutstanding(), charge.getAmountPaid(), charge.getAmountOutstanding()))
+                    .collect(Collectors.toList());
+            disbursementPeriod.setFeeDetails(disbirsementFees);
+            periods.add(disbursementPeriod);
+            if (loanApplicationTerms.isDownPaymentEnabled()) {
+                final LoanScheduleModelDownPaymentPeriod downPaymentPeriod = createDownPaymentPeriod(loanApplicationTerms,
+                        loanScheduleParams, loanApplicationTerms.getExpectedDisbursementDate(),
+                        loanApplicationTerms.getPrincipal().getAmount());
+                periods.add(downPaymentPeriod);
+            }
+        } else {
+            if (loanApplicationTerms.getDisbursementDatas().isEmpty()) {
+                loanApplicationTerms.getDisbursementDatas()
+                        .add(new DisbursementData(1L, loanApplicationTerms.getExpectedDisbursementDate(),
+                                loanApplicationTerms.getExpectedDisbursementDate(), loanApplicationTerms.getPrincipal().getAmount(), null,
+                                null, null, null));
+            }
+            for (DisbursementData disbursementData : loanApplicationTerms.getDisbursementDatas()) {
+                if (disbursementData.disbursementDate().equals(loanScheduleParams.getPeriodStartDate())) {
+                    final LoanScheduleModelDisbursementPeriod disbursementPeriod = LoanScheduleModelDisbursementPeriod.disbursement(
+                            disbursementData.disbursementDate(),
+                            Money.of(loanScheduleParams.getCurrency(), disbursementData.getPrincipal()), chargesDueAtTimeOfDisbursement);
+                    periods.add(disbursementPeriod);
+                    if (loanApplicationTerms.isDownPaymentEnabled()) {
+                        final LoanScheduleModelDownPaymentPeriod downPaymentPeriod = createDownPaymentPeriod(loanApplicationTerms,
+                                loanScheduleParams, loanApplicationTerms.getExpectedDisbursementDate(), disbursementData.getPrincipal());
+                        periods.add(downPaymentPeriod);
+                    }
+                }
+            }
+        }
+
+        return periods;
+    }
+
     private LoanScheduleModelDownPaymentPeriod createDownPaymentPeriod(LoanApplicationTerms loanApplicationTerms,
             LoanScheduleParams scheduleParams, LocalDate date, BigDecimal periodBaseAmount) {
         Money downPaymentAmount = Money.of(loanApplicationTerms.getCurrency(),
@@ -2590,14 +2657,16 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     @SuppressWarnings({ "squid:S3776", "squid:S00107", "java:S3776" })
     private BigDecimal processLifeInsuranceCharge(PrincipalInterest principalInterestForThisPeriod, BigDecimal amount,
             Integer installmentNumber) {
-        BigDecimal principalApprovedAmount = (BigDecimal) principalInterestForThisPeriod.getAuxiliaryData("principalApprovedAmount");
+        BigDecimal principalApprovedAmount = (BigDecimal) principalInterestForThisPeriod.getAuxiliaryData(STRING_PRINCIPAL_APPROVED_AMOUNT);
         Integer installmentDayOfMonth = (int) principalInterestForThisPeriod.getAuxiliaryData("installmentDayOfMonth");
         LocalDate periodStartDate = (LocalDate) principalInterestForThisPeriod.getAuxiliaryData("periodStartDate");
         LocalDate periodDueDate = (LocalDate) principalInterestForThisPeriod.getAuxiliaryData("periodDueDate");
+        PeriodFrequencyType periodFrequencyType = (PeriodFrequencyType) principalInterestForThisPeriod
+                .getAuxiliaryData(STRING_PERIOD_FREQUENCY_TYPE);
 
         Integer maxDayOfMonth = YearMonth.from(periodDueDate).lengthOfMonth();
 
-        boolean isWeeklyRepayment = periodStartDate.until(periodDueDate, ChronoUnit.DAYS) == 7;
+        boolean isWeeklyRepayment = periodFrequencyType.isWeekly();
 
         // If not daily, add 1 day to periodStartDate
         if (Boolean.FALSE.equals(periodDueDate.isEqual(periodStartDate))) {
@@ -2621,7 +2690,13 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     installmentDayOfMonthClone = YearMonth.from(periodStartDate).lengthOfMonth();
                 }
 
-                referenceDate = LocalDate.of(periodStartDate.getYear(), periodStartDate.getMonthValue(), installmentDayOfMonthClone);
+                LocalDate referenceDateClone = LocalDate.of(periodStartDate.getYear(), periodStartDate.getMonthValue(),
+                        installmentDayOfMonthClone);
+                Boolean isWithinRange = isWithinRange(periodStartDate, periodDueDate, referenceDateClone);
+
+                if (isWithinRange) {
+                    referenceDate = referenceDateClone;
+                }
             }
 
         } else { // Daily and Monthly
@@ -2632,14 +2707,18 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         }
 
         // If charge date is beween periodStartDate and periodDueDate
-        Boolean isWithinRange = (referenceDate.isEqual(periodStartDate) || referenceDate.isAfter(periodStartDate))
-                && (referenceDate.isEqual(periodDueDate) || referenceDate.isBefore(periodDueDate));
+        Boolean isWithinRange = isWithinRange(periodStartDate, periodDueDate, referenceDate);
 
         if (isWithinRange) {
             amount = amount.add(principalApprovedAmount);
         }
 
         return amount;
+    }
+
+    private boolean isWithinRange(LocalDate periodStartDate, LocalDate periodDueDate, LocalDate referenceDate) {
+        return (referenceDate.isEqual(periodStartDate) || referenceDate.isAfter(periodStartDate))
+                && (referenceDate.isEqual(periodDueDate) || referenceDate.isBefore(periodDueDate));
     }
 
     @SuppressWarnings({ "squid:S3776" })

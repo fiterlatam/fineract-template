@@ -20,9 +20,11 @@ package org.apache.fineract.portfolio.loanaccount.loanschedule.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Set;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanInterestRecalcualtionAdditionalDetails;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.data.FeeDetails;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 
 public interface LoanScheduleModelPeriod {
@@ -96,4 +98,9 @@ public interface LoanScheduleModelPeriod {
     public BigDecimal advancePrincipalAmountForInstallment();
 
     public void setAdvancePrincipalAmountForInstallment(BigDecimal advancePrincipalAmountForInstallment);
+
+    public void setFeeDetails(Collection<FeeDetails> feeDetails);
+
+    public Collection<FeeDetails> getFeeDetails();
+
 }

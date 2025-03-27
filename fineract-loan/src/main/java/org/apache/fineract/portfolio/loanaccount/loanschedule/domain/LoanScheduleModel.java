@@ -122,6 +122,7 @@ public final class LoanScheduleModel {
             totalLifeInsuranceCharged = totalLifeInsuranceCharged.add(modelPeriod.getTotalLifeInsuranceCharged());
 
             periodData.setLifeInsuranceDue(modelPeriod.getTotalLifeInsuranceCharged());
+            periodData.setFeeDetails(modelPeriod.getFeeDetails());
 
             if (modelPeriod.isDisbursementPeriod()) {
                 totalHonorariosCharged = totalHonorariosCharged.add(periodData.getFeeChargesDue());

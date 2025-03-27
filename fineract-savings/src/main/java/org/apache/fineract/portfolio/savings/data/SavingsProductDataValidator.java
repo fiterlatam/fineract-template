@@ -108,8 +108,8 @@ public class SavingsProductDataValidator {
             SavingsApiConstants.minRequiredBalanceParamName, SavingsApiConstants.enforceMinRequiredBalanceParamName,
             SavingsApiConstants.maxAllowedLienLimitParamName, SavingsApiConstants.lienAllowedParamName,
             minBalanceForInterestCalculationParamName, withHoldTaxParamName, taxGroupIdParamName,
-            SavingsApiConstants.feesReceivableParamName, SavingsApiConstants.penaltiesReceivableAccountIdParamName,
-            SavingsApiConstants.interestPayableAccountIdParamName));
+            SavingsApiConstants.FEES_RECEIVABLE_PARAM_NAME, SavingsApiConstants.PENALTIES_RECEIVABLE_ACCOUNT_ID_PARAM_NAME,
+            SavingsApiConstants.INTEREST_PAYABLE_ACCOUNT_ID_PARAM_NAME));
 
     @Autowired
     public SavingsProductDataValidator(final FromJsonHelper fromApiJsonHelper) {
