@@ -153,6 +153,7 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
         log.info("Daily accrual persisted for loan: {}", loan.getId());
     }
 
+    @SuppressWarnings("all")
     private void processInterestAccrualForDate(final LocalDate accrualDate, Loan loan, Long minimumDaysInArrearsToSuspendLoanAccount) {
         final MonetaryCurrency currency = loan.getCurrency();
         ExternalId externalIdentifier = ExternalId.empty();
@@ -163,46 +164,11 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
         BigDecimal dailyAccrualInterest = null;
         Integer accrualInstallmentNumber = null;
 
-        // Use the actual outstanding principal balance from the loan
-        // This will reflect any payments made against the principal, including special write-offs and Credit Notes
-        // final Money principalLoanBalanceOutstanding = Money.of(currency,
-        // loan.getLoanSummary().getTotalPrincipalOutstanding());
+        // Start with the total principal disbursed as the outstanding balance
         Money principalLoanBalanceOutstanding = Money.of(currency, loan.getLoanSummary().getTotalPrincipalDisbursed());
 
-        // Check if the loan has any special write-off or Credit Note transactions on or before the accrual date
-        // If so, we need to make sure we're using the correct principal balance
-        List<LoanTransaction> specialWriteOffOrCreditNoteTransactions = loan.getLoanTransactions().stream()
-                .filter(transaction -> (transaction.isSpecialWriteOff() || transaction.getTypeOf().equals(LoanTransactionType.CREDIT_NOTE))
-                        && !transaction.isReversed() && !transaction.getTransactionDate().isAfter(accrualDate))
-                .sorted((t1, t2) -> t2.getTransactionDate().compareTo(t1.getTransactionDate())) // Sort by date
-                                                                                                // descending (most
-                                                                                                // recent first)
-                .toList();
-
-        if (!specialWriteOffOrCreditNoteTransactions.isEmpty()) {
-            log.debug("Loan {} has {} special write-off or Credit Note transactions. Using actual outstanding principal: {}", loan.getId(),
-                    specialWriteOffOrCreditNoteTransactions.size(), principalLoanBalanceOutstanding.getAmount());
-
-            // If the principal balance is zero after a special write-off or Credit Note, skip accrual calculations
-            if (principalLoanBalanceOutstanding.isZero()) {
-                log.debug("Loan {} has zero principal balance after special write-off or Credit Note. Skipping accrual calculation.",
-                        loan.getId());
-                loan.setInterestAccruedTill(accrualDate);
-                this.loanRepository.saveAndFlush(loan);
-                return;
-            }
-
-            // Force a refresh of the loan summary to ensure we have the most up-to-date principal balance
-            // This is especially important when multiple special write-off transactions occur
-            loan = this.loanAssembler.assembleFrom(loan.getId());
-            // principalLoanBalanceOutstanding = Money.of(currency,
-            // loan.getLoanSummary().getTotalPrincipalOutstanding());
-            log.debug("Refreshed loan summary for loan {}. Updated outstanding principal: {}", loan.getId(),
-                    principalLoanBalanceOutstanding.getAmount());
-        }
-
         // Get the applicable interest rate for the accrual date
-        // This ensures we're using the correct interest rate after any rate changes
+        // This ensures we're using the correct interest rate after any maximum legal rate changes
         LoanTermVariationsData interestRateChange = this.getLoanTermVariationsDataFor(loan.getId(), accrualDate);
         BigDecimal annualNominalInterestRate = loan.getLoanRepaymentScheduleDetail().getAnnualNominalInterestRate();
         if (interestRateChange != null && interestRateChange.getDecimalValue() != null) {
