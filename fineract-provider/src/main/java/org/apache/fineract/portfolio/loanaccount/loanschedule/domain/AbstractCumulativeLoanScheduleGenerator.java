@@ -770,6 +770,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
     private int dayOfFirstRepayment = 0;
 
+    @SuppressWarnings({ "java:S3655", "java:S107" })
     private void applyChargesForCurrentPeriod(final Set<LoanCharge> loanCharges, final MonetaryCurrency currency,
             LoanScheduleParams scheduleParams, LocalDate scheduledDueDate, ScheduleCurrentPeriodParams currentPeriodParams,
             final MathContext mc, boolean isLastInstallmentPeriod, Integer numberOfRepayments) {
@@ -2691,7 +2692,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
                 LocalDate referenceDateClone = LocalDate.of(periodStartDate.getYear(), periodStartDate.getMonthValue(),
                         installmentDayOfMonthClone);
-                Boolean isWithinRange = isWithinRange(periodStartDate, periodDueDate, referenceDateClone);
+                boolean isWithinRange = isWithinRange(periodStartDate, periodDueDate, referenceDateClone);
 
                 if (isWithinRange) {
                     referenceDate = referenceDateClone;

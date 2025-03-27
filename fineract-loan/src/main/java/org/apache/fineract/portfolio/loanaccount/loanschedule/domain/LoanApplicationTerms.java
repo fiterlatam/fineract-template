@@ -1023,6 +1023,7 @@ public final class LoanApplicationTerms {
         return interestForInstallment;
     }
 
+    @SuppressWarnings({ "java:S3776" })
     private BigDecimal periodicInterestRate(final PaymentPeriodsInOneYearCalculator calculator, final MathContext mc,
             final DaysInMonthType daysInMonthType, final DaysInYearType daysInYearType, LocalDate periodStartDate, LocalDate periodEndDate,
             boolean isForPMT, boolean useDailyInterestCalculation, boolean useAnnualNominalInterestRate) {
@@ -1303,7 +1304,7 @@ public final class LoanApplicationTerms {
                 // For both daily and weekly payments, use pmtForDaily since they are both short-term frequencies
                 if (this.repaymentPeriodFrequencyType.isDaily() || this.repaymentPeriodFrequencyType.isWeekly()) {
                     installmentAmount = FinanicalFunctions.pmtForDaily(periodicInterestRate.doubleValue(), periodsRemaining.doubleValue(),
-                            principalDouble, futureValue, false);
+                            principalDouble);
                 } else {
                     installmentAmount = FinanicalFunctions.pmt(periodicInterestRate.doubleValue(), periodsRemaining.doubleValue(),
                             principalDouble, futureValue, false);
