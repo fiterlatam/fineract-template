@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.loanschedule.data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.organisation.monetary.domain.Money;
@@ -228,6 +229,6 @@ public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleMod
 
     @Override
     public Collection<FeeDetails> getFeeDetails() {
-        return null;
+        return Collections.emptyList();
     }
 }

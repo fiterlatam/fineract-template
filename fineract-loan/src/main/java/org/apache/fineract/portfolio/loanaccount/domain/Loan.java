@@ -1265,6 +1265,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return amount.plus(finalAmount);
     }
 
+    @SuppressWarnings({ "java:S3776" })
     private Money calculateInstallmentChargeAmount(final ChargeCalculationType calculationType, final BigDecimal percentage,
             final LoanRepaymentScheduleInstallment installment, Long parentChargeId, LoanCharge loanCharge) {
         Money amount = Money.zero(getCurrency());
