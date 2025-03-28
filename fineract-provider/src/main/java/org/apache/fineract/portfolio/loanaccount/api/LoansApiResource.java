@@ -1082,6 +1082,16 @@ public class LoansApiResource {
         final Set<String> associationParameters = ApiParameterHelper.extractAssociationsForResponseIfProvided(uriInfo.getQueryParameters());
         final Collection<LoanTransactionData> currentLoanRepayments = this.loanReadPlatformService.retrieveLoanTransactions(resolvedLoanId);
 
+        ApiParameterHelper.excludeAssociationsForResponseIfProvided(exclude, associationParameters);
+        if (associationParameters.contains(DataTableApiConstant.allAssociateParamName)) {
+            associationParameters.addAll(Arrays.asList(DataTableApiConstant.repaymentScheduleAssociateParamName,
+                    DataTableApiConstant.futureScheduleAssociateParamName, DataTableApiConstant.originalScheduleAssociateParamName,
+                    DataTableApiConstant.transactionsAssociateParamName, DataTableApiConstant.chargesAssociateParamName,
+                    DataTableApiConstant.guarantorsAssociateParamName, DataTableApiConstant.collateralAssociateParamName,
+                    DataTableApiConstant.notesAssociateParamName, DataTableApiConstant.linkedAccountAssociateParamName,
+                    DataTableApiConstant.multiDisburseDetailsAssociateParamName, DataTableApiConstant.collectionAssociateParamName));
+        }
+
         if (associationParameters.contains(DataTableApiConstant.multiDisburseDetailsAssociateParamName)
                 || associationParameters.contains(DataTableApiConstant.repaymentScheduleAssociateParamName) || lightWeight) {
             mandatoryResponseParameters.add(DataTableApiConstant.multiDisburseDetailsAssociateParamName);
@@ -1116,16 +1126,6 @@ public class LoansApiResource {
             }
         }
         if (!associationParameters.isEmpty()) {
-            if (associationParameters.contains(DataTableApiConstant.allAssociateParamName)) {
-                associationParameters.addAll(Arrays.asList(DataTableApiConstant.repaymentScheduleAssociateParamName,
-                        DataTableApiConstant.futureScheduleAssociateParamName, DataTableApiConstant.originalScheduleAssociateParamName,
-                        DataTableApiConstant.transactionsAssociateParamName, DataTableApiConstant.chargesAssociateParamName,
-                        DataTableApiConstant.guarantorsAssociateParamName, DataTableApiConstant.collateralAssociateParamName,
-                        DataTableApiConstant.notesAssociateParamName, DataTableApiConstant.linkedAccountAssociateParamName,
-                        DataTableApiConstant.multiDisburseDetailsAssociateParamName, DataTableApiConstant.collectionAssociateParamName));
-            }
-
-            ApiParameterHelper.excludeAssociationsForResponseIfProvided(exclude, associationParameters);
 
             if (associationParameters.contains(DataTableApiConstant.guarantorsAssociateParamName)) {
                 mandatoryResponseParameters.add(DataTableApiConstant.guarantorsAssociateParamName);
