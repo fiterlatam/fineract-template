@@ -27,7 +27,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionToRepaymentScheduleMapping;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.AbstractLoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 
 /**
  * Old style {@link LoanRepaymentScheduleTransactionProcessor}.
@@ -58,76 +57,8 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
             final List<LoanRepaymentScheduleInstallment> installments, final LoanTransaction loanTransaction,
             final LocalDate transactionDate, final Money paymentInAdvance,
             List<LoanTransactionToRepaymentScheduleMapping> transactionMappings) {
-
-        final MonetaryCurrency currency = paymentInAdvance.getCurrency();
-        Money transactionAmountRemaining = paymentInAdvance;
-        Money principalPortion = Money.zero(transactionAmountRemaining.getCurrency());
-        Money interestPortion = Money.zero(transactionAmountRemaining.getCurrency());
-        Money interestWaivedPortion = Money.zero(transactionAmountRemaining.getCurrency());
-        Money feeChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
-        Money penaltyChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
-
-        if (loanTransaction.isChargesWaiver()) {
-            penaltyChargesPortion = currentInstallment.waivePenaltyChargesComponent(transactionDate,
-                    loanTransaction.getPenaltyChargesPortion(currency));
-            transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
-
-            feeChargesPortion = currentInstallment.waiveFeeChargesComponent(transactionDate,
-                    loanTransaction.getFeeChargesPortion(currency));
-            transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
-
-        } else if (loanTransaction.isInterestWaiver()) {
-            interestPortion = currentInstallment.waiveInterestComponent(transactionDate, transactionAmountRemaining);
-            transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
-
-            loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
-        } else if (loanTransaction.isChargePayment()) {
-            if (loanTransaction.isPenaltyPayment()) {
-                penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
-                transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
-            } else {
-                feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining);
-                transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
-            }
-            loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
-        } else {
-            penaltyChargesPortion = currentInstallment.payPenaltyChargesComponent(transactionDate, transactionAmountRemaining);
-            transactionAmountRemaining = transactionAmountRemaining.minus(penaltyChargesPortion);
-
-            feeChargesPortion = currentInstallment.payFeeChargesComponent(transactionDate, transactionAmountRemaining);
-            transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
-
-            LoanProduct loanProduct = loanTransaction.getLoan().getLoanProduct();
-            if (loanProduct.getWaiveInterestEarlyRepayment()) {
-                interestPortion = currentInstallment.payAccruedInterestComponent(transactionDate, transactionAmountRemaining);
-            } else {
-                interestPortion = currentInstallment.payInterestComponent(transactionDate, transactionAmountRemaining);
-            }
-            if (!currentInstallment.getDueDate().isBefore(transactionDate)
-                    && currentInstallment.getInterestAccrued(transactionAmountRemaining.getCurrency()).isGreaterThanZero()) {
-                Money interstIncomePortion = loanTransaction.getIncomeInterestPortion(transactionAmountRemaining.getCurrency()).plus(
-                        interestPortion.minus(currentInstallment.getInterestAccrued(transactionAmountRemaining.getCurrency())).getAmount());
-                loanTransaction.setIncomeInterestPortion(interstIncomePortion.getAmount());
-                Money receivableIterestPortion = loanTransaction.getReceivableInterestPortion(transactionAmountRemaining.getCurrency())
-                        .plus(currentInstallment.getInterestAccrued(transactionAmountRemaining.getCurrency()).getAmount());
-                loanTransaction.setReceivableInterestPortion(receivableIterestPortion.getAmount());
-            }
-            transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
-
-            principalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining);
-            transactionAmountRemaining = transactionAmountRemaining.minus(principalPortion);
-
-            if (loanProduct.getWaiveInterestEarlyRepayment() && transactionAmountRemaining.isGreaterThanZero()) {
-                interestWaivedPortion = currentInstallment.waiveInterestComponent(transactionDate, transactionAmountRemaining);
-            }
-
-            loanTransaction.updateComponents(principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion);
-        }
-        if (principalPortion.plus(interestPortion).plus(feeChargesPortion).plus(penaltyChargesPortion).isGreaterThanZero()) {
-            transactionMappings.add(LoanTransactionToRepaymentScheduleMapping.createFrom(loanTransaction, currentInstallment,
-                    principalPortion, interestPortion, feeChargesPortion, penaltyChargesPortion));
-        }
-        return transactionAmountRemaining;
+        return handleTransactionThatIsOnTimePaymentOfInstallment(currentInstallment, loanTransaction, paymentInAdvance,
+                transactionMappings);
     }
 
     /**

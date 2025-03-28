@@ -162,7 +162,7 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
 
         // Adjust start date based on paid days
         LocalDate adjustedStartDate = interestStartDate.plusDays(daysPaid);
-        if (adjustedStartDate.isAfter(tilldate)) {
+        if (adjustedStartDate.isAfter(tilldate) || adjustedStartDate.equals(tilldate)) {
             return; // No accrual needed as paid interest covers till the given date.
         }
 

@@ -1909,7 +1909,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 .append(" or (ls.interest_amount > COALESCE(ls.interest_completed_derived, 0)")
                 .append(" and (ls.interest_amount <> COALESCE(ls.accrual_interest_derived, 0))))")
                 .append(" and loan.loan_status_id=:active and mpl.accounting_type=:type and (loan.closedon_date <= :tillDate or loan.closedon_date is null)")
-                .append(" and loan.is_npa=false and (ls.duedate <= :tillDate or (ls.duedate > :tillDate and ls.fromdate < :tillDate))) ");
+                .append(" and loan.is_npa=false and (ls.duedate <= :tillDate or (ls.duedate > :tillDate and ls.fromdate < :tillDate and ls.completed_derived=0))) ");
         Map<String, Object> paramMap = new HashMap<>(4);
         if (organisationStartDate != null) {
             sqlBuilder.append(" and ls.duedate > :organisationStartDate ");

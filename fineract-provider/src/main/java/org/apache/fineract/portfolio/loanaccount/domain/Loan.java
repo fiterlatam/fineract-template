@@ -5755,6 +5755,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return this.accruedTill;
     }
 
+    public void updateAccruedTillDate(LocalDate accruedTill) {
+        this.accruedTill = accruedTill;
+    }
+
     public LocalDate fetchInterestRecalculateFromDate() {
         LocalDate interestRecalculatedOn = null;
         if (this.interestRecalculatedOn == null) {
