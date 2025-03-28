@@ -579,7 +579,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
         // determine fees and penalties for charges which depends on total
         // loan interest
-        updatePeriodsWithCharges(currency, scheduleParams, periods, nonCompoundingCharges, mc);
+        updatePeriodsWithCharges(currency, scheduleParams, periods, nonCompoundingCharges, loanCharges, mc);
 
         // this block is to add extra re-payment schedules with interest portion
         // if the loan not paid with in loan term
@@ -688,11 +688,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         Collection<LoanCharge> lifeInsuranceCharges = loanCharges.stream().filter(lif -> lif.getChargeCalculation().isLifeInsurance())
                 .toList();
 
-        Collection<FeeDetails> feesDetails = loanCharges.stream().filter(charge -> !charge.isDisbursementCharge())
-                .map(charge -> new FeeDetails(charge.name(), charge.getAmountOutstanding(), charge.getAmountPaid(),
-                        charge.getAmountOutstanding()))
-                .toList();
-
         BigDecimal mandatoryInsuranceAmount = mandatoryInsuranceCharges.stream().map(LoanCharge::getInstallmentChargeAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal voluntaryInsuranceAmount = voluntaryInsuranceCharges.stream().map(LoanCharge::getInstallmentChargeAmount)
@@ -733,7 +728,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         installment.setTotalAvalCharged(avalAmount);
         installment.setTotalHonorariosCharged(honorariosAmount);
         installment.setTotalLifeInsuranceCharged(lifeInsuranceAmount);
-        installment.setFeeDetails(feesDetails);
         // Reset charge amount to be calculated from zero for next installment
         for (LoanCharge loanCharge : loanCharges) {
             loanCharge.setInstallmentChargeAmount(BigDecimal.ZERO);
@@ -824,11 +818,23 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     }
 
     private void updatePeriodsWithCharges(final MonetaryCurrency currency, LoanScheduleParams scheduleParams,
-            final Collection<LoanScheduleModelPeriod> periods, final Set<LoanCharge> nonCompoundingCharges, final MathContext mc) {
+            final Collection<LoanScheduleModelPeriod> periods, Set<LoanCharge> nonCompoundingCharges,
+            final Set<LoanCharge> compoundingCharges, final MathContext mc) {
         boolean isLastInstallmentPeriod = false;
         Money outstandingBalance = scheduleParams.getPrincipalToBeScheduled();
         for (LoanScheduleModelPeriod loanScheduleModelPeriod : periods) {
             if (loanScheduleModelPeriod.isRepaymentPeriod()) {
+
+                BigDecimal finalOutstandingBalance = outstandingBalance.getAmount();
+                List<FeeDetails> feesDetails = compoundingCharges.stream().filter(loanCharge -> !loanCharge.isDisbursementCharge())
+                        .map(charge -> {
+                            BigDecimal amountOutstanding = charge.getAmountOutstanding();
+                            if (charge.isCustomPercentageOfOutstandingPrincipalCharge()) {
+                                amountOutstanding = finalOutstandingBalance.multiply(charge.getPercentage().divide(new BigDecimal(100)));
+                            }
+                            return new FeeDetails(charge.name(), amountOutstanding, charge.getAmountPaid(), amountOutstanding);
+                        }).toList();
+
                 PrincipalInterest principalInterest = new PrincipalInterest(Money.of(currency, loanScheduleModelPeriod.principalDue()),
                         Money.of(currency, loanScheduleModelPeriod.interestDue()), null);
                 outstandingBalance = outstandingBalance.minus(loanScheduleModelPeriod.principalDue());
@@ -846,6 +852,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 scheduleParams.addTotalPenaltyChargesCharged(penaltyChargesForInstallment);
                 scheduleParams.addTotalRepaymentExpected(feeChargesForInstallment.plus(penaltyChargesForInstallment));
                 loanScheduleModelPeriod.addLoanCharges(feeChargesForInstallment.getAmount(), penaltyChargesForInstallment.getAmount());
+                loanScheduleModelPeriod.setFeeDetails(feesDetails);
             }
         }
     }
