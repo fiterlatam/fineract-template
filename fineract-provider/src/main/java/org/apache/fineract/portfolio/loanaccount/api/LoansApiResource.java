@@ -475,7 +475,22 @@ public class LoansApiResource {
             @QueryParam("exclude") @Parameter(in = ParameterIn.QUERY, name = "exclude", description = "Optional Loan object relation list to be filtered in the response", required = false, example = "guarantors,futureSchedule") final String exclude,
             @QueryParam("fields") @Parameter(in = ParameterIn.QUERY, name = "fields", description = "Optional Loan attribute list to be in the response", required = false, example = "id,principal,annualInterestRate") final String fields,
             @Context final UriInfo uriInfo) {
-        return retrieveLoan(loanId, null, staffInSelectedOfficeOnly, exclude, uriInfo);
+        return retrieveLoan(loanId, null, staffInSelectedOfficeOnly, exclude, uriInfo, false);
+    }
+
+    @GET
+    @Path("{loanId}/summary")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve a Loan", description = "Note: template=true parameter doesn't apply to this resource."
+            + "Example Requests:\n" + "\n" + "loans/1\n" + "\n" + "\n" + "loans/1?fields=id,principal,annualInterestRate\n" + "\n" + "\n"
+            + "loans/1?associations=all\n" + "\n" + "loans/1?associations=all&exclude=guarantors\n" + "\n" + "\n"
+            + "loans/1?fields=id,principal,annualInterestRate&associations=repaymentSchedule,transactions")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = LoansApiResourceSwagger.GetLoansLoanIdResponse.class))) })
+    public String retrieveLoanLite(@PathParam("loanId") @Parameter(description = "loanId", required = true) final Long loanId,
+            @Context final UriInfo uriInfo) {
+        return retrieveLoan(loanId, null, false, null, uriInfo, true);
     }
 
     @GET
@@ -755,7 +770,7 @@ public class LoansApiResource {
             @QueryParam("exclude") @Parameter(in = ParameterIn.QUERY, name = "exclude", description = "Optional Loan object relation list to be filtered in the response", required = false, example = "guarantors,futureSchedule") final String exclude,
             @QueryParam("fields") @Parameter(in = ParameterIn.QUERY, name = "fields", description = "Optional Loan attribute list to be in the response", required = false, example = "id,principal,annualInterestRate") final String fields,
             @Context final UriInfo uriInfo) {
-        return retrieveLoan(null, loanExternalId, staffInSelectedOfficeOnly, exclude, uriInfo);
+        return retrieveLoan(null, loanExternalId, staffInSelectedOfficeOnly, exclude, uriInfo, false);
     }
 
     @PUT
@@ -1012,12 +1027,12 @@ public class LoansApiResource {
     }
 
     private String retrieveLoan(final Long loanId, final String loanExternalIdStr, boolean staffInSelectedOfficeOnly, final String exclude,
-            final UriInfo uriInfo) {
+            final UriInfo uriInfo, boolean lightWeight) {
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
         ExternalId loanExternalId = ExternalIdFactory.produce(loanExternalIdStr);
         Long resolvedLoanId = getResolvedLoanId(loanId, loanExternalId);
         LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(resolvedLoanId);
-        final Long InterestRatePoints = loanBasicDetails.getInterestRatePoints();
+        final Long interestRatePoints = loanBasicDetails.getInterestRatePoints();
         if (loanBasicDetails.isInterestRecalculationEnabled()) {
             Collection<CalendarData> interestRecalculationCalendarDatas = this.calendarReadPlatformService.retrieveCalendarsByEntity(
                     loanBasicDetails.getInterestRecalculationDetailId(), CalendarEntityType.LOAN_RECALCULATION_REST_DETAIL.getValue(),
@@ -1055,7 +1070,6 @@ public class LoansApiResource {
         LoanScheduleData repaymentSchedule = null;
         Collection<LoanChargeData> charges = null;
         Collection<GuarantorData> guarantors = null;
-        CalendarData meeting = null;
         Collection<NoteData> notes = null;
         PortfolioAccountData linkedAccount = null;
         Collection<DisbursementData> disbursementData = null;
@@ -1067,17 +1081,51 @@ public class LoansApiResource {
         final Set<String> mandatoryResponseParameters = new HashSet<>();
         final Set<String> associationParameters = ApiParameterHelper.extractAssociationsForResponseIfProvided(uriInfo.getQueryParameters());
         final Collection<LoanTransactionData> currentLoanRepayments = this.loanReadPlatformService.retrieveLoanTransactions(resolvedLoanId);
-        if (!associationParameters.isEmpty()) {
-            if (associationParameters.contains(DataTableApiConstant.allAssociateParamName)) {
-                associationParameters.addAll(Arrays.asList(DataTableApiConstant.repaymentScheduleAssociateParamName,
-                        DataTableApiConstant.futureScheduleAssociateParamName, DataTableApiConstant.originalScheduleAssociateParamName,
-                        DataTableApiConstant.transactionsAssociateParamName, DataTableApiConstant.chargesAssociateParamName,
-                        DataTableApiConstant.guarantorsAssociateParamName, DataTableApiConstant.collateralAssociateParamName,
-                        DataTableApiConstant.notesAssociateParamName, DataTableApiConstant.linkedAccountAssociateParamName,
-                        DataTableApiConstant.multiDisburseDetailsAssociateParamName, DataTableApiConstant.collectionAssociateParamName));
+
+        ApiParameterHelper.excludeAssociationsForResponseIfProvided(exclude, associationParameters);
+        if (associationParameters.contains(DataTableApiConstant.allAssociateParamName)) {
+            associationParameters.addAll(Arrays.asList(DataTableApiConstant.repaymentScheduleAssociateParamName,
+                    DataTableApiConstant.futureScheduleAssociateParamName, DataTableApiConstant.originalScheduleAssociateParamName,
+                    DataTableApiConstant.transactionsAssociateParamName, DataTableApiConstant.chargesAssociateParamName,
+                    DataTableApiConstant.guarantorsAssociateParamName, DataTableApiConstant.collateralAssociateParamName,
+                    DataTableApiConstant.notesAssociateParamName, DataTableApiConstant.linkedAccountAssociateParamName,
+                    DataTableApiConstant.multiDisburseDetailsAssociateParamName, DataTableApiConstant.collectionAssociateParamName));
+        }
+
+        if (associationParameters.contains(DataTableApiConstant.multiDisburseDetailsAssociateParamName)
+                || associationParameters.contains(DataTableApiConstant.repaymentScheduleAssociateParamName) || lightWeight) {
+            mandatoryResponseParameters.add(DataTableApiConstant.multiDisburseDetailsAssociateParamName);
+            disbursementData = this.loanReadPlatformService.retrieveLoanDisbursementDetails(resolvedLoanId);
+        }
+
+        if (associationParameters.contains(DataTableApiConstant.repaymentScheduleAssociateParamName) || lightWeight) {
+            mandatoryResponseParameters.add(DataTableApiConstant.repaymentScheduleAssociateParamName);
+            final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData = loanBasicDetails.getTimeline()
+                    .repaymentScheduleRelatedData(loanBasicDetails.getCurrency(), loanBasicDetails.getPrincipal(),
+                            loanBasicDetails.getApprovedPrincipal(), loanBasicDetails.getInArrearsTolerance(),
+                            loanBasicDetails.getFeeChargesAtDisbursementCharged());
+            repaymentSchedule = this.loanReadPlatformService.retrieveRepaymentSchedule(resolvedLoanId, repaymentScheduleRelatedData,
+                    disbursementData, loanBasicDetails.isInterestRecalculationEnabled(),
+                    LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
+            this.calculationPlatformService.getFeeChargesDetail(repaymentSchedule, resolvedLoanId);
+
+            if (associationParameters.contains(DataTableApiConstant.futureScheduleAssociateParamName)
+                    && loanBasicDetails.isInterestRecalculationEnabled()) {
+                mandatoryResponseParameters.add(DataTableApiConstant.futureScheduleAssociateParamName);
+                this.calculationPlatformService.updateFutureSchedule(repaymentSchedule, resolvedLoanId);
             }
 
-            ApiParameterHelper.excludeAssociationsForResponseIfProvided(exclude, associationParameters);
+            // Farooq - 14/06/2024 - Added to retrieve original schedule irrespective of loan status and interest
+            // recalculation
+            if (associationParameters.contains(DataTableApiConstant.originalScheduleAssociateParamName)) {
+                mandatoryResponseParameters.add(DataTableApiConstant.originalScheduleAssociateParamName);
+                LoanScheduleData loanScheduleData = this.loanScheduleHistoryReadPlatformService.retrieveRepaymentArchiveSchedule(
+                        resolvedLoanId, repaymentScheduleRelatedData, disbursementData,
+                        LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
+                loanBasicDetails = LoanAccountData.withOriginalSchedule(loanBasicDetails, loanScheduleData);
+            }
+        }
+        if (!associationParameters.isEmpty()) {
 
             if (associationParameters.contains(DataTableApiConstant.guarantorsAssociateParamName)) {
                 mandatoryResponseParameters.add(DataTableApiConstant.guarantorsAssociateParamName);
@@ -1094,45 +1142,11 @@ public class LoansApiResource {
                 }
             }
 
-            if (associationParameters.contains(DataTableApiConstant.multiDisburseDetailsAssociateParamName)
-                    || associationParameters.contains(DataTableApiConstant.repaymentScheduleAssociateParamName)) {
-                mandatoryResponseParameters.add(DataTableApiConstant.multiDisburseDetailsAssociateParamName);
-                disbursementData = this.loanReadPlatformService.retrieveLoanDisbursementDetails(resolvedLoanId);
-            }
-
             if (associationParameters.contains(DataTableApiConstant.emiAmountVariationsAssociateParamName)
                     || associationParameters.contains(DataTableApiConstant.repaymentScheduleAssociateParamName)) {
                 mandatoryResponseParameters.add(DataTableApiConstant.emiAmountVariationsAssociateParamName);
                 emiAmountVariations = this.loanReadPlatformService.retrieveLoanTermVariations(resolvedLoanId,
                         LoanTermVariationType.EMI_AMOUNT.getValue());
-            }
-
-            if (associationParameters.contains(DataTableApiConstant.repaymentScheduleAssociateParamName)) {
-                mandatoryResponseParameters.add(DataTableApiConstant.repaymentScheduleAssociateParamName);
-                final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData = loanBasicDetails.getTimeline()
-                        .repaymentScheduleRelatedData(loanBasicDetails.getCurrency(), loanBasicDetails.getPrincipal(),
-                                loanBasicDetails.getApprovedPrincipal(), loanBasicDetails.getInArrearsTolerance(),
-                                loanBasicDetails.getFeeChargesAtDisbursementCharged());
-                repaymentSchedule = this.loanReadPlatformService.retrieveRepaymentSchedule(resolvedLoanId, repaymentScheduleRelatedData,
-                        disbursementData, loanBasicDetails.isInterestRecalculationEnabled(),
-                        LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
-                this.calculationPlatformService.getFeeChargesDetail(repaymentSchedule, resolvedLoanId);
-
-                if (associationParameters.contains(DataTableApiConstant.futureScheduleAssociateParamName)
-                        && loanBasicDetails.isInterestRecalculationEnabled()) {
-                    mandatoryResponseParameters.add(DataTableApiConstant.futureScheduleAssociateParamName);
-                    this.calculationPlatformService.updateFutureSchedule(repaymentSchedule, resolvedLoanId);
-                }
-
-                // Farooq - 14/06/2024 - Added to retrieve original schedule irrespective of loan status and interest
-                // recalculation
-                if (associationParameters.contains(DataTableApiConstant.originalScheduleAssociateParamName)) {
-                    mandatoryResponseParameters.add(DataTableApiConstant.originalScheduleAssociateParamName);
-                    LoanScheduleData loanScheduleData = this.loanScheduleHistoryReadPlatformService.retrieveRepaymentArchiveSchedule(
-                            resolvedLoanId, repaymentScheduleRelatedData, disbursementData,
-                            LoanScheduleType.fromEnumOptionData(loanBasicDetails.getLoanScheduleType()));
-                    loanBasicDetails = LoanAccountData.withOriginalSchedule(loanBasicDetails, loanScheduleData);
-                }
             }
 
             if (associationParameters.contains(DataTableApiConstant.chargesAssociateParamName)) {
@@ -1150,11 +1164,6 @@ public class LoansApiResource {
                 for (LoanCollateralResponseData loanCollateralManagement : loanCollateralManagements) {
                     loanCollateralManagementData.add(loanCollateralManagement.toCommand());
                 }
-            }
-
-            if (associationParameters.contains(DataTableApiConstant.meetingAssociateParamName)) {
-                mandatoryResponseParameters.add(DataTableApiConstant.meetingAssociateParamName);
-                meeting = this.calendarReadPlatformService.retrieveLoanCalendar(resolvedLoanId);
             }
 
             if (associationParameters.contains(DataTableApiConstant.notesAssociateParamName)) {
@@ -1265,7 +1274,7 @@ public class LoansApiResource {
         // Get rates from Loan
         boolean isRatesEnabled = this.configurationDomainService.isSubRatesEnabled();
         List<RateData> rates = null;
-        if (isRatesEnabled) {
+        if (isRatesEnabled && !lightWeight) {
             rates = this.rateReadService.retrieveLoanRates(resolvedLoanId);
         }
 
@@ -1289,9 +1298,6 @@ public class LoansApiResource {
             LoanAssignorData loanAssignorData = this.loanReadPlatformService.retrieveLoanAssignorDataById(loanAssignorId);
             loanAccount.setLoanAssignorData(loanAssignorData);
         }
-        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters(),
-                mandatoryResponseParameters);
-        loanAccount.setInterestRatePoints(InterestRatePoints);
 
         if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(charges)) {
             final Optional<LoanChargeData> voluntaryInsuranceOptional = charges.stream().filter(c -> {
@@ -1305,8 +1311,16 @@ public class LoansApiResource {
                 loanAccount.setVoluntaryInsurance(voluntaryInsurance);
             }
         }
+        if (!lightWeight) {
+            loanAccount.setInterestRatePoints(interestRatePoints);
+        } else {
+            loanAccount.optimizeForLightWeight();
+        }
         final boolean isRediferir = this.loanReadPlatformService.retrieveRediferidoNumber(loanId) > 0;
         loanAccount.setRediferir(isRediferir);
+
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters(),
+                mandatoryResponseParameters);
         return this.toApiJsonSerializer.serialize(settings, loanAccount, LOAN_DATA_PARAMETERS);
     }
 

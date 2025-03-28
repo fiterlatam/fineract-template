@@ -1282,4 +1282,47 @@ public class LoanAccountData {
     public boolean isActive() {
         return LoanStatus.fromInt(getStatus().getId().intValue()).isActive();
     }
+
+    public void optimizeForLightWeight() {
+        this.subStatus = null;
+        this.loanType = null;
+        this.currency = null;
+        this.repaymentFrequencyType = null;
+        this.termPeriodFrequencyType = null;
+        this.interestRateFrequencyType = null;
+        this.amortizationType = null;
+        this.interestType = null;
+        this.interestCalculationPeriodType = null;
+        this.allowPartialPeriodInterestCalculation = null;
+        this.transactionProcessingStrategyCode = null;
+        this.transactionProcessingStrategyName = null;
+        this.graceOnArrearsAgeing = null;
+        this.disallowExpectedDisbursements = null;
+        this.syncDisbursementWithMeeting = null;
+        this.timeline = null;
+        this.daysInMonthType = null;
+        this.daysInYearType = null;
+        this.loanScheduleProcessingType = null;
+        this.loanScheduleType = null;
+        this.enableAutoRepaymentForDownPayment = null;
+        this.enableDownPayment = null;
+        this.chargedOff = null;
+        this.enableInstallmentLevelDelinquency = null;
+        this.isRatesEnabled = null;
+        this.isEqualAmortization = null;
+        this.maximumGap = null;
+        this.minimumGap = null;
+        this.isVariableInstallmentsAllowed = null;
+        this.paidInAdvance = null;
+        this.createStandingInstructionAtDisbursement = null;
+        this.overdueCharges = null;
+        this.inArrears = null;
+        this.closureLoanId = null;
+        this.canDefineInstallmentAmount = null;
+        this.multiDisburseLoan = null;
+        this.loanProductCounter = null;
+        this.feeChargesAtDisbursementCharged = null;
+        this.loanScheduleTypeOptions = null;
+        this.collateral = null;
+    }
 }
