@@ -141,8 +141,11 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
 
         final Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
                 .retriveMinimumDaysInArrearsToSuspendLoanAccount();
-        LocalDate lastInterestAccrualDate = loan.getInterestAccruedTill() != null ? loan.getInterestAccruedTill()
-                : loan.getDisbursementDate();
+        LocalDate lastInterestAccrualDate = loan.getInterestAccruedTill();
+        if (lastInterestAccrualDate == null) {
+            final LocalDate disbursementDate = loan.getDisbursementDate();
+            lastInterestAccrualDate = disbursementDate.minusDays(1);
+        }
         // Loop through the days between the last accrual date and accrual date and process interest accrual for each
         // day
         log.info("Persisting daily accrual for loan: {}", loan.getId());
@@ -224,6 +227,17 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
                         RoundingMode.HALF_UP);
                 // Accumulate the daily interest to the installment's accrued interest
                 dailyAccrualInterest = dailyAccrualInterest.setScale(0, RoundingMode.DOWN);
+
+                // Check if the accrual date is the last date of the installment
+                if (accrualDate.equals(loanRepaymentScheduleInstallment.getDueDate().minusDays(1))) {
+                    final Money principalAccountedFor = loanRepaymentScheduleInstallment.getPrincipalAccountedFor(currency);
+                    if (principalAccountedFor.isZero()) {
+                        final Money interestCharged = loanRepaymentScheduleInstallment.getInterestCharged(currency);
+                        if (interestCharged.isGreaterThan(Money.of(currency, totalAccruedInterestForInstallment))) {
+                            dailyAccrualInterest = interestCharged.minus(totalAccruedInterestForInstallment).getAmount();
+                        }
+                    }
+                }
                 final BigDecimal accruedInterest = totalAccruedInterestForInstallment.add(dailyAccrualInterest);
                 loanRepaymentScheduleInstallment.setInterestAccrued(accruedInterest);
                 accrualInstallmentNumber = loanRepaymentScheduleInstallment.getInstallmentNumber();
