@@ -2470,9 +2470,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         "No repayment installment found for the special write off date", writtenOffOnDate));
         LoanRepaymentScheduleInstallment installment = null;
         for (LoanRepaymentScheduleInstallment repaymentScheduleInstallment : repaymentScheduleInstallments) {
-            if (DateUtils.isAfter(writtenOffOnDate, repaymentScheduleInstallment.getFromDate())
-                    || DateUtils.isEqual(writtenOffOnDate, repaymentScheduleInstallment.getFromDate())) {
-                if (!DateUtils.isAfter(writtenOffOnDate, repaymentScheduleInstallment.getDueDate())) {
+            if (repaymentScheduleInstallment.isNotFullyPaidOff() && !DateUtils.isAfter(writtenOffOnDate, repaymentScheduleInstallment.getDueDate())) {
+                if (!DateUtils.isBefore(writtenOffOnDate, repaymentScheduleInstallment.getFromDate()) || !DateUtils.isAfter(writtenOffOnDate, repaymentScheduleInstallment.getDueDate())) {
                     installment = repaymentScheduleInstallment;
                     break;
                 }

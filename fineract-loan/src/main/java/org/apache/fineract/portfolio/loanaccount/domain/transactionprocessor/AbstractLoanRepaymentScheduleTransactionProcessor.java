@@ -634,7 +634,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                 Money penaltyChargesPortionWrittenOff = Money.zero(currency);
                 Money feeChargesPortionWrittenOffForCurrentInstallment = Money.zero(currency);
                 if (principalAmountRemaining.isGreaterThanZero()
-                        && currentInstallment.getPrincipalOutstanding(currency).isGreaterThanZero()) {
+                        && currentInstallment.getPrincipalOutstandingIncludingAdvanced(currency).isGreaterThanZero()) {
                     principalPortionWrittenOff = currentInstallment.writeOffOutstandingPrincipal(principalAmountRemaining, transactionDate,
                             currency);
                     principalAmountRemaining = principalAmountRemaining.minus(principalPortionWrittenOff);
