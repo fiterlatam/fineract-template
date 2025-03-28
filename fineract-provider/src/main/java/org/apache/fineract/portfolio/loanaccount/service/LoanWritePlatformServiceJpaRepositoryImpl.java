@@ -5213,8 +5213,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             if (Objects.isNull(expectedFirstRepaymentDate)) {
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.creditorotativo.first.repayment.date.mandatory",
                         "First Repayment date shall be provided when product is Credito Rotativo");
-            } else if (!loan.isMigratedLoan() && expectedFirstRepaymentDate.getDayOfMonth() != 1 && expectedFirstRepaymentDate.getDayOfMonth() != 10
-                    && expectedFirstRepaymentDate.getDayOfMonth() != 20) {
+            } else if (!loan.isMigratedLoan() && expectedFirstRepaymentDate.getDayOfMonth() != 1
+                    && expectedFirstRepaymentDate.getDayOfMonth() != 10 && expectedFirstRepaymentDate.getDayOfMonth() != 20) {
                 throw new GeneralPlatformDomainRuleException("error.msg.loan..creditorotativo.first.repayment.date.must.be.day.1.10.20",
                         "Disbursement date must be 1, 10 or 20");
             }

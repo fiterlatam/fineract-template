@@ -315,7 +315,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     parsedCommand.add(DISBURSEMENT_DATA_PARAM, disbursementData);
 
                     // Add dynamic disbursal data to command
-                    command = new JsonCommand(fromJsonHelper, parsedCommand.toString(), null, JsonParser.parseString(parsedCommand.toString()));
+                    command = new JsonCommand(fromJsonHelper, parsedCommand.toString(), null,
+                            JsonParser.parseString(parsedCommand.toString()));
                 }
             }
 
@@ -682,7 +683,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 if (!newLoanApplication.isMigratedLoan()) {
                     if (expectedfirstRepaymentDate.getDayOfMonth() != 1 && expectedfirstRepaymentDate.getDayOfMonth() != 10
                             && expectedfirstRepaymentDate.getDayOfMonth() != 20) {
-                        throw new GeneralPlatformDomainRuleException("error.msg.loan.creditorotativo.first.repayment.date.must.be.day.1.10.20",
+                        throw new GeneralPlatformDomainRuleException(
+                                "error.msg.loan.creditorotativo.first.repayment.date.must.be.day.1.10.20",
                                 "Disbursement date must be 1, 10 or 20");
                     }
                 }
