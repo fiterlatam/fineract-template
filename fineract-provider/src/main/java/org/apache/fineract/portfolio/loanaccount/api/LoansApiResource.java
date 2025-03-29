@@ -1080,7 +1080,7 @@ public class LoansApiResource {
 
         final Set<String> mandatoryResponseParameters = new HashSet<>();
         final Set<String> associationParameters = ApiParameterHelper.extractAssociationsForResponseIfProvided(uriInfo.getQueryParameters());
-        final Collection<LoanTransactionData> currentLoanRepayments = this.loanReadPlatformService.retrieveLoanTransactions(resolvedLoanId);
+        Collection<LoanTransactionData> currentLoanRepayments = new ArrayList<>();
 
         ApiParameterHelper.excludeAssociationsForResponseIfProvided(exclude, associationParameters);
         if (associationParameters.contains(DataTableApiConstant.allAssociateParamName)) {
@@ -1137,6 +1137,7 @@ public class LoansApiResource {
 
             if (associationParameters.contains(DataTableApiConstant.transactionsAssociateParamName)) {
                 mandatoryResponseParameters.add(DataTableApiConstant.transactionsAssociateParamName);
+                currentLoanRepayments = this.loanReadPlatformService.retrieveLoanTransactions(resolvedLoanId);
                 if (!CollectionUtils.isEmpty(currentLoanRepayments)) {
                     loanRepayments = currentLoanRepayments;
                 }
