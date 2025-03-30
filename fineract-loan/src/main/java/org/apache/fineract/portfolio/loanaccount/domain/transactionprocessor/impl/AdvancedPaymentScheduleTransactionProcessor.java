@@ -517,7 +517,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         if (loanTransactions != null) {
             chargeOrTransactions.addAll(loanTransactions.stream().map(ChargeOrTransaction::new).toList());
         }
-        Collections.sort(chargeOrTransactions);
+        // Collections.sort(chargeOrTransactions);
         return chargeOrTransactions;
     }
 
