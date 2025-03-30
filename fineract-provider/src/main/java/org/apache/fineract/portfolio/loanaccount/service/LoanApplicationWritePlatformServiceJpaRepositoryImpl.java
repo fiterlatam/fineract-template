@@ -295,29 +295,27 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             // If product is Ctredito Rotativo, fill automatically expected disbursement date tranche details
             Boolean isMigratedLoan = this.fromJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, command.parsedJson());
-            if (isMigratedLoan == null || !isMigratedLoan) {
-                if (loanProduct.getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())
-                        || loanProduct.getName().contains(LoanProductType.NANO_CREDITO.getCode())) {
-                    final String expectedDisbursementDate = this.fromJsonHelper
-                            .extractStringNamed(LoanApiConstants.expectedDisbursementDateParameterName, command.parsedJson());
 
-                    JsonObject parsedCommand = command.getParsedCommand().getAsJsonObject();
+            if ((isMigratedLoan == null || !isMigratedLoan) && loanProduct.getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())
+                    || loanProduct.getName().contains(LoanProductType.NANO_CREDITO.getCode())) {
+                final String expectedDisbursementDate = this.fromJsonHelper
+                        .extractStringNamed(LoanApiConstants.expectedDisbursementDateParameterName, command.parsedJson());
 
-                    final JsonArray disbursementData = new JsonArray();
-                    final JsonObject disbursementDataElement = new JsonObject();
-                    disbursementDataElement.addProperty(EXPECTED_DISBURSEMENT_DATE_PARAM, expectedDisbursementDate);
+                JsonObject parsedCommand = command.getParsedCommand().getAsJsonObject();
 
-                    // Add principal amount to command
-                    disbursementDataElement.addProperty(PRINCIPAL_PARAM,
-                            this.fromJsonHelper.extractStringNamed(LoanApiConstants.principalParamName, command.parsedJson()));
+                final JsonArray disbursementData = new JsonArray();
+                final JsonObject disbursementDataElement = new JsonObject();
+                disbursementDataElement.addProperty(EXPECTED_DISBURSEMENT_DATE_PARAM, expectedDisbursementDate);
 
-                    disbursementData.add(disbursementDataElement);
-                    parsedCommand.add(DISBURSEMENT_DATA_PARAM, disbursementData);
+                // Add principal amount to command
+                disbursementDataElement.addProperty(PRINCIPAL_PARAM,
+                        this.fromJsonHelper.extractStringNamed(LoanApiConstants.principalParamName, command.parsedJson()));
 
-                    // Add dynamic disbursal data to command
-                    command = new JsonCommand(fromJsonHelper, parsedCommand.toString(), null,
-                            JsonParser.parseString(parsedCommand.toString()));
-                }
+                disbursementData.add(disbursementDataElement);
+                parsedCommand.add(DISBURSEMENT_DATA_PARAM, disbursementData);
+
+                // Add dynamic disbursal data to command
+                command = new JsonCommand(fromJsonHelper, parsedCommand.toString(), null, JsonParser.parseString(parsedCommand.toString()));
             }
 
             this.fromApiJsonDeserializer.validateForCreate(command.json(), isMeetingMandatoryForJLGLoans, loanProduct);
@@ -680,14 +678,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.creditorotativo.first.repayment.date.mandatory",
                         "First Repayment date shall be provided when product is Credito Rotativo");
             } else {
-                if (!newLoanApplication.isMigratedLoan()) {
-                    if (expectedfirstRepaymentDate.getDayOfMonth() != 1 && expectedfirstRepaymentDate.getDayOfMonth() != 10
-                            && expectedfirstRepaymentDate.getDayOfMonth() != 20) {
-                        throw new GeneralPlatformDomainRuleException(
-                                "error.msg.loan.creditorotativo.first.repayment.date.must.be.day.1.10.20",
-                                "Disbursement date must be 1, 10 or 20");
-                    }
+                if ((!newLoanApplication.isMigratedLoan()) && expectedfirstRepaymentDate.getDayOfMonth() != 1
+                        && expectedfirstRepaymentDate.getDayOfMonth() != 10 && expectedfirstRepaymentDate.getDayOfMonth() != 20) {
+                    throw new GeneralPlatformDomainRuleException("error.msg.loan.creditorotativo.first.repayment.date.must.be.day.1.10.20",
+                            "Disbursement date must be 1, 10 or 20");
                 }
+
             }
         }
     }

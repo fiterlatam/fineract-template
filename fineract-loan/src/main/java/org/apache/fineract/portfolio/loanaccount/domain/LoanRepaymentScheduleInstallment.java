@@ -1037,7 +1037,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             feePortionOfTransaction = feePortionOfTransaction.plus(transactionAmountRemaining);
             feeChargePaid = feeChargePaid.plus(transactionAmountRemaining);
         }
-        loanChargePaidByPortion = loanChargePaidByPortion.plus(feeChargePaid);
+        loanChargePaidByPortion.plus(feeChargePaid);
         installmentCharge.getLoanCharge().updatePaidAmountBy(feeChargePaid, this.installmentNumber, Money.zero(currency),
                 isWriteOffTransaction);
         this.feeChargesPaid = defaultToNullIfZero(this.feeChargesPaid);
