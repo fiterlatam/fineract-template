@@ -4854,8 +4854,34 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         synchronized (this) {
             log.info("Acquiring lock for loan document processing with client id: {}", loanDocumentData.getClientIdNumber());
-            FacturaElectronicaMensual facturaElectronicaMensual = generateInvoice(loanDocumentData,
-                    loanDocumentData.getProductTypeParamId());
+            long documentNumber;
+            Long currentCounter;
+            final FacturaElectronicaMensual facturaElectronicaMensual = loanDocumentData.toEntity();
+            final Integer itemsCount = loanDocumentData.getItemsCount();
+            facturaElectronicaMensual.setTotal_unidades(String.valueOf(itemsCount));
+            final LoanProductParameterization loanProductParameterization = this.productParameterizationRepository
+                    .findById(loanDocumentData.getProductTypeParamId())
+                    .orElseThrow(() -> new LoanProductParameterizationNotFoundException(loanDocumentData.getProductTypeParamId()));
+            final Long rangeStartNumber = loanProductParameterization.getRangeStartNumber();
+            final Long invoiceCounter = loanProductParameterization.getInvoiceCounter();
+            final Long rangeEndNumber = loanProductParameterization.getRangeEndNumber();
+
+            facturaElectronicaMensual.setFec_desde(loanProductParameterization.getGenerationDate());
+            facturaElectronicaMensual.setFec_hasta(loanProductParameterization.getExpirationDate());
+            currentCounter = ObjectUtils.defaultIfNull(invoiceCounter, 0L) + 1L;
+            documentNumber = rangeStartNumber + invoiceCounter;
+            if (currentCounter > rangeEndNumber) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.invoice.counter.exceeds.range.end.number",
+                        String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
+                                loanProductParameterization.getProductType()));
+            }
+            facturaElectronicaMensual.setNumero_doc(String.valueOf(documentNumber));
+            facturaElectronicaMensual.setReferencia(String.valueOf(documentNumber));
+            facturaElectronicaMensual.setCodigo_descuento("0");
+            facturaElectronicaMensual.setPorcentajedescuento(BigDecimal.ZERO);
+            facturaElectronicaMensual.setDescuento(BigDecimal.ZERO);
+            facturaElectronicaMensual.setPorcentaje_impuesto_item(BigDecimal.ZERO);
+            facturaElectronicaMensual.setImpuesto_item(BigDecimal.ZERO);
 
             long itemPosition = 0L;
             if (interestPaid.compareTo(BigDecimal.ZERO) > 0) {
@@ -4954,48 +4980,19 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final BigDecimal porcentajeImpuestoItem = facturaElectronicaMensuals.stream()
                     .filter(f -> f.getPorcentaje_impuesto_item() != null).findFirst().orElse(new FacturaElectronicaMensual())
                     .getPorcentaje_impuesto_item();
-            for (final FacturaElectronicaMensual facturaElectronicaMensualItem : facturaElectronicaMensuals) {
-                final BigDecimal totalValue = facturaElectronicaMensualItem.getTotal().add(totalImpuestoItem);
-                facturaElectronicaMensualItem.setTotal(totalValue);
-                facturaElectronicaMensualItem.setImpuesto(totalImpuestoItem);
-                facturaElectronicaMensualItem.setPorcentaje_impuesto(porcentajeImpuestoItem);
+            if (!facturaElectronicaMensuals.isEmpty()) {
+                for (final FacturaElectronicaMensual facturaElectronicaMensualItem : facturaElectronicaMensuals) {
+                    final BigDecimal totalValue = facturaElectronicaMensualItem.getTotal().add(totalImpuestoItem);
+                    facturaElectronicaMensualItem.setTotal(totalValue);
+                    facturaElectronicaMensualItem.setImpuesto(totalImpuestoItem);
+                    facturaElectronicaMensualItem.setPorcentaje_impuesto(porcentajeImpuestoItem);
+                }
+                this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
+                loanProductParameterization.setInvoiceCounter(currentCounter);
+                this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
             }
-            this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
             log.info("Releasing lock for loan document processing with client id: {}", loanDocumentData.getClientIdNumber());
         }
-    }
-
-    private FacturaElectronicaMensual generateInvoice(LoanDocumentData loanDocumentData, Long productTypeParamId) {
-        long documentNumber;
-        Long currentCounter;
-        final FacturaElectronicaMensual facturaElectronicaMensual = loanDocumentData.toEntity();
-        final Integer itemsCount = loanDocumentData.getItemsCount();
-        facturaElectronicaMensual.setTotal_unidades(String.valueOf(itemsCount));
-        final LoanProductParameterization loanProductParameterization = this.productParameterizationRepository.findById(productTypeParamId)
-                .orElseThrow(() -> new LoanProductParameterizationNotFoundException(productTypeParamId));
-        final Long rangeStartNumber = loanProductParameterization.getRangeStartNumber();
-        final Long invoiceCounter = loanProductParameterization.getInvoiceCounter();
-        final Long rangeEndNumber = loanProductParameterization.getRangeEndNumber();
-
-        facturaElectronicaMensual.setFec_desde(loanProductParameterization.getGenerationDate());
-        facturaElectronicaMensual.setFec_hasta(loanProductParameterization.getExpirationDate());
-        currentCounter = ObjectUtils.defaultIfNull(invoiceCounter, 0L) + 1L;
-        documentNumber = rangeStartNumber + invoiceCounter;
-        loanProductParameterization.setInvoiceCounter(currentCounter);
-        if (currentCounter > rangeEndNumber) {
-            throw new GeneralPlatformDomainRuleException("error.msg.loan.invoice.counter.exceeds.range.end.number",
-                    String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
-                            loanProductParameterization.getProductType()));
-        }
-        this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
-        facturaElectronicaMensual.setNumero_doc(String.valueOf(documentNumber));
-        facturaElectronicaMensual.setReferencia(String.valueOf(documentNumber));
-        facturaElectronicaMensual.setCodigo_descuento("0");
-        facturaElectronicaMensual.setPorcentajedescuento(BigDecimal.ZERO);
-        facturaElectronicaMensual.setDescuento(BigDecimal.ZERO);
-        facturaElectronicaMensual.setPorcentaje_impuesto_item(BigDecimal.ZERO);
-        facturaElectronicaMensual.setImpuesto_item(BigDecimal.ZERO);
-        return facturaElectronicaMensual;
     }
 
     @Override
