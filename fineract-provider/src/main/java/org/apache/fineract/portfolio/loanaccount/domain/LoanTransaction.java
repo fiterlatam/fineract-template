@@ -38,6 +38,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
+import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -130,6 +131,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Transient
     @Setter
     private BigDecimal receivableInterestPortion;
+
+    @Transient
+    @Setter
+    @Getter
+    private Boolean isForeclosureTransaction;
 
     protected LoanTransaction() {}
 
