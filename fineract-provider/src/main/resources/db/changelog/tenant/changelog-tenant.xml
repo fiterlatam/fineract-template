@@ -393,4 +393,5 @@
     <include file="parts/202503252000001000_EA_266_updatechannels.xml" relativeToChangelogFile="true" />
     <include file="parts/202503262000001000_EA_269_updatewebhooknames.xml" relativeToChangelogFile="true" />
     <include file="parts/202503262000002000_EA_269_updateinterestratestartdate.xml" relativeToChangelogFile="true" />
+    <include file="parts/202504012000001000_EA_274_aditionalwebhooks.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>
