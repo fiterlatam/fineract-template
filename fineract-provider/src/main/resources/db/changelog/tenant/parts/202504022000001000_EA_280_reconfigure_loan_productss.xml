@@ -83,6 +83,9 @@
                                 , 'Microcredito B'
                                 , 'Microcredito M'
                             )
+                    AND EXISTS (
+                        SELECT 1 FROM m_charge WHERE name IN ('Seguro de Vida')
+                    );
                 ;
 
             ]]>
@@ -123,6 +126,9 @@
                                 , 'Nanocredito semanal', 'Nano Credito Semanal'
                                 , 'Nanocredito diario', 'Nano Credito Diario'
                             )
+                    AND EXISTS (
+                        SELECT 1 FROM m_charge WHERE name IN ('Seguro de vida nano', 'Seguro de vida Nano')
+                    );
                 ;
             ]]>
         </sql>
