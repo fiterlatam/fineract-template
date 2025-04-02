@@ -42,4 +42,90 @@
     </changeSet>
 
 
+    <changeSet id="10" author="fineract">
+        <sql>
+            <![CDATA[
+
+                DELETE FROM m_product_loan_charge
+                WHERE product_loan_id IN (
+                                            SELECT id FROM m_product_loan
+                                            WHERE
+                                                name IN (
+                                                              'Bajo monto', 'Bajo Monto'
+                                                            , 'Crédito Libre Inversión'
+                                                            , 'Credito Comercial PJ'
+                                                            , 'Credito Comercial PN'
+                                                            , 'Microcredito'
+                                                            , 'Microcredito B'
+                                                            , 'Microcredito M'
+                                                        )
+                                         )
+                AND charge_id IN (
+                                    SELECT id FROM m_charge
+                                    WHERE name IN ('Seguro de Vida')
+                                 )
+
+                ;
+
+                INSERT INTO m_product_loan_charge (product_loan_id, charge_id)
+                SELECT
+                    id,
+                    (SELECT id FROM m_charge WHERE name = 'Seguro de Vida')
+                FROM
+                    m_product_loan
+                WHERE
+                    name IN (
+                                  'Bajo monto', 'Bajo Monto'
+                                , 'Crédito Libre Inversión'
+                                , 'Credito Comercial PJ'
+                                , 'Credito Comercial PN'
+                                , 'Microcredito'
+                                , 'Microcredito B'
+                                , 'Microcredito M'
+                            )
+                ;
+
+            ]]>
+        </sql>
+    </changeSet>
+
+
+    <changeSet id="20" author="fineract">
+        <sql>
+            <![CDATA[
+                -- Delete all charges 'Seguro de Vida', 'Seguro de vida nano', 'Seguro de vida Nano'
+                DELETE FROM m_product_loan_charge
+                WHERE product_loan_id IN (
+                                            SELECT id FROM m_product_loan
+                                            WHERE name IN (
+                                                              'Credito rotativo', 'Crédito rotativo'
+                                                            , 'Nanocredito semanal', 'Nano Credito Semanal'
+                                                            , 'Nanocredito diario', 'Nano Credito Diario'
+                                                          )
+                                         )
+                AND charge_id IN (
+                                    SELECT id FROM m_charge
+                                    WHERE name IN ('Seguro de Vida', 'Seguro de vida nano', 'Seguro de vida Nano')
+                                 )
+
+                ;
+
+                -- Leave just 'Seguro de vida nano', 'Seguro de vida Nano'
+                INSERT INTO m_product_loan_charge (product_loan_id, charge_id)
+                SELECT
+                    id,
+                    (SELECT id FROM m_charge WHERE name IN ('Seguro de vida nano', 'Seguro de vida Nano'))
+                FROM
+                    m_product_loan
+                WHERE
+                    name IN (
+                                  'Credito rotativo', 'Crédito rotativo'
+                                , 'Nanocredito semanal', 'Nano Credito Semanal'
+                                , 'Nanocredito diario', 'Nano Credito Diario'
+                            )
+                ;
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
