@@ -1418,6 +1418,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     chargeAmount = installmentCharge.getAmount();
                 }
             }
+
+            chargeAmount = checkIfDivideTotalChargePerInstallment(chargeAmount, numberOfInstallments);
+
             customAmout = customAmout.add(chargeAmount);
         } else if (this.isCustomPercentageBasedOfAnotherCharge()) {
             if (isVatChargeOfHonoCharge()) {
@@ -1464,6 +1467,27 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
             customAmout = customAmout.add(finalAmount);
         }
         return customAmout;
+    }
+
+    private BigDecimal checkIfDivideTotalChargePerInstallment(BigDecimal chargeAmount, Integer numberOfRepayments) {
+        Integer numberOfRepaymentsClone = Integer.valueOf(numberOfRepayments);
+        if (this.getCharge().getName().contains(ChargeCustomType.COMISION_MI_PYME.getRootName())) {
+            if (Objects.nonNull(this.loan)) {
+                List<LoanRepaymentScheduleInstallment> graceInstallments = this.loan.getRepaymentScheduleInstallments().stream()
+                        .filter(installment -> installment.getInstallmentNumber() != null && installment.getInstallmentNumber() == 0)
+                        .toList();
+                if (!graceInstallments.isEmpty()) {
+                    numberOfRepaymentsClone = numberOfRepaymentsClone - graceInstallments.size();
+                }
+            }
+
+            if (this.applicableFromInstallment != null) {
+                numberOfRepaymentsClone = numberOfRepaymentsClone - (this.applicableFromInstallment - 1);
+            }
+
+            chargeAmount = chargeAmount.divide(BigDecimal.valueOf(numberOfRepaymentsClone), 2, RoundingMode.HALF_UP);
+        }
+        return chargeAmount;
     }
 
     public BigDecimal calculateCustomFeeChargeToInstallment(Integer installmentNumber) {

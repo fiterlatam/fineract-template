@@ -26,6 +26,7 @@ import lombok.Getter;
 public enum ChargeCustomType {
 
     CAPITAL_PENDIENTE_MI_PYME("Capital Pendiente Mi Pyme"), //
+    COMISION_MI_PYME("Comision Mi Pyme"), //
     ;
 
     private final String rootName;
