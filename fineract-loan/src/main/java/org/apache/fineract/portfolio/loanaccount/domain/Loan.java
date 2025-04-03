@@ -1753,10 +1753,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             Money principal = this.loanRepaymentScheduleDetail.getPrincipal();
 
             if (this.getLoanProduct().isMultiDisburseLoan()) {
-                principal = Money.of(loanCurrency(),
-                        getDisbursmentData().stream().filter(act -> Objects.nonNull(act.getActualDisbursementDate()))
-                                .map(obj -> obj.getPrincipal()).reduce(BigDecimal.ZERO, BigDecimal::add));
 
+                BigDecimal totalDisbursedAmount = disbursementDetails.stream()
+                        .filter(notReversed -> Boolean.FALSE.equals(notReversed.isReversed()))
+                        .filter(act -> Objects.nonNull(act.getActualDisbursementDate())).map(obj -> obj.getPrincipal())
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                principal = Money.of(getCurrency(), totalDisbursedAmount);
+
+                this.loanRepaymentScheduleDetail.setPrincipal(totalDisbursedAmount);
             }
 
             this.summary.updateSummary(loanCurrency(), principal, getRepaymentScheduleInstallments(), this.loanSummaryWrapper,
