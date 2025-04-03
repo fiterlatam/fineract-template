@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
@@ -58,6 +59,7 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
     @Embedded
     private MonetaryCurrency currency;
 
+    @Setter
     @Column(name = "principal_amount", scale = 6, precision = 19)
     private BigDecimal principal;
 
