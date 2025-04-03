@@ -4198,6 +4198,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         if (newTransactionDetail.isRepaymentLikeType() || newTransactionDetail.isInterestWaiver()) {
+
+            // Reverse the entry from disbursement_detail before regenerating the schedule to affect totals
+            reverseDisbursementDetaisAndRescheduleRequest(newTransactionDetail, transactionForAdjustment);
+
             changedTransactionDetail = handleRepaymentOrRecoveryOrWaiverTransaction(newTransactionDetail, loanLifecycleStateMachine,
                     transactionForAdjustment, scheduleGeneratorDTO);
         } else if (newTransactionDetail.isDisbursement()) {
@@ -4223,6 +4227,37 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         return changedTransactionDetail;
+    }
+
+    private void reverseDisbursementDetaisAndRescheduleRequest(LoanTransaction newTransactionDetail,
+            LoanTransaction transactionForAdjustment) {
+
+        if (this.isMultiDisburmentLoan() && LoanTransactionType.DISBURSEMENT.equals(transactionForAdjustment.getTypeOf())
+                && transactionForAdjustment.isReversed()) {
+
+            // Revert entry from disbursement details and leave repayment schedule without this disbursal
+            disbursementDetails.stream().filter(disbursementDetail -> Boolean.FALSE.equals(disbursementDetail.isReversed()))
+                    .filter(samePrincipal -> samePrincipal.getPrincipal().compareTo(transactionForAdjustment.getAmount()) == 0)
+                    .sorted(Comparator.comparing(LoanDisbursementDetails::getId).reversed()) //
+                    .findFirst() //
+                    .ifPresent(currentDisbursementDetail -> {
+                        currentDisbursementDetail.reverse();
+                    });
+
+            // Check edge case when new installmentes were added by this disbursal, then we need to revert the
+            // reschedule request as well
+            loanTermVariations.stream()
+                    .filter(loanTermVariation -> LoanTermVariationType.EXTEND_REPAYMENT_PERIOD.equals(loanTermVariation.getTermType()))
+                    .filter(createdByMifos -> createdByMifos.getCreatedBy().isPresent()
+                            && createdByMifos.getCreatedBy().get().compareTo(1L) == 0)
+                    .filter(active -> active.isActive()) //
+                    .sorted(Comparator.comparing(LoanTermVariations::getId).reversed()) //
+                    .findFirst() //
+                    .ifPresent(loanTermVariation -> {
+                        loanTermVariation.setDecimalValue(BigDecimal.ZERO);
+                        loanTermVariation.updateIsActive(false);
+                    });
+        }
     }
 
     public ChangedTransactionDetail undoWrittenOff(LoanLifecycleStateMachine loanLifecycleStateMachine,
