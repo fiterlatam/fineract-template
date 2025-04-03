@@ -1605,6 +1605,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 installment.updateComponents(scheduledInstallment, this.getCurrency());
             } else {
                 // This can only be possible in case of big advance payment which reduces the installment count
+                installment.getInstallmentCharges().clear();
+                // Remove penalty charges for deleted installments
+                Set<LoanCharge> removeOverdueInstallmentCharges = new HashSet<>();
+                for (LoanCharge charge : this.charges) {
+                    if (charge.isPenaltyCharge() && Objects.equals(charge.getOverdueInstallmentCharge().getInstallment().getInstallmentNumber(), installment.getInstallmentNumber())) {
+                        removeOverdueInstallmentCharges.add(charge);
+                    }
+                }
+                removeOverdueInstallmentCharges.forEach(this.charges::remove);
                 removeInstallments.add(installment);
             }
         }
