@@ -364,8 +364,8 @@ public class LoanArrearsAgeingUpdateHandler {
                     JOIN m_blocking_reason_setting mbrs ON mbrs.id = mcbr.blocking_reason_id
                     AND mbrs.name_of_reason = ?
                     WHERE mcbr.client_id NOT IN (
-                        SELECT DISTINCT client_id
-                        FROM m_loan_arrears_aging
+                        SELECT DISTINCT ml.client_id
+                        FROM m_loan_arrears_aging mlaa join m_loan ml on mlaa.loan_id = ml.id
                     )
                 )
                 """;
@@ -379,13 +379,20 @@ public class LoanArrearsAgeingUpdateHandler {
                     JOIN m_blocking_reason_setting mbrs ON mbrs.id = mcbr.blocking_reason_id
                     AND mbrs.name_of_reason = ?
                     WHERE mcbr.client_id NOT IN (
-                        SELECT DISTINCT client_id
-                        FROM m_loan_arrears_aging
+                        SELECT DISTINCT ml.client_id
+                        FROM m_loan_arrears_aging mlaa join m_loan ml on mlaa.loan_id = ml.id
                     )
                 and blocking_reason_id = (select id from m_blocking_reason_setting where name_of_reason = ? and level = ?)
                 )
                 """;
         this.jdbcTemplate.update(query, BLOCKING_REASON_NAME, BLOCKING_REASON_NAME, BlockLevel.CLIENT.toString());
+
+        query = """
+                update m_client set blocking_reason_id = null
+                where blocking_reason_id is not null
+                and not exists(select 1 from m_client_blocking_reason where client_id = m_client.id)
+                """;
+        this.jdbcTemplate.update(query);
         log.info("Done unblocking clients with no active loans in arrears");
 
         // Remove clients from m_client_block_list table
@@ -428,7 +435,6 @@ public class LoanArrearsAgeingUpdateHandler {
                         LEFT JOIN m_credit_blocking_reason  mcbr on mcbr.loan_id  = l.id
                         LEFT join m_blocking_reason_setting mbrs
                         on mbrs.id = mcbr.blocking_reason_id and mbrs.name_of_reason = ?
-                        where mcbr.id is null
                     )
                     and (block_status_id is null or block_status_id in (select id from m_blocking_reason_setting where level = ? and priority > ?))
                 """;
