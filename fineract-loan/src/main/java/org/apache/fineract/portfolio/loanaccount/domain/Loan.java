@@ -1609,7 +1609,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 // Remove penalty charges for deleted installments
                 Set<LoanCharge> removeOverdueInstallmentCharges = new HashSet<>();
                 for (LoanCharge charge : this.charges) {
-                    if (charge.isPenaltyCharge() && Objects.equals(charge.getOverdueInstallmentCharge().getInstallment().getInstallmentNumber(), installment.getInstallmentNumber())) {
+                    if (charge.isPenaltyCharge()
+                            && Objects.equals(charge.getOverdueInstallmentCharge().getInstallment().getInstallmentNumber(),
+                                    installment.getInstallmentNumber())) {
                         removeOverdueInstallmentCharges.add(charge);
                     }
                 }
