@@ -134,4 +134,25 @@
         </sql>
     </changeSet>
 
+    <changeSet id="30" author="fineract">
+        <sql>
+            <![CDATA[
+
+                UPDATE m_product_loan
+                SET
+                      days_in_month_enum = 1
+                    , days_in_year_enum = 365
+                    , amortization_method_enum = 1
+                WHERE
+                    name IN (
+                                  'Credito Comercial PN'
+                                , 'Microcredito'
+                                , 'Microcredito B'
+                            )
+                ;
+
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
