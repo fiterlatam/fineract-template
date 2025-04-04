@@ -48,6 +48,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.fineract.infrastructure.core.exception.PlatformInternalServerException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -1075,11 +1076,19 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             List<LoanTransactionToRepaymentScheduleMapping> transactionMappings, Set<LoanCharge> charges, Balances balances) {
         Money paidPortion;
         boolean exit = false;
+        final int maxIterationCount = 50;
+        int iterationCount = 0;
         do {
-            log.info("processing loan id: " + loanTransaction.getLoan().getId());
+            iterationCount += 1;
+            log.info("processing loan id: {}", loanTransaction.getLoan().getId());
             if (transactionAmountUnprocessed.isZero()) {
                 exit = true;
                 continue;
+            }
+            if (iterationCount > maxIterationCount) {
+                log.error("Failed to fully process loan id: {}", loanTransaction.getLoan().getId());
+                throw new PlatformInternalServerException("processing.failed.for.loan",
+                        "Processing failed for loan id: " + loanTransaction.getLoan().getId());
             }
             LoanRepaymentScheduleInstallment oldestPastDueInstallment = installments.stream()
                     .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff).filter(e -> loanTransaction.isAfter(e.getDueDate()))
