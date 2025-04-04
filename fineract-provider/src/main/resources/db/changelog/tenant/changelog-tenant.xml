@@ -396,4 +396,5 @@
     <include file="parts/202504012000001000_EA_274_aditionalwebhooks.xml" relativeToChangelogFile="true" />
     <include file="parts/202504022000001000_EA_280_reconfigure_loan_productss.xml" relativeToChangelogFile="true" />
     <include file="parts/202504012000001000_EA_235_microcreditomrename.xml" relativeToChangelogFile="true" />
+    <include file="parts/202504042000001000_EA_285_accounting_loan_products.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>
