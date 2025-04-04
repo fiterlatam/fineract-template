@@ -48,6 +48,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
@@ -505,6 +507,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Transient
     private boolean isAnuladoOnDisbursementDate;
+
+    @Getter
+    @Setter
+    @Transient
+    private boolean maxLegalRateChanging;
 
     // Columns for migrated loans
     @Column(name = "is_migrated_loan", nullable = false)

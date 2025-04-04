@@ -420,7 +420,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
 
             final AppUser appUser = this.platformSecurityContext.authenticatedUser();
             final Map<String, Object> changes = new LinkedHashMap<>();
-            final Boolean isJobTriggered = jsonCommand.booleanPrimitiveValueOfParameterNamed("isJobTriggered");
+            final boolean isJobTriggered = jsonCommand.booleanPrimitiveValueOfParameterNamed("isJobTriggered");
 
             LocalDate approvedOnDate = jsonCommand.localDateValueOfParameterNamed("approvedOnDate");
             final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(jsonCommand.dateFormat())
@@ -432,6 +432,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             changes.put("approvedByUserId", appUser.getId());
             final LocalDate businessLocalDate = DateUtils.getBusinessLocalDate();
             Loan loan = loanRescheduleRequest.getLoan();
+            loan.setMaxLegalRateChanging(isJobTriggered);
             final LoanProduct loanProduct = loan.loanProduct();
             final List<Long> existingTransactionIds = new ArrayList<>(loan.findExistingTransactionIds());
             final List<Long> existingReversedTransactionIds = new ArrayList<>(loan.findExistingReversedTransactionIds());
