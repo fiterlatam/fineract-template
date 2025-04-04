@@ -1515,6 +1515,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 chargeAmt = loanCharge.getPercentage();
                 if (loanCharge.isInstalmentFee()) {
                     totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
+                } else if (loanCharge.isOverdueInstallmentCharge()) {
+                    totalChargeAmt = loanCharge.amountOutstanding();
                 }
             } else {
                 if (loanCharge.isCustomFlatDistributedCharge()) {
@@ -2966,12 +2968,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean canDisburse(final LocalDate actualDisbursementDate) {
-        // If product is credito Rotativo, disburse as much as available. Checked before.
-        if (this.getLoanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase(Locale.ROOT))
-                || this.getLoanProduct().getName().toLowerCase()
-                        .contains(LoanProductType.NANO_CREDITO.getCode().toLowerCase(Locale.ROOT))) {
-            return true;
-        }
+        // For revolving credit products, we still need to validate basic loan state
+        boolean isRevolvingCredit = this.getLoanProduct().getName().toLowerCase()
+                .contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase(Locale.ROOT))
+                || this.getLoanProduct().getName().toLowerCase().contains(LoanProductType.NANO_CREDITO.getCode().toLowerCase(Locale.ROOT));
 
         LocalDate loanSubmittedOnDate = this.submittedOnDate;
         final LoanStatus statusEnum = this.loanLifecycleStateMachine.dryTransition(LoanEvent.LOAN_DISBURSED, this);
@@ -2987,6 +2987,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
             isMultiTrancheDisburse = true;
         }
+
+        // For revolving credit, we allow disbursement if the loan is in a valid state
+        if (isRevolvingCredit) {
+            return !statusEnum.hasStateOf(actualLoanStatus) || isMultiTrancheDisburse;
+        }
+
         return !statusEnum.hasStateOf(actualLoanStatus) || isMultiTrancheDisburse;
     }
 

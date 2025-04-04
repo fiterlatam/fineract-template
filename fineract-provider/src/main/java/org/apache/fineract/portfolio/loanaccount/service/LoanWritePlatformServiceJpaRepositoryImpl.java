@@ -5227,21 +5227,44 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     private void validateDisbursementAmount(Loan loan, BigDecimal principal) {
-        BigDecimal disbursementAmountSum = loanDisbursementDetailsRepository.findAllByLoanId(loan.getId()).stream()
-                .filter(disbursed -> Objects.nonNull(disbursed.getDisbursementDate())).map(x -> x.getPrincipal())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // For revolving credit products, we need to track available credit differently
+        if (loan.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+            BigDecimal disbursementAmountSum = loanDisbursementDetailsRepository.findAllByLoanId(loan.getId()).stream()
+                    .filter(disbursed -> Objects.nonNull(disbursed.getDisbursementDate())).map(x -> x.getPrincipal())
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal loanTransactionRepaymentSum = loanTransactionRepository.findAllByLoanIdAndTypeOf(loan.getId(), 2).stream()
-                .filter(nR -> !nR.isReversed()).map(x -> x.getPrincipalPortion()).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal loanTransactionRepaymentSum = loanTransactionRepository.findAllByLoanIdAndTypeOf(loan.getId(), 2).stream()
+                    .filter(nR -> !nR.isReversed()).map(x -> x.getPrincipalPortion()).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal loanApprovedPrincipal = loan.getApprovedPrincipal();
+            // For revolving credit, available credit is: approved limit - (disbursements - repayments)
+            BigDecimal currentOutstanding = disbursementAmountSum.subtract(loanTransactionRepaymentSum);
+            BigDecimal availableCredit = loan.getApprovedPrincipal().subtract(currentOutstanding);
 
-        if (disbursementAmountSum.add(principal).subtract(loanTransactionRepaymentSum).compareTo(loanApprovedPrincipal) > 0) {
-            throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.exceeds.approved.principal",
-                    "Sum of Loan disbursements (".concat(String.valueOf(disbursementAmountSum)).concat(") + This one (")
-                            .concat(String.valueOf(principal)).concat(") - Repayments (")
-                            .concat(String.valueOf(loanTransactionRepaymentSum)).concat(") exceeds approved principal (")
-                            .concat(String.valueOf(loanApprovedPrincipal)).concat(")."));
+            if (principal.compareTo(availableCredit) > 0) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.exceeds.available.credit",
+                        "Disbursement amount (".concat(String.valueOf(principal)).concat(") exceeds available credit (")
+                                .concat(String.valueOf(availableCredit)).concat("). Current outstanding: ")
+                                .concat(String.valueOf(currentOutstanding)).concat(", Approved limit: ")
+                                .concat(String.valueOf(loan.getApprovedPrincipal())).concat("."));
+            }
+        } else {
+            // Original validation for non-revolving credit products
+            BigDecimal disbursementAmountSum = loanDisbursementDetailsRepository.findAllByLoanId(loan.getId()).stream()
+                    .filter(disbursed -> Objects.nonNull(disbursed.getDisbursementDate())).map(x -> x.getPrincipal())
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal loanTransactionRepaymentSum = loanTransactionRepository.findAllByLoanIdAndTypeOf(loan.getId(), 2).stream()
+                    .filter(nR -> !nR.isReversed()).map(x -> x.getPrincipalPortion()).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal loanApprovedPrincipal = loan.getApprovedPrincipal();
+
+            if (disbursementAmountSum.add(principal).subtract(loanTransactionRepaymentSum).compareTo(loanApprovedPrincipal) > 0) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.disbursement.exceeds.approved.principal",
+                        "Sum of Loan disbursements (".concat(String.valueOf(disbursementAmountSum)).concat(") + This one (")
+                                .concat(String.valueOf(principal)).concat(") - Repayments (")
+                                .concat(String.valueOf(loanTransactionRepaymentSum)).concat(") exceeds approved principal (")
+                                .concat(String.valueOf(loanApprovedPrincipal)).concat(")."));
+            }
         }
     }
 
