@@ -4222,7 +4222,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (newTransactionDetail.isRepaymentLikeType() || newTransactionDetail.isInterestWaiver()) {
 
             // Reverse the entry from disbursement_detail before regenerating the schedule to affect totals
-            reverseDisbursementDetaisAndRescheduleRequest(newTransactionDetail, transactionForAdjustment);
+            reverseDisbursementDetaisAndRescheduleRequest(transactionForAdjustment);
 
             changedTransactionDetail = handleRepaymentOrRecoveryOrWaiverTransaction(newTransactionDetail, loanLifecycleStateMachine,
                     transactionForAdjustment, scheduleGeneratorDTO);
@@ -4251,8 +4251,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return changedTransactionDetail;
     }
 
-    private void reverseDisbursementDetaisAndRescheduleRequest(LoanTransaction newTransactionDetail,
-            LoanTransaction transactionForAdjustment) {
+    private void reverseDisbursementDetaisAndRescheduleRequest(LoanTransaction transactionForAdjustment) {
 
         if (this.isMultiDisburmentLoan() && LoanTransactionType.DISBURSEMENT.equals(transactionForAdjustment.getTypeOf())
                 && transactionForAdjustment.isReversed()) {
@@ -4262,9 +4261,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     .filter(samePrincipal -> samePrincipal.getPrincipal().compareTo(transactionForAdjustment.getAmount()) == 0)
                     .sorted(Comparator.comparing(LoanDisbursementDetails::getId).reversed()) //
                     .findFirst() //
-                    .ifPresent(currentDisbursementDetail -> {
-                        currentDisbursementDetail.reverse();
-                    });
+                    .ifPresent(LoanDisbursementDetails::reverse);
 
             // Check edge case when new installmentes were added by this disbursal, then we need to revert the
             // reschedule request as well

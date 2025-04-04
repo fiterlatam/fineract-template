@@ -1470,7 +1470,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private BigDecimal checkIfDivideTotalChargePerInstallment(BigDecimal chargeAmount, Integer numberOfRepayments) {
-        Integer numberOfRepaymentsClone = Integer.valueOf(numberOfRepayments);
+        Integer numberOfRepaymentsClone = numberOfRepayments;
         if (this.getCharge().getName().contains(ChargeCustomType.COMISION_MI_PYME.getRootName())) {
             if (Objects.nonNull(this.loan)) {
                 List<LoanRepaymentScheduleInstallment> graceInstallments = this.loan.getRepaymentScheduleInstallments().stream()
