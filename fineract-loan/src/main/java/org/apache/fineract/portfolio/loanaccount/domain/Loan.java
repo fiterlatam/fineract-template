@@ -5835,7 +5835,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         && loanCharge.getApplicableFromInstallment() > installment.getInstallmentNumber())) {
                     amount = BigDecimal.ZERO;
                 }
-                if (ChargeCalculationType.DISB_SEGO == loanCharge.getChargeCalculation()) {
+                if (ChargeCalculationType.DISB_SEGO == loanCharge.getChargeCalculation() && Boolean.FALSE
+                        .equals(loanCharge.getCharge().getName().contains(ChargeCustomType.COMISION_MI_PYME.getRootName()))) {
                     amount = loanCharge.amount();
                 }
 
