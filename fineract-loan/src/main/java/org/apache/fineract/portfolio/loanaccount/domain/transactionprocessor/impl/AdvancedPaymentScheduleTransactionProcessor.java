@@ -1080,13 +1080,13 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         int iterationCount = 0;
         do {
             iterationCount += 1;
-            log.info("processing loan id: " + loanTransaction.getLoan().getId());
+            log.info("processing loan id: {}", loanTransaction.getLoan().getId());
             if (transactionAmountUnprocessed.isZero()) {
                 exit = true;
                 continue;
             }
             if (iterationCount > maxIterationCount) {
-                // throw PlatformException
+                log.error("Failed to fully process loan id: {}", loanTransaction.getLoan().getId());
                 throw new PlatformInternalServerException("processing.failed.for.loan",
                         "Processing failed for loan id: " + loanTransaction.getLoan().getId());
             }
