@@ -3118,8 +3118,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             // identify retain installments
             List<LoanRepaymentScheduleInstallment> processInstallmentsInstallments = new ArrayList<>();
             if (recalculationDetails.size() > 0) {
-                processInstallmentsInstallments = fetchRetainedInstallmentsForProgressiveLoans(loan.getRepaymentScheduleInstallments(),
-                        rescheduleFrom, currency);
+                processInstallmentsInstallments = fetchRetainedInstallmentsForProgressiveLoans(loan, rescheduleFrom);
             }
             // if processed installements is empty , check for graced installments
             if (processInstallmentsInstallments.isEmpty()) {
@@ -3492,12 +3491,13 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         return newRepaymentScheduleInstallments;
     }
 
-    private List<LoanRepaymentScheduleInstallment> fetchRetainedInstallmentsForProgressiveLoans(
-            final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments, final LocalDate rescheduleFrom,
-            MonetaryCurrency currency) {
+    private List<LoanRepaymentScheduleInstallment> fetchRetainedInstallmentsForProgressiveLoans(final Loan loan,
+            final LocalDate rescheduleFrom) {
+        final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
         List<LoanRepaymentScheduleInstallment> newRepaymentScheduleInstallments = new ArrayList<>();
         for (LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
-            if (DateUtils.isOnOrBefore(installment.getDueDate(), rescheduleFrom) || installment.isMigratedInstallment()) {
+            LocalDate dateToCheck = loan.isMaxLegalRateChanging() ? installment.getDueDate() : installment.getFromDate();
+            if (DateUtils.isOnOrBefore(dateToCheck, rescheduleFrom) || installment.isMigratedInstallment()) {
                 newRepaymentScheduleInstallments.add(installment);
             } else {
                 // Check if there is any installment having advance payment then add the installment to calculate
