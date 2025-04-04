@@ -3497,7 +3497,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             MonetaryCurrency currency) {
         List<LoanRepaymentScheduleInstallment> newRepaymentScheduleInstallments = new ArrayList<>();
         for (LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
-            if (DateUtils.isOnOrBefore(installment.getDueDate(), rescheduleFrom) || installment.isMigratedInstallment()) {
+            if (DateUtils.isOnOrBefore(installment.getFromDate(), rescheduleFrom) || installment.isMigratedInstallment()) {
                 newRepaymentScheduleInstallments.add(installment);
             } else {
                 // Check if there is any installment having advance payment then add the installment to calculate
