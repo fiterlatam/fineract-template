@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="10" author="fineract">
+        <sql>
+            <![CDATA[
+                    -- Delete previous entries
+                    DELETE FROM acc_product_mapping WHERE product_id IN (SELECT id FROM m_product_loan);
+            ]]>
+        </sql>
+    </changeSet>
+
+
+    <changeSet id="20" author="fineract">
+        <sql>
+            <![CDATA[
+                    INSERT INTO acc_product_mapping
+                    (gl_account_id, product_id, product_type, financial_account_type)
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '1115056051')
+                        , mpl.id
+                        , 1
+                        , 1
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '1115056051')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '1690952001')
+                        , mpl.id
+                        , 1
+                        , 2
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '1690952001')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '4103950503')
+                        , mpl.id
+                        , 1
+                        , 3
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '4103950503')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '4115950502')
+                        , mpl.id
+                        , 1
+                        , 4
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '4115950502')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '4103950504')
+                        , mpl.id
+                        , 1
+                        , 5
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '4103950504')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '5190959514')
+                        , mpl.id
+                        , 1
+                        , 6
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '5190959514')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '1690952002')
+                        , mpl.id
+                        , 1
+                        , 7
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '1690952002')
+
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '1690952004')
+                        , mpl.id
+                        , 1
+                        , 8
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '1690952004')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '1690952003')
+                        , mpl.id
+                        , 1
+                        , 9
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '1690952003')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '2222222222')
+                        , mpl.id
+                        , 1
+                        , 10
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '2222222222')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '2502950501')
+                        , mpl.id
+                        , 1
+                        , 11
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '2502950501')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '4198050501')
+                        , mpl.id
+                        , 1
+                        , 12
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '4198050501')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '5190959514')
+                        , mpl.id
+                        , 1
+                        , 13
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '5190959514')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '4198050501')
+                        , mpl.id
+                        , 1
+                        , 14
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '4198050501')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '4198050501')
+                        , mpl.id
+                        , 1
+                        , 15
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '4198050501')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '5190959514')
+                        , mpl.id
+                        , 1
+                        , 16
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '5190959514')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '5190959514')
+                        , mpl.id
+                        , 1
+                        , 17
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '5190959514')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '4198050501')
+                        , mpl.id
+                        , 1
+                        , 18
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '4198050501')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '4198050501')
+                        , mpl.id
+                        , 1
+                        , 19
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '4198050501')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '4198050501')
+                        , mpl.id
+                        , 1
+                        , 20
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '4198050501')
+
+                    UNION ALL
+
+                    SELECT
+                        (SELECT id FROM acc_gl_account WHERE gl_code = '4198050501')
+                        , mpl.id
+                        , 1
+                        , 21
+                    FROM m_product_loan mpl
+                    WHERE
+                        EXISTS (SELECT 1 FROM acc_gl_account WHERE gl_code = '4198050501');
+
+            ]]>
+        </sql>
+    </changeSet>
+
+
+</databaseChangeLog>
