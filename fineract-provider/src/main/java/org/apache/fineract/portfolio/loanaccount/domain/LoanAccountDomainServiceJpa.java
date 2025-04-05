@@ -1118,7 +1118,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                             && chg.getCharge().getParentChargeId().equals(honoCharge.getCharge().getId()))
                     .findFirst();
             Money remainingAmount = Money.of(loan.getCurrency(), transactionAmount);
-            Integer installmentNumber = 0;
+            Integer installmentNumber = -1;
             Long version = 0L;
             if (honoCharge.getCustomChargeHonorarioMaps() != null && !honoCharge.getCustomChargeHonorarioMaps().isEmpty()) {
                 for (CustomChargeHonorarioMap map : honoCharge.getCustomChargeHonorarioMaps()) {
@@ -1130,7 +1130,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             version = version + 1;
             for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
                 if (installment.isOverdueOn(transactionDate) && !installment.isObligationsMet()) {
-                    if (installmentNumber == 0) {
+                    if (installmentNumber == -1) {
                         installmentNumber = installment.getInstallmentNumber();
                     }
                     BigDecimal installmentOutstandingAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount();

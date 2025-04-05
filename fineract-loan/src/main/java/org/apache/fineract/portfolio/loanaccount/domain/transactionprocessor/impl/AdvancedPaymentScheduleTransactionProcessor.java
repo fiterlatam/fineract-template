@@ -1080,7 +1080,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         int iterationCount = 0;
         do {
             iterationCount += 1;
-            log.info("processing loan id: {}", loanTransaction.getLoan().getId());
+            log.info("processing loan id: {} - {}", loanTransaction.getLoan().getId(), iterationCount);
             if (transactionAmountUnprocessed.isZero()) {
                 exit = true;
                 continue;
@@ -1091,7 +1091,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                         "Processing failed for loan id: " + loanTransaction.getLoan().getId());
             }
             LoanRepaymentScheduleInstallment oldestPastDueInstallment = installments.stream()
-                    .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff).filter(e -> loanTransaction.isAfter(e.getDueDate()))
+                    .filter(x -> x.isNotFullyPaidOff() && !x.isFullyGraced()).filter(e -> loanTransaction.isAfter(e.getDueDate()))
                     .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
             boolean found = false;
             if (loanTransaction.claimType() != null) {

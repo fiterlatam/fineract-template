@@ -2941,7 +2941,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final LoanTransactionEnumData transactionType = LoanEnumerations.transactionType(LoanTransactionType.REPAYMENT);
         final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
         final BigDecimal outstandingLoanBalance = loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount();
-        final Boolean isReversed = false;
+        final boolean isReversed = false;
 
         BigDecimal feeHono = calculateHonoChargeAmount(loan, transactionDate,
                 loanRepaymentScheduleInstallment.getTotalOutstanding(currency).getAmount());
