@@ -7867,86 +7867,90 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
 
-        LocalDate installmentStartDate = getDisbursementDate();
+        // Only add new installment if we removed any (i.e the loan still had future installments)
+        if (newInstallments.size() < this.repaymentScheduleInstallments.size()) {
+            LocalDate installmentStartDate = getDisbursementDate();
 
-        if (!newInstallments.isEmpty()) {
-            installmentStartDate = newInstallments.get(newInstallments.size() - 1).getDueDate();
-        }
-
-        int installmentNumber = newInstallments.size();
-
-        if (!isInterestComponent) {
-            installmentNumber++;
-        }
-
-        LoanRepaymentScheduleInstallment newInstallment = new LoanRepaymentScheduleInstallment(null, newInstallments.size() + 1,
-                installmentStartDate, transactionDate, totalPrincipal.getAmount(), balances[0].getAmount(), balances[1].getAmount(),
-                balances[2].getAmount(), isInterestComponent, null);
-        newInstallment.updateInstallmentNumber(newInstallments.size() + 1);
-        newInstallments.add(newInstallment);
-
-        // SU-579 an installment which gets replaced by the newly created installment somehow does not gets recreated
-        // because its references
-        // are still present. Below code removes those references for all installments which are deleted
-        for (LoanRepaymentScheduleInstallment inst : this.repaymentScheduleInstallments) {
-            if (inst.getInstallmentNumber() >= newInstallment.getInstallmentNumber()) {
-                inst.getInstallmentCharges().clear();
-                inst.getLoanTransactionToRepaymentScheduleMappings().clear();
-
-                List<LoanTransaction> transactions = this.getLoanTransactions();
-                for (LoanTransaction loanTransaction : transactions) {
-                    if (loanTransaction.isPaymentTransaction() && loanTransaction.hasPaidInstallment(inst.getInstallmentNumber())) {
-                        Set<LoanTransactionToRepaymentScheduleMapping> existingMappings = loanTransaction
-                                .getLoanTransactionToRepaymentScheduleMappings();
-                        newInstallment.getLoanTransactionToRepaymentScheduleMappings().addAll(existingMappings);
-                        existingMappings.forEach(c -> c.setInstallment(newInstallment));
-                    }
-                }
+            if (!newInstallments.isEmpty()) {
+                installmentStartDate = newInstallments.get(newInstallments.size() - 1).getDueDate();
             }
-        }
-        updateLoanScheduleOnForeclosure(newInstallments);
 
-        Set<LoanCharge> charges = this.getActiveCharges();
-        int penaltyWaitPeriod = 0;
-        for (LoanCharge loanCharge : charges) {
-            if (DateUtils.isAfter(loanCharge.getDueLocalDate(), transactionDate)) {
-                loanCharge.setActive(false);
-            } else if (loanCharge.getDueLocalDate() == null) {
-                boolean ivaHono = false;
-                if (this.isAnulado && this.isAnuladoOnDisbursementDate) {
-                    if (loanCharge.isCustomPercentageBasedOfAnotherCharge()) {
-                        for (LoanCharge charge : charges) {
-                            if (charge.isFlatHono() && charge.getCharge().getId() != null
-                                    && charge.getCharge().getId().equals(loanCharge.getCharge().getParentChargeId())) {
-                                ivaHono = true;
-                            }
+            int installmentNumber = newInstallments.size();
+
+            if (!isInterestComponent) {
+                installmentNumber++;
+            }
+
+            LoanRepaymentScheduleInstallment newInstallment = new LoanRepaymentScheduleInstallment(null, newInstallments.size() + 1,
+                    installmentStartDate, transactionDate, totalPrincipal.getAmount(), balances[0].getAmount(), balances[1].getAmount(),
+                    balances[2].getAmount(), isInterestComponent, null);
+            newInstallment.updateInstallmentNumber(newInstallments.size() + 1);
+            newInstallments.add(newInstallment);
+
+            // SU-579 an installment which gets replaced by the newly created installment somehow does not gets
+            // recreated
+            // because its references
+            // are still present. Below code removes those references for all installments which are deleted
+            for (LoanRepaymentScheduleInstallment inst : this.repaymentScheduleInstallments) {
+                if (inst.getInstallmentNumber() >= newInstallment.getInstallmentNumber()) {
+                    inst.getInstallmentCharges().clear();
+                    inst.getLoanTransactionToRepaymentScheduleMappings().clear();
+
+                    List<LoanTransaction> transactions = this.getLoanTransactions();
+                    for (LoanTransaction loanTransaction : transactions) {
+                        if (loanTransaction.isPaymentTransaction() && loanTransaction.hasPaidInstallment(inst.getInstallmentNumber())) {
+                            Set<LoanTransactionToRepaymentScheduleMapping> existingMappings = loanTransaction
+                                    .getLoanTransactionToRepaymentScheduleMappings();
+                            newInstallment.getLoanTransactionToRepaymentScheduleMappings().addAll(existingMappings);
+                            existingMappings.forEach(c -> c.setInstallment(newInstallment));
                         }
                     }
                 }
-                if (this.isAnulado && this.isAnuladoOnDisbursementDate && (!loanCharge.isFlatHono() && !ivaHono)) {
-                    // If loan is canceled on same day as disbursement then only charge hono charges
-                    this.clearLoanInstallmentChargesBeforeRegeneration(loanCharge);
-                    loanCharge.setAmount(loanCharge.getAmountPaid(currency).getAmount());
-                    loanCharge.setOutstandingAmount(BigDecimal.ZERO);
-
-                } else {
-                    recalculateLoanCharge(loanCharge, penaltyWaitPeriod);
-                    loanCharge.updateWaivedAmount(currency);
-                }
             }
-        }
+            updateLoanScheduleOnForeclosure(newInstallments);
 
-        for (LoanTransaction loanTransaction : getLoanTransactions()) {
-            if (loanTransaction.isChargesWaiver()) {
-                for (LoanChargePaidBy chargePaidBy : loanTransaction.getLoanChargesPaid()) {
-                    if ((chargePaidBy.getLoanCharge().isDueDateCharge()
-                            && DateUtils.isBefore(transactionDate, chargePaidBy.getLoanCharge().getDueLocalDate()))
-                            || (chargePaidBy.getLoanCharge().isInstalmentFee() && chargePaidBy.getInstallmentNumber() != null
-                                    && chargePaidBy.getInstallmentNumber() > installmentNumber)) {
-                        loanTransaction.reverse();
+            Set<LoanCharge> charges = this.getActiveCharges();
+            int penaltyWaitPeriod = 0;
+            for (LoanCharge loanCharge : charges) {
+                if (DateUtils.isAfter(loanCharge.getDueLocalDate(), transactionDate)) {
+                    loanCharge.setActive(false);
+                } else if (loanCharge.getDueLocalDate() == null) {
+                    boolean ivaHono = false;
+                    if (this.isAnulado && this.isAnuladoOnDisbursementDate) {
+                        if (loanCharge.isCustomPercentageBasedOfAnotherCharge()) {
+                            for (LoanCharge charge : charges) {
+                                if (charge.isFlatHono() && charge.getCharge().getId() != null
+                                        && charge.getCharge().getId().equals(loanCharge.getCharge().getParentChargeId())) {
+                                    ivaHono = true;
+                                }
+                            }
+                        }
+                    }
+                    if (this.isAnulado && this.isAnuladoOnDisbursementDate && (!loanCharge.isFlatHono() && !ivaHono)) {
+                        // If loan is canceled on same day as disbursement then only charge hono charges
+                        this.clearLoanInstallmentChargesBeforeRegeneration(loanCharge);
+                        loanCharge.setAmount(loanCharge.getAmountPaid(currency).getAmount());
+                        loanCharge.setOutstandingAmount(BigDecimal.ZERO);
+
+                    } else {
+                        recalculateLoanCharge(loanCharge, penaltyWaitPeriod);
+                        loanCharge.updateWaivedAmount(currency);
                     }
                 }
+            }
 
+            for (LoanTransaction loanTransaction : getLoanTransactions()) {
+                if (loanTransaction.isChargesWaiver()) {
+                    for (LoanChargePaidBy chargePaidBy : loanTransaction.getLoanChargesPaid()) {
+                        if ((chargePaidBy.getLoanCharge().isDueDateCharge()
+                                && DateUtils.isBefore(transactionDate, chargePaidBy.getLoanCharge().getDueLocalDate()))
+                                || (chargePaidBy.getLoanCharge().isInstalmentFee() && chargePaidBy.getInstallmentNumber() != null
+                                        && chargePaidBy.getInstallmentNumber() > installmentNumber)) {
+                            loanTransaction.reverse();
+                        }
+                    }
+
+                }
             }
         }
     }
