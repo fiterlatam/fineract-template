@@ -6050,6 +6050,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return currentDisbursementDetails;
     }
 
+    public void addDisbursementDetails(LoanDisbursementDetails disbursementDetails) {
+        if (Objects.nonNull(this.disbursementDetails)) {
+            this.disbursementDetails.add(disbursementDetails);
+        }
+    }
+
     public LoanDisbursementDetails getDisbursementDetails(final LocalDate transactionDate, final BigDecimal transactionAmount) {
         for (LoanDisbursementDetails disbursementDetail : this.disbursementDetails) {
             if (!disbursementDetail.isReversed() && disbursementDetail.getDisbursementDate().equals(transactionDate)
