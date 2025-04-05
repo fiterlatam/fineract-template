@@ -237,23 +237,18 @@ public final class LoanApplicationTerms {
     private BigDecimal advancePrincipalAmountForInstallment;
     private Integer numberOfInstallmentsToIgnore;
 
-    @Getter
     @Setter
     private String loanProductName;
 
-    @Getter
     @Setter
     private List<LoanRepaymentScheduleInstallment> existentInstallments;
 
-    @Getter
     @Setter
     private BigDecimal principalAmountProposed;
 
-    @Getter
     @Setter
     private BigDecimal principalAmountApproved;
 
-    @Getter
     @Setter
     private int installmentDayOfMonth;
 

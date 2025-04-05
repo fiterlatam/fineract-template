@@ -5278,7 +5278,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             LoanDisbursementDetails details = new LoanDisbursementDetails(actualDisbursementDate, actualDisbursementDate, principal, null,
                     false);
             details.updateLoan(loan);
-            loanDisbursementDetailsRepository.saveAndFlush(details);
+            loanDisbursementDetailsRepository.save(details);
+
+            loan.addDisbursementDetails(details);
+            loan.updateLoanSummaryDerivedFields();
+            loanRepository.save(loan);
 
             loan = this.loanAssembler.assembleFrom(loan.getId());
             Long loanRescheduleReasonId = getLoanRescheduleReasonId();
@@ -5304,15 +5308,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private Integer calculateInstallmentsToAdd(Loan loan) {
         Integer productNrOfRepayments = loan.getOriginalNumberOfRepayments();
         Long notPaidInstallmentNr = loan.getRepaymentScheduleInstallments().stream().filter(p -> !p.isObligationsMet()).count();
-        Integer nrOfInstallmentsToAdd = productNrOfRepayments - notPaidInstallmentNr.intValue();
 
-        if (nrOfInstallmentsToAdd.compareTo(0) == 0) {
-            loan.removeLoanRepaymentScheduleInstallment(loan.getLoanRepaymentScheduleInstallmentsSize());
-            loanRepository.increaseRepaymentsAndTermFrequency(-1, -1, loan.getId());
-            loanRepository.save(loan);
-            nrOfInstallmentsToAdd = 1;
-        }
-        return nrOfInstallmentsToAdd;
+        return productNrOfRepayments - notPaidInstallmentNr.intValue();
     }
 
     private void createRescheduleRequest(Loan loan, LocalDate actualDisbursementDate, Long loanRescheduleReasonId,
