@@ -1068,7 +1068,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         Money interestDue;
         boolean isMigratedMultiDisbursalLoan = false;
         String productName = this.getLoan().getLoanProduct().getName();
-        if (this.getLoan().isMigratedLoan() &&(productName.contains(LoanProductType.CREDITO_ROTATIVO.getCode()) || productName.contains(LoanProductType.NANO_CREDITO.getCode()))) {
+        if (this.getLoan().isMigratedLoan() && (productName.contains(LoanProductType.CREDITO_ROTATIVO.getCode())
+                || productName.contains(LoanProductType.NANO_CREDITO.getCode()))) {
             isMigratedMultiDisbursalLoan = true;
         }
         if (this.isMigratedInstallment || isMigratedMultiDisbursalLoan) {

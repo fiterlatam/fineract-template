@@ -1132,9 +1132,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                 for (LoanRepaymentScheduleInstallment inAdvanceInstallment : inAdvanceInstallments) {
                                     if (transactionAmountUnprocessed.isGreaterThanZero()) {
                                         String productName = inAdvanceInstallment.getLoan().getLoanProduct().getName();
-                                        if (inAdvanceInstallment.isMigratedInstallment() ||
-                                                (inAdvanceInstallment.getLoan().isMigratedLoan() &&
-                                                        ( productName.contains(LoanProductType.CREDITO_ROTATIVO.getCode()) || productName.contains(LoanProductType.NANO_CREDITO.getCode())))) {
+                                        if (inAdvanceInstallment.isMigratedInstallment() || (inAdvanceInstallment.getLoan().isMigratedLoan()
+                                                && (productName.contains(LoanProductType.CREDITO_ROTATIVO.getCode())
+                                                        || productName.contains(LoanProductType.NANO_CREDITO.getCode())))) {
                                             // Process migrated installments as due or past due installments
                                             Set<LoanCharge> inAdvanceInstallmentCharges = getLoanChargesOfInstallment(charges,
                                                     inAdvanceInstallment, firstNormalInstallmentNumber);
