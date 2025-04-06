@@ -68,12 +68,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionToRepayme
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.AbstractLoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.MoneyHolder;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
-import org.apache.fineract.portfolio.loanproduct.domain.AllocationType;
-import org.apache.fineract.portfolio.loanproduct.domain.CreditAllocationTransactionType;
-import org.apache.fineract.portfolio.loanproduct.domain.DueType;
-import org.apache.fineract.portfolio.loanproduct.domain.FutureInstallmentAllocationRule;
-import org.apache.fineract.portfolio.loanproduct.domain.PaymentAllocationTransactionType;
-import org.apache.fineract.portfolio.loanproduct.domain.PaymentAllocationType;
+import org.apache.fineract.portfolio.loanproduct.domain.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -1136,7 +1131,10 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                 Money zero = transactionAmountUnprocessed.zero();
                                 for (LoanRepaymentScheduleInstallment inAdvanceInstallment : inAdvanceInstallments) {
                                     if (transactionAmountUnprocessed.isGreaterThanZero()) {
-                                        if (inAdvanceInstallment.isMigratedInstallment()) {
+                                        String productName = inAdvanceInstallment.getLoan().getLoanProduct().getName();
+                                        if (inAdvanceInstallment.isMigratedInstallment() ||
+                                                (inAdvanceInstallment.getLoan().isMigratedLoan() &&
+                                                        ( productName.contains(LoanProductType.CREDITO_ROTATIVO.getCode()) || productName.contains(LoanProductType.NANO_CREDITO.getCode())))) {
                                             // Process migrated installments as due or past due installments
                                             Set<LoanCharge> inAdvanceInstallmentCharges = getLoanChargesOfInstallment(charges,
                                                     inAdvanceInstallment, firstNormalInstallmentNumber);
