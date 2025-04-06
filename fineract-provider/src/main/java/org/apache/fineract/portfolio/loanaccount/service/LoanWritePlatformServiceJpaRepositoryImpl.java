@@ -5308,7 +5308,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private Integer calculateInstallmentsToAdd(Loan loan) {
         Integer productNrOfRepayments = loan.getOriginalNumberOfRepayments();
         Long notPaidInstallmentNr = loan.getRepaymentScheduleInstallments().stream().filter(p -> !p.isObligationsMet()).count();
-
+        Long graceInstallments = loan.getRepaymentScheduleInstallments().stream().filter(p -> p.isFullyGraced()).count();
+        notPaidInstallmentNr = notPaidInstallmentNr + graceInstallments;
         return productNrOfRepayments - notPaidInstallmentNr.intValue();
     }
 

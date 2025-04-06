@@ -41,6 +41,7 @@ import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
 import org.apache.fineract.portfolio.loanproduct.domain.AllocationType;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 
 @SuppressWarnings({ "squid:S7091" })
@@ -1065,7 +1066,13 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
 
         Money interestDue;
-        if (this.isMigratedInstallment) {
+        boolean isMigratedMultiDisbursalLoan = false;
+        String productName = this.getLoan().getLoanProduct().getName();
+        if (this.getLoan().isMigratedLoan() && (productName.contains(LoanProductType.CREDITO_ROTATIVO.getCode())
+                || productName.contains(LoanProductType.NANO_CREDITO.getCode()))) {
+            isMigratedMultiDisbursalLoan = true;
+        }
+        if (this.isMigratedInstallment || isMigratedMultiDisbursalLoan) {
             interestDue = getInterestOutstanding(currency);
         } else if (isOn(transactionDate, this.getDueDate())) {
             interestDue = getInterestOutstanding(currency);
