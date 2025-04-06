@@ -7884,7 +7884,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             LoanRepaymentScheduleInstallment newInstallment = new LoanRepaymentScheduleInstallment(null, newInstallments.size() + 1,
                     installmentStartDate, transactionDate, totalPrincipal.getAmount(), balances[0].getAmount(), balances[1].getAmount(),
                     balances[2].getAmount(), isInterestComponent, null);
-            newInstallment.updateInstallmentNumber(newInstallments.size() + 1);
+            if (!newInstallments.isEmpty()) {
+                newInstallment.updateInstallmentNumber(newInstallments.get(newInstallments.size() - 1).getInstallmentNumber() + 1);
+            } else {
+                newInstallment.updateInstallmentNumber(1);
+            }
             newInstallments.add(newInstallment);
 
             // SU-579 an installment which gets replaced by the newly created installment somehow does not gets
