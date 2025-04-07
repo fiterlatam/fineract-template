@@ -4333,6 +4333,24 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         this.closedBy = currentUser;
     }
 
+    public void closeAsObligationsMet(final LocalDate closedOnDate, final AppUser currentUser) {
+        this.loanStatus = LoanStatus.CLOSED_OBLIGATIONS_MET.getValue();
+        this.closedOnDate = closedOnDate;
+        this.closedBy = currentUser;
+    }
+
+    public void closeAsOverPaid(final LocalDate overpaidOnDate, final AppUser currentUser) {
+        this.loanStatus = LoanStatus.OVERPAID.getValue();
+        this.overpaidOnDate = overpaidOnDate;
+        this.closedBy = currentUser;
+    }
+
+    public void markInstallmentsAsObligationsMet() {
+        for (final LoanRepaymentScheduleInstallment installment : this.getRepaymentScheduleInstallments()) {
+            installment.updateObligationMet(true);
+        }
+    }
+
     public ChangedTransactionDetail closeAsWrittenOff(final JsonCommand command, final LoanLifecycleStateMachine loanLifecycleStateMachine,
             final Map<String, Object> changes, final List<Long> existingTransactionIds, final List<Long> existingReversedTransactionIds,
             final AppUser currentUser, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
@@ -7560,44 +7578,46 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money principalLoanBalanceOutstanding = this.getPrincipal();
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(installment.getAdvancePrincipalAmount());
-            if (!DateUtils.isBefore(paymentDate, installment.getDueDate())) {
-                interest = interest.plus(installment.getInterestOutstanding(currency));
-                penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
-                fee = fee.plus(installment.getFeeChargesOutstanding(currency));
-            } else if (DateUtils.isAfter(paymentDate, installment.getFromDate())) {
-                final Money[] balancesForCurrentPeriod = fetchInterestFeeAndPenaltyTillDate(paymentDate, installment,
-                        principalLoanBalanceOutstanding, scheduleGeneratorDTO);
-                if (balancesForCurrentPeriod[0].isGreaterThan(balancesForCurrentPeriod[5])) {
-                    interest = interest.plus(balancesForCurrentPeriod[0]).minus(balancesForCurrentPeriod[5]);
-                } else {
-                    paidFromFutureInstallments = paidFromFutureInstallments.plus(balancesForCurrentPeriod[5])
-                            .minus(balancesForCurrentPeriod[0]);
-                }
-                if (balancesForCurrentPeriod[1].isGreaterThan(balancesForCurrentPeriod[3])) {
-                    fee = fee.plus(balancesForCurrentPeriod[1].minus(balancesForCurrentPeriod[3]));
-                } else {
-                    paidFromFutureInstallments = paidFromFutureInstallments
-                            .plus(balancesForCurrentPeriod[3].minus(balancesForCurrentPeriod[1]));
-                }
-                if (balancesForCurrentPeriod[2].isGreaterThan(balancesForCurrentPeriod[4])) {
-                    penalty = penalty.plus(balancesForCurrentPeriod[2].minus(balancesForCurrentPeriod[4]));
-                } else {
-                    paidFromFutureInstallments = paidFromFutureInstallments.plus(balancesForCurrentPeriod[4])
-                            .minus(balancesForCurrentPeriod[2]);
-                }
-            } else {
-                // When Foreclosure on disbursement date then pay fee charges
-                // When loan is canceled on same date then only pay hono charges
-                if (installment.getInstallmentNumber() == 1 && DateUtils.isEqual(paymentDate, installment.getFromDate())) {
-                    paidFromFutureInstallments = paidFromFutureInstallments.plus(installment.getInterestPaid(currency))
-                            .plus(installment.getPenaltyChargesPaid(currency));
+            if (!installment.isObligationsMet()) {
+                if (!DateUtils.isBefore(paymentDate, installment.getDueDate())) {
+                    interest = interest.plus(installment.getInterestOutstanding(currency));
+                    penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
                     fee = fee.plus(installment.getFeeChargesOutstanding(currency));
-                    if (this.isAnulado) {
-                        fee = getPendingHonoAmountOfAnuladoLoanForInstallment(this, installment.getInstallmentNumber());
+                } else if (DateUtils.isAfter(paymentDate, installment.getFromDate())) {
+                    final Money[] balancesForCurrentPeriod = fetchInterestFeeAndPenaltyTillDate(paymentDate, installment,
+                            principalLoanBalanceOutstanding, scheduleGeneratorDTO);
+                    if (balancesForCurrentPeriod[0].isGreaterThan(balancesForCurrentPeriod[5])) {
+                        interest = interest.plus(balancesForCurrentPeriod[0]).minus(balancesForCurrentPeriod[5]);
+                    } else {
+                        paidFromFutureInstallments = paidFromFutureInstallments.plus(balancesForCurrentPeriod[5])
+                                .minus(balancesForCurrentPeriod[0]);
+                    }
+                    if (balancesForCurrentPeriod[1].isGreaterThan(balancesForCurrentPeriod[3])) {
+                        fee = fee.plus(balancesForCurrentPeriod[1].minus(balancesForCurrentPeriod[3]));
+                    } else {
+                        paidFromFutureInstallments = paidFromFutureInstallments
+                                .plus(balancesForCurrentPeriod[3].minus(balancesForCurrentPeriod[1]));
+                    }
+                    if (balancesForCurrentPeriod[2].isGreaterThan(balancesForCurrentPeriod[4])) {
+                        penalty = penalty.plus(balancesForCurrentPeriod[2].minus(balancesForCurrentPeriod[4]));
+                    } else {
+                        paidFromFutureInstallments = paidFromFutureInstallments.plus(balancesForCurrentPeriod[4])
+                                .minus(balancesForCurrentPeriod[2]);
                     }
                 } else {
-                    paidFromFutureInstallments = paidFromFutureInstallments.plus(installment.getInterestPaid(currency))
-                            .plus(installment.getPenaltyChargesPaid(currency)).plus(installment.getFeeChargesPaid(currency));
+                    // When Foreclosure on disbursement date then pay fee charges
+                    // When loan is canceled on same date then only pay hono charges
+                    if (installment.getInstallmentNumber() == 1 && DateUtils.isEqual(paymentDate, installment.getFromDate())) {
+                        paidFromFutureInstallments = paidFromFutureInstallments.plus(installment.getInterestPaid(currency))
+                                .plus(installment.getPenaltyChargesPaid(currency));
+                        fee = fee.plus(installment.getFeeChargesOutstanding(currency));
+                        if (this.isAnulado) {
+                            fee = getPendingHonoAmountOfAnuladoLoanForInstallment(this, installment.getInstallmentNumber());
+                        }
+                    } else {
+                        paidFromFutureInstallments = paidFromFutureInstallments.plus(installment.getInterestPaid(currency))
+                                .plus(installment.getPenaltyChargesPaid(currency)).plus(installment.getFeeChargesPaid(currency));
+                    }
                 }
             }
             principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(installment.getPrincipal(currency));

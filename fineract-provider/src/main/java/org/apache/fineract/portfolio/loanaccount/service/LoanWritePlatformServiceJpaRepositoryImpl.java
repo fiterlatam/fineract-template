@@ -1333,8 +1333,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         boolean recalculateEMI = command.booleanPrimitiveValueOfParameterNamed("reduceInstallmentAmount");
         loan.setRecalculateEMI(recalculateEMI);
 
-        BigDecimal totalExpectedRepayment = loan.getLoanSummary().getTotalExpectedRepayment();
-        final LoanStatus loanStatus = loan.getStatus();
+        final ScheduleGeneratorDTO scheduleGeneratorDTO = loanUtilService.buildScheduleGeneratorDTO(loan, null);
+        LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(transactionDate,
+                scheduleGeneratorDTO);
+        final BigDecimal totalExpectedRepayment = loanRepaymentScheduleInstallment.getTotalOutstanding(loan.getCurrency()).getAmount();
         final boolean isBankChannel = channelData.getName().equalsIgnoreCase("Bancos")
                 || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
 
@@ -1348,11 +1350,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 holidayDetailDto, isHolidayValidationDone);
         loan = loanTransaction.getLoan();
 
-        // we also want to validate that the repayment amount is not greater than the outstanding amount
+        loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(transactionDate, scheduleGeneratorDTO);
+        final BigDecimal totalOutstandingAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(loan.getCurrency()).getAmount();
 
-        if ((loanStatus.isOverpaid() && !isBankChannel)) {
-            final String totalOverpaid = Money.of(loan.getCurrency(), loan.getTotalOverpaid()).toString();
-            handleOverPaidException(totalOverpaid);
+        final AppUser currentUser = getAppUserIfPresent();
+        if (totalOutstandingAmount.compareTo(BigDecimal.ZERO) == 0) {
+            loan.markInstallmentsAsObligationsMet();
+            loan.closeAsObligationsMet(transactionDate, currentUser);
+        } else if (totalOutstandingAmount.compareTo(BigDecimal.ZERO) < 0) {
+            if (!isBankChannel) {
+                handleOverPaidException(totalOutstandingAmount.toString());
+            }
+            loan.markInstallmentsAsObligationsMet();
+            loan.closeAsOverPaid(transactionDate, currentUser);
+        } else {
+            loan.updateLoanStatus(LoanStatus.ACTIVE);
         }
 
         // Update loan transaction on repayment.
@@ -1376,6 +1388,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             createCancellationNoveltyNews(loan, loan.getClosedOnDate());
         }
 
+        saveLoanWithDataIntegrityViolationChecks(loan);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()) //
                 .withLoanId(loan.getId()) //
                 .withEntityId(loanTransaction.getId()) //
