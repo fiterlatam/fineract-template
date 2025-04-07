@@ -106,6 +106,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanSchedul
 import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualTransactionBusinessEventService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
+import org.apache.fineract.portfolio.loanaccount.service.LoanBlockWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.apache.fineract.portfolio.loanaccount.service.ReplayedTransactionBusinessEventService;
 import org.apache.fineract.portfolio.note.domain.Note;
@@ -158,6 +159,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final ClientReadPlatformService clientReadPlatformService;
     @Autowired
     private CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
+    private final LoanBlockWritePlatformService loanBlockWritePlatformService;
 
     @Transactional
     @Override
@@ -1091,6 +1093,11 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             }
         }
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+
+        final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
+                BlockingReasonSettingEnum.CREDIT_ANULADO.getDatabaseString(), BlockLevel.CREDIT.toString());
+        blockingReasonSetting.setAffectsClientLevel(0);
+        loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "Anulado", DateUtils.getLocalDateOfTenant());
 
         if (StringUtils.isNotBlank(noteText)) {
             changes.put("note", noteText);

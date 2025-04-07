@@ -970,7 +970,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 new TransactionCtx(getCurrency(), chargePaymentInstallments, loanCharges, new MoneyHolder(getTotalOverpaidAsMoney())));
 
         updateLoanSummaryDerivedFields();
-        doPostLoanTransactionChecks(chargesPayment.getTransactionDate(), loanLifecycleStateMachine);
+        doPostLoanTransactionChecks(chargesPayment.getTransactionDate(), loanLifecycleStateMachine, null);
     }
 
     private void validateLoanIsNotClosed(final LoanCharge loanCharge) {
@@ -1395,7 +1395,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         updateLoanSummaryDerivedFields();
 
-        doPostLoanTransactionChecks(waiveLoanChargeTransaction.getTransactionDate(), loanLifecycleStateMachine);
+        doPostLoanTransactionChecks(waiveLoanChargeTransaction.getTransactionDate(), loanLifecycleStateMachine, scheduleGeneratorDTO);
 
         return waiveLoanChargeTransaction;
     }
@@ -1777,7 +1777,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void updateLoanSummaryAndStatus() {
         updateLoanSummaryDerivedFields();
-        doPostLoanTransactionChecks(getLastUserTransactionDate(), loanLifecycleStateMachine);
+        doPostLoanTransactionChecks(getLastUserTransactionDate(), loanLifecycleStateMachine, null);
     }
 
     public Map<String, Object> loanApplicationModification(final JsonCommand command, final Set<LoanCharge> possiblyModifedLoanCharges,
@@ -3607,7 +3607,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             addLoanTransaction(loanTransaction);
         }
         updateLoanSummaryDerivedFields();
-        doPostLoanTransactionChecks(loanTransaction.getTransactionDate(), loanLifecycleStateMachine);
+        doPostLoanTransactionChecks(loanTransaction.getTransactionDate(), loanLifecycleStateMachine, null);
     }
 
     private ChangedTransactionDetail handleRepaymentOrRecoveryOrWaiverTransaction(final LoanTransaction loanTransaction,
@@ -3754,7 +3754,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
          * FIXME: Vishwas, skipping post loan transaction checks for Loan recoveries
          **/
         if (loanTransaction.isNotRecoveryRepayment()) {
-            doPostLoanTransactionChecks(loanTransaction.getTransactionDate(), loanLifecycleStateMachine);
+            doPostLoanTransactionChecks(loanTransaction.getTransactionDate(), loanLifecycleStateMachine, scheduleGeneratorDTO);
         }
 
         if (this.loanProduct.isMultiDisburseLoan()) {
@@ -3864,15 +3864,18 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return transactions;
     }
 
-    private boolean doPostLoanTransactionChecks(final LocalDate transactionDate,
-            final LoanLifecycleStateMachine loanLifecycleStateMachine) {
+    private boolean doPostLoanTransactionChecks(final LocalDate transactionDate, final LoanLifecycleStateMachine loanLifecycleStateMachine,
+            final ScheduleGeneratorDTO scheduleGeneratorDTO) {
         boolean statusChanged = false;
-        boolean isOverpaid = getTotalOverpaid() != null && getTotalOverpaid().compareTo(BigDecimal.ZERO) > 0;
+        final LoanRepaymentScheduleInstallment loanForeclosureDetail = this.fetchLoanForeclosureDetail(transactionDate,
+                scheduleGeneratorDTO);
+        final Money totalOutstandingBalance = loanForeclosureDetail.getTotalOutstanding(getCurrency());
+        final boolean isOverpaid = totalOutstandingBalance.isLessThanZero();
+        final boolean isRepaidInFull = totalOutstandingBalance.isZero();
         if (isOverpaid) {
-            // FIXME - kw - update account balance to negative amount.
             handleLoanOverpayment(transactionDate, loanLifecycleStateMachine);
             statusChanged = true;
-        } else if (this.summary.isRepaidInFull(loanCurrency())) {
+        } else if (isRepaidInFull) {
             handleLoanRepaymentInFull(transactionDate, loanLifecycleStateMachine);
             statusChanged = true;
         } else {
@@ -4597,7 +4600,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
             updateLoanSummaryDerivedFields();
             LoanTransaction loanTransaction = getLatestTransaction();
-            doPostLoanTransactionChecks(loanTransaction.getTransactionDate(), loanLifecycleStateMachine);
+            doPostLoanTransactionChecks(loanTransaction.getTransactionDate(), loanLifecycleStateMachine, scheduleGeneratorDTO);
         }
         return changedTransactionDetail;
     }
@@ -7144,7 +7147,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         updateLoanSummaryDerivedFields();
 
-        doPostLoanTransactionChecks(loanTransaction.getTransactionDate(), loanLifecycleStateMachine);
+        doPostLoanTransactionChecks(loanTransaction.getTransactionDate(), loanLifecycleStateMachine, null);
 
         return changedTransactionDetail;
     }
@@ -7165,7 +7168,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 getRepaymentScheduleInstallments(), getActiveCharges(), new MoneyHolder(getTotalOverpaidAsMoney())));
 
         updateLoanSummaryDerivedFields();
-        if (!doPostLoanTransactionChecks(chargebackTransaction.getTransactionDate(), loanLifecycleStateMachine)) {
+        if (!doPostLoanTransactionChecks(chargebackTransaction.getTransactionDate(), loanLifecycleStateMachine, null)) {
             loanLifecycleStateMachine.transition(LoanEvent.LOAN_CHARGEBACK, this);
         }
     }
@@ -7252,7 +7255,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         actualChanges.put("disbursedAmount", this.getDisbursedAmount());
         updateLoanSummaryDerivedFields();
 
-        doPostLoanTransactionChecks(getLastUserTransactionDate(), loanLifecycleStateMachine);
+        doPostLoanTransactionChecks(getLastUserTransactionDate(), loanLifecycleStateMachine, scheduleGeneratorDTO);
 
         return actualChanges;
     }
