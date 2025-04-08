@@ -435,7 +435,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
                     .getSingleBlockingReasonSettingByReason(BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(),
                             BlockLevel.CREDIT.toString());
-
             if (blockingReasonSetting != null) {
                 loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
                 LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
@@ -1094,12 +1093,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             }
         }
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
-
-        final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
-                BlockingReasonSettingEnum.CREDIT_ANULADO.getDatabaseString(), BlockLevel.CREDIT.toString());
-        blockingReasonSetting.setAffectsClientLevel(0);
-        loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "Anulado", DateUtils.getLocalDateOfTenant());
-
         if (StringUtils.isNotBlank(noteText)) {
             changes.put("note", noteText);
             final Note note = Note.loanNote(loan, noteText);

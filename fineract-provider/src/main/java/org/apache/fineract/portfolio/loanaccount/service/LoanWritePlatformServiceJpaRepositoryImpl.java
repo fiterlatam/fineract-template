@@ -1399,10 +1399,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             loan.markInstallmentsAsObligationsMet();
             final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
-                    .getSingleBlockingReasonSettingByReason(BlockingReasonSettingEnum.CREDIT_ANULADO.getDatabaseString(),
+                    .getSingleBlockingReasonSettingByReason(BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(),
                             BlockLevel.CREDIT.toString());
             blockingReasonSetting.setAffectsClientLevel(0);
-            loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "Anulado", DateUtils.getLocalDateOfTenant());
+            loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "CANCELADO", DateUtils.getLocalDateOfTenant());
         } else {
             loan.updateLoanStatus(LoanStatus.ACTIVE);
         }
@@ -3810,6 +3810,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, externalId,
                 changes, true);
 
+        final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
+                BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(), BlockLevel.CREDIT.toString());
+        blockingReasonSetting.setAffectsClientLevel(0);
+        loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "CANCELADO", DateUtils.getLocalDateOfTenant());
+
         final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();
         return commandProcessingResultBuilder //
                 .withLoanId(loanId) //
@@ -3865,6 +3870,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         final LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText,
                 externalId, changes, false);
+        final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
+                BlockingReasonSettingEnum.CREDIT_ANULADO.getDatabaseString(), BlockLevel.CREDIT.toString());
+        blockingReasonSetting.setAffectsClientLevel(0);
+        loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "ANULADO", DateUtils.getLocalDateOfTenant());
+
         final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();
         return commandProcessingResultBuilder.withLoanId(loanId).withEntityId(foreclosureTransaction.getId())
                 .withEntityExternalId(foreclosureTransaction.getExternalId()).with(changes).build();
