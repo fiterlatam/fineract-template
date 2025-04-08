@@ -158,6 +158,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
 
         addChargeOnlyRepaymentInstallmentIfRequired(charges, installments);
 
+        // SU-662: we need to preserve the advancePayment for the new installment created during foreclosure
+        LoanRepaymentScheduleInstallment lastInstallment = installments.get(installments.size() - 1);
+        BigDecimal advancePayment = lastInstallment.getAdvancePrincipalAmount();
         for (final LoanRepaymentScheduleInstallment currentInstallment : installments) {
             // currentInstallment.resetBalances();
             currentInstallment.resetDerivedComponents();
@@ -180,6 +183,11 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         }
         List<LoanTransaction> txs = chargeOrTransactions.stream().map(ChargeOrTransaction::getLoanTransaction).filter(Optional::isPresent)
                 .map(Optional::get).toList();
+        if (lastInstallment.getLoan().isForeClosing() && advancePayment.compareTo(BigDecimal.ZERO) > 0) {
+            // SU-662: re-instate the advance payment
+            lastInstallment.setAdvancePrincipalAmount(advancePayment);
+            lastInstallment.setTotalPaidInAdvance(advancePayment);
+        }
         reprocessInstallments(disbursementDate, txs, installments, currency);
         return changedTransactionDetail;
     }

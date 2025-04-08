@@ -1445,6 +1445,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         return Money.of(currency, this.totalPaidInAdvance);
     }
 
+    public void setTotalPaidInAdvance(BigDecimal totalPaidInAdvance) {
+        this.totalPaidInAdvance = totalPaidInAdvance;
+    }
+
     public Money getTotalPaidLate(final MonetaryCurrency currency) {
         return Money.of(currency, this.totalPaidLate);
     }

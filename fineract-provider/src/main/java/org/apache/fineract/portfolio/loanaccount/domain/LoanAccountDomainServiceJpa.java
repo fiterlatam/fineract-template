@@ -1045,6 +1045,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         Money feePayable = foreCloseDetail.getFeeChargesCharged(currency);
         Money penaltyPayable = foreCloseDetail.getPenaltyChargesCharged(currency);
         Money payPrincipal = foreCloseDetail.getPrincipal(currency);
+        loan.setForeClosing(true);
         loan.updateInstallmentsPostDate(foreClosureDate, scheduleGeneratorDTO);
         LoanTransaction payment = null;
 
