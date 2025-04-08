@@ -513,6 +513,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Transient
     private boolean maxLegalRateChanging;
 
+    @Getter
+    @Setter
+    @Transient
+    private boolean foreClosing;
+
     // Columns for migrated loans
     @Column(name = "is_migrated_loan", nullable = false)
     private boolean isMigratedLoan = false;
@@ -3773,7 +3778,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     private LoanRepaymentScheduleInstallment fetchLoanRepaymentScheduleInstallment(LocalDate dueDate) {
         LoanRepaymentScheduleInstallment installment = null;
-        List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
+        List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments().stream()
+                .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff).toList();
         for (LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : installments) {
             if (dueDate.equals(loanRepaymentScheduleInstallment.getDueDate())) {
                 installment = loanRepaymentScheduleInstallment;
@@ -5820,6 +5826,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         && loanCharge.getApplicableFromInstallment() > installment.getInstallmentNumber()) {
                     continue;
                 }
+                // Skip installments with zero fees during loan foreclosure
+                if (installment.getFeeChargesCharged(this.getCurrency()).isZero() && this.foreClosing) {
+                    continue;
+                }
                 BigDecimal amount;
                 if (loanCharge.getChargeCalculation().isFlat()) {
                     amount = loanCharge.amountOrPercentage();
@@ -7749,7 +7759,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 balances[2] = penalty;
                 break;
             } else if (DateUtils.isAfter(paymentDate, installment.getFromDate())
-                    && DateUtils.isBefore(paymentDate, installment.getDueDate())) {
+                    && DateUtils.isBefore(paymentDate, installment.getDueDate()) && installment.isNotFullyPaidOff()) {
                 balances = fetchInterestFeeAndPenaltyTillDate(paymentDate, installment, principalLoanBalanceOutstanding,
                         scheduleGeneratorDTO);
                 break;
@@ -7872,14 +7882,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         List<LoanRepaymentScheduleInstallment> newInstallments = new ArrayList<>(this.repaymentScheduleInstallments);
         final MonetaryCurrency currency = getCurrency();
         Money totalPrincipal = Money.zero(currency);
+        Money totalAdvanced = Money.zero(currency);
         Money[] balances = retriveIncomeForOverlappingPeriod(transactionDate, scheduleGeneratorDTO);
         boolean isInterestComponent = false;
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
-            if (!DateUtils.isAfter(transactionDate, installment.getDueDate())) {
+            if (!DateUtils.isAfter(transactionDate, installment.getDueDate()) && installment.isNotFullyPaidOff()) {
                 totalPrincipal = totalPrincipal.plus(installment.getPrincipal(currency));
                 if (installment.getAdvancePrincipalAmount() != null
                         && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
-                    totalPrincipal = totalPrincipal.add(installment.getAdvancePrincipalAmount());
+                    totalAdvanced = totalAdvanced.add(installment.getAdvancePrincipalAmount());
                 }
                 newInstallments.remove(installment);
             }
@@ -7895,7 +7906,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             LocalDate installmentStartDate = getDisbursementDate();
 
             if (!newInstallments.isEmpty()) {
-                installmentStartDate = newInstallments.get(newInstallments.size() - 1).getDueDate();
+                LoanRepaymentScheduleInstallment lastInstallment = newInstallments.get(newInstallments.size() - 1);
+                // If this loan has future installments already paid off, we should adjust the duedate accordingly
+                if (lastInstallment.isObligationsMet() && DateUtils.isBefore(transactionDate, lastInstallment.getDueDate())) {
+                    // if obligations are met, then definitely the obligations met date is not in future, let's set the
+                    // due date to obligations met date
+                    lastInstallment.setDueDate(lastInstallment.getObligationsMetOnDate());
+                }
+                installmentStartDate = lastInstallment.getDueDate();
             }
 
             int installmentNumber = newInstallments.size();
@@ -7907,6 +7925,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             LoanRepaymentScheduleInstallment newInstallment = new LoanRepaymentScheduleInstallment(null, newInstallments.size() + 1,
                     installmentStartDate, transactionDate, totalPrincipal.getAmount(), balances[0].getAmount(), balances[1].getAmount(),
                     balances[2].getAmount(), isInterestComponent, null);
+            if (totalAdvanced.isGreaterThanZero()) {
+                newInstallment.setAdvancePrincipalAmount(totalAdvanced.getAmount());
+                newInstallment.setTotalPaidInAdvance(totalAdvanced.getAmount());
+            }
             if (!newInstallments.isEmpty()) {
                 newInstallment.updateInstallmentNumber(newInstallments.get(newInstallments.size() - 1).getInstallmentNumber() + 1);
             } else {
