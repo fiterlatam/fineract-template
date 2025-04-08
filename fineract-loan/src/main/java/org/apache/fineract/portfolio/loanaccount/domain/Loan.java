@@ -7750,7 +7750,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money principalLoanBalanceOutstanding = this.getPrincipal();
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(installment.getAdvancePrincipalAmount());
-            if (DateUtils.isEqual(paymentDate, installment.getDueDate())) {
+            if (DateUtils.isEqual(paymentDate, installment.getDueDate()) && installment.isNotFullyPaidOff()) {
                 Money interest = installment.getInterestCharged(currency);
                 Money fee = installment.getFeeChargesCharged(currency);
                 Money penalty = installment.getPenaltyChargesCharged(currency);
@@ -7771,8 +7771,19 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     fee = getPendingHonoAmountOfAnuladoLoanForInstallment(this, installment.getInstallmentNumber());
                 }
                 balances[1] = fee;
-            } else if (DateUtils.isEqual(paymentDate, installment.getFromDate())) {
+            } else if (DateUtils.isEqual(paymentDate, installment.getFromDate()) && installment.isNotFullyPaidOff()) {
                 Money fee = installment.getFeeChargesCharged(currency);
+                // SU-661: we need to deduct the Aval amount since the payment date is the due date of the previous
+                // installment
+                // So Aval doesn't apply today
+                if (installment.getInstallmentCharges() != null) {
+                    for (LoanInstallmentCharge loanInstallmentCharge : installment.getInstallmentCharges()) {
+                        if (loanInstallmentCharge.getLoanCharge().isAvalCharge()
+                                || loanInstallmentCharge.getLoanCharge().isVatChargeOfAvalCharge()) {
+                            fee = fee.minus(loanInstallmentCharge.getAmount(currency));
+                        }
+                    }
+                }
                 balances[1] = fee;
             }
             principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(installment.getPrincipal(currency));
