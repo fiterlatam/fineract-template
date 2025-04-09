@@ -1199,6 +1199,10 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             int firstNormalInstallmentNumber = LoanRepaymentScheduleProcessingWrapper.fetchFirstNormalInstallmentNumber(installments);
             boolean stopProcessingAdvanceInstallment = false;
             for (PaymentAllocationType paymentAllocationType : paymentAllocationTypes) {
+                if (transactionAmountUnprocessed.isZero()) {
+                    exit = true;
+                    break;
+                }
                 switch (paymentAllocationType.getDueType()) {
                     case PAST_DUE -> {
                         if (oldestPastDueInstallment != null) {
@@ -1304,13 +1308,13 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                             } else {
                                                 balances.setAggregatedPrincipalPortion(
                                                         balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
-                                                inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(
-                                                        loanTransaction.getTransactionDate(), currency);
 
                                                 inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
                                                         loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
                                                 inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
                                                         .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
+                                                inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMetAdvanced(
+                                                        loanTransaction.getTransactionDate(), currency);
                                                 inAdvanceInstallment.setRecalculateEMI(loanTransaction.recalculateEMI());
                                                 LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
                                                         transactionMappings, loanTransaction, inAdvanceInstallment, currency);

@@ -519,6 +519,11 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                 .plus(getPenaltyChargesOutstanding(currency));
     }
 
+    public Money getTotalOutstandingIncludingAdvanced(final MonetaryCurrency currency) {
+        return getPrincipalOutstandingIncludingAdvanced(currency).plus(getInterestOutstanding(currency))
+                .plus(getFeeChargesOutstanding(currency)).plus(getPenaltyChargesOutstanding(currency));
+    }
+
     public Money getRediferirAmount(final MonetaryCurrency currency) {
         return getInterestOutstanding(currency).plus(getFeeChargesOutstanding(currency)).plus(getPenaltyChargesOutstanding(currency));
     }
@@ -1424,6 +1429,19 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.obligationsMet = !getTotalOutstanding(currency).isGreaterThanZero();
         if (this.obligationsMet) {
             this.obligationsMetOnDate = transactionDate;
+        } else {
+            this.obligationsMetOnDate = null;
+        }
+    }
+
+    public void checkIfRepaymentPeriodObligationsAreMetAdvanced(final LocalDate transactionDate, final MonetaryCurrency currency) {
+        this.obligationsMet = !getTotalOutstandingIncludingAdvanced(currency).isGreaterThanZero();
+        if (this.obligationsMet) {
+            this.obligationsMetOnDate = transactionDate;
+            this.principalCompleted = this.principal;
+            // remove advance payments because this is a foreclosure
+            this.advancePrincipalAmount = BigDecimal.ZERO;
+            this.totalPaidInAdvance = BigDecimal.ZERO;
         } else {
             this.obligationsMetOnDate = null;
         }
