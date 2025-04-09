@@ -1035,7 +1035,7 @@ public final class LoanApplicationTerms {
             }
         } else {
             loanTermPeriodsInOneYear = calculatePeriodsInOneYear(calculator);
-            if (useDailyInterestCalculation) {
+            if (useDailyInterestCalculation && Boolean.FALSE.equals(DaysInYearType.DAYS_360.equals(daysInYearType))) {
                 loanTermPeriodsInOneYear = DaysInYearType.DAYS_365.getValue();
             }
         }
@@ -1062,7 +1062,7 @@ public final class LoanApplicationTerms {
         BigDecimal oneDayOfYearInterestRate = useAnnualNominalInterestRate
                 ? this.annualNominalInterestRate.divide(loanTermPeriodsInYearBigDecimal, mc).divide(divisor, mc)
                 : this.interestRatePerPeriod.divide(loanTermPeriodsInYearBigDecimal, mc).divide(divisor, mc);
-        oneDayOfYearInterestRate = oneDayOfYearInterestRate.setScale(5, roundingMode);
+        oneDayOfYearInterestRate = oneDayOfYearInterestRate.setScale(15, roundingMode);
         switch (this.interestCalculationPeriodMethod) {
             case INVALID:
             break;
@@ -1121,7 +1121,7 @@ public final class LoanApplicationTerms {
             break;
         }
 
-        return periodicInterestRate.setScale(5, roundingMode);
+        return periodicInterestRate.setScale(15, roundingMode);
     }
 
     private BigDecimal calculateCustomPeriodicInterestRate(double installments, BigDecimal divisor, boolean useAnnualNominalInterestRate) {
