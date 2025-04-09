@@ -106,6 +106,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanSchedul
 import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualTransactionBusinessEventService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
+import org.apache.fineract.portfolio.loanaccount.service.LoanBlockWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.apache.fineract.portfolio.loanaccount.service.ReplayedTransactionBusinessEventService;
 import org.apache.fineract.portfolio.note.domain.Note;
@@ -158,6 +159,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final ClientReadPlatformService clientReadPlatformService;
     @Autowired
     private CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
+    private final LoanBlockWritePlatformService loanBlockWritePlatformService;
 
     @Transactional
     @Override
@@ -433,7 +435,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
                     .getSingleBlockingReasonSettingByReason(BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(),
                             BlockLevel.CREDIT.toString());
-
             if (blockingReasonSetting != null) {
                 loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
                 LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
@@ -1043,6 +1044,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         Money feePayable = foreCloseDetail.getFeeChargesCharged(currency);
         Money penaltyPayable = foreCloseDetail.getPenaltyChargesCharged(currency);
         Money payPrincipal = foreCloseDetail.getPrincipal(currency);
+        loan.setForeClosing(true);
         loan.updateInstallmentsPostDate(foreClosureDate, scheduleGeneratorDTO);
         LoanTransaction payment = null;
 
@@ -1091,7 +1093,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             }
         }
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
-
         if (StringUtils.isNotBlank(noteText)) {
             changes.put("note", noteText);
             final Note note = Note.loanNote(loan, noteText);
@@ -1118,7 +1119,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                             && chg.getCharge().getParentChargeId().equals(honoCharge.getCharge().getId()))
                     .findFirst();
             Money remainingAmount = Money.of(loan.getCurrency(), transactionAmount);
-            Integer installmentNumber = 0;
+            Integer installmentNumber = -1;
             Long version = 0L;
             if (honoCharge.getCustomChargeHonorarioMaps() != null && !honoCharge.getCustomChargeHonorarioMaps().isEmpty()) {
                 for (CustomChargeHonorarioMap map : honoCharge.getCustomChargeHonorarioMaps()) {
@@ -1130,7 +1131,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             version = version + 1;
             for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
                 if (installment.isOverdueOn(transactionDate) && !installment.isObligationsMet()) {
-                    if (installmentNumber == 0) {
+                    if (installmentNumber == -1) {
                         installmentNumber = installment.getInstallmentNumber();
                     }
                     BigDecimal installmentOutstandingAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount();

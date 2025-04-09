@@ -438,8 +438,56 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         loanTransactionTemplate.setIvaPercentage(vatPercentage);
         loanTransactionTemplate.setHaveHono(isHasCustomHonoraioMap);
         loanTransactionTemplate.setIsCalculate(isCalculate);
+        adjustForLastRepaymentInstallment(loan, loanTransactionTemplate);
 
         return loanTransactionTemplate;
+    }
+
+    private void adjustForLastRepaymentInstallment(final Loan loan, final LoanTransactionData loanTransactionTemplate) {
+        final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
+        if (isObligationsMetForAllInstallmentsExceptLast(repaymentScheduleInstallments)) {
+            final LocalDate transactionDate = DateUtils.getBusinessLocalDate();
+            final ScheduleGeneratorDTO scheduleGeneratorDTO = loanUtilService.buildScheduleGeneratorDTO(loan, null);
+            final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(transactionDate,
+                    scheduleGeneratorDTO);
+            final BigDecimal outstandingAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(loan.getCurrency()).getAmount();
+            final BigDecimal principalOutstanding = loanRepaymentScheduleInstallment.getPrincipalOutstanding(loan.getCurrency())
+                    .getAmount();
+            final BigDecimal interestOutstanding = loanRepaymentScheduleInstallment.getInterestOutstanding(loan.getCurrency()).getAmount();
+            final BigDecimal feeChargesOutstanding = loanRepaymentScheduleInstallment.getFeeChargesOutstanding(loan.getCurrency())
+                    .getAmount();
+            final BigDecimal penaltyChargesOutstanding = loanRepaymentScheduleInstallment.getPenaltyChargesOutstanding(loan.getCurrency())
+                    .getAmount();
+            loanTransactionTemplate.setAmount(outstandingAmount);
+            loanTransactionTemplate.setPrincipalPortion(principalOutstanding);
+            loanTransactionTemplate.setInterestPortion(interestOutstanding);
+            loanTransactionTemplate.setFeeChargesPortion(feeChargesOutstanding);
+            loanTransactionTemplate.setPenaltyChargesPortion(penaltyChargesOutstanding);
+        }
+    }
+
+    public boolean isObligationsMetForAllInstallmentsExceptLast(final List<LoanRepaymentScheduleInstallment> installments) {
+        if (installments == null || installments.isEmpty()) {
+            return false;
+        }
+
+        LoanRepaymentScheduleInstallment lastInstallment = null;
+        for (LoanRepaymentScheduleInstallment installment : installments) {
+            if (lastInstallment == null || installment.getInstallmentNumber() > lastInstallment.getInstallmentNumber()) {
+                lastInstallment = installment;
+            }
+        }
+
+        if (lastInstallment != null) {
+            for (LoanRepaymentScheduleInstallment installment : installments) {
+                if (installment.getInstallmentNumber() < lastInstallment.getInstallmentNumber() && !installment.isObligationsMet()) {
+                    return false;
+                }
+            }
+            return !lastInstallment.isObligationsMet();
+        }
+
+        return false;
     }
 
     @Override
@@ -2941,7 +2989,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final LoanTransactionEnumData transactionType = LoanEnumerations.transactionType(LoanTransactionType.REPAYMENT);
         final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
         final BigDecimal outstandingLoanBalance = loanRepaymentScheduleInstallment.getPrincipalOutstanding(currency).getAmount();
-        final Boolean isReversed = false;
+        final boolean isReversed = false;
 
         BigDecimal feeHono = calculateHonoChargeAmount(loan, transactionDate,
                 loanRepaymentScheduleInstallment.getTotalOutstanding(currency).getAmount());

@@ -51,10 +51,10 @@ public class LoanTransactionData {
     private final PaymentDetailData paymentDetailData;
     private BigDecimal amount;
     private final BigDecimal netDisbursalAmount;
-    private final BigDecimal principalPortion;
-    private final BigDecimal interestPortion;
+    private BigDecimal principalPortion;
+    private BigDecimal interestPortion;
     private BigDecimal feeChargesPortion;
-    private final BigDecimal penaltyChargesPortion;
+    private BigDecimal penaltyChargesPortion;
     private final BigDecimal overpaymentPortion;
     private final BigDecimal unrecognizedIncomePortion;
     private final ExternalId externalId;

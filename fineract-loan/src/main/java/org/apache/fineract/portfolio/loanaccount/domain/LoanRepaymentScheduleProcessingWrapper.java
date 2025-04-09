@@ -52,7 +52,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
         Money outstandingBalance = Money.of(currency, totalPrincipal.getAmount());
         for (final LoanRepaymentScheduleInstallment period : repaymentPeriods) {
 
-            if (!period.isDownPayment()) {
+            if (!period.isDownPayment() && !period.isFullyGraced()) {
                 outstandingBalance = outstandingBalance.minus(period.getAdvancePrincipalAmount());
                 boolean isFirstNonDownPaymentPeriod = period.equals(firstNormalPeriod);
 

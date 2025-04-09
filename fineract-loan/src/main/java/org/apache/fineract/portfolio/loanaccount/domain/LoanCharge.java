@@ -1582,6 +1582,15 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         return getChargeCalculation().isPercentageOfAval() || getChargeCalculation().isFlatAvalForMigration();
     }
 
+    public boolean isVatChargeOfAvalCharge() {
+        for (LoanCharge parentCharge : this.loan.getCharges()) {
+            if (parentCharge.isAvalCharge() && parentCharge.getCharge().getId().equals(this.getCharge().getParentChargeId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean isAvalChargeFlatForMigration() {
         // Charge is distributed among the installments
         return ChargeCalculationType.fromInt(this.chargeCalculation).isFlatAvalForMigration();
