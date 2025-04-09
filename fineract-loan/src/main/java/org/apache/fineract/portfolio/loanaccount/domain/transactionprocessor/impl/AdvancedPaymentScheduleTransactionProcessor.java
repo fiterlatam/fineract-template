@@ -171,6 +171,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             currentInstallment.updateDerivedFields(currency, disbursementDate);
         }
 
+        final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
+        wrapper.reprocess(currency, disbursementDate, installments, charges);
+
         List<ChargeOrTransaction> chargeOrTransactions = createSortedChargesAndTransactionsList(loanTransactions, charges);
 
         final ChangedTransactionDetail changedTransactionDetail = new ChangedTransactionDetail();

@@ -979,6 +979,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
         Money feeChargePaid = Money.zero(currency);
         Money feeChargesDue = getInstallmentChargeOutstandingAmount(currency, installmentCharge);
+        if (feeChargesDue.isZero()) {
+            return Money.zero(currency);
+        }
         if (installmentCharge.getLoanCharge().isCustomPercentageBasedOfAnotherCharge()) {
             if (installmentCharge.getLoanCharge().isAvalChargeFlatForMigration() && this.isMigratedInstallment) {
                 // Pay charge of migrated installments in full
