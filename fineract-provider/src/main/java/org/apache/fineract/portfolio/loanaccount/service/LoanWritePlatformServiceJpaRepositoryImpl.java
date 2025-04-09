@@ -1333,8 +1333,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         boolean recalculateEMI = command.booleanPrimitiveValueOfParameterNamed("reduceInstallmentAmount");
         loan.setRecalculateEMI(recalculateEMI);
 
-        BigDecimal totalExpectedRepayment = loan.getLoanSummary().getTotalExpectedRepayment();
-        final LoanStatus loanStatus = loan.getStatus();
+        final ScheduleGeneratorDTO scheduleGeneratorDTO = loanUtilService.buildScheduleGeneratorDTO(loan, null);
+        LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(transactionDate,
+                scheduleGeneratorDTO);
+        final BigDecimal totalExpectedRepayment = loanRepaymentScheduleInstallment.getTotalOutstanding(loan.getCurrency()).getAmount();
         final boolean isBankChannel = channelData.getName().equalsIgnoreCase("Bancos")
                 || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
 
@@ -1342,19 +1344,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final String totalOverpaid = transactionAmount.subtract(totalExpectedRepayment).toString();
             handleOverPaidException(totalOverpaid);
         }
-
         LoanTransaction loanTransaction = this.loanAccountDomainService.makeRepayment(repaymentTransactionType, loan, transactionDate,
                 transactionAmount, paymentDetail, noteText, txnExternalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer,
                 holidayDetailDto, isHolidayValidationDone);
         loan = loanTransaction.getLoan();
 
-        // we also want to validate that the repayment amount is not greater than the outstanding amount
-
-        if ((loanStatus.isOverpaid() && !isBankChannel)) {
-            final String totalOverpaid = Money.of(loan.getCurrency(), loan.getTotalOverpaid()).toString();
-            handleOverPaidException(totalOverpaid);
-        }
-
+        loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(transactionDate, scheduleGeneratorDTO);
+        final BigDecimal totalOutstandingAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(loan.getCurrency()).getAmount();
+        this.handleLoanStatusChange(loan, transactionDate, totalOutstandingAmount, isBankChannel);
         // Update loan transaction on repayment.
         if (AccountType.fromInt(loan.getLoanType()).isIndividualAccount()) {
             Set<LoanCollateralManagement> loanCollateralManagements = loan.getLoanCollateralManagements();
@@ -1376,6 +1373,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             createCancellationNoveltyNews(loan, loan.getClosedOnDate());
         }
 
+        saveLoanWithDataIntegrityViolationChecks(loan);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()) //
                 .withLoanId(loan.getId()) //
                 .withEntityId(loanTransaction.getId()) //
@@ -1385,6 +1383,29 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withGroupId(loan.getGroupId()) //
                 .with(changes) //
                 .build();
+    }
+
+    private void handleLoanStatusChange(final Loan loan, final LocalDate transactionDate, final BigDecimal totalOutstandingAmount,
+            final boolean isBankChannel) {
+        final AppUser currentUser = getAppUserIfPresent();
+        if (totalOutstandingAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            if (totalOutstandingAmount.compareTo(BigDecimal.ZERO) == 0) {
+                loan.closeAsObligationsMet(transactionDate, currentUser);
+            } else if (totalOutstandingAmount.compareTo(BigDecimal.ZERO) < 0) {
+                if (!isBankChannel) {
+                    handleOverPaidException(totalOutstandingAmount.toString());
+                }
+                loan.closeAsOverPaid(transactionDate, currentUser);
+            }
+            loan.markInstallmentsAsObligationsMet();
+            final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+                    .getSingleBlockingReasonSettingByReason(BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(),
+                            BlockLevel.CREDIT.toString());
+            blockingReasonSetting.setAffectsClientLevel(0);
+            loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "CANCELADO", DateUtils.getLocalDateOfTenant());
+        } else {
+            loan.updateLoanStatus(LoanStatus.ACTIVE);
+        }
     }
 
     private static void handleOverPaidException(String totalOverpaid) {
@@ -3789,6 +3810,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, externalId,
                 changes, true);
 
+        final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
+                BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(), BlockLevel.CREDIT.toString());
+        blockingReasonSetting.setAffectsClientLevel(0);
+        loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "CANCELADO", DateUtils.getLocalDateOfTenant());
+
         final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();
         return commandProcessingResultBuilder //
                 .withLoanId(loanId) //
@@ -3844,11 +3870,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         final LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText,
                 externalId, changes, false);
-        final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
+        final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                 BlockingReasonSettingEnum.CREDIT_ANULADO.getDatabaseString(), BlockLevel.CREDIT.toString());
-        // not to mess with the record , we will just ensure it does not affect client level
         blockingReasonSetting.setAffectsClientLevel(0);
-        loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "Anulado", DateUtils.getLocalDateOfTenant());
+        loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "ANULADO", DateUtils.getLocalDateOfTenant());
+
         final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();
         return commandProcessingResultBuilder.withLoanId(loanId).withEntityId(foreclosureTransaction.getId())
                 .withEntityExternalId(foreclosureTransaction.getExternalId()).with(changes).build();

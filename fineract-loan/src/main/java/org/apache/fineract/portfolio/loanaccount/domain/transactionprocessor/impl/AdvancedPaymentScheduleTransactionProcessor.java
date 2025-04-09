@@ -48,6 +48,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.fineract.infrastructure.core.exception.PlatformInternalServerException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -157,6 +158,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
 
         addChargeOnlyRepaymentInstallmentIfRequired(charges, installments);
 
+        // SU-662: we need to preserve the advancePayment for the new installment created during foreclosure
+        LoanRepaymentScheduleInstallment lastInstallment = installments.get(installments.size() - 1);
+        BigDecimal advancePayment = lastInstallment.getAdvancePrincipalAmount();
         for (final LoanRepaymentScheduleInstallment currentInstallment : installments) {
             // currentInstallment.resetBalances();
             currentInstallment.resetDerivedComponents();
@@ -179,6 +183,11 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         }
         List<LoanTransaction> txs = chargeOrTransactions.stream().map(ChargeOrTransaction::getLoanTransaction).filter(Optional::isPresent)
                 .map(Optional::get).toList();
+        if (lastInstallment.getLoan().isForeClosing() && advancePayment.compareTo(BigDecimal.ZERO) > 0) {
+            // SU-662: re-instate the advance payment
+            lastInstallment.setAdvancePrincipalAmount(advancePayment);
+            lastInstallment.setTotalPaidInAdvance(advancePayment);
+        }
         reprocessInstallments(disbursementDate, txs, installments, currency);
         return changedTransactionDetail;
     }
@@ -1075,14 +1084,22 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             List<LoanTransactionToRepaymentScheduleMapping> transactionMappings, Set<LoanCharge> charges, Balances balances) {
         Money paidPortion;
         boolean exit = false;
+        final int maxIterationCount = 50;
+        int iterationCount = 0;
         do {
-            log.info("processing loan id: " + loanTransaction.getLoan().getId());
+            iterationCount += 1;
+            log.info("processing loan id: {} - {}", loanTransaction.getLoan().getId(), iterationCount);
             if (transactionAmountUnprocessed.isZero()) {
                 exit = true;
                 continue;
             }
+            if (iterationCount > maxIterationCount) {
+                log.error("Failed to fully process loan id: {}", loanTransaction.getLoan().getId());
+                throw new PlatformInternalServerException("processing.failed.for.loan",
+                        "Processing failed for loan id: " + loanTransaction.getLoan().getId());
+            }
             LoanRepaymentScheduleInstallment oldestPastDueInstallment = installments.stream()
-                    .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff).filter(e -> loanTransaction.isAfter(e.getDueDate()))
+                    .filter(x -> x.isNotFullyPaidOff() && !x.isFullyGraced()).filter(e -> loanTransaction.isAfter(e.getDueDate()))
                     .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
             boolean found = false;
             if (loanTransaction.claimType() != null) {
