@@ -3786,6 +3786,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 break;
             }
         }
+        // If we are foreclosing them there's only one installment in that list
+        if (this.foreClosing) {
+            installment = installments.get(0);
+        }
         return installment;
     }
 
@@ -7918,12 +7922,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
             if (!newInstallments.isEmpty()) {
                 LoanRepaymentScheduleInstallment lastInstallment = newInstallments.get(newInstallments.size() - 1);
-                // If this loan has future installments already paid off, we should adjust the duedate accordingly
-                if (lastInstallment.isObligationsMet() && DateUtils.isBefore(transactionDate, lastInstallment.getDueDate())) {
-                    // if obligations are met, then definitely the obligations met date is not in future, let's set the
-                    // due date to obligations met date
-                    lastInstallment.setDueDate(lastInstallment.getObligationsMetOnDate());
-                }
                 installmentStartDate = lastInstallment.getDueDate();
             }
 
@@ -7932,9 +7930,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (!isInterestComponent) {
                 installmentNumber++;
             }
-
+            LocalDate installmentDueDate = DateUtils.isAfter(transactionDate, installmentStartDate) ? transactionDate
+                    : installmentStartDate;
             LoanRepaymentScheduleInstallment newInstallment = new LoanRepaymentScheduleInstallment(null, newInstallments.size() + 1,
-                    installmentStartDate, transactionDate, totalPrincipal.getAmount(), balances[0].getAmount(), balances[1].getAmount(),
+                    installmentStartDate, installmentDueDate, totalPrincipal.getAmount(), balances[0].getAmount(), balances[1].getAmount(),
                     balances[2].getAmount(), isInterestComponent, null);
             if (totalAdvanced.isGreaterThanZero()) {
                 newInstallment.setAdvancePrincipalAmount(totalAdvanced.getAmount());
