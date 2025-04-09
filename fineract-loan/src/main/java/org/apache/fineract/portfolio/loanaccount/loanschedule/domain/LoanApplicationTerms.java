@@ -1035,8 +1035,8 @@ public final class LoanApplicationTerms {
             }
         } else {
             loanTermPeriodsInOneYear = calculatePeriodsInOneYear(calculator);
-            if (useDailyInterestCalculation && Boolean.FALSE.equals(DaysInYearType.DAYS_360.equals(daysInYearType))) {
-                loanTermPeriodsInOneYear = DaysInYearType.DAYS_365.getValue();
+            if (useDailyInterestCalculation) {
+                loanTermPeriodsInOneYear = daysInYearType.getValue() == 1 ? DaysInYearType.DAYS_365.getValue() : daysInYearType.getValue();
             }
         }
 
