@@ -2454,6 +2454,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         loan = writeOffTransaction.getLoan();
         final LoanStatus loanStatus = loan.getStatus();
+        if (LoanStatus.CLOSED_WRITTEN_OFF.equals(loanStatus)) {
+            final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+                    .getSingleBlockingReasonSettingByReason(BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(),
+                            BlockLevel.CREDIT.toString());
+            blockingReasonSetting.setAffectsClientLevel(0);
+            loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "CANCELADO", DateUtils.getLocalDateOfTenant());
+        }
+
         if (loanStatus.isOverpaid()) {
             final Money writeOffAmount = writeOffTransaction.getAmount(loan.getCurrency());
             final Money totalOverpaidBy = Money.of(loan.getCurrency(), loan.getTotalOverpaid());
