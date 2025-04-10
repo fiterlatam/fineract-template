@@ -27,8 +27,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
@@ -36,8 +34,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ManageBlockingReasonsReadPlatformServiceImpl implements ManageBlockingReasonsReadPlatformService {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ManageBlockingReasonsReadPlatformServiceImpl.class);
 
     private final JdbcTemplate jdbcTemplate;
     private final PlatformSecurityContext context;
@@ -59,7 +55,7 @@ public class ManageBlockingReasonsReadPlatformServiceImpl implements ManageBlock
     @Override
     public Collection<BlockingReasonsData> retrieveClientBlockingReasons(String level, Long clientId) {
         final BlockingReasonsMapper rm = new BlockingReasonsMapper(false);
-        String sql = "SELECT " + rm.clientSchema() + " WHERE mcbr.client_id = ? AND brs.level = ? AND mcbr.unblock_date IS NULL";
+        String sql = "SELECT " + rm.clientSchema() + " WHERE mcbr.client_id = ? AND brs.level = ? AND mcbr.unblock_by IS NULL";
         final Object[] params = new Object[] { clientId, level };
         sql += " ORDER BY brs.id";
         return this.jdbcTemplate.query(sql, rm, params);

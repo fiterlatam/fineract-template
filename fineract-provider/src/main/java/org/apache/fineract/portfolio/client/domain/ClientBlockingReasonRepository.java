@@ -27,10 +27,13 @@ import org.springframework.data.repository.query.Param;
 public interface ClientBlockingReasonRepository
         extends JpaRepository<ClientBlockingReason, Long>, JpaSpecificationExecutor<ClientBlockingReason> {
 
-    @Query("SELECT cbr FROM ClientBlockingReason cbr WHERE cbr.clientId = :clientId AND cbr.unblockDate IS NULL ")
+    @Query("SELECT cbr FROM ClientBlockingReason cbr WHERE cbr.clientId = :clientId AND cbr.unblockBy IS NULL ")
     List<ClientBlockingReason> findByClientId(@Param("clientId") Long clientId);
 
-    @Query("SELECT cbr FROM ClientBlockingReason cbr WHERE cbr.clientId = :clientId AND cbr.blockingReasonId = :blockingReasonId AND cbr.unblockDate IS NULL ")
+    @Query("SELECT cbr FROM ClientBlockingReason cbr WHERE cbr.clientId = :clientId AND cbr.blockingReasonId = :blockingReasonId AND cbr.unblockBy IS NULL ")
     List<ClientBlockingReason> findByClientIdAndBlockingReasonId(@Param("clientId") Long clientId,
             @Param("blockingReasonId") long blockingReasonId);
+
+    @Query("SELECT cbr FROM ClientBlockingReason cbr WHERE cbr.clientId = :clientId AND cbr.unblockBy IS NULL ")
+    List<ClientBlockingReason> findActiveReasonByClientId(@Param("clientId") Long clientId);
 }

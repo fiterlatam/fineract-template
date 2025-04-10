@@ -36,8 +36,8 @@ public class ClientBlockingReasonRepositoryWrapper {
         return this.clientBlockingReasonRepository.findByClientIdAndBlockingReasonId(clientId, blockingReasonId);
     }
 
-    public List<ClientBlockingReason> findClientBlockingReasonByClientId(final Long clientId) {
-        return this.clientBlockingReasonRepository.findByClientId(clientId);
+    public List<ClientBlockingReason> findActiveBlockingReasonByClientId(final Long clientId) {
+        return this.clientBlockingReasonRepository.findActiveReasonByClientId(clientId);
     }
 
     public void save(final ClientBlockingReason clientBlockingReason) {
