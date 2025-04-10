@@ -333,9 +333,17 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                         loanCharge -> (loanCharge.getCharge().isAvalCharge() || loanCharge.getCharge().isAvalChargeFlatForMigration()))
                         .findFirst().orElse(null);
                 if (avalCharge != null) {
+                    Money loanAvalAmount = avalCharge.getAmountOutstanding(loan.getCurrency());
                     for (LoanCharge vatCharge : loanCharges) {
                         if (Objects.equals(avalCharge.getCharge().getId(), vatCharge.getCharge().getParentChargeId())) {
-                            Money vatAmount = aval.percentageOfVat(vatCharge.getPercentage(), RoundingMode.HALF_UP);
+                            Money vatAmount;
+                            Money loanAvalVatAmount = vatCharge.getAmountOutstanding(loan.getCurrency());
+                            // if Aval amount to write-off equals total outstanding, then use that, else calculate
+                            if (loanAvalAmount.plus(loanAvalVatAmount).isEqualTo(aval)) {
+                                vatAmount = loanAvalVatAmount;
+                            } else {
+                                vatAmount = aval.percentageOfVat(vatCharge.getPercentage(), RoundingMode.HALF_UP);
+                            }
                             charges.add(Map.of("chargeId", Objects.requireNonNull(vatCharge.getCharge().getId()), "writeOffAmount",
                                     vatAmount.getAmount()));
                             aval = aval.minus(vatAmount);
