@@ -7469,12 +7469,26 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 receivables[0].getAmount(), receivables[1].getAmount(), receivables[2].getAmount(), false, null);
     }
 
-    public LoanRepaymentScheduleInstallment fetchLoanSpecialWriteOffDetail(final LocalDate writtenOffOnDate) {
+    /***
+     * Fetch the loan special write-off installment. The write-off date is nullable. If null is passed, the assumption
+     * will be that the write off amounts need to cover the rest of the loan term. This applies to charges
+     *
+     * @param writtenOffOnDate
+     * @return
+     */
+    public LoanRepaymentScheduleInstallment fetchLoanSpecialWriteOffDetail(LocalDate writtenOffOnDate) {
         final MonetaryCurrency currency = getCurrency();
         Money interest = Money.zero(currency);
         Money paidFromFutureInstallments = Money.zero(currency);
         Money fee = Money.zero(currency);
         Money penalty = Money.zero(currency);
+        LocalDate maxWriteOffDate;
+        if (writtenOffOnDate == null) {
+            maxWriteOffDate = this.getExpectedMaturityDate();
+            writtenOffOnDate = DateUtils.getLocalDateOfTenant();
+        } else {
+            maxWriteOffDate = writtenOffOnDate;
+        }
         final List<LoanChargeData> currentOutstandingLoanCharges = new ArrayList<>();
         for (LoanCharge loanCharge : this.charges) {
             if (loanCharge.isActive() && !loanCharge.isDueAtDisbursement()) {
@@ -7489,15 +7503,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
-            if (!DateUtils.isBefore(writtenOffOnDate, installment.getDueDate())) {
+            if (!DateUtils.isBefore(maxWriteOffDate, installment.getDueDate())) {
                 interest = interest.plus(installment.getInterestOutstanding(currency));
                 penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
                 fee = fee.plus(installment.getFeeChargesOutstanding(currency));
                 this.incrementOutstandingInstallmentChargeBalances(installment.getInstallmentNumber(), currentOutstandingLoanCharges);
                 this.incrementOutstandingPenaltyChargeBalances(installment.getInstallmentNumber(), currentOutstandingLoanCharges);
-            } else if (DateUtils.isAfter(writtenOffOnDate, installment.getFromDate())) {
+            } else if (DateUtils.isAfter(maxWriteOffDate, installment.getFromDate())) {
                 int totalPeriodDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
-                int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), writtenOffOnDate));
+                int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), maxWriteOffDate));
                 Money interestForCurrentPeriod = Money.of(getCurrency(), BigDecimal.valueOf(
                         calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency()).getAmount(), tillDays)));
                 Money interestAccountedForCurrentPeriod = installment.getInterestWaived(getCurrency())
