@@ -808,9 +808,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         if (transactionAmountRemaining.isZero()) {
             return feePortionOfTransaction;
         }
-        for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
+        for (LoanInstallmentCharge installmentCharge : getInstallmentChargesSorted()) {
             if (installmentCharge.getLoanCharge().getChargeCalculation().isFlatHono()) {
-                for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                for (LoanInstallmentCharge vatCharge : getInstallmentChargesSorted()) {
                     if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
                             vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
                         loanChargePaidByPortion = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
@@ -842,10 +842,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         if (transactionAmountRemaining.isZero()) {
             return feePortionOfTransaction;
         }
-        for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
+        for (LoanInstallmentCharge installmentCharge : getInstallmentChargesSorted()) {
             if (installmentCharge.getLoanCharge().isAvalCharge() || installmentCharge.getLoanCharge().isAvalChargeFlatForMigration()) {
 
-                for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                for (LoanInstallmentCharge vatCharge : getInstallmentChargesSorted()) {
                     if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
                             vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
                         loanChargePaidByPortion = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
@@ -877,11 +877,11 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         if (transactionAmountRemaining.isZero()) {
             return feePortionOfTransaction;
         }
-        for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
+        for (LoanInstallmentCharge installmentCharge : getInstallmentChargesSorted()) {
             if (installmentCharge.getLoanCharge().getChargeCalculation().isMandatoryInsuranceCharge()
                     || installmentCharge.getLoanCharge().getChargeCalculation().isLifeInsurance()) {
 
-                for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                for (LoanInstallmentCharge vatCharge : getInstallmentChargesSorted()) {
                     if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
                             vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
                         loanChargePaidByPortion = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
@@ -944,10 +944,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         if (transactionAmountRemaining.isZero()) {
             return feePortionOfTransaction;
         }
-        for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {
+        for (LoanInstallmentCharge installmentCharge : getInstallmentChargesSorted()) {
             if (installmentCharge.getLoanCharge().getChargeCalculation().isVoluntaryInsurance()) {
 
-                for (LoanInstallmentCharge vatCharge : getInstallmentCharges()) {
+                for (LoanInstallmentCharge vatCharge : getInstallmentChargesSorted()) {
                     if (Objects.equals(installmentCharge.getLoanCharge().getCharge().getId(),
                             vatCharge.getLoanCharge().getCharge().getParentChargeId())) {
                         loanChargePaidByPortion = payLoanCharge(vatCharge, transactionDate, transactionAmountRemaining, currency,
@@ -979,6 +979,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
         Money feeChargePaid = Money.zero(currency);
         Money feeChargesDue = getInstallmentChargeOutstandingAmount(currency, installmentCharge);
+        if (feeChargesDue.isZero()) {
+            return Money.zero(currency);
+        }
         if (installmentCharge.getLoanCharge().isCustomPercentageBasedOfAnotherCharge()) {
             if (installmentCharge.getLoanCharge().isAvalChargeFlatForMigration() && this.isMigratedInstallment) {
                 // Pay charge of migrated installments in full
@@ -1702,6 +1705,13 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Set<LoanInstallmentCharge> getInstallmentCharges() {
         return installmentCharges;
+    }
+
+    public List<LoanInstallmentCharge> getInstallmentChargesSorted() {
+        List<LoanInstallmentCharge> sortedList = new ArrayList<>(installmentCharges);
+
+        sortedList.sort(Comparator.comparing(l -> l.getLoanCharge().getId()));
+        return sortedList;
     }
 
     public boolean isAdditional() {

@@ -171,6 +171,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             currentInstallment.updateDerivedFields(currency, disbursementDate);
         }
 
+        // final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
+        // wrapper.reprocess(currency, disbursementDate, installments, charges);
+
         List<ChargeOrTransaction> chargeOrTransactions = createSortedChargesAndTransactionsList(loanTransactions, charges);
 
         final ChangedTransactionDetail changedTransactionDetail = new ChangedTransactionDetail();
@@ -610,9 +613,11 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             case MANDATORY_INSURANCE -> {
                 balances.setAggregatedFeeChargesPortion(balances.getAggregatedFeeChargesPortion().add(portion));
                 addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, zero, zero, portion, zero);
-                Set<LoanCharge> fees = chargesOfInstallment.stream().filter(lc -> lc.isMandatoryInsurance() || lc.isLifeInsurance())
-                        .collect(Collectors.toSet());
-                chargesPaidByFunction.accept(loanTransaction, portion, fees, currentInstallment.getInstallmentNumber());
+                // Set<LoanCharge> fees = chargesOfInstallment.stream().filter(lc -> lc.isMandatoryInsurance() ||
+                // lc.isLifeInsurance())
+                // .collect(Collectors.toSet());
+                // chargesPaidByFunction.accept(loanTransaction, portion, fees,
+                // currentInstallment.getInstallmentNumber());
             }
             case VOLUNTARY_INSURANCE -> {
                 balances.setAggregatedFeeChargesPortion(balances.getAggregatedFeeChargesPortion().add(portion));
