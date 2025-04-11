@@ -1710,7 +1710,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     public List<LoanInstallmentCharge> getInstallmentChargesSorted() {
         List<LoanInstallmentCharge> sortedList = new ArrayList<>(installmentCharges);
 
-      sortedList.sort(Comparator.comparing(l -> l.getLoanCharge().getId()));
+        sortedList.sort(Comparator.comparing(l -> l.getLoanCharge().getId()));
         return sortedList;
     }
 
