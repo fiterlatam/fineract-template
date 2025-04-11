@@ -5226,18 +5226,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 command.parsedJson().getAsJsonObject());
     }
 
-    private boolean isRevolvingLoan(Loan loan) {
-        String loanProductName = loan.getLoanProduct().getName();
-        String loanProductType = loan.getLoanProduct().getProductType().getLabel();
-        String creditProductType = LoanProductType.CREDITO_ROTATIVO.getCode();
-        return creditProductType.equalsIgnoreCase(loanProductName) || creditProductType.equalsIgnoreCase(loanProductType);
-    }
-
     private void validateDisbursementAmount(Loan loan, BigDecimal principal) {
         // For revolving credit products, we need to track available credit differently
-        if (isRevolvingLoan(loan)) {
+        if (loan.isRevolvingLoan()) {
             BigDecimal disbursementAmountSum = loanDisbursementDetailsRepository.findAllByLoanId(loan.getId()).stream()
-                    .filter(disbursed -> Objects.nonNull(disbursed.getDisbursementDate())).map(x -> x.getPrincipal())
+                    .filter(disbursed -> Objects.nonNull(disbursed.getDisbursementDate())).map(LoanDisbursementDetails::getPrincipal)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal loanTransactionRepaymentSum = loanTransactionRepository.findAllByLoanIdAndTypeOf(loan.getId(), 2).stream()
