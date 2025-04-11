@@ -5226,15 +5226,22 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 command.parsedJson().getAsJsonObject());
     }
 
+    private boolean isRevolvingLoan(Loan loan) {
+        String loanProductName = loan.getLoanProduct().getName();
+        String loanProductType = loan.getLoanProduct().getProductType().getLabel();
+        String creditProductType = LoanProductType.CREDITO_ROTATIVO.getCode();
+        return creditProductType.equalsIgnoreCase(loanProductName) || creditProductType.equalsIgnoreCase(loanProductType);
+    }
+
     private void validateDisbursementAmount(Loan loan, BigDecimal principal) {
         // For revolving credit products, we need to track available credit differently
-        if (loan.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+        if (isRevolvingLoan(loan)) {
             BigDecimal disbursementAmountSum = loanDisbursementDetailsRepository.findAllByLoanId(loan.getId()).stream()
                     .filter(disbursed -> Objects.nonNull(disbursed.getDisbursementDate())).map(x -> x.getPrincipal())
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal loanTransactionRepaymentSum = loanTransactionRepository.findAllByLoanIdAndTypeOf(loan.getId(), 2).stream()
-                    .filter(nR -> !nR.isReversed()).map(x -> x.getPrincipalPortion()).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    .filter(nR -> !nR.isReversed()).map(LoanTransaction::getPrincipalPortion).reduce(BigDecimal.ZERO, BigDecimal::add);
 
             // For revolving credit, available credit is: approved limit - (disbursements - repayments)
             BigDecimal currentOutstanding = disbursementAmountSum.subtract(loanTransactionRepaymentSum);
