@@ -3067,7 +3067,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         maxDisbursedAmount);
             }
         } else {
-            if (totalDisbursed.compareTo(this.approvedPrincipal) > 0) {
+            if (totalDisbursed.compareTo(this.approvedPrincipal) > 0 && !isRevolvingLoan()) {
                 final String errorMsg = "Loan can't be disbursed,disburse amount is exceeding approved principal ";
                 throw new LoanDisbursalException(errorMsg, "disburse.amount.must.be.less.than.approved.principal", totalDisbursed,
                         this.approvedPrincipal);
@@ -8389,4 +8389,17 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public void setOriginalNrOfRepayments() {
         this.originalNumberOfRepayments = this.getNumberOfRepayments();
     }
+
+    private String normalizeString(String input) {
+        if (input == null) return "";
+        return java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase();
+    }
+
+    public boolean isRevolvingLoan() {
+        String loanProductName = normalizeString(getLoanProduct().getName());
+        String loanProductType = normalizeString(getLoanProduct().getProductType().getLabel());
+        String creditProductType = normalizeString(LoanProductType.CREDITO_ROTATIVO.getCode());
+        return creditProductType.equalsIgnoreCase(loanProductName) || creditProductType.equalsIgnoreCase(loanProductType);
+    }
+
 }
