@@ -1418,8 +1418,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     chargeAmount = installmentCharge.getAmount();
                 }
             }
-
-            chargeAmount = checkIfDivideTotalChargePerInstallment(chargeAmount, numberOfInstallments);
+            if (this.installmentCharges().isEmpty()) {
+                chargeAmount = checkIfDivideTotalChargePerInstallment(chargeAmount, numberOfInstallments);
+            }
 
             customAmout = customAmout.add(chargeAmount);
         } else if (this.isCustomPercentageBasedOfAnotherCharge()) {
