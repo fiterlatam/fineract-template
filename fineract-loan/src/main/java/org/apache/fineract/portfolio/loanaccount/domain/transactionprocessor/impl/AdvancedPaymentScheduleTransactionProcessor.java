@@ -161,7 +161,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             List<LoanInstallmentCharge> installmentCharges = currentInstallment.getInstallmentChargesSorted();
             BigDecimal amount = BigDecimal.ZERO;
             for (LoanInstallmentCharge installmentCharge : installmentCharges) {
-                if (installmentCharge.getLoanCharge().isFeeCharge() && !installmentCharge.getLoanCharge().isDueAtDisbursement() && installmentCharge.getAmount() != null) {
+                if (installmentCharge.getLoanCharge().isFeeCharge() && !installmentCharge.getLoanCharge().isDueAtDisbursement()
+                        && installmentCharge.getAmount() != null) {
                     amount = amount.add(installmentCharge.getAmount());
                 }
             }
