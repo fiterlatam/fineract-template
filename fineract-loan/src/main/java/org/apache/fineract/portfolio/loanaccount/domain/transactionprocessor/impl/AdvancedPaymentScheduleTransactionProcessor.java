@@ -53,18 +53,7 @@ import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
-import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanChargePaidBy;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCreditAllocationRule;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanPaymentAllocationRule;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleProcessingWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelation;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationTypeEnum;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionToRepaymentScheduleMapping;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.AbstractLoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.MoneyHolder;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
@@ -169,6 +158,14 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         for (final LoanRepaymentScheduleInstallment currentInstallment : installments) {
             currentInstallment.resetDerivedComponents();
             currentInstallment.updateDerivedFields(currency, disbursementDate);
+            List<LoanInstallmentCharge> installmentCharges = currentInstallment.getInstallmentChargesSorted();
+            BigDecimal amount = BigDecimal.ZERO;
+            for (LoanInstallmentCharge installmentCharge : installmentCharges) {
+                if (installmentCharge.getLoanCharge().isFeeCharge() && !installmentCharge.getLoanCharge().isDueAtDisbursement() && installmentCharge.getAmount() != null) {
+                    amount = amount.add(installmentCharge.getAmount());
+                }
+            }
+            currentInstallment.setFeeChargesCharged(amount);
         }
 
         List<ChargeOrTransaction> chargeOrTransactions = createSortedChargesAndTransactionsList(loanTransactions, charges);
