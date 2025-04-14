@@ -1340,9 +1340,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final boolean isBankChannel = channelData.getName().equalsIgnoreCase("Bancos")
                 || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
 
-        if ((transactionAmount.compareTo(totalExpectedRepayment) > 0 && !isBankChannel)) {
-            final String totalOverpaid = transactionAmount.subtract(totalExpectedRepayment).toString();
-            handleOverPaidException(totalOverpaid);
+        if (!isImportedTransaction) {
+            if ((transactionAmount.compareTo(totalExpectedRepayment) > 0 && !isBankChannel)) {
+                final String totalOverpaid = transactionAmount.subtract(totalExpectedRepayment).toString();
+                handleOverPaidException(totalOverpaid);
+            }
         }
         LoanTransaction loanTransaction = this.loanAccountDomainService.makeRepayment(repaymentTransactionType, loan, transactionDate,
                 transactionAmount, paymentDetail, noteText, txnExternalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer,
@@ -1351,7 +1353,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(transactionDate, scheduleGeneratorDTO);
         final BigDecimal totalOutstandingAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(loan.getCurrency()).getAmount();
-        this.handleLoanStatusChange(loan, transactionDate, totalOutstandingAmount, isBankChannel);
+        final BigDecimal overpaidAmount = loan.getTotalOverpaid();
+        this.handleLoanStatusChange(loan, transactionDate, totalOutstandingAmount, overpaidAmount, isBankChannel, isImportedTransaction);
         // Update loan transaction on repayment.
         if (AccountType.fromInt(loan.getLoanType()).isIndividualAccount()) {
             Set<LoanCollateralManagement> loanCollateralManagements = loan.getLoanCollateralManagements();
@@ -1386,16 +1389,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     private void handleLoanStatusChange(final Loan loan, final LocalDate transactionDate, final BigDecimal totalOutstandingAmount,
-            final boolean isBankChannel) {
+            final BigDecimal totalOverpaidAmount, final boolean isBankChannel, final boolean isImportedTransaction) {
         final AppUser currentUser = getAppUserIfPresent();
         if (totalOutstandingAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            if (totalOutstandingAmount.compareTo(BigDecimal.ZERO) == 0) {
-                loan.closeAsObligationsMet(transactionDate, currentUser);
-            } else if (totalOutstandingAmount.compareTo(BigDecimal.ZERO) < 0) {
-                if (!isBankChannel) {
+            if (totalOutstandingAmount.compareTo(BigDecimal.ZERO) <= 0 && totalOverpaidAmount.compareTo(BigDecimal.ZERO) > 0) {
+                if (!isBankChannel && !isImportedTransaction) {
                     handleOverPaidException(totalOutstandingAmount.toString());
                 }
                 loan.closeAsOverPaid(transactionDate, currentUser);
+            } else {
+                loan.closeAsObligationsMet(transactionDate, currentUser);
             }
             loan.markInstallmentsAsObligationsMet();
             final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
