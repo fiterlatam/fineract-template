@@ -22,6 +22,7 @@ import java.util.Map;
 import javax.persistence.PersistenceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -37,12 +38,14 @@ import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.office.domain.OfficeRepositoryWrapper;
 import org.apache.fineract.organisation.office.domain.OfficeTransaction;
 import org.apache.fineract.organisation.office.domain.OfficeTransactionRepository;
+import org.apache.fineract.organisation.office.exception.WrongOfficeHierarchyException;
 import org.apache.fineract.organisation.office.serialization.OfficeCommandFromApiJsonDeserializer;
 import org.apache.fineract.organisation.office.serialization.OfficeTransactionCommandFromApiJsonDeserializer;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,6 +61,7 @@ public class OfficeWritePlatformServiceJpaRepositoryImpl implements OfficeWriteP
     private final OfficeRepositoryWrapper officeRepositoryWrapper;
     private final OfficeTransactionRepository officeTransactionRepository;
     private final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Transactional
     @Override
@@ -126,6 +130,17 @@ public class OfficeWritePlatformServiceJpaRepositoryImpl implements OfficeWriteP
             if (changes.containsKey("parentId")) {
                 final Office parent = validateUserPriviledgeOnOfficeAndRetrieve(currentUser, parentId);
                 office.update(parent);
+                String officeCode = office.getOfficeCode();
+                //IF we are moving these offices, we also update linked office to the region in all related agencies;
+                if (StringUtils.containsAny(officeCode,"QUI","SMC","HUE" ,"DEM" ,"PAN" ,"NEB" ,"SOL" ,"MAZ" ,"CHI" ,"XEL" ,"TOM" ,"CAO" ,"COB" ,"IXC")){
+                    if (StringUtils.countMatches(parent.getHierarchy(),".")>=StringUtils.countMatches(office.getHierarchy(),".") ){
+                        throw new WrongOfficeHierarchyException(officeId,parentId);
+                    }
+                    //UPDATE the linked agency id.
+                    String updateSql = "update m_agency ma inner join m_supervision ms on ms.agency_id = ma.id INNER JOIN m_office mo on mo.id = ms.linked_office_id set ma.linked_office_id = ? where mo.id=?";
+                    this.jdbcTemplate.update(updateSql, parentId, officeId);
+                }
+
             }
 
             if (!changes.isEmpty()) {
