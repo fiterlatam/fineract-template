@@ -6185,7 +6185,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public BigDecimal getTotalOverpaid() {
-        return this.totalOverpaid;
+        return this.totalOverpaid != null ? this.totalOverpaid : BigDecimal.ZERO;
     }
 
     public Money getTotalOverpaidAsMoney() {
