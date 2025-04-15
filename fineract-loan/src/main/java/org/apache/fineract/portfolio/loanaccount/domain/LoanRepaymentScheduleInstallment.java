@@ -1450,6 +1450,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         if (this.obligationsMet) {
             this.obligationsMetOnDate = transactionDate;
             this.principalCompleted = this.principal;
+            if (this.principalWrittenOff != null) {
+                // SU-671: If the principal is written off, then the principal completed should consider it
+                this.principalCompleted = this.principalCompleted.subtract(this.principalWrittenOff);
+            }
             // remove advance payments because this is a foreclosure
             this.advancePrincipalAmount = BigDecimal.ZERO;
             this.totalPaidInAdvance = BigDecimal.ZERO;
