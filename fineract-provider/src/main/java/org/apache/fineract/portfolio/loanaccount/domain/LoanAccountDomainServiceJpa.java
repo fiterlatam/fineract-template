@@ -1092,6 +1092,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 updateRepaymentInstalmentCharge(installment, installment.getInstallmentNumber());
             }
         }
+        if (loan.getLoanSummary().isRepaidInFull(loan.getCurrency())) {
+            loan.closeAsObligationsMet(foreClosureDate, this.platformSecurityContext.authenticatedUser());
+        }
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         if (StringUtils.isNotBlank(noteText)) {
             changes.put("note", noteText);

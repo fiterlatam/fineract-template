@@ -5830,8 +5830,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         && loanCharge.getApplicableFromInstallment() > installment.getInstallmentNumber()) {
                     continue;
                 }
-                // Skip installments with zero fees during loan foreclosure
-                if (installment.getFeeChargesCharged(this.getCurrency()).isZero() && this.foreClosing) {
+                // Skip installments with zero fees during loan foreclosure except for honorarios (which is dynamic)
+                if (this.foreClosing && installment.getFeeChargesCharged(this.getCurrency()).isZero()
+                        && !installment.hasHonoraiosCharge()) {
                     continue;
                 }
                 BigDecimal amount;
@@ -7966,7 +7967,17 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             // are still present. Below code removes those references for all installments which are deleted
             for (LoanRepaymentScheduleInstallment inst : this.repaymentScheduleInstallments) {
                 if (inst.getInstallmentNumber() >= newInstallment.getInstallmentNumber()) {
-                    inst.getInstallmentCharges().clear();
+                    if (inst.getInstallmentNumber() > newInstallment.getInstallmentNumber()) {
+                        inst.getInstallmentCharges().clear();
+                    } else {
+                        // copy the charges to the new installment
+                        newInstallment.setInstallmentCharges(inst.getInstallmentCharges());
+                        if (newInstallment.getInstallmentCharges() != null) {
+                            for (LoanInstallmentCharge loanInstallmentCharge : newInstallment.getInstallmentCharges()) {
+                                loanInstallmentCharge.setInstallment(newInstallment);
+                            }
+                        }
+                    }
                     inst.getLoanTransactionToRepaymentScheduleMappings().clear();
 
                     List<LoanTransaction> transactions = this.getLoanTransactions();

@@ -1199,7 +1199,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             // If we are foreclosing and the last installment hasn't been caught, we should add it to advanced
             // installments
             if (loanTransaction.getLoan().isForeClosing()) {
-                if (oldestPastDueInstallment == null || dueInstallment == null || inAdvanceInstallments.isEmpty()) {
+                if (oldestPastDueInstallment == null && dueInstallment == null && inAdvanceInstallments.isEmpty()) {
                     // we process the last installment
                     inAdvanceInstallments = List.of(installments.get(installments.size() - 1));
                 }
