@@ -1158,7 +1158,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 // SU-516 Transaction amount may contain hono amount as well. ReCalculate hono charge amount based on
                 // the actual transaction amount
                 remainingAmount = remainingAmount.minus(honoAmount);
-                Integer installmentNumber = 0;
+                Integer installmentNumber = -1;
                 // increment the batch id which will be used to delete the rows from db table when a transaction is
                 // rollbacked. The rows with highest version will be roll backed
                 // because only the latest transaction can be reversed
@@ -1173,7 +1173,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 version = version + 1;
                 for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
                     if (installment.isOverdueOn(transactionDate) && !installment.isObligationsMet()) {
-                        if (installmentNumber == 0) {
+                        if (installmentNumber == -1) {
                             installmentNumber = installment.getInstallmentNumber();
                         }
                         BigDecimal installmentOutstandingAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount();

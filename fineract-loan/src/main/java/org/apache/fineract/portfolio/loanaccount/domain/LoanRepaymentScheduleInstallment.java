@@ -623,6 +623,17 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         return getPenaltyChargesOutstanding(getLoan().getCurrency()).isGreaterThanZero();
     }
 
+    public boolean hasHonoraiosCharge() {
+        if (this.installmentCharges != null) {
+            for (LoanInstallmentCharge installmentCharge : this.installmentCharges) {
+                if (installmentCharge.getLoanCharge().isFlatHono() || installmentCharge.getLoanCharge().isVatChargeOfHonoCharge()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public interface PaymentFunction {
 
         Money accept(LocalDate transactionDate, Money transactionAmountRemaining, boolean isWriteOffTransaction,
@@ -1725,6 +1736,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Set<LoanInstallmentCharge> getInstallmentCharges() {
         return installmentCharges;
+    }
+
+    public void setInstallmentCharges(Set<LoanInstallmentCharge> installmentCharges) {
+        this.installmentCharges = installmentCharges;
     }
 
     public boolean isAdditional() {
