@@ -207,6 +207,8 @@ public class LoanWriteOffImportHandler implements ImportHandler {
                 final JsonObject loanRepaymentJsonObj = gsonBuilder.create().toJsonTree(loanWriteOffData).getAsJsonObject();
                 loanRepaymentJsonObj.remove("manuallyReversed");
                 loanRepaymentJsonObj.remove("numberOfRepayments");
+                loanRepaymentJsonObj.remove("occurredOnSuspendedAccount");
+                loanRepaymentJsonObj.remove("partiallyInvoiced");
                 final String payload = loanRepaymentJsonObj.toString();
                 final CommandWrapper commandRequest = new CommandWrapperBuilder().specialWriteOffLoanTransaction(loanAccountId)
                         .withJson(payload).build();

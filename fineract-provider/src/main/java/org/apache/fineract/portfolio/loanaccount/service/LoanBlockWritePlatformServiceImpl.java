@@ -186,17 +186,14 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
     @Override
     public LoanBlockingReason blockLoan(final Long loanId, final BlockingReasonSetting blockingReasonSetting, final String comment,
             final LocalDate blockDate) {
-
-        final Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository.findExistingBlockingReason(loanId,
-                blockingReasonSetting.getId());
-
-        if (existingBlockingReason.isPresent()) {
-            throw new GeneralPlatformDomainRuleException("error.msg.loan.blocking.reason.already.exists",
-                    "Loan is already blocked with blocking reason");
+        final Collection<LoanBlockingReason> activeExistingBlockingReasons = this.loanBlockingReasonRepository
+                .findActiveBlockingReasons(loanId, blockingReasonSetting.getId());
+        for (final LoanBlockingReason blockingReason : activeExistingBlockingReasons) {
+            handleDelete(blockingReason, blockDate, this.context.authenticatedUser(),
+                    "Reason unblocked :: Loan is blocked again with a similar reason!!");
         }
-
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
-        if (loan.getDisburseDonDate() == null) {
+        if (loan.getDisburseDonDate() == null && !loan.isDisbursed()) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.not.disburse", "Loan not disburse");
         }
         // check if current blocking reason on loan has higher priority, if so, replace it with this blocking reason
@@ -204,9 +201,11 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
                 || loan.getLoanCustomizationDetail().getBlockStatus().getPriority() > blockingReasonSetting.getPriority()) {
             loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
         }
-
         final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting, comment, blockDate);
         loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
+        if (!activeExistingBlockingReasons.isEmpty()) {
+            this.loanBlockingReasonRepository.saveAllAndFlush(activeExistingBlockingReasons);
+        }
 
         // Check if reason affects client too
         if (blockingReasonSetting.isAffectsClientLevel()) {

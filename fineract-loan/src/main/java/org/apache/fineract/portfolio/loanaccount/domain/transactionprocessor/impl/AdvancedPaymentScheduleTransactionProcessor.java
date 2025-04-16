@@ -1196,9 +1196,22 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                         .max(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).stream().toList();
             }
 
+            // If we are foreclosing and the last installment hasn't been caught, we should add it to advanced
+            // installments
+            if (loanTransaction.getLoan().isForeClosing()) {
+                if (oldestPastDueInstallment == null && dueInstallment == null && inAdvanceInstallments.isEmpty()) {
+                    // we process the last installment
+                    inAdvanceInstallments = List.of(installments.get(installments.size() - 1));
+                }
+            }
+
             int firstNormalInstallmentNumber = LoanRepaymentScheduleProcessingWrapper.fetchFirstNormalInstallmentNumber(installments);
             boolean stopProcessingAdvanceInstallment = false;
             for (PaymentAllocationType paymentAllocationType : paymentAllocationTypes) {
+                if (transactionAmountUnprocessed.isZero()) {
+                    exit = true;
+                    break;
+                }
                 switch (paymentAllocationType.getDueType()) {
                     case PAST_DUE -> {
                         if (oldestPastDueInstallment != null) {
@@ -1304,13 +1317,22 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                             } else {
                                                 balances.setAggregatedPrincipalPortion(
                                                         balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
-                                                inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(
-                                                        loanTransaction.getTransactionDate(), currency);
+                                                if (loanTransaction.getLoan().isForeClosing()) {
+                                                    inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
+                                                            loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
+                                                    inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
+                                                            .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
+                                                    inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMetAdvanced(
+                                                            loanTransaction.getTransactionDate(), currency);
+                                                } else {
+                                                    inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMetAdvanced(
+                                                            loanTransaction.getTransactionDate(), currency);
+                                                    inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
+                                                            loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
+                                                    inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
+                                                            .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
+                                                }
 
-                                                inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
-                                                        loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
-                                                inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
-                                                        .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
                                                 inAdvanceInstallment.setRecalculateEMI(loanTransaction.recalculateEMI());
                                                 LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
                                                         transactionMappings, loanTransaction, inAdvanceInstallment, currency);

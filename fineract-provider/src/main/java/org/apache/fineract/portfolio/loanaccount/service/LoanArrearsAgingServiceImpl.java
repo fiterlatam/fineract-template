@@ -634,7 +634,14 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
             blockingReason.setDeactivatedBy(currentUser);
             blockingReason.setUnblockComment("Cliente desbloqueado por defecto");
             blockingReason.setDeactivatedOn(DateUtils.getLocalDateOfTenant());
-            loan.getLoanCustomizationDetail().setBlockStatus(null);
+
+            final BlockingReasonSetting existingBlockingReasonSetting = loan.getLoanCustomizationDetail().getBlockStatus();
+            if (existingBlockingReasonSetting != null) {
+                final Long existingBlockingSettingId = existingBlockingReasonSetting.getId();
+                if (existingBlockingSettingId != null && existingBlockingSettingId.equals(blockingReasonSetting.getId())) {
+                    loan.getLoanCustomizationDetail().setBlockStatus(null);
+                }
+            }
             loanRepository.save(loan);
             loanBlockingReasonRepository.saveAndFlush(blockingReason);
         }
