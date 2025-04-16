@@ -58,6 +58,7 @@ public class SearchingClientRepositoryImpl implements SearchingClientRepository 
                 LEFT JOIN m_blocking_reason_setting brs ON c.blocking_reason_id = brs.id
                 LEFT JOIN campos_cliente_empresas cce ON c.id = cce.client_id
                 LEFT JOIN campos_cliente_persona ccp ON c.id = ccp.client_id
+                LEFT JOIN ( SELECT mcbr.client_id AS client_id,  COUNT(mcbr.id) AS reason_count FROM m_client_blocking_reason mcbr WHERE mcbr.unblock_by IS NULL GROUP BY mcbr.client_id) blocking_reason ON  blocking_reason.client_id = c.id
                 WHERE o.hierarchy LIKE ?
                 """;
 
@@ -90,12 +91,13 @@ public class SearchingClientRepositoryImpl implements SearchingClientRepository 
                        o.id AS officeId,
                        o.name AS officeName,
                        c.mobile_no AS mobileNo,
-                       CASE WHEN c.blocking_reason_id IS NOT NULL THEN 900 ELSE c.status_enum END AS status,
+                       CASE WHEN (c.blocking_reason_id IS NOT NULL AND blocking_reason.reason_count > 0) THEN 900 ELSE c.status_enum END AS status,
                        c.activation_date AS activationDate,
                        c.created_on_utc AS createdDate,
                        CASE WHEN cce.client_id IS NOT NULL THEN 'Empresa' ELSE 'Persona' END AS clientType,
                        CASE WHEN cce."NIT" IS NOT NULL THEN cce."NIT" ELSE ccp."Cedula" END AS cedularornit
-                """ + baseSql + " ORDER BY " + sortSql + " LIMIT ? OFFSET ?";
+                """
+                + baseSql + " ORDER BY " + sortSql + " LIMIT ? OFFSET ?";
 
         RowMapper<SearchedClient> rowMapper = (rs, rowNum) -> {
             Date activationDate = rs.getDate("activationDate");

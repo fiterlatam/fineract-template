@@ -58,6 +58,8 @@ import org.apache.fineract.portfolio.address.service.AddressReadPlatformService;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.client.data.*;
 import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.domain.ClientBlockingReason;
+import org.apache.fineract.portfolio.client.domain.ClientBlockingReasonRepositoryWrapper;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.client.domain.ClientStatus;
@@ -107,6 +109,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
     private final ClientRepositoryWrapper clientRepositoryWrapper;
     private final ClientMapper clientMapper;
     private final LoanProductReadPlatformService loanProductReadPlatformService;
+    private final ClientBlockingReasonRepositoryWrapper clientBlockingReasonRepositoryWrapper;
 
     @Override
     public ClientData retrieveTemplate(final Long officeId, final boolean staffInSelectedOfficeOnly) {
@@ -286,7 +289,13 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
 
             final Client client = clientRepositoryWrapper.getClientByClientIdAndHierarchy(clientId, hierarchySearchString);
             ClientData clientData = clientMapper.map(client);
-
+            final List<ClientBlockingReason> activeClientBlockingReasons = this.clientBlockingReasonRepositoryWrapper
+                    .findActiveBlockingReasonByClientId(client.getId());
+            if (client.getBlockingReason() != null && !activeClientBlockingReasons.isEmpty()) {
+                clientData.setStatus(ClientEnumerations.status(ClientStatus.BLOCKED));
+            } else {
+                clientData.setStatus(ClientEnumerations.status(client.getStatus()));
+            }
             // Get client collaterals
             final Collection<ClientCollateralManagement> clientCollateralManagements = this.clientCollateralManagementRepositoryWrapper
                     .getCollateralsPerClient(clientId);
@@ -778,6 +787,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             builder.append("c.default_savings_product as savingsProductId, sp.name as savingsProductName, ");
             builder.append("c.blocking_reason_id as blockReasonId, ");
             builder.append("c.default_savings_account as savingsAccountId ");
+            builder.append(", COALESCE(blocking_reason.reason_count) as blockReasonCount");
             builder.append("from m_client c ");
             builder.append("join m_office o on o.id = c.office_id ");
             builder.append("left join m_client_non_person cnp on cnp.client_id = c.id ");
@@ -793,7 +803,8 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             builder.append("left join m_code_value cvSubStatus on cvSubStatus.id = c.sub_status ");
             builder.append("left join m_code_value cvConstitution on cvConstitution.id = cnp.constitution_cv_id ");
             builder.append("left join m_code_value cvMainBusinessLine on cvMainBusinessLine.id = cnp.main_business_line_cv_id ");
-
+            builder.append(
+                    "LEFT JOIN ( SELECT mcbr.client_id AS client_id,  COUNT(mcbr.id) AS reason_count FROM m_client_blocking_reason mcbr WHERE mcbr.unblock_by IS NULL GROUP BY mcbr.client_id) blocking_reason ON  blocking_reason.client_id = mc.id ");
             this.schema = builder.toString();
         }
 
@@ -807,10 +818,10 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final String accountNo = rs.getString("accountNo");
 
             Integer statusEnum;
-            if (JdbcSupport.getIntegerDefaultToNullIfZero(rs, "blockReasonId") == null) {
-                statusEnum = JdbcSupport.getIntegerDefaultToNullIfZero(rs, "statusEnum");
-            } else {
+            if (JdbcSupport.getIntegerDefaultToNullIfZero(rs, "blockReasonId") != null && rs.getInt("blockReasonCount") > 0) {
                 statusEnum = ClientStatus.BLOCKED.getValue();
+            } else {
+                statusEnum = JdbcSupport.getIntegerDefaultToNullIfZero(rs, "statusEnum");
             }
             final EnumOptionData status = ClientEnumerations.status(statusEnum);
 

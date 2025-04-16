@@ -3785,6 +3785,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 break;
             }
         }
+        // If we are foreclosing them there's only one installment in that list
+        if (this.foreClosing) {
+            installment = installments.get(0);
+        }
         return installment;
     }
 
@@ -5825,8 +5829,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         && loanCharge.getApplicableFromInstallment() > installment.getInstallmentNumber()) {
                     continue;
                 }
-                // Skip installments with zero fees during loan foreclosure
-                if (installment.getFeeChargesCharged(this.getCurrency()).isZero() && this.foreClosing) {
+                // Skip installments with zero fees during loan foreclosure except for honorarios (which is dynamic)
+                if (this.foreClosing && installment.getFeeChargesCharged(this.getCurrency()).isZero()
+                        && !installment.hasHonoraiosCharge()) {
                     continue;
                 }
                 BigDecimal amount;
@@ -6180,7 +6185,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public BigDecimal getTotalOverpaid() {
-        return this.totalOverpaid;
+        return this.totalOverpaid != null ? this.totalOverpaid : BigDecimal.ZERO;
     }
 
     public Money getTotalOverpaidAsMoney() {
@@ -7464,12 +7469,26 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 receivables[0].getAmount(), receivables[1].getAmount(), receivables[2].getAmount(), false, null);
     }
 
-    public LoanRepaymentScheduleInstallment fetchLoanSpecialWriteOffDetail(final LocalDate writtenOffOnDate) {
+    /***
+     * Fetch the loan special write-off installment. The write-off date is nullable. If null is passed, the assumption
+     * will be that the write off amounts need to cover the rest of the loan term. This applies to charges
+     *
+     * @param writtenOffOnDate
+     * @return
+     */
+    public LoanRepaymentScheduleInstallment fetchLoanSpecialWriteOffDetail(LocalDate writtenOffOnDate) {
         final MonetaryCurrency currency = getCurrency();
         Money interest = Money.zero(currency);
         Money paidFromFutureInstallments = Money.zero(currency);
         Money fee = Money.zero(currency);
         Money penalty = Money.zero(currency);
+        LocalDate maxWriteOffDate;
+        if (writtenOffOnDate == null) {
+            maxWriteOffDate = this.getExpectedMaturityDate();
+            writtenOffOnDate = DateUtils.getLocalDateOfTenant();
+        } else {
+            maxWriteOffDate = writtenOffOnDate;
+        }
         final List<LoanChargeData> currentOutstandingLoanCharges = new ArrayList<>();
         for (LoanCharge loanCharge : this.charges) {
             if (loanCharge.isActive() && !loanCharge.isDueAtDisbursement()) {
@@ -7484,15 +7503,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
-            if (!DateUtils.isBefore(writtenOffOnDate, installment.getDueDate())) {
+            if (!DateUtils.isBefore(maxWriteOffDate, installment.getDueDate())) {
                 interest = interest.plus(installment.getInterestOutstanding(currency));
                 penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
                 fee = fee.plus(installment.getFeeChargesOutstanding(currency));
                 this.incrementOutstandingInstallmentChargeBalances(installment.getInstallmentNumber(), currentOutstandingLoanCharges);
                 this.incrementOutstandingPenaltyChargeBalances(installment.getInstallmentNumber(), currentOutstandingLoanCharges);
-            } else if (DateUtils.isAfter(writtenOffOnDate, installment.getFromDate())) {
+            } else if (DateUtils.isAfter(maxWriteOffDate, installment.getFromDate())) {
                 int totalPeriodDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate()));
-                int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), writtenOffOnDate));
+                int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(installment.getFromDate(), maxWriteOffDate));
                 Money interestForCurrentPeriod = Money.of(getCurrency(), BigDecimal.valueOf(
                         calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency()).getAmount(), tillDays)));
                 Money interestAccountedForCurrentPeriod = installment.getInterestWaived(getCurrency())
@@ -7917,12 +7936,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
             if (!newInstallments.isEmpty()) {
                 LoanRepaymentScheduleInstallment lastInstallment = newInstallments.get(newInstallments.size() - 1);
-                // If this loan has future installments already paid off, we should adjust the duedate accordingly
-                if (lastInstallment.isObligationsMet() && DateUtils.isBefore(transactionDate, lastInstallment.getDueDate())) {
-                    // if obligations are met, then definitely the obligations met date is not in future, let's set the
-                    // due date to obligations met date
-                    lastInstallment.setDueDate(lastInstallment.getObligationsMetOnDate());
-                }
                 installmentStartDate = lastInstallment.getDueDate();
             }
 
@@ -7931,9 +7944,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (!isInterestComponent) {
                 installmentNumber++;
             }
-
+            LocalDate installmentDueDate = DateUtils.isAfter(transactionDate, installmentStartDate) ? transactionDate
+                    : installmentStartDate;
             LoanRepaymentScheduleInstallment newInstallment = new LoanRepaymentScheduleInstallment(null, newInstallments.size() + 1,
-                    installmentStartDate, transactionDate, totalPrincipal.getAmount(), balances[0].getAmount(), balances[1].getAmount(),
+                    installmentStartDate, installmentDueDate, totalPrincipal.getAmount(), balances[0].getAmount(), balances[1].getAmount(),
                     balances[2].getAmount(), isInterestComponent, null);
             if (totalAdvanced.isGreaterThanZero()) {
                 newInstallment.setAdvancePrincipalAmount(totalAdvanced.getAmount());
@@ -7952,7 +7966,17 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             // are still present. Below code removes those references for all installments which are deleted
             for (LoanRepaymentScheduleInstallment inst : this.repaymentScheduleInstallments) {
                 if (inst.getInstallmentNumber() >= newInstallment.getInstallmentNumber()) {
-                    inst.getInstallmentCharges().clear();
+                    if (inst.getInstallmentNumber() > newInstallment.getInstallmentNumber()) {
+                        inst.getInstallmentCharges().clear();
+                    } else {
+                        // copy the charges to the new installment
+                        newInstallment.setInstallmentCharges(inst.getInstallmentCharges());
+                        if (newInstallment.getInstallmentCharges() != null) {
+                            for (LoanInstallmentCharge loanInstallmentCharge : newInstallment.getInstallmentCharges()) {
+                                loanInstallmentCharge.setInstallment(newInstallment);
+                            }
+                        }
+                    }
                     inst.getLoanTransactionToRepaymentScheduleMappings().clear();
 
                     List<LoanTransaction> transactions = this.getLoanTransactions();

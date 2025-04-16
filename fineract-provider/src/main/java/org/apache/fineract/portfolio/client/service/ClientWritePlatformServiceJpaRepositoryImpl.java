@@ -1456,7 +1456,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
         final Optional<BlockingReasonSetting> listasDeControlBlockingReason = blockingReasonSettingsRepositoryWrapper
                 .getBlockingReasonSettingByReason("LISTAS DE CONTROL", "CLIENT").stream().findFirst();
 
-        List<ClientBlockingReason> clientBlockingReason = this.clientBlockingReasonRepositoryWrapper
+        final List<ClientBlockingReason> clientBlockingReason = this.clientBlockingReasonRepositoryWrapper
                 .findClientBlockingReason(client.getId(), blockingReasonId);
 
         if (!clientBlockingReason.isEmpty()) {
@@ -1468,8 +1468,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             }
         }
 
-        List<ClientBlockingReason> remainingClientBlockingReason = this.clientBlockingReasonRepositoryWrapper
-                .findClientBlockingReasonByClientId(client.getId());
+        final List<ClientBlockingReason> remainingClientBlockingReason = this.clientBlockingReasonRepositoryWrapper
+                .findActiveBlockingReasonByClientId(client.getId());
         if (remainingClientBlockingReason.isEmpty()) {
             client.undoBlock();
             this.clientRepository.saveAndFlush(client);

@@ -125,7 +125,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
     public void validateClientBlockingList(final Long clientId) {
 
         final List<ClientBlockingReason> clientBlockingReasonRepository = clientBlockingReasonRepositoryWrapper
-                .findClientBlockingReasonByClientId(clientId);
+                .findActiveBlockingReasonByClientId(clientId);
 
         if (!clientBlockingReasonRepository.isEmpty()) {
             throw new GeneralPlatformDomainRuleException("error.msg.client.blocked", "Cliente o bloqueo de crédito existente");
