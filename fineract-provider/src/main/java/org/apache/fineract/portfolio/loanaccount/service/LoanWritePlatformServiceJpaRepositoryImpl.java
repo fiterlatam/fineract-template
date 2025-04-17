@@ -2408,9 +2408,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     }
                 }
             } else {
-                final Money interestToBeWrittenOff = specialWriteOffInstallment.getInterestOutstanding(currency);
-                final Money feeChargesToBeWrittenOff = specialWriteOffInstallment.getFeeChargesOutstanding(currency);
-                final Money penaltyChargesToBeWrittenOff = specialWriteOffInstallment.getPenaltyChargesOutstanding(currency);
+                final Money interestToBeWrittenOff = loanRepaymentScheduleInstallmentData.getInterestPortion(currency);
+                final Money feeChargesToBeWrittenOff = loanRepaymentScheduleInstallmentData.getFeeChargesPortion(currency);
+                final Money penaltyChargesToBeWrittenOff = loanRepaymentScheduleInstallmentData.getPenaltyChargesPortion(currency);
                 final Money interestAmountRemaining = specialWriteOffInstallment.getInterestOutstanding(currency)
                         .minus(interestToBeWrittenOff);
                 final Money feeChargesAmountRemaining = specialWriteOffInstallment.getFeeChargesOutstanding(currency)
@@ -2435,8 +2435,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     int totalPeriodDays = Math.toIntExact(
                             ChronoUnit.DAYS.between(currentScheduleInstallment.getFromDate(), currentScheduleInstallment.getDueDate()));
                     int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(currentScheduleInstallment.getFromDate(), transactionDate));
-                    interestToBeChargedAndWrittenOff = Money.of(currency, BigDecimal.valueOf(loan.calculateInterestForDays(totalPeriodDays,
-                            currentScheduleInstallment.getInterestCharged(currency).getAmount(), tillDays)));
+                    if (!isLastRepaymentInstallment(currentScheduleInstallment.getInstallmentNumber(), repaymentScheduleInstallments)
+                            && !DateUtils.isAfter(transactionDate, currentScheduleInstallment.getDueDate())) {
+                        interestToBeChargedAndWrittenOff = Money.of(currency,
+                                BigDecimal.valueOf(loan.calculateInterestForDays(totalPeriodDays,
+                                        currentScheduleInstallment.getInterestCharged(currency).getAmount(), tillDays)));
+                    }
                 }
                 saveAndFlushLoanWithIntegrityChecks(loan);
             }
@@ -2519,6 +2523,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     "No repayment installment found for the special write off date", writtenOffOnDate);
         }
         return installment;
+    }
+
+    public boolean isLastRepaymentInstallment(final Integer installmentNumber,
+            final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments) {
+        final Integer maximumInstallmentNumber = repaymentScheduleInstallments.stream()
+                .max(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber))
+                .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.special.write.off.installment.not.found",
+                        "No repayment installment found for the special write off date", installmentNumber))
+                .getInstallmentNumber();
+        return installmentNumber.equals(maximumInstallmentNumber);
     }
 
     @Transactional
