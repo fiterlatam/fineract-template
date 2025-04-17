@@ -2289,7 +2289,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     isHolidayValidationDone);
         } else {
             final MonetaryCurrency currency = loan.getCurrency();
-            final LoanRepaymentScheduleInstallment specialWriteOffInstallment = loan.fetchLoanSpecialWriteOffDetail(null);
+            final LoanRepaymentScheduleInstallment specialWriteOffInstallment = loan.fetchLoanSpecialWriteOffDetail(transactionDate);
             final LoanRepaymentScheduleInstallmentData loanRepaymentScheduleInstallmentData = loan.validateSpecialWriteOffConcepts(command,
                     specialWriteOffInstallment);
             final BigDecimal principalToBeWrittenOff = loanRepaymentScheduleInstallmentData.getPrincipalPortion();
