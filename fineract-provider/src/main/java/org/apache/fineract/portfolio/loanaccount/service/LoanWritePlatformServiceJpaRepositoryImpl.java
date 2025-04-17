@@ -2435,8 +2435,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     int totalPeriodDays = Math.toIntExact(
                             ChronoUnit.DAYS.between(currentScheduleInstallment.getFromDate(), currentScheduleInstallment.getDueDate()));
                     int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(currentScheduleInstallment.getFromDate(), transactionDate));
-                    if (!isLastRepaymentInstallment(currentScheduleInstallment.getInstallmentNumber(), repaymentScheduleInstallments)
-                            && !DateUtils.isAfter(transactionDate, currentScheduleInstallment.getDueDate())) {
+                    if (!DateUtils.isAfter(transactionDate, currentScheduleInstallment.getDueDate())) {
                         interestToBeChargedAndWrittenOff = Money.of(currency,
                                 BigDecimal.valueOf(loan.calculateInterestForDays(totalPeriodDays,
                                         currentScheduleInstallment.getInterestCharged(currency).getAmount(), tillDays)));
@@ -2523,16 +2522,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     "No repayment installment found for the special write off date", writtenOffOnDate);
         }
         return installment;
-    }
-
-    public boolean isLastRepaymentInstallment(final Integer installmentNumber,
-            final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments) {
-        final Integer maximumInstallmentNumber = repaymentScheduleInstallments.stream()
-                .max(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber))
-                .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.loan.special.write.off.installment.not.found",
-                        "No repayment installment found for the special write off date", installmentNumber))
-                .getInstallmentNumber();
-        return installmentNumber.equals(maximumInstallmentNumber);
     }
 
     @Transactional
