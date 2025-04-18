@@ -88,7 +88,7 @@ public class LoanDisbursementRemainingAmountEventProcessor extends BaseCustomWeb
         BigDecimal loanApprovedPrincipal = loan.getApprovedPrincipal();
 
         if (disbursementAmountSum.subtract(loanTransactionRepaymentSum).compareTo(loanApprovedPrincipal) >= 0) {
-            requestBody.put(LOAN_ID_PARAM, result.getLoanId());
+            requestBody.put(LOAN_ID_PARAM, loan.getAccountNumber());
         }
     }
 }

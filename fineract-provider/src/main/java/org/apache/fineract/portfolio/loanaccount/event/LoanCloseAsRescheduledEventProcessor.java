@@ -72,7 +72,7 @@ public class LoanCloseAsRescheduledEventProcessor extends BaseCustomWebhookEvent
         Long customerId = client.getId();
         String productName = loan.getLoanProduct().getName();
 
-        response.put("loanId", loanId);
+        response.put("loanId", loan.getAccountNumber());
         response.put("customerId", customerId);
         response.put("firstName", firstName);
         response.put("lastName", lastName);

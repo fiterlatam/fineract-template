@@ -33,6 +33,9 @@ import org.apache.fineract.infrastructure.dataqueries.service.ReadWriteNonCoreDa
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.service.SqlInjectionPreventerService;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
+import org.apache.fineract.portfolio.client.domain.ClientRepository;
+import org.apache.fineract.portfolio.group.domain.GroupRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,10 +55,11 @@ public class DataQueriesAutoConfiguration {
             final DataTableValidator dataTableValidator, final ColumnValidator columnValidator,
             final NamedParameterJdbcTemplate namedParameterJdbcTemplate, final SqlInjectionPreventerService preventSqlInjectionService,
             DatatableKeywordGenerator datatableKeywordGenerator,
-            RegisteredDatatableFieldMaskRepository registeredDatatableFieldMaskRepository) {
+            RegisteredDatatableFieldMaskRepository registeredDatatableFieldMaskRepository, LoanRepository loanRepository,
+            ClientRepository clientRepository, GroupRepository groupRepository) {
         return new ReadWriteNonCoreDataServiceImpl(jdbcTemplate, databaseTypeResolver, sqlGenerator, context, fromJsonHelper,
                 genericDataService, fromApiJsonDeserializer, configurationDomainService, codeReadPlatformService, dataTableValidator,
                 columnValidator, namedParameterJdbcTemplate, preventSqlInjectionService, datatableKeywordGenerator,
-                registeredDatatableFieldMaskRepository);
+                registeredDatatableFieldMaskRepository, loanRepository, clientRepository, groupRepository);
     }
 }

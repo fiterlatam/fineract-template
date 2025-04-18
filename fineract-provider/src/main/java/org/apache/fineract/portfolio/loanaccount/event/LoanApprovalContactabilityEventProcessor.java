@@ -55,7 +55,7 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
 
     @Override
     protected List<Map<String, String>> getSupportedEvents() {
-        Map<String, String> loanEvent = Map.of("entityName", "LOAN", "actionName", "APPROVE");
+        Map<String, String> loanEvent = Map.of("entityName", "LOAN", "actionName", "NONE");
         return Collections.singletonList(loanEvent);
     }
 
@@ -95,6 +95,7 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
             requestBody.put("documentClient", camposClienteEmpresaYPersona.getNumeroIdentificacion());
             requestBody.put("name", clientData.getFirstname());
             requestBody.put("surNames", clientData.getLastname());
+            requestBody.put("city", camposClienteEmpresaYPersona.getCiudad());
             requestBody.put("address", camposClienteEmpresaYPersona.getDireccion());
             requestBody.put("phone", camposClienteEmpresaYPersona.getTelefono());
             requestBody.put("email", clientData.getEmailAddress());

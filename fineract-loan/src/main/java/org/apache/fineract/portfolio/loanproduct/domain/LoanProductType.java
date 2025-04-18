@@ -30,7 +30,12 @@ public enum LoanProductType {
     SUMAS_PRESTAMOS("SU+ Préstamos"), //
     SUMAS_CASTIGADO("SU+ Castigado"), //
     CREDITO_ROTATIVO("Crédito rotativo"), //
-    NANO_CREDITO("Nano Credito"),; //
+    NANO_CREDITO("Nano Credito"), //
+    BAJO_MONTO("Bajo Monto"), //
+    MICRO_CREDITO("Microcredito"), //
+    MICRO_CREDITO_M("Microcredito M"), //
+    CREDITO_COMERCIAL_PN("Credito Comercial PN"), //
+    ; //
 
     private final String code;
 

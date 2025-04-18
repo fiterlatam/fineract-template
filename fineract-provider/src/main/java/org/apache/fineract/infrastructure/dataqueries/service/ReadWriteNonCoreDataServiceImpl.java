@@ -71,6 +71,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -108,12 +109,20 @@ import org.apache.fineract.infrastructure.dataqueries.domain.RegisteredDatatable
 import org.apache.fineract.infrastructure.dataqueries.exception.DatatableEntryRequiredException;
 import org.apache.fineract.infrastructure.dataqueries.exception.DatatableNotFoundException;
 import org.apache.fineract.infrastructure.dataqueries.exception.DatatableSystemErrorException;
+import org.apache.fineract.infrastructure.dataqueries.validator.chain.TaskChain;
+import org.apache.fineract.infrastructure.dataqueries.validator.data.DataTableMetaData;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.service.SqlInjectionPreventerService;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLInjectionValidator;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
+import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.domain.ClientRepository;
 import org.apache.fineract.portfolio.client.service.ClientWritePlatformServiceJpaRepositoryImpl;
+import org.apache.fineract.portfolio.group.domain.Group;
+import org.apache.fineract.portfolio.group.domain.GroupRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.search.data.AdvancedQueryData;
 import org.apache.fineract.portfolio.search.data.ColumnFilterData;
 import org.apache.fineract.portfolio.search.service.SearchUtil;
@@ -153,6 +162,12 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
     private final SqlInjectionPreventerService preventSqlInjectionService;
     private final DatatableKeywordGenerator datatableKeywordGenerator;
     private final RegisteredDatatableFieldMaskRepository registeredDatatableFieldMaskRepository;
+    private final LoanRepository loanRepository;
+    private final ClientRepository clientRepository;
+    private final GroupRepository groupRepository;
+
+    private Object parentObject;
+    private Map<String, Object> auxliaryObjects = new HashMap<>();
 
     @Override
     public List<DatatableData> retrieveDatatableNames(final String appTable) {
@@ -1287,6 +1302,9 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         return createNewDatatableEntry(dataTableName, appTableId, json, false);
     }
 
+    @Setter
+    private Object dataTableParentObject;
+
     @Transactional
     @Override
     public CommandProcessingResult createPPIEntry(final String dataTableName, final Long appTableId, final JsonCommand command) {
@@ -1303,6 +1321,8 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
 
         final Type typeOfMap = new TypeToken<Map<String, String>>() {}.getType();
         final Map<String, String> dataParams = fromJsonHelper.extractDataMap(typeOfMap, json);
+
+        executeCustomDatatableFiledsValidation(dataTableName, appTableId, entityTable, dataParams);
 
         final String dateFormat = dataParams.get(API_PARAM_DATE_FORMAT);
         // fall back to dateFormat to keep backward compatibility
@@ -1418,6 +1438,8 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         final String dateTimeFormat = dataParams.getOrDefault(API_PARAM_DATETIME_FORMAT, dateFormat);
         final String localeString = dataParams.get(API_PARAM_LOCALE);
         Locale locale = localeString == null ? null : JsonParserHelper.localeFromString(localeString);
+
+        executeCustomDatatableFiledsValidation(dataTableName, appTableId, entityTable, dataParams);
 
         DatabaseType dialect = sqlGenerator.getDialect();
         ArrayList<String> updateColumns = new ArrayList<>(List.of(UPDATEDAT_FIELD_NAME));
@@ -1869,5 +1891,34 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         }
         log.error("Error occurred.", e);
         throw ErrorHandler.getMappable(e, msgCode, msg, param, msgArgs);
+    }
+
+    private void setDataTableParentObject(EntityTables entityTable, Long appTableId) {
+        if (EntityTables.CLIENT.equals(entityTable)) {
+            Optional<Client> opt = clientRepository.findById(appTableId);
+            if (opt.isPresent()) {
+                parentObject = opt.get();
+            }
+        } else if (EntityTables.GROUP.equals(entityTable)) {
+            Optional<Group> opt = groupRepository.findById(appTableId);
+            if (opt.isPresent()) {
+                parentObject = opt.get();
+            }
+        } else if (EntityTables.LOAN.equals(entityTable)) {
+            Optional<Loan> opt = loanRepository.findById(appTableId);
+            if (opt.isPresent()) {
+                parentObject = opt.get();
+            }
+        } else {
+            parentObject = null;
+        }
+    }
+
+    private void executeCustomDatatableFiledsValidation(String dataTableName, Long appTableId, EntityTables entityTable,
+            Map<String, String> dataParams) {
+        setDataTableParentObject(entityTable, appTableId);
+        DataTableMetaData metData = new DataTableMetaData(dataTableName, entityTable, appTableId);
+        TaskChain chain = new TaskChain();
+        chain.process(parentObject, metData, dataParams, auxliaryObjects);
     }
 }

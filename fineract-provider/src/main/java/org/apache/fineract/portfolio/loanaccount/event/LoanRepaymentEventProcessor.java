@@ -30,9 +30,11 @@ import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -67,7 +69,11 @@ public class LoanRepaymentEventProcessor extends BaseCustomWebhookEventProcessor
         Client client = loan.getClient();
         final LocalDate transactionDate = command.localDateValueOfParameterNamed("transactionDate");
         BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed("transactionAmount");
-        BigDecimal principalAmount = loan.getApprovedPrincipal();
+
+        BigDecimal principalAmount = loan.getLoanTransactions().stream().filter(type -> type.getTypeOf().isDisbursement())
+                .filter(rev -> Boolean.FALSE.equals(rev.isReversed())).map(LoanTransaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         BigDecimal principalOutstanding = loan.getLoanSummary().getTotalPrincipalOutstanding();
         BigDecimal loanBalance = loan.getLoanSummary().getTotalOutstanding();
 
@@ -96,10 +102,10 @@ public class LoanRepaymentEventProcessor extends BaseCustomWebhookEventProcessor
             response.put("documentType", clientDocument.get("documentType"));
         }
 
-        response.put("loanId", loanId);
+        response.put("loanId", loan.getAccountNumber());
         response.put("amount", transactionAmount);
         response.put("arrearDue", daysInArrears);
-        response.put("paymentDate", transactionDate);
+        response.put("paymentDate", DateUtils.format(transactionDate, DateUtils.DEFAULT_DATE_FORMAT));
 
         response.put("fullname", clientName);
         response.put("loanAmount", principalAmount);

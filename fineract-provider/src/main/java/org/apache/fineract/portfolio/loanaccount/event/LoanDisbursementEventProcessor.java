@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.loanaccount.event;
 
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,9 +68,11 @@ public class LoanDisbursementEventProcessor extends BaseCustomWebhookEventProces
         }
         String mobileNumber = client.mobileNo();
         String loanProductName = loan.getLoanProduct().getName();
-        BigDecimal loanAmount = loan.getApprovedPrincipal();
 
-        requestBody.put("loanId", result.getLoanId());
+        BigDecimal loanAmount = loan.getLoanTransactions().stream().filter(type -> type.getTypeOf().isDisbursement())
+                .max(Comparator.comparing(dt -> dt.getCreatedDateTime())).map(p -> p.getAmount()).orElse(BigDecimal.ZERO);
+
+        requestBody.put("loanId", loan.getAccountNumber());
         requestBody.put("mobilePhone", mobileNumber);
         requestBody.put("productName", loanProductName);
         requestBody.put("loanAmount", loanAmount);
