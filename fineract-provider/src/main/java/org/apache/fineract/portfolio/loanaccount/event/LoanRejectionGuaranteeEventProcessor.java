@@ -75,8 +75,8 @@ public class LoanRejectionGuaranteeEventProcessor extends BaseCustomWebhookEvent
         Map<String, Object> requestBody = new HashMap<>();
         Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(result.getLoanId(), true);
 
-        if (loan.getLoanProduct().getName().equals(LoanProductType.CREDITO_ROTATIVO.getCode())
-                || loan.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode())) {
+        if (Boolean.FALSE.equals(loan.getLoanProduct().getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode()))
+                && Boolean.FALSE.equals(loan.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode()))) {
 
             // Check if client is Persona o Empresa
             ClientData clientData = clientReadPlatformService.retrieveOne(result.getClientId());
@@ -98,9 +98,9 @@ public class LoanRejectionGuaranteeEventProcessor extends BaseCustomWebhookEvent
 
     private void getRequestBody(CommandProcessingResult result, Map<String, Object> requestBody, Loan loan,
             CamposClienteGenericDatatableData camposClienteEmpresaYPersona, DetalleGarantiaDatatableData detalleGaranta) {
-        requestBody.put(LOAN_ID_PARAM, result.getLoanId());
-        if (Objects.nonNull(loan.getExternalId())) {
-            requestBody.put(EXTERNAL_ID_PARAM, loan.getExternalId().getValue());
+        requestBody.put(LOAN_ID_PARAM, loan.getAccountNumber());
+        if (Objects.nonNull(loan.getClient())) {
+            requestBody.put(EXTERNAL_ID_PARAM, loan.getClient().getExternalId());
         }
 
         if (Objects.nonNull(detalleGaranta)) {
@@ -109,7 +109,7 @@ public class LoanRejectionGuaranteeEventProcessor extends BaseCustomWebhookEvent
         }
 
         if (Objects.nonNull(camposClienteEmpresaYPersona)) {
-            requestBody.put(DOCUMENT_ID_PARAM, camposClienteEmpresaYPersona.getNumeroIdentificacion());
+            requestBody.put(DOCUMENT_ID_PARAM, detalleGaranta.getNumeroPagare());
         }
     }
 
@@ -131,6 +131,7 @@ public class LoanRejectionGuaranteeEventProcessor extends BaseCustomWebhookEvent
                             .loanId(rs.getLong("loan_id")) //
                             .numeroGarantia(rs.getString("numero_garantia")) //
                             .tipoGarantia(rs.getString("tipo_garantia")) //
+                            .numeroPagare(rs.getString("numero_pagare")) //
                             .build();
                 }
             }, loan.getId());

@@ -19,7 +19,9 @@
 
 package org.apache.fineract.portfolio.loanaccount.event;
 
+import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,9 +29,14 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
+import org.apache.fineract.custom.infrastructure.dataqueries.data.CamposClienteGenericDatatableData;
+import org.apache.fineract.custom.infrastructure.dataqueries.data.InformacionAdicionalDatatableData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
@@ -48,6 +55,9 @@ public class LoanCreditoRotativoFirstUseEventProcessor extends BaseCustomWebhook
     public static final String FULL_NAME_PARAM = "fullName";
 
     private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final LoanDisbursementCreditoRotativoEventProcessor loanDisbursementCreditoRotativoEventProcessor;
+    private final LoanApprovalContactabilityEventProcessor loanApprovalContactabilityEventProcessor;
+    private final ClientReadPlatformService clientReadPlatformService;
 
     @Override
     protected List<Map<String, String>> getSupportedEvents() {
@@ -69,29 +79,44 @@ public class LoanCreditoRotativoFirstUseEventProcessor extends BaseCustomWebhook
         Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(result.getLoanId());
 
         // Check if product is equals to credito rotativo or Nano Credito (all variations)
-        if (loan.getLoanProduct().getName().equals(LoanProductType.CREDITO_ROTATIVO.getCode())
+        if (loan.getLoanProduct().getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())
                 || loan.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode())) {
 
-            // Check if it is the very first dibursal
-            Long disubursalCounter = loan.getDisbursementDetails().stream()
-                    .filter(wasDisbursed -> Objects.nonNull(wasDisbursed.getDisbursementDate()))
-                    .filter(notRversed -> Boolean.FALSE.equals(notRversed.isReversed())).count();
+            InformacionAdicionalDatatableData informacionAdicional = loanDisbursementCreditoRotativoEventProcessor
+                    .getInformacionAdicionalDatatableData(loan);
+
+            // Check if client is Persona o Empresa
+            ClientData clientData = clientReadPlatformService.retrieveOne(result.getClientId());
+            EnumOptionData legalFormEnum = clientData.getLegalForm();
+
+            // Get Campos_Cliente_Empresa and Campos_Cliente_Persona for check
+            CamposClienteGenericDatatableData camposClienteEmpresaYPersona = loanApprovalContactabilityEventProcessor
+                    .getCamposClienteEmpresaYPersona(result, legalFormEnum);
 
             // Create payload
-            if (disubursalCounter.compareTo(1L) == 0) {
-                Client client = loan.client();
-
-                requestBody.put(LOAN_ID_PARAM, result.getLoanId());
-                requestBody.put(MOBILE_PHONE_PARAM, client.mobileNo());
-                requestBody.put(PRODUCT_NAME_PARAM, loan.getLoanProduct().getName());
-                if (Objects.nonNull(client.getExternalId())) {
-                    requestBody.put(EXTERNAL_ID_PARAM, client.getExternalId().getValue());
-                }
-                requestBody.put(LOAN_AMOUNT_PARAM, loan.getApprovedPrincipal());
-                requestBody.put(FULL_NAME_PARAM, client.getDisplayName());
+            if (Objects.isNull(informacionAdicional.getFechaPrimerUso()) || informacionAdicional.getFechaPrimerUso().isEmpty()) {
+                generateMessageBody(result, requestBody, loan, camposClienteEmpresaYPersona);
             }
         }
 
         return requestBody;
+    }
+
+    private static void generateMessageBody(CommandProcessingResult result, Map<String, Object> requestBody, Loan loan,
+            CamposClienteGenericDatatableData camposClienteEmpresaYPersona) {
+        Client client = loan.client();
+
+        requestBody.put(LOAN_ID_PARAM, loan.getAccountNumber());
+        requestBody.put(MOBILE_PHONE_PARAM, camposClienteEmpresaYPersona.getTelefono());
+        requestBody.put(PRODUCT_NAME_PARAM, loan.getLoanProduct().getName());
+        if (Objects.nonNull(client.getExternalId())) {
+            requestBody.put(EXTERNAL_ID_PARAM, client.getExternalId().getValue());
+        }
+
+        BigDecimal lastDisbursalAmt = loan.getLoanTransactions().stream().filter(type -> type.getTypeOf().isDisbursement())
+                .max(Comparator.comparing(dt -> dt.getCreatedDateTime())).map(p -> p.getAmount()).orElse(BigDecimal.ZERO);
+
+        requestBody.put(LOAN_AMOUNT_PARAM, lastDisbursalAmt);
+        requestBody.put(FULL_NAME_PARAM, client.getDisplayName());
     }
 }

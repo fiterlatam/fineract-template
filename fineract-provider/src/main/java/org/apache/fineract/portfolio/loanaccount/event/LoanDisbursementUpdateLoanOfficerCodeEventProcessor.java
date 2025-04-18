@@ -18,12 +18,16 @@
  */
 package org.apache.fineract.portfolio.loanaccount.event;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
@@ -60,6 +64,18 @@ public class LoanDisbursementUpdateLoanOfficerCodeEventProcessor extends BaseCus
         Map<String, Object> response = new HashMap<>();
         Long loanId = successResult.getLoanId();
 
+        // Just send the message if loan is active and not in mora
+        Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
+
+        if (Boolean.FALSE.equals(loan.getStatus().isActive())) {
+            Long overDueInstallments = loan.getRepaymentScheduleInstallments().stream()
+                    .filter(dd -> dd.getDueDate().isBefore(DateUtils.getLocalDateOfTenant())).filter(om -> om.isObligationsMet()).count();
+
+            if (overDueInstallments.compareTo(0L) > 0) {
+                return response;
+            }
+        }
+
         String promoterCode = null;
         String promoterCodeOriginal = null;
         String sql = """
@@ -82,7 +98,6 @@ public class LoanDisbursementUpdateLoanOfficerCodeEventProcessor extends BaseCus
                 response.put("promoterCodeOriginal", promoterCodeOriginal); // loan data table - Informacion Adicional
             }
 
-            Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(loanId);
             Client client = loan.getClient();
             String name = client.getFirstname();
             String surName = client.getLastname();
@@ -96,15 +111,18 @@ public class LoanDisbursementUpdateLoanOfficerCodeEventProcessor extends BaseCus
                 response.put("email", email);
             }
             if (phoneNumber != null) {
-                response.put("phoneNumber", phoneNumber);
+                response.put("phone", phoneNumber);
             }
 
             String document = null;
             String documentType = null;
             String city = null;
+            String address = null;
             sql = """
                     select mc.id AS clientId, ccp."Cedula" AS document,
-                    cv.code_value as documentType, cvc.code_value as city
+                    cv.code_value as documentType,\s
+                    cvc.code_value as city,
+                    ccp."Direccion" as address
                     FROM m_client mc
                     LEFT JOIN campos_cliente_persona ccp ON ccp.client_id = mc.id
                     LEFT JOIN m_code_value cv ON cv.id = ccp."Customer Identifier_cd_Tipo identificacion"
@@ -116,15 +134,19 @@ public class LoanDisbursementUpdateLoanOfficerCodeEventProcessor extends BaseCus
                 document = rs.getString("document");
                 documentType = rs.getString("documentType");
                 city = rs.getString("city");
+                address = rs.getString("address");
             }
             if (document != null) {
-                response.put("documentId", document); // client data table - campos_cliente_persona
+                response.put("documentClient", document); // client data table - campos_cliente_persona
             }
             if (documentType != null) {
                 response.put("documentType", documentType); // client data table - campos_cliente_persona
             }
             if (city != null) {
                 response.put("city", city); // client data table - campos_cliente_persona
+            }
+            if (address != null) {
+                response.put("address", address); // client data table - campos_cliente_persona
             }
             return response;
         }

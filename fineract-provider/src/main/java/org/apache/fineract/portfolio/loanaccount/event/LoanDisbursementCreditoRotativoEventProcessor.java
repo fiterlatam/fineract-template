@@ -19,9 +19,11 @@
 
 package org.apache.fineract.portfolio.loanaccount.event;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +56,8 @@ public class LoanDisbursementCreditoRotativoEventProcessor extends BaseCustomWeb
     public static final String INSTALLMENTS_PARAM = "installments";
     public static final String PRODUCT_NAME_PARAM = "productName";
     public static final String USER_ID_PARAM = "userId";
+    public static final String LOAN_AMOUNT_PARAM = "loanAmount";
+
     private final JdbcTemplate jdbcTemplate;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
     private final ClientReadPlatformService clientReadPlatformService;
@@ -92,13 +96,18 @@ public class LoanDisbursementCreditoRotativoEventProcessor extends BaseCustomWeb
             if (Objects.nonNull(loan.getClient().getExternalId())) {
                 requestBody.put(USER_ID_PARAM, loan.getClient().getExternalId().getValue());
             }
-            requestBody.put(LOAN_ID_PARAM, loan.getId());
+            requestBody.put(LOAN_ID_PARAM, loan.getAccountNumber());
             requestBody.put(EMAIL_PARAM, clientData.getEmailAddress());
             requestBody.put(FIRST_NAME_PARAM, clientData.getFirstname());
             requestBody.put(FULL_NAME_PARAM, clientData.getDisplayName());
             requestBody.put(MOBILE_PHONE_PARAM, clientData.getMobileNo());
             requestBody.put(INSTALLMENTS_PARAM, loan.getLoanProduct().getNumberOfRepayments());
             requestBody.put(PRODUCT_NAME_PARAM, loan.getLoanProduct().getName());
+
+            BigDecimal loanAmount = loan.getLoanTransactions().stream().filter(type -> type.getTypeOf().isDisbursement())
+                    .max(Comparator.comparing(dt -> dt.getCreatedDateTime())).map(p -> p.getAmount()).orElse(BigDecimal.ZERO);
+
+            requestBody.put(LOAN_AMOUNT_PARAM, loanAmount);
         }
 
         return requestBody;
@@ -122,7 +131,7 @@ public class LoanDisbursementCreditoRotativoEventProcessor extends BaseCustomWeb
                             .validacionManual(rs.getBoolean("validacion_manual")) //
                             .notificacionBienvenida(rs.getBoolean("notificacion_bienvenida")) //
                             .montoDisponible(rs.getBoolean("monto_disponible")) //
-                            .build();
+                            .fechaPrimerUso(rs.getString("fecha_primer_uso")).build();
                 }
             }, loan.getId());
 

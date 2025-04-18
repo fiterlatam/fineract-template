@@ -18,11 +18,8 @@
  */
 package org.apache.fineract.portfolio.loanaccount.event;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.math.BigDecimal;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
@@ -84,7 +81,7 @@ public class LoanDisbursementApprovedAmountAvailableEventProcessor extends BaseC
 
         // If Monto Disponible is checked, send the request body
         if (Boolean.TRUE.equals(informacionAdicional.getMontoDisponible())) {
-            requestBody.put(LOAN_ID_PARAM, result.getLoanId());
+            requestBody.put(LOAN_ID_PARAM, loan.getAccountNumber());
 
             requestBody.put(PRODUCT_NAME_PARAM, loan.getLoanProduct().getName());
 
@@ -92,7 +89,10 @@ public class LoanDisbursementApprovedAmountAvailableEventProcessor extends BaseC
                 requestBody.put(EXTERNAL_ID_PARAM, loan.getExternalId().getValue());
             }
 
-            requestBody.put(LOAN_AMOUNT_PARAM, loan.getApprovedPrincipal().toString());
+            BigDecimal lastDisbursalAmt = loan.getLoanTransactions().stream().filter(type -> type.getTypeOf().isDisbursement())
+                    .max(Comparator.comparing(dt -> dt.getCreatedDateTime())).map(p -> p.getAmount()).orElse(BigDecimal.ZERO);
+
+            requestBody.put(LOAN_AMOUNT_PARAM, lastDisbursalAmt);
         }
     }
 }

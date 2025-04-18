@@ -18,10 +18,12 @@
  */
 package org.apache.fineract.portfolio.loanaccount.event;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,8 @@ import org.apache.fineract.custom.infrastructure.dataqueries.data.DetalleGaranti
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -45,6 +49,7 @@ import org.springframework.stereotype.Component;
 public class LoanDisbursementGuaranteeEventProcessor extends BaseCustomWebhookEventProcessorImpl {
 
     private final JdbcTemplate jdbcTemplate;
+    private final LoanRepositoryWrapper loanRepositoryWrapper;
     private final LoanReadPlatformService loanReadPlatformService;
 
     @Override
@@ -63,7 +68,7 @@ public class LoanDisbursementGuaranteeEventProcessor extends BaseCustomWebhookEv
 
     public Map<String, Object> generateSuccessResponse(CommandProcessingResult result) {
         Map<String, Object> requestBody = new HashMap<>();
-        LoanAccountData loan = loanReadPlatformService.retrieveOne(result.getLoanId());
+        Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(result.getLoanId());
 
         String query = """
                 SELECT *, fn_core_codevalue_getdescription("Tipo Garantía_cd_Tipo Garantía") AS tipo_garantia
@@ -88,13 +93,18 @@ public class LoanDisbursementGuaranteeEventProcessor extends BaseCustomWebhookEv
             if (Objects.nonNull(detalleGaranta) && detalleGaranta.isAplicaGarantia()
                     && Objects.isNull(detalleGaranta.getFechaRegistroGarantia())) {
 
-                requestBody.put("loanId", result.getLoanId());
-                requestBody.put("loanAmount", loan.getApprovedPrincipal());
+                BigDecimal loanAmount = loan.getLoanTransactions().stream().filter(type -> type.getTypeOf().isDisbursement())
+                        .max(Comparator.comparing(dt -> dt.getCreatedDateTime())).map(p -> p.getAmount()).orElse(BigDecimal.ZERO);
+
+                requestBody.put("loanId", loan.getAccountNumber());
+                requestBody.put("loanAmount", loanAmount);
                 requestBody.put("guaranteeNumber", detalleGaranta.getNumeroGarantia());
                 requestBody.put("promissoryNote", detalleGaranta.getNumeroPagare());
                 requestBody.put("guaranteeType", detalleGaranta.getTipoGarantia());
                 requestBody.put("guaranteeTypeId", detalleGaranta.getTipoGarantiaId());
-                requestBody.put("interestRate", loan.getAnnualInterestRate());
+
+                LoanAccountData loanAccountData = loanReadPlatformService.retrieveOne(result.getLoanId());
+                requestBody.put("interestRate", loanAccountData.getAnnualInterestRate());
             }
         } catch (EmptyResultDataAccessException e) {
             return requestBody;
