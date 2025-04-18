@@ -43,7 +43,7 @@ public class InformacionAdicionalEventHandler implements DatatableEventHandler {
     private static final String FIELD_VALIDACION_MANUAL = "validacion_manual";
     private static final String FIELD_NOTIFICACION_BIENVENIDA = "notificacion_bienvenida";
     private static final String ENTITY_TYPE = "LOAN";
-    private static final String ACTION = "DISBURSE";
+    private static final String ACTION = "APPROVE";
 
     private final LoanApprovalContactabilityEventProcessor loanApprovalContactabilityEventProcessor;
     private final PlatformSecurityContext context;
@@ -76,23 +76,22 @@ public class InformacionAdicionalEventHandler implements DatatableEventHandler {
         log.info("Extracted values - validacionManual: {}, notificacionBienvenidaIsNull: {}", validacionManual,
                 notificacionBienvenidaIsNull);
 
-        // Get loan details to check if it's revolving and its status
+        // Get loan details to check its status
         Loan loan = loanRepository.findOneWithNotFoundDetection(event.getAppTableId());
-        boolean isRevolvingLoan = loan.isRevolvingLoan();
         LoanStatus loanStatus = loan.getStatus();
 
-        log.info("Loan details - Is Revolving Loan: {}, Status: {}", isRevolvingLoan, loanStatus);
+        log.info("Loan details -  Status: {}", loanStatus);
 
         if (shouldTriggerWebhook(loan, validacionManual, notificacionBienvenidaIsNull)) {
             publishWebhook(event.getAppTableId());
 
             log.info(
-                    "Webhook published for loan ID: {} - All conditions met: IsRevolvingLoan={}, Status={}, ValidacionManual={}, NotificacionBienvenidaIsNull={}",
-                    event.getAppTableId(), isRevolvingLoan, loanStatus, validacionManual, notificacionBienvenidaIsNull);
+                    "Webhook published for loan ID: {} - All conditions met:  Status={}, ValidacionManual={}, NotificacionBienvenidaIsNull={}",
+                    event.getAppTableId(), loanStatus, validacionManual, notificacionBienvenidaIsNull);
         } else {
             log.info(
-                    "No webhook needed for loan ID: {} - Conditions not met: IsRevolvingLoan={}, Status={}, ValidacionManual={}, NotificacionBienvenidaIsNull={}",
-                    event.getAppTableId(), isRevolvingLoan, loanStatus, validacionManual, notificacionBienvenidaIsNull);
+                    "No webhook needed for loan ID: {} - Conditions not met:  Status={}, ValidacionManual={}, NotificacionBienvenidaIsNull={}",
+                    event.getAppTableId(), loanStatus, validacionManual, notificacionBienvenidaIsNull);
         }
     }
 
@@ -108,7 +107,7 @@ public class InformacionAdicionalEventHandler implements DatatableEventHandler {
      * @return true if all conditions are met to trigger the webhook
      */
     private boolean shouldTriggerWebhook(Loan loan, boolean validacionManual, boolean notificacionBienvenidaIsNull) {
-        return loan.isRevolvingLoan() && loan.getStatus().isApproved() && validacionManual && notificacionBienvenidaIsNull;
+        return loan.getStatus().isApproved() && validacionManual && notificacionBienvenidaIsNull;
     }
 
     /**
