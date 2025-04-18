@@ -106,6 +106,7 @@ import org.apache.fineract.infrastructure.dataqueries.data.ResultsetColumnHeader
 import org.apache.fineract.infrastructure.dataqueries.data.ResultsetRowData;
 import org.apache.fineract.infrastructure.dataqueries.domain.RegisteredDatatableFieldMask;
 import org.apache.fineract.infrastructure.dataqueries.domain.RegisteredDatatableFieldMaskRepository;
+import org.apache.fineract.infrastructure.dataqueries.events.DatatableOperationType;
 import org.apache.fineract.infrastructure.dataqueries.exception.DatatableEntryRequiredException;
 import org.apache.fineract.infrastructure.dataqueries.exception.DatatableNotFoundException;
 import org.apache.fineract.infrastructure.dataqueries.exception.DatatableSystemErrorException;
@@ -165,6 +166,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
     private final LoanRepository loanRepository;
     private final ClientRepository clientRepository;
     private final GroupRepository groupRepository;
+    private final DatatableEventPublisher eventPublisher;
 
     private Object parentObject;
     private Map<String, Object> auxliaryObjects = new HashMap<>();
@@ -1293,7 +1295,13 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
     @Transactional
     @Override
     public CommandProcessingResult createNewDatatableEntry(final String dataTableName, final Long appTableId, final JsonCommand command) {
-        return createNewDatatableEntry(dataTableName, appTableId, command.json(), false);
+        CommandProcessingResult result = createNewDatatableEntry(dataTableName, appTableId, command.json(), false);
+
+        // Publish event after successful creation
+        eventPublisher.publishDatatableEvent(dataTableName, appTableId, result.getResourceId(), DatatableOperationType.CREATE,
+                command.parsedJson().getAsJsonObject());
+
+        return result;
     }
 
     @Transactional
@@ -1311,6 +1319,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
         return createNewDatatableEntry(dataTableName, appTableId, command.json(), true);
     }
 
+    @SuppressWarnings({ "java:S3776" })
     private CommandProcessingResult createNewDatatableEntry(final String dataTableName, final Long appTableId, final String json,
             boolean addScore) {
         final EntityTables entityTable = queryForApplicationEntity(dataTableName);
@@ -1394,17 +1403,29 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
     @Override
     public CommandProcessingResult updateDatatableEntryOneToOne(final String dataTableName, final Long appTableId,
             final JsonCommand command) {
-        return updateDatatableEntry(dataTableName, appTableId, null, command);
+        CommandProcessingResult result = updateDatatableEntry(dataTableName, appTableId, null, command);
+
+        // Publish event after successful update
+        eventPublisher.publishDatatableEvent(dataTableName, appTableId, result.getResourceId(), DatatableOperationType.UPDATE,
+                command.parsedJson().getAsJsonObject());
+
+        return result;
     }
 
     @Transactional
     @Override
     public CommandProcessingResult updateDatatableEntryOneToMany(final String dataTableName, final Long appTableId, final Long datatableId,
             final JsonCommand command) {
-        return updateDatatableEntry(dataTableName, appTableId, datatableId, command);
+        CommandProcessingResult result = updateDatatableEntry(dataTableName, appTableId, datatableId, command);
+
+        // Publish event after successful update
+        eventPublisher.publishDatatableEvent(dataTableName, appTableId, datatableId, DatatableOperationType.UPDATE,
+                command.parsedJson().getAsJsonObject());
+
+        return result;
     }
 
-    @SuppressWarnings({ "WhitespaceAround" })
+    @SuppressWarnings({ "WhitespaceAround", "java:S3776", "java:S3776" })
     private CommandProcessingResult updateDatatableEntry(final String dataTableName, final Long appTableId, final Long datatableId,
             final JsonCommand command) {
         final EntityTables entityTable = queryForApplicationEntity(dataTableName);
