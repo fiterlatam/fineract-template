@@ -3914,10 +3914,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
         if (isAllChargesPaid || isChargeRepaymentRequired) {
-            this.closedOnDate = transactionDate;
-            this.actualMaturityDate = transactionDate;
-            loanLifecycleStateMachine.transition(LoanEvent.REPAID_IN_FULL, this);
-
+            // Only close the loan if it's not a revolving credit loan
+            if (!isRevolvingLoan()) {
+                this.closedOnDate = transactionDate;
+                this.actualMaturityDate = transactionDate;
+                loanLifecycleStateMachine.transition(LoanEvent.REPAID_IN_FULL, this);
+            } else {
+                // For revolving credit, just handle it as a regular repayment to keep the loan active
+                loanLifecycleStateMachine.transition(LoanEvent.LOAN_REPAYMENT_OR_WAIVER, this);
+            }
         } else if (LoanStatus.fromInt(this.loanStatus).isOverpaid()) {
             if (this.totalOverpaid == null || BigDecimal.ZERO.compareTo(this.totalOverpaid) == 0) {
                 this.overpaidOnDate = null;
