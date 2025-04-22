@@ -1504,6 +1504,11 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.interestCharged = interestCharged;
     }
 
+    public void updateInterestChargedAfterWriteOff() {
+        this.interestCharged = this.getInterestPaid(this.getLoan().getCurrency())
+                .plus(this.getInterestWrittenOff(this.getLoan().getCurrency())).getAmount();
+    }
+
     public void updateObligationMet(final Boolean obligationMet) {
 
         this.obligationsMet = obligationMet;
