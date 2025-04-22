@@ -24,6 +24,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
@@ -511,7 +512,8 @@ public class LoanChargeAssembler {
             }
         }
 
-        ExternalId externalId = externalIdFactory.createFromCommand(command, "externalId");
+        ExternalId externalId = this.externalIdFactory.createFromCommand(command, "externalId");
+        loanCharge = loanCharge.setScale(loan.getCurrency().getDigitsAfterDecimal(), RoundingMode.DOWN);
         return new LoanCharge(loan, chargeDefinition, amountPercentageAppliedTo, amount, chargeTime, chargeCalculation, dueDate,
                 chargePaymentMode, null, loanCharge, externalId, getPercentageAmountFromTable, numberOfPenaltyDays);
     }

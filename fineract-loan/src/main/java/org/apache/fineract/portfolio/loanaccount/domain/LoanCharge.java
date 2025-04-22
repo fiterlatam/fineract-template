@@ -327,6 +327,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     if (numberOfPenaltyDays != null) {
                         loanCharge = loanCharge.multiply(BigDecimal.valueOf(numberOfPenaltyDays));
                     }
+                    loanCharge = loanCharge.setScale(loan.getCurrency().getDigitsAfterDecimal(), RoundingMode.DOWN);
                 }
                 this.amount = minimumAndMaximumCap(loanCharge);
                 this.amountPaid = null;
