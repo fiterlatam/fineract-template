@@ -3931,6 +3931,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
         processIncomeAccrualTransactionOnLoanClosure();
     }
+
     private void processIncomeAccrualTransactionOnLoanClosure() {
         if (this.loanInterestRecalculationDetails != null && this.loanInterestRecalculationDetails.isCompoundingToBePostedAsTransaction()
                 && this.getStatus().isClosedObligationsMet() && !isNpa() && !isChargedOff()) {
@@ -8407,4 +8408,3 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
 }
-
