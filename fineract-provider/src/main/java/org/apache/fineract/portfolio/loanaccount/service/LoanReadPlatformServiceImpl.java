@@ -3019,7 +3019,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepository.findOneWithNotFoundDetection(currency);
         final CurrencyData currencyData = applicationCurrency.toData();
         final LocalDate earliestUnpaidInstallmentDate = DateUtils.getBusinessLocalDate();
-        final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanSpecialWriteOffDetail(transactionDate);
+        final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
+        final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanSpecialWriteOffDetail(transactionDate,
+                scheduleGeneratorDTO);
         BigDecimal unrecognizedIncomePortion = null;
         final LoanTransactionEnumData transactionType = LoanEnumerations.transactionType(LoanTransactionType.WRITEOFF);
         final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
