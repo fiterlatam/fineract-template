@@ -1,0 +1,69 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.fineract.portfolio.loanaccount.event;
+
+import java.util.Arrays;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@AllArgsConstructor
+@Getter
+public enum CustomHookEventProcessorEnum {
+
+    CREDITO_ROTATIVO_FIRST_USE("org.apache.fineract.portfolio.loanaccount.event.LoanCreditoRotativoFirstUseEventProcessor",
+            "First use in revolving loan"),
+
+    LOAN_OFFICER_UPDATE("org.apache.fineract.portfolio.loanaccount.event.LoanOfficerUpdateEventProcessor", "Actualizar Codigo de Promotor"),
+
+    DISBURSEMENT("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementEventProcessor", "Disbursement Event"),
+
+    REPAYMENT_EVENT("org.apache.fineract.portfolio.loanaccount.event.LoanRepaymentEventProcessor", "Repayment Event"),
+
+    RENEWAL_EVENT("org.apache.fineract.portfolio.loanaccount.event.LoanCloseAsRescheduledEventProcessor", "Renewal Event"),
+
+    LOAN_DISBURSEMENT_APPROVED_AMOUNT_AVAILABLE(
+            "org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementApprovedAmountAvailableEventProcessor",
+            "Loan Disbursement - Approved Amount Available"),
+
+    DISBURSEMENT_GUARANTEE("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementGuaranteeEventProcessor",
+            "Disbursement Guarantee"),
+
+    DISBURSEMENT_CREDITO_ROTATIVO("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementCreditoRotativoEventProcessor",
+            "Aprobación De Crédito Rotativo - Operaciones"),
+
+    LOAN_DISBURSEMENT_REMAINING_AMOUNT("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementRemainingAmountEventProcessor",
+            "Loan Disbursement - Remaining Amount"),
+
+    ANULLMENT_EVENT("org.apache.fineract.portfolio.loanaccount.event.LoanCloseEventProcessor", "Annulment Event"),
+
+    CONTACTABILITY("org.apache.fineract.portfolio.loanaccount.event.LoanApprovalContactabilityEventProcessor", "Contactability"),
+
+    NOTFOUND("", ""),;
+
+    private String clazz;
+    private String hookName;
+
+    public static CustomHookEventProcessorEnum fromClazz(String clazz) {
+        return Arrays.stream(values()).filter(e -> e.getClazz().equals(clazz)).findFirst().orElse(NOTFOUND);
+    }
+
+    public static CustomHookEventProcessorEnum fromHookName(String hookName) {
+        return Arrays.stream(values()).filter(e -> e.getHookName().equals(hookName)).findFirst().orElse(NOTFOUND);
+    }
+}

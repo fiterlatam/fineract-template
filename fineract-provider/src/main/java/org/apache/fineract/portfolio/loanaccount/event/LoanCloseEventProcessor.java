@@ -44,6 +44,11 @@ public class LoanCloseEventProcessor extends BaseCustomWebhookEventProcessorImpl
     private final JdbcTemplate jdbcTemplate;
 
     @Override
+    protected String hookName() {
+        return CustomHookEventProcessorEnum.fromClazz(this.getClass().getName()).getHookName();
+    }
+
+    @Override
     protected List<Map<String, String>> getSupportedEvents() {
         Map<String, String> loanCloseEvent = Map.of("entityName", "LOAN", "actionName", "REJECT");
         return Collections.singletonList(loanCloseEvent);

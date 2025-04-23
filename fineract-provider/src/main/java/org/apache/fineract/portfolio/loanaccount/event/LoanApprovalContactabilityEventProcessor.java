@@ -54,6 +54,11 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
     private final ClientReadPlatformService clientReadPlatformService;
 
     @Override
+    protected String hookName() {
+        return CustomHookEventProcessorEnum.fromClazz(this.getClass().getName()).getHookName();
+    }
+
+    @Override
     protected List<Map<String, String>> getSupportedEvents() {
         Map<String, String> loanEvent = Map.of("entityName", "LOAN", "actionName", "NONE");
         return Collections.singletonList(loanEvent);

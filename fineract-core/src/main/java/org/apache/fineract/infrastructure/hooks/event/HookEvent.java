@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.hooks.event;
 
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.domain.FineractEvent;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -30,9 +31,21 @@ public class HookEvent extends FineractEvent {
 
     private final AppUser appUser;
 
+    private final String hookName;
+
     public HookEvent(final HookEventSource source, final String payload, final AppUser appUser, FineractContext fineractContext) {
         super(source, fineractContext);
         this.payload = payload;
         this.appUser = appUser;
+        this.hookName = StringUtils.EMPTY;
     }
+
+    public HookEvent(final HookEventSource source, final String payload, final AppUser appUser, FineractContext fineractContext,
+            String hookName) {
+        super(source, fineractContext);
+        this.payload = payload;
+        this.appUser = appUser;
+        this.hookName = hookName;
+    }
+
 }

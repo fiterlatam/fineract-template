@@ -28,6 +28,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import okhttp3.OkHttpClient;
+import org.apache.fineract.infrastructure.hooks.interceptor.LoggingInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -77,6 +78,7 @@ public final class ProcessorHelper {
 
     private OkHttpClient createClient() {
         var okBuilder = new OkHttpClient.Builder();
+        okBuilder.addInterceptor(new LoggingInterceptor());
         if (insecureHttpClient) {
             configureInsecureClient(okBuilder);
         }

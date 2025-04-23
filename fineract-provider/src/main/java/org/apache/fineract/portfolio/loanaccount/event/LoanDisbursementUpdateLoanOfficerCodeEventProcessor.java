@@ -46,6 +46,11 @@ public class LoanDisbursementUpdateLoanOfficerCodeEventProcessor extends BaseCus
     private final JdbcTemplate jdbcTemplate;
 
     @Override
+    protected String hookName() {
+        return CustomHookEventProcessorEnum.fromClazz(this.getClass().getName()).getHookName();
+    }
+
+    @Override
     protected List<Map<String, String>> getSupportedEvents() {
         Map<String, String> loanEvent = Map.of("entityName", "LOAN", "actionName", "DISBURSE");
         return Collections.singletonList(loanEvent);

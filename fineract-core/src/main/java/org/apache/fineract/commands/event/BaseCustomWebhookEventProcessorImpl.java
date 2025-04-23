@@ -49,6 +49,8 @@ public abstract class BaseCustomWebhookEventProcessorImpl implements CustomWebho
         this.toApiResultJsonSerializer = toApiResultJsonSerializer;
     }
 
+    protected abstract String hookName();
+
     @SuppressWarnings("all")
     @Override
     public void publish(Map<String, Object> transformedPayload, String entityName, String actionName, AppUser user,
@@ -61,7 +63,7 @@ public abstract class BaseCustomWebhookEventProcessorImpl implements CustomWebho
             try {
                 String serializedPayload = toApiResultJsonSerializer.serialize(transformedPayload);
                 HookEventSource source = new HookEventSource(entityName, actionName);
-                HookEvent event = new HookEvent(source, serializedPayload, user, fineractContext);
+                HookEvent event = new HookEvent(source, serializedPayload, user, fineractContext, hookName());
 
                 applicationContext.publishEvent(event);
             } catch (Exception e) {
