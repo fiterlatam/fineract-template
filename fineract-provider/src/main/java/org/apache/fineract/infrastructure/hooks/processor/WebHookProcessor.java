@@ -25,6 +25,8 @@ import static org.apache.fineract.infrastructure.hooks.api.HookApiConstants.PAYL
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -63,8 +65,9 @@ public class WebHookProcessor implements HookProcessor {
                 apiKey = conf.getFieldValue();
             }
         }
-        Map<String, Object> customHeaders = Map.of("X-API-KEY", apiKey);
+        Map<String, Object> customHeaders = new HashMap<>(Map.of("X-API-KEY", apiKey));
         // we can add other headers based off the configuration
+        customHeaders.put("X-FINERACT-WEBHOOK", URLEncoder.encode(hook.getName(), StandardCharsets.UTF_8));
 
         sendRequest(url, contentType, payload, entityName, actionName, context, customHeaders);
     }

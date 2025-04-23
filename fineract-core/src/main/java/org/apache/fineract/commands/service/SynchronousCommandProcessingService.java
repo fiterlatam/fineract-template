@@ -183,7 +183,9 @@ public class SynchronousCommandProcessingService implements CommandProcessingSer
             // Filter processors that support the webhook and process them
             customWebhookEventProcessorList.stream().filter(p -> p.supports(wrapper.entityName(), wrapper.actionName())).forEach(p -> {
                 var transformedEvent = p.transform(wrapper.entityName(), wrapper.actionName(), command, result);
-                p.publish(transformedEvent, wrapper.entityName(), wrapper.actionName(), user, ThreadLocalContextUtil.getContext());
+                if (transformedEvent.size() > 0) {
+                    p.publish(transformedEvent, wrapper.entityName(), wrapper.actionName(), user, ThreadLocalContextUtil.getContext());
+                }
             });
         } else {
             publishHookEvent(wrapper.entityName(), wrapper.actionName(), command, result);
