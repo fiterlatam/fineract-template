@@ -1099,7 +1099,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                         "Processing failed for loan id: " + loanTransaction.getLoan().getId());
             }
             LoanRepaymentScheduleInstallment oldestPastDueInstallment = installments.stream()
-                    .filter(x -> x.isNotFullyPaidOff() && !x.isFullyGraced()).filter(e -> loanTransaction.isAfter(e.getDueDate()))
+                    .filter(x -> x.isNotFullyPaidOff() && !x.isFullyGraced()).filter(e -> !loanTransaction.isBefore(e.getDueDate()))
                     .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
             boolean found = false;
             if (loanTransaction.claimType() != null) {
