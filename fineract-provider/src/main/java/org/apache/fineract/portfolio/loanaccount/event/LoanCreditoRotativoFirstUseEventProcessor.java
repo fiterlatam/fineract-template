@@ -34,11 +34,13 @@ import org.apache.fineract.custom.infrastructure.dataqueries.data.InformacionAdi
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.springframework.stereotype.Component;
 
@@ -119,7 +121,7 @@ public class LoanCreditoRotativoFirstUseEventProcessor extends BaseCustomWebhook
         }
 
         BigDecimal lastDisbursalAmt = loan.getLoanTransactions().stream().filter(type -> type.getTypeOf().isDisbursement())
-                .max(Comparator.comparing(dt -> dt.getCreatedDateTime())).map(p -> p.getAmount()).orElse(BigDecimal.ZERO);
+                .max(Comparator.comparing(AbstractAuditableWithUTCDateTimeCustom::getCreatedDateTime)).map(LoanTransaction::getAmount).orElse(BigDecimal.ZERO);
 
         requestBody.put(LOAN_AMOUNT_PARAM, lastDisbursalAmt);
         requestBody.put(FULL_NAME_PARAM, client.getDisplayName());
