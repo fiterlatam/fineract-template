@@ -19,7 +19,6 @@
 package org.apache.fineract.infrastructure.hooks.listener;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.domain.FineractContext;
@@ -55,7 +54,7 @@ public class FineractHookListener implements HookListener {
 
         final List<Hook> hooks = hookReadPlatformService
                 .retrieveHooksByEvent(hookEventSource.getEntityName(), hookEventSource.getActionName()).stream()
-                .filter(hookName -> hookName.getName().equalsIgnoreCase(event.getHookName())).collect(Collectors.toUnmodifiableList());
+                .filter(hookName -> hookName.getName().equalsIgnoreCase(event.getHookName())).toList();
 
         for (final Hook hook : hooks) {
             final HookProcessor processor = hookProcessorProvider.getProcessor(hook);
