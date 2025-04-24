@@ -42,18 +42,12 @@ public class InformacionAdicionalValidateProcessor extends CustomFieldValidation
         return STRING_DATATABLE_INFORMACION_ADICIONAL;
     }
 
-  @Override
-  public void process(
-      Object parentObject,
-      DataTableMetaData metData,
-      Map<String, String> dataParams,
-      Map<String, Object> auxliaryObjects) {
+    @Override
+    public void process(Object parentObject, DataTableMetaData metData, Map<String, String> dataParams,
+            Map<String, Object> auxliaryObjects) {
 
-        if (metData.getDataTableName().equalsIgnoreCase(whoAmI()) 
-                && parentObject instanceof Loan loanObj
-                && loanObj.isApproved() 
-                && Boolean.FALSE.equals(loanObj.isDisbursed())
-                && dataParams.containsKey(STRING_PARAM_VALIDACION_MANUAL)
+        if (metData.getDataTableName().equalsIgnoreCase(whoAmI()) && parentObject instanceof Loan loanObj && loanObj.isApproved()
+                && Boolean.FALSE.equals(loanObj.isDisbursed()) && dataParams.containsKey(STRING_PARAM_VALIDACION_MANUAL)
                 && dataParams.get(STRING_PARAM_VALIDACION_MANUAL).equalsIgnoreCase(Boolean.TRUE.toString())
                 && dataParams.containsKey(STRING_PARAM_NOTIFICACION_BIENVENIDA)
                 && (dataParams.get(STRING_PARAM_NOTIFICACION_BIENVENIDA).equalsIgnoreCase(Boolean.FALSE.toString())

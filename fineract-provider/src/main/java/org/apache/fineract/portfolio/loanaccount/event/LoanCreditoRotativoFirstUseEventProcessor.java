@@ -110,7 +110,7 @@ public class LoanCreditoRotativoFirstUseEventProcessor extends BaseCustomWebhook
     }
 
     private static void generateMessageBody(Map<String, Object> requestBody, Loan loan,
-                                            CamposClienteGenericDatatableData camposClienteEmpresaYPersona) {
+            CamposClienteGenericDatatableData camposClienteEmpresaYPersona) {
         Client client = loan.client();
 
         requestBody.put(LOAN_ID_PARAM, loan.getAccountNumber());
@@ -121,7 +121,8 @@ public class LoanCreditoRotativoFirstUseEventProcessor extends BaseCustomWebhook
         }
 
         BigDecimal lastDisbursalAmt = loan.getLoanTransactions().stream().filter(type -> type.getTypeOf().isDisbursement())
-                .max(Comparator.comparing(AbstractAuditableWithUTCDateTimeCustom::getCreatedDateTime)).map(LoanTransaction::getAmount).orElse(BigDecimal.ZERO);
+                .max(Comparator.comparing(AbstractAuditableWithUTCDateTimeCustom::getCreatedDateTime)).map(LoanTransaction::getAmount)
+                .orElse(BigDecimal.ZERO);
 
         requestBody.put(LOAN_AMOUNT_PARAM, lastDisbursalAmt);
         requestBody.put(FULL_NAME_PARAM, client.getDisplayName());

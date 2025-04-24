@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
@@ -104,8 +103,8 @@ public class LoanRejectionGuaranteeEventProcessor extends BaseCustomWebhookEvent
         return requestBody;
     }
 
-    private void getRequestBody(Map<String, Object> requestBody, Loan loan,
-                                CamposClienteGenericDatatableData camposClienteEmpresaYPersona, DetalleGarantiaDatatableData detalleGaranta) {
+    private void getRequestBody(Map<String, Object> requestBody, Loan loan, CamposClienteGenericDatatableData camposClienteEmpresaYPersona,
+            DetalleGarantiaDatatableData detalleGaranta) {
         requestBody.put(LOAN_ID_PARAM, loan.getAccountNumber());
         if (Objects.nonNull(loan.getClient())) {
             requestBody.put(EXTERNAL_ID_PARAM, loan.getClient().getExternalId());
@@ -116,8 +115,7 @@ public class LoanRejectionGuaranteeEventProcessor extends BaseCustomWebhookEvent
             requestBody.put(GUARANTEE_TYPE_PARAM, detalleGaranta.getTipoGarantia());
         }
 
-        Optional.ofNullable(camposClienteEmpresaYPersona)
-                .filter(c -> detalleGaranta != null && detalleGaranta.getNumeroPagare() != null)
+        Optional.ofNullable(camposClienteEmpresaYPersona).filter(c -> detalleGaranta != null && detalleGaranta.getNumeroPagare() != null)
                 .ifPresent(c -> requestBody.put(DOCUMENT_ID_PARAM, detalleGaranta.getNumeroPagare()));
     }
 
