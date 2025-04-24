@@ -35,7 +35,7 @@ public abstract class CustomFieldValidationProcessor {
 
     public CustomFieldValidationProcessor(CustomFieldValidationProcessor nextCustomFieldValidationProcessor) {
         this.nextCustomFieldValidationProcessor = nextCustomFieldValidationProcessor;
-    };
+    }
 
     public void process(Object parentObject, DataTableMetaData metData, Map<String, String> dataParams,
             Map<String, Object> auxliaryObjects) {

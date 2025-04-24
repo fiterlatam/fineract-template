@@ -40,6 +40,7 @@ import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -97,14 +98,14 @@ public class LoanRejectionGuaranteeEventProcessor extends BaseCustomWebhookEvent
             DetalleGarantiaDatatableData detalleGaranta = getDetalleGarantia(loan);
 
             // Create response object
-            getRequestBody(result, requestBody, loan, camposClienteEmpresaYPersona, detalleGaranta);
+            getRequestBody(requestBody, loan, camposClienteEmpresaYPersona, detalleGaranta);
         }
 
         return requestBody;
     }
 
-    private void getRequestBody(CommandProcessingResult result, Map<String, Object> requestBody, Loan loan,
-            CamposClienteGenericDatatableData camposClienteEmpresaYPersona, DetalleGarantiaDatatableData detalleGaranta) {
+    private void getRequestBody(Map<String, Object> requestBody, Loan loan,
+                                CamposClienteGenericDatatableData camposClienteEmpresaYPersona, DetalleGarantiaDatatableData detalleGaranta) {
         requestBody.put(LOAN_ID_PARAM, loan.getAccountNumber());
         if (Objects.nonNull(loan.getClient())) {
             requestBody.put(EXTERNAL_ID_PARAM, loan.getClient().getExternalId());
@@ -133,7 +134,7 @@ public class LoanRejectionGuaranteeEventProcessor extends BaseCustomWebhookEvent
             validacionContactaData = this.jdbcTemplate.queryForObject(query, new RowMapper<DetalleGarantiaDatatableData>() {
 
                 @Override
-                public DetalleGarantiaDatatableData mapRow(ResultSet rs, int rowNum) throws SQLException {
+                public DetalleGarantiaDatatableData mapRow(@NotNull ResultSet rs, int rowNum) throws SQLException {
                     return DetalleGarantiaDatatableData.builder() //
                             .loanId(rs.getLong("loan_id")) //
                             .numeroGarantia(rs.getString("numero_garantia")) //
