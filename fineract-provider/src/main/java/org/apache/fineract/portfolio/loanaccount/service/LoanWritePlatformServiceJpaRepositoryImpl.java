@@ -2300,7 +2300,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final LoanRepaymentScheduleInstallment currentScheduleInstallment = fetchRepaymentInstallmentByWrittenOfDate(transactionDate,
                     repaymentScheduleInstallments);
 
-            Money interestToBeChargedAndWrittenOff = currentScheduleInstallment.getInterestCharged(currency);
+            Money interestToBeChargedAfterWriteOff = currentScheduleInstallment.getInterestCharged(currency);
             if (remainingPrincipalPortion.isGreaterThanZero()
                     && specialWriteOffInstallment.getPrincipalOutstanding(currency).isGreaterThanZero()) {
                 final Integer currentInstallmentNumber = currentScheduleInstallment.getInstallmentNumber();
@@ -2353,7 +2353,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                         "Loan schedule period not found"));
                         final Money midInterestForCurrentPeriod = Money.of(currency, BigDecimal.valueOf(
                                 loan.calculateInterestForDays(totalPeriodDays, midScheduleInstallment.interestDue(), futureTillDays)));
-                        interestToBeChargedAndWrittenOff = interestForCurrentPeriod.plus(midInterestForCurrentPeriod);
+                        interestToBeChargedAfterWriteOff = interestForCurrentPeriod.plus(midInterestForCurrentPeriod);
                         final LocalDate installmentFromDate = nextRescheduleInstallment.getFromDate();
                         final LocalDate installmentDueDate = nextRescheduleInstallment.getDueDate();
                         writeOffNumberOfRepayments = numberOfRepayments - currentInstallmentNumber;
@@ -2437,7 +2437,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             ChronoUnit.DAYS.between(currentScheduleInstallment.getFromDate(), currentScheduleInstallment.getDueDate()));
                     int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(currentScheduleInstallment.getFromDate(), transactionDate));
                     if (!DateUtils.isAfter(transactionDate, currentScheduleInstallment.getDueDate())) {
-                        interestToBeChargedAndWrittenOff = Money.of(currency,
+                        interestToBeChargedAfterWriteOff = Money.of(currency,
                                 BigDecimal.valueOf(loan.calculateInterestForDays(totalPeriodDays,
                                         currentScheduleInstallment.getInterestCharged(currency).getAmount(), tillDays)));
                     }
@@ -2449,10 +2449,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 loanRepaymentScheduleInstallmentData.setLoanWriteOffChargeData(creditNote.toChargeData());
             }
             writeOffTransaction = loan.writeOff(loanRepaymentScheduleInstallmentData, transactionDate, externalId, isCreditNote);
-            currentScheduleInstallment.updateInterestChargedAfterWriteOff();
+
+            final Money totalWriteOffAmount = Money.of(currency, loanRepaymentScheduleInstallmentData.getTotalInstallmentAmount());
+            final Money totalOutstandingAmount = specialWriteOffInstallment.getTotalOutstanding(currency);
+            if (totalWriteOffAmount.isGreaterThanOrEqualTo(totalOutstandingAmount)) {
+                currentScheduleInstallment.updateInterestChargedAfterWriteOff();
+            } else {
+                currentScheduleInstallment.updateInterestCharged(interestToBeChargedAfterWriteOff.getAmount());
+            }
+
             loan.updateLoanSummaryDerivedFields();
             loan.getRepaymentScheduleInstallments().forEach(rp -> rp.checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency));
-            final Money totalOutstandingAmount = specialWriteOffInstallment.getTotalOutstanding(currency);
             final Money totalPaymentAmount = Money.of(currency, loanRepaymentScheduleInstallmentData.getTotalInstallmentAmount());
             if (totalPaymentAmount.isEqualTo(totalOutstandingAmount) || loan.getLoanSummary().isRepaidInFull(loan.getCurrency())) {
                 final AppUser currentUser = getAppUserIfPresent();
@@ -2493,6 +2500,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         loanAccountDomainService.setLoanDelinquencyTag(loan, DateUtils.getBusinessLocalDate());
         businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
         businessEventNotifierService.notifyPostBusinessEvent(new LoanWrittenOffPostBusinessEvent(writeOffTransaction));
+
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(writeOffTransaction.getId())
                 .withEntityExternalId(writeOffTransaction.getExternalId()).withOfficeId(loan.getOfficeId()).withClientId(loan.getClientId())
                 .withGroupId(loan.getGroupId()).withLoanId(loanId).with(changes).build();
