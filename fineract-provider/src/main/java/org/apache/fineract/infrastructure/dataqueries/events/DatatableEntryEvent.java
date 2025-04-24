@@ -29,7 +29,7 @@ public class DatatableEntryEvent extends ApplicationEvent {
     private final Long appTableId;
     private final Long datatableId;
     private final DatatableOperationType operation;
-    private final JsonObject jsonData;
+    private final transient JsonObject jsonData;
 
     public DatatableEntryEvent(Object source, String datatableName, Long appTableId, Long datatableId, DatatableOperationType operation,
             JsonObject jsonData) {

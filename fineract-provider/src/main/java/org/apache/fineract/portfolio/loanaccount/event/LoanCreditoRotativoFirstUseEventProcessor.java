@@ -100,15 +100,15 @@ public class LoanCreditoRotativoFirstUseEventProcessor extends BaseCustomWebhook
 
             // Create payload
             if (Objects.isNull(informacionAdicional.getFechaPrimerUso()) || informacionAdicional.getFechaPrimerUso().isEmpty()) {
-                generateMessageBody(result, requestBody, loan, camposClienteEmpresaYPersona);
+                generateMessageBody(requestBody, loan, camposClienteEmpresaYPersona);
             }
         }
 
         return requestBody;
     }
 
-    private static void generateMessageBody(CommandProcessingResult result, Map<String, Object> requestBody, Loan loan,
-            CamposClienteGenericDatatableData camposClienteEmpresaYPersona) {
+    private static void generateMessageBody(Map<String, Object> requestBody, Loan loan,
+                                            CamposClienteGenericDatatableData camposClienteEmpresaYPersona) {
         Client client = loan.client();
 
         requestBody.put(LOAN_ID_PARAM, loan.getAccountNumber());

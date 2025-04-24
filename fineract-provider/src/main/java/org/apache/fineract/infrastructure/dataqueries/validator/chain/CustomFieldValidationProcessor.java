@@ -41,7 +41,7 @@ public abstract class CustomFieldValidationProcessor {
             Map<String, Object> auxliaryObjects) {
         if (nextCustomFieldValidationProcessor != null)
             nextCustomFieldValidationProcessor.process(parentObject, metData, dataParams, auxliaryObjects);
-    };
+    }
 
     protected abstract String whoAmI();
 }

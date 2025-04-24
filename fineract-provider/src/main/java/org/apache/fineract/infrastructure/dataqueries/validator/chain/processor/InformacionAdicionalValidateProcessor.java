@@ -43,33 +43,24 @@ public class InformacionAdicionalValidateProcessor extends CustomFieldValidation
         return STRING_DATATABLE_INFORMACION_ADICIONAL;
     }
 
-    public void process(Object parentObject, DataTableMetaData metData, Map<String, String> dataParams,
-            Map<String, Object> auxliaryObjects) {
+  @Override
+  public void process(
+      Object parentObject,
+      DataTableMetaData metData,
+      Map<String, String> dataParams,
+      Map<String, Object> auxliaryObjects) {
 
-        if (metData.getDataTableName().equalsIgnoreCase(whoAmI())) {
+        if (metData.getDataTableName().equalsIgnoreCase(whoAmI()) 
+                && parentObject instanceof Loan loanObj
+                && loanObj.isApproved() 
+                && Boolean.FALSE.equals(loanObj.isDisbursed())
+                && dataParams.containsKey(STRING_PARAM_VALIDACION_MANUAL)
+                && dataParams.get(STRING_PARAM_VALIDACION_MANUAL).equalsIgnoreCase(Boolean.TRUE.toString())
+                && dataParams.containsKey(STRING_PARAM_NOTIFICACION_BIENVENIDA)
+                && (dataParams.get(STRING_PARAM_NOTIFICACION_BIENVENIDA).equalsIgnoreCase(Boolean.FALSE.toString())
+                        || dataParams.get(STRING_PARAM_NOTIFICACION_BIENVENIDA).equalsIgnoreCase(StringUtils.EMPTY))) {
 
-            if (Objects.nonNull(parentObject) && parentObject instanceof Loan) {
-                Loan loanObj = (Loan) parentObject;
-
-                if (loanObj.isApproved() //
-                        && Boolean.FALSE.equals(loanObj.isDisbursed()) //
-                        && dataParams.containsKey(STRING_PARAM_VALIDACION_MANUAL) //
-                        && dataParams.get(STRING_PARAM_VALIDACION_MANUAL).equalsIgnoreCase(Boolean.TRUE.toString()) //
-                        && dataParams.containsKey(STRING_PARAM_NOTIFICACION_BIENVENIDA) //
-                        && (dataParams.get(STRING_PARAM_NOTIFICACION_BIENVENIDA).equalsIgnoreCase(Boolean.FALSE.toString()) //
-                                || dataParams.get(STRING_PARAM_NOTIFICACION_BIENVENIDA).equalsIgnoreCase(StringUtils.EMPTY))) {
-
-                    // TODO Trigger the webhook here
-                    // Populate auxliaryObjects at ReadWriteNonCoreDataServiceImpl Create and Update with webhook object
-                    // Then you can use here
-                    // eg. ReadReportingServiceImpl rep = (ReadReportingServiceImpl) auxliaryObjects;
-                    // if (Objects.nonNull(rep)) { {
-                    // rep.generate();
-                    // }
-
-                    log.warn("Informacion Adicional - DataTableMetaData: " + metData.getDataTableName());
-                }
-            }
+            log.warn("Informacion Adicional - DataTableMetaData: " + metData.getDataTableName());
         }
 
         super.process(parentObject, metData, dataParams, auxliaryObjects);

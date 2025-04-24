@@ -34,8 +34,6 @@ public class TaskChain {
     }
 
     private void buildChain() {
-        // Here we can define the chain order
-        // chain = new Post BackupProcessor(new EmailSummaryProcessor(null)))));
         chain = new InformacionAdicionalValidateProcessor(null);
     }
 
