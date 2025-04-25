@@ -1509,6 +1509,16 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                 .plus(this.getInterestWrittenOff(this.getLoan().getCurrency())).getAmount();
     }
 
+    public void updateComponentsAfterClosureAsWriteOff() {
+        final MonetaryCurrency monetaryCurrency = this.getLoan().getCurrency();
+        this.interestCharged = this.getInterestPaid(monetaryCurrency).plus(this.getInterestWrittenOff(monetaryCurrency))
+                .plus(this.getInterestWaived(monetaryCurrency)).getAmount();
+        this.feeChargesCharged = this.getFeeChargesPaid(monetaryCurrency).plus(this.getFeeChargesWrittenOff(monetaryCurrency))
+                .plus(this.getFeeChargesWaived(monetaryCurrency)).getAmount();
+        this.penaltyCharges = this.getPenaltyChargesPaid(monetaryCurrency).plus(this.getPenaltyChargesWrittenOff(monetaryCurrency))
+                .plus(this.getPenaltyChargesWaived(monetaryCurrency)).getAmount();
+    }
+
     public void updateObligationMet(final Boolean obligationMet) {
 
         this.obligationsMet = obligationMet;
