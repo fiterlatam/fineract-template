@@ -18,15 +18,15 @@
  */
 package org.apache.fineract.infrastructure.dataqueries.service;
 
+import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.dataqueries.events.DatatableEntryEvent;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.loanaccount.event.LoanApprovalContactabilityEventProcessor;
+import org.springframework.expression.spel.SpelEvaluationException;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -52,11 +52,14 @@ public class ContactabilityEventHandler implements DatatableEventHandler {
     }
 
     private void publishWebhook(Long loanId) {
-        CommandProcessingResult result = new CommandProcessingResultBuilder().withLoanId(loanId).build();
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("dummyNotEmptyPayload", "dummyNotEmptyPayload");
 
-        Map<String, Object> payload = loanApprovalContactabilityEventProcessor.generateSuccessResponse(result);
-
-        loanApprovalContactabilityEventProcessor.publish(payload, ENTITY_TYPE, ACTION, context.authenticatedUser(),
-                ThreadLocalContextUtil.getContext());
+        try {
+            loanApprovalContactabilityEventProcessor.publish(payload, ENTITY_TYPE, ACTION, context.authenticatedUser(),
+                    ThreadLocalContextUtil.getContext());
+        } catch (SpelEvaluationException e) {
+            log.info(e.getMessage());
+        }
     }
 }
