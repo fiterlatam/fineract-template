@@ -32,6 +32,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
 import org.apache.fineract.portfolio.loanaccount.event.LoanApprovalContactabilityEventProcessor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -45,8 +46,13 @@ public class InformacionAdicionalEventHandler implements DatatableEventHandler {
     private static final String ENTITY_TYPE = "LOAN";
     private static final String ACTION = "APPROVE";
 
+    @Autowired
     private final LoanApprovalContactabilityEventProcessor loanApprovalContactabilityEventProcessor;
+
+    @Autowired
     private final PlatformSecurityContext context;
+
+    @Autowired
     private final LoanRepositoryWrapper loanRepository;
 
     @Override

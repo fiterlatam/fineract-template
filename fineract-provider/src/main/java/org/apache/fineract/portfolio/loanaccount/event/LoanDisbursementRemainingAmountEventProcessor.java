@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
@@ -54,7 +53,7 @@ public class LoanDisbursementRemainingAmountEventProcessor extends BaseCustomWeb
 
     @Override
     protected List<Map<String, String>> getSupportedEvents() {
-        Map<String, String> loanEvent = Map.of("entityName", "LOAN", "actionName", "DISBURSE");
+        Map<String, String> loanEvent = Map.of("entityName", "LOAN", "actionName", "REPAYMENT");
         return Collections.singletonList(loanEvent);
     }
 
@@ -82,17 +81,8 @@ public class LoanDisbursementRemainingAmountEventProcessor extends BaseCustomWeb
 
     private void getRequestBody(CommandProcessingResult result, Map<String, Object> requestBody, Loan loan) {
 
-        // If Available amount == 0 (totally used), call the hook
-        BigDecimal disbursementAmountSum = loanDisbursementDetailsRepository.findAllByLoanId(loan.getId()).stream()
-                .filter(disbursed -> Objects.nonNull(disbursed.getDisbursementDate())).map(x -> x.getPrincipal())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal loanTransactionRepaymentSum = loanTransactionRepository.findAllByLoanIdAndTypeOf(loan.getId(), 2).stream()
-                .filter(nR -> !nR.isReversed()).map(x -> x.getPrincipalPortion()).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal loanApprovedPrincipal = loan.getApprovedPrincipal();
-
-        if (disbursementAmountSum.subtract(loanTransactionRepaymentSum).compareTo(loanApprovedPrincipal) >= 0) {
+        // Just call the webhook if the balance == 0;
+        if (loan.getLoanSummary().getTotalOutstanding().compareTo(BigDecimal.ZERO) == 0) {
             requestBody.put(LOAN_ID_PARAM, loan.getAccountNumber());
         }
     }
