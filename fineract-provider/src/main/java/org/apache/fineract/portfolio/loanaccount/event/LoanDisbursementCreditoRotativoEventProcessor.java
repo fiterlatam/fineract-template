@@ -69,7 +69,7 @@ public class LoanDisbursementCreditoRotativoEventProcessor extends BaseCustomWeb
 
     @Override
     protected List<Map<String, String>> getSupportedEvents() {
-        Map<String, String> loanEvent = Map.of("entityName", "LOAN", "actionName", "DISBURSE");
+        Map<String, String> loanEvent = Map.of("entityName", "LOAN", "actionName", "NONE");
         return Collections.singletonList(loanEvent);
     }
 

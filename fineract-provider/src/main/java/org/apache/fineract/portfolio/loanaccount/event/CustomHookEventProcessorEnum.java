@@ -29,7 +29,8 @@ public enum CustomHookEventProcessorEnum {
     CREDITO_ROTATIVO_FIRST_USE("org.apache.fineract.portfolio.loanaccount.event.LoanCreditoRotativoFirstUseEventProcessor",
             "First use in revolving loan"),
 
-    LOAN_OFFICER_UPDATE("org.apache.fineract.portfolio.loanaccount.event.LoanOfficerUpdateEventProcessor", "Actualizar Codigo de Promotor"),
+    LOAN_OFFICER_UPDATE("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementUpdateLoanOfficerCodeEventProcessor",
+            "Actualizar Codigo de Promotor"),
 
     DISBURSEMENT("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementEventProcessor", "Disbursement Event"),
 
