@@ -157,8 +157,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
         if (!scheduleParams.isPartialUpdate()) {
             if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
-                getDisbursementAmount(loanApplicationTerms, scheduleParams.getPeriodStartDate(),
-                        scheduleParams.getDisburseDetailMap(), scheduleParams.applyInterestRecalculation());
+                getDisbursementAmount(loanApplicationTerms, scheduleParams.getPeriodStartDate(), scheduleParams.getDisburseDetailMap(),
+                        scheduleParams.applyInterestRecalculation());
                 Money calculatedAmortizableAmount = loanApplicationTerms.getPrincipal().minus(loanApplicationTerms.getDownPaymentAmount());
                 updateAmortization(mc, loanApplicationTerms, scheduleParams.getPeriodNumber(), calculatedAmortizableAmount);
             } else {
@@ -175,7 +175,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         downPaymentAmt = Money.of(currency, MathUtil.percentageOf(disburseAmt.getAmount(),
                                 loanApplicationTerms.getDisbursedAmountPercentageForDownPayment(), 19));
                         if (loanApplicationTerms.getInstallmentAmountInMultiplesOf() != null) {
-                            downPaymentAmt = Money.roundToMultiplesOf(downPaymentAmt, loanApplicationTerms.getInstallmentAmountInMultiplesOf());
+                            downPaymentAmt = Money.roundToMultiplesOf(downPaymentAmt,
+                                    loanApplicationTerms.getInstallmentAmountInMultiplesOf());
                         }
                     }
                     Money remainingPrincipalAmt = disburseAmt.minus(downPaymentAmt);
@@ -811,7 +812,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             dayOfFirstRepayment = scheduleParams.getActualRepaymentDate().getDayOfMonth();
         }
         if (dayOfFirstRepayment == 0) {
-            // When there are some retained installments based on the disbursement or repayment then use first installment's date
+            // When there are some retained installments based on the disbursement or repayment then use first
+            // installment's date
             if (!scheduleParams.getInstallments().isEmpty()) {
                 LoanRepaymentScheduleInstallment firstInstallment;
                 dayOfFirstRepayment = scheduleParams.getInstallments().get(0).getDueDate().getDayOfMonth();
@@ -1372,12 +1374,14 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         scheduleParams.setOutstandingBalanceAsPerRest(updateBalanceForInterestCalculation(scheduleParams.getPrincipalPortionMap(),
                 scheduledDueDate, scheduleParams.getOutstandingBalanceAsPerRest()));
         if (!loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
-            scheduleParams.setOutstandingBalanceAsPerRest(calculateOutstandingBalanceAsPerRest(loanApplicationTerms,
-                    scheduleParams.getDisburseDetailMap(), scheduledDueDate, scheduleParams.getOutstandingBalanceAsPerRest(), scheduleParams.getActualRepaymentDate()));
+            scheduleParams.setOutstandingBalanceAsPerRest(
+                    calculateOutstandingBalanceAsPerRest(loanApplicationTerms, scheduleParams.getDisburseDetailMap(), scheduledDueDate,
+                            scheduleParams.getOutstandingBalanceAsPerRest(), scheduleParams.getActualRepaymentDate()));
         }
     }
+
     private void removeAppliedDisbursementsFromMap(LoanApplicationTerms loanApplicationTerms, Map<LocalDate, Money> disburseDetailMap,
-                                                       LocalDate scheduledDueDate) {
+            LocalDate scheduledDueDate) {
         List<LocalDate> removeFromMap = new ArrayList<>();
         for (Map.Entry<LocalDate, Money> entry : disburseDetailMap.entrySet()) {
             if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
@@ -1385,7 +1389,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         && ChronoUnit.DAYS.between(entry.getKey(), scheduledDueDate) > 15) {
                     removeFromMap.add(entry.getKey());
                 }
-            } else  if (!DateUtils.isAfter(entry.getKey(), scheduledDueDate)) {
+            } else if (!DateUtils.isAfter(entry.getKey(), scheduledDueDate)) {
                 removeFromMap.add(entry.getKey());
             }
         }
@@ -1401,10 +1405,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             boolean allowed = false;
             if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
                 if (!DateUtils.isAfter(entry.getKey(), scheduledDueDate)
-                    && ChronoUnit.DAYS.between(entry.getKey(), scheduledDueDate) > 15) {
+                        && ChronoUnit.DAYS.between(entry.getKey(), scheduledDueDate) > 15) {
                     allowed = true;
                 }
-            } else  if (!DateUtils.isAfter(entry.getKey(), scheduledDueDate)) {
+            } else if (!DateUtils.isAfter(entry.getKey(), scheduledDueDate)) {
                 allowed = true;
             }
             if (allowed) {
@@ -1433,12 +1437,13 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
      *
      */
     private void processDisbursements(final LoanApplicationTerms loanApplicationTerms, final BigDecimal chargesDueAtTimeOfDisbursement,
-            LoanScheduleParams scheduleParams, final Collection<LoanScheduleModelPeriod> periods, final LocalDate scheduledDueDate, MathContext mc) {
+            LoanScheduleParams scheduleParams, final Collection<LoanScheduleModelPeriod> periods, final LocalDate scheduledDueDate,
+            MathContext mc) {
         for (Map.Entry<LocalDate, Money> disburseDetail : scheduleParams.getDisburseDetailMap().entrySet()) {
             boolean allowed = false;
             if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
                 if (!DateUtils.isAfter(disburseDetail.getKey(), scheduledDueDate)
-                    && ChronoUnit.DAYS.between(disburseDetail.getKey(), scheduledDueDate) > 15) {
+                        && ChronoUnit.DAYS.between(disburseDetail.getKey(), scheduledDueDate) > 15) {
                     allowed = true;
                 }
             } else if (DateUtils.isAfter(disburseDetail.getKey(), scheduleParams.getPeriodStartDate())
@@ -2317,7 +2322,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         for (Map.Entry<LocalDate, Money> mapEntry : params.getDisburseDetailMap().entrySet()) {
             boolean allowed = false;
             if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
-                if (!DateUtils.isAfter(mapEntry.getKey(), params.getActualRepaymentDate()) && ChronoUnit.DAYS.between(mapEntry.getKey(), params.getActualRepaymentDate()) > 15) {
+                if (!DateUtils.isAfter(mapEntry.getKey(), params.getActualRepaymentDate())
+                        && ChronoUnit.DAYS.between(mapEntry.getKey(), params.getActualRepaymentDate()) > 15) {
                     allowed = true;
                 }
             } else {
@@ -2329,8 +2335,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     value = value.plus(map.get(mapEntry.getKey()));
                 }
                 if (loanApplicationTerms.isDownPaymentEnabled()) {
-                    Money downPaymentAmount = Money.of(loanApplicationTerms.getCurrency(),
-                            MathUtil.percentageOf(value.getAmount(), loanApplicationTerms.getDisbursedAmountPercentageForDownPayment(), 19));
+                    Money downPaymentAmount = Money.of(loanApplicationTerms.getCurrency(), MathUtil.percentageOf(value.getAmount(),
+                            loanApplicationTerms.getDisbursedAmountPercentageForDownPayment(), 19));
                     if (loanApplicationTerms.getInstallmentAmountInMultiplesOf() != null) {
                         downPaymentAmount = Money.roundToMultiplesOf(downPaymentAmount,
                                 loanApplicationTerms.getInstallmentAmountInMultiplesOf());
@@ -3523,7 +3529,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                             allowed = true;
                             removeFromMap.add(disburseDetail.getKey());
                         }
-                    } else  if (DateUtils.isAfter(disburseDetail.getKey(), installment.getFromDate())
+                    } else if (DateUtils.isAfter(disburseDetail.getKey(), installment.getFromDate())
                             && !DateUtils.isAfter(disburseDetail.getKey(), installment.getDueDate())) {
                         allowed = true;
                     }
@@ -3552,7 +3558,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     for (LocalDate date : removeFromMap) {
                         disburseDetailMap.remove(date);
                     }
-		        }
+                }
 
                 // calculation of basic fields to start the schedule generation
                 // from the middle

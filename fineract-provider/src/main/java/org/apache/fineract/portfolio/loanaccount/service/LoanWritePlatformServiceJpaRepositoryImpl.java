@@ -679,7 +679,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 createAndSaveLoanScheduleArchive(loan, scheduleGeneratorDTO);
             }
 
-
             if (isPaymentTypeApplicableForDisbursementCharge) {
                 changedTransactionDetail = loan.disburse(currentUser, command, changes, scheduleGeneratorDTO, paymentDetail);
             } else {
@@ -847,7 +846,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     private void createAndSaveLoanScheduleArchiveForCreditoRotativo(final Loan loan, ScheduleGeneratorDTO scheduleGeneratorDTO) {
         LoanRescheduleRequest loanRescheduleRequest = null;
-        this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan, loanRescheduleRequest);
+        this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan,
+                loanRescheduleRequest);
     }
 
     /**
@@ -5241,11 +5241,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         // For revolving credit products, we need to track available credit differently
         if (loan.isRevolvingLoan()) {
             BigDecimal disbursementAmountSum = loanDisbursementDetailsRepository.findAllByLoanId(loan.getId()).stream()
-                    .filter(disbursed -> !disbursed.isReversed() && Objects.nonNull(disbursed.getDisbursementDate())).map(LoanDisbursementDetails::getPrincipal)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    .filter(disbursed -> !disbursed.isReversed() && Objects.nonNull(disbursed.getDisbursementDate()))
+                    .map(LoanDisbursementDetails::getPrincipal).reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal loanTransactionRepaymentSum = loanTransactionRepository.findAllByLoanIdAndTypeOf(loan.getId(), 2).stream()
-                    .filter(nR -> !nR.isReversed() && nR.getPrincipalPortion() != null).map(LoanTransaction::getPrincipalPortion).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    .filter(nR -> !nR.isReversed() && nR.getPrincipalPortion() != null).map(LoanTransaction::getPrincipalPortion)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             // For revolving credit, available credit is: approved limit - (disbursements - repayments)
             BigDecimal currentOutstanding = disbursementAmountSum.subtract(loanTransactionRepaymentSum);
@@ -5396,7 +5397,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 for (LoanRescheduleRequestToTermVariationMapping mapping : request.getLoanRescheduleRequestToTermVariationMappings()) {
                     LoanTermVariations variation = mapping.getLoanTermVariations();
                     variation.updateIsActive(true);
-                  //  loan.getLoanTermVariations().add(variation);
+                    // loan.getLoanTermVariations().add(variation);
                 }
                 loanRepository.save(loan);
             }
