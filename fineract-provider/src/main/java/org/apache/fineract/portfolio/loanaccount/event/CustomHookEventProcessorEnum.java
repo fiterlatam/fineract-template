@@ -48,12 +48,18 @@ public enum CustomHookEventProcessorEnum {
     DISBURSEMENT_CREDITO_ROTATIVO("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementCreditoRotativoEventProcessor",
             "Aprobación De Crédito Rotativo - Operaciones"),
 
+    DISBURSEMENT_CREDITO_ROTATIVO_UPDATE(
+            "org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementCreditoRotativoUpdateEventProcessor",
+            "Aprobación De Crédito Rotativo - Operaciones"),
+
     LOAN_DISBURSEMENT_REMAINING_AMOUNT("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementRemainingAmountEventProcessor",
             "Loan Disbursement - Remaining Amount"),
 
     ANULLMENT_EVENT("org.apache.fineract.portfolio.loanaccount.event.LoanCloseEventProcessor", "Annulment Event"),
 
-    CONTACTABILITY("org.apache.fineract.portfolio.loanaccount.event.LoanApprovalContactabilityEventProcessor", "Contactability"),
+    CONTACTABILITY("org.apache.fineract.portfolio.loanaccount.event.LoanApprovalContactabilityEventProcessor",
+            "Contactability"), CONTACTABILITY_UPDATE(
+                    "org.apache.fineract.portfolio.loanaccount.event.LoanApprovalContactabilityUpdateEventProcessor", "Contactability"),
 
     NOTFOUND("", ""),;
 

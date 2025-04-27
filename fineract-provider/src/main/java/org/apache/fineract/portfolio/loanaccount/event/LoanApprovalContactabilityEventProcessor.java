@@ -60,11 +60,10 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
 
     @Override
     protected List<Map<String, String>> getSupportedEvents() {
-        Map<String, String> loanEvent = Map.of("entityName", "LOAN", "actionName", "NONE");
+        Map<String, String> loanEvent = Map.of("entityName", "Validacion Contacta", "actionName", "CREATE");
         return Collections.singletonList(loanEvent);
     }
 
-    @Override
     public Map<String, Object> transform(String entityName, String actionName, JsonCommand command, Object result) {
         if (result instanceof CommandProcessingResult successResult) {
             return generateSuccessResponse(CommandProcessingResult.fromCommandProcessingResult(successResult));
