@@ -25,22 +25,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.dataqueries.events.DatatableEntryEvent;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementCreditoRotativoEventProcessor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.fineract.portfolio.loanaccount.event.LoanApprovalContactabilityEventProcessor;
 import org.springframework.expression.spel.SpelEvaluationException;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class InformacionAdicionalEventHandler implements DatatableEventHandler {
+public class ContactabilityEventHandler implements DatatableEventHandler {
 
-    private static final String DATATABLE_NAME = "Informacion Adicional";
+    private static final String DATATABLE_NAME = "Validacion Contacta";
     private static final String ENTITY_TYPE = "LOAN";
     private static final String ACTION = "NONE";
 
-    @Autowired
-    private final LoanDisbursementCreditoRotativoEventProcessor loanDisbursementCreditoRotativoEventProcessor;
+    private final LoanApprovalContactabilityEventProcessor loanApprovalContactabilityEventProcessor;
     private final PlatformSecurityContext context;
 
     @Override
@@ -58,7 +56,7 @@ public class InformacionAdicionalEventHandler implements DatatableEventHandler {
         payload.put("dummyNotEmptyPayload", "dummyNotEmptyPayload");
 
         try {
-            loanDisbursementCreditoRotativoEventProcessor.publish(payload, ENTITY_TYPE, ACTION, context.authenticatedUser(),
+            loanApprovalContactabilityEventProcessor.publish(payload, ENTITY_TYPE, ACTION, context.authenticatedUser(),
                     ThreadLocalContextUtil.getContext());
         } catch (SpelEvaluationException e) {
             log.info(e.getMessage());

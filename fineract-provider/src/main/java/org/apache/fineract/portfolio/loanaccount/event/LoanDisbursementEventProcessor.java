@@ -33,6 +33,7 @@ import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -65,6 +66,13 @@ public class LoanDisbursementEventProcessor extends BaseCustomWebhookEventProces
 
         Map<String, Object> requestBody = new HashMap<>();
         Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(result.getLoanId());
+
+        if (loan.getLoanProduct().getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())
+                && loan.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode())) {
+
+            return requestBody;
+        }
+
         Client client = loan.client();
         String clientName = client.getDisplayName();
         ExternalId externalId = client.getExternalId();
