@@ -54,6 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.cob.exceptions.LoanAccountLockCannotBeOverruledException;
 import org.apache.fineract.cob.service.LoanAccountLockService;
@@ -668,11 +669,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                  */
                 recalculateSchedule = true;
             }
+            if (loan.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+                createAndSaveLoanScheduleArchiveForCreditoRotativo(loan, scheduleGeneratorDTO);
+            }
             regenerateScheduleOnDisbursement(command, loan, recalculateSchedule, scheduleGeneratorDTO, nextPossibleRepaymentDate,
                     rescheduledRepaymentDate);
             // Farooq 25th June 2024 - Ensured that Loan Schedule Archive is always created
+            if (!loan.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+                createAndSaveLoanScheduleArchive(loan, scheduleGeneratorDTO);
+            }
 
-            createAndSaveLoanScheduleArchive(loan, scheduleGeneratorDTO);
 
             if (isPaymentTypeApplicableForDisbursementCharge) {
                 changedTransactionDetail = loan.disburse(currentUser, command, changes, scheduleGeneratorDTO, paymentDetail);
@@ -837,6 +843,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         LoanScheduleModel loanScheduleModel = loan.regenerateScheduleModel(scheduleGeneratorDTO);
         List<LoanRepaymentScheduleInstallment> installments = retrieveRepaymentScheduleFromModel(loanScheduleModel);
         this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(installments, loan, loanRescheduleRequest);
+    }
+
+    private void createAndSaveLoanScheduleArchiveForCreditoRotativo(final Loan loan, ScheduleGeneratorDTO scheduleGeneratorDTO) {
+        LoanRescheduleRequest loanRescheduleRequest = null;
+        this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan, loanRescheduleRequest);
     }
 
     /**
@@ -5230,11 +5241,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         // For revolving credit products, we need to track available credit differently
         if (loan.isRevolvingLoan()) {
             BigDecimal disbursementAmountSum = loanDisbursementDetailsRepository.findAllByLoanId(loan.getId()).stream()
-                    .filter(disbursed -> Objects.nonNull(disbursed.getDisbursementDate())).map(LoanDisbursementDetails::getPrincipal)
+                    .filter(disbursed -> !disbursed.isReversed() && Objects.nonNull(disbursed.getDisbursementDate())).map(LoanDisbursementDetails::getPrincipal)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal loanTransactionRepaymentSum = loanTransactionRepository.findAllByLoanIdAndTypeOf(loan.getId(), 2).stream()
-                    .filter(nR -> !nR.isReversed()).map(LoanTransaction::getPrincipalPortion).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    .filter(nR -> !nR.isReversed() && nR.getPrincipalPortion() != null).map(LoanTransaction::getPrincipalPortion).reduce(BigDecimal.ZERO, BigDecimal::add);
 
             // For revolving credit, available credit is: approved limit - (disbursements - repayments)
             BigDecimal currentOutstanding = disbursementAmountSum.subtract(loanTransactionRepaymentSum);
@@ -5281,16 +5292,26 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             loanDisbursementDetailsRepository.save(details);
 
             loan.addDisbursementDetails(details);
-            loan.updateLoanSummaryDerivedFields();
+            if (!loan.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+                loan.updateLoanSummaryDerivedFields();
+            }
             loanRepository.save(loan);
 
             loan = this.loanAssembler.assembleFrom(loan.getId());
             Long loanRescheduleReasonId = getLoanRescheduleReasonId();
+            if (loan.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+                ImmutablePair<Integer, LocalDate> pair = calculateInstallmentsToAdd(loan, actualDisbursementDate);
+                if (pair != null) {
+                    Integer nrOfInstallmentsToAdd = pair.left;
+                    LocalDate variationDate = pair.right;
+                    createRescheduleRequestForCreditoRotativo(loan, variationDate, loanRescheduleReasonId, nrOfInstallmentsToAdd);
+                }
+            } else {
+                Integer nrOfInstallmentsToAdd = calculateInstallmentsToAdd(loan);
 
-            Integer nrOfInstallmentsToAdd = calculateInstallmentsToAdd(loan);
-
-            if (nrOfInstallmentsToAdd.compareTo(0) > 0) {
-                createRescheduleRequest(loan, actualDisbursementDate, loanRescheduleReasonId, nrOfInstallmentsToAdd);
+                if (nrOfInstallmentsToAdd.compareTo(0) > 0) {
+                    createRescheduleRequest(loan, actualDisbursementDate, loanRescheduleReasonId, nrOfInstallmentsToAdd);
+                }
             }
         }
     }
@@ -5313,12 +5334,72 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         return productNrOfRepayments - notPaidInstallmentNr.intValue();
     }
 
+    private ImmutablePair<Integer, LocalDate> calculateInstallmentsToAdd(Loan loan, LocalDate disbursementDate) {
+        ImmutablePair<Integer, LocalDate> pair;
+        LocalDate variationDate = disbursementDate;
+        Integer productNrOfRepayments = loan.getOriginalNumberOfRepayments();
+        Integer installmentNumber = 0;
+        for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
+            if (installment.getDueDate().isAfter(disbursementDate)) {
+                long diff = ChronoUnit.DAYS.between(disbursementDate, installment.getDueDate());
+                if (diff < 15) {
+                    installmentNumber = installment.getInstallmentNumber();
+                    // Add the variation to next installment
+                    variationDate = installment.getDueDate().plusDays(2);
+                    break;
+                } else {
+                    installmentNumber = installment.getInstallmentNumber();
+                    variationDate = installment.getDueDate();
+                    break;
+                }
+            }
+        }
+        Integer remainingInstallments = loan.getRepaymentScheduleInstallments().size() - installmentNumber;
+        if (installmentNumber == 0) {
+            pair = new ImmutablePair<>(productNrOfRepayments, variationDate);
+            return pair;
+        } else if (productNrOfRepayments > remainingInstallments) {
+            pair = new ImmutablePair<>(productNrOfRepayments - remainingInstallments, variationDate);
+            return pair;
+        } else {
+            return null;
+        }
+    }
+
     private void createRescheduleRequest(Loan loan, LocalDate actualDisbursementDate, Long loanRescheduleReasonId,
             Integer nrOfNewInstallments) {
         try {
             JsonCommand createRescheduleRequestCommand = createRescheduleRequestAction(fromApiJsonHelper, null, loan.getId(),
                     actualDisbursementDate, loanRescheduleReasonId, nrOfNewInstallments);
             loanRescheduleRequestWritePlatformService.create(createRescheduleRequestCommand);
+        } catch (JsonProcessingException ex) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.does.cannot.create.extension",
+                    "Loan could not be automatically create and approve its extension.");
+        }
+    }
+
+    private void createRescheduleRequestForCreditoRotativo(Loan loan, LocalDate actualDisbursementDate, Long loanRescheduleReasonId,
+            Integer nrOfNewInstallments) {
+        try {
+            JsonCommand createRescheduleRequestCommand = createRescheduleRequestAction(fromApiJsonHelper, null, loan.getId(),
+                    actualDisbursementDate, loanRescheduleReasonId, nrOfNewInstallments);
+            CommandProcessingResult result = loanRescheduleRequestWritePlatformService.create(createRescheduleRequestCommand);
+            Long requestId = result.getResourceId();
+            Optional<LoanRescheduleRequest> rescheduleRequestDataOpt = loanRescheduleRequestRepository.findById(requestId);
+            if (rescheduleRequestDataOpt.isPresent()) {
+                final AppUser appUser = this.platformSecurityContext.authenticatedUser();
+                LoanRescheduleRequest request = rescheduleRequestDataOpt.get();
+                loan.updateRescheduledByUser(appUser);
+                loan.updateRescheduledOnDate(DateUtils.getBusinessLocalDate());
+                request.approve(appUser, LocalDate.now());
+                loanRescheduleRequestRepository.save(request);
+                for (LoanRescheduleRequestToTermVariationMapping mapping : request.getLoanRescheduleRequestToTermVariationMappings()) {
+                    LoanTermVariations variation = mapping.getLoanTermVariations();
+                    variation.updateIsActive(true);
+                  //  loan.getLoanTermVariations().add(variation);
+                }
+                loanRepository.save(loan);
+            }
         } catch (JsonProcessingException ex) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.does.cannot.create.extension",
                     "Loan could not be automatically create and approve its extension.");

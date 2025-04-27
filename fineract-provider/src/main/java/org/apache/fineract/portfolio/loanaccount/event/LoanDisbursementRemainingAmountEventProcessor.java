@@ -88,7 +88,7 @@ public class LoanDisbursementRemainingAmountEventProcessor extends BaseCustomWeb
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal loanTransactionRepaymentSum = loanTransactionRepository.findAllByLoanIdAndTypeOf(loan.getId(), 2).stream()
-                .filter(nR -> !nR.isReversed()).map(x -> x.getPrincipalPortion()).reduce(BigDecimal.ZERO, BigDecimal::add);
+                .filter(nR -> !nR.isReversed() && nR.getPrincipalPortion() != null).map(x -> x.getPrincipalPortion()).reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal loanApprovedPrincipal = loan.getApprovedPrincipal();
 
