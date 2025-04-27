@@ -2962,7 +2962,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
                 regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
             } else {
-                regenerateRepaymentSchedule(scheduleGeneratorDTO);
+                if (this.isMultiDisburmentLoan() && this.disbursementDetails.size() > 1) {
+                    scheduleGeneratorDTO.setRecalculateFrom(actualDisbursementDate);
+                    regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
+                } else {
+                    regenerateRepaymentSchedule(scheduleGeneratorDTO);
+                }
             }
         }
     }
@@ -6618,6 +6623,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (Objects.nonNull(this.getExpectedDisbursedOnLocalDate())) {
             loanApplicationTerms.setInstallmentDayOfMonth(this.getExpectedDisbursedOnLocalDate().getDayOfMonth());
         }
+
+        loanApplicationTerms.setLoanProductName(this.getLoanProduct().getName());
 
         return loanApplicationTerms;
     }

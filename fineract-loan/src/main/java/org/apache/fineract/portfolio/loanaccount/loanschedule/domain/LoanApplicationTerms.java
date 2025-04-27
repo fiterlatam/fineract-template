@@ -24,10 +24,7 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -251,6 +248,8 @@ public final class LoanApplicationTerms {
 
     @Setter
     private int installmentDayOfMonth;
+
+    List<LoanTermVariationsData> loanTermVariationsDataList;
 
     public static LoanApplicationTerms assembleFrom(final ApplicationCurrency currency, final Integer loanTermFrequency,
             final PeriodFrequencyType loanTermPeriodFrequencyType, final Integer numberOfRepayments, final Integer repaymentEvery,
@@ -2043,5 +2042,16 @@ public final class LoanApplicationTerms {
 
     public void setNumberOfInstallmentsToIgnore(Integer numberOfInstallmentsToIgnore) {
         this.numberOfInstallmentsToIgnore = numberOfInstallmentsToIgnore;
+    }
+
+    public List<LoanTermVariationsData> getLoanTermVariationsDataList() {
+        if (loanTermVariationsDataList == null) {
+            return new ArrayList<LoanTermVariationsData>();
+        }
+        return loanTermVariationsDataList;
+    }
+
+    public void setLoanTermVariationsDataList(List<LoanTermVariationsData> loanTermVariationsDataList) {
+        this.loanTermVariationsDataList = loanTermVariationsDataList;
     }
 }

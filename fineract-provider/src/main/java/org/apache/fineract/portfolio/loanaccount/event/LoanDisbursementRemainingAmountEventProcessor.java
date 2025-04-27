@@ -80,7 +80,6 @@ public class LoanDisbursementRemainingAmountEventProcessor extends BaseCustomWeb
     }
 
     private void getRequestBody(CommandProcessingResult result, Map<String, Object> requestBody, Loan loan) {
-
         // Just call the webhook if the balance == 0;
         if (loan.getLoanSummary().getTotalOutstanding().compareTo(BigDecimal.ZERO) == 0) {
             requestBody.put(LOAN_ID_PARAM, loan.getAccountNumber());
