@@ -1445,8 +1445,15 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
     }
 
-    public void checkIfRepaymentPeriodObligationsAreMetAdvanced(final LocalDate transactionDate, final MonetaryCurrency currency) {
-        this.obligationsMet = !getTotalOutstandingIncludingAdvanced(currency).isGreaterThanZero();
+    public void checkIfRepaymentPeriodObligationsAreMetAdvanced(final LocalDate transactionDate, final MonetaryCurrency currency,
+            final boolean isForeclosing) {
+        final Money totalOutstandingIncludingAdvanced = getTotalOutstandingIncludingAdvanced(currency);
+        final boolean isAdvancePayment = isInAdvance(transactionDate);
+        if (isForeclosing) {
+            this.obligationsMet = !totalOutstandingIncludingAdvanced.isGreaterThanZero();
+        } else {
+            this.obligationsMet = !totalOutstandingIncludingAdvanced.isGreaterThanZero() && !isAdvancePayment;
+        }
         if (this.obligationsMet) {
             this.obligationsMetOnDate = transactionDate;
             this.principalCompleted = this.principal;
