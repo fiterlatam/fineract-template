@@ -124,6 +124,7 @@ public class OfficeWritePlatformServiceJpaRepositoryImpl implements OfficeWriteP
             }
 
             final Office office = validateUserPriviledgeOnOfficeAndRetrieve(currentUser, officeId);
+            String currentOfficeHierarchy = office.getHierarchy();
 
             final Map<String, Object> changes = office.update(command);
 
@@ -131,14 +132,22 @@ public class OfficeWritePlatformServiceJpaRepositoryImpl implements OfficeWriteP
                 final Office parent = validateUserPriviledgeOnOfficeAndRetrieve(currentUser, parentId);
                 office.update(parent);
                 String officeCode = office.getOfficeCode();
-                //IF we are moving these offices, we also update linked office to the region in all related agencies;
-                if (StringUtils.containsAny(officeCode,"QUI","SMC","HUE" ,"DEM" ,"PAN" ,"NEB" ,"SOL" ,"MAZ" ,"CHI" ,"XEL" ,"TOM" ,"CAO" ,"COB" ,"IXC")){
-                    if (StringUtils.countMatches(parent.getHierarchy(),".")>=StringUtils.countMatches(office.getHierarchy(),".") ){
-                        throw new WrongOfficeHierarchyException(officeId,parentId);
+                // IF we are moving these offices, we also update linked office to the region in all related agencies;
+                if (StringUtils.containsAny(officeCode, "QUI", "SMC", "HUE", "DEM", "PAN", "NEB", "SOL", "MAZ", "CHI", "XEL", "TOM", "CAO",
+                        "COB", "IXC")) {
+                    if (StringUtils.countMatches(parent.getHierarchy(), ".") >= StringUtils.countMatches(office.getHierarchy(), ".")) {
+                        throw new WrongOfficeHierarchyException(officeId, parentId);
                     }
-                    //UPDATE the linked agency id.
+                    // UPDATE the linked agency id.
                     String updateSql = "update m_agency ma inner join m_supervision ms on ms.agency_id = ma.id INNER JOIN m_office mo on mo.id = ms.linked_office_id set ma.linked_office_id = ? where mo.id=?";
                     this.jdbcTemplate.update(updateSql, parentId, officeId);
+                }
+
+                // update the hierarchy of the offices under this office hierarchcy if the hierarchy is changed.
+                if (!StringUtils.equalsIgnoreCase(currentOfficeHierarchy, office.getHierarchy())) {
+                    String updateHierarchySql = "UPDATE m_office SET hierarchy = CONCAT(?, SUBSTRING(hierarchy, LENGTH(?) + 1)) WHERE hierarchy LIKE ?";
+                    this.jdbcTemplate.update(updateHierarchySql, office.getHierarchy(), currentOfficeHierarchy,
+                            currentOfficeHierarchy + "%");
                 }
 
             }
