@@ -1129,10 +1129,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                             Money zero = transactionAmountUnprocessed.zero();
                             for (LoanRepaymentScheduleInstallment inAdvanceInstallment : allFutureInstallments) {
                                 if (transactionAmountUnprocessed.isZero()) break;
-                                // Use domain method for revolving loan check
                                 if (inAdvanceInstallment.isMigratedInstallment() || (inAdvanceInstallment.getLoan().isMigratedLoan()
                                         && inAdvanceInstallment.getLoan().isRevolvingLoan())) {
-                                    // Process migrated or revolving installments as due or past due installments
                                     Set<LoanCharge> inAdvanceInstallmentCharges = getLoanChargesOfInstallment(charges, inAdvanceInstallment,
                                             firstNormalInstallmentNumber);
                                     LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
@@ -1141,15 +1139,16 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                             .isGreaterThanOrEqualTo(inAdvanceInstallment.getTotalOutstanding(currency))
                                                     ? inAdvanceInstallment.getTotalOutstanding(currency)
                                                     : transactionAmountUnprocessed;
+                                    Money totalPortionPaid = Money.zero(currency);
                                     for (PaymentAllocationType allocationType : paymentAllocationTypes) {
                                         if (toApply.isZero()) break;
                                         Money portion = processPaymentAllocation(allocationType, inAdvanceInstallment, loanTransaction,
                                                 toApply, loanTransactionToRepaymentScheduleMapping, inAdvanceInstallmentCharges, balances,
                                                 LoanRepaymentScheduleInstallment.PaymentAction.PAY);
                                         toApply = toApply.minus(portion);
+                                        totalPortionPaid = totalPortionPaid.plus(portion);
                                     }
-                                    transactionAmountUnprocessed = transactionAmountUnprocessed
-                                            .minus(inAdvanceInstallment.getTotalOutstanding(currency));
+                                    transactionAmountUnprocessed = transactionAmountUnprocessed.minus(totalPortionPaid);
                                     if (transactionAmountUnprocessed.isLessThanZero()) {
                                         transactionAmountUnprocessed = transactionAmountUnprocessed.zero();
                                         break;
