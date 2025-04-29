@@ -871,7 +871,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     }
 
-    private Money payFlatCharge(LoanCharge loanCharge, Money transactionAmountRemaining, final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
+    private Money payFlatCharge(LoanCharge loanCharge, Money transactionAmountRemaining, final boolean isWriteOffTransaction,
+            LoanTransaction loanTransaction) {
         if (transactionAmountRemaining.isZero()) {
             return transactionAmountRemaining;
         }
@@ -898,8 +899,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             feeChargePaid = feeChargePaid.plus(transactionAmountRemaining);
         }
 
-        loanCharge.updatePaidAmountBy(feeChargePaid, this.installmentNumber, Money.zero(currency),
-                isWriteOffTransaction);
+        loanCharge.updatePaidAmountBy(feeChargePaid, this.installmentNumber, Money.zero(currency), isWriteOffTransaction);
         this.feeChargesPaid = defaultToNullIfZero(this.feeChargesPaid);
 
         checkIfRepaymentPeriodObligationsAreMet(loanTransaction.getTransactionDate(), currency);
@@ -919,7 +919,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         if (transactionAmountRemaining.isZero()) {
             return feePortionOfTransaction;
         }
-        // EA-317 we do not have a separate place to handle this charge. So adding it here. When code comes to collect mandatory insurance charge
+        // EA-317 we do not have a separate place to handle this charge. So adding it here. When code comes to collect
+        // mandatory insurance charge
         // then it will also pay the flat charge if it is added to the installment
         if (!this.flatSpecificDueDateCharges.isEmpty()) {
             for (LoanCharge flatCharge : this.getFlatSpecificDueDateCharges()) {
