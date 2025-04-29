@@ -179,6 +179,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     @Column(name = "life_insurance_charge_portion", nullable = true)
     private BigDecimal lifeInsuranceChargePortion;
 
+    @Transient
+    private List<LoanCharge> flatSpecificDueDateCharges;
+
     public LoanRepaymentScheduleInstallment() {
         this.installmentNumber = null;
         this.fromDate = null;
@@ -868,6 +871,45 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     }
 
+    private Money payFlatCharge(LoanCharge loanCharge, Money transactionAmountRemaining, final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
+        if (transactionAmountRemaining.isZero()) {
+            return transactionAmountRemaining;
+        }
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money feeChargePaid = Money.zero(currency);
+        Money feePortionOfTransaction = Money.zero(currency);
+        Money feeChargesDue = loanCharge.getAmountOutstanding(currency);
+        if (feeChargesDue.isZero()) {
+            return Money.zero(currency);
+        }
+        if (transactionAmountRemaining.isGreaterThanOrEqualTo(feeChargesDue)) {
+            if (isWriteOffTransaction) {
+                this.feeChargesWrittenOff = getFeeChargesWrittenOff(currency).plus(feeChargesDue).getAmount();
+            } else {
+                this.feeChargesPaid = getFeeChargesPaid(currency).plus(feeChargesDue).getAmount();
+            }
+            feeChargePaid = feeChargePaid.plus(feeChargesDue);
+        } else {
+            if (isWriteOffTransaction) {
+                this.feeChargesWrittenOff = getFeeChargesWrittenOff(currency).plus(transactionAmountRemaining).getAmount();
+            } else {
+                this.feeChargesPaid = getFeeChargesPaid(currency).plus(transactionAmountRemaining).getAmount();
+            }
+            feeChargePaid = feeChargePaid.plus(transactionAmountRemaining);
+        }
+
+        loanCharge.updatePaidAmountBy(feeChargePaid, this.installmentNumber, Money.zero(currency),
+                isWriteOffTransaction);
+        this.feeChargesPaid = defaultToNullIfZero(this.feeChargesPaid);
+
+        checkIfRepaymentPeriodObligationsAreMet(loanTransaction.getTransactionDate(), currency);
+
+        trackAdvanceAndLateTotalsForRepaymentPeriod(loanTransaction.getTransactionDate(), currency, feeChargePaid);
+
+        return feeChargePaid;
+
+    }
+
     public Money payMandatoryInsuranceChargesComponent(final LocalDate transactionDate, Money transactionAmountRemaining,
             final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
 
@@ -877,6 +919,18 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         if (transactionAmountRemaining.isZero()) {
             return feePortionOfTransaction;
         }
+        // EA-317 we do not have a separate place to handle this charge. So adding it here. When code comes to collect mandatory insurance charge
+        // then it will also pay the flat charge if it is added to the installment
+        if (!this.flatSpecificDueDateCharges.isEmpty()) {
+            for (LoanCharge flatCharge : this.getFlatSpecificDueDateCharges()) {
+                loanChargePaidByPortion = payFlatCharge(flatCharge, transactionAmountRemaining, isWriteOffTransaction, loanTransaction);
+                updateChargePaidByAmount(loanChargePaidByPortion, loanTransaction, flatCharge);
+                transactionAmountRemaining = transactionAmountRemaining.minus(loanChargePaidByPortion);
+                feePortionOfTransaction = feePortionOfTransaction.plus(loanChargePaidByPortion);
+                loanChargePaidByPortion = Money.zero(currency);
+            }
+        }
+
         for (LoanInstallmentCharge installmentCharge : getInstallmentChargesSorted()) {
             if (installmentCharge.getLoanCharge().getChargeCalculation().isMandatoryInsuranceCharge()
                     || installmentCharge.getLoanCharge().getChargeCalculation().isLifeInsurance()) {
@@ -1859,5 +1913,13 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             // amount and all other null components
             this.getInstallmentCharges().clear();
         }
+    }
+
+    public List<LoanCharge> getFlatSpecificDueDateCharges() {
+        return flatSpecificDueDateCharges;
+    }
+
+    public void setFlatSpecificDueDateCharges(List<LoanCharge> flatSpecificDueDateCharges) {
+        this.flatSpecificDueDateCharges = flatSpecificDueDateCharges;
     }
 }
