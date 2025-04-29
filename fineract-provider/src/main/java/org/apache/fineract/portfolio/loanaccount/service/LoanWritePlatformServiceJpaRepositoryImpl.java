@@ -4903,8 +4903,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         synchronized (this) {
             log.info("Acquiring lock for loan document processing with client id: {}", loanDocumentData.getClientIdNumber());
-            FacturaElectronicaMensual facturaElectronicaMensual = generateInvoice(loanDocumentData,
-                    loanDocumentData.getProductTypeParamId());
+            final LoanProductParameterization loanProductParameterization = this.productParameterizationRepository
+                    .findById(loanDocumentData.getProductTypeParamId())
+                    .orElseThrow(() -> new LoanProductParameterizationNotFoundException(loanDocumentData.getProductTypeParamId()));
+            FacturaElectronicaMensual facturaElectronicaMensual = generateInvoice(loanDocumentData, loanProductParameterization);
 
             long itemPosition = 0L;
             if (interestPaid.compareTo(BigDecimal.ZERO) > 0) {
@@ -5009,19 +5011,24 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 facturaElectronicaMensualItem.setImpuesto(totalImpuestoItem);
                 facturaElectronicaMensualItem.setPorcentaje_impuesto(porcentajeImpuestoItem);
             }
-            this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
+            if (!facturaElectronicaMensuals.isEmpty()) {
+                this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
+            } else {
+                // revert the counter to maintain consistency
+                loanProductParameterization.setInvoiceCounter(loanProductParameterization.getInvoiceCounter() - 1L);
+            }
+            this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
             log.info("Releasing lock for loan document processing with client id: {}", loanDocumentData.getClientIdNumber());
         }
     }
 
-    private FacturaElectronicaMensual generateInvoice(LoanDocumentData loanDocumentData, Long productTypeParamId) {
+    private FacturaElectronicaMensual generateInvoice(LoanDocumentData loanDocumentData,
+            LoanProductParameterization loanProductParameterization) {
         long documentNumber;
         Long currentCounter;
         final FacturaElectronicaMensual facturaElectronicaMensual = loanDocumentData.toEntity();
         final Integer itemsCount = loanDocumentData.getItemsCount();
         facturaElectronicaMensual.setTotal_unidades(String.valueOf(itemsCount));
-        final LoanProductParameterization loanProductParameterization = this.productParameterizationRepository.findById(productTypeParamId)
-                .orElseThrow(() -> new LoanProductParameterizationNotFoundException(productTypeParamId));
         final Long rangeStartNumber = loanProductParameterization.getRangeStartNumber();
         final Long invoiceCounter = loanProductParameterization.getInvoiceCounter();
         final Long rangeEndNumber = loanProductParameterization.getRangeEndNumber();
@@ -5036,7 +5043,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
                             loanProductParameterization.getProductType()));
         }
-        this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
         facturaElectronicaMensual.setNumero_doc(String.valueOf(documentNumber));
         facturaElectronicaMensual.setReferencia(String.valueOf(documentNumber));
         facturaElectronicaMensual.setCodigo_descuento("0");
