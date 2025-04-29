@@ -1323,10 +1323,10 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                     inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
                                                             .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
                                                     inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMetAdvanced(
-                                                            loanTransaction.getTransactionDate(), currency);
+                                                            loanTransaction.getTransactionDate(), currency, true);
                                                 } else {
                                                     inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMetAdvanced(
-                                                            loanTransaction.getTransactionDate(), currency);
+                                                            loanTransaction.getTransactionDate(), currency, false);
                                                     inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
                                                             loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
                                                     inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
