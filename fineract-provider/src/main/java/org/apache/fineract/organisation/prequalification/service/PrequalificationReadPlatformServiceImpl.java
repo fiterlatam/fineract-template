@@ -432,11 +432,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                         prequalification_numbers.total_approved_amount AS totalApprovedAmount,
                         CASE
                             WHEN g.previous_prequalification IS NOT NULL THEN 'Recredito'
-                            ELSE 'Nuevo' 
+                            ELSE 'Nuevo'
                         END AS processType,
-                        CASE 
-                            WHEN mpsl.reprocess_count > 0 THEN 'Reproceso' 
-                            ELSE 'Nuevo' 
+                        CASE
+                            WHEN mpsl.reprocess_count > 0 THEN 'Reproceso'
+                            ELSE 'Nuevo'
                         END AS processQuality,
                         CONCAT(mu.firstname, ' ', mu.lastname) AS statusChangedBy,
                         COALESCE(ma.NAME, individualOffice.agency_name) AS agencyName,
@@ -475,7 +475,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                                 mpgm.group_id,
                                 ms.agency_id,
                                 mag.NAME AS agency_name,
-                    						ms.linked_office_id AS supervision_office 
+                    						ms.linked_office_id AS supervision_office
                             FROM
                                 m_prequalification_group_members mpgm
                                 INNER JOIN m_client mc ON mc.dpi = mpgm.dpi
