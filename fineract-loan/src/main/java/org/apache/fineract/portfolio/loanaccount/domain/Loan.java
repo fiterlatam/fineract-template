@@ -6285,8 +6285,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (!loanCharge.isDueAtDisbursement()) {
                 updateOverdueScheduleInstallment(loanCharge);
                 if (loanCharge.getDueLocalDate() == null || !DateUtils.isBefore(lastRepaymentDate, loanCharge.getDueLocalDate())) {
-                    if ((loanCharge.isInstalmentFee() || !loanCharge.isWaived()) && (loanCharge.getDueLocalDate() == null
-                            || !DateUtils.isAfter(lastTransactionDate, loanCharge.getDueLocalDate()))) {
+                    if ((loanCharge.isInstalmentFee() || !loanCharge.isWaived()) && ((loanCharge.getDueLocalDate() == null
+                            || !DateUtils.isAfter(lastTransactionDate, loanCharge.getDueLocalDate()))
+                            || loanCharge.isFlatSpecificDueDateCharge())) {
                         recalculateLoanCharge(loanCharge);
                         loanCharge.updateWaivedAmount(getCurrency());
                     }
