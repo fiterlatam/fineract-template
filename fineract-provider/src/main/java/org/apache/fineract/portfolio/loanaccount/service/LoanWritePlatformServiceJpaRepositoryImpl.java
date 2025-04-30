@@ -5373,16 +5373,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         pair = new ImmutablePair<>(installmentsToAdd, variationDate);
         return pair;
-//        Integer remainingInstallments = loan.getRepaymentScheduleInstallments().size() - installmentNumber;
-//        if (installmentNumber == 0) {
-//            pair = new ImmutablePair<>(productNrOfRepayments, variationDate);
-//            return pair;
-//        } else if (productNrOfRepayments > remainingInstallments) {
-//            pair = new ImmutablePair<>(productNrOfRepayments - remainingInstallments, variationDate);
-//            return pair;
-//        } else {
-//            return null;
-//        }
     }
 
     private void createRescheduleRequest(Loan loan, LocalDate actualDisbursementDate, Long loanRescheduleReasonId,
