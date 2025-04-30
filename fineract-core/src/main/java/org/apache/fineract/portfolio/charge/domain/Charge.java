@@ -1046,6 +1046,11 @@ public class Charge extends AbstractPersistableCustom {
                             ChargeCalculationTypeBaseItemsEnum.INTEREST_INSTALLMENT.getIndex(),
                             ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex());
                 }
+            } else if (ChargeTimeType.SPECIFIED_DUE_DATE.equals(ChargeTimeType.fromInt(this.getChargeTimeType()))) {
+                if (!ChargeCalculationType.FLAT.equals(ChargeCalculationType.fromInt(this.chargeCalculation))) {
+                    throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
+                            Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
+                }
             } else if (this.isMandatoryInsurance()) {
                 if (this.isFlatMandatoryInsurance()) { // Flat and Mandatory Insurance
                     verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(),
@@ -1081,7 +1086,8 @@ public class Charge extends AbstractPersistableCustom {
                         Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
             }
 
-            if (!this.isPenalty() && !ChargeTimeType.fromInt(this.getChargeTimeType()).isInstalmentFee() && !this.isDisbursementCharge()) {
+            if (!this.isPenalty() && !ChargeTimeType.fromInt(this.getChargeTimeType()).isInstalmentFee()
+                    && !ChargeTimeType.fromInt(this.getChargeTimeType()).isOnSpecifiedDueDate() && !this.isDisbursementCharge()) {
                 throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
                         Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
             }

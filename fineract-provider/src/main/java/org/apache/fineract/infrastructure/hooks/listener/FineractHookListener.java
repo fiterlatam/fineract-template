@@ -55,7 +55,13 @@ public class FineractHookListener implements HookListener {
 
         final List<Hook> hooks = hookReadPlatformService
                 .retrieveHooksByEvent(hookEventSource.getEntityName(), hookEventSource.getActionName()).stream()
-                .filter(hookName -> hookName.getName().equalsIgnoreCase(event.getHookName())).collect(Collectors.toUnmodifiableList());
+                .filter(hookName -> hookName.getName().trim().equalsIgnoreCase(event.getHookName()))
+                .collect(Collectors.toUnmodifiableList());
+
+        if (hooks.size() == 0) {
+            log.warn("No hooks found for event and HookName {}.{}.{}", entityName, actionName, event.getHookName());
+            return;
+        }
 
         for (final Hook hook : hooks) {
             final HookProcessor processor = hookProcessorProvider.getProcessor(hook);

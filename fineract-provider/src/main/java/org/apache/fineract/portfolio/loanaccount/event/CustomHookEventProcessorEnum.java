@@ -29,7 +29,8 @@ public enum CustomHookEventProcessorEnum {
     CREDITO_ROTATIVO_FIRST_USE("org.apache.fineract.portfolio.loanaccount.event.LoanCreditoRotativoFirstUseEventProcessor",
             "First use in revolving loan"),
 
-    LOAN_OFFICER_UPDATE("org.apache.fineract.portfolio.loanaccount.event.LoanOfficerUpdateEventProcessor", "Actualizar Codigo de Promotor"),
+    LOAN_OFFICER_UPDATE("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementUpdateLoanOfficerCodeEventProcessor",
+            "Actualizar Codigo de Promotor"),
 
     DISBURSEMENT("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementEventProcessor", "Disbursement Event"),
 
@@ -39,7 +40,7 @@ public enum CustomHookEventProcessorEnum {
 
     LOAN_DISBURSEMENT_APPROVED_AMOUNT_AVAILABLE(
             "org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementApprovedAmountAvailableEventProcessor",
-            "Loan Disbursement - Approved Amount Available"),
+            "New disbursement revolving with balance 0"),
 
     DISBURSEMENT_GUARANTEE("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementGuaranteeEventProcessor",
             "Disbursement Guarantee"),
@@ -47,12 +48,19 @@ public enum CustomHookEventProcessorEnum {
     DISBURSEMENT_CREDITO_ROTATIVO("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementCreditoRotativoEventProcessor",
             "Aprobación De Crédito Rotativo - Operaciones"),
 
+    DISBURSEMENT_CREDITO_ROTATIVO_UPDATE(
+            "org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementCreditoRotativoUpdateEventProcessor",
+            "Aprobación De Crédito Rotativo - Operaciones"),
+
     LOAN_DISBURSEMENT_REMAINING_AMOUNT("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementRemainingAmountEventProcessor",
-            "Loan Disbursement - Remaining Amount"),
+            "Revolving amount available"),
 
     ANULLMENT_EVENT("org.apache.fineract.portfolio.loanaccount.event.LoanCloseEventProcessor", "Annulment Event"),
 
-    CONTACTABILITY("org.apache.fineract.portfolio.loanaccount.event.LoanApprovalContactabilityEventProcessor", "Contactability"),
+    CONTACTABILITY("org.apache.fineract.portfolio.loanaccount.event.LoanApprovalContactabilityEventProcessor", "Contactability"), //
+
+    CONTACTABILITY_UPDATE("org.apache.fineract.portfolio.loanaccount.event.LoanApprovalContactabilityUpdateEventProcessor",
+            "Contactability"),
 
     NOTFOUND("", ""),;
 

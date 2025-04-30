@@ -2962,7 +2962,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
                 regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
             } else {
-                regenerateRepaymentSchedule(scheduleGeneratorDTO);
+                if (this.isMultiDisburmentLoan() && this.disbursementDetails.size() > 1) {
+                    scheduleGeneratorDTO.setRecalculateFrom(actualDisbursementDate);
+                    regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
+                } else {
+                    regenerateRepaymentSchedule(scheduleGeneratorDTO);
+                }
             }
         }
     }
@@ -6280,8 +6285,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (!loanCharge.isDueAtDisbursement()) {
                 updateOverdueScheduleInstallment(loanCharge);
                 if (loanCharge.getDueLocalDate() == null || !DateUtils.isBefore(lastRepaymentDate, loanCharge.getDueLocalDate())) {
-                    if ((loanCharge.isInstalmentFee() || !loanCharge.isWaived()) && (loanCharge.getDueLocalDate() == null
-                            || !DateUtils.isAfter(lastTransactionDate, loanCharge.getDueLocalDate()))) {
+                    if ((loanCharge.isInstalmentFee() || !loanCharge.isWaived()) && ((loanCharge.getDueLocalDate() == null
+                            || !DateUtils.isAfter(lastTransactionDate, loanCharge.getDueLocalDate()))
+                            || loanCharge.isFlatSpecificDueDateCharge())) {
                         recalculateLoanCharge(loanCharge);
                         loanCharge.updateWaivedAmount(getCurrency());
                     }
@@ -6618,6 +6624,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (Objects.nonNull(this.getExpectedDisbursedOnLocalDate())) {
             loanApplicationTerms.setInstallmentDayOfMonth(this.getExpectedDisbursedOnLocalDate().getDayOfMonth());
         }
+
+        loanApplicationTerms.setLoanProductName(this.getLoanProduct().getName());
 
         return loanApplicationTerms;
     }

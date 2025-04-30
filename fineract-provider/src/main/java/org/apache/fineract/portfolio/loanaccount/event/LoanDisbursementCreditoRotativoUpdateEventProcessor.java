@@ -16,12 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.fineract.portfolio.loanaccount.event;
 
-import java.math.BigDecimal;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -29,19 +27,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.infrastructure.core.domain.ExternalId;
-import org.apache.fineract.portfolio.client.domain.Client;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class LoanDisbursementEventProcessor extends BaseCustomWebhookEventProcessorImpl {
+public class LoanDisbursementCreditoRotativoUpdateEventProcessor extends BaseCustomWebhookEventProcessorImpl {
 
-    private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final LoanDisbursementCreditoRotativoEventProcessor loanDisbursementCreditoRotativoEventProcessor;
 
     @Override
     protected String hookName() {
@@ -50,7 +43,7 @@ public class LoanDisbursementEventProcessor extends BaseCustomWebhookEventProces
 
     @Override
     protected List<Map<String, String>> getSupportedEvents() {
-        Map<String, String> loanEvent = Map.of("entityName", "LOAN", "actionName", "DISBURSE");
+        Map<String, String> loanEvent = Map.of("entityName", "Informacion Adicional", "actionName", "UPDATE");
         return Collections.singletonList(loanEvent);
     }
 
@@ -63,36 +56,6 @@ public class LoanDisbursementEventProcessor extends BaseCustomWebhookEventProces
     }
 
     public Map<String, Object> generateSuccessResponse(CommandProcessingResult result) {
-
-        Map<String, Object> requestBody = new HashMap<>();
-        Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(result.getLoanId());
-
-        if (loan.getLoanProduct().getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())
-                || loan.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode())) {
-
-            return requestBody;
-        }
-
-        Client client = loan.client();
-        String clientName = client.getDisplayName();
-        ExternalId externalId = client.getExternalId();
-        if (externalId != null) {
-            requestBody.put("externalId", externalId.getValue());
-        }
-        String mobileNumber = client.mobileNo();
-        String loanProductName = loan.getLoanProduct().getName();
-
-        BigDecimal loanAmount = loan.getLoanTransactions().stream().filter(type -> type.getTypeOf().isDisbursement())
-                .max(Comparator.comparing(dt -> dt.getCreatedDateTime())).map(p -> p.getAmount()).orElse(BigDecimal.ZERO);
-
-        requestBody.put("loanId", loan.getAccountNumber());
-        requestBody.put("mobilePhone", mobileNumber);
-        requestBody.put("productName", loanProductName);
-        requestBody.put("loanAmount", loanAmount);
-        requestBody.put("fullName", clientName);
-
-        return requestBody;
-
+        return loanDisbursementCreditoRotativoEventProcessor.generateSuccessResponse(result);
     }
-
 }

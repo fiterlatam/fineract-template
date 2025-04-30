@@ -147,6 +147,8 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.PaidInAdvanceData;
 import org.apache.fineract.portfolio.loanaccount.data.ReclaimData;
 import org.apache.fineract.portfolio.loanaccount.data.RepaymentScheduleRelatedLoanData;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariationType;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanTemplateTypeRequiredException;
@@ -171,6 +173,7 @@ import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.note.data.NoteData;
@@ -358,6 +361,7 @@ public class LoansApiResource {
     private final ReadWriteNonCoreDataService readWriteNonCoreDataService;
     private final LoanWritePlatformService loanWritePlatformService;
     private static final String DISBURSE_ACTION = "disburse";
+    private final LoanRepository loanRepository;
 
     @GET
     @Path("{loanId}/template")
@@ -1511,9 +1515,17 @@ public class LoansApiResource {
         }
         CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
 
+        Optional<Loan> loanOpt = this.loanRepository.findById(resolvedLoanId);
+        String productName = "";
+        if (loanOpt.isPresent()) {
+            Loan loan = loanOpt.get();
+            productName = loan.getLoanProduct().getName();
+        }
         // Check here if there is any pending reschedule request associated with this Credito Rotativo and approve it.
         if (CommandParameterUtil.is(commandParam, DISBURSE_ACTION)) {
-            loanWritePlatformService.approveRescheduleRequest(resolvedLoanId, result.getResourceId(), null);
+            if (!productName.equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+                loanWritePlatformService.approveRescheduleRequest(resolvedLoanId, result.getResourceId(), null);
+            }
         }
 
         return this.toApiJsonSerializer.serialize(result);

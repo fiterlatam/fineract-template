@@ -69,7 +69,7 @@ public class LoanDisbursementCreditoRotativoEventProcessor extends BaseCustomWeb
 
     @Override
     protected List<Map<String, String>> getSupportedEvents() {
-        Map<String, String> loanEvent = Map.of("entityName", "LOAN", "actionName", "DISBURSE");
+        Map<String, String> loanEvent = Map.of("entityName", "Informacion Adicional", "actionName", "CREATE");
         return Collections.singletonList(loanEvent);
     }
 
@@ -84,6 +84,10 @@ public class LoanDisbursementCreditoRotativoEventProcessor extends BaseCustomWeb
     public Map<String, Object> generateSuccessResponse(CommandProcessingResult result) {
         Map<String, Object> requestBody = new HashMap<>();
         Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(result.getLoanId(), true);
+
+        if (Boolean.FALSE.equals(loan.isApproved()) || loan.isDisbursed()) {
+            return Collections.emptyMap();
+        }
 
         // Get "InformacionAdicional" datatable data
         InformacionAdicionalDatatableData informacionAdicionalData = getInformacionAdicionalDatatableData(loan);
@@ -111,6 +115,10 @@ public class LoanDisbursementCreditoRotativoEventProcessor extends BaseCustomWeb
 
             BigDecimal loanAmount = loan.getLoanTransactions().stream().filter(type -> type.getTypeOf().isDisbursement())
                     .max(Comparator.comparing(dt -> dt.getCreatedDateTime())).map(p -> p.getAmount()).orElse(BigDecimal.ZERO);
+
+            if (loanAmount.compareTo(BigDecimal.ZERO) == 0) {
+                loanAmount = loan.getPrincipal().getAmount();
+            }
 
             requestBody.put(LOAN_AMOUNT_PARAM, loanAmount);
         }

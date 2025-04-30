@@ -166,6 +166,13 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     amount = amount.add(installmentCharge.getAmount());
                 }
             }
+            if (charges != null && !charges.isEmpty()) {
+                for (final LoanCharge loanCharge : charges) {
+                    if (loanCharge.isFlatSpecificDueDateChargeForInstallment(currentInstallment)) {
+                        amount = amount.add(loanCharge.amount());
+                    }
+                }
+            }
             currentInstallment.setFeeChargesCharged(amount);
         }
 
@@ -1204,6 +1211,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
     @NotNull
     private static Set<LoanCharge> getLoanChargesOfInstallment(Set<LoanCharge> charges, LoanRepaymentScheduleInstallment currentInstallment,
             int firstNormalInstallmentNumber) {
+        List<LoanCharge> flatChargesForInstallment = charges.stream()
+                .filter(loanCharge -> loanCharge.isFlatSpecificDueDateChargeForInstallment(currentInstallment)).toList();
+        currentInstallment.setFlatSpecificDueDateCharges(flatChargesForInstallment);
         return charges.stream().filter(loanCharge -> loanCharge.isDueForCollectionForInstallment(currentInstallment)
                 || currentInstallment.getInstallmentCharges().stream().filter(li -> li.getLoanCharge().isLifeInsurance()).count() > 0)
                 .collect(Collectors.toSet());

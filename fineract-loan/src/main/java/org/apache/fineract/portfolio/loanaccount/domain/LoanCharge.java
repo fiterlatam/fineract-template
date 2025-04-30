@@ -892,6 +892,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 .equals(this.getOverdueInstallmentCharge().installment().getInstallmentNumber(), installment.getInstallmentNumber());
     }
 
+    public boolean isFlatSpecificDueDateChargeForInstallment(final LoanRepaymentScheduleInstallment installment) {
+        return this.isFlatSpecificDueDateCharge()
+                && occursOnDayFromExclusiveAndUpToAndIncluding(installment.getFromDate(), installment.getDueDate(), this.dueDate);
+    }
+
     public boolean isDueForCollectionForInstallmentByInstallmentNumber(final Integer installmentNumber) {
         return this.getOverdueInstallmentCharge() != null
                 && Objects.equals(this.getOverdueInstallmentCharge().installment().getInstallmentNumber(), installmentNumber);
@@ -1241,6 +1246,10 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
     public LoanOverdueInstallmentCharge getOverdueInstallmentCharge() {
         return this.overdueInstallmentCharge;
+    }
+
+    public boolean isFlatSpecificDueDateCharge() {
+        return this.getChargeTimeType().isOnSpecifiedDueDate() && this.getChargeCalculation().equals(ChargeCalculationType.FLAT);
     }
 
     public LoanTrancheDisbursementCharge getTrancheDisbursementCharge() {

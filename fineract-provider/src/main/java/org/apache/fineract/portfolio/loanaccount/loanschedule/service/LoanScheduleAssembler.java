@@ -588,6 +588,8 @@ public class LoanScheduleAssembler {
         loanApplicationTerms.setPrincipalAmountApproved(principal);
         loanApplicationTerms.setPrincipalAmountProposed(principal);
 
+        loanApplicationTerms.setLoanProductName(loanProduct.productName());
+
         return loanApplicationTerms;
     }
 
