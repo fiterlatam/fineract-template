@@ -1386,7 +1386,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         for (Map.Entry<LocalDate, Money> entry : disburseDetailMap.entrySet()) {
             if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
                 if (!DateUtils.isAfter(entry.getKey(), scheduledDueDate)
-                        && ChronoUnit.DAYS.between(entry.getKey(), scheduledDueDate) > 15) {
+                        && ChronoUnit.DAYS.between(entry.getKey(), scheduledDueDate) >= 15) {
                     removeFromMap.add(entry.getKey());
                 }
             } else if (!DateUtils.isAfter(entry.getKey(), scheduledDueDate)) {
@@ -1405,7 +1405,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             boolean allowed = false;
             if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
                 if (!DateUtils.isAfter(entry.getKey(), scheduledDueDate)
-                        && ChronoUnit.DAYS.between(entry.getKey(), scheduledDueDate) > 15) {
+                        && ChronoUnit.DAYS.between(entry.getKey(), scheduledDueDate) >= 15) {
                     allowed = true;
                 }
             } else if (!DateUtils.isAfter(entry.getKey(), scheduledDueDate)) {
@@ -1443,7 +1443,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             boolean allowed = false;
             if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
                 if (!DateUtils.isAfter(disburseDetail.getKey(), scheduledDueDate)
-                        && ChronoUnit.DAYS.between(disburseDetail.getKey(), scheduledDueDate) > 15) {
+                        && ChronoUnit.DAYS.between(disburseDetail.getKey(), scheduledDueDate) >= 15) {
                     allowed = true;
                 }
             } else if (DateUtils.isAfter(disburseDetail.getKey(), scheduleParams.getPeriodStartDate())
@@ -2323,7 +2323,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             boolean allowed = false;
             if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
                 if (!DateUtils.isAfter(mapEntry.getKey(), params.getActualRepaymentDate())
-                        && ChronoUnit.DAYS.between(mapEntry.getKey(), params.getActualRepaymentDate()) > 15) {
+                        && ChronoUnit.DAYS.between(mapEntry.getKey(), params.getActualRepaymentDate()) >= 15) {
                     allowed = true;
                 }
             } else {
@@ -3525,7 +3525,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     boolean allowed = false;
                     if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
                         if (!DateUtils.isAfter(disburseDetail.getKey(), installment.getDueDate())
-                                && ChronoUnit.DAYS.between(disburseDetail.getKey(), installment.getDueDate()) > 15) {
+                                && ChronoUnit.DAYS.between(disburseDetail.getKey(), installment.getDueDate()) >= 15) {
                             allowed = true;
                             removeFromMap.add(disburseDetail.getKey());
                         }
