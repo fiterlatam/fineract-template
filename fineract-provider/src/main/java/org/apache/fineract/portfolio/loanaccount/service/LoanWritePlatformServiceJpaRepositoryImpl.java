@@ -5339,32 +5339,40 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         ImmutablePair<Integer, LocalDate> pair;
         LocalDate variationDate = disbursementDate;
         Integer productNrOfRepayments = loan.getOriginalNumberOfRepayments();
-        Integer installmentNumber = 0;
+        Integer installmentNumberToAddDisbursement = null;
+        boolean addVariationToNextInstallment = false;
         for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
             if (installment.getDueDate().isAfter(disbursementDate)) {
                 long diff = ChronoUnit.DAYS.between(disbursementDate, installment.getDueDate());
                 if (diff < 15) {
-                    installmentNumber = installment.getInstallmentNumber();
                     // Add the variation to next installment
+                    installmentNumberToAddDisbursement = installment.getInstallmentNumber() + 1;
                     variationDate = installment.getDueDate().plusDays(2);
+                    addVariationToNextInstallment = true;
                     break;
                 } else {
-                    installmentNumber = installment.getInstallmentNumber();
+                    installmentNumberToAddDisbursement = installment.getInstallmentNumber();
                     variationDate = installment.getDueDate();
                     break;
                 }
             }
         }
-        Integer remainingInstallments = loan.getRepaymentScheduleInstallments().size() - installmentNumber;
-        if (installmentNumber == 0) {
-            pair = new ImmutablePair<>(productNrOfRepayments, variationDate);
-            return pair;
-        } else if (productNrOfRepayments > remainingInstallments) {
-            pair = new ImmutablePair<>(productNrOfRepayments - remainingInstallments, variationDate);
-            return pair;
-        } else {
+        if (installmentNumberToAddDisbursement == null) {
+            // Can only be null if disbursement date is after last installment due date. So create all installments
+            installmentNumberToAddDisbursement = loan.getRepaymentScheduleInstallments().size();
+            variationDate = loan.getLastLoanRepaymentScheduleInstallment().getDueDate();
+        }
+        Integer actualNumberOfRepayments = loan.getTermFrequency();
+        Integer requiredInstallments = installmentNumberToAddDisbursement + actualNumberOfRepayments - 1;
+        if (requiredInstallments == 0) {
             return null;
         }
+        Integer installmentsToAdd = requiredInstallments - loan.getRepaymentScheduleInstallments().size();
+        if (installmentsToAdd == 0) {
+            return null;
+        }
+        pair = new ImmutablePair<>(installmentsToAdd, variationDate);
+        return pair;
     }
 
     private void createRescheduleRequest(Loan loan, LocalDate actualDisbursementDate, Long loanRescheduleReasonId,
