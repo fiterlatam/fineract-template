@@ -2405,7 +2405,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         final BigDecimal adjustedPrincipalAmount = principalToBeWrittenOff
                                 .subtract(unpaidPrincipalUptoCurrentInstallment.getAmount())
                                 .add(currentScheduleInstallment.getPrincipalOutstanding(currency).getAmount());
-                        currentScheduleInstallment.updatePrincipal(adjustedPrincipalAmount);
+                        if (Money.of(currency, adjustedPrincipalAmount).isGreaterThan(currentScheduleInstallment.getPrincipal(currency))) {
+                            currentScheduleInstallment.updatePrincipal(adjustedPrincipalAmount);
+                        }
                         saveAndFlushLoanWithIntegrityChecks(loan);
                     }
                 }
