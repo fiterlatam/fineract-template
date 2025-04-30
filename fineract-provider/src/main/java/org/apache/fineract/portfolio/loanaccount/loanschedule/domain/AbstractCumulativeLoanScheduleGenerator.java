@@ -3227,11 +3227,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         LoanScheduleModel loanScheduleModelWithPeriodChanges = LoanScheduleModel.withLoanScheduleModelPeriods(periods, loanScheduleModel);
 
         // Validate and correct the principal distribution in the new schedule
-        validateAndCorrectInstallments(
-            retainedInstallments,
-            loanApplicationTerms.getCurrency(),
-            getPrincipalToBeScheduled(loanApplicationTerms)
-        );
+        validateAndCorrectInstallments(retainedInstallments, loanApplicationTerms.getCurrency(),
+                getPrincipalToBeScheduled(loanApplicationTerms));
 
         return LoanScheduleDTO.from(retainedInstallments, loanScheduleModelWithPeriodChanges);
     }
@@ -3707,11 +3704,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         LoanScheduleModel loanScheduleModelWithPeriodChanges = LoanScheduleModel.withLoanScheduleModelPeriods(periods, loanScheduleModel);
 
         // Validate and correct the principal distribution in the new schedule
-        validateAndCorrectInstallments(
-            retainedInstallments,
-            loanApplicationTerms.getCurrency(),
-            getPrincipalToBeScheduled(loanApplicationTerms)
-        );
+        validateAndCorrectInstallments(retainedInstallments, loanApplicationTerms.getCurrency(),
+                getPrincipalToBeScheduled(loanApplicationTerms));
 
         return LoanScheduleDTO.from(retainedInstallments, loanScheduleModelWithPeriodChanges);
     }
@@ -4042,11 +4036,11 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     }
 
     /**
-     * Validates and corrects the principal distribution in the generated schedule.
-     * Ensures no installment (except possibly the last) has zero or negative principal.
-     * Adjusts rounding differences to the last installment.
+     * Validates and corrects the principal distribution in the generated schedule. Ensures no installment (except
+     * possibly the last) has zero or negative principal. Adjusts rounding differences to the last installment.
      */
-    private void validateAndCorrectInstallments(List<LoanRepaymentScheduleInstallment> installments, MonetaryCurrency currency, Money expectedTotalPrincipal) {
+    private void validateAndCorrectInstallments(List<LoanRepaymentScheduleInstallment> installments, MonetaryCurrency currency,
+            Money expectedTotalPrincipal) {
         if (installments == null || installments.isEmpty()) {
             throw new IllegalStateException("No installments generated for loan schedule.");
         }
@@ -4062,9 +4056,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             // Only allow zero/negative principal for the last installment (for rounding)
             if ((principal.isLessThanZero() || principal.isZero()) && i != lastIdx) {
                 throw new org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException(
-                    "error.msg.loan.reschedule.principal.cannot.be.zero.or.negative",
-                    "Installment " + (i + 1) + " has zero or negative principal after reschedule: " + principal.getAmount()
-                );
+                        "error.msg.loan.reschedule.principal.cannot.be.zero.or.negative",
+                        "Installment " + (i + 1) + " has zero or negative principal after reschedule: " + principal.getAmount());
             }
             totalPrincipal = totalPrincipal.plus(principal);
         }
@@ -4076,9 +4069,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             Money newPrincipal = lastInstallment.getPrincipal(currency).plus(roundingDiff);
             if (newPrincipal.isLessThanZero() || newPrincipal.isZero()) {
                 throw new org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException(
-                    "error.msg.loan.reschedule.last.installment.negative",
-                    "Rounding adjustment would make last installment principal negative: " + newPrincipal.getAmount()
-                );
+                        "error.msg.loan.reschedule.last.installment.negative",
+                        "Rounding adjustment would make last installment principal negative: " + newPrincipal.getAmount());
             }
             lastInstallment.setPrincipal(newPrincipal.getAmount());
         }
