@@ -393,15 +393,30 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
     }
 
     @SuppressWarnings({ "squid:S3776", "squid:S107" })
-    private LoanTermVariations createLoanTermVariations(LoanRescheduleRequest loanRescheduleRequest, final Integer termType,
-            final Loan loan, LocalDate rescheduleFromDate, LocalDate adjustedDueDate,
-            List<LoanRescheduleRequestToTermVariationMapping> loanRescheduleRequestToTermVariationMappings, final Boolean isActive,
+    private LoanTermVariations createLoanTermVariations(final LoanRescheduleRequest loanRescheduleRequest, final Integer termType,
+            final Loan loan, final LocalDate rescheduleFromDate, final LocalDate adjustedDueDate,
+            final List<LoanRescheduleRequestToTermVariationMapping> loanRescheduleRequestToTermVariationMappings, final Boolean isActive,
             final boolean isSpecificToInstallment, final BigDecimal decimalValue, LoanTermVariations parent) {
-        LoanTermVariations loanTermVariation = new LoanTermVariations(termType, rescheduleFromDate, decimalValue, adjustedDueDate,
+
+        // For interest rate changes, find the next installment that starts after the reschedule date
+        LocalDate effectiveDate = rescheduleFromDate;
+        if (termType.equals(LoanTermVariationType.INTEREST_RATE_FROM_INSTALLMENT.getValue())) {
+            for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
+                // Apply new interest rate to any unpaid installment that starts after the reschedule date
+                if (!installment.isObligationsMet() && DateUtils.isAfter(installment.getFromDate(), rescheduleFromDate)) {
+                    effectiveDate = installment.getFromDate();
+                    break;
+                }
+            }
+        }
+
+        final LoanTermVariations loanTermVariation = new LoanTermVariations(termType, effectiveDate, decimalValue, adjustedDueDate,
                 isSpecificToInstallment, loan, loan.getStatus().getValue(), isActive, parent);
+
         loan.getLoanTermVariations().add(loanTermVariation);
         loanRescheduleRequestToTermVariationMappings
                 .add(LoanRescheduleRequestToTermVariationMapping.createNew(loanRescheduleRequest, loanTermVariation));
+
         return loanTermVariation;
     }
 
