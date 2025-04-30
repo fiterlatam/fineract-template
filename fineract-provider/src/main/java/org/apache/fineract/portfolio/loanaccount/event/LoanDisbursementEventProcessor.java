@@ -68,7 +68,7 @@ public class LoanDisbursementEventProcessor extends BaseCustomWebhookEventProces
         Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(result.getLoanId());
 
         if (loan.getLoanProduct().getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())
-                && loan.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode())) {
+                || loan.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode())) {
 
             return requestBody;
         }

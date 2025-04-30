@@ -36,6 +36,8 @@ public interface ConfigurationDomainService {
 
     boolean allowTransactionsOnHolidayEnabled();
 
+    boolean executeGenerateGLEntries();
+
     boolean allowTransactionsOnNonWorkingDayEnabled();
 
     boolean enableMonthlyInvoiceGenerationOnJobTrigger();
