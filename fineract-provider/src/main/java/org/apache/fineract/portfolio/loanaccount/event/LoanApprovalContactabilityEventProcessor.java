@@ -37,7 +37,8 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
-import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -52,6 +53,7 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
     private final JdbcTemplate jdbcTemplate;
     private final LoanReadPlatformService loanReadPlatformService;
     private final ClientReadPlatformService clientReadPlatformService;
+    private final LoanRepositoryWrapper loanRepositoryWrapper;
 
     @Override
     protected String hookName() {
@@ -73,7 +75,11 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
 
     public Map<String, Object> generateSuccessResponse(CommandProcessingResult result) {
         Map<String, Object> requestBody = new HashMap<>();
-        LoanAccountData loan = loanReadPlatformService.retrieveOne(result.getLoanId());
+        Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(result.getLoanId(), true);
+
+        if (Boolean.FALSE.equals(loan.isApproved()) || loan.isDisbursed()) {
+            return Collections.emptyMap();
+        }
 
         // Check if client is Persona o Empresa
         ClientData clientData = clientReadPlatformService.retrieveOne(result.getClientId());
@@ -113,7 +119,7 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
         return requestBody;
     }
 
-    private ValidacionContactaDatatableData getValidacionContacta(LoanAccountData loan) {
+    private ValidacionContactaDatatableData getValidacionContacta(Loan loan) {
         ValidacionContactaDatatableData validacionContactaData = ValidacionContactaDatatableData.builder().build();
 
         try {

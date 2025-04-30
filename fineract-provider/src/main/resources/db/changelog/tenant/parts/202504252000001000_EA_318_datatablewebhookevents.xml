@@ -51,4 +51,30 @@
             ]]>
         </sql>
     </changeSet>
+
+    <changeSet id="20" author="fineract">
+        <sql>
+            <![CDATA[
+
+                DELETE from m_hook_registered_events WHERE id = (select id from m_hook where name = 'Renewal Event');
+
+                INSERT INTO m_hook_registered_events
+                (hook_id, entity_name, action_name)
+                VALUES
+                ((select id from m_hook where name = 'Renewal Event'), 'LOAN', 'REPAYMENT');
+
+                UPDATE m_hook
+                SET name = TRIM(name);
+
+                DELETE from m_hook_registered_events WHERE id = (select id from m_hook where name = 'Revolving amount available');
+
+                INSERT INTO m_hook_registered_events
+                (hook_id, entity_name, action_name)
+                VALUES
+                ((select id from m_hook where name = 'Revolving amount available'), 'LOAN', 'REPAYMENT');
+
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

@@ -85,6 +85,10 @@ public class LoanDisbursementCreditoRotativoEventProcessor extends BaseCustomWeb
         Map<String, Object> requestBody = new HashMap<>();
         Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(result.getLoanId(), true);
 
+        if (Boolean.FALSE.equals(loan.isApproved()) || loan.isDisbursed()) {
+            return Collections.emptyMap();
+        }
+
         // Get "InformacionAdicional" datatable data
         InformacionAdicionalDatatableData informacionAdicionalData = getInformacionAdicionalDatatableData(loan);
 

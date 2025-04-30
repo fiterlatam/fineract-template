@@ -120,6 +120,13 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     }
 
     @Override
+    public boolean executeGenerateGLEntries() {
+        final String allowTransactionsOnHolidayProperty = "generate-glaccount_posts";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(allowTransactionsOnHolidayProperty);
+        return property.isEnabled();
+    }
+
+    @Override
     public boolean allowTransactionsOnNonWorkingDayEnabled() {
         final String propertyName = "allow-transactions-on-non_workingday";
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
