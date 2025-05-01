@@ -3573,9 +3573,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             BigDecimal totalOutstanding = loan.getSummary().getTotalPrincipalOutstanding();
             if (percentage.compareTo(loanForeclosureFeeThreshold.doubleValue()) < 0) {
                 Charge foreclosureCharge = this.chargeRepositoryWrapper.findOneWithNotFoundDetection("Cargo por ejecución hipotecaria");
-                BigDecimal percentageValue = foreclosureCharge.getAmount();
-                BigDecimal chargeAmount = totalOutstanding.multiply(percentageValue.divide(BigDecimal.valueOf(100)));
-                LoanCharge loanCharge = LoanCharge.createNewFromChargeAmount(loan, foreclosureCharge, transactionDate, chargeAmount,
+                LoanCharge loanCharge = LoanCharge.createNewFromChargeAmount(loan, foreclosureCharge, transactionDate, totalOutstanding,
                         receiptNumber);
                 this.addCharge(loan, foreclosureCharge, loanCharge);
                 this.loanChargeRepository.saveAndFlush(loanCharge);
