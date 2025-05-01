@@ -37,7 +37,6 @@ import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -80,8 +79,7 @@ public class LoanRejectionGuaranteeEventProcessor extends BaseCustomWebhookEvent
         Map<String, Object> requestBody = new HashMap<>();
         Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(result.getLoanId(), true);
 
-        if (Boolean.FALSE.equals(loan.getLoanProduct().getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode()))
-                && Boolean.FALSE.equals(loan.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode()))) {
+        if (Boolean.FALSE.equals(loan.containsRevolvingLoan())) {
 
             // Check if client is Persona o Empresa
             ClientData clientData = clientReadPlatformService.retrieveOne(result.getClientId());

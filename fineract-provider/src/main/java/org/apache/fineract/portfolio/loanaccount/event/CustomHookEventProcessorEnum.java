@@ -55,7 +55,7 @@ public enum CustomHookEventProcessorEnum {
     LOAN_DISBURSEMENT_REMAINING_AMOUNT("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementRemainingAmountEventProcessor",
             "Revolving amount available"),
 
-    ANULLMENT_EVENT("org.apache.fineract.portfolio.loanaccount.event.LoanCloseEventProcessor", "Annulment Event"),
+    ANULLMENT_EVENT("org.apache.fineract.portfolio.loanaccount.event.LoanRejectionGuaranteeEventProcessor", "Annulment Event"),
 
     CONTACTABILITY("org.apache.fineract.portfolio.loanaccount.event.LoanApprovalContactabilityEventProcessor", "Contactability"), //
 
