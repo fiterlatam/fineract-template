@@ -32,7 +32,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetailsRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -69,8 +68,7 @@ public class LoanDisbursementRemainingAmountEventProcessor extends BaseCustomWeb
         Map<String, Object> requestBody = new HashMap<>();
         Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(result.getLoanId(), true);
 
-        if (loan.getLoanProduct().getName().equals(LoanProductType.CREDITO_ROTATIVO.getCode())
-                || loan.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode())) {
+        if (loan.containsRevolvingLoan()) {
 
             // Create response object
             getRequestBody(result, requestBody, loan);

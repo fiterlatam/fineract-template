@@ -32,7 +32,6 @@ import org.apache.fineract.infrastructure.dataqueries.service.ReadWriteNonCoreDa
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
@@ -74,9 +73,7 @@ public class LoanCloseAsRescheduledEventProcessor extends BaseCustomWebhookEvent
                 .count();
 
         // Send only if the loan was totally paid...
-        if (Boolean.FALSE.equals(loan.getLoanProduct().getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode()))
-                && Boolean.FALSE.equals(loan.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode()))
-                && outstandingInstallments.compareTo(0L) == 0) {
+        if (Boolean.FALSE.equals(loan.containsRevolvingLoan()) && outstandingInstallments.compareTo(0L) == 0) {
 
             Client client = loan.getClient();
             String firstName = client.getFirstname();

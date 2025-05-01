@@ -38,7 +38,6 @@ import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -93,7 +92,7 @@ public class LoanDisbursementCreditoRotativoEventProcessor extends BaseCustomWeb
         InformacionAdicionalDatatableData informacionAdicionalData = getInformacionAdicionalDatatableData(loan);
 
         // Check the business rules and set the responseBody
-        if (loan.getLoanProduct().getName().equals(LoanProductType.CREDITO_ROTATIVO.getCode()) //
+        if (loan.containsRevolvingLoan() //
                 && Objects.nonNull(informacionAdicionalData) //
                 && Objects.nonNull(informacionAdicionalData.getValidacionManual()) //
                 && Boolean.TRUE.equals(informacionAdicionalData.getValidacionManual()) //
