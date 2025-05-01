@@ -1539,6 +1539,14 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.principal = principal;
     }
 
+    public void updatePrincipalPaid(final BigDecimal principalPaid) {
+        this.principalCompleted = principalPaid;
+    }
+
+    public void updatePrincipalWrittenOff(final BigDecimal principalWrittenOff) {
+        this.principalWrittenOff = principalWrittenOff;
+    }
+
     public void addToPrincipal(final LocalDate transactionDate, final Money transactionAmount) {
         if (this.principal == null) {
             this.principal = transactionAmount.getAmount();
