@@ -87,6 +87,7 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService
 import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.apache.fineract.portfolio.loanaccount.service.ReplayedTransactionBusinessEventService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
@@ -224,6 +225,21 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 if (localDate != null) {
                     // get installment by due date
                     LoanRepaymentScheduleInstallment installment = loan.getInstallmentByScheduleFromDate(localDate);
+
+                    // Check if is rotating credit product and all installmentes were paid.
+                    if (loan.loanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase())
+                            || Boolean.FALSE.equals(loan.loanProduct().getName().toLowerCase()
+                                    .contains(LoanProductType.NANO_CREDITO.getCode().toLowerCase()))) {
+
+                        // Check if all installments were paid. If so, select last installment.
+                        Long outstandintInstallments = loan.getRepaymentScheduleInstallments().stream()
+                                .filter(paid -> Boolean.FALSE.equals(paid.isObligationsMet())).count();
+
+                        if (outstandintInstallments == 0) {
+                            installment = loan.getRepaymentScheduleInstallments().get(loan.getRepaymentScheduleInstallments().size() - 1);
+                        }
+                    }
+
                     rescheduleFromInstallment = installment.getInstallmentNumber();
 
                     // update the value of the "rescheduleFromDate" variable

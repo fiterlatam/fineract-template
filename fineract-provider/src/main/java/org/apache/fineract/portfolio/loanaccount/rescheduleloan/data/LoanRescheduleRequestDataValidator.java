@@ -183,7 +183,11 @@ public class LoanRescheduleRequestDataValidator {
             dataValidatorBuilder.reset().parameter(RescheduleLoansApiConstants.graceOnPrincipalParamName).notNull();
         }
         LoanRepaymentScheduleInstallment installment = null;
-        if (rescheduleFromDate != null) {
+        if (rescheduleFromDate != null
+                && Boolean.FALSE.equals(
+                        loan.loanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase()))
+                && Boolean.FALSE.equals(
+                        loan.loanProduct().getName().toLowerCase().contains(LoanProductType.NANO_CREDITO.getCode().toLowerCase()))) {
             installment = loan.getInstallmentByScheduleFromDate(rescheduleFromDate);
             if (installment == null) {
                 dataValidatorBuilder.reset().parameter(RescheduleLoansApiConstants.rescheduleFromDateParamName)

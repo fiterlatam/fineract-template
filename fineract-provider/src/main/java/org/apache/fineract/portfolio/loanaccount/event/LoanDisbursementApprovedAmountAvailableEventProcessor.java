@@ -90,8 +90,8 @@ public class LoanDisbursementApprovedAmountAvailableEventProcessor extends BaseC
 
             requestBody.put(PRODUCT_NAME_PARAM, loan.getLoanProduct().getName());
 
-            if (Objects.nonNull(loan.getExternalId())) {
-                requestBody.put(EXTERNAL_ID_PARAM, loan.getExternalId().getValue());
+            if (Objects.nonNull(loan.getClient().getExternalId())) {
+                requestBody.put(EXTERNAL_ID_PARAM, loan.getClient().getExternalId().getValue());
             }
 
             BigDecimal lastDisbursalAmt = loan.getLoanTransactions().stream().filter(type -> type.getTypeOf().isDisbursement())
