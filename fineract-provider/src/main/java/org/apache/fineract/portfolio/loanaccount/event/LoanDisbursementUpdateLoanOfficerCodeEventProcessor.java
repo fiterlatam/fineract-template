@@ -29,7 +29,6 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.client.domain.Client;
-import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.poi.util.StringUtil;
@@ -42,6 +41,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class LoanDisbursementUpdateLoanOfficerCodeEventProcessor extends BaseCustomWebhookEventProcessorImpl {
 
+    public static final String STRING_CLIENT_TYPE_GC = "GC";
     private final LoanRepositoryWrapper loanRepositoryWrapper;
     private final JdbcTemplate jdbcTemplate;
 
@@ -108,9 +108,9 @@ public class LoanDisbursementUpdateLoanOfficerCodeEventProcessor extends BaseCus
             String surName = client.getLastname();
             String email = client.getEmailAddress();
             String phoneNumber = client.getMobileNo();
-            String clientType = ClientEnumerations.legalForm(client.getLegalForm()).getValue();
+            String clientType = STRING_CLIENT_TYPE_GC;
             response.put("name", name);
-            response.put("surName", surName);
+            response.put("surNames", surName);
             response.put("clientType", clientType);
             if (email != null) {
                 response.put("email", email);

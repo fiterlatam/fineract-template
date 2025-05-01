@@ -35,13 +35,13 @@ public abstract class CustomFieldValidationProcessor {
 
     public CustomFieldValidationProcessor(CustomFieldValidationProcessor nextCustomFieldValidationProcessor) {
         this.nextCustomFieldValidationProcessor = nextCustomFieldValidationProcessor;
-    }
+    };
 
     public void process(Object parentObject, DataTableMetaData metData, Map<String, String> dataParams,
             Map<String, Object> auxliaryObjects) {
         if (nextCustomFieldValidationProcessor != null)
             nextCustomFieldValidationProcessor.process(parentObject, metData, dataParams, auxliaryObjects);
-    }
+    };
 
     protected abstract String whoAmI();
 }

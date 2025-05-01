@@ -2962,7 +2962,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
                 regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
             } else {
-                if (this.isMultiDisburmentLoan() && this.disbursementDetails.size() > 1) {
+                if (this.isMultiDisburmentLoan()
+                        && this.disbursementDetails.stream().filter(notrev -> Boolean.FALSE.equals(notrev.isReversed())).count() > 1) {
                     scheduleGeneratorDTO.setRecalculateFrom(actualDisbursementDate);
                     regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
                 } else {
