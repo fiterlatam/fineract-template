@@ -1628,11 +1628,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             throw new InvalidLoanStateTransitionException("transaction", "cannot.be.before.last.valid.transaction", errorMessage,
                     transactionToAdjust.getTransactionDate(), loan.getDisbursementDate());
         }
-        if (loan.getStatus().isClosed() && loan.getLoanSubStatus() != null
-                && loan.getLoanSubStatus().equals(LoanSubStatus.FORECLOSED.getValue())) {
-            final String defaultUserMessage = "The loan cannot reopened as it is foreclosed.";
-            throw new LoanForeclosureException("loan.cannot.be.reopened.as.it.is.foreclosured", defaultUserMessage, loanId);
-        }
+
+        /**
+         * if (loan.getStatus().isClosed() && loan.getLoanSubStatus() != null &&
+         * loan.getLoanSubStatus().equals(LoanSubStatus.FORECLOSED.getValue())) { final String defaultUserMessage = "The
+         * loan cannot reopened as it is foreclosed."; throw new
+         * LoanForeclosureException("loan.cannot.be.reopened.as.it.is.foreclosured", defaultUserMessage, loanId); }
+         */
 
         checkClientOrGroupActive(loan);
 
