@@ -249,7 +249,7 @@ public class LoanCharge extends AbstractPersistableCustom {
             }
         }
 
-        LoanCharge newLoanCharge = new LoanCharge(loan, chargeDefinition, amountPercentageAppliedTo, chargeAmount, chargeTime,
+        LoanCharge newLoanCharge = new LoanCharge(loan, chargeDefinition, chargeAmount, chargeDefinition.getAmount(), chargeTime,
                 chargeCalculation, dueDate, chargePaymentMode, null, loanCharge);
         final String externalId = receiptNumber;
         newLoanCharge.setExternalId(externalId);
