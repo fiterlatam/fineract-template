@@ -1451,21 +1451,29 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         final boolean isAdvancePayment = isInAdvance(transactionDate);
         if (isForeclosing) {
             this.obligationsMet = !totalOutstandingIncludingAdvanced.isGreaterThanZero();
+            boolean lastInstallment = this.getId() == null
+                    || Objects.equals(this.installmentNumber, this.getLoan().getRepaymentScheduleInstallments()
+                            .get(this.getLoan().getLoanRepaymentScheduleInstallmentsSize() - 1).installmentNumber);
+            if (this.obligationsMet && lastInstallment) {
+                this.obligationsMetOnDate = transactionDate;
+                this.principalCompleted = this.principal;
+                if (this.principalWrittenOff != null) {
+                    // SU-671: If the principal is written off, then the principal completed should consider it
+                    this.principalCompleted = this.principalCompleted.subtract(this.principalWrittenOff);
+                }
+                this.advancePrincipalAmount = BigDecimal.ZERO;
+                this.totalPaidInAdvance = BigDecimal.ZERO;
+            } else {
+                this.obligationsMet = false;
+                this.obligationsMetOnDate = null;
+            }
         } else {
             this.obligationsMet = !totalOutstandingIncludingAdvanced.isGreaterThanZero() && !isAdvancePayment;
-        }
-        if (this.obligationsMet) {
-            this.obligationsMetOnDate = transactionDate;
-            this.principalCompleted = this.principal;
-            if (this.principalWrittenOff != null) {
-                // SU-671: If the principal is written off, then the principal completed should consider it
-                this.principalCompleted = this.principalCompleted.subtract(this.principalWrittenOff);
+            if (this.obligationsMet) {
+                this.obligationsMetOnDate = transactionDate;
+            } else {
+                this.obligationsMetOnDate = null;
             }
-            // remove advance payments because this is a foreclosure
-            this.advancePrincipalAmount = BigDecimal.ZERO;
-            this.totalPaidInAdvance = BigDecimal.ZERO;
-        } else {
-            this.obligationsMetOnDate = null;
         }
     }
 
