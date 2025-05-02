@@ -494,7 +494,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             final LoanTransaction newLoanTransaction = LoanTransaction.copyTransactionProperties(loanTransaction);
             ctx.getChangedTransactionDetail().getCurrentTransactionToOldId().put(newLoanTransaction, loanTransaction.getId());
 
-            // Reset derived component of new loan transaction and
+            // Reset derived component of a new loan transaction and
             // re-process transaction
             processLatestTransaction(newLoanTransaction, ctx);
             if (loanTransaction.isInterestWaiver()) {
@@ -1099,7 +1099,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                         "Processing failed for loan id: " + loanTransaction.getLoan().getId());
             }
             LoanRepaymentScheduleInstallment oldestPastDueInstallment = installments.stream()
-                    .filter(x -> x.isNotFullyPaidOff() && !x.isFullyGraced()).filter(e -> loanTransaction.isAfter(e.getDueDate()))
+                    .filter(x -> x.isNotFullyPaidOff() && !x.isFullyGraced()).filter(e -> !loanTransaction.isBefore(e.getDueDate()))
                     .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
             boolean found = false;
             if (loanTransaction.claimType() != null) {
@@ -1244,7 +1244,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     }
                     case IN_ADVANCE -> {
                         if (loanTransaction.doNotProcessAdvanceInstallments() || stopProcessingAdvanceInstallment) {
-                            // This condition will only be true if loan processing type is VERTICAL.
+                            // This condition will only be true if a loan processing type is VERTICAL.
                             // For vertical payments, Past Due and Due installments MUST be processed Horizontally
                             exit = true;
                         } else {
@@ -1276,7 +1276,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                 for (LoanRepaymentScheduleInstallment inAdvanceInstallment : inAdvanceInstallments) {
                                     if (transactionAmountUnprocessed.isGreaterThanZero()) {
                                         if (inAdvanceInstallment.isMigratedInstallment()) {
-                                            // Process migrated installments as due or past due installments
+                                            // Process migrated installments as due or past-due installments
                                             Set<LoanCharge> inAdvanceInstallmentCharges = getLoanChargesOfInstallment(charges,
                                                     inAdvanceInstallment, firstNormalInstallmentNumber);
                                             LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
@@ -1290,7 +1290,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                             if (inAdvanceInstallment.isLastInstallment(installments)
                                                     && inAdvanceInstallment.isOverpaidInAdvance(currency) && transactionAmountUnprocessed
                                                             .isGreaterThanOrEqualTo(inAdvanceInstallment.getPrincipal(currency))) {
-                                                // This MUST be true only in case of advance overpayment after repayment
+                                                // This MUST be true only in case of advance overpayment after the
+                                                // repayment
                                                 // schedule is regenerated
                                                 // Process principal and move the remaining amount to overpaid
                                                 if (transactionAmountUnprocessed.isEqualTo(inAdvanceInstallment.getPrincipal(currency))) {
@@ -1323,10 +1324,10 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                     inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
                                                             .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
                                                     inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMetAdvanced(
-                                                            loanTransaction.getTransactionDate(), currency);
+                                                            loanTransaction.getTransactionDate(), currency, true);
                                                 } else {
                                                     inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMetAdvanced(
-                                                            loanTransaction.getTransactionDate(), currency);
+                                                            loanTransaction.getTransactionDate(), currency, false);
                                                     inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
                                                             loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
                                                     inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment

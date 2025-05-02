@@ -25,6 +25,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.organisation.monetary.domain.Money;
 
 @AllArgsConstructor
 @Getter
@@ -49,6 +51,22 @@ public final class LoanRepaymentScheduleInstallmentData {
     public static LoanRepaymentScheduleInstallmentData instanceOf(final Long id, final Integer installmentId, final LocalDate date,
             final BigDecimal amount) {
         return new LoanRepaymentScheduleInstallmentData(id, installmentId, date, amount, null, null, null, null, null, null, null, null);
+    }
+
+    public Money getInterestPortion(final MonetaryCurrency currency) {
+        return Money.of(currency, this.interestPortion);
+    }
+
+    public Money getPrincipalPortion(final MonetaryCurrency currency) {
+        return Money.of(currency, this.principalPortion);
+    }
+
+    public Money getFeeChargesPortion(final MonetaryCurrency currency) {
+        return Money.of(currency, this.feeChargesPortion);
+    }
+
+    public Money getPenaltyChargesPortion(final MonetaryCurrency currency) {
+        return Money.of(currency, this.penaltyChargesPortion);
     }
 
 }

@@ -26,6 +26,7 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -120,6 +121,17 @@ public class FacturaElectronicaMensualPoster {
                                     .reduce(BigDecimal.ZERO, BigDecimal::add);
                             final BigDecimal honorariosVatPaid = list.stream().map(LoanDocumentData::getHonorariosVatPaid)
                                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+                            final String voluntaryInsuranceCode = list.stream().map(LoanDocumentData::getVoluntaryInsuranceCode)
+                                    .filter(Objects::nonNull).findFirst().orElse(null);
+                            final String voluntaryInsuranceName = list.stream().map(LoanDocumentData::getVoluntaryInsuranceName)
+                                    .filter(Objects::nonNull).findFirst().orElse(null);
+
+                            final String mandatoryInsuranceCode = list.stream().map(LoanDocumentData::getMandatoryInsuranceCode)
+                                    .filter(Objects::nonNull).findFirst().orElse(null);
+
+                            final String mandatoryInsuranceName = list.stream().map(LoanDocumentData::getMandatoryInsuranceName)
+                                    .filter(Objects::nonNull).findFirst().orElse(null);
+
                             final Integer loansCount = list.size();
                             final LoanDocumentData loanDocumentData = list.get(0);
                             return LoanDocumentData.builder().clientIdNumber(loanDocumentData.getClientIdNumber())
@@ -162,10 +174,8 @@ public class FacturaElectronicaMensualPoster {
                                     .clientTelephone(loanDocumentData.getClientTelephone())
                                     .collectionHouseName(loanDocumentData.getCollectionHouseName())
                                     .collectionHouseNit(loanDocumentData.getCollectionHouseNit())
-                                    .voluntaryInsuranceCode(loanDocumentData.getVoluntaryInsuranceCode())
-                                    .voluntaryInsuranceName(loanDocumentData.getVoluntaryInsuranceName())
-                                    .mandatoryInsuranceCode(loanDocumentData.getMandatoryInsuranceCode())
-                                    .mandatoryInsuranceName(loanDocumentData.getMandatoryInsuranceName())
+                                    .voluntaryInsuranceCode(voluntaryInsuranceCode).voluntaryInsuranceName(voluntaryInsuranceName)
+                                    .mandatoryInsuranceCode(mandatoryInsuranceCode).mandatoryInsuranceName(mandatoryInsuranceName)
                                     .transactionIds(loanDocumentData.getTransactionIds()).build();
                         })))
                 .values().stream().toList();
