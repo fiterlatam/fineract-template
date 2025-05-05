@@ -39,4 +39,10 @@
         </update>
     </changeSet>
 
+    <changeSet id="20240703120000-ea_330-delete-cedula-extranjeria" author="fineract">
+        <delete tableName="m_code_value">
+            <where>code_id = (SELECT id FROM m_code WHERE code_name = 'Customer Identifier') AND code_value = 'Cédula de extranjería'</where>
+        </delete>
+    </changeSet>
+
 </databaseChangeLog>
