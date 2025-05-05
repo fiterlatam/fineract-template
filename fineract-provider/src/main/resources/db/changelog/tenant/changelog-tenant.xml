@@ -400,4 +400,5 @@
     <include file="parts/202504252000001000_EA_318_datatablewebhookevents.xml" relativeToChangelogFile="true" />
     <include file="parts/202504252000002000_EA_318_glpostgeneration_configuration.xml" relativeToChangelogFile="true" />
     <include file="parts/20240703120000_EA_330_update_customer_identifier_codes.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202505042000001000_EA_329_fn_core_codevalue_getcode.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

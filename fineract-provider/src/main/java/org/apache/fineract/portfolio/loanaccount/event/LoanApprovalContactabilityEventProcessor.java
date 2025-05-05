@@ -169,7 +169,7 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
                                 , "Cedula"                                                                                          as "Numero identificacion"
                                 , "Customer Identifier_cd_Tipo identificacion"                                                      as "Tipo identificacion Id"
                                 , fn_core_codevalue_getdescription("Customer Identifier_cd_Tipo identificacion")                    as "Tipo identificacion"
-                                , fn_core_codevalue_getdescription("Ciudad_cd_Ciudad")                                              as "Ciudad"
+                                , fn_core_codevalue_getcodevalue("Ciudad_cd_Ciudad")                                              as "Ciudad"
                             FROM "campos_cliente_persona"
                             WHERE client_id = ?
                         """;
@@ -181,7 +181,7 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
                                 , "NIT"                                                                                             as "Numero identificacion"
                                 , "Tipo ID_cd_Tipo ID"                                                                              as "Tipo identificacion Id"
                                 , fn_core_codevalue_getdescription("Tipo ID_cd_Tipo ID")                                            as "Tipo identificacion"
-                                , fn_core_codevalue_getdescription("Ciudad_cd_Ciudad")                                              as "Ciudad"
+                                , fn_core_codevalue_getcodevalue("Ciudad_cd_Ciudad")                                              as "Ciudad"
                             FROM "campos_cliente_empresas"
                            WHERE client_id = ?
                         """;
