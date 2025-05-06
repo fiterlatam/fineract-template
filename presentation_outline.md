@@ -7,8 +7,8 @@
 
 ## 2. Tech Stack
 ### 2.1 Backend Technologies
-- Java 17 (Core programming language)
-- Spring Boot 3.2.x (Application framework)
+- Java 21 (Core programming language)
+- Spring Boot 3.4.x (Application framework)
 - Spring Data JPA/EclipseLink (ORM)
 - Spring Security (Authentication and authorization)
 - Liquibase (Database migration)
