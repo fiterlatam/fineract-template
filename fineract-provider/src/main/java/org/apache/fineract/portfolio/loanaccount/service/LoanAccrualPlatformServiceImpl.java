@@ -182,7 +182,9 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
 
         for (final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : repaymentScheduleInstallments) {
             if (!accrualDate.isBefore(loanRepaymentScheduleInstallment.getFromDate())
-                    && !accrualDate.isAfter(loanRepaymentScheduleInstallment.getDueDate().minusDays(1))) {
+                    && !accrualDate.isAfter(loanRepaymentScheduleInstallment.getDueDate().minusDays(1))
+                    && loanRepaymentScheduleInstallment.getInstallmentNumber() != null
+                    && loanRepaymentScheduleInstallment.getInstallmentNumber() > 0) {
                 final BigDecimal totalAccruedInterestForInstallment = loan
                         .getAccruedInterestForInstallment(loanRepaymentScheduleInstallment.getInstallmentNumber());
                 LocalDate periodStartDate = loanRepaymentScheduleInstallment.getFromDate();
