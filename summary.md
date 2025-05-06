@@ -1,7 +1,5 @@
 # Apache Fineract Technical Walkthrough - Summary
 
-I've created a comprehensive presentation outline for a technical walkthrough of the Apache Fineract codebase. The outline covers all the requested areas:
-
 ## Tech Stack
 The Apache Fineract platform uses a modern Java-based tech stack:
 - **Core**: Java 17, Spring Boot 3.2.x
