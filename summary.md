@@ -2,7 +2,7 @@
 
 ## Tech Stack
 The Apache Fineract platform uses a modern Java-based tech stack:
-- **Core**: Java 17, Spring Boot 3.2.x
+- **Core**: Java 21, Spring Boot 3.4.x
 - **Persistence**: EclipseLink (JPA), MySQL/MariaDB/PostgreSQL
 - **API**: RESTful APIs documented with OpenAPI/Swagger
 - **Build & Deployment**: Gradle, Docker/Jib
