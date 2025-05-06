@@ -1445,20 +1445,35 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         }
     }
 
-    public void checkIfRepaymentPeriodObligationsAreMetAdvanced(final LocalDate transactionDate, final MonetaryCurrency currency) {
-        this.obligationsMet = !getTotalOutstandingIncludingAdvanced(currency).isGreaterThanZero();
-        if (this.obligationsMet) {
-            this.obligationsMetOnDate = transactionDate;
-            this.principalCompleted = this.principal;
-            if (this.principalWrittenOff != null) {
-                // SU-671: If the principal is written off, then the principal completed should consider it
-                this.principalCompleted = this.principalCompleted.subtract(this.principalWrittenOff);
+    public void checkIfRepaymentPeriodObligationsAreMetAdvanced(final LocalDate transactionDate, final MonetaryCurrency currency,
+            final boolean isForeclosing) {
+        final Money totalOutstandingIncludingAdvanced = getTotalOutstandingIncludingAdvanced(currency);
+        final boolean isAdvancePayment = isInAdvance(transactionDate);
+        if (isForeclosing) {
+            this.obligationsMet = !totalOutstandingIncludingAdvanced.isGreaterThanZero();
+            boolean lastInstallment = this.getId() == null
+                    || Objects.equals(this.installmentNumber, this.getLoan().getRepaymentScheduleInstallments()
+                            .get(this.getLoan().getLoanRepaymentScheduleInstallmentsSize() - 1).installmentNumber);
+            if (this.obligationsMet && lastInstallment) {
+                this.obligationsMetOnDate = transactionDate;
+                this.principalCompleted = this.principal;
+                if (this.principalWrittenOff != null) {
+                    // SU-671: If the principal is written off, then the principal completed should consider it
+                    this.principalCompleted = this.principalCompleted.subtract(this.principalWrittenOff);
+                }
+                this.advancePrincipalAmount = BigDecimal.ZERO;
+                this.totalPaidInAdvance = BigDecimal.ZERO;
+            } else {
+                this.obligationsMet = false;
+                this.obligationsMetOnDate = null;
             }
-            // remove advance payments because this is a foreclosure
-            this.advancePrincipalAmount = BigDecimal.ZERO;
-            this.totalPaidInAdvance = BigDecimal.ZERO;
         } else {
-            this.obligationsMetOnDate = null;
+            this.obligationsMet = !totalOutstandingIncludingAdvanced.isGreaterThanZero() && !isAdvancePayment;
+            if (this.obligationsMet) {
+                this.obligationsMetOnDate = transactionDate;
+            } else {
+                this.obligationsMetOnDate = null;
+            }
         }
     }
 
@@ -1504,6 +1519,21 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.interestCharged = interestCharged;
     }
 
+    public void updateInterestChargedAfterWriteOff() {
+        this.interestCharged = this.getInterestPaid(this.getLoan().getCurrency())
+                .plus(this.getInterestWrittenOff(this.getLoan().getCurrency())).getAmount();
+    }
+
+    public void updateComponentsAfterClosureAsWriteOff() {
+        final MonetaryCurrency monetaryCurrency = this.getLoan().getCurrency();
+        this.interestCharged = this.getInterestPaid(monetaryCurrency).plus(this.getInterestWrittenOff(monetaryCurrency))
+                .plus(this.getInterestWaived(monetaryCurrency)).getAmount();
+        this.feeChargesCharged = this.getFeeChargesPaid(monetaryCurrency).plus(this.getFeeChargesWrittenOff(monetaryCurrency))
+                .plus(this.getFeeChargesWaived(monetaryCurrency)).getAmount();
+        this.penaltyCharges = this.getPenaltyChargesPaid(monetaryCurrency).plus(this.getPenaltyChargesWrittenOff(monetaryCurrency))
+                .plus(this.getPenaltyChargesWaived(monetaryCurrency)).getAmount();
+    }
+
     public void updateObligationMet(final Boolean obligationMet) {
 
         this.obligationsMet = obligationMet;
@@ -1515,6 +1545,14 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public void updatePrincipal(final BigDecimal principal) {
         this.principal = principal;
+    }
+
+    public void updatePrincipalPaid(final BigDecimal principalPaid) {
+        this.principalCompleted = principalPaid;
+    }
+
+    public void updatePrincipalWrittenOff(final BigDecimal principalWrittenOff) {
+        this.principalWrittenOff = principalWrittenOff;
     }
 
     public void addToPrincipal(final LocalDate transactionDate, final Money transactionAmount) {

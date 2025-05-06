@@ -1012,7 +1012,7 @@ public final class LoanApplicationTerms {
             final DaysInMonthType daysInMonthType, final DaysInYearType daysInYearType, LocalDate periodStartDate, LocalDate periodEndDate,
             boolean isForPMT, boolean useDailyInterestCalculation, boolean useAnnualNominalInterestRate) {
 
-        // As per client's formula, EMI is calculated based on Monthly interest rate while intallment interest is
+        // As per client's formula, EMI is calculated based on Monthly interest rate while installment interest is
         // calculated based on Daily interest rate
         // Variable isForPMT refers to the process flow where EMI is being calculated
         long loanTermPeriodsInOneYear;
