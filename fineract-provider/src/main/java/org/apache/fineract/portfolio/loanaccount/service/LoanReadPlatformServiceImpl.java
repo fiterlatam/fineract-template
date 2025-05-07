@@ -4224,160 +4224,175 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         INNER JOIN m_product_loan mpl ON mpl.id = ml.product_id
                         INNER JOIN m_code_value prodtype ON prodtype.id = mpl.product_type
                         INNER JOIN (
-                        		SELECT
-                        			mlt.loan_id AS "loanId",
-                        			STRING_AGG(mlt.id::TEXT, ',') AS "transactionIds",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."interestPaid", 0)) ELSE SUM(COALESCE(mlt.interest_portion_derived, 0)) END AS "interest",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsurancePaid", 0)) ELSE SUM(COALESCE(mandatory_insurance.amount, 0)) END AS "mandatoryInsurance",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_mandatory_insurance.amount, 0)) END AS "mandatoryInsuranceVat",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsurancePaid", 0)) ELSE SUM(COALESCE(voluntary_insurance.amount, 0)) END AS "voluntaryInsurance",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_voluntary_insurance.amount, 0)) END AS "voluntaryInsuranceVat",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosPaid", 0)) ELSE SUM(COALESCE(hono.amount, 0)) END AS "honorarios",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosVatPaid", 0)) ELSE SUM(COALESCE(vat_hono.amount, 0)) END AS "honorariosVat",
-                        			CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyPaid", 0)) ELSE SUM(COALESCE(penalty.amount, 0)) END AS "penaltyCharges",
-                            		CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyVatPaid", 0)) ELSE SUM(COALESCE(vat_penalty.amount, 0)) END AS "penaltyChargesVat",
-                        			COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."interestPaid", 0)) ELSE SUM(COALESCE(mlt.interest_portion_derived, 0)) END, 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsurancePaid", 0)) ELSE SUM(COALESCE(mandatory_insurance.amount, 0)) END, 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_mandatory_insurance.amount, 0)) END , 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsurancePaid", 0)) ELSE SUM(COALESCE(voluntary_insurance.amount, 0)) END, 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_voluntary_insurance.amount, 0)) END, 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosPaid", 0)) ELSE SUM(COALESCE(hono.amount, 0)) END, 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosVatPaid", 0)) ELSE SUM(COALESCE(vat_hono.amount, 0)) END, 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyPaid", 0)) ELSE SUM(COALESCE(penalty.amount, 0)) END, 0)
-                        				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyVatPaid", 0)) ELSE SUM(COALESCE(vat_penalty.amount, 0)) END, 0) AS "totalPaid"
-                        		FROM m_loan_transaction mlt
-                                INNER JOIN m_loan mlx ON mlx.id = mlt.loan_id
-                        		LEFT JOIN (
-                        			SELECT
-                        					mpit.accrual_transaction_id AS "accrualTransactionId",
-                        					SUM(COALESCE(mpit.interest, 0)) AS "interestPaid",
-                        					SUM(COALESCE(mpit.honorarios, 0)) AS "honorariosPaid",
-                        					SUM(COALESCE(mpit.honorarios_vat, 0)) AS "honorariosVatPaid",
-                        					SUM(COALESCE(mpit.mandatory_insurance, 0)) AS "mandatoryInsurancePaid",
-                        					SUM(COALESCE(mpit.mandatory_insurance_vat, 0)) AS "mandatoryInsuranceVatPaid",
-                        					SUM(COALESCE(mpit.voluntary_insurance, 0)) AS "voluntaryInsurancePaid",
-                        					SUM(COALESCE(mpit.voluntary_insurance_vat, 0)) AS "voluntaryInsuranceVatPaid",
-                        				    SUM(COALESCE(mpit.penalty, 0)) AS "penaltyPaid",
-                        					SUM(COALESCE(mpit.penalty_vat, 0)) AS "penaltyVatPaid"
-                        			FROM m_partial_invoiced_transaction mpit
-                        			INNER JOIN m_loan_transaction invoiced_by ON invoiced_by.id = mpit.repayment_transaction_id
-                        			WHERE invoiced_by.transaction_type_enum = 2
-                        			GROUP BY mpit.accrual_transaction_id
-                        		) partial_transaction ON partial_transaction."accrualTransactionId" = mlt.id
-                        		LEFT JOIN (
-                        			SELECT mlcpd.loan_transaction_id,
-                        					SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			WHERE mlc.charge_calculation_enum IN (468, 575, 231)
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) mandatory_insurance ON mandatory_insurance.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			JOIN m_charge mc ON mc.id = mlc.charge_id
-                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                        			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum IN (468, 575, 231)
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) vat_mandatory_insurance ON vat_mandatory_insurance.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			WHERE mlc.charge_calculation_enum = 1034
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) voluntary_insurance ON voluntary_insurance.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			JOIN m_charge mc ON mc.id = mlc.charge_id
-                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                        			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 1034
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) vat_voluntary_insurance ON vat_voluntary_insurance.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			WHERE mlc.charge_calculation_enum = 41
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) aval ON aval.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			JOIN m_charge mc ON mc.id = mlc.charge_id
-                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                        			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 41
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) vat_aval ON vat_aval.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id ,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			WHERE mlc.charge_calculation_enum = 1009
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) hono ON hono.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			JOIN m_charge mc ON mc.id = mlc.charge_id
-                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                        			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 1009
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) vat_hono ON vat_hono.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id ,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			WHERE mlc.is_penalty = TRUE
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) penalty ON penalty.loan_transaction_id = mlt.id
-                        		LEFT JOIN (
-                        			SELECT
-                        				mlcpd.loan_transaction_id,
-                        				SUM(mlcpd.amount) amount
-                        			FROM m_loan_charge_paid_by mlcpd
-                        			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
-                        			JOIN m_charge mc ON mc.id = mlc.charge_id
-                        			JOIN m_charge parent ON parent.id = mc.parent_charge_id
-                        			WHERE mc.charge_calculation_enum = 342
-                        				AND mc.is_penalty = TRUE
-                        				AND parent.charge_calculation_enum = 1009
-                        				AND parent.is_penalty = TRUE
-                        			GROUP BY mlcpd.loan_transaction_id
-                        		) vat_penalty ON vat_penalty.loan_transaction_id = mlt.id
-                        		WHERE mlt.is_reversed = FALSE
-                        		AND mlt.transaction_type_enum = 10
-                                 AND (CASE
-                                        WHEN (mlx.loan_status_id = 300) THEN (mlt.occurred_on_suspended_account = FALSE)
-                                        WHEN (mlx.loan_status_id != 300 AND mlt.invoiced_by_transaction_id IS NULL) THEN (mlt.is_invoiced_generated_by_job = FALSE)
-                                        WHEN (mlx.loan_status_id != 300 AND mlt.invoiced_by_transaction_id IS NOT NULL) THEN (mlt.occurred_on_suspended_account = FALSE)
-                                        ELSE FALSE
-                                      END)
-                        		AND mlt.transaction_date <= :date
-                                AND mlt.is_invoiced_generated_by_job = FALSE
-                                AND mlt.loan_id in (:loanIds)
-                        		GROUP BY mlt.loan_id, mlt.is_partially_ivoiced
+                                    SELECT accrual_transaction."loanId",
+                                    	STRING_AGG(accrual_transaction."transactionIds"::TEXT, ',') AS "transactionIds",
+                                    	SUM(accrual_transaction."interest") AS "interest",
+                                    	SUM(accrual_transaction."mandatoryInsurance") AS "mandatoryInsurance",
+                                    	SUM(accrual_transaction."mandatoryInsuranceVat") AS "mandatoryInsuranceVat",
+                                    	SUM(accrual_transaction."voluntaryInsurance") AS "voluntaryInsurance",
+                                    	SUM(accrual_transaction."voluntaryInsuranceVat") AS "voluntaryInsuranceVat",
+                                    	SUM(accrual_transaction."honorarios") AS "honorarios",
+                                    	SUM(accrual_transaction."honorariosVat") AS "honorariosVat",
+                                    	SUM(accrual_transaction."penaltyCharges") AS "penaltyCharges",
+                                    	SUM(accrual_transaction."penaltyChargesVat") AS "penaltyChargesVat",
+                                    	SUM(accrual_transaction."totalPaid") AS "totalPaid"
+                                    FROM (
+                                    				SELECT
+                                                    			mlt.loan_id AS "loanId",
+                                                    			STRING_AGG(mlt.id::TEXT, ',') AS "transactionIds",
+                                                    			CASE WHEN (mlt.is_partially_ivoiced AND mlx.loan_status_id = 300) THEN SUM(COALESCE(partial_transaction."interestPaid", 0)) ELSE SUM(COALESCE(mlt.interest_portion_derived, 0)) END AS "interest",
+                                                    			CASE WHEN (mlt.is_partially_ivoiced AND mlx.loan_status_id = 300) THEN SUM(COALESCE(partial_transaction."mandatoryInsurancePaid", 0)) ELSE SUM(COALESCE(mandatory_insurance.amount, 0)) END AS "mandatoryInsurance",
+                                                    			CASE WHEN (mlt.is_partially_ivoiced AND mlx.loan_status_id = 300) THEN SUM(COALESCE(partial_transaction."mandatoryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_mandatory_insurance.amount, 0)) END AS "mandatoryInsuranceVat",
+                                                    			CASE WHEN (mlt.is_partially_ivoiced AND mlx.loan_status_id = 300) THEN SUM(COALESCE(partial_transaction."voluntaryInsurancePaid", 0)) ELSE SUM(COALESCE(voluntary_insurance.amount, 0)) END AS "voluntaryInsurance",
+                                                    			CASE WHEN (mlt.is_partially_ivoiced AND mlx.loan_status_id = 300) THEN SUM(COALESCE(partial_transaction."voluntaryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_voluntary_insurance.amount, 0)) END AS "voluntaryInsuranceVat",
+                                                    			CASE WHEN (mlt.is_partially_ivoiced AND mlx.loan_status_id = 300) THEN SUM(COALESCE(partial_transaction."honorariosPaid", 0)) ELSE SUM(COALESCE(hono.amount, 0)) END AS "honorarios",
+                                                    			CASE WHEN (mlt.is_partially_ivoiced AND mlx.loan_status_id = 300) THEN SUM(COALESCE(partial_transaction."honorariosVatPaid", 0)) ELSE SUM(COALESCE(vat_hono.amount, 0)) END AS "honorariosVat",
+                                                    			CASE WHEN (mlt.is_partially_ivoiced AND mlx.loan_status_id = 300) THEN SUM(COALESCE(partial_transaction."penaltyPaid", 0)) ELSE SUM(COALESCE(penalty.amount, 0)) END AS "penaltyCharges",
+                                                        		CASE WHEN (mlt.is_partially_ivoiced AND mlx.loan_status_id = 300) THEN SUM(COALESCE(partial_transaction."penaltyVatPaid", 0)) ELSE SUM(COALESCE(vat_penalty.amount, 0)) END AS "penaltyChargesVat",
+                                                    			COALESCE(CASE WHEN (mlt.is_partially_ivoiced AND mlx.loan_status_id = 300) THEN SUM(COALESCE(partial_transaction."interestPaid", 0)) ELSE SUM(COALESCE(mlt.interest_portion_derived, 0)) END, 0)
+                                                    				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsurancePaid", 0)) ELSE SUM(COALESCE(mandatory_insurance.amount, 0)) END, 0)
+                                                    				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."mandatoryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_mandatory_insurance.amount, 0)) END , 0)
+                                                    				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsurancePaid", 0)) ELSE SUM(COALESCE(voluntary_insurance.amount, 0)) END, 0)
+                                                    				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."voluntaryInsuranceVatPaid", 0)) ELSE SUM(COALESCE(vat_voluntary_insurance.amount, 0)) END, 0)
+                                                    				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosPaid", 0)) ELSE SUM(COALESCE(hono.amount, 0)) END, 0)
+                                                    				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."honorariosVatPaid", 0)) ELSE SUM(COALESCE(vat_hono.amount, 0)) END, 0)
+                                                    				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyPaid", 0)) ELSE SUM(COALESCE(penalty.amount, 0)) END, 0)
+                                                    				+ COALESCE(CASE WHEN mlt.is_partially_ivoiced THEN SUM(COALESCE(partial_transaction."penaltyVatPaid", 0)) ELSE SUM(COALESCE(vat_penalty.amount, 0)) END, 0) AS "totalPaid"
+                                                    		FROM m_loan_transaction mlt
+                                                            INNER JOIN m_loan mlx ON mlx.id = mlt.loan_id
+                                                    		LEFT JOIN (
+                                                    			SELECT
+                                                    					mpit.accrual_transaction_id AS "accrualTransactionId",
+                                                    					SUM(COALESCE(mpit.interest, 0)) AS "interestPaid",
+                                                    					SUM(COALESCE(mpit.honorarios, 0)) AS "honorariosPaid",
+                                                    					SUM(COALESCE(mpit.honorarios_vat, 0)) AS "honorariosVatPaid",
+                                                    					SUM(COALESCE(mpit.mandatory_insurance, 0)) AS "mandatoryInsurancePaid",
+                                                    					SUM(COALESCE(mpit.mandatory_insurance_vat, 0)) AS "mandatoryInsuranceVatPaid",
+                                                    					SUM(COALESCE(mpit.voluntary_insurance, 0)) AS "voluntaryInsurancePaid",
+                                                    					SUM(COALESCE(mpit.voluntary_insurance_vat, 0)) AS "voluntaryInsuranceVatPaid",
+                                                    				    SUM(COALESCE(mpit.penalty, 0)) AS "penaltyPaid",
+                                                    					SUM(COALESCE(mpit.penalty_vat, 0)) AS "penaltyVatPaid"
+                                                    			FROM m_partial_invoiced_transaction mpit
+                                                    			INNER JOIN m_loan_transaction invoiced_by ON invoiced_by.id = mpit.repayment_transaction_id
+                                                    			WHERE invoiced_by.transaction_type_enum = 2
+                                                    			GROUP BY mpit.accrual_transaction_id
+                                                    		) partial_transaction ON partial_transaction."accrualTransactionId" = mlt.id
+                                                    		LEFT JOIN (
+                                                    			SELECT mlcpd.loan_transaction_id,
+                                                    					SUM(mlcpd.amount) amount
+                                                    			FROM m_loan_charge_paid_by mlcpd
+                                                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                                                    			WHERE mlc.charge_calculation_enum IN (468, 575, 231)
+                                                    			GROUP BY mlcpd.loan_transaction_id
+                                                    		) mandatory_insurance ON mandatory_insurance.loan_transaction_id = mlt.id
+                                                    		LEFT JOIN (
+                                                    			SELECT
+                                                    				mlcpd.loan_transaction_id,
+                                                    				SUM(mlcpd.amount) amount
+                                                    			FROM m_loan_charge_paid_by mlcpd
+                                                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                                                    			JOIN m_charge mc ON mc.id = mlc.charge_id
+                                                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                                                    			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum IN (468, 575, 231)
+                                                    			GROUP BY mlcpd.loan_transaction_id
+                                                    		) vat_mandatory_insurance ON vat_mandatory_insurance.loan_transaction_id = mlt.id
+                                                    		LEFT JOIN (
+                                                    			SELECT
+                                                    				mlcpd.loan_transaction_id,
+                                                    				SUM(mlcpd.amount) amount
+                                                    			FROM m_loan_charge_paid_by mlcpd
+                                                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                                                    			WHERE mlc.charge_calculation_enum = 1034
+                                                    			GROUP BY mlcpd.loan_transaction_id
+                                                    		) voluntary_insurance ON voluntary_insurance.loan_transaction_id = mlt.id
+                                                    		LEFT JOIN (
+                                                    			SELECT
+                                                    				mlcpd.loan_transaction_id,
+                                                    				SUM(mlcpd.amount) amount
+                                                    			FROM m_loan_charge_paid_by mlcpd
+                                                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                                                    			JOIN m_charge mc ON mc.id = mlc.charge_id
+                                                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                                                    			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 1034
+                                                    			GROUP BY mlcpd.loan_transaction_id
+                                                    		) vat_voluntary_insurance ON vat_voluntary_insurance.loan_transaction_id = mlt.id
+                                                    		LEFT JOIN (
+                                                    			SELECT
+                                                    				mlcpd.loan_transaction_id,
+                                                    				SUM(mlcpd.amount) amount
+                                                    			FROM m_loan_charge_paid_by mlcpd
+                                                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                                                    			WHERE mlc.charge_calculation_enum = 41
+                                                    			GROUP BY mlcpd.loan_transaction_id
+                                                    		) aval ON aval.loan_transaction_id = mlt.id
+                                                    		LEFT JOIN (
+                                                    			SELECT
+                                                    				mlcpd.loan_transaction_id,
+                                                    				SUM(mlcpd.amount) amount
+                                                    			FROM m_loan_charge_paid_by mlcpd
+                                                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                                                    			JOIN m_charge mc ON mc.id = mlc.charge_id
+                                                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                                                    			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 41
+                                                    			GROUP BY mlcpd.loan_transaction_id
+                                                    		) vat_aval ON vat_aval.loan_transaction_id = mlt.id
+                                                    		LEFT JOIN (
+                                                    			SELECT
+                                                    				mlcpd.loan_transaction_id ,
+                                                    				SUM(mlcpd.amount) amount
+                                                    			FROM m_loan_charge_paid_by mlcpd
+                                                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                                                    			WHERE mlc.charge_calculation_enum = 1009
+                                                    			GROUP BY mlcpd.loan_transaction_id
+                                                    		) hono ON hono.loan_transaction_id = mlt.id
+                                                    		LEFT JOIN (
+                                                    			SELECT
+                                                    				mlcpd.loan_transaction_id,
+                                                    				SUM(mlcpd.amount) amount
+                                                    			FROM m_loan_charge_paid_by mlcpd
+                                                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                                                    			JOIN m_charge mc ON mc.id = mlc.charge_id
+                                                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                                                    			WHERE mc.charge_calculation_enum = 342 AND parent.charge_calculation_enum = 1009
+                                                    			GROUP BY mlcpd.loan_transaction_id
+                                                    		) vat_hono ON vat_hono.loan_transaction_id = mlt.id
+                                                    		LEFT JOIN (
+                                                    			SELECT
+                                                    				mlcpd.loan_transaction_id ,
+                                                    				SUM(mlcpd.amount) amount
+                                                    			FROM m_loan_charge_paid_by mlcpd
+                                                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                                                    			WHERE mlc.is_penalty = TRUE
+                                                    			GROUP BY mlcpd.loan_transaction_id
+                                                    		) penalty ON penalty.loan_transaction_id = mlt.id
+                                                    		LEFT JOIN (
+                                                    			SELECT
+                                                    				mlcpd.loan_transaction_id,
+                                                    				SUM(mlcpd.amount) amount
+                                                    			FROM m_loan_charge_paid_by mlcpd
+                                                    			JOIN m_loan_charge mlc ON mlc.id = mlcpd.loan_charge_id
+                                                    			JOIN m_charge mc ON mc.id = mlc.charge_id
+                                                    			JOIN m_charge parent ON parent.id = mc.parent_charge_id
+                                                    			WHERE mc.charge_calculation_enum = 342
+                                                    				AND mc.is_penalty = TRUE
+                                                    				AND parent.charge_calculation_enum = 1009
+                                                    				AND parent.is_penalty = TRUE
+                                                    			GROUP BY mlcpd.loan_transaction_id
+                                                    		) vat_penalty ON vat_penalty.loan_transaction_id = mlt.id
+                                                    		WHERE mlt.is_reversed = FALSE
+                                                    		AND mlt.transaction_type_enum = 10
+                                                             AND (CASE
+                                                                    WHEN (mlx.loan_status_id = 300) THEN (mlt.occurred_on_suspended_account = FALSE)
+                                                                    WHEN (mlx.loan_status_id != 300 AND mlt.invoiced_by_transaction_id IS NULL) THEN (mlt.is_invoiced_generated_by_job = FALSE)
+                                                                    WHEN (mlx.loan_status_id != 300 AND mlt.invoiced_by_transaction_id IS NOT NULL) THEN (mlt.occurred_on_suspended_account = FALSE)
+                                                                    ELSE FALSE
+                                                                  END)
+                                                    		AND mlt.transaction_date <= :date
+                                                            AND mlt.is_invoiced_generated_by_job = FALSE
+                                                            AND mlt.loan_id in (:loanIds)
+                                                    		GROUP BY mlt.loan_id, mlt.is_partially_ivoiced, mlx.loan_status_id
+                                    ) accrual_transaction
+                                    GROUP BY accrual_transaction."loanId"
                         ) mlt ON mlt."loanId" = ml.id
                         INNER JOIN (
                             SELECT DISTINCT ON (mptp.product_type) *

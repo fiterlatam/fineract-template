@@ -159,5 +159,17 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="8">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="c_facturacion_electronica" columnName="accrual_transaction_ids"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="c_facturacion_electronica">
+            <column name="accrual_transaction_ids" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
 
 </databaseChangeLog>
