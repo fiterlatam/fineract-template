@@ -32,9 +32,9 @@ BEGIN
     SELECT EXISTS(SELECT 1 FROM acc_gl_account WHERE gl_code = '1690952007') INTO gl_exists;
     IF NOT gl_exists THEN
         INSERT INTO acc_gl_account
-            (id, gl_code, name, classification_enum, account_type_enum, usage_enum, manual_journal_entries_allowed, disabled, parent_id)
+            (id, gl_code, name, classification_enum, account_usage, manual_journal_entries_allowed, disabled, parent_id)
         VALUES
-            (1690952007, '1690952007', 'CxC Comisión FNG', 1, 1, 1, true, false, NULL);
+            (1690952007, '1690952007', 'CxC Comisión FNG', 1, 1, true, false, NULL);
     END IF;
 END
 $$;
