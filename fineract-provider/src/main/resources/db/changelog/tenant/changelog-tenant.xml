@@ -402,4 +402,6 @@
     <include file="parts/20240703120000_EA_330_update_customer_identifier_codes.xml" relativeToChangelogFile="true"/>
     <include file="parts/202505042000001000_EA_329_fn_core_codevalue_getcode.xml" relativeToChangelogFile="true" />
     <include file="parts/20240707120000_EA_331_manual_charges_INSERT.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240708120000_EA_332_add_gl_account_FNG_commission.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20240708121000_EA_333_add_charge_FNG_commission.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
