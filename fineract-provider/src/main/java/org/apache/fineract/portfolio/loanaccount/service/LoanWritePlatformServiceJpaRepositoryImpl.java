@@ -5041,6 +5041,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 facturaElectronicaMensualItem.setTotal(totalValue);
                 facturaElectronicaMensualItem.setImpuesto(totalImpuestoItem);
                 facturaElectronicaMensualItem.setPorcentaje_impuesto(porcentajeImpuestoItem);
+                facturaElectronicaMensualItem.setAccrualTransactionIds(loanDocumentData.getTransactionIds());
             }
             if (!facturaElectronicaMensuals.isEmpty()) {
                 this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
