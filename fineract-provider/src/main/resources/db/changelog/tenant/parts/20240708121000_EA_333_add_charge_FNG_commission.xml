@@ -42,4 +42,4 @@ $$;
             ]]>
         </sql>
     </changeSet>
-</databaseChangeLog> 
+</databaseChangeLog>
