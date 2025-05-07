@@ -394,6 +394,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     loanApplicationTerms.setAnnualNominalInterestRate(annualNominalInterestRate);
                 }
 
+                accruedInterestByAdvancePmt = Money.zero(currency);
                 principalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
                         interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
                         totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
