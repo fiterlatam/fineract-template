@@ -1059,6 +1059,16 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             payment = LoanTransaction.repayment(loan.getOffice(), payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable),
                     paymentDetail, foreClosureDate, externalId);
             payment.updateLoan(loan);
+
+            final ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
+                    .retrieveClientAdditionalData(loan.getClientId());
+            final String nit = ObjectUtils.defaultIfNull(clientAdditionalInformation.getNit(), clientAdditionalInformation.getCedula());
+            final CollectionHouseConfiguration collectionHouse = this.collectionHouseReadWriteService
+                    .retrieveCollectionHouseByClientFromHistory(nit);
+            if (collectionHouse != null) {
+                payment.setCollectionHouse(collectionHouse);
+            }
+
             newTransactions.add(payment);
         }
 
