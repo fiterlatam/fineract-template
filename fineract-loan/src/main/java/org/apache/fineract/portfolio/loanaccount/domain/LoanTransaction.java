@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -50,6 +51,7 @@ import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 @Slf4j
 @Entity
 @Table(name = "m_loan_transaction", uniqueConstraints = { @UniqueConstraint(columnNames = { "external_id" }, name = "external_id_UNIQUE") })
+@EntityListeners(AuditDateOverrideListener.class)
 public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     @ManyToOne(optional = false)
@@ -186,6 +188,18 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     // Transient variable to hold original interest amount paid by the original transaction
     @Transient
     private HashMap<Integer, BigDecimal> interestPaidByOriginalTransaction = new HashMap<>();
+
+    // Methods to set your custom dates
+    // A field to store the override date
+    @Setter
+    @Getter
+    @Transient
+    private OffsetDateTime customCreatedDate;
+
+    @Setter
+    @Getter
+    @Transient
+    private OffsetDateTime customLastModifiedDate;
 
     public static LoanTransaction incomePosting(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
             final BigDecimal interestPortion, final BigDecimal feeChargesPortion, final BigDecimal penaltyChargesPortion,
