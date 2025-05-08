@@ -379,7 +379,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     PrincipalInterest principalInterestAccruedForAdvancePmt = calculatePrincipalInterestComponentsForPeriod(calculator,
                             interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
                             totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, tempOutstandingBalance, loanApplicationTerms,
-                            periodNumber, mc, principalVariation, compoundingMap, detail.getTransactionDate(), toDate, interestRates);
+                            periodNumber, mc, principalVariation, compoundingMap, periodStartDateApplicableForInterest, periodEndDate,
+                            interestRates);
 
                     accruedInterestByAdvancePmt = accruedInterestByAdvancePmt.add(principalInterestAccruedForAdvancePmt.interest());
 
@@ -984,7 +985,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     private void updateAmountsBasedOnCurrentEarlyPayments(final MathContext mc, final LoanApplicationTerms loanApplicationTerms,
             LoanScheduleParams scheduleParams, ScheduleCurrentPeriodParams currentPeriodParams) {
         currentPeriodParams.setReducedBalance(currentPeriodParams.getEarlyPaidAmount());
-        currentPeriodParams.minusEarlyPaidAmount(currentPeriodParams.getPrincipalForThisPeriod());
+        currentPeriodParams.minusEarlyPaidAmount(currentPeriodParams.getEarlyPaidAmount());
         if (currentPeriodParams.getEarlyPaidAmount().isGreaterThanZero()) {
             scheduleParams.addReducePrincipal(currentPeriodParams.getEarlyPaidAmount());
             BigDecimal fixedEmiAmount = loanApplicationTerms.getFixedEmiAmount();
