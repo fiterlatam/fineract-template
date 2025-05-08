@@ -914,12 +914,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         LocalDate transactionDate = null;
+        final LocalDate currentDate = DateUtils.getBusinessLocalDate();
 
         if (suppliedTransactionDate != null) {
             transactionDate = suppliedTransactionDate;
         } else {
             transactionDate = loanCharge.getDueLocalDate();
-            final LocalDate currentDate = DateUtils.getBusinessLocalDate();
 
             // if loan charge is to be applied on a future date, the loan transaction would show today's date as applied
             // date
@@ -938,6 +938,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, loanCharge,
                 loanCharge.getAmount(getCurrency()).getAmount(), installmentNumber);
         applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
+        // if the transaction date is in the past and this is a penalty,
+        // let's retrospectively set the created-on date
+        if (loanCharge.isPenaltyCharge() && transactionDate.isBefore(currentDate)) {
+            applyLoanChargeTransaction.setCustomCreatedDate(DateUtils.toAuditOffsetDateTime(transactionDate));
+            applyLoanChargeTransaction.setCustomLastModifiedDate(DateUtils.toAuditOffsetDateTime(transactionDate));
+        }
         addLoanTransaction(applyLoanChargeTransaction);
         return applyLoanChargeTransaction;
     }
