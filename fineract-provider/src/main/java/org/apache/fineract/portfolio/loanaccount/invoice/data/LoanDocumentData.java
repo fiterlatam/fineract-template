@@ -101,6 +101,8 @@ public class LoanDocumentData {
     private String mandatoryInsuranceCode;
     private String voluntaryInsuranceName;
     private String mandatoryInsuranceName;
+    private String voluntaryInsuranceNIT;
+    private String mandatoryInsuranceNIT;
     private Integer loansCount;
     private Integer itemsCount;
     private Long loanTransactionId;

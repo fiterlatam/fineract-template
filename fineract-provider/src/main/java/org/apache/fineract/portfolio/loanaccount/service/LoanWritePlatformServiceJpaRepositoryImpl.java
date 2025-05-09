@@ -4983,10 +4983,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
                 facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
 
-                final String mandatoryInsuranceCode = loanDocumentData.getMandatoryInsuranceCode();
+                final String mandatoryInsuranceNIT = loanDocumentData.getMandatoryInsuranceNIT();
                 final String mandatoryInsuranceName = loanDocumentData.getMandatoryInsuranceName();
 
-                facturaElectronicaMensualDuplicate.setId_mandante(mandatoryInsuranceCode);
+                facturaElectronicaMensualDuplicate.setId_mandante(mandatoryInsuranceNIT);
                 facturaElectronicaMensualDuplicate.setDescripcion_mandante(mandatoryInsuranceName);
 
                 final ClasificacionConceptosData clasificacionConceptosData = this
@@ -5004,10 +5004,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
                 facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
 
-                final String voluntaryInsuranceCode = loanDocumentData.getVoluntaryInsuranceCode();
+                final String voluntaryInsuranceNIT = loanDocumentData.getVoluntaryInsuranceNIT();
                 final String voluntaryInsuranceName = loanDocumentData.getVoluntaryInsuranceName();
 
-                facturaElectronicaMensualDuplicate.setId_mandante(voluntaryInsuranceCode);
+                facturaElectronicaMensualDuplicate.setId_mandante(voluntaryInsuranceNIT);
                 facturaElectronicaMensualDuplicate.setDescripcion_mandante(voluntaryInsuranceName);
 
                 final ClasificacionConceptosData clasificacionConceptosData = this
