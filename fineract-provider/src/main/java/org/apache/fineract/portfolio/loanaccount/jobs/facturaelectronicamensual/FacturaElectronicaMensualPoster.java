@@ -133,6 +133,10 @@ public class FacturaElectronicaMensualPoster {
 
                             final String mandatoryInsuranceName = list.stream().map(LoanDocumentData::getMandatoryInsuranceName)
                                     .filter(Objects::nonNull).findFirst().orElse(null);
+                            final String voluntaryInsuranceNIT = list.stream().map(LoanDocumentData::getVoluntaryInsuranceNIT)
+                                    .filter(Objects::nonNull).findFirst().orElse(null);
+                            final String mandatoryInsuranceNIT = list.stream().map(LoanDocumentData::getMandatoryInsuranceNIT)
+                                    .filter(Objects::nonNull).findFirst().orElse(null);
 
                             final Integer loansCount = list.size();
                             final LoanDocumentData loanDocumentData = list.get(0);
@@ -178,6 +182,7 @@ public class FacturaElectronicaMensualPoster {
                                     .collectionHouseNit(loanDocumentData.getCollectionHouseNit())
                                     .voluntaryInsuranceCode(voluntaryInsuranceCode).voluntaryInsuranceName(voluntaryInsuranceName)
                                     .mandatoryInsuranceCode(mandatoryInsuranceCode).mandatoryInsuranceName(mandatoryInsuranceName)
+                                    .voluntaryInsuranceNIT(voluntaryInsuranceNIT).mandatoryInsuranceNIT(mandatoryInsuranceNIT)
                                     .transactionIds(transactionIds).build();
                         })))
                 .values().stream().toList();

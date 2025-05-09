@@ -4214,6 +4214,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                          	voluntary_insurance_code."codeValue" AS "voluntaryInsuranceCode",
                          	mandatory_insurance_code."codeName" AS "mandatoryInsuranceName",
                           	voluntary_insurance_code."codeName" AS "voluntaryInsuranceName",
+                          	mandatory_insurance_code."insuranceNIT" AS "mandatoryInsuranceNIT",
+                          	voluntary_insurance_code."insuranceNIT" AS "voluntaryInsuranceNIT",
                           	mc.mobile_no AS "clientTelephone",
                           	mchcc.collection_nit as clientCollectionHouseNit,
                             mchcc.collection_name as clientCollectionHouseName,
@@ -4413,7 +4415,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         LEFT JOIN (
                           SELECT mlc.loan_id,
                           MAX(mc.insurance_code) AS "codeValue",
-                          MAX(mc.insurer_name) AS "codeName"
+                          MAX(mc.insurer_name) AS "codeName",
+                          MAX(mc.insurance_company) AS "insuranceNIT"
                           FROM m_loan_charge mlc
                           INNER JOIN m_charge mc ON mc.id = mlc.charge_id
                           WHERE mlc.charge_calculation_enum IN (468, 575, 231)
@@ -4423,7 +4426,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         LEFT JOIN (
                           SELECT mlc.loan_id,
                           MAX(mc.insurance_code) AS "codeValue",
-                          MAX(mc.insurer_name) AS "codeName"
+                          MAX(mc.insurer_name) AS "codeName",
+                          MAX(mc.insurance_company) AS "insuranceNIT"
                           FROM m_loan_charge mlc
                           INNER JOIN m_charge mc ON mc.id = mlc.charge_id
                           WHERE mlc.charge_calculation_enum = 1034
@@ -4489,6 +4493,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                      	voluntary_insurance_code."codeValue" AS "voluntaryInsuranceCode",
                      	mandatory_insurance_code."codeName" AS "mandatoryInsuranceName",
                       	voluntary_insurance_code."codeName" AS "voluntaryInsuranceName",
+                      	mandatory_insurance_code."insuranceNIT" AS "voluntaryInsuranceNIT",
+                      	voluntary_insurance_code."insuranceNIT" AS "mandatoryInsuranceNIT",
                       	mc.mobile_no AS "clientTelephone",
                       	mchc.collection_nit as clientCollectionHouseNit,
                         mchc.collection_name as clientCollectionHouseName,
@@ -4640,7 +4646,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     LEFT JOIN (
                       SELECT mlc.loan_id,
                       MAX(mc.insurance_code) AS "codeValue",
-                       MAX(mc.insurer_name) AS "codeName"
+                       MAX(mc.insurer_name) AS "codeName",
+                       MAX(mc.insurance_company) AS "insuranceNIT"
                       FROM m_loan_charge mlc
                       INNER JOIN m_charge mc ON mc.id = mlc.charge_id
                       WHERE mlc.charge_calculation_enum IN (468, 575, 231)
@@ -4649,7 +4656,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     LEFT JOIN (
                       SELECT mlc.loan_id,
                       MAX(mc.insurance_code) AS "codeValue",
-                      MAX(mc.insurer_name) AS "codeName"
+                      MAX(mc.insurer_name) AS "codeName",
+                      MAX(mc.insurance_company) AS "insuranceNIT"
                       FROM m_loan_charge mlc
                       INNER JOIN m_charge mc ON mc.id = mlc.charge_id
                       WHERE mlc.charge_calculation_enum = 1034
@@ -4696,6 +4704,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     .totalPaid(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "totalPaid"))
                     .mandatoryInsuranceCode(rs.getString("mandatoryInsuranceCode"))
                     .voluntaryInsuranceCode(rs.getString("voluntaryInsuranceCode"))
+                    .voluntaryInsuranceNIT(rs.getString("voluntaryInsuranceNIT"))
+                    .mandatoryInsuranceNIT(rs.getString("mandatoryInsuranceNIT"))
                     .voluntaryInsuranceName(rs.getString("voluntaryInsuranceName")).clientFirstName(rs.getString("clientFirstName"))
                     .clientMiddleName(rs.getString("clientMiddleName")).mandatoryInsuranceName(rs.getString("mandatoryInsuranceName"))
                     .collectionHouseNit(collectionHouseNit).collectionHouseName(collectionHouseName)
