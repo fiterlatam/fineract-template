@@ -252,26 +252,25 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
                 if (loan.getLoanCustomizationDetail().getBlockStatus() == null) {
                     Collection<LoanBlockingReason> loanBlockingReasonCollection = this.loanBlockingReasonRepository
                             .findAllActiveByLoanId(loan.getId());
-                    if (loanBlockingReasonCollection.size() > 0) {
+                    if (!loanBlockingReasonCollection.isEmpty()) {
                         final Optional<LoanBlockingReason> highestPriorityReason = loanBlockingReasonCollection.stream()
                                 .filter(LoanBlockingReason::isActive)
-                                .sorted(Comparator.comparingInt(t -> t.getBlockingReasonSetting().getPriority())).findFirst();
+                                .min(Comparator.comparingInt(t -> t.getBlockingReasonSetting().getPriority()));
 
-                        if (highestPriorityReason.isPresent()) {
-                            loan.getLoanCustomizationDetail().setBlockStatus(highestPriorityReason.get().getBlockingReasonSetting());
-                        }
+                        highestPriorityReason.ifPresent(blockingReason -> loan.getLoanCustomizationDetail()
+                                .setBlockStatus(blockingReason.getBlockingReasonSetting()));
                     }
                 }
 
                 this.loanRepository.save(loan);
                 this.loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
 
-                final Collection<LoanBlockingReason> unBlocked = new ArrayList();
+                final Collection<LoanBlockingReason> unBlocked = new ArrayList<>();
                 unBlocked.add(loanBlockingReason);
                 Client client = loan.getClient();
                 if (client.getBlockingReason() != null) {
 
-                    if (isHaveBlockLoan(client) == false && loanBlockingReason.getBlockingReasonSetting().isAffectsClientLevel() == true) {
+                    if (!isHaveBlockLoan(client) && loanBlockingReason.getBlockingReasonSetting().isAffectsClientLevel()) {
                         deleteBlockReasonFromClientIfPresent(unBlocked, client, currentUser, unblockDate, unblockComment);
                     }
 
@@ -290,7 +289,7 @@ public class LoanBlockWritePlatformServiceImpl implements LoanBlockWritePlatform
         for (Loan clientloan : allLoans) {
             Collection<LoanBlockingReason> loanBlockingReasonCollection = this.loanBlockingReasonRepository
                     .findAllActiveByLoanId(clientloan.getId());
-            if (loanBlockingReasonCollection.size() > 0) {
+            if (!loanBlockingReasonCollection.isEmpty()) {
                 return true;
             }
         }
