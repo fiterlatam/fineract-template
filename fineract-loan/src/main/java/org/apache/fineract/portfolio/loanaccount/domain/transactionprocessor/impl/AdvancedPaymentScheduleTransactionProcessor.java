@@ -1148,98 +1148,46 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                     LoanRepaymentScheduleInstallment.PaymentAction.PAY);
                                             transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
                                         } else {
-                                            // For non-migrated installments, handle advanced payments
                                             if (inAdvanceInstallment.isLastInstallment(installments)
-                                                    && inAdvanceInstallment.isOverpaidInAdvance(currency)) {
-                                                // Handle overpaid last installment
-                                                Money remainingPrincipal = inAdvanceInstallment.getPrincipal(currency)
-                                                        .minus(inAdvanceInstallment.getPrincipalCompleted(currency));
-                                                
-                                                if (transactionAmountUnprocessed.isGreaterThanOrEqualTo(remainingPrincipal)) {
-                                                    // Pay remaining principal and move excess to overpaid
-                                                    Money paidPrincipalComponent = inAdvanceInstallment.payPrincipalComponent(
-                                                            loanTransaction.getTransactionDate(), remainingPrincipal, false,
-                                                            loanTransaction);
+                                                    && inAdvanceInstallment.isOverpaidInAdvance(currency) && transactionAmountUnprocessed
+                                                            .isGreaterThanOrEqualTo(inAdvanceInstallment.getPrincipal(currency))) {
+                                                // This MUST be true only in case of advance overpayment after repayment
+                                                // schedule is regenerated
+                                                // Process principal and move the remaining amount to overpaid
 
-                                                    Money excessAmount = transactionAmountUnprocessed.minus(remainingPrincipal);
-                                                    inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
-                                                            .getAdvancePrincipalAmount().add(excessAmount.getAmount()));
+                                                Money paidPrincipalComponent = inAdvanceInstallment.payPrincipalComponent(
+                                                        loanTransaction.getTransactionDate(), transactionAmountUnprocessed, false,
+                                                        loanTransaction);
 
-                                                    balances.setAggregatedPrincipalPortion(
-                                                            balances.getAggregatedPrincipalPortion().add(remainingPrincipal));
-                                                    
-                                                    LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
-                                                            transactionMappings, loanTransaction, inAdvanceInstallment, currency);
-                                                    addToTransactionMapping(loanTransactionToRepaymentScheduleMapping,
-                                                            remainingPrincipal, zero, zero, zero);
-                                                    
-                                                    transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPrincipalComponent);
-                                                    stopProcessingAdvanceInstallment = true;
-                                                } else {
-                                                    // Pay partial principal
-                                                    Money paidPrincipalComponent = inAdvanceInstallment.payPrincipalComponent(
-                                                            loanTransaction.getTransactionDate(), transactionAmountUnprocessed, false,
-                                                            loanTransaction);
+                                                inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
+                                                        .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
 
-                                                    balances.setAggregatedPrincipalPortion(
-                                                            balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
-                                                    
-                                                    LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
-                                                            transactionMappings, loanTransaction, inAdvanceInstallment, currency);
-                                                    addToTransactionMapping(loanTransactionToRepaymentScheduleMapping,
-                                                            transactionAmountUnprocessed, zero, zero, zero);
-                                                    
-                                                    transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPrincipalComponent);
-                                                    stopProcessingAdvanceInstallment = true;
-                                                }
+                                                balances.setAggregatedPrincipalPortion(
+                                                        balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
+                                                LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
+                                                        transactionMappings, loanTransaction, inAdvanceInstallment, currency);
+                                                addToTransactionMapping(loanTransactionToRepaymentScheduleMapping,
+                                                        transactionAmountUnprocessed, zero, zero, zero);
+                                                transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPrincipalComponent);
+                                                stopProcessingAdvanceInstallment = true;
+
                                             } else {
-                                                // Handle regular advanced payments
-                                                Money remainingPrincipal = inAdvanceInstallment.getPrincipal(currency)
-                                                        .minus(inAdvanceInstallment.getPrincipalCompleted(currency));
-                                                
-                                                if (transactionAmountUnprocessed.isGreaterThanOrEqualTo(remainingPrincipal)) {
-                                                    // Pay full principal
-                                                    Money paidPrincipalComponent = inAdvanceInstallment.payPrincipalComponent(
-                                                            loanTransaction.getTransactionDate(), remainingPrincipal, false,
-                                                            loanTransaction);
+                                                balances.setAggregatedPrincipalPortion(
+                                                        balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
+                                                inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(
+                                                        loanTransaction.getTransactionDate(), currency);
 
-                                                    balances.setAggregatedPrincipalPortion(
-                                                            balances.getAggregatedPrincipalPortion().add(remainingPrincipal));
-                                                    
-                                                    inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(
-                                                            loanTransaction.getTransactionDate(), currency);
-                                                    
-                                                    inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
-                                                            loanTransaction.getTransactionDate(), currency, remainingPrincipal);
-                                                    
-                                                    LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
-                                                            transactionMappings, loanTransaction, inAdvanceInstallment, currency);
-                                                    addToTransactionMapping(loanTransactionToRepaymentScheduleMapping,
-                                                            remainingPrincipal, zero, zero, zero);
-                                                    
-                                                    transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPrincipalComponent);
-                                                } else {
-                                                    // Pay partial principal
-                                                    Money paidPrincipalComponent = inAdvanceInstallment.payPrincipalComponent(
-                                                            loanTransaction.getTransactionDate(), transactionAmountUnprocessed, false,
-                                                            loanTransaction);
+                                                inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
+                                                        loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
+                                                inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
+                                                        .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
+                                                inAdvanceInstallment.setRecalculateEMI(loanTransaction.recalculateEMI());
+                                                LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
+                                                        transactionMappings, loanTransaction, inAdvanceInstallment, currency);
+                                                addToTransactionMapping(loanTransactionToRepaymentScheduleMapping,
+                                                        transactionAmountUnprocessed, zero, zero, zero);
 
-                                                    balances.setAggregatedPrincipalPortion(
-                                                            balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
-                                                    
-                                                    inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(
-                                                            loanTransaction.getTransactionDate(), currency);
-                                                    
-                                                    inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
-                                                            loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
-                                                    
-                                                    LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
-                                                            transactionMappings, loanTransaction, inAdvanceInstallment, currency);
-                                                    addToTransactionMapping(loanTransactionToRepaymentScheduleMapping,
-                                                            transactionAmountUnprocessed, zero, zero, zero);
-                                                    
-                                                    transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPrincipalComponent);
-                                                }
+                                                transactionAmountUnprocessed = Money.zero(currency);
                                             }
                                         }
                                     }
