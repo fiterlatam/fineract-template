@@ -684,7 +684,12 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                 final BigDecimal porcentajeImpuestoItem = newCreditNoteDocuments.stream()
                         .filter(f -> Objects.nonNull(f.getPorcentaje_impuesto_item())).findFirst().orElse(new FacturaElectronicaMensual())
                         .getPorcentaje_impuesto_item();
+                final BigDecimal creditNoteBaseValue = newCreditNoteDocuments.stream().map(FacturaElectronicaMensual::getBase)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                final BigDecimal creditNoteTotalValue = creditNoteBaseValue.add(totalImpuestoItem);
                 for (final FacturaElectronicaMensual facturaElectronicaMensualItem : newCreditNoteDocuments) {
+                    facturaElectronicaMensualItem.setBase(creditNoteBaseValue);
+                    facturaElectronicaMensualItem.setTotal(creditNoteTotalValue);
                     facturaElectronicaMensualItem.setImpuesto(totalImpuestoItem);
                     facturaElectronicaMensualItem.setPorcentaje_impuesto(porcentajeImpuestoItem);
                     facturaElectronicaMensualItem.setTotal_unidades(String.valueOf(itemsCount));

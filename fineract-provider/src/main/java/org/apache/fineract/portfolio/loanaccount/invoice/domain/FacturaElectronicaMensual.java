@@ -311,6 +311,10 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
         return this.total == null ? BigDecimal.ZERO : this.total;
     }
 
+    public BigDecimal getBase() {
+        return this.base == null ? BigDecimal.ZERO : this.base;
+    }
+
     @Override
     public FacturaElectronicaMensual clone() {
         try {
