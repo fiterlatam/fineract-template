@@ -1774,16 +1774,30 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     private boolean updateFixedInstallmentAmount(final MathContext mc, final LoanApplicationTerms loanApplicationTerms, int periodNumber,
             Money outstandingBalance) {
         boolean isAmountChanged = false;
+
+        // Only update EMI for declining balance loans with equal installments
         if (loanApplicationTerms.getActualFixedEmiAmount() == null && loanApplicationTerms.getInterestMethod().isDecliningBalance()
                 && loanApplicationTerms.getAmortizationMethod().isEqualInstallment()) {
+
+            // Adjust period number if we're in grace period
             if (periodNumber < loanApplicationTerms.getPrincipalGrace() + 1) {
                 periodNumber = loanApplicationTerms.getPrincipalGrace() + 1;
             }
+
+            // Calculate new EMI amount
             Money emiAmount = loanApplicationTerms.pmtForInstallment(getPaymentPeriodsInOneYearCalculator(), outstandingBalance,
                     periodNumber, mc);
+
+            // Apply rounding if needed
+            if (loanApplicationTerms.getInstallmentAmountInMultiplesOf() != null) {
+                emiAmount = Money.roundToMultiplesOf(emiAmount, loanApplicationTerms.getInstallmentAmountInMultiplesOf());
+            }
+
+            // Update the fixed EMI amount
             loanApplicationTerms.setFixedEmiAmount(emiAmount.getAmount());
             isAmountChanged = true;
         }
+
         return isAmountChanged;
     }
 
@@ -2002,19 +2016,26 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
 
     private void adjustInstallmentOrPrincipalAmount(final LoanApplicationTerms loanApplicationTerms, final Money totalCumulativePrincipal,
             int periodNumber, final MathContext mc) {
-        // in this case emi amount will be reduced but number of
-        // installments won't change
+        // Get the remaining principal to be scheduled
         Money principal = getPrincipalToBeScheduled(loanApplicationTerms);
         if (!principal.minus(totalCumulativePrincipal).isGreaterThanZero()) {
             return;
         }
-        if (loanApplicationTerms.getAmortizationMethod().isEqualPrincipal()) {
-            loanApplicationTerms.updateFixedPrincipalAmount(mc, periodNumber, principal.minus(totalCumulativePrincipal));
-        } else if (loanApplicationTerms.getActualFixedEmiAmount() == null) {
-            loanApplicationTerms.setFixedEmiAmount(null);
-            updateFixedInstallmentAmount(mc, loanApplicationTerms, periodNumber, principal.minus(totalCumulativePrincipal));
-        }
 
+        // Calculate the new outstanding balance
+        Money newOutstandingBalance = principal.minus(totalCumulativePrincipal);
+
+        // Handle different amortization methods
+        if (loanApplicationTerms.getAmortizationMethod().isEqualPrincipal()) {
+            // For equal principal payments, update the fixed principal amount
+            loanApplicationTerms.updateFixedPrincipalAmount(mc, periodNumber, newOutstandingBalance);
+        } else {
+            // For other methods, recalculate the EMI
+            if (loanApplicationTerms.getActualFixedEmiAmount() == null) {
+                loanApplicationTerms.setFixedEmiAmount(null);
+                updateFixedInstallmentAmount(mc, loanApplicationTerms, periodNumber, newOutstandingBalance);
+            }
+        }
     }
 
     /**
@@ -4045,7 +4066,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             throw new IllegalStateException("No installments generated for loan schedule.");
         }
 
-        // Calculate total principal and find any problematic installments
+        // Calculate total principal and validate installments
         Money totalPrincipal = Money.zero(currency);
         int lastIdx = installments.size() - 1;
 
@@ -4053,7 +4074,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             var inst = installments.get(i);
             Money principal = inst.getPrincipal(currency);
 
-            // Only allow zero/negative principal for the last installment (for rounding)
+            // Only allow zero/negative principal for the last installment
             if ((principal.isLessThanZero() || principal.isZero()) && i != lastIdx) {
                 throw new org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException(
                         "error.msg.loan.reschedule.principal.cannot.be.zero.or.negative",
@@ -4062,16 +4083,18 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             totalPrincipal = totalPrincipal.plus(principal);
         }
 
-        // Optionally: Adjust the last installment to absorb rounding difference
+        // Adjust last installment for rounding differences
         Money roundingDiff = expectedTotalPrincipal.minus(totalPrincipal);
         if (!roundingDiff.isZero()) {
             var lastInstallment = installments.get(lastIdx);
             Money newPrincipal = lastInstallment.getPrincipal(currency).plus(roundingDiff);
+
             if (newPrincipal.isLessThanZero() || newPrincipal.isZero()) {
                 throw new org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException(
                         "error.msg.loan.reschedule.last.installment.negative",
                         "Rounding adjustment would make last installment principal negative: " + newPrincipal.getAmount());
             }
+
             lastInstallment.setPrincipal(newPrincipal.getAmount());
         }
     }
