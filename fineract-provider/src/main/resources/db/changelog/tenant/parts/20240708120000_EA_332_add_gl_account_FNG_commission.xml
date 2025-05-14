@@ -41,4 +41,25 @@ $$;
             ]]>
         </sql>
     </changeSet>
+
+    <changeSet id="20240709-01-update-manual-charges-to-aval" author="fineract">
+        <comment>
+            Update manual charges created in EA-331 to use calculation type "Aval" (286) instead of "Honorarios" (1009).
+        </comment>
+        <update tableName="m_charge">
+            <column name="charge_calculation_enum" valueNumeric="286"/>
+            <where>
+                charge_calculation_enum = 1009
+                AND name IN (
+                    'Cargo Manual Capital',
+                    'Cargo Manual Intereses',
+                    'Cargo Manual Mora',
+                    'Cargo Manual Mipyme',
+                    'Cargo Manual GAC',
+                    'Cargo Manual Seguro',
+                    'Cargo Manual FNG'
+                )
+            </where>
+        </update>
+    </changeSet>
 </databaseChangeLog>
