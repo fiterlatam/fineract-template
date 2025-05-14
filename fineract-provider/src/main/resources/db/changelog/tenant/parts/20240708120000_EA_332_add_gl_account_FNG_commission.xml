@@ -62,4 +62,70 @@ $$;
             </where>
         </update>
     </changeSet>
+
+    <changeSet id="20240709-02-update-manual-charges-to-disbursement" author="fineract">
+        <comment>
+            Update manual charges to use DISBURSEMENT (2) instead of SPECIFIED_DUE_DATE (8)
+        </comment>
+        <update tableName="m_charge">
+            <column name="charge_time_enum" valueNumeric="2"/>
+            <where>
+                charge_time_enum = 8
+                AND name IN (
+                    'Cargo Manual Capital',
+                    'Cargo Manual Intereses',
+                    'Cargo Manual Mora',
+                    'Cargo Manual Mipyme',
+                    'Cargo Manual GAC',
+                    'Cargo Manual Seguro',
+                    'Cargo Manual FNG'
+                )
+            </where>
+        </update>
+    </changeSet>
+
+    <changeSet id="20240709-03-handle-duplicate-charge-ids" author="fineract">
+        <comment>
+            Check for duplicate charge IDs and update them to use max_id + 1
+        </comment>
+        <sql splitStatements="false">
+            <![CDATA[
+DO $$
+DECLARE
+    max_id BIGINT;
+    duplicate_charge RECORD;
+BEGIN
+    -- Get the maximum ID from m_charge
+    SELECT COALESCE(MAX(id), 0) INTO max_id FROM m_charge;
+
+    -- Find charges with duplicate IDs
+    FOR duplicate_charge IN
+        SELECT id, name
+        FROM m_charge
+        WHERE id IN (
+            SELECT id
+            FROM m_charge
+            GROUP BY id
+            HAVING COUNT(*) > 1
+        )
+    LOOP
+        -- Update the charge ID to max_id + 1
+        max_id := max_id + 1;
+
+        -- Update the charge ID
+        UPDATE m_charge
+        SET id = max_id
+        WHERE id = duplicate_charge.id
+        AND name = duplicate_charge.name;
+
+        -- Update any references in m_loan_charge
+        UPDATE m_loan_charge
+        SET charge_id = max_id
+        WHERE charge_id = duplicate_charge.id;
+    END LOOP;
+END
+$$;
+            ]]>
+        </sql>
+    </changeSet>
 </databaseChangeLog>

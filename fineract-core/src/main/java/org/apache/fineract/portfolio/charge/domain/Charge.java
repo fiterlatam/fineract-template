@@ -43,7 +43,6 @@ import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
-import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -55,6 +54,7 @@ import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeCreatedExcep
 import org.apache.fineract.portfolio.charge.exception.ChargeDueAtDisbursementCannotBePenaltyException;
 import org.apache.fineract.portfolio.charge.exception.ChargeMustBePenaltyException;
 import org.apache.fineract.portfolio.charge.exception.ChargeParameterUpdateNotSupportedException;
+import org.apache.fineract.portfolio.charge.exception.ChargeSetupException;
 import org.apache.fineract.portfolio.charge.service.ChargeEnumerations;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
@@ -163,8 +163,7 @@ public class Charge extends AbstractPersistableCustom {
     @Embedded
     private ChargeInsuranceDetail chargeInsuranceDetail;
 
-    private static final String ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP = "error.msg.charge.not.setup.correctly";
-    private static final String ERROR_MESSAGE_INCORRECT_CHARGE_SETUP = "Charge not setup correctly";
+    public static final String ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP = "Charge not setup correctly";
     private static final String AMOUNT_PARAM = "amount";
 
     public static Charge fromJson(final JsonCommand command, final GLAccount account, final TaxGroup taxGroup,
@@ -1029,12 +1028,10 @@ public class Charge extends AbstractPersistableCustom {
             }
             if (this.isPenalty()) {
                 if (!ChargeTimeType.fromInt(this.getChargeTimeType()).isOverdueInstallment()) {
-                    throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
-                            Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
+                    throw new ChargeSetupException(this.getName(), "Penalty charges must have charge time type of Overdue Installment");
                 }
                 if (this.interestRate == null) {
-                    throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
-                            Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
+                    throw new ChargeSetupException(this.getName(), "Penalty charges must have an interest rate defined");
                 }
                 if (this.isCustomPercentageBasedOfAnotherCharge()) {
                     verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.PERCENT_OF_ANOTHER_CHARGE.getIndex(), null, null,
@@ -1047,9 +1044,11 @@ public class Charge extends AbstractPersistableCustom {
                             ChargeCalculationTypeBaseItemsEnum.PRINCIPAL_INSTALLMENT.getIndex());
                 }
             } else if (ChargeTimeType.SPECIFIED_DUE_DATE.equals(ChargeTimeType.fromInt(this.getChargeTimeType()))) {
-                if (!ChargeCalculationType.FLAT.equals(ChargeCalculationType.fromInt(this.chargeCalculation))) {
-                    throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
-                            Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
+                ChargeCalculationType calcType = ChargeCalculationType.fromInt(this.chargeCalculation);
+                if (!java.util.List.of(ChargeCalculationType.FLAT, ChargeCalculationType.FLAT_HONO, ChargeCalculationType.FLAT_AVAL)
+                        .contains(calcType)) {
+                    throw new ChargeSetupException(this.getName(),
+                            "Specified Due Date charges must use FLAT, FLAT_HONO, or FLAT_AVAL calculation types");
                 }
             } else if (this.isMandatoryInsurance()) {
                 if (this.isFlatMandatoryInsurance()) { // Flat and Mandatory Insurance
@@ -1082,27 +1081,24 @@ public class Charge extends AbstractPersistableCustom {
                 verifyChargeConfiguration(code, ChargeCalculationTypeBaseItemsEnum.SEGURO_DE_VIDA.getIndex(),
                         ChargeCalculationTypeBaseItemsEnum.SEGURO_OBRIGATORIO.getIndex(), null, null, null);
             } else {
-                throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
-                        Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
+                throw new ChargeSetupException(this.getName(), "Invalid charge configuration for loan charge");
             }
 
             if (!this.isPenalty() && !ChargeTimeType.fromInt(this.getChargeTimeType()).isInstalmentFee()
                     && !ChargeTimeType.fromInt(this.getChargeTimeType()).isOnSpecifiedDueDate() && !this.isDisbursementCharge()) {
-                throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
-                        Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
+                throw new ChargeSetupException(this.getName(),
+                        "Non-penalty loan charges must be either installment fee, specified due date, or disbursement charges");
             }
         }
     }
 
     private void verifyChargeConfiguration(String code, Integer index1, Integer index2, Integer index3, Integer index4, Integer index5) {
         if (this.isAvalCharge() && !this.isPenalty() && !this.isGetPercentageFromTable()) {
-            throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
-                    Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
+            throw new ChargeSetupException(this.getName(), "Aval charges must have getPercentageFromTable set to true");
         }
 
         if (!this.isPenalty() && !this.isInstallmentFee() && !this.isDisbursementCharge()) {
-            throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
-                    Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
+            throw new ChargeSetupException(this.getName(), "Non-penalty charges must be either installment fee or disbursement charges");
         }
         char[] codeArray = code.toCharArray();
         codeArray[index1] = '0';
@@ -1121,8 +1117,7 @@ public class Charge extends AbstractPersistableCustom {
         }
         code = String.valueOf(codeArray);
         if (code.indexOf('1') != -1) {
-            throw new GeneralPlatformDomainRuleException(Charge.ERROR_MESSAGE_LABEL_INCORRECT_CHARGE_SETUP,
-                    Charge.ERROR_MESSAGE_INCORRECT_CHARGE_SETUP, this.getName());
+            throw new ChargeSetupException(this.getName(), "Invalid charge configuration code: " + code);
         }
     }
 
