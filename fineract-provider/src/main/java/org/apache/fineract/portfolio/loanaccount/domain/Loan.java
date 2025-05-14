@@ -942,6 +942,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     amount = getPrincpal().getAmount();
                 }
             break;
+            case PERCENT_OF_OUTSTANDING_BALANCE:
+                amount = getTotalOutstandingOnLoan().getPrincipalOutstanding(getCurrency()).getAmount();
+            break;
             default:
             break;
         }
@@ -1001,6 +1004,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             break;
             case PERCENT_OF_INTEREST:
                 percentOf = installment.getInterestCharged(getCurrency());
+            break;
+            case PERCENT_OF_OUTSTANDING_BALANCE:
+                percentOf = installment.getPrincipalOutstanding(getCurrency());
             break;
             default:
             break;

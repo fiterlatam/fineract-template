@@ -46,7 +46,8 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
                 chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT),
                 chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST),
                 chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST),
-                chargeCalculationType(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT));
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT),
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_BALANCE));
     }
 
     @Override
@@ -84,7 +85,8 @@ public class ChargeDropdownReadPlatformServiceImpl implements ChargeDropdownRead
                 chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT),
                 chargeCalculationType(ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST),
                 chargeCalculationType(ChargeCalculationType.PERCENT_OF_INTEREST),
-                chargeCalculationType(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT));
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT),
+                chargeCalculationType(ChargeCalculationType.PERCENT_OF_OUTSTANDING_BALANCE));
     }
 
     @Override
