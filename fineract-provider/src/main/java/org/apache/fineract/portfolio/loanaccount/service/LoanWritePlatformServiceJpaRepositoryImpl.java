@@ -5364,6 +5364,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
         Integer actualNumberOfRepayments = loan.getTermFrequency();
         Integer requiredInstallments = installmentNumberToAddDisbursement + actualNumberOfRepayments - 1;
+
+        // Fix for revolving loans when disbursement is after maturity
+        if (loan.isRevolvingLoan() && installmentNumberToAddDisbursement == loan.getRepaymentScheduleInstallments().size()) {
+            // For revolving loans with disbursement after maturity, add one more installment
+            requiredInstallments += 1;
+        }
+
         if (requiredInstallments == 0) {
             return null;
         }
