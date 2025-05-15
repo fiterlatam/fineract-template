@@ -354,6 +354,7 @@ public class LoanCharge extends AbstractPersistableCustom {
             case PERCENT_OF_AMOUNT_AND_INTEREST:
             case PERCENT_OF_INTEREST:
             case PERCENT_OF_DISBURSEMENT_AMOUNT:
+            case PERCENT_OF_OUTSTANDING_BALANCE:
                 this.percentage = chargeAmount;
                 this.amountPercentageAppliedTo = amountPercentageAppliedTo;
                 if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
@@ -466,6 +467,7 @@ public class LoanCharge extends AbstractPersistableCustom {
                 case PERCENT_OF_AMOUNT:
                 case PERCENT_OF_AMOUNT_AND_INTEREST:
                 case PERCENT_OF_INTEREST:
+                case PERCENT_OF_OUTSTANDING_BALANCE:
                 case PERCENT_OF_DISBURSEMENT_AMOUNT:
                     this.amountPercentageAppliedTo = loanPrincipal;
                     if (this.loan != null && isDisbursementCharge() && this.isAddOnDisbursementType()) {
@@ -523,6 +525,9 @@ public class LoanCharge extends AbstractPersistableCustom {
                     LoanTrancheDisbursementCharge loanTrancheDisbursementCharge = this.loanTrancheDisbursementCharge;
                     amountPercentageAppliedTo = loanTrancheDisbursementCharge.getloanDisbursementDetails().principal();
                 break;
+                case PERCENT_OF_OUTSTANDING_BALANCE:
+                    amountPercentageAppliedTo = this.loan.getSummary().getTotalPrincipalOutstanding();
+                break;
                 default:
                 break;
             }
@@ -568,6 +573,7 @@ public class LoanCharge extends AbstractPersistableCustom {
                 case PERCENT_OF_AMOUNT_AND_INTEREST:
                 case PERCENT_OF_INTEREST:
                 case PERCENT_OF_DISBURSEMENT_AMOUNT:
+                case PERCENT_OF_OUTSTANDING_BALANCE:
                     this.percentage = newValue;
                     this.amountPercentageAppliedTo = amount;
                     loanCharge = BigDecimal.ZERO;
