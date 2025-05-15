@@ -5361,15 +5361,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             // Can only be null if disbursement date is after last installment due date. So create all installments
             installmentNumberToAddDisbursement = loan.getRepaymentScheduleInstallments().size();
             variationDate = loan.getLastLoanRepaymentScheduleInstallment().getDueDate();
+            return ImmutablePair.of(installmentNumberToAddDisbursement, variationDate);
         }
         Integer actualNumberOfRepayments = loan.getTermFrequency();
         Integer requiredInstallments = installmentNumberToAddDisbursement + actualNumberOfRepayments - 1;
-
-        // Fix for revolving loans when disbursement is after maturity
-        if (loan.isRevolvingLoan() && installmentNumberToAddDisbursement == loan.getRepaymentScheduleInstallments().size()) {
-            // For revolving loans with disbursement after maturity, add one more installment
-            requiredInstallments += 1;
-        }
 
         if (requiredInstallments == 0) {
             return null;
