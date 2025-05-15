@@ -247,7 +247,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
 
             totalDebitAmount = totalDebitAmount.add(feesAmount);
 
-            if (isIncomeFromFee) {
+            if (isIncomeFromFee || loanTransactionDTO.getTransactionType().isRepayment()) {
                 this.helper.createCreditJournalEntryOrReversalForLoanCharges(office, currencyCode,
                         AccrualAccountsForLoan.INCOME_FROM_FEES.getValue(), loanProductId, loanId, transactionId, transactionDate,
                         feesAmount, isReversal, loanTransactionDTO.getFeePayments());
