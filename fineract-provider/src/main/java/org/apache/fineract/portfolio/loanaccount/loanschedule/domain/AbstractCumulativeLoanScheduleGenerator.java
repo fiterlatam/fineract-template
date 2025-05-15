@@ -1487,9 +1487,31 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
                     scheduleParams.addOutstandingBalanceAsPerRest(remainingPrincipal);
                 }
-                loanApplicationTerms.setPrincipal(loanApplicationTerms.getPrincipal().plus(remainingPrincipal));
-                if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
-                    updateAmortization(mc, loanApplicationTerms, scheduleParams.getPeriodNumber(), scheduleParams.getOutstandingBalance());
+                
+                // Update total principal
+                Money newTotalPrincipal = loanApplicationTerms.getPrincipal().plus(remainingPrincipal);
+                loanApplicationTerms.setPrincipal(newTotalPrincipal);
+                
+                // Recalculate loan term and number of installments for multiple disbursements
+                if (loanApplicationTerms.isMultiDisburseLoan()) {
+                    // Get the number of installments from the first disbursement
+                    int firstDisbursementInstallments = loanApplicationTerms.getNumberOfRepayments();
+                    
+                    // Calculate the total number of installments needed based on the total principal
+                    int totalInstallments = loanApplicationTerms.getNumberOfRepayments();
+                    if (totalInstallments < firstDisbursementInstallments) {
+                        // Extend the loan term to match the number of installments from first disbursement
+                        loanApplicationTerms.updateNumberOfRepayments(firstDisbursementInstallments);
+                        
+                        // Update the loan end date based on the new number of installments
+                        LocalDate newLoanEndDate = getScheduledDateGenerator().getLastRepaymentDate(loanApplicationTerms, 
+                            loanApplicationTerms.getHolidayDetailDTO());
+                        loanApplicationTerms.updateLoanEndDate(newLoanEndDate);
+                        
+                        // Recalculate amortization for the new total principal
+                        updateAmortization(mc, loanApplicationTerms, scheduleParams.getPeriodNumber(), 
+                            scheduleParams.getOutstandingBalance());
+                    }
                 }
             }
         }
