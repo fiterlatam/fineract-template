@@ -3570,7 +3570,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 periodStartDate = installment.getDueDate();
                 if ((installment.getAdvancePrincipalAmount() != null
                         && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0)
-                || (installment.isMigratedInstallment() && installment.recalculateEMI())) {
+                        || (installment.isMigratedInstallment() && installment.recalculateEMI())) {
                     // Reduce advance paid amount from outstanding balance and recalculate EMI
                     outstandingBalance = outstandingBalance.minus(installment.getAdvancePrincipalAmount());
                     outstandingBalanceAsPerRest = outstandingBalanceAsPerRest.minus(installment.getAdvancePrincipalAmount());
