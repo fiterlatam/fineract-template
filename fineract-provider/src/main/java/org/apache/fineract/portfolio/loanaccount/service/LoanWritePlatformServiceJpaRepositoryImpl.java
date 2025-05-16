@@ -1892,6 +1892,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 this.loanTransactionRepository.saveAll(invoicedByTransactions);
             }
             if (CollectionUtils.isNotEmpty(facturaElectronicMensuals)) {
+                this.decrementInvoiceCounterOnProduct(transactionToAdjust, facturaElectronicMensuals);
                 this.facturaElectronicMensualRepository.deleteAll(facturaElectronicMensuals);
             }
         }
@@ -1904,6 +1905,25 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withGroupId(loan.getGroupId()) //
                 .withLoanId(loanId) //
                 .with(changes).build();
+    }
+
+    private void decrementInvoiceCounterOnProduct(LoanTransaction transactionToAdjust,
+            List<FacturaElectronicaMensual> facturaElectronicMensuals) {
+        // If this invoice has the last invoice number, then decrement it on the product
+        final String productTypeName = transactionToAdjust.getLoan().loanProduct().getProductType() != null
+                ? transactionToAdjust.getLoan().loanProduct().getProductType().getLabel()
+                : "";
+        final List<LoanProductParameterization> loanProductParameterizations = this.productParameterizationRepository
+                .findByProductType(productTypeName);
+        if (!loanProductParameterizations.isEmpty()) {
+            // we expect exactly one product parameterization
+            final LoanProductParameterization loanProductParameterization = loanProductParameterizations.get(0);
+            Long invoiceNumber = Long.parseLong(facturaElectronicMensuals.get(0).getNumero_doc());
+            if (invoiceNumber.equals(loanProductParameterization.getInvoiceCounter())) {
+                loanProductParameterization.setInvoiceCounter(loanProductParameterization.getInvoiceCounter() - 1L);
+                this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
+            }
+        }
     }
 
     private void checkIfProductAllowsCancelationOrReversal(Loan loan) {

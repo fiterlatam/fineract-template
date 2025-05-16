@@ -3499,7 +3499,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         List<LoanRepaymentScheduleInstallment> newRepaymentScheduleInstallments = new ArrayList<>();
         for (LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
             LocalDate dateToCheck = loan.isMaxLegalRateChanging() ? installment.getDueDate() : installment.getFromDate();
-            if (DateUtils.isOnOrBefore(dateToCheck, rescheduleFrom) || installment.isMigratedInstallment()) {
+            if (DateUtils.isOnOrBefore(dateToCheck, rescheduleFrom) || installment.isMigratedInstallment()
+                    || installment.isObligationsMet()) {
                 newRepaymentScheduleInstallments.add(installment);
             } else {
                 // Check if there is any installment having advance payment then add the installment to calculate
