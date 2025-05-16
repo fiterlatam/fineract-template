@@ -5373,7 +5373,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
             if (lastInstallmentDueDateOpt.isPresent()) {
                 LocalDate lastInstallmentDueDate = lastInstallmentDueDateOpt.get();
-                long diff = ChronoUnit.DAYS.between(disbursementDate, lastInstallmentDueDate);
+                long diff = ChronoUnit.DAYS.between(lastInstallmentDueDate, disbursementDate);
                 if (diff < 15) {
                     installmentNumberToAddDisbursement = loan.getRepaymentScheduleInstallments().size() - 1;
                 }
