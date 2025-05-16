@@ -1124,71 +1124,75 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     }
                     case IN_ADVANCE -> {
                         if (loanTransaction.doNotProcessAdvanceInstallments() || stopProcessingAdvanceInstallment) {
+                            // This condition will only be true if loan processing type is VERTICAL.
+                            // For vertical payments, Past Due and Due installments MUST be processed Horizontally
                             exit = true;
                         } else {
-                            List<LoanRepaymentScheduleInstallment> selectedInstallments;
-
-                            // Select installments based on allocation rule
-                            if (FutureInstallmentAllocationRule.REAMORTIZATION.equals(futureInstallmentAllocationRule)) {
-                                // Get all future installments for reamortization
-                                selectedInstallments = installments.stream().filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
-                                        .filter(e -> loanTransaction.isBefore(e.getFromDate()))
-                                        .sorted(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber))
-                                        .collect(Collectors.toList());
-                            } else if (FutureInstallmentAllocationRule.NEXT_INSTALLMENT.equals(futureInstallmentAllocationRule)) {
-                                // Get only the next immediate installment
-                                selectedInstallments = installments.stream().filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
-                                        .filter(e -> loanTransaction.isBefore(e.getFromDate()))
-                                        .sorted(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).limit(1)
-                                        .collect(Collectors.toList());
-                            } else if (FutureInstallmentAllocationRule.LAST_INSTALLMENT.equals(futureInstallmentAllocationRule)) {
-                                // Get only the last installment
-                                selectedInstallments = installments.stream().filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
-                                        .filter(e -> loanTransaction.isBefore(e.getFromDate()))
-                                        .max(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).stream()
-                                        .collect(Collectors.toList());
-                            } else {
-                                selectedInstallments = Collections.emptyList();
-                            }
-
-                            int numberOfInstallments = selectedInstallments.size();
+                            int numberOfInstallments = inAdvanceInstallments.size();
                             if (numberOfInstallments > 0) {
-                                if (FutureInstallmentAllocationRule.REAMORTIZATION.equals(futureInstallmentAllocationRule)) {
-                                    // Distribute evenly across all future installments
-                                    Money evenPortion = transactionAmountUnprocessed.dividedBy(numberOfInstallments,
-                                            MoneyHelper.getRoundingMode());
-                                    Money balanceAdjustment = transactionAmountUnprocessed
-                                            .minus(evenPortion.multipliedBy(numberOfInstallments));
+                                Money zero = transactionAmountUnprocessed.zero();
+                                for (LoanRepaymentScheduleInstallment inAdvanceInstallment : inAdvanceInstallments) {
+                                    if (transactionAmountUnprocessed.isGreaterThanZero()) {
+                                        String productName = inAdvanceInstallment.getLoan().getLoanProduct().getName();
+                                        if (inAdvanceInstallment.isMigratedInstallment() || (inAdvanceInstallment.getLoan().isMigratedLoan()
+                                                && (productName.contains(LoanProductType.CREDITO_ROTATIVO.getCode())
+                                                        || productName.contains(LoanProductType.NANO_CREDITO.getCode())))) {
+                                            // Process migrated installments as due or past due installments
+                                            Set<LoanCharge> inAdvanceInstallmentCharges = getLoanChargesOfInstallment(charges,
+                                                    inAdvanceInstallment, firstNormalInstallmentNumber);
+                                            LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
+                                                    transactionMappings, loanTransaction, inAdvanceInstallment, currency);
+                                            paidPortion = processPaymentAllocation(paymentAllocationType, inAdvanceInstallment,
+                                                    loanTransaction, transactionAmountUnprocessed,
+                                                    loanTransactionToRepaymentScheduleMapping, inAdvanceInstallmentCharges, balances,
+                                                    LoanRepaymentScheduleInstallment.PaymentAction.PAY);
+                                            transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
+                                        } else {
+                                            if (inAdvanceInstallment.isLastInstallment(installments)
+                                                    && inAdvanceInstallment.isOverpaidInAdvance(currency) && transactionAmountUnprocessed
+                                                            .isGreaterThanOrEqualTo(inAdvanceInstallment.getPrincipal(currency))) {
+                                                // This MUST be true only in case of advance overpayment after repayment
+                                                // schedule is regenerated
+                                                // Process principal and move the remaining amount to overpaid
 
-                                    for (int i = 0; i < selectedInstallments.size(); i++) {
-                                        LoanRepaymentScheduleInstallment installment = selectedInstallments.get(i);
-                                        Money portion = (i == selectedInstallments.size() - 1) ? evenPortion.add(balanceAdjustment)
-                                                : evenPortion;
+                                                Money paidPrincipalComponent = inAdvanceInstallment.payPrincipalComponent(
+                                                        loanTransaction.getTransactionDate(), transactionAmountUnprocessed, false,
+                                                        loanTransaction);
 
-                                        Set<LoanCharge> installmentCharges = getLoanChargesOfInstallment(charges, installment,
-                                                firstNormalInstallmentNumber);
-                                        LoanTransactionToRepaymentScheduleMapping mapping = getTransactionMapping(transactionMappings,
-                                                loanTransaction, installment, currency);
+                                                inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
+                                                        .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
 
-                                        paidPortion = processPaymentAllocation(paymentAllocationType, installment, loanTransaction, portion,
-                                                mapping, installmentCharges, balances, LoanRepaymentScheduleInstallment.PaymentAction.PAY);
+                                                balances.setAggregatedPrincipalPortion(
+                                                        balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
+                                                LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
+                                                        transactionMappings, loanTransaction, inAdvanceInstallment, currency);
+                                                addToTransactionMapping(loanTransactionToRepaymentScheduleMapping,
+                                                        transactionAmountUnprocessed, zero, zero, zero);
+                                                transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPrincipalComponent);
+                                                stopProcessingAdvanceInstallment = true;
 
-                                        transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
+                                            } else {
+                                                balances.setAggregatedPrincipalPortion(
+                                                        balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
+                                                inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(
+                                                        loanTransaction.getTransactionDate(), currency);
+
+                                                inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
+                                                        loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
+                                                inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
+                                                        .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
+                                                inAdvanceInstallment.setRecalculateEMI(loanTransaction.recalculateEMI());
+                                                LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
+                                                        transactionMappings, loanTransaction, inAdvanceInstallment, currency);
+                                                addToTransactionMapping(loanTransactionToRepaymentScheduleMapping,
+                                                        transactionAmountUnprocessed, zero, zero, zero);
+
+                                                transactionAmountUnprocessed = Money.zero(currency);
+                                            }
+                                        }
                                     }
-                                } else {
-                                    // Apply entire amount to single installment
-                                    LoanRepaymentScheduleInstallment installment = selectedInstallments.get(0);
-                                    Set<LoanCharge> installmentCharges = getLoanChargesOfInstallment(charges, installment,
-                                            firstNormalInstallmentNumber);
-                                    LoanTransactionToRepaymentScheduleMapping mapping = getTransactionMapping(transactionMappings,
-                                            loanTransaction, installment, currency);
-
-                                    paidPortion = processPaymentAllocation(paymentAllocationType, installment, loanTransaction,
-                                            transactionAmountUnprocessed, mapping, installmentCharges, balances,
-                                            LoanRepaymentScheduleInstallment.PaymentAction.PAY);
-
-                                    transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
                                 }
+                                exit = true;
                             } else {
                                 exit = true;
                             }

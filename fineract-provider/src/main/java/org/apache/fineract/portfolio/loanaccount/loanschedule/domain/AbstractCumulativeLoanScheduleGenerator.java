@@ -3568,8 +3568,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 // calculation of basic fields to start the schedule generation
                 // from the middle
                 periodStartDate = installment.getDueDate();
-                if (installment.getAdvancePrincipalAmount() != null
-                        && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
+                if ((installment.getAdvancePrincipalAmount() != null
+                        && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0)
+                        || (installment.isMigratedInstallment() && installment.recalculateEMI())) {
                     // Reduce advance paid amount from outstanding balance and recalculate EMI
                     outstandingBalance = outstandingBalance.minus(installment.getAdvancePrincipalAmount());
                     outstandingBalanceAsPerRest = outstandingBalanceAsPerRest.minus(installment.getAdvancePrincipalAmount());
@@ -4049,12 +4050,19 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         Money totalPrincipal = Money.zero(currency);
         int lastIdx = installments.size() - 1;
 
+        boolean isMigratedLoan = false;
         for (int i = 0; i < installments.size(); i++) {
             var inst = installments.get(i);
             Money principal = inst.getPrincipal(currency);
+            principal = principal.add(inst.getAdvancePrincipalAmount());
+
+            if (inst.isMigratedInstallment()) { // Do not round off installment for migrated loans
+                isMigratedLoan = true;
+                return;
+            }
 
             // Only allow zero/negative principal for the last installment (for rounding)
-            if ((principal.isLessThanZero() || principal.isZero()) && i != lastIdx) {
+            if (!isMigratedLoan && ((principal.isLessThanZero() || principal.isZero()) && i != lastIdx)) {
                 throw new org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException(
                         "error.msg.loan.reschedule.principal.cannot.be.zero.or.negative",
                         "Installment " + (i + 1) + " has zero or negative principal after reschedule: " + principal.getAmount());
