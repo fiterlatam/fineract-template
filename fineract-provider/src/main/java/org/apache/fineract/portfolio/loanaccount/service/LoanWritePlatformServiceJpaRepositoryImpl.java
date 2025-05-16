@@ -5360,7 +5360,27 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (installmentNumberToAddDisbursement == null) {
             // Can only be null if disbursement date is after last installment due date. So create all installments
             installmentNumberToAddDisbursement = loan.getRepaymentScheduleInstallments().size();
+
+            // 12 Installment loans - 1 paid - 2nd disbursal after last installment date
+            // If the the second disbursal is done before the cutoff date of the last installments then Fineract should
+            // add NumberOfnstallments -1.
+            // In your example: 12 - 1 = 11
+            // If the last disbursal is done after the cutoff date the of last installment, then fineract should add
+            // NumberOfInstallnebts
+            Optional<LocalDate> lastInstallmentDueDateOpt = loan.getRepaymentScheduleInstallments().stream()
+                    .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber).reversed()).findFirst()
+                    .map(dt -> dt.getDueDate());
+
+            if (lastInstallmentDueDateOpt.isPresent()) {
+                LocalDate lastInstallmentDueDate = lastInstallmentDueDateOpt.get();
+                long diff = ChronoUnit.DAYS.between(disbursementDate, lastInstallmentDueDate);
+                if (diff < 15) {
+                    installmentNumberToAddDisbursement = loan.getRepaymentScheduleInstallments().size() - 1;
+                }
+            }
+
             variationDate = loan.getLastLoanRepaymentScheduleInstallment().getDueDate();
+            return ImmutablePair.of(installmentNumberToAddDisbursement, variationDate);
         }
         Integer actualNumberOfRepayments = loan.getTermFrequency();
         Integer requiredInstallments = installmentNumberToAddDisbursement + actualNumberOfRepayments - 1;
