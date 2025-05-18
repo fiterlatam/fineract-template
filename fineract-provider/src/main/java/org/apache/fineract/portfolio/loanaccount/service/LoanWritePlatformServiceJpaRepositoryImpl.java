@@ -2342,8 +2342,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     isHolidayValidationDone);
         } else {
             final MonetaryCurrency currency = loan.getCurrency();
-            final LoanRepaymentScheduleInstallment specialWriteOffInstallment = loan.fetchLoanSpecialWriteOffDetail(
-                    loan.isMigratedLoan() ? loan.getExpectedMaturityDate() : transactionDate);
+            final LoanRepaymentScheduleInstallment specialWriteOffInstallment = loan
+                    .fetchLoanSpecialWriteOffDetail(loan.isMigratedLoan() ? loan.getExpectedMaturityDate() : transactionDate);
             final LoanRepaymentScheduleInstallmentData loanRepaymentScheduleInstallmentData = loan.validateSpecialWriteOffConcepts(command,
                     specialWriteOffInstallment);
             final BigDecimal principalToBeWrittenOff = loanRepaymentScheduleInstallmentData.getPrincipalPortion();
@@ -2351,8 +2351,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     .minus(principalToBeWrittenOff);
             final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
             final LoanRepaymentScheduleInstallment currentScheduleInstallment = fetchRepaymentInstallmentByWrittenOfDate(
-                    loan.isMigratedLoan() ? loan.getExpectedMaturityDate() : transactionDate,
-                    repaymentScheduleInstallments);
+                    loan.isMigratedLoan() ? loan.getExpectedMaturityDate() : transactionDate, repaymentScheduleInstallments);
 
             Money interestToBeChargedAndWrittenOff = currentScheduleInstallment.getInterestCharged(currency);
             if (remainingPrincipalPortion.isGreaterThanZero()
