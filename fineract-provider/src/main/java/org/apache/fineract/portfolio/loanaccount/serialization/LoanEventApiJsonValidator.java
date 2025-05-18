@@ -496,7 +496,7 @@ public final class LoanEventApiJsonValidator {
                 Arrays.asList(LoanEventApiJsonValidator.PRINCIPAL_PORTION_PARAM, LoanEventApiJsonValidator.INTEREST_PORTION_PARAM,
                         LoanEventApiJsonValidator.LOCALE_PARAM, LoanEventApiJsonValidator.DATE_FORMAT_PARAM, "charges", "writeoffReasonId",
                         "loanId", LoanEventApiJsonValidator.TOTAL_WRITE_OFF_AMOUNT_PARAM,
-                        LoanEventApiJsonValidator.IS_IMPORTED_TRANSACTION_PARAM, "isCreditNote"));
+                        LoanEventApiJsonValidator.IS_IMPORTED_TRANSACTION_PARAM, "isCreditNote", "transactionDate"));
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, disbursementParameters);
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
@@ -518,6 +518,9 @@ public final class LoanEventApiJsonValidator {
             baseDataValidator.reset().parameter(LoanEventApiJsonValidator.INTEREST_PORTION_PARAM).value(interestPortion).notNull()
                     .zeroOrPositiveAmount();
         }
+        final LocalDate transactionDate = this.fromApiJsonHelper.extractLocalDateNamed(LoanEventApiJsonValidator.TRANSACTION_DATE_PARAM,
+                element);
+        baseDataValidator.reset().parameter(LoanEventApiJsonValidator.TRANSACTION_DATE_PARAM).value(transactionDate).ignoreIfNull();
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
 
