@@ -3226,10 +3226,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         periods.addAll(loanScheduleModel.getPeriods());
         LoanScheduleModel loanScheduleModelWithPeriodChanges = LoanScheduleModel.withLoanScheduleModelPeriods(periods, loanScheduleModel);
 
-        // Validate and correct the principal distribution in the new schedule
-        validateAndCorrectInstallments(retainedInstallments, loanApplicationTerms.getCurrency(),
-                getPrincipalToBeScheduled(loanApplicationTerms));
-
         return LoanScheduleDTO.from(retainedInstallments, loanScheduleModelWithPeriodChanges);
     }
 
@@ -3704,10 +3700,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         periods.addAll(loanScheduleModel.getPeriods());
         LoanScheduleModel loanScheduleModelWithPeriodChanges = LoanScheduleModel.withLoanScheduleModelPeriods(periods, loanScheduleModel);
 
-        // Validate and correct the principal distribution in the new schedule
-        validateAndCorrectInstallments(retainedInstallments, loanApplicationTerms.getCurrency(),
-                getPrincipalToBeScheduled(loanApplicationTerms));
-
         return LoanScheduleDTO.from(retainedInstallments, loanScheduleModelWithPeriodChanges);
     }
 
@@ -4036,51 +4028,4 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 ignoreCurrencyDigitsAfterDecimal);
     }
 
-    /**
-     * Validates and corrects the principal distribution in the generated schedule. Ensures no installment (except
-     * possibly the last) has zero or negative principal. Adjusts rounding differences to the last installment.
-     */
-    private void validateAndCorrectInstallments(List<LoanRepaymentScheduleInstallment> installments, MonetaryCurrency currency,
-            Money expectedTotalPrincipal) {
-        if (installments == null || installments.isEmpty()) {
-            throw new IllegalStateException("No installments generated for loan schedule.");
-        }
-
-        // Calculate total principal and find any problematic installments
-        Money totalPrincipal = Money.zero(currency);
-        int lastIdx = installments.size() - 1;
-
-        boolean isMigratedLoan = false;
-        for (int i = 0; i < installments.size(); i++) {
-            var inst = installments.get(i);
-            Money principal = inst.getPrincipal(currency);
-            principal = principal.add(inst.getAdvancePrincipalAmount());
-
-            if (inst.isMigratedInstallment()) { // Do not round off installment for migrated loans
-                isMigratedLoan = true;
-                return;
-            }
-
-            // Only allow zero/negative principal for the last installment (for rounding)
-            if (!isMigratedLoan && ((principal.isLessThanZero() || principal.isZero()) && i != lastIdx)) {
-                throw new org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException(
-                        "error.msg.loan.reschedule.principal.cannot.be.zero.or.negative",
-                        "Installment " + (i + 1) + " has zero or negative principal after reschedule: " + principal.getAmount());
-            }
-            totalPrincipal = totalPrincipal.plus(principal);
-        }
-
-        // Optionally: Adjust the last installment to absorb rounding difference
-        Money roundingDiff = expectedTotalPrincipal.minus(totalPrincipal);
-        if (!roundingDiff.isZero()) {
-            var lastInstallment = installments.get(lastIdx);
-            Money newPrincipal = lastInstallment.getPrincipal(currency).plus(roundingDiff);
-            if (newPrincipal.isLessThanZero() || newPrincipal.isZero()) {
-                throw new org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException(
-                        "error.msg.loan.reschedule.last.installment.negative",
-                        "Rounding adjustment would make last installment principal negative: " + newPrincipal.getAmount());
-            }
-            lastInstallment.setPrincipal(newPrincipal.getAmount());
-        }
-    }
 }
