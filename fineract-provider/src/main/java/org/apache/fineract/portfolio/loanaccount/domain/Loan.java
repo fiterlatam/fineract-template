@@ -6626,7 +6626,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money interestForCurrentPeriod = Money.zero(getCurrency());
         Money interestAccountedForCurrentPeriod = Money.zero(getCurrency());
         int totalPeriodDays = Math.toIntExact(DAYS.between(installment.getFromDate(), installment.getDueDate()));
-        int tillDays = Math.toIntExact(DAYS.between(installment.getFromDate(), paymentDate));
+
+        LocalDate interestTillDate = paymentDate;
+        if (paymentDate.isAfter(this.accruedTill)) {
+            interestTillDate = paymentDate.minus(1, DAYS);
+        }
+
+        int tillDays = Math.toIntExact(DAYS.between(installment.getFromDate(), interestTillDate));
         interestForCurrentPeriod = Money.of(getCurrency(), BigDecimal
                 .valueOf(calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency()).getAmount(), tillDays)));
         interestAccountedForCurrentPeriod = installment.getInterestWaived(getCurrency()).plus(installment.getInterestPaid(getCurrency()));
@@ -6679,7 +6685,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 balances[2] = penalty;
                 break;
             } else if (installment.getDueDate().isAfter(paymentDate) && installment.getFromDate().isBefore(paymentDate)) {
-                balances = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment);
+                LocalDate accrualTill = paymentDate;
+                if (paymentDate.isAfter(this.accruedTill)) {
+                    accrualTill = paymentDate.minus(1, DAYS);
+                }
+                balances = fetchInterestFeeAndPenaltyTillDate(accrualTill, currency, installment);
                 break;
             }
         }

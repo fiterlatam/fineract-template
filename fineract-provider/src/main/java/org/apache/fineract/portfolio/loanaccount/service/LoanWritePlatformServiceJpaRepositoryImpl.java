@@ -3560,9 +3560,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         changes.put("receiptNumber", receiptNumber);
         changes.put("glAccountId", glAccountId);
 
-        this.loanAccountDomainService.recalculateAccruals(loan);
-        this.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
-
         // if declining balance calculation type. add charge to loan before making payment
         if (loan.getLoanRepaymentScheduleDetail().getInterestMethod().equals(InterestMethod.DECLINING_BALANCE)) {
             String completedPaymentsSql = "select count(*) from m_loan_repayment_schedule where loan_id = ? and completed_derived = true";

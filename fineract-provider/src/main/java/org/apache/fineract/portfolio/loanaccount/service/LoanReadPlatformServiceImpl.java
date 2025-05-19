@@ -2486,7 +2486,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 BigDecimal percentageValue = foreclosureCharge.getAmount();
                 BigDecimal totalOutstanding = loan.getSummary().getTotalPrincipalOutstanding();
                 BigDecimal chargeAmount = totalOutstanding.multiply(percentageValue.divide(BigDecimal.valueOf(100)));
-                feeCharges = feeCharges.add(chargeAmount);
+                feeCharges = feeCharges.add(Money.of(loan.getCurrency(), chargeAmount).getAmount());
             }
         }
 

@@ -50,6 +50,10 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
             this.helper.checkForBranchClosures(latestGLClosure, transactionDate);
 
+            // if transaction is waiver for Friendship bridge, dont post accounting for interest waivers
+            if (loanTransactionDTO.getTransactionType().isWaiveInterest()) {
+                continue;
+            }
             /** Handle Disbursements **/
             if (loanTransactionDTO.getTransactionType().isDisbursement()) {
                 createJournalEntriesForDisbursements(loanDTO, loanTransactionDTO, office);
