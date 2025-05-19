@@ -87,7 +87,6 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService
 import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.apache.fineract.portfolio.loanaccount.service.ReplayedTransactionBusinessEventService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
@@ -227,19 +226,33 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     LoanRepaymentScheduleInstallment installment = loan.getInstallmentByScheduleFromDate(localDate);
 
                     // Check if is rotating credit product and all installmentes were paid.
-                    if (loan.loanProduct().getName().toLowerCase().contains(LoanProductType.CREDITO_ROTATIVO.getCode().toLowerCase())
-                            || Boolean.FALSE.equals(loan.loanProduct().getName().toLowerCase()
-                                    .contains(LoanProductType.NANO_CREDITO.getCode().toLowerCase()))) {
+                    if (loan.isRevolvingLoan()) {
+                        List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments();
+                        if (installments != null && !installments.isEmpty()) {
+                            // If reschedule date is after last installment's due date, use last installment
+                            LoanRepaymentScheduleInstallment lastInstallment = installments.get(installments.size() - 1);
+                            if (DateUtils.isAfter(localDate, lastInstallment.getDueDate())) {
+                                LOG.info("Reschedule date {} is after last installment due date {}, using last installment", localDate,
+                                        lastInstallment.getDueDate());
+                                installment = lastInstallment;
+                            } else {
+                                // Check if all installments were paid. If so, select last installment.
+                                long outstandingInstallments = installments.stream().filter(paid -> !paid.isObligationsMet()).count();
+                                LOG.info("Found {} outstanding installments for loan ID: {}", outstandingInstallments, loan.getId());
 
-                        // Check if all installments were paid. If so, select last installment.
-                        Long outstandintInstallments = loan.getRepaymentScheduleInstallments().stream()
-                                .filter(paid -> Boolean.FALSE.equals(paid.isObligationsMet())).count();
-
-                        if (outstandintInstallments == 0) {
-                            installment = loan.getRepaymentScheduleInstallments().get(loan.getRepaymentScheduleInstallments().size() - 1);
+                                if (outstandingInstallments == 0) {
+                                    installment = lastInstallment;
+                                    LOG.info("Selected last installment {} for loan ID: {}", installment.getInstallmentNumber(),
+                                            loan.getId());
+                                }
+                            }
+                        } else {
+                            // If no installments exist yet, we can't create a reschedule request
+                            LOG.error("No installments found for loan ID: {}", loan.getId());
+                            throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.no.installments",
+                                    "Cannot create reschedule request - no installments exist for this loan");
                         }
                     }
-
                     rescheduleFromInstallment = installment.getInstallmentNumber();
 
                     // update the value of the "rescheduleFromDate" variable
