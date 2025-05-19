@@ -87,7 +87,6 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService
 import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.apache.fineract.portfolio.loanaccount.service.ReplayedTransactionBusinessEventService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
@@ -233,18 +232,18 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                             // If reschedule date is after last installment's due date, use last installment
                             LoanRepaymentScheduleInstallment lastInstallment = installments.get(installments.size() - 1);
                             if (DateUtils.isAfter(localDate, lastInstallment.getDueDate())) {
-                                LOG.info("Reschedule date {} is after last installment due date {}, using last installment",
-                                        localDate, lastInstallment.getDueDate());
+                                LOG.info("Reschedule date {} is after last installment due date {}, using last installment", localDate,
+                                        lastInstallment.getDueDate());
                                 installment = lastInstallment;
                             } else {
                                 // Check if all installments were paid. If so, select last installment.
-                                long outstandingInstallments = installments.stream()
-                                        .filter(paid -> !paid.isObligationsMet()).count();
+                                long outstandingInstallments = installments.stream().filter(paid -> !paid.isObligationsMet()).count();
                                 LOG.info("Found {} outstanding installments for loan ID: {}", outstandingInstallments, loan.getId());
 
                                 if (outstandingInstallments == 0) {
                                     installment = lastInstallment;
-                                    LOG.info("Selected last installment {} for loan ID: {}", installment.getInstallmentNumber(), loan.getId());
+                                    LOG.info("Selected last installment {} for loan ID: {}", installment.getInstallmentNumber(),
+                                            loan.getId());
                                 }
                             }
                         } else {
