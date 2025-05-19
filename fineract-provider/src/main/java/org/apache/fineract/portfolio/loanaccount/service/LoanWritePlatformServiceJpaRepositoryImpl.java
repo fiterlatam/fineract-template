@@ -5334,10 +5334,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     private Integer calculateInstallmentsToAdd(Loan loan) {
         Integer productNrOfRepayments = loan.getOriginalNumberOfRepayments();
-        Long notPaidInstallmentNr = loan.getRepaymentScheduleInstallments().stream().filter(p -> !p.isObligationsMet()).count();
-        Long graceInstallments = loan.getRepaymentScheduleInstallments().stream().filter(p -> p.isFullyGraced()).count();
+        Long notPaidInstallmentNr = loan.getRepaymentScheduleInstallments().stream()
+            .filter(p -> !p.isObligationsMet()).count();
+        Long graceInstallments = loan.getRepaymentScheduleInstallments().stream()
+            .filter(LoanRepaymentScheduleInstallment::isFullyGraced).count();
         notPaidInstallmentNr = notPaidInstallmentNr + graceInstallments;
-        return productNrOfRepayments - notPaidInstallmentNr.intValue();
+
+        // For migrated loans that already have more installments than defined in loan spec
+        if (loan.isMigratedLoan() && notPaidInstallmentNr >= productNrOfRepayments) {
+            return 0; // Don't create new installments
+        }
+
+        return Math.max(0, productNrOfRepayments - notPaidInstallmentNr.intValue());
     }
 
     private ImmutablePair<Integer, LocalDate> calculateInstallmentsToAdd(Loan loan, LocalDate disbursementDate) {
