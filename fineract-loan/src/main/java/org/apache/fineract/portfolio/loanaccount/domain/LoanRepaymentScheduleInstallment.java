@@ -1356,7 +1356,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public Money writeOffOutstandingInterest(final Money interestAmountRemaining, final LocalDate transactionDate,
             final MonetaryCurrency currency) {
-        final Money interestDue = getInterestOutstanding(currency, transactionDate);
+        final Money interestDue = getInterestOutstanding(currency,
+                this.loan.isMigratedLoan() ? this.loan.getExpectedMaturityDate() : transactionDate);
         Money interestPortionWrittenOff = Money.zero(currency);
         if (interestDue.isGreaterThanZero() && interestAmountRemaining.isGreaterThanZero()) {
             if (interestAmountRemaining.isGreaterThan(interestDue)) {
