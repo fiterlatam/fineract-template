@@ -91,6 +91,7 @@ import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
 import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
+import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
@@ -758,18 +759,30 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             }
         }
 
+        Money interestPayable = foreCloseDetail.getInterestCharged(currency);
         Money interestReceivable = foreCloseDetail.getInterestCharged(currency);
         Money feePayable = foreCloseDetail.getFeeChargesCharged(currency);
         Money penaltyPayable = foreCloseDetail.getPenaltyChargesCharged(currency);
         Money payPrincipal = foreCloseDetail.getPrincipal(currency);
         BigDecimal totalInterestOutstanding = loan.getSummary().getTotalInterestOutstanding();
-        Money incomeInterest = Money.of(currency, totalInterestOutstanding.subtract(interestReceivable.getAmount()));
-        loan.updateInstallmentsPostDate(foreClosureDate, incomeInterest);
-        Money totalWriteOff = payPrincipal.plus(interestReceivable).plus(feePayable).plus(penaltyPayable).plus(incomeInterest);
+        Money interestToWaive = Money.of(currency, totalInterestOutstanding.subtract(interestPayable.getAmount()));
+        Money totalWriteOff = payPrincipal.plus(totalInterestOutstanding).plus(feePayable).plus(penaltyPayable);
+        loan.updateInstallmentsPostDate(foreClosureDate, interestToWaive);
 
         // after updating the installments. waive off the interest that is not accrued yet and pay off the outstanding.
         LoanTransaction payment = null;
         List<Long> transactionIds = new ArrayList<>();
+
+        boolean isDecliningBalance = loan.getLoanRepaymentScheduleDetail().getInterestMethod().equals(InterestMethod.DECLINING_BALANCE);
+        if (interestToWaive.isGreaterThanZero() && isDecliningBalance) {
+            totalWriteOff = totalWriteOff.minus(interestToWaive);
+
+            Money unrecognizedIncome = interestToWaive.zero();
+            final LoanTransaction waiveInterestTransaction = LoanTransaction.waiver(loan.getOffice(), loan, interestToWaive,
+                    foreClosureDate, interestToWaive, unrecognizedIncome);
+            loan.waiveInterest(waiveInterestTransaction, defaultLoanLifecycleStateMachine(), existingTransactionIds,
+                    existingReversedTransactionIds, scheduleGeneratorDTO);
+        }
 
         if (totalWriteOff.isGreaterThanZero()) {
             final PaymentDetail paymentDetail = null;
@@ -778,7 +791,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             payment.updateLoan(loan);
             payment.setIsForeclosureTransaction(true);
             payment.setReceivableInterestPortion(interestReceivable.getAmount());
-            payment.setIncomeInterestPortion(incomeInterest.getAmount());
+            if (!isDecliningBalance) payment.setIncomeInterestPortion(interestToWaive.getAmount());
             newTransactions.add(payment);
         }
 

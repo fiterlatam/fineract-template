@@ -54,6 +54,11 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
 
             this.helper.checkForBranchClosures(latestGLClosure, transactionDate);
 
+            // if transaaction is waive for Friendship bridge, dont post accounting for interest waivers
+            if (loanTransactionDTO.getTransactionType().isWaiveInterest()) {
+                return;
+            }
+
             /** Handle Disbursements and reversals of disbursements **/
             if (loanTransactionDTO.getTransactionType().isDisbursement()) {
                 createJournalEntriesForDisbursements(loanDTO, loanTransactionDTO, office);
