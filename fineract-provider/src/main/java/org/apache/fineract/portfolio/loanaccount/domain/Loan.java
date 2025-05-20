@@ -6628,7 +6628,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         int totalPeriodDays = Math.toIntExact(DAYS.between(installment.getFromDate(), installment.getDueDate()));
 
         LocalDate interestTillDate = paymentDate;
-        if (paymentDate.isAfter(this.accruedTill)) {
+        if (this.accruedTill !=null && paymentDate.isAfter(this.accruedTill)) {
             interestTillDate = paymentDate.minus(1, DAYS);
         }
 
