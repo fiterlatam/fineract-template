@@ -3375,7 +3375,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             final ListIterator<LoanTermVariationsData> exceptionDataListIterator = exceptionDataList.listIterator();
             LoanTermVariationParams loanTermVariationParams;
             List<LoanRepaymentScheduleInstallment> processInstallmentsInstallments = new ArrayList<>();
-            if (!recalculationDetails.isEmpty()) {
+            boolean isRevolvingLoan = loan.isRevolvingLoan();
+
+            if (!recalculationDetails.isEmpty() && !isRevolvingLoan) {
                 processInstallmentsInstallments = fetchRetainedInstallmentsForProgressiveLoans(loan.getRepaymentScheduleInstallments(),
                         rescheduleFrom);
             }
