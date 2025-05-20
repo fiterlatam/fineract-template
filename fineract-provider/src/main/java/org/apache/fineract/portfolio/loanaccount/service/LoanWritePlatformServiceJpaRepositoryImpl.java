@@ -5334,10 +5334,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     private Integer calculateInstallmentsToAdd(Loan loan) {
         Integer productNrOfRepayments = loan.getOriginalNumberOfRepayments();
-        Long notPaidInstallmentNr = loan.getRepaymentScheduleInstallments().stream()
-            .filter(p -> !p.isObligationsMet()).count();
-        Long graceInstallments = loan.getRepaymentScheduleInstallments().stream()
-            .filter(LoanRepaymentScheduleInstallment::isFullyGraced).count();
+        Long notPaidInstallmentNr = loan.getRepaymentScheduleInstallments().stream().filter(p -> !p.isObligationsMet()).count();
+        Long graceInstallments = loan.getRepaymentScheduleInstallments().stream().filter(LoanRepaymentScheduleInstallment::isFullyGraced)
+                .count();
         notPaidInstallmentNr = notPaidInstallmentNr + graceInstallments;
 
         // For migrated loans that already have more installments than defined in loan spec
@@ -5396,12 +5395,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             return ImmutablePair.of(installmentNumberToAddDisbursement, variationDate);
         }
         Integer actualNumberOfRepayments = loan.getTermFrequency();
-        Integer requiredInstallments = installmentNumberToAddDisbursement + actualNumberOfRepayments - 1;
+        int requiredInstallments = installmentNumberToAddDisbursement + actualNumberOfRepayments - 1;
         if (requiredInstallments == 0) {
             return null;
         }
-        Integer installmentsToAdd = requiredInstallments - loan.getRepaymentScheduleInstallments().size();
-        if (installmentsToAdd == 0) {
+        int installmentsToAdd = requiredInstallments - loan.getRepaymentScheduleInstallments().size();
+        if (installmentsToAdd <= 0) {
             return null;
         }
         pair = new ImmutablePair<>(installmentsToAdd, variationDate);
