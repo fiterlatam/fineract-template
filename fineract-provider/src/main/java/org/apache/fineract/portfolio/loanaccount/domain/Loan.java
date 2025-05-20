@@ -6627,12 +6627,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money interestAccountedForCurrentPeriod = Money.zero(getCurrency());
         int totalPeriodDays = Math.toIntExact(DAYS.between(installment.getFromDate(), installment.getDueDate()));
 
-        LocalDate interestTillDate = paymentDate;
-        if (this.accruedTill !=null && paymentDate.isAfter(this.accruedTill)) {
-            interestTillDate = paymentDate.minus(1, DAYS);
-        }
-
-        int tillDays = Math.toIntExact(DAYS.between(installment.getFromDate(), interestTillDate));
+        int tillDays = Math.toIntExact(DAYS.between(installment.getFromDate(), paymentDate));
         interestForCurrentPeriod = Money.of(getCurrency(), BigDecimal
                 .valueOf(calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency()).getAmount(), tillDays)));
         interestAccountedForCurrentPeriod = installment.getInterestWaived(getCurrency()).plus(installment.getInterestPaid(getCurrency()));
@@ -6640,6 +6635,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (loanCharge.isActive() && !loanCharge.isDueAtDisbursement()) {
                 if (loanCharge.isDueForCollectionFromAndUpToAndIncluding(installment.getFromDate(), paymentDate)) {
                     if (loanCharge.isPenaltyCharge()) {
+                        if (loanCharge.isOverdueInstallmentCharge() && DateUtils.getBusinessLocalDate().isBefore(installment.getDueDate())){
+                            continue;
+                        }
                         penaltyForCurrentPeriod = penaltyForCurrentPeriod.plus(loanCharge.getAmount(getCurrency()));
                         penaltyAccoutedForCurrentPeriod = penaltyAccoutedForCurrentPeriod
                                 .plus(loanCharge.getAmountWaived(getCurrency()).plus(loanCharge.getAmountPaid(getCurrency())));
@@ -6685,11 +6683,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 balances[2] = penalty;
                 break;
             } else if (installment.getDueDate().isAfter(paymentDate) && installment.getFromDate().isBefore(paymentDate)) {
-                LocalDate accrualTill = paymentDate;
-                if (this.accruedTill!=null && paymentDate.isAfter(this.accruedTill)) {
-                    accrualTill = paymentDate.minus(1, DAYS);
-                }
-                balances = fetchInterestFeeAndPenaltyTillDate(accrualTill, currency, installment);
+                balances = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment);
                 break;
             }
         }

@@ -2488,6 +2488,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 BigDecimal chargeAmount = totalOutstanding.multiply(percentageValue.divide(BigDecimal.valueOf(100)));
                 feeCharges = feeCharges.add(Money.of(loan.getCurrency(), chargeAmount).getAmount());
             }
+
+        }else {
+            unrecognizedIncomePortion = loan.getLoanSummary().getTotalInterestOutstanding().subtract(interestOutstanding);
         }
 
         LoanTransactionData loanTransactionData = new LoanTransactionData(null, null, null, transactionType, null, currencyData,
