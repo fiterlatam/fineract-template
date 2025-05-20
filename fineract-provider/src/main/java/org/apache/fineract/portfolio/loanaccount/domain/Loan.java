@@ -6686,7 +6686,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 break;
             } else if (installment.getDueDate().isAfter(paymentDate) && installment.getFromDate().isBefore(paymentDate)) {
                 LocalDate accrualTill = paymentDate;
-                if (paymentDate.isAfter(this.accruedTill)) {
+                if (this.accruedTill!=null && paymentDate.isAfter(this.accruedTill)) {
                     accrualTill = paymentDate.minus(1, DAYS);
                 }
                 balances = fetchInterestFeeAndPenaltyTillDate(accrualTill, currency, installment);
