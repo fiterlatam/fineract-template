@@ -17,7 +17,6 @@ import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.portfolio.loanaccount.data.LoanArchiveHistoryData;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanArchiveHistoryRepository;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanArchiveHistoryReadWritePlatformService;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -25,6 +24,7 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
@@ -34,7 +34,7 @@ import org.springframework.stereotype.Component;
 public class ArchiveLoansHistoryTasklet implements Tasklet {
 
     private final LoanArchiveHistoryReadWritePlatformService loanArchiveHistoryService;
-    private final LoanArchiveHistoryRepository loanArchiveHistoryRepository;
+    private final JdbcTemplate jdbcTemplate;
     private static final int QUEUE_SIZE = 1;
     private final Queue<List<LoanArchiveHistoryData>> queue = new ArrayDeque<>();
     private final ApplicationContext applicationContext;
@@ -55,7 +55,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
         LocalDate archiveDate = DateUtils.getLocalDateOfTenant();
         log.info("Running Archivo de cartera for date: {}", archiveDate);
         log.info("Archivo de cartera: Removing old entries.");
-        loanArchiveHistoryRepository.deleteAll();
+        this.jdbcTemplate.update("TRUNCATE TABLE m_archive_loan_history");
         log.info("Reading Loans for archiving!");
         List<LoanArchiveHistoryData> listLoan = loanArchiveHistoryService.getLoanArchiveCollectionData(maxClientIdInList, pageSize);
         if (listLoan != null && !listLoan.isEmpty()) {
