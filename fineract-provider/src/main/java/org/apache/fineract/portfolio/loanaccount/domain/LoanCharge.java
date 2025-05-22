@@ -537,7 +537,7 @@ public class LoanCharge extends AbstractPersistableCustom {
                     loanCharge = percentageOf(this.amountPercentageAppliedTo);
                     if (PeriodFrequencyType.fromInt(charge.feeFrequency()).equals(PeriodFrequencyType.MONTHS_APPLIED_DAILY)) {
                         long daysBetween = ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate());
-                        loanCharge = loanCharge.divide(BigDecimal.valueOf(daysBetween));
+                        loanCharge = loanCharge.divide(BigDecimal.valueOf(daysBetween), MathContext.DECIMAL64);
                     }
                 }
                 this.amount = minimumAndMaximumCap(loanCharge);
