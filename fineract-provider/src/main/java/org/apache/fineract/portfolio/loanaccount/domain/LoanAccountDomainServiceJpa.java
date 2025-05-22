@@ -28,6 +28,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
@@ -786,7 +788,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
         if (totalWriteOff.isGreaterThanZero()) {
             final PaymentDetail paymentDetail = null;
-            String externalId = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.receiptNumberParamName, command.parsedJson());
+            String externalId = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.receiptNumberParamName, command.parsedJson())+ UUID.randomUUID().toString();
             payment = LoanTransaction.repayment(loan.getOffice(), totalWriteOff, paymentDetail, foreClosureDate, externalId);
             payment.updateLoan(loan);
             payment.setIsForeclosureTransaction(true);
