@@ -3001,7 +3001,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         LocalDate startDate = dueDate.plusDays(penaltyWaitPeriodValue.intValue() + 1);
         Integer frequencyNunber = 1;
         if (feeFrequency == null) {
-            scheduleDates.put(frequencyNunber++, startDate.minusDays(diff));
+            scheduleDates.put(frequencyNunber++, startDate);
         } else {
             while (!startDate.isAfter(DateUtils.getBusinessLocalDate())) {
                 scheduleDates.put(frequencyNunber++, startDate);
@@ -3034,7 +3034,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             businessEventNotifierService.notifyPreBusinessEvent(new LoanApplyOverdueChargeBusinessEvent(loan));
             for (Map.Entry<Integer, LocalDate> entry : scheduleDates.entrySet()) {
 
-                final LoanCharge loanCharge = LoanCharge.createNewFromJson(loan, chargeDefinition, command, entry.getValue());
+                final LoanCharge loanCharge = LoanCharge.createNewFromJson(loan, chargeDefinition, command, entry.getValue(), installment);
 
                 if (BigDecimal.ZERO.compareTo(loanCharge.amount()) == 0) {
                     continue;

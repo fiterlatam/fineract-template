@@ -2489,7 +2489,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 feeCharges = feeCharges.add(Money.of(loan.getCurrency(), chargeAmount).getAmount());
             }
 
-        }else {
+        } else {
             unrecognizedIncomePortion = loan.getLoanSummary().getTotalInterestOutstanding().subtract(interestOutstanding);
         }
 

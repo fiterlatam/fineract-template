@@ -958,7 +958,7 @@ public class ShareAccountDataSerializer {
             switch (periodType) {
                 case INVALID: // It never comes in to this state.
                 break;
-                case DAYS:
+                case DAYS, MONTHS_APPLIED_DAILY:
                     lockinDate = purchaseDate.plusDays(lockinPeriod);
                 break;
                 case WEEKS:
