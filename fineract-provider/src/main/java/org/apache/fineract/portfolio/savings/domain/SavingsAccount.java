@@ -2907,7 +2907,7 @@ public class SavingsAccount extends AbstractPersistableCustom {
         switch (lockinPeriodFrequencyType) {
             case INVALID:
             break;
-            case DAYS:
+            case DAYS, MONTHS_APPLIED_DAILY:
                 lockedInUntilLocalDate = activationLocalDate.plusDays(this.lockinPeriodFrequency);
             break;
             case WEEKS:

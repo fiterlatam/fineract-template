@@ -4648,6 +4648,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             case MONTHS:
                 dueRepaymentPeriodDate = startDate.plusMonths(repaidEvery);
             break;
+            case MONTHS_APPLIED_DAILY:
+                dueRepaymentPeriodDate = startDate.plusDays(repaidEvery);
+            break;
             case YEARS:
                 dueRepaymentPeriodDate = startDate.plusYears(repaidEvery);
             break;
@@ -6635,7 +6638,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             if (loanCharge.isActive() && !loanCharge.isDueAtDisbursement()) {
                 if (loanCharge.isDueForCollectionFromAndUpToAndIncluding(installment.getFromDate(), paymentDate)) {
                     if (loanCharge.isPenaltyCharge()) {
-                        if (loanCharge.isOverdueInstallmentCharge() && DateUtils.getBusinessLocalDate().isBefore(installment.getDueDate())){
+                        if (loanCharge.isOverdueInstallmentCharge()
+                                && DateUtils.getBusinessLocalDate().isBefore(installment.getDueDate())) {
                             continue;
                         }
                         penaltyForCurrentPeriod = penaltyForCurrentPeriod.plus(loanCharge.getAmount(getCurrency()));

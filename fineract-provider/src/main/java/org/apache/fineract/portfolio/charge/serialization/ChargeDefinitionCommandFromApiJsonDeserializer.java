@@ -97,7 +97,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
         baseDataValidator.reset().parameter("feeInterval").value(feeInterval).integerGreaterThanZero();
 
         final Integer feeFrequency = this.fromApiJsonHelper.extractIntegerNamed("feeFrequency", element, Locale.getDefault());
-        baseDataValidator.reset().parameter("feeFrequency").value(feeFrequency).inMinMaxRange(0, 3);
+        baseDataValidator.reset().parameter("feeFrequency").value(feeFrequency).inMinMaxRange(0, 6);
 
         if (this.fromApiJsonHelper.parameterExists("enableFreeWithdrawalCharge", element)) {
 
@@ -431,7 +431,7 @@ public final class ChargeDefinitionCommandFromApiJsonDeserializer {
         }
         if (this.fromApiJsonHelper.parameterExists("feeFrequency", element)) {
             final Integer feeFrequency = this.fromApiJsonHelper.extractIntegerNamed("feeFrequency", element, Locale.getDefault());
-            baseDataValidator.reset().parameter("feeFrequency").value(feeFrequency).inMinMaxRange(0, 3);
+            baseDataValidator.reset().parameter("feeFrequency").value(feeFrequency).inMinMaxRange(0, 6);
         }
 
         if (this.fromApiJsonHelper.parameterExists(ChargesApiConstants.glAccountIdParamName, element)) {
