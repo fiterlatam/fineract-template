@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -43,6 +44,7 @@ import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanOverdueInstallmentCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.RescheduleLoansApiConstants;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain.LoanRescheduleRequest;
@@ -207,13 +209,15 @@ public class LoanRescheduleRequestDataValidator {
     }
 
     private void validateForOverdueCharges(DataValidatorBuilder dataValidatorBuilder, final Loan loan,
-            final LoanRepaymentScheduleInstallment installment) {
-        if (installment != null) {
-            LocalDate rescheduleFromDate = installment.getFromDate();
-            Collection<LoanCharge> charges = loan.getLoanCharges();
-            for (LoanCharge loanCharge : charges) {
-                if (loanCharge.isOverdueInstallmentCharge() && DateUtils.isAfter(loanCharge.getDueLocalDate(), rescheduleFromDate)
-                        && loanCharge.isActive()) {
+            final LoanRepaymentScheduleInstallment repaymentScheduleInstallment) {
+        if (repaymentScheduleInstallment != null) {
+            final Collection<LoanCharge> charges = loan.getLoanCharges();
+            for (final LoanCharge loanCharge : charges) {
+                final LoanOverdueInstallmentCharge loanOverdueInstallmentCharge = loanCharge.getOverdueInstallmentCharge();
+                if (loanOverdueInstallmentCharge != null && loanOverdueInstallmentCharge.getInstallment() != null
+                        && Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                                loanOverdueInstallmentCharge.getInstallment().getInstallmentNumber())
+                        && loanCharge.isOverdueInstallmentCharge() && loanCharge.isActive() && !loanCharge.isPaid()) {
                     dataValidatorBuilder.failWithCodeNoParameterAddedToErrorCode("not.allowed.due.to.overdue.charges");
                     break;
                 }

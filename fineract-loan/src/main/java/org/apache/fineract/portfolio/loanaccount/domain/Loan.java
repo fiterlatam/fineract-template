@@ -6822,13 +6822,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private boolean isOverdueInstallment(LoanRepaymentScheduleInstallment repaymentScheduleInstallment) {
-        final LocalDate fromDate = repaymentScheduleInstallment.getFromDate();
         boolean isOverdueInstallment = false;
-        Collection<LoanCharge> charges = this.getLoanCharges();
-        for (LoanCharge loanCharge : charges) {
-            if (loanCharge.isOverdueInstallmentCharge() && DateUtils.isAfter(loanCharge.getDueLocalDate(), fromDate)
-                    && loanCharge.isActive()) {
+        final Collection<LoanCharge> chargesList = this.getLoanCharges();
+        for (LoanCharge loanCharge : chargesList) {
+            final LoanOverdueInstallmentCharge loanOverdueInstallmentCharge = loanCharge.getOverdueInstallmentCharge();
+            if (loanOverdueInstallmentCharge != null && loanOverdueInstallmentCharge.getInstallment() != null
+                    && Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            loanOverdueInstallmentCharge.getInstallment().getInstallmentNumber())
+                    && loanCharge.isOverdueInstallmentCharge() && loanCharge.isActive() && !loanCharge.isPaid()) {
                 isOverdueInstallment = true;
+                break;
             }
         }
         return isOverdueInstallment;
