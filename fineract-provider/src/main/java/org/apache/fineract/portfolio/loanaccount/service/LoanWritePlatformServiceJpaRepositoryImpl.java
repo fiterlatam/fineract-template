@@ -5307,7 +5307,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Long loanRescheduleReasonId = getLoanRescheduleReasonId();
             if (loan.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
                 ImmutablePair<Integer, LocalDate> pair = calculateInstallmentsToAdd(loan, actualDisbursementDate);
-                if (pair != null) {
+                if (pair != null && pair.getKey().compareTo(0) > 0) {
                     Integer nrOfInstallmentsToAdd = pair.left;
                     LocalDate variationDate = pair.right;
                     createRescheduleRequestForCreditoRotativo(loan, variationDate, loanRescheduleReasonId, nrOfInstallmentsToAdd);
