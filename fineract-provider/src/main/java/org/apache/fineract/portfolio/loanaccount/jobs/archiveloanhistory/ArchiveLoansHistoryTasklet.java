@@ -55,7 +55,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
         LocalDate archiveDate = DateUtils.getLocalDateOfTenant();
         log.info("Running Archivo de cartera for date: {}", archiveDate);
         log.info("Archivo de cartera: Removing old entries.");
-        this.jdbcTemplate.update("TRUNCATE TABLE m_archive_loan_history");
+        this.jdbcTemplate.update("DELETE FROM m_archive_loan_history");
         log.info("Reading Loans for archiving!");
         List<LoanArchiveHistoryData> listLoan = loanArchiveHistoryService.getLoanArchiveCollectionData(maxClientIdInList, pageSize);
         if (listLoan != null && !listLoan.isEmpty()) {
