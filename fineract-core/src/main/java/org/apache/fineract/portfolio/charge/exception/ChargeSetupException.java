@@ -18,9 +18,11 @@
  */
 package org.apache.fineract.portfolio.charge.exception;
 
+import lombok.Getter;
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 
+@Getter
 public class ChargeSetupException extends AbstractPlatformDomainRuleException {
 
     private final String validationContext;
@@ -30,7 +32,4 @@ public class ChargeSetupException extends AbstractPlatformDomainRuleException {
         this.validationContext = validationContext;
     }
 
-    public String getValidationContext() {
-        return validationContext;
-    }
 }
