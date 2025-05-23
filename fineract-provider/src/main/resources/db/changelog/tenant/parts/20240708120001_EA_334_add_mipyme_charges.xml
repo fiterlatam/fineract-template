@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="EA-334" author="fiter">
+        <comment>Add MiPyme charges for different terms</comment>
+
+        <sql>
+            INSERT INTO m_charge
+            (name, currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, income_or_liability_account_id, tax_group_id)
+            SELECT 'MiPymeMes2Menor', 'COP', 1, 8, 231, 0, 0.45505000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, 4, 1
+            WHERE NOT EXISTS (SELECT 1 FROM m_charge WHERE name = 'MiPymeMes2Menor')
+            AND EXISTS (SELECT 1 FROM m_tax_group WHERE id = 1)
+            AND EXISTS (SELECT 1 FROM acc_gl_account WHERE id = 4);
+        </sql>
+
+        <sql>
+            INSERT INTO m_charge
+            (name, currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, income_or_liability_account_id, tax_group_id)
+            SELECT 'IVA_MiPymeMes2Menor', 'COP', 1, 8, 342, 0, 19.00000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, 4, 1
+            WHERE NOT EXISTS (SELECT 1 FROM m_charge WHERE name = 'IVA_MiPymeMes2Menor')
+            AND EXISTS (SELECT 1 FROM m_tax_group WHERE id = 1)
+            AND EXISTS (SELECT 1 FROM acc_gl_account WHERE id = 4);
+        </sql>
+
+        <!-- MiPyme 3 Months -->
+        <sql>
+            INSERT INTO m_charge
+            (name, currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, income_or_liability_account_id, tax_group_id)
+            SELECT 'MiPymeMes3Menor', 'COP', 1, 8, 231, 0, 0.40593330, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, 4, 1
+            WHERE NOT EXISTS (SELECT 1 FROM m_charge WHERE name = 'MiPymeMes3Menor')
+            AND EXISTS (SELECT 1 FROM m_tax_group WHERE id = 1)
+            AND EXISTS (SELECT 1 FROM acc_gl_account WHERE id = 4);
+        </sql>
+
+        <sql>
+            INSERT INTO m_charge
+            (name, currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, income_or_liability_account_id, tax_group_id)
+            SELECT 'IVA_MiPymeMes3Menor', 'COP', 1, 8, 342, 0, 19.00000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, 4, 1
+            WHERE NOT EXISTS (SELECT 1 FROM m_charge WHERE name = 'IVA_MiPymeMes3Menor')
+            AND EXISTS (SELECT 1 FROM m_tax_group WHERE id = 1)
+            AND EXISTS (SELECT 1 FROM acc_gl_account WHERE id = 4);
+        </sql>
+
+        <!-- MiPyme 6 Months -->
+        <sql>
+            INSERT INTO m_charge
+            (name, currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, income_or_liability_account_id, tax_group_id)
+            SELECT 'MiPymeMes6Menor', 'COP', 1, 8, 231, 0, 0.35905000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, 4, 1
+            WHERE NOT EXISTS (SELECT 1 FROM m_charge WHERE name = 'MiPymeMes6Menor')
+            AND EXISTS (SELECT 1 FROM m_tax_group WHERE id = 1)
+            AND EXISTS (SELECT 1 FROM acc_gl_account WHERE id = 4);
+        </sql>
+
+        <sql>
+            INSERT INTO m_charge
+            (name, currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, income_or_liability_account_id, tax_group_id)
+            SELECT 'IVA_MiPymeMes6Menor', 'COP', 1, 8, 342, 0, 19.00000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, 4, 1
+            WHERE NOT EXISTS (SELECT 1 FROM m_charge WHERE name = 'IVA_MiPymeMes6Menor')
+            AND EXISTS (SELECT 1 FROM m_tax_group WHERE id = 1)
+            AND EXISTS (SELECT 1 FROM acc_gl_account WHERE id = 4);
+        </sql>
+
+        <!-- MiPyme 9 Months -->
+        <sql>
+            INSERT INTO m_charge
+            (name, currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, income_or_liability_account_id, tax_group_id)
+            SELECT 'MiPymeMes9Menor', 'COP', 1, 8, 231, 0, 0.34562222, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, 4, 1
+            WHERE NOT EXISTS (SELECT 1 FROM m_charge WHERE name = 'MiPymeMes9Menor')
+            AND EXISTS (SELECT 1 FROM m_tax_group WHERE id = 1)
+            AND EXISTS (SELECT 1 FROM acc_gl_account WHERE id = 4);
+        </sql>
+
+        <sql>
+            INSERT INTO m_charge
+            (name, currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, income_or_liability_account_id, tax_group_id)
+            SELECT 'IVA_MiPymeMes9Menor', 'COP', 1, 8, 342, 0, 19.00000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, 4, 1
+            WHERE NOT EXISTS (SELECT 1 FROM m_charge WHERE name = 'IVA_MiPymeMes9Menor')
+            AND EXISTS (SELECT 1 FROM m_tax_group WHERE id = 1)
+            AND EXISTS (SELECT 1 FROM acc_gl_account WHERE id = 4);
+        </sql>
+
+        <!-- MiPyme 6 Months Mayor -->
+        <sql>
+            INSERT INTO m_charge
+            (name, currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, income_or_liability_account_id, tax_group_id)
+            SELECT 'MiPymeMes6Mayor', 'COP', 1, 8, 231, 0, 0.21828333, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, 4, 1
+            WHERE NOT EXISTS (SELECT 1 FROM m_charge WHERE name = 'MiPymeMes6Mayor')
+            AND EXISTS (SELECT 1 FROM m_tax_group WHERE id = 1)
+            AND EXISTS (SELECT 1 FROM acc_gl_account WHERE id = 4);
+        </sql>
+
+        <sql>
+            INSERT INTO m_charge
+            (name, currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, income_or_liability_account_id, tax_group_id)
+            SELECT 'IVA_MiPymeMes6Mayor', 'COP', 1, 8, 342, 0, 19.00000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, 4, 1
+            WHERE NOT EXISTS (SELECT 1 FROM m_charge WHERE name = 'IVA_MiPymeMes6Mayor')
+            AND EXISTS (SELECT 1 FROM m_tax_group WHERE id = 1)
+            AND EXISTS (SELECT 1 FROM acc_gl_account WHERE id = 4);
+        </sql>
+
+        <!-- MiPyme 9 Months Mayor -->
+        <sql>
+            INSERT INTO m_charge
+            (name, currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, income_or_liability_account_id, tax_group_id)
+            SELECT 'MiPymeMes9Mayor', 'COP', 1, 8, 231, 0, 0.21011110, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, 4, 1
+            WHERE NOT EXISTS (SELECT 1 FROM m_charge WHERE name = 'MiPymeMes9Mayor')
+            AND EXISTS (SELECT 1 FROM m_tax_group WHERE id = 1)
+            AND EXISTS (SELECT 1 FROM acc_gl_account WHERE id = 4);
+        </sql>
+
+        <sql>
+            INSERT INTO m_charge
+            (name, currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, income_or_liability_account_id, tax_group_id)
+            SELECT 'IVA_MiPymeMes9Mayor', 'COP', 1, 8, 342, 0, 19.00000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, 4, 1
+            WHERE NOT EXISTS (SELECT 1 FROM m_charge WHERE name = 'IVA_MiPymeMes9Mayor')
+            AND EXISTS (SELECT 1 FROM m_tax_group WHERE id = 1)
+            AND EXISTS (SELECT 1 FROM acc_gl_account WHERE id = 4);
+        </sql>
+
+        <!-- Rollback -->
+        <rollback>
+            DELETE FROM m_charge WHERE name IN (
+                'MiPymeMes2Menor', 'IVA_MiPymeMes2Menor',
+                'MiPymeMes3Menor', 'IVA_MiPymeMes3Menor',
+                'MiPymeMes6Menor', 'IVA_MiPymeMes6Menor',
+                'MiPymeMes9Menor', 'IVA_MiPymeMes9Menor',
+                'MiPymeMes6Mayor', 'IVA_MiPymeMes6Mayor',
+                'MiPymeMes9Mayor', 'IVA_MiPymeMes9Mayor'
+            );
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog> 
