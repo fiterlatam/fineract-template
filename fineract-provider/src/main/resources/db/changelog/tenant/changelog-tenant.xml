@@ -405,5 +405,4 @@
     <include file="parts/20240708120000_EA_332_add_gl_account_FNG_commission.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240708121000_EA_333_add_charge_FNG_commission.xml" relativeToChangelogFile="true"/>
     <include file="parts/202505132000001000_EA_333_charge_mipyme_normalization.xml" relativeToChangelogFile="true"/>
-    <include file="parts/20240708120001_EA_334_add_mipyme_charges.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
