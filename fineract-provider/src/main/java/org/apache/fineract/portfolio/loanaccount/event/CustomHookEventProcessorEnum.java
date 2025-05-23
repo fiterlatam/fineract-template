@@ -62,6 +62,9 @@ public enum CustomHookEventProcessorEnum {
     CONTACTABILITY_UPDATE("org.apache.fineract.portfolio.loanaccount.event.LoanApprovalContactabilityUpdateEventProcessor",
             "Contactability"),
 
+    LOAN_DISBURSEMENT_REPORT_EVENT("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementReportEventProcessor",
+            "Disbursement report event"),
+
     NOTFOUND("", ""),;
 
     private String clazz;

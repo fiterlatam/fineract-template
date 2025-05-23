@@ -116,7 +116,7 @@ public class LoanRejectionGuaranteeEventProcessor extends BaseCustomWebhookEvent
         }
     }
 
-    private DetalleGarantiaDatatableData getDetalleGarantia(Loan loan) {
+    protected DetalleGarantiaDatatableData getDetalleGarantia(Loan loan) {
         DetalleGarantiaDatatableData validacionContactaData = DetalleGarantiaDatatableData.builder().build();
 
         try {
@@ -135,6 +135,8 @@ public class LoanRejectionGuaranteeEventProcessor extends BaseCustomWebhookEvent
                             .numeroGarantia(rs.getString("numero_garantia")) //
                             .tipoGarantia(rs.getString("tipo_garantia")) //
                             .numeroPagare(rs.getString("numero_pagare")) //
+                            .aplicaGarantia(rs.getBoolean("aplica_garantia")) //
+                            .pctComission(rs.getDouble("porc_comision")) //
                             .build();
                 }
             }, loan.getId());
