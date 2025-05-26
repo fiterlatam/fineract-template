@@ -182,18 +182,21 @@ public class SynchronousCommandProcessingService implements CommandProcessingSer
         if (command == null) {
             return;
         }
-        CommandProcessingResultType status = CommandProcessingResultType.fromInt(command.getStatus());
-        switch (status) {
-            case UNDER_PROCESSING -> throw new IdempotentCommandProcessUnderProcessingException(wrapper, idempotencyKey);
-            case PROCESSED -> throw new IdempotentCommandProcessSucceedException(wrapper, idempotencyKey, command);
-            case ERROR -> {
-                if (!retry) {
-                    throw new IdempotentCommandProcessFailedException(wrapper, idempotencyKey, command);
-                }
-            }
-            default -> {
-            }
-        }
+        //SU-702: disabling idempotency check since the clean up code is calling the foreclosure
+        //endpoint multiple times.
+        //TODO: Uncomment this code after clean up
+//        CommandProcessingResultType status = CommandProcessingResultType.fromInt(command.getStatus());
+//        switch (status) {
+//            case UNDER_PROCESSING -> throw new IdempotentCommandProcessUnderProcessingException(wrapper, idempotencyKey);
+//            case PROCESSED -> throw new IdempotentCommandProcessSucceedException(wrapper, idempotencyKey, command);
+//            case ERROR -> {
+//                if (!retry) {
+//                    throw new IdempotentCommandProcessFailedException(wrapper, idempotencyKey, command);
+//                }
+//            }
+//            default -> {
+//            }
+//        }
     }
 
     private void setIdempotencyKeyStoreFlag(boolean flag) {

@@ -144,6 +144,7 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanBlockReadPlatformSe
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanDebtProjectionService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
@@ -292,6 +293,7 @@ public class LoansApiResource {
     private final DelinquencyReadPlatformService delinquencyReadPlatformService;
     private final LoanBlockReadPlatformService loanBlockingReasonReadPlatformService;
     private final LoanDebtProjectionService loanDebtProjectionService;
+    private final LoanWritePlatformService loanWritePlatformService;
 
     @Autowired
     private SpringTemplateEngine templateEngine;
@@ -1534,6 +1536,15 @@ public class LoansApiResource {
             @QueryParam("amount") @Parameter(description = "amount") final BigDecimal amount, @Context final UriInfo uriInfo) {
         this.context.authenticatedUser();
         return this.loanReadPlatformService.calculateHonorariosAmount(loanId, amount, DateUtils.getBusinessLocalDate());
+    }
+
+    @POST
+    @Path("cleanuploans")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String cleanupLoans(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        this.loanWritePlatformService.cleanUpLoans();
+        return "Loan clean up completed";
     }
 
 }

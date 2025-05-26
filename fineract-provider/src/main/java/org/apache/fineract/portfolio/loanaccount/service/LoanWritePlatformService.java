@@ -150,4 +150,6 @@ public interface LoanWritePlatformService {
     void processInvoiceFor(LoanDocumentData loanDocumentData);
 
     ClasificacionConceptosData getClasificacionConceptosData(String concepto);
+
+    void cleanUpLoans();
 }

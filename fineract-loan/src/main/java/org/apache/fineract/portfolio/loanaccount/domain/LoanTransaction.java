@@ -739,6 +739,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         this.reversed = true;
     }
 
+    public void unReverse() {
+        this.reversed = false;
+    }
+
     public void setManuallyAdjustedOrReversed() {
         this.manuallyAdjustedOrReversed = true;
     }
