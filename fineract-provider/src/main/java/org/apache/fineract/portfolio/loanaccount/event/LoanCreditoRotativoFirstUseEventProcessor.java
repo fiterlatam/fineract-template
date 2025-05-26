@@ -112,7 +112,7 @@ public class LoanCreditoRotativoFirstUseEventProcessor extends BaseCustomWebhook
         Client client = loan.client();
 
         requestBody.put(LOAN_ID_PARAM, loan.getAccountNumber());
-        requestBody.put(MOBILE_PHONE_PARAM, camposClienteEmpresaYPersona.getTelefono());
+        requestBody.put(MOBILE_PHONE_PARAM, client.mobileNo());
         requestBody.put(PRODUCT_NAME_PARAM, loan.getLoanProduct().getName());
         if (Objects.nonNull(client.getExternalId())) {
             requestBody.put(EXTERNAL_ID_PARAM, client.getExternalId().getValue());
