@@ -54,8 +54,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
         long start = System.currentTimeMillis();
         LocalDate archiveDate = DateUtils.getLocalDateOfTenant();
         log.info("Running Archivo de cartera for date: {}", archiveDate);
-        log.info("Archivo de cartera: Removing old entries.");
-        this.jdbcTemplate.update("DELETE FROM m_archive_loan_history");
+        this.loanArchiveHistoryService.truncateLoanHistory();
         log.info("Reading Loans for archiving!");
         List<LoanArchiveHistoryData> listLoan = loanArchiveHistoryService.getLoanArchiveCollectionData(maxClientIdInList, pageSize);
         if (listLoan != null && !listLoan.isEmpty()) {
@@ -68,7 +67,7 @@ public class ArchiveLoansHistoryTasklet implements Tasklet {
                 do {
                     List<LoanArchiveHistoryData> queueElement = queue.element();
                     maxClientIdInList = queueElement.get(queueElement.size() - 1).getIdentificacion();
-                    this.archiveLoans(queue.remove(), threadPoolSize, batchSize, maxClientIdInList);
+                    this.archiveLoans(queue.remove(), threadPoolSize, pageSize, maxClientIdInList);
                 } while (!CollectionUtils.isEmpty(queue));
             }
         }

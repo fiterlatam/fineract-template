@@ -3,6 +3,7 @@ package org.apache.fineract.portfolio.loanaccount.rescheduleloan.service;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.loanaccount.data.LoanArchiveHistoryData;
@@ -10,7 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchiveHistoryReadWritePlatformService {
 
@@ -119,5 +123,13 @@ public class LoanArchiveHistoryServiceReadWritePlatformImpl implements LoanArchi
                 loanArchiveHistoryDataList.add(loan);
             }
         }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Override
+    public void truncateLoanHistory() {
+        log.info("Archivo de cartera: Removing old entries.");
+        this.jdbcTemplate.execute("truncate table m_archive_loan_history");
+        log.info("Archivo de cartera: Finished removing old entries.");
     }
 }
