@@ -327,9 +327,9 @@ public class LoanCharge extends AbstractPersistableCustom {
 
     // For FriendshipBridge
     public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
-            final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
-            final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
-            LoanRepaymentScheduleInstallment installment) {
+                      final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
+                      final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
+                      LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue) {
         this.loan = loan;
         this.charge = chargeDefinition;
         this.penaltyCharge = chargeDefinition.isPenalty();
@@ -372,12 +372,12 @@ public class LoanCharge extends AbstractPersistableCustom {
             this.chargePaymentMode = chargePaymentMode.getValue();
         }
 
-        populateDerivedFields(loanPrincipal, chargeAmount, numberOfRepayments, loanCharge, installment);
+        populateDerivedFields(loanPrincipal, chargeAmount, numberOfRepayments, loanCharge, installment,penaltyWaitPeriodValue,dueDate);
         this.paid = determineIfFullyPaid();
     }
 
     public static LoanCharge createNewFromJson(Loan loan, Charge chargeDefinition, JsonCommand command, LocalDate dueDate,
-            LoanRepaymentScheduleInstallment installment) {
+                                               LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue) {
         final BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount");
 
         final ChargeTimeType chargeTime = null;
@@ -436,7 +436,7 @@ public class LoanCharge extends AbstractPersistableCustom {
         }
 
         LoanCharge newLoanCharge = new LoanCharge(loan, chargeDefinition, amountPercentageAppliedTo, amount, chargeTime, chargeCalculation,
-                dueDate, chargePaymentMode, null, loanCharge, installment);
+                dueDate, chargePaymentMode, null, loanCharge, installment, penaltyWaitPeriodValue);
         final String externalId = command.stringValueOfParameterNamedAllowingNull("externalId");
         newLoanCharge.setExternalId(externalId);
         newLoanCharge.setChargeDisbursementType(chargeDefinition.getChargeDisbursementType());
@@ -498,7 +498,7 @@ public class LoanCharge extends AbstractPersistableCustom {
     }
 
     private void populateDerivedFields(final BigDecimal amountPercentageAppliedTo, final BigDecimal chargeAmount,
-            Integer numberOfRepayments, BigDecimal loanCharge, LoanRepaymentScheduleInstallment installment) {
+                                       Integer numberOfRepayments, BigDecimal loanCharge, LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue, LocalDate dueDate) {
 
         switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
             case INVALID:
@@ -538,6 +538,12 @@ public class LoanCharge extends AbstractPersistableCustom {
                     if (PeriodFrequencyType.fromInt(charge.feeFrequency()).equals(PeriodFrequencyType.MONTHS_APPLIED_DAILY)) {
                         long daysBetween = ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate());
                         loanCharge = loanCharge.divide(BigDecimal.valueOf(daysBetween), MathContext.DECIMAL64);
+
+                        // If penalty wait period is set, then we need to add the penalty wait period charges
+                        if (installment.getDueDate().plusDays(penaltyWaitPeriodValue+1).equals(dueDate)){
+                            BigDecimal penaltyWaitPeriodCharges = loanCharge.multiply(BigDecimal.valueOf(penaltyWaitPeriodValue));
+                            loanCharge = loanCharge.add(penaltyWaitPeriodCharges);
+                        }
                     }
                 }
                 this.amount = minimumAndMaximumCap(loanCharge);
