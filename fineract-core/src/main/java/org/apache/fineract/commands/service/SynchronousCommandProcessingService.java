@@ -32,7 +32,6 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.batch.exception.ErrorInfo;
-import org.apache.fineract.commands.domain.CommandProcessingResultType;
 import org.apache.fineract.commands.domain.CommandSource;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.exception.UnsupportedCommandException;
@@ -44,9 +43,6 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.domain.BatchRequestContextHolder;
 import org.apache.fineract.infrastructure.core.domain.FineractRequestContextHolder;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
-import org.apache.fineract.infrastructure.core.exception.IdempotentCommandProcessFailedException;
-import org.apache.fineract.infrastructure.core.exception.IdempotentCommandProcessSucceedException;
-import org.apache.fineract.infrastructure.core.exception.IdempotentCommandProcessUnderProcessingException;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
@@ -182,21 +178,21 @@ public class SynchronousCommandProcessingService implements CommandProcessingSer
         if (command == null) {
             return;
         }
-        //SU-702: disabling idempotency check since the clean up code is calling the foreclosure
-        //endpoint multiple times.
-        //TODO: Uncomment this code after clean up
-//        CommandProcessingResultType status = CommandProcessingResultType.fromInt(command.getStatus());
-//        switch (status) {
-//            case UNDER_PROCESSING -> throw new IdempotentCommandProcessUnderProcessingException(wrapper, idempotencyKey);
-//            case PROCESSED -> throw new IdempotentCommandProcessSucceedException(wrapper, idempotencyKey, command);
-//            case ERROR -> {
-//                if (!retry) {
-//                    throw new IdempotentCommandProcessFailedException(wrapper, idempotencyKey, command);
-//                }
-//            }
-//            default -> {
-//            }
-//        }
+        // SU-702: disabling idempotency check since the clean up code is calling the foreclosure
+        // endpoint multiple times.
+        // TODO: Uncomment this code after clean up
+        // CommandProcessingResultType status = CommandProcessingResultType.fromInt(command.getStatus());
+        // switch (status) {
+        // case UNDER_PROCESSING -> throw new IdempotentCommandProcessUnderProcessingException(wrapper, idempotencyKey);
+        // case PROCESSED -> throw new IdempotentCommandProcessSucceedException(wrapper, idempotencyKey, command);
+        // case ERROR -> {
+        // if (!retry) {
+        // throw new IdempotentCommandProcessFailedException(wrapper, idempotencyKey, command);
+        // }
+        // }
+        // default -> {
+        // }
+        // }
     }
 
     private void setIdempotencyKeyStoreFlag(boolean flag) {
