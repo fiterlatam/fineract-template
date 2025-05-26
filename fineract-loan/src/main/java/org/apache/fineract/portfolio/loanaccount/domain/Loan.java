@@ -8137,6 +8137,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return this.loanSubStatus;
     }
 
+    public void setLoanSubStatus(Integer loanSubStatus) {
+        this.loanSubStatus = loanSubStatus;
+    }
+
     private boolean isForeclosure() {
         boolean isForeClosure = false;
         if (this.loanSubStatus != null) {
