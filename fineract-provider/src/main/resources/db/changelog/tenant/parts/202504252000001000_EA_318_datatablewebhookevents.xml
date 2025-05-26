@@ -77,4 +77,17 @@
         </sql>
     </changeSet>
 
+    <changeSet id="30" author="fineract">
+        <sql>
+            <![CDATA[
+
+                INSERT INTO m_hook_registered_events
+                (hook_id, entity_name, action_name)
+                VALUES
+                ((select id from m_hook where name = 'Renewal Event'), 'LOAN', 'FORECLOSURE');
+
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

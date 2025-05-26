@@ -38,6 +38,9 @@ public enum CustomHookEventProcessorEnum {
 
     RENEWAL_EVENT("org.apache.fineract.portfolio.loanaccount.event.LoanCloseAsRescheduledEventProcessor", "Renewal Event"),
 
+    RENEWAL_EVENT_FORECLOSURE("org.apache.fineract.portfolio.loanaccount.event.LoanCloseAsRescheduledForeclosureEventProcessor",
+            "Renewal Event"),
+
     LOAN_DISBURSEMENT_APPROVED_AMOUNT_AVAILABLE(
             "org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementApprovedAmountAvailableEventProcessor",
             "New disbursement revolving with balance 0"),

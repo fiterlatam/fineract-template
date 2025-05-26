@@ -98,7 +98,8 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
                 && validacionContactaData.getUsuarioAsignadoCdUsuarioAsignado().compareTo(0L) > 0 //
                 && Objects.isNull(validacionContactaData.getFechaInicioContactabilidad()) //
                 && Objects.nonNull(validacionContactaData.getCorreoUsuarioAsignadoCdCorreoUsuarioAsignado()) //
-                && Objects.isNull(validacionContactaData.getValidacionContactabilidadCdValidacionContactabilidad())) { //
+                && (Objects.isNull(validacionContactaData.getValidacionContactabilidadCdValidacionContactabilidad())) //
+                || validacionContactaData.getValidacionContactabilidadCdValidacionContactabilidad() == 0) { //
 
             requestBody.put("documentTypeId", camposClienteEmpresaYPersona.getTipoIdentificacionId());
             requestBody.put("documentType", camposClienteEmpresaYPersona.getTipoIdentificacion());
@@ -107,7 +108,7 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
             requestBody.put("surNames", clientData.getLastname());
             requestBody.put("city", camposClienteEmpresaYPersona.getCiudad());
             requestBody.put("address", camposClienteEmpresaYPersona.getDireccion());
-            requestBody.put("phone", camposClienteEmpresaYPersona.getTelefono());
+            requestBody.put("phone", clientData.getMobileNo());
             requestBody.put("email", clientData.getEmailAddress());
             requestBody.put("userAsignedId", validacionContactaData.getUsuarioAsignadoCdUsuarioAsignado());
             requestBody.put("userAsigned", validacionContactaData.getUsuarioAsignado());
@@ -143,7 +144,10 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
                             .usuarioAsignado(rs.getString("Usuario Asignado"))
                             .fechaInicioContactabilidad(rs.getObject("fecha_inicio_contactabilidad", LocalDate.class))
                             .correoUsuarioAsignadoCdCorreoUsuarioAsignado(rs.getLong("Correo Usuario Asignado_cd_Correo Usuario Asignado"))
-                            .correoUsuarioAsignado(rs.getString("Correo Usuario Asignado")).build();
+                            .correoUsuarioAsignado(rs.getString("Correo Usuario Asignado"))
+                            .validacionContactabilidadCdValidacionContactabilidad(
+                                    rs.getLong("Validacion Contactabilidad_cd_Validacion Contactabilidad"))
+                            .build();
                 }
             }, loan.getId());
 
@@ -166,10 +170,10 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
 
                 query = """
                             SElECT *
-                                , "Cedula"                                                                                          as "Numero identificacion"
-                                , "Customer Identifier_cd_Tipo identificacion"                                                      as "Tipo identificacion Id"
-                                , fn_core_codevalue_getdescription("Customer Identifier_cd_Tipo identificacion")                    as "Tipo identificacion"
-                                , fn_core_codevalue_getcodevalue("Ciudad_cd_Ciudad")                                              as "Ciudad"
+                                , "Cedula"                                                                              as "Numero identificacion"
+                                , "Customer Identifier_cd_Tipo identificacion"                                          as "Tipo identificacion Id"
+                                , fn_core_codevalue_getcodevalue("Customer Identifier_cd_Tipo identificacion")          as "Tipo identificacion"
+                                , fn_core_codevalue_getcodevalue("Ciudad_cd_Ciudad")                                    as "Ciudad"
                             FROM "campos_cliente_persona"
                             WHERE client_id = ?
                         """;
@@ -178,10 +182,10 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
 
                 query = """
                             SElECT *
-                                , "NIT"                                                                                             as "Numero identificacion"
-                                , "Tipo ID_cd_Tipo ID"                                                                              as "Tipo identificacion Id"
-                                , fn_core_codevalue_getdescription("Tipo ID_cd_Tipo ID")                                            as "Tipo identificacion"
-                                , fn_core_codevalue_getcodevalue("Ciudad_cd_Ciudad")                                              as "Ciudad"
+                                , "NIT"                                                                                 as "Numero identificacion"
+                                , "Tipo ID_cd_Tipo ID"                                                                  as "Tipo identificacion Id"
+                                , fn_core_codevalue_getcodevalue("Tipo ID_cd_Tipo ID")                                  as "Tipo identificacion"
+                                , fn_core_codevalue_getcodevalue("Ciudad_cd_Ciudad")                                    as "Ciudad"
                             FROM "campos_cliente_empresas"
                            WHERE client_id = ?
                         """;
