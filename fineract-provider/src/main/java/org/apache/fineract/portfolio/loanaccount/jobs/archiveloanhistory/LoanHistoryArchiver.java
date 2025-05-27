@@ -225,7 +225,6 @@ public class LoanHistoryArchiver {
                         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
                         final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
                                 .fetchLoanForeclosureDetail(LocalDate.now(), scheduleGeneratorDTO);
-                        BigDecimal creSaldo = loanRepaymentScheduleInstallment.getTotalOutstanding(loan.getCurrency()).getAmount();
 
                         String creEstad = ClientStatus.fromInt(loan.getClient().getStatus()).name();
                         if (loan.getLoanCustomizationDetail() != null) {
@@ -295,7 +294,6 @@ public class LoanHistoryArchiver {
                             loanArchiveHistory.setCondonaciones(totalWrittenOff);
                             loanArchiveHistory.setActividadLaboral(actividadLaboral);
                             loanArchiveHistory.setNumeroDeReprogramaciones(numberReschedule);
-                            loanArchiveHistory.setCreSaldo(creSaldo);
                             loanArchiveHistory.setCuoSaldo(currentInstallment.getTotalOutstanding(loan.getCurrency()).getAmount());
                             loanArchiveHistory.setCuoEstado(cuoEstado);
                             if (dataLoan.getFechaNacimiento() != null) {
