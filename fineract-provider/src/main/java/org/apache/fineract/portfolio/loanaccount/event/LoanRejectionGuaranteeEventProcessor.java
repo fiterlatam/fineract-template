@@ -112,7 +112,7 @@ public class LoanRejectionGuaranteeEventProcessor extends BaseCustomWebhookEvent
         }
 
         if (Objects.nonNull(camposClienteEmpresaYPersona)) {
-            requestBody.put(DOCUMENT_ID_PARAM, detalleGaranta.getNumeroPagare());
+            requestBody.put(DOCUMENT_ID_PARAM, camposClienteEmpresaYPersona.getNumeroIdentificacion());
         }
     }
 
