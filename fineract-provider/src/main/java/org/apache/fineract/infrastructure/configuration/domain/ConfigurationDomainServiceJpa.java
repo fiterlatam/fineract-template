@@ -531,4 +531,11 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         }
         return property.getValue();
     }
+
+    @Override
+    public Boolean isHierarchyEnabledForAccounting() {
+        final String propertyName = "office-hierarchy-enabled-for-accounting";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.isEnabled();
+    }
 }
