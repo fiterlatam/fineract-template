@@ -57,6 +57,7 @@ import org.apache.fineract.accounting.producttoaccountmapping.domain.PortfolioPr
 import org.apache.fineract.accounting.producttoaccountmapping.domain.ProductToGLAccountMapping;
 import org.apache.fineract.accounting.producttoaccountmapping.domain.ProductToGLAccountMappingRepository;
 import org.apache.fineract.accounting.producttoaccountmapping.exception.ProductToGLAccountMappingNotFoundException;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -76,6 +77,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
 import org.apache.fineract.portfolio.shareaccounts.data.ShareAccountTransactionEnumData;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -100,6 +102,8 @@ public class AccountingProcessorHelper {
     private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
     private final AccountTransfersReadPlatformService accountTransfersReadPlatformService;
     private final ChargeRepositoryWrapper chargeRepositoryWrapper;
+    private final ConfigurationDomainService configurationDomainService;
+    private final JdbcTemplate jdbcTemplate;
 
     public LoanDTO populateLoanDtoFromMap(final Map<String, Object> accountingBridgeData, final boolean cashBasedAccountingEnabled,
             final boolean upfrontAccrualBasedAccountingEnabled, final boolean periodicAccrualBasedAccountingEnabled) {
@@ -582,6 +586,34 @@ public class AccountingProcessorHelper {
 
     public GLClosure getLatestClosureByBranch(final long officeId) {
         return this.closureRepository.getLatestGLClosureByBranch(officeId);
+    }
+
+    public List<GLClosure> getLatestClosureByOfficeIds(final long officeId) {
+        String retrieveAllOfficeIds = """
+                WITH RECURSIVE hierarchy_parts AS (
+                               SELECT
+                                 TRIM(BOTH '.' FROM hierarchy) AS h,
+                                 SUBSTRING_INDEX(TRIM(BOTH '.' FROM hierarchy), '.', 1) AS id_part,
+                                 1 AS level
+                               FROM m_office
+                               WHERE id = ?
+
+                               UNION ALL
+
+                               SELECT
+                                 h,
+                                 SUBSTRING_INDEX(SUBSTRING_INDEX(h, '.', level + 1), '.', -1),
+                                 level + 1
+                               FROM hierarchy_parts
+                               WHERE level < LENGTH(h) - LENGTH(REPLACE(h, '.', '')) + 1
+                             )
+
+                             SELECT CAST(id_part AS UNSIGNED) AS id
+                             FROM hierarchy_parts;
+                """;
+        // return a list of office ids in the hierarchy
+        List<Long> officeIds = this.jdbcTemplate.queryForList(retrieveAllOfficeIds, Long.class, officeId);
+        return this.closureRepository.findGLClosuresByOfficeIds(officeIds);
     }
 
     public Office getOfficeById(final long officeId) {

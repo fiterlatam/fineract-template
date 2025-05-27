@@ -21,7 +21,6 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -327,9 +326,9 @@ public class LoanCharge extends AbstractPersistableCustom {
 
     // For FriendshipBridge
     public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
-                      final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
-                      final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
-                      LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue) {
+            final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
+            final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
+            LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue) {
         this.loan = loan;
         this.charge = chargeDefinition;
         this.penaltyCharge = chargeDefinition.isPenalty();
@@ -372,12 +371,12 @@ public class LoanCharge extends AbstractPersistableCustom {
             this.chargePaymentMode = chargePaymentMode.getValue();
         }
 
-        populateDerivedFields(loanPrincipal, chargeAmount, numberOfRepayments, loanCharge, installment,penaltyWaitPeriodValue,dueDate);
+        populateDerivedFields(loanPrincipal, chargeAmount, numberOfRepayments, loanCharge, installment, penaltyWaitPeriodValue, dueDate);
         this.paid = determineIfFullyPaid();
     }
 
     public static LoanCharge createNewFromJson(Loan loan, Charge chargeDefinition, JsonCommand command, LocalDate dueDate,
-                                               LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue) {
+            LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue) {
         final BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount");
 
         final ChargeTimeType chargeTime = null;
@@ -498,7 +497,8 @@ public class LoanCharge extends AbstractPersistableCustom {
     }
 
     private void populateDerivedFields(final BigDecimal amountPercentageAppliedTo, final BigDecimal chargeAmount,
-                                       Integer numberOfRepayments, BigDecimal loanCharge, LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue, LocalDate dueDate) {
+            Integer numberOfRepayments, BigDecimal loanCharge, LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue,
+            LocalDate dueDate) {
 
         switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
             case INVALID:
@@ -536,11 +536,10 @@ public class LoanCharge extends AbstractPersistableCustom {
                 if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
                     loanCharge = percentageOf(this.amountPercentageAppliedTo);
                     if (PeriodFrequencyType.fromInt(charge.feeFrequency()).equals(PeriodFrequencyType.MONTHS_APPLIED_DAILY)) {
-                        long daysBetween = ChronoUnit.DAYS.between(installment.getFromDate(), installment.getDueDate());
-                        loanCharge = loanCharge.divide(BigDecimal.valueOf(daysBetween), MathContext.DECIMAL64);
+                        loanCharge = loanCharge.divide(BigDecimal.valueOf(30), MathContext.DECIMAL64);
 
                         // If penalty wait period is set, then we need to add the penalty wait period charges
-                        if (installment.getDueDate().plusDays(penaltyWaitPeriodValue+1).equals(dueDate)){
+                        if (installment.getDueDate().plusDays(penaltyWaitPeriodValue + 1).equals(dueDate)) {
                             BigDecimal penaltyWaitPeriodCharges = loanCharge.multiply(BigDecimal.valueOf(penaltyWaitPeriodValue));
                             loanCharge = loanCharge.add(penaltyWaitPeriodCharges);
                         }
