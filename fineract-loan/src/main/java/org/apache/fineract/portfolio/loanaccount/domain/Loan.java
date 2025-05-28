@@ -7674,7 +7674,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     interest = interest.plus(installment.getInterestOutstanding(currency));
                     penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
                     fee = fee.plus(installment.getFeeChargesOutstanding(currency));
-                } else if (DateUtils.isAfter(paymentDate, installment.getFromDate()) || DateUtils.isEqual(paymentDate, installment.getFromDate())) {
+                } else if (DateUtils.isAfter(paymentDate, installment.getFromDate())
+                        || DateUtils.isEqual(paymentDate, installment.getFromDate())) {
                     final Money[] balancesForCurrentPeriod = fetchInterestFeeAndPenaltyTillDate(paymentDate, installment,
                             principalLoanBalanceOutstanding, scheduleGeneratorDTO);
                     if (balancesForCurrentPeriod[0].isGreaterThan(balancesForCurrentPeriod[5])) {
