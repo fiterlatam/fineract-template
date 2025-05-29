@@ -129,14 +129,13 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
 
         String comments = jsonCommand.stringValueOfParameterNamed("comments");
         BigDecimal totalOutstanding = getTotalOutstanding(loanAccounts);
-        if (totalRequestedAmount != null && totalRequestedAmount.compareTo(BigDecimal.ZERO) > 0) {
-            totalOutstanding = totalOutstanding.add(totalRequestedAmount);
-        }
+
         AppUser appUser = this.platformSecurityContext.authenticatedUser();
         LocalDateTime localDateTimeOfSystem = DateUtils.getLocalDateTimeOfSystem();
+        BigDecimal extensionAmount = totalRequestedAmount.subtract(totalOutstanding);
         RestructureCreditsRequest request = RestructureCreditsRequest.fromJSON(client, RestructureCreditStatus.PENDING.getValue(),
-                loanProducts.get(), totalOutstanding, disbursementDate, comments, localDateTimeOfSystem, appUser, prequalificationId,
-                totalRequestedAmount);
+                loanProducts.get(), totalRequestedAmount, disbursementDate, comments, localDateTimeOfSystem, appUser, prequalificationId,
+                extensionAmount);
         restructureCreditsRequestRepository.save(request);
         List<RestructureCreditsLoanMapping> mappings = createRestructureMappings(loanAccounts, request);
         request.updateMappings(mappings);
@@ -207,12 +206,13 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         closeObject.add("locale", command.jsonElement("locale"));
         closeObject.add("note", command.jsonElement("notes"));
         closeObject.add("dateFormat", command.jsonElement("dateFormat"));
-        JsonElement finalCommand = this.fromApiJsonHelper.parse(closeObject.toString());
 
-        JsonCommand jsonCommand = JsonCommand.fromExistingCommand(command, finalCommand);
         for (RestructureCreditsLoanMapping mapping : creditMappings) {
+            JsonElement finalCommand = this.fromApiJsonHelper.parse(closeObject.toString());
+
+            JsonCommand jsonCommand = JsonCommand.fromExistingCommand(command, finalCommand);
             Loan loan = mapping.getLoan();
-            loanWritePlatformService.closeAsRescheduled(loan.getId(), jsonCommand);
+            loanWritePlatformService.writeOff(loan.getId(), jsonCommand);
         }
     }
 
