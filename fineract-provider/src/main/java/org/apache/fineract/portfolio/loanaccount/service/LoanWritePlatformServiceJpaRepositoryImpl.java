@@ -2994,11 +2994,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final Long penaltyWaitPeriodValue = this.configurationDomainService.retrievePenaltyWaitPeriod();
         final Long penaltyPostingWaitPeriodValue = this.configurationDomainService.retrieveGraceOnPenaltyPostingPeriod();
         final LocalDate dueDate = command.localDateValueOfParameterNamed("dueDate");
+        final Integer installmentNumber = command.integerValueOfParameterNamed("installmentNumber");
+        final Integer lastUnpaidInstallment = command.integerValueOfParameterNamed("lastUnpaidInstallment");
+
         Long diff = penaltyWaitPeriodValue + 1 - penaltyPostingWaitPeriodValue;
         if (diff < 1) {
             diff = 1L;
         }
-        LocalDate startDate = dueDate.plusDays(penaltyWaitPeriodValue.intValue() + 1);
+        LocalDate startDate = dueDate;
+        if (lastUnpaidInstallment >= installmentNumber) {
+            startDate = dueDate.plusDays(penaltyWaitPeriodValue.intValue() + 1);
+        }
         Integer frequencyNunber = 1;
         if (feeFrequency == null) {
             scheduleDates.put(frequencyNunber++, startDate);
