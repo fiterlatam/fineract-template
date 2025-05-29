@@ -171,6 +171,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @JoinColumn(name = "collection_house_id", nullable = false)
     private CollectionHouseConfiguration collectionHouse;
 
+    @Column(name = "is_foreclosure_transaction")
+    private boolean foreclosureTransaction;
+
     @Embedded
     private WriteOffChargesDetail writeOffChargesDetail;
 
@@ -1303,5 +1306,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isInvoicedNotGeneratedByJob() {
         return Boolean.FALSE.equals(invoicedGeneratedByJob);
+    }
+
+    public boolean isForeclosureTransaction() {
+        return this.foreclosureTransaction;
     }
 }

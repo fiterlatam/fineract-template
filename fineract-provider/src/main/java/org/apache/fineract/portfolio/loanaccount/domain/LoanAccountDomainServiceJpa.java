@@ -24,6 +24,15 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -43,6 +52,7 @@ import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.MultiException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
+import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
@@ -159,7 +169,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final ClientReadPlatformService clientReadPlatformService;
     @Autowired
     private CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
-    private final LoanBlockWritePlatformService loanBlockWritePlatformService;
+    @Autowired
+    private LoanForeclosureSnapshotRepository loanForeclosureSnapshotRepository;
 
     @Transactional
     @Override
@@ -979,6 +990,101 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         return newRefundTransaction;
     }
 
+    private ObjectMapper createObjectMapper() {
+        final ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        mapper.configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false);
+        mapper.configure(SerializationFeature.FAIL_ON_UNWRAPPED_TYPE_IDENTIFIERS, false);
+
+        // Add configuration to handle circular references
+        mapper.configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false);
+        mapper.configure(JsonGenerator.Feature.IGNORE_UNKNOWN, true);
+
+        // Configure to use object identity to handle circular references
+        mapper.configure(SerializationFeature.WRITE_SELF_REFERENCES_AS_NULL, true);
+
+        // Add a custom serializer or use @JsonIdentityInfo approach
+        // For now, we'll use a simple approach with max depth
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
+        addCircularReferenceMixIns(mapper);
+
+        return mapper;
+    }
+
+
+
+    private void addCircularReferenceMixIns(ObjectMapper mapper) {
+        // Add mix-ins for common entities that cause circular references
+        mapper.addMixIn(org.apache.fineract.portfolio.loanaccount.domain.Loan.class, LoanMixIn.class);
+        mapper.addMixIn(org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction.class, LoanTransactionMixIn.class);
+        mapper.addMixIn(org.apache.fineract.portfolio.loanaccount.domain.LoanCharge.class, LoanChargeMixIn.class);
+        mapper.addMixIn(org.apache.fineract.portfolio.loanaccount.domain.LoanChargePaidBy.class, LoanChargePaidByMixIn.class);
+        mapper.addMixIn(org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment.class, LoanInstallmentMixIn.class);
+        mapper.addMixIn(org.apache.fineract.portfolio.loanproduct.domain.LoanProduct.class, LoanProductMixIn.class);
+        mapper.addMixIn(org.apache.fineract.portfolio.charge.domain.Charge.class, ChargeMixIn.class);
+        mapper.addMixIn(org.apache.fineract.infrastructure.codes.domain.CodeValue.class, CodeValueMixIn.class);
+        mapper.addMixIn(org.apache.fineract.infrastructure.codes.domain.Code.class, CodeMixIn.class);
+        mapper.addMixIn(org.apache.fineract.portfolio.loanaccount.domain.LoanInstallmentCharge.class, LoanInstallmentChargeMixIn.class);
+        mapper.addMixIn(org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionToRepaymentScheduleMapping.class, LoanTransactionMappingMixIn.class);
+
+    }
+
+
+    // Mix-in interfaces to ignore problematic fields during serialization
+    @JsonIgnoreProperties({"loanTransactions", "loanCharges", "repaymentScheduleInstallments",
+            "loanOfficerHistory", "loanCollateralManagements", "loanTopupDetails", "disbursementDetails",
+            "loanTermVariations", "loanRescheduleRequests", "postDatedChecks", "loanProduct"})
+    interface LoanMixIn {}
+
+    @JsonIgnoreProperties({"loan", "loanChargesPaid", "loanTransactionToRepaymentScheduleMappings"})
+    interface LoanTransactionMixIn {}
+
+    @JsonIgnoreProperties({"loan", "charge", "loanInstallmentCharge", "loanChargePaidByList",
+            "customChargeHonorarioMaps", "loanChargePaidBySet", "installmentCharges"})
+    interface LoanChargeMixIn {}
+
+    @JsonIgnoreProperties({"loanTransaction", "loanCharge"})
+    interface LoanChargePaidByMixIn {}
+
+    @JsonIgnoreProperties({"loan", "loanTransaction", "installmentCharges", "loanTransactionToRepaymentScheduleMappings"})
+    interface LoanInstallmentMixIn {}
+
+    @JsonIgnoreProperties({"paymentAllocationRules", "loanProductPaymentAllocationRules",
+            "creditAllocationRules", "loanProductCreditAllocationRules", "charges", "accountingMappings"})
+    interface LoanProductMixIn {}
+
+    @JsonIgnoreProperties({"loanCharges", "chargeAppliesTo", "feeFrequency", "feeOnMonthDay",
+            "feeInterval", "chargePaymentMode", "chargeCalculationType", "chargeTimeType", "parentCharge"})
+    interface ChargeMixIn {}
+
+    @JsonIgnoreProperties({"code", "values"})
+    interface CodeValueMixIn {}
+
+    @JsonIgnoreProperties({"values", "codeValues"})
+    interface CodeMixIn {}
+
+    @JsonIgnoreProperties({"loanCharge", "installment", "loanRepaymentScheduleInstallment"})
+    interface LoanInstallmentChargeMixIn {}
+
+    @JsonIgnoreProperties({"loanTransaction", "loanRepaymentScheduleInstallment"})
+    interface LoanTransactionMappingMixIn {}
+
+
+    private <T> String serializeValueAsString(T objectValue) {
+        final ObjectMapper objectMapper = createObjectMapper();
+        try {
+            return objectMapper.writeValueAsString(objectValue);
+        } catch (final JsonProcessingException ex) {
+            throw new PlatformDataIntegrityException("error.msg.loan.components.serialization.failed",
+                    "Failed to serialize loan component: " + ex.getMessage(), ex);
+        }
+    }
+
+
     @Override
     public LoanTransaction foreCloseLoan(Loan loan, final LocalDate foreClosureDate, final String noteText, final ExternalId externalId,
             Map<String, Object> changes, boolean isForCloureAction) {
@@ -988,6 +1094,20 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     + " backdated transaction is not allowed. Transaction date cannot be earlier than the charge-off date of the loan",
                     loan.getId());
         }
+
+        final String loanSummaryJson = serializeValueAsString(loan.getLoanSummary());
+        final String loanTransactionsJson = serializeValueAsString(loan.getLoanTransactions());
+        final String loanChargesJson = serializeValueAsString(loan.getLoanCharges());
+        final String loanRepaymentScheduleJson = serializeValueAsString(loan.getRepaymentScheduleInstallments());
+
+        final LoanForeclosureSnapshot loanForeclosureSnapshot = new LoanForeclosureSnapshot();
+        loanForeclosureSnapshot.setLoanId(loan.getId());
+        loanForeclosureSnapshot.setLoanSummaryJson(loanSummaryJson);
+        loanForeclosureSnapshot.setLoanTransactionsJson(loanTransactionsJson);
+        loanForeclosureSnapshot.setLoanRepaymentScheduleJson(loanRepaymentScheduleJson);
+        loanForeclosureSnapshot.setLoanChargesJson(loanChargesJson);
+        loanForeclosureSnapshot.setRestored(false);
+
         businessEventNotifierService.notifyPreBusinessEvent(new LoanForeClosurePreBusinessEvent(loan));
         MonetaryCurrency currency = loan.getCurrency();
         List<LoanTransaction> newTransactions = new ArrayList<>();
@@ -1117,6 +1237,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
         businessEventNotifierService.notifyPostBusinessEvent(new LoanForeClosurePostBusinessEvent(payment));
         businessEventNotifierService.notifyPostBusinessEvent(new LoanInvoiceGenerationPostBusinessEvent(payment));
+        loanForeclosureSnapshot.setLoanTransactionId(payment.getId());
+        this.loanForeclosureSnapshotRepository.saveAndFlush(loanForeclosureSnapshot);
         return payment;
     }
 

@@ -8592,4 +8592,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return this.getRepaymentScheduleInstallments().stream().anyMatch(LoanRepaymentScheduleInstallment::hasPenalties);
     }
 
+    public void setLoanSummary(LoanSummary summary){
+        this.summary = summary;
+    }
+
 }

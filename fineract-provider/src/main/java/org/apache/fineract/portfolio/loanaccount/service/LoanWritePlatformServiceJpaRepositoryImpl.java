@@ -18,6 +18,12 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -85,6 +91,7 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainR
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
+import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -312,6 +319,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
     private final LoanCreditNoteRepository loanCreditNoteRepository;
     private final LoanAccrualPlatformService loanAccrualPlatformService;
+    private LoanForeclosureSnapshotRepository loanForeclosureSnapshotRepository;
 
     @PostConstruct
     public void registerForNotification() {
@@ -1896,6 +1904,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 this.facturaElectronicMensualRepository.deleteAll(facturaElectronicMensuals);
             }
         }
+
+        if(transactionToAdjust.isForeclosureTransaction() && !isAdjustCommand){
+            restoreLoanFromJsonSnapshot(loan, transactionToAdjust);
+        }
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(entityId) //
@@ -1905,6 +1917,60 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withGroupId(loan.getGroupId()) //
                 .withLoanId(loanId) //
                 .with(changes).build();
+    }
+
+    private ObjectMapper createObjectMapper() {
+        final ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        return mapper;
+    }
+
+    public <T> T deserializeJsonSnapshot(final String jsonSnapshot, final TypeReference<T> valueTypeRef) {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            return objectMapper.readValue(jsonSnapshot, valueTypeRef);
+        } catch (JsonProcessingException e) {
+            throw new PlatformDataIntegrityException("error.msg.loan.components.deserialization.failed",
+                    "Failed to deserialize loan components: " + e.getMessage(), e);
+        }
+    }
+
+    private <T> T deserializeJsonSnapshot(String jsonSnapshot, Class<T> valueType) {
+        final ObjectMapper objectMapper = createObjectMapper();
+        try {
+            return objectMapper.readValue(jsonSnapshot, valueType);
+        } catch (final JsonProcessingException e) {
+            throw new PlatformDataIntegrityException("error.msg.loan.components.deserialization.failed",
+                    "Failed to deserialize loan components: " + e.getMessage(), e);
+        }
+    }
+
+    private void restoreLoanFromJsonSnapshot(final Loan loan, final LoanTransaction transactionToAdjust) {
+        final List<LoanForeclosureSnapshot> loanForeclosureSnapshots = this.loanForeclosureSnapshotRepository.findByLoanIdAndTransactionId(loan.getId(), transactionToAdjust.getId());
+        if(CollectionUtils.isNotEmpty(loanForeclosureSnapshots)){
+            final LoanForeclosureSnapshot loanForeclosureSnapshot = loanForeclosureSnapshots.get(0);
+            final String loanChargesJsonSnapshot = loanForeclosureSnapshot.getLoanChargesJson();
+            final String loanSummaryJsonSnapshot = loanForeclosureSnapshot.getLoanSummaryJson();
+            final String loanRepaymentScheduleJsonSnapshot = loanForeclosureSnapshot.getLoanRepaymentScheduleJson();
+            final String loanTransactionsJsonSnapshot = loanForeclosureSnapshot.getLoanTransactionsJson();
+            final List<LoanCharge> loanCharges = deserializeJsonSnapshot(loanChargesJsonSnapshot, new TypeReference<List<LoanCharge>>() {});
+            final LoanSummary loanSummary = deserializeJsonSnapshot(loanSummaryJsonSnapshot, LoanSummary.class);
+            final List<LoanTransaction> loanTransactions = deserializeJsonSnapshot(loanTransactionsJsonSnapshot, new TypeReference<List<LoanTransaction>>() {});
+            final List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = deserializeJsonSnapshot(loanRepaymentScheduleJsonSnapshot, new TypeReference<List<LoanRepaymentScheduleInstallment>>() {});
+            loan.getRepaymentScheduleInstallments().clear();
+            loan.getRepaymentScheduleInstallments().addAll(loanRepaymentScheduleInstallments);
+            loan.getCharges().clear();
+            loan.getCharges().addAll(loanCharges);
+            loan.setLoanSummary(loanSummary);
+            loan.getLoanTransactions().clear();
+            loan.getLoanTransactions().addAll(loanTransactions);
+            loan.getCharges().clear();
+            loan.getCharges().addAll(loanCharges);
+            saveAndFlushLoanWithIntegrityChecks(loan);
+        }
     }
 
     private void decrementInvoiceCounterOnProduct(LoanTransaction transactionToAdjust,
