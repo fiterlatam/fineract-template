@@ -4088,17 +4088,20 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     @Override
-    public List<Long> retrieveLoanIdsForInvoiceGenerationByClientId(Long clientId, LocalDate secondLastDayOfMonth) {
+    public List<Long> retrieveLoanIdsForInvoiceGenerationByClientIds(List<Long> clientIds, LocalDate secondLastDateOfMonth) {
         final String sql = """
                 select distinct ml.id from m_loan_transaction mlt
                      join m_loan ml on mlt.loan_id = ml.id
-                     where ml.client_id = ?
+                     where ml.client_id IN (:clientIds)
                      and mlt.is_reversed = false
                      AND mlt.transaction_type_enum = 10 AND mlt.occurred_on_suspended_account = FALSE
                      AND mlt.is_invoiced_generated_by_job = false
-                     AND mlt.transaction_date <= ?
+                     AND mlt.transaction_date <= :secondLastDateOfMonth
                 """;
-        return this.jdbcTemplate.queryForList(sql, Long.class, clientId, secondLastDayOfMonth).stream().toList();
+        final MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("clientIds", clientIds);
+        parameters.addValue("secondLastDateOfMonth", secondLastDateOfMonth);
+        return this.namedParameterJdbcTemplate.queryForList(sql, parameters, Long.class);
     }
 
     @Override

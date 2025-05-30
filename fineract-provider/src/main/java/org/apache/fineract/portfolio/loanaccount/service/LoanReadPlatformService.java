@@ -188,7 +188,7 @@ public interface LoanReadPlatformService {
 
     List<LoanDocumentData> retrieveLoanInvoiceDataListByTransactionId(Long loanTransactionId);
 
-    List<Long> retrieveLoanIdsForInvoiceGenerationByClientId(Long clientId, LocalDate secondLastDayOfMonth);
+    List<Long> retrieveLoanIdsForInvoiceGenerationByClientIds(List<Long> clientIds, LocalDate secondLastDayOfMonth);
 
     List<LoanElectronicInvoiceData> retrieveAvailableElectronicInvoicesToBeOffset(String idCliente, String tipoProd, String sku);
 
