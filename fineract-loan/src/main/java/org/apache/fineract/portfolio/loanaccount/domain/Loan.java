@@ -3433,19 +3433,50 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             boolean isDisbursedAmountChanged = !MathUtil.isEqualTo(approvedPrincipal,
                     this.loanRepaymentScheduleDetail.getPrincipal().getAmount());
             this.loanRepaymentScheduleDetail.setPrincipal(this.approvedPrincipal);
+
+            boolean updateLoanToPreDisbursalState = false;
+
+            boolean isEmiAmountChanged = !this.loanTermVariations.isEmpty();
+
             // Remove All the Disbursement Details If the Loan Product is disabled and exists one
             if (this.loanProduct().isDisallowExpectedDisbursements() && !getDisbursementDetails().isEmpty()) {
                 for (LoanDisbursementDetails disbursementDetail : getAllDisbursementDetails()) {
                     disbursementDetail.reverse();
                 }
             } else {
-                for (final LoanDisbursementDetails details : getDisbursementDetails()) {
-                    details.updateActualDisbursementDate(null);
+                // Pick last active disbursal
+                Optional<LoanDisbursementDetails> lastActiveDDOpt = this.disbursementDetails.stream()
+                        .filter(isNotRev -> Boolean.FALSE.equals(isNotRev.isReversed()))
+                        .filter(disb -> Objects.nonNull(disb.actualDisbursementDate()))
+                        .sorted(Comparator.comparing(LoanDisbursementDetails::expectedDisbursementDateAsLocalDate).reversed()).findFirst();
+
+                // Check how many active disbursals
+                Long activeDisbursalsCounter = this.disbursementDetails.stream()
+                        .filter(isNotRev -> Boolean.FALSE.equals(isNotRev.isReversed()))
+                        .filter(disb -> Objects.nonNull(disb.actualDisbursementDate())).count();
+
+                if (lastActiveDDOpt.isPresent()) {
+                    LoanDisbursementDetails details = lastActiveDDOpt.get();
+
+                    // If there is only 1 active disbursal remaining, restore principal to approved amount
+                    if (activeDisbursalsCounter.compareTo(1L) == 0) {
+                        details.updateActualDisbursementDate(null);
+                        details.updatePrincipal(this.getApprovedPrincipal());
+
+                        updateLoanToPreDisbursalState = true;
+                    } else {
+                        throw new GeneralPlatformDomainRuleException("validation.msg.undo.disbursal.transaction.first",
+                                "Undo disbursal is only allowed when there is only 1 active disbursal. Use Undo from Transactions Tab instead.");
+                    }
+
+                    isDisbursedAmountChanged = true;
                 }
             }
-            boolean isEmiAmountChanged = !this.loanTermVariations.isEmpty();
 
-            updateLoanToPreDisbursalState();
+            if (updateLoanToPreDisbursalState) {
+                updateLoanToPreDisbursalState();
+            }
+
             if (isScheduleRegenerateRequired || isDisbursedAmountChanged || isEmiAmountChanged
                     || this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
                 // clear off actual disbusrement date so schedule regeneration

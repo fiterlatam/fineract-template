@@ -1743,6 +1743,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             throw new InvalidLoanTransactionTypeException("transaction", "error.msg.loan.transaction.update.not.allowed", errorMessage);
         }
 
+        // Check if it is adjustment and if the transaction type is disbursement
+        // If yes, check if there is only 1 active disbursement transaction. If so, trhow an exception
+        if (transactionAmount.compareTo(BigDecimal.ZERO) == 0 && transactionToAdjust.isDisbursement()
+                && loan.getDisbursementDetails().size() == 1) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.cannot.undo.last.disbursal.transaction",
+                    "Undo disbursal transaction is not allowed for the 1st disbursal. Use Undo Disbursal from menu. ", transactionDate);
+        }
+
         // SU-516 if transaction has a hono charge paid then delete the latest version in hono charge map
         for (LoanChargePaidBy chargePaidBy : transactionToAdjust.getLoanChargesPaid()) {
             if (chargePaidBy.getLoanCharge().isFlatHono()) {
