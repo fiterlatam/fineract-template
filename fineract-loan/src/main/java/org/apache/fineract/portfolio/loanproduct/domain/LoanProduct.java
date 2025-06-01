@@ -2083,7 +2083,6 @@ public class LoanProduct extends AbstractPersistableCustom {
         return isPurChaseCharge == null ? Boolean.FALSE : isPurChaseCharge;
     }
 
-
     public boolean isRevolvingLoanProduct() {
         String loanProductName = normalizeString(getName());
         String loanProductType = normalizeString(getProductType().getLabel());
