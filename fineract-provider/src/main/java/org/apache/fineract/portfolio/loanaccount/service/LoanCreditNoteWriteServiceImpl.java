@@ -56,6 +56,8 @@ import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproductparameterization.domain.LoanProductParameterization;
 import org.apache.fineract.portfolio.loanproductparameterization.domain.LoanProductParameterizationRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -582,8 +584,10 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
         return newCreditNoteDocuments;
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Override
     public void processInvoiceOffsetByCreditNote(final Long creditNoteId) {
+        log.info("Processing invoice offset by credit note for credit note ID: {}", creditNoteId);
         final LoanCreditNote loanCreditNote = this.loanCreditNoteRepository.findById(creditNoteId)
                 .orElseThrow(() -> new LoanCreditNoteNotFoundException(creditNoteId));
         if (!loanCreditNote.isFullyUsedByInvoice()) {
@@ -622,6 +626,8 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                     .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
             final CreditNoteConceptAmount interestCreditNoteConceptAmount = new CreditNoteConceptAmount(loanCreditNote.getCurrentInterest(),
                     BigDecimal.ZERO, interestPortionAccountedFor);
+
+            log.info("Processing INT_CORRIENTE Concepts For Credit Note ID: {} ", creditNoteId);
             final Set<FacturaElectronicaMensual> interestElectronicCns = processElectronicCreditNoteForConcept(
                     interestCreditNoteConceptAmount, LoanDocumentConcept.INT_CORRIENTE, clientIdNumber, loanProductType, loanCreditNote,
                     itemCounter, documentNumber, loanProductParameterization);
@@ -631,6 +637,8 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                     .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
             final CreditNoteConceptAmount mandatoryInsuranceCreditNoteConceptAmount = new CreditNoteConceptAmount(
                     loanCreditNote.getMandatoryInsurance(), loanCreditNote.getMandatoryInsuranceVat(), mandatoryPortionAccountedFor);
+
+            log.info("Processing SEGURO_OBLIGATORIO Concepts For Credit Note ID: {} ", creditNoteId);
             final Set<FacturaElectronicaMensual> mandatoryInsuranceElectronicCns = processElectronicCreditNoteForConcept(
                     mandatoryInsuranceCreditNoteConceptAmount, LoanDocumentConcept.SEGURO_OBLIGATORIO, clientIdNumber, loanProductType,
                     loanCreditNote, itemCounter, documentNumber, loanProductParameterization);
@@ -640,6 +648,8 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                     .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
             final CreditNoteConceptAmount voluntaryInsuranceCreditNoteConceptAmount = new CreditNoteConceptAmount(
                     loanCreditNote.getInsurance(), loanCreditNote.getVoluntaryInsuranceVat(), voluntaryPortionAccountedFor);
+
+            log.info("Processing SEGURO_VOLUNTARIOS Concepts For Credit Note ID: {} ", creditNoteId);
             final Set<FacturaElectronicaMensual> voluntaryInsuranceElectronicCns = processElectronicCreditNoteForConcept(
                     voluntaryInsuranceCreditNoteConceptAmount, LoanDocumentConcept.SEGUROS_VOLUNTARIOS, clientIdNumber, loanProductType,
                     loanCreditNote, itemCounter, documentNumber, loanProductParameterization);
@@ -649,6 +659,8 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                     .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
             final CreditNoteConceptAmount honorariosCreditNoteConceptAmount = new CreditNoteConceptAmount(loanCreditNote.getHonorarios(),
                     loanCreditNote.getHonorariosVat(), honorariosPortionAccountedFor);
+
+            log.info("Processing HONORARIOS Concepts For Credit Note ID: {} ", creditNoteId);
             final Set<FacturaElectronicaMensual> honorariosElectronicCns = processElectronicCreditNoteForConcept(
                     honorariosCreditNoteConceptAmount, LoanDocumentConcept.HONORARIOS, clientIdNumber, loanProductType, loanCreditNote,
                     itemCounter, documentNumber, loanProductParameterization);
@@ -658,6 +670,8 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
                     .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
             final CreditNoteConceptAmount penaltyCreditNoteConceptAmount = new CreditNoteConceptAmount(loanCreditNote.getArrearInterest(),
                     loanCreditNote.getPenaltyVat(), penaltyPortionAccountedFor);
+
+            log.info("Processing INT_DE_MORA Concepts For Credit Note ID: {} ", creditNoteId);
             final Set<FacturaElectronicaMensual> penaltyElectronicCns = processElectronicCreditNoteForConcept(
                     penaltyCreditNoteConceptAmount, LoanDocumentConcept.INT_DE_MORA, clientIdNumber, loanProductType, loanCreditNote,
                     itemCounter, documentNumber, loanProductParameterization);
@@ -677,6 +691,7 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
             newCreditNoteDocuments.addAll(honorariosElectronicCns);
             newCreditNoteDocuments.addAll(penaltyElectronicCns);
 
+            log.info("Number of new CreditNote Documents: {}", newCreditNoteDocuments.size());
             if (!newCreditNoteDocuments.isEmpty()) {
                 final int itemsCount = newCreditNoteDocuments.size();
                 final BigDecimal totalImpuestoItem = newCreditNoteDocuments.stream().map(FacturaElectronicaMensual::getImpuesto_item)
