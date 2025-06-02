@@ -36,6 +36,7 @@ import org.apache.fineract.infrastructure.core.config.TaskExecutorConstant;
 import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
+import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanCreditNoteReadService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanCreditNoteWriteService;
@@ -109,10 +110,21 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
         return RepeatStatus.FINISHED;
     }
 
-    private void processInvoicesOffsetByCreditNotes() {
-        List<Long> creditNoteIdsForProcessing = this.loanCreditNoteReadService.retrieveCreditNoteIdsForInvoiceProcessing();
+    private void processInvoicesOffsetByCreditNotes() throws JobExecutionException {
+        final List<Throwable> errors = new ArrayList<>();
+        final List<Long> creditNoteIdsForProcessing = this.loanCreditNoteReadService.retrieveCreditNoteIdsForInvoiceProcessing();
         log.info("Processing invoices offset by creditNoteIds with count of: {}", creditNoteIdsForProcessing.size());
-        creditNoteIdsForProcessing.forEach(this.loanCreditNoteWriteService::processInvoiceOffsetByCreditNote);
+        for (final Long creditNoteId : creditNoteIdsForProcessing) {
+            try {
+                this.loanCreditNoteWriteService.processInvoiceOffsetByCreditNote(creditNoteId);
+            } catch (final Exception e) {
+                log.error(String.format("Error while processing invoices offset by credit Note Id: %s ", creditNoteId), e);
+                errors.add(e);
+            }
+        }
+        if (!errors.isEmpty()) {
+            throw new JobExecutionException(errors);
+        }
         log.info("Completed processing invoices offset by creditNoteIds");
     }
 
