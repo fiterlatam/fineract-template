@@ -2097,7 +2097,27 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
+    private void updateLifeInsuranceChargePortionsForRevolvingLoan() {
+        if (!isRevolvingLoan() || getRepaymentScheduleInstallments().isEmpty()) {
+            return;
+        }
+
+        // Find first installment with non-null life insurance charge portion
+        LoanRepaymentScheduleInstallment sourceInstallment = getRepaymentScheduleInstallments().stream()
+                .filter(installment -> installment.getLifeInsuranceChargePortion() != null).findFirst().orElse(null);
+
+        if (sourceInstallment == null) {
+            return; // No source installment found with life insurance charge portion
+        }
+
+        // Update all installments that don't have a life insurance charge portion
+        getRepaymentScheduleInstallments().stream().filter(installment -> installment.getLifeInsuranceChargePortion() == null)
+                .forEach(installment -> installment.setLifeInsuranceChargePortion(sourceInstallment.getLifeInsuranceChargePortion()));
+    }
+
     private void recalculateLoanCharge(final LoanCharge loanCharge) {
+
+        updateLifeInsuranceChargePortionsForRevolvingLoan();
         BigDecimal amount = BigDecimal.ZERO;
         BigDecimal chargeAmt;
         BigDecimal totalChargeAmt = BigDecimal.ZERO;

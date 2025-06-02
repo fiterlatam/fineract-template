@@ -2082,4 +2082,16 @@ public class LoanProduct extends AbstractPersistableCustom {
     public Boolean isPurChaseCharge() {
         return isPurChaseCharge == null ? Boolean.FALSE : isPurChaseCharge;
     }
+
+    public boolean isRevolvingLoanProduct() {
+        String loanProductName = normalizeString(getName());
+        String loanProductType = normalizeString(getProductType().getLabel());
+        String creditProductType = normalizeString(LoanProductType.CREDITO_ROTATIVO.getCode());
+        return creditProductType.equalsIgnoreCase(loanProductName) || creditProductType.equalsIgnoreCase(loanProductType);
+    }
+
+    private String normalizeString(String input) {
+        if (input == null) return "";
+        return java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase();
+    }
 }
