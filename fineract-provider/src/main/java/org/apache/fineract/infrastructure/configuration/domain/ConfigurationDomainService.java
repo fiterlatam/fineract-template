@@ -134,4 +134,6 @@ public interface ConfigurationDomainService {
     Long getMaximumBackDateDaysAllowed();
 
     Boolean isHierarchyEnabledForAccounting();
+
+    Boolean isRepaymentScheduleRecalculationEnabled();
 }

@@ -118,6 +118,7 @@ import org.apache.fineract.portfolio.loanaccount.data.PaidInAdvanceData;
 import org.apache.fineract.portfolio.loanaccount.data.RepaymentScheduleRelatedLoanData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
@@ -2456,10 +2457,33 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepository.findOneWithNotFoundDetection(currency);
 
         final CurrencyData currencyData = applicationCurrency.toData();
-
+        Money additionalPenaltiesToCollect = Money.zero(currency);
         final LocalDate earliestUnpaidInstallmentDate = DateUtils.getBusinessLocalDate();
 
         final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(transactionDate);
+        if (loanRepaymentScheduleInstallment.getPenaltyChargesCharged(currency).isGreaterThanZero()) {
+            Collection<LoanCharge> loanCharges = loan.getCharges();
+            for (LoanCharge charge : loanCharges) {
+                if (charge.isOverdueInstallmentCharge() && charge.isPenaltyCharge()) {
+                    String lastPenaltyUpdateSql = "select max(due_for_collection_as_of_date) from m_loan_charge where loan_id = ? and charge_id = ? and is_penalty = true";
+                    final Long chargeId = charge.getCharge().getId();
+                    LocalDate lastPenaltyDate = this.jdbcTemplate.queryForObject(lastPenaltyUpdateSql, LocalDate.class, loan.getId(),
+                            chargeId);
+                    if (lastPenaltyDate != null && transactionDate.isAfter(lastPenaltyDate)) {
+                        long daysBetween = ChronoUnit.DAYS.between(lastPenaltyDate, transactionDate);// this is to
+                                                                                                     // update the
+                                                                                                     // penalty charge
+                                                                                                     // for the number
+                                                                                                     // of days after
+                                                                                                     // last penalty
+                                                                                                     // date
+                        additionalPenaltiesToCollect = charge.getAmount(currency).multipliedBy(daysBetween);
+                    }
+                    break;
+                }
+            }
+
+        }
         BigDecimal unrecognizedIncomePortion = null;
         final LoanTransactionEnumData transactionType = LoanEnumerations.transactionType(LoanTransactionType.REPAYMENT);
         final Collection<PaymentTypeData> paymentTypeOptions = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
@@ -2475,6 +2499,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         List<BankAccountData> bankAccounts = this.jdbcTemplate.query(bankAccSql, bankAccountMapper, hierarchy, hierarchy);
 
         BigDecimal penaltyAmount = loanRepaymentScheduleInstallment.getPenaltyChargesOutstanding(currency).getAmount();
+        if (additionalPenaltiesToCollect.isGreaterThanZero()) {
+            penaltyAmount = penaltyAmount.add(additionalPenaltiesToCollect.getAmount());
+        }
         BigDecimal feeCharges = loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount();
         BigDecimal interestOutstanding = loanRepaymentScheduleInstallment.getInterestOutstanding(currency).getAmount();
 

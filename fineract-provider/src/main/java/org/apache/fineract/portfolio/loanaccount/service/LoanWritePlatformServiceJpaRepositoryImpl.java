@@ -703,7 +703,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         LoanRescheduleRequest loanRescheduleRequest = null;
         LoanScheduleModel loanScheduleModel = loan.regenerateScheduleModel(scheduleGeneratorDTO);
         List<LoanRepaymentScheduleInstallment> installments = retrieveRepaymentScheduleFromModel(loanScheduleModel);
-        this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(installments, loan, loanRescheduleRequest);
+        this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(installments, loan, loanRescheduleRequest, true);
     }
 
     /**
@@ -1795,7 +1795,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             updateOriginalSchedule(loan);
         }
-        if (reprocessRequired) {
+        Boolean repaymentScheduleRecalculation = this.configurationDomainService.isRepaymentScheduleRecalculationEnabled();
+        if (reprocessRequired && repaymentScheduleRecalculation) {
             ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions();
             if (changedTransactionDetail != null) {
                 for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
@@ -2928,18 +2929,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
                 updateOriginalSchedule(loan);
             }
+            Boolean repaymentScheduleRecalculation = this.configurationDomainService.isRepaymentScheduleRecalculationEnabled();
 
             if (reprocessRequired) {
                 addInstallmentIfPenaltyAppliedAfterLastDueDate(loan, lastChargeDate);
-                ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions();
-                if (changedTransactionDetail != null) {
-                    for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings()
-                            .entrySet()) {
-                        this.loanTransactionRepository.save(mapEntry.getValue());
-                        // update loan with references to the newly created
-                        // transactions
-                        loan.addLoanTransaction(mapEntry.getValue());
-                        this.accountTransfersWritePlatformService.updateLoanTransaction(mapEntry.getKey(), mapEntry.getValue());
+                if (repaymentScheduleRecalculation) {
+                    ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions();
+                    if (changedTransactionDetail != null) {
+                        for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings()
+                                .entrySet()) {
+                            this.loanTransactionRepository.save(mapEntry.getValue());
+                            // update loan with references to the newly created
+                            // transactions
+                            loan.addLoanTransaction(mapEntry.getValue());
+                            this.accountTransfersWritePlatformService.updateLoanTransaction(mapEntry.getKey(), mapEntry.getValue());
+                        }
                     }
                 }
                 saveLoanWithDataIntegrityViolationChecks(loan);
@@ -3600,7 +3604,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan,
-                loanRescheduleRequest);
+                loanRescheduleRequest, false);
 
         final Map<String, Object> modifications = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, command);
         changes.putAll(modifications);
