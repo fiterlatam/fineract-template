@@ -2464,7 +2464,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         if (loanRepaymentScheduleInstallment.getPenaltyChargesCharged(currency).isGreaterThanZero()) {
             Collection<LoanCharge> loanCharges = loan.getCharges();
             for (LoanCharge charge : loanCharges) {
-                if (charge.isOverdueInstallmentCharge() && charge.isPenaltyCharge()) {
+                if (charge.isOverdueInstallmentCharge() && charge.isPenaltyCharge() && !charge.isPaid()) {
                     String lastPenaltyUpdateSql = "select max(due_for_collection_as_of_date) from m_loan_charge where loan_id = ? and charge_id = ? and is_penalty = true";
                     final Long chargeId = charge.getCharge().getId();
                     LocalDate lastPenaltyDate = this.jdbcTemplate.queryForObject(lastPenaltyUpdateSql, LocalDate.class, loan.getId(),
