@@ -32,6 +32,9 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -88,6 +91,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     @Column(name = "reschedule_interest_portion", scale = 6, precision = 19, nullable = true)
     private BigDecimal rescheduleInterestPortion;
 
+    @Getter
+    @Setter
     @Column(name = "fee_charges_amount", scale = 6, precision = 19, nullable = true)
     private BigDecimal feeChargesCharged;
 
@@ -103,6 +108,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     @Column(name = "accrual_fee_charges_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal feeAccrued;
 
+    @Getter
+    @Setter
     @Column(name = "penalty_charges_amount", scale = 6, precision = 19, nullable = true)
     private BigDecimal penaltyCharges;
 
@@ -1853,10 +1860,6 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public void setInterestCharged(BigDecimal interestCharged) {
         this.interestCharged = interestCharged;
-    }
-
-    public void setFeeChargesCharged(BigDecimal feeChargesCharged) {
-        this.feeChargesCharged = feeChargesCharged;
     }
 
     public void setPenaltyCharges(BigDecimal penaltyCharges) {

@@ -1046,6 +1046,23 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         Money payPrincipal = foreCloseDetail.getPrincipal(currency);
         loan.setForeClosing(true);
         loan.updateInstallmentsPostDate(foreClosureDate, scheduleGeneratorDTO);
+        if (foreClosureDate.isBefore(loan.getMaturityDate())) {
+            // SU-707: now that we've updated the foreclosure installment, let's match the fees
+            // to cover aval fees when foreclosure is done on the first day of an installment
+            LoanRepaymentScheduleInstallment lastInstallment = loan.getRepaymentScheduleInstallments()
+                    .get(loan.getLoanRepaymentScheduleInstallmentsSize() - 1);
+            if (lastInstallment.getFeeChargesCharged() != null
+                    && lastInstallment.getFeeChargesCharged().compareTo(foreCloseDetail.getFeeChargesCharged()) < 0) {
+                lastInstallment.setFeeChargesCharged(foreCloseDetail.getFeeChargesCharged());
+                // Update the loanInstallmentCharges as well, we need to double the AVAL fees
+                for (LoanInstallmentCharge charge : lastInstallment.getInstallmentCharges()) {
+                    if (charge.getLoanCharge().isAvalCharge() || charge.getLoanCharge().isVatChargeOfAvalCharge()) {
+                        charge.setAmount(charge.getAmount().multiply(BigDecimal.valueOf(2)));
+                        charge.setAmountOutstanding(charge.getAmount());
+                    }
+                }
+            }
+        }
         LoanTransaction payment = null;
 
         if (payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).isGreaterThanZero()) {
@@ -1142,7 +1159,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 }
             }
             version = version + 1;
-            for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
+            List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments();
+            List<BigDecimal> penaltyCharges = installments.stream().map(LoanRepaymentScheduleInstallment::getPenaltyCharges).toList();
+            for (LoanRepaymentScheduleInstallment installment : installments) {
                 if (installment.isOverdueOn(transactionDate) && !installment.isObligationsMet()) {
                     if (installmentNumber == -1) {
                         installmentNumber = installment.getInstallmentNumber();
@@ -1170,6 +1189,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     }
 
                 }
+            }
+            // SU-707: Preserve penalty charges, hono should not affect them
+            for (int i = 0; i < penaltyCharges.size(); i++) {
+                installments.get(i).setPenaltyCharges(penaltyCharges.get(i));
             }
 
             // Add Accrual Transaction
