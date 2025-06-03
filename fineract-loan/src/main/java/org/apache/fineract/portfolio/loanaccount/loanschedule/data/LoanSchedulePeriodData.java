@@ -25,6 +25,7 @@ import java.util.Collection;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallmentStatusEnum;
 
 /**
  * Immutable data object that represents a period of a loan schedule.
@@ -104,6 +105,8 @@ public final class LoanSchedulePeriodData {
 
     private Collection<FeeDetails> feeDetails;
     private Long installmentId;
+
+    private String status = LoanRepaymentScheduleInstallmentStatusEnum.NOT_APPLICABLE.getCode();
 
     public static LoanSchedulePeriodData disbursementOnlyPeriod(final LocalDate disbursementDate, final BigDecimal principalDisbursed,
             final BigDecimal feeChargesDueAtTimeOfDisbursement, final boolean isDisbursed, Collection<FeeDetails> feeDetails) {

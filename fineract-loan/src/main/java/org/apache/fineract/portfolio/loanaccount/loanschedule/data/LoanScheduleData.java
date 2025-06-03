@@ -61,6 +61,7 @@ public class LoanScheduleData {
     BigDecimal totalAvalCharged = BigDecimal.ZERO;
     BigDecimal totalHonorariosCharged = BigDecimal.ZERO;
     BigDecimal totalLifeInsuranceCharged = BigDecimal.ZERO;
+    private String installmentStatusCode;
 
     /**
      * <code>periods</code> is collection of data objects containing specific information to each period of the loan
