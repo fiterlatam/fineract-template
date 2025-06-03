@@ -834,12 +834,13 @@ public final class LoanAccountData {
                 acc.linkedAccount, acc.disbursementDetails, acc.multiDisburseLoan, acc.canDefineInstallmentAmount, acc.fixedEmiAmount,
                 acc.maxOutstandingLoanBalance, acc.emiAmountVariations, acc.memberVariations, acc.product, acc.inArrears,
                 acc.graceOnArrearsAgeing, acc.overdueCharges, acc.isNPA, acc.daysInMonthType, acc.daysInYearType,
-                acc.isInterestRecalculationEnabled, acc.interestRecalculationData, null, acc.createStandingInstructionAtDisbursement,
-                acc.paidInAdvance, acc.interestRatesPeriods, acc.isVariableInstallmentsAllowed, acc.minimumGap, acc.maximumGap,
-                acc.subStatus, acc.canUseForTopup, acc.clientActiveLoanOptions, acc.isTopup, acc.closureLoanId, acc.closureLoanAccountNo,
-                acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled, acc.fixedPrincipalPercentagePerInstallment,
-                acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions, acc.groupOptions, acc.facilitatorOptions,
-                acc.disbursementMethodOptions, acc.requiredGuaranteeAmount, acc.actualGuaranteeAmount, groupLoanAdditionalData);
+                acc.isInterestRecalculationEnabled, acc.interestRecalculationData, acc.originalSchedule,
+                acc.createStandingInstructionAtDisbursement, acc.paidInAdvance, acc.interestRatesPeriods, acc.isVariableInstallmentsAllowed,
+                acc.minimumGap, acc.maximumGap, acc.subStatus, acc.canUseForTopup, acc.clientActiveLoanOptions, acc.isTopup,
+                acc.closureLoanId, acc.closureLoanAccountNo, acc.topupAmount, acc.isEqualAmortization, acc.rates, acc.isRatesEnabled,
+                acc.fixedPrincipalPercentagePerInstallment, acc.delinquent, acc.contractNo, acc.agencyOptions, acc.centerOptions,
+                acc.groupOptions, acc.facilitatorOptions, acc.disbursementMethodOptions, acc.requiredGuaranteeAmount,
+                acc.actualGuaranteeAmount, groupLoanAdditionalData);
     }
 
     public Integer getRowIndex() {

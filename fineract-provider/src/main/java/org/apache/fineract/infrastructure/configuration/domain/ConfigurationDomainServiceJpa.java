@@ -538,4 +538,11 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
         return property.isEnabled();
     }
+
+    @Override
+    public Boolean isRepaymentScheduleRecalculationEnabled() {
+        final String propertyName = "repayment-schedule-recalculation-enabled";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.isEnabled();
+    }
 }

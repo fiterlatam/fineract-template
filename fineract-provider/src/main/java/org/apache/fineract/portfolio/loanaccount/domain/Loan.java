@@ -2485,7 +2485,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
         updateLoanRepaymentPeriodsDerivedFields(actualDisbursementDate);
-        handleDisbursementTransaction(actualDisbursementDate, paymentDetail);
+        handleDisbursementTransactionFBR(actualDisbursementDate, paymentDetail);
         updateLoanSummaryDerivedFields();
         final Money interestApplied = Money.of(getCurrency(), this.summary.getTotalInterestCharged());
 
@@ -2850,7 +2850,97 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return interestRate;
     }
 
-    private void handleDisbursementTransaction(final LocalDate disbursedOn, final PaymentDetail paymentDetail) {
+    // private void handleDisbursementTransaction(final LocalDate disbursedOn, final PaymentDetail paymentDetail) {
+    //
+    // // add repayment transaction to track incoming money from client to mfi
+    // // for (charges due at time of disbursement)
+    //
+    // /***
+    // * TODO Vishwas: do we need to be able to pass in payment type details for repayments at disbursements too?
+    // ***/
+    //
+    // final Money totalFeeChargesDueAtDisbursement = this.summary.getTotalFeeChargesDueAtDisbursement(loanCurrency());
+    // /**
+    // * all Charges repaid at disbursal is marked as repaid and "APPLY Charge" transactions are created for all other
+    // * fees ( which are created during disbursal but not repaid)
+    // **/
+    //
+    // Money disbursentMoney = Money.zero(getCurrency());
+    // final LoanTransaction chargesPayment = LoanTransaction.repaymentAtDisbursement(getOffice(), disbursentMoney,
+    // paymentDetail,
+    // disbursedOn, null);
+    // final Integer installmentNumber = null;
+    // for (final LoanCharge charge : charges()) {
+    // LocalDate actualDisbursementDate = getActualDisbursementDate(charge);
+    // if ((charge.getCharge().getChargeTimeType().equals(ChargeTimeType.DISBURSEMENT.getValue())
+    // && disbursedOn.equals(actualDisbursementDate) && (actualDisbursementDate != null) && !charge.isWaived()
+    // && !charge.isFullyPaid())
+    // || (charge.getCharge().getChargeTimeType().equals(ChargeTimeType.TRANCHE_DISBURSEMENT.getValue())
+    // && disbursedOn.equals(actualDisbursementDate) && (actualDisbursementDate != null) && !charge.isWaived()
+    // && !charge.isFullyPaid())) {
+    // if (totalFeeChargesDueAtDisbursement.isGreaterThanZero() &&
+    // !charge.getChargePaymentMode().isPaymentModeAccountTransfer()) {
+    // charge.markAsFullyPaid();
+    // // Add "Loan Charge Paid By" details to this transaction
+    // final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(chargesPayment, charge, charge.amount(),
+    // installmentNumber);
+    // chargesPayment.getLoanChargesPaid().add(loanChargePaidBy);
+    // disbursentMoney = disbursentMoney.plus(charge.amount());
+    // }
+    // } else if (disbursedOn.equals(this.actualDisbursementDate)) {
+    // /**
+    // * create a Charge applied transaction if Up front Accrual, None or Cash based accounting is enabled
+    // **/
+    // if (isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
+    // handleChargeAppliedTransaction(charge, disbursedOn);
+    // }
+    // }
+    // }
+    //
+    // if (disbursentMoney.isGreaterThanZero()) {
+    // final Money zero = Money.zero(getCurrency());
+    // chargesPayment.updateComponentsAndTotal(zero, zero, disbursentMoney, zero);
+    // chargesPayment.updateLoan(this);
+    // addLoanTransaction(chargesPayment);
+    // updateLoanOutstandingBalaces();
+    // }
+    //
+    // if (getApprovedOnDate() != null && disbursedOn.isBefore(getApprovedOnDate())) {
+    // final String errorMessage = "The date on which a loan is disbursed cannot be before its approval date: "
+    // + getApprovedOnDate().toString();
+    // throw new InvalidLoanStateTransitionException("disbursal", "cannot.be.before.approval.date", errorMessage,
+    // disbursedOn,
+    // getApprovedOnDate());
+    // }
+    //
+    // if (getExpectedFirstRepaymentOnDate() != null
+    // && (disbursedOn.isAfter(this.fetchRepaymentScheduleInstallment(1).getDueDate())
+    // || disbursedOn.isAfter(getExpectedFirstRepaymentOnDate()))
+    // && disbursedOn.compareTo(this.actualDisbursementDate) == 0 ? Boolean.TRUE : Boolean.FALSE) {
+    // final String errorMessage = "submittedOnDate cannot be after the loans expectedFirstRepaymentOnDate: "
+    // + getExpectedFirstRepaymentOnDate().toString();
+    // throw new InvalidLoanStateTransitionException("disbursal", "cannot.be.after.expected.first.repayment.date",
+    // errorMessage,
+    // disbursedOn, getExpectedFirstRepaymentOnDate());
+    // }
+    //
+    // validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_DISBURSED, disbursedOn);
+    //
+    // if (disbursedOn.isAfter(DateUtils.getBusinessLocalDate())) {
+    // final String errorMessage = "The date on which a loan with identifier : " + this.accountNumber
+    // + " is disbursed cannot be in the future.";
+    // throw new InvalidLoanStateTransitionException("disbursal", "cannot.be.a.future.date", errorMessage, disbursedOn);
+    // }
+    //
+    // }
+
+    /**
+     * Handle disbursement Transaction For Friendship Bridge
+     *
+     * @param disbursedOn
+     * @param paymentDetail
+     */
+    private void handleDisbursementTransactionFBR(final LocalDate disbursedOn, final PaymentDetail paymentDetail) {
 
         // add repayment transaction to track incoming money from client to mfi
         // for (charges due at time of disbursement)
@@ -2866,23 +2956,25 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
          **/
 
         Money disbursentMoney = Money.zero(getCurrency());
-        final LoanTransaction chargesPayment = LoanTransaction.repaymentAtDisbursement(getOffice(), disbursentMoney, paymentDetail,
-                disbursedOn, null);
+        List<LoanTransaction> disbursementTransactions = this.loanTransactions.stream().filter(LoanTransaction::isDisbursement)
+                .collect(Collectors.toList());
+
         final Integer installmentNumber = null;
         for (final LoanCharge charge : charges()) {
             LocalDate actualDisbursementDate = getActualDisbursementDate(charge);
             if ((charge.getCharge().getChargeTimeType().equals(ChargeTimeType.DISBURSEMENT.getValue())
-                    && disbursedOn.equals(actualDisbursementDate) && (actualDisbursementDate != null) && !charge.isWaived()
-                    && !charge.isFullyPaid())
+                    && (disbursedOn.equals(actualDisbursementDate) || disbursedOn.isAfter(actualDisbursementDate))
+                    && (actualDisbursementDate != null) && !charge.isWaived() && !charge.isFullyPaid())
                     || (charge.getCharge().getChargeTimeType().equals(ChargeTimeType.TRANCHE_DISBURSEMENT.getValue())
-                            && disbursedOn.equals(actualDisbursementDate) && (actualDisbursementDate != null) && !charge.isWaived()
-                            && !charge.isFullyPaid())) {
+                            && (disbursedOn.equals(actualDisbursementDate) || disbursedOn.isAfter(actualDisbursementDate))
+                            && (actualDisbursementDate != null) && !charge.isWaived() && !charge.isFullyPaid())) {
                 if (totalFeeChargesDueAtDisbursement.isGreaterThanZero() && !charge.getChargePaymentMode().isPaymentModeAccountTransfer()) {
                     charge.markAsFullyPaid();
                     // Add "Loan Charge Paid By" details to this transaction
-                    final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(chargesPayment, charge, charge.amount(),
+                    LoanTransaction disbursementTransaction = disbursementTransactions.get(0);
+                    final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(disbursementTransaction, charge, charge.amount(),
                             installmentNumber);
-                    chargesPayment.getLoanChargesPaid().add(loanChargePaidBy);
+                    disbursementTransaction.getLoanChargesPaid().add(loanChargePaidBy);
                     disbursentMoney = disbursentMoney.plus(charge.amount());
                 }
             } else if (disbursedOn.equals(this.actualDisbursementDate)) {
@@ -2897,9 +2989,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         if (disbursentMoney.isGreaterThanZero()) {
             final Money zero = Money.zero(getCurrency());
-            chargesPayment.updateComponentsAndTotal(zero, zero, disbursentMoney, zero);
-            chargesPayment.updateLoan(this);
-            addLoanTransaction(chargesPayment);
             updateLoanOutstandingBalaces();
         }
 
@@ -4424,7 +4513,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public Boolean isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct() {
         return isCashBasedAccountingEnabledOnLoanProduct() || isUpfrontAccrualAccountingEnabledOnLoanProduct()
-                || isAccountingDisabledOnLoanProduct() || isPeriodicAccrualAccountingEnabledOnLoanProduct();
+                || isAccountingDisabledOnLoanProduct();
     }
 
     public Boolean isPeriodicAccrualAccountingEnabledOnLoanProduct() {
