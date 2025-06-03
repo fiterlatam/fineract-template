@@ -38,6 +38,7 @@ import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
+import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -90,7 +91,7 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
             final String sql = "select " + fullResultsetExtractor.schema()
                     + " where ls.loan_id = ? and ls.version = ? order by ls.loan_id, ls.installment,ls.duedate";
 
-            return this.jdbcTemplate.query(sql, fullResultsetExtractor, loanId, versionNumber); // NOSONAR
+            return this.jdbcTemplate.query(sql, fullResultsetExtractor, loanId, versionNumber); // NOSONAR;
         } catch (final EmptyResultDataAccessException e) {
             throw new LoanNotFoundException(loanId, e);
         }
@@ -129,8 +130,20 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
             stringBuilder.append(
                     "ls.principal_amount as principalDue, ls.interest_amount as interestDue, ls.fee_charges_amount as feeChargesDue, ls.penalty_charges_amount as penaltyChargesDue, ");
             stringBuilder.append(
-                    " ls.mandatory_insurance_amount mandatoryInsuranceDue, ls.voluntary_insurance_amount voluntaryInsuranceDue, ls.aval_amount avalDue, ls.honorarios_amount honorariosDue");
+                    " ls.mandatory_insurance_amount mandatoryInsuranceDue, ls.voluntary_insurance_amount voluntaryInsuranceDue, ls.aval_amount avalDue, ls.honorarios_amount honorariosDue, ");
+
+            stringBuilder.append(" obligations_met_on_date, ");
+            stringBuilder.append(
+                    "  COALESCE(ml.principal_amount, 0) - COALESCE(ml.principal_completed_derived, 0) - COALESCE(ml.principal_writtenoff_derived, 0) "
+                            + "    + COALESCE(ml.interest_amount, 0) - COALESCE(ml.interest_completed_derived, 0) - COALESCE(ml.interest_writtenoff_derived, 0) - COALESCE(ml.interest_waived_derived, 0) "
+                            + "    + COALESCE(ml.fee_charges_amount, 0) - COALESCE(ml.fee_charges_completed_derived, 0) - COALESCE(ml.fee_charges_writtenoff_derived, 0) - COALESCE(ml.fee_charges_waived_derived, 0) "
+                            + "    + COALESCE(ml.penalty_charges_amount, 0) - COALESCE(ml.penalty_charges_completed_derived, 0) - COALESCE(ml.penalty_charges_writtenoff_derived, 0) - COALESCE(ml.penalty_charges_waived_derived, 0) "
+                            + "    AS outstanding_balance_for_period");
+
             stringBuilder.append(" from m_loan_repayment_schedule_history ls ");
+            stringBuilder.append(" LEFT JOIN m_loan_repayment_schedule ml ON ml.loan_id = ls.loan_id ");
+            stringBuilder.append(" AND ml.fromdate = ls.fromdate AND ml.duedate = ls.duedate ");
+
             return stringBuilder.toString();
         }
 
@@ -235,6 +248,10 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
 
                 totalRepaymentExpected = totalRepaymentExpected.plus(totalDueForPeriod);
 
+                final LocalDate obligationsMetOnDate = JdbcSupport.getLocalDate(rs, "obligations_met_on_date");
+                final BigDecimal totalOutstandingForPeriod = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs,
+                        "outstanding_balance_for_period");
+
                 if (fromDate == null) {
                     fromDate = this.lastDueDate;
                 }
@@ -251,6 +268,9 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
                 periodData.setHonorariosDue(honorariosDue);
                 periodData.setMandatoryInsuranceDue(mandatoryInsuranceDue);
                 periodData.setVoluntaryInsuranceDue(voluntaryInsuranceDue);
+
+                LoanReadPlatformServiceImpl.defineInstallmentStatus(obligationsMetOnDate, periodData, totalOutstandingForPeriod, dueDate);
+
                 periods.add(periodData);
             }
 

@@ -1565,6 +1565,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 periodData.setInstallmentId(installmentId);
                 periodData.setLifeInsuranceDue(rs.getBigDecimal("lifeInsuranceChargePortion"));
 
+                // Define installment status as not applicable pending, paid, partially paid or late
+                defineInstallmentStatus(obligationsMetOnDate, periodData, totalOutstandingForPeriod, dueDate);
+
                 periods.add(periodData);
             }
 
@@ -1609,6 +1612,34 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     && isDueForDisbursement;
         }
 
+    }
+
+    public static void defineInstallmentStatus(LocalDate obligationsMetOnDate, LoanSchedulePeriodData periodData,
+            BigDecimal totalOutstandingForPeriod, LocalDate dueDate) {
+
+        // if paid
+        if (Objects.nonNull(obligationsMetOnDate)) {
+            periodData.setStatus(LoanRepaymentScheduleInstallmentStatusEnum.PAID.getCode());
+        }
+
+        // else if partially paid
+        else if (Objects.isNull(obligationsMetOnDate) && BigDecimal.ZERO.compareTo(totalOutstandingForPeriod) > 0) {
+            periodData.setStatus(LoanRepaymentScheduleInstallmentStatusEnum.PARTIALLY_PAID.getCode());
+        }
+
+        // else if late
+        else if (Objects.isNull(obligationsMetOnDate) && DateUtils.getLocalDateOfTenant().isAfter(dueDate)) {
+            periodData.setStatus(LoanRepaymentScheduleInstallmentStatusEnum.LATE.getCode());
+        }
+
+        // else if Pending
+        else if (Objects.isNull(obligationsMetOnDate)
+                && (DateUtils.getLocalDateOfTenant().isBefore(dueDate) || DateUtils.getLocalDateOfTenant().isEqual(dueDate))) {
+            periodData.setStatus(LoanRepaymentScheduleInstallmentStatusEnum.PENDING.getCode());
+
+        } else {
+            periodData.setStatus(LoanRepaymentScheduleInstallmentStatusEnum.NOT_APPLICABLE.getCode());
+        }
     }
 
     private static final class LoanTransactionsMapper implements RowMapper<LoanTransactionData> {
