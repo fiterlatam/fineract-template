@@ -106,8 +106,9 @@ public class LoanDocumentData {
     private Integer loansCount;
     private Integer itemsCount;
     private Long loanTransactionId;
-    private String collectionHouseNit;
-    private String collectionHouseName;
+    private Long clientCollectionHouseId;
+    private String clientCollectionHouseNit;
+    private String clientCollectionHouseName;
 
     public FacturaElectronicaMensual toEntity() {
         final FacturaElectronicaMensual facturaElectronicaMensual = new FacturaElectronicaMensual();

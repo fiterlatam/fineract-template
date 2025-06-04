@@ -1024,6 +1024,14 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 if (loan.getAccruedTill() != null) {
                     fromDate = loan.getAccruedTill();
                 }
+                final ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
+                        .retrieveClientAdditionalData(loan.getClientId());
+                final String nit = ObjectUtils.defaultIfNull(clientAdditionalInformation.getNit(), clientAdditionalInformation.getCedula());
+                final CollectionHouseConfiguration collectionHouse = this.collectionHouseReadWriteService
+                        .retrieveCollectionHouseByClientFromHistory(nit);
+                if (collectionHouse != null) {
+                    accrualTransaction.setCollectionHouse(collectionHouse);
+                }
                 newTransactions.add(accrualTransaction);
                 loan.addLoanTransaction(accrualTransaction);
                 Set<LoanChargePaidBy> accrualCharges = accrualTransaction.getLoanChargesPaid();
@@ -1212,6 +1220,14 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 final LoanChargePaidBy vatChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, vat, cumulativeVatFee,
                         installmentNumber);
                 applyLoanChargeTransaction.getLoanChargesPaid().add(vatChargePaidBy);
+            }
+            final ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
+                    .retrieveClientAdditionalData(loan.getClientId());
+            final String nit = ObjectUtils.defaultIfNull(clientAdditionalInformation.getNit(), clientAdditionalInformation.getCedula());
+            final CollectionHouseConfiguration collectionHouse = this.collectionHouseReadWriteService
+                    .retrieveCollectionHouseByClientFromHistory(nit);
+            if (collectionHouse != null) {
+                applyLoanChargeTransaction.setCollectionHouse(collectionHouse);
             }
             loan.addLoanTransaction(applyLoanChargeTransaction);
         }

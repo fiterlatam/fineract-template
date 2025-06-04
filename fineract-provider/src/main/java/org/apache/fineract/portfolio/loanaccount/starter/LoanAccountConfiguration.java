@@ -74,6 +74,7 @@ import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
 import org.apache.fineract.portfolio.collateralmanagement.service.LoanCollateralAssembler;
+import org.apache.fineract.portfolio.collectionhousemanagement.service.CollectionHouseReadWriteServiceImpl;
 import org.apache.fineract.portfolio.common.service.DropdownReadPlatformService;
 import org.apache.fineract.portfolio.delinquency.service.DelinquencyReadPlatformService;
 import org.apache.fineract.portfolio.floatingrates.service.FloatingRatesReadPlatformService;
@@ -468,7 +469,7 @@ public class LoanAccountConfiguration {
             FacturaElectronicMensualRepository facturaElectronicMensualRepository,
             LoanProductParameterizationRepository productParameterizationRepository,
             CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository, LoanCreditNoteRepository loanCreditNoteRepository,
-            LoanAccrualPlatformService loanAccrualPlatformService) {
+            LoanAccrualPlatformService loanAccrualPlatformService, CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
@@ -487,7 +488,7 @@ public class LoanAccountConfiguration {
                 channelReadWritePlatformService, platformSecurityContext, globalConfigurationRepository, loanBlockWritePlatformService,
                 loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository, loanScheduleFactory,
                 blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository, productParameterizationRepository,
-                customChargeHonorarioMapRepository, loanCreditNoteRepository, loanAccrualPlatformService);
+                customChargeHonorarioMapRepository, loanCreditNoteRepository, loanAccrualPlatformService, collectionHouseReadWriteService);
     }
 
     @Bean
