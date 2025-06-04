@@ -63,7 +63,7 @@ public class FacturaElectronicaMensualPoster {
                     secondLastDayOfMonth);
             final String invoiceTransactionIds = loanInvoiceDataList.stream().map(LoanDocumentData::getTransactionIds)
                     .collect(Collectors.joining(","));
-            final List<LoanDocumentData> groupedLoanInvoices = groupByClientIdAndProductType(loanInvoiceDataList);
+            final List<LoanDocumentData> groupedLoanInvoices = groupByClientIdAndProductTypeAndCollectionHouseId(loanInvoiceDataList);
             for (final LoanDocumentData groupedLoanInvoice : groupedLoanInvoices) {
                 this.loanWritePlatformService.processInvoiceFor(groupedLoanInvoice);
             }
@@ -92,14 +92,15 @@ public class FacturaElectronicaMensualPoster {
         }
     }
 
-    private List<LoanDocumentData> groupByClientIdAndProductType(final List<LoanDocumentData> loanDocumentDataList) {
+    private List<LoanDocumentData> groupByClientIdAndProductTypeAndCollectionHouseId(final List<LoanDocumentData> loanDocumentDataList) {
         final LocalDate businessLocalDate = DateUtils.getBusinessLocalDate();
         final YearMonth yearMonth = YearMonth.from(businessLocalDate);
         final LocalDate lastDayOfMonth = yearMonth.atEndOfMonth();
         final LocalDate firstDayOfMonth = businessLocalDate.withDayOfMonth(1);
         final LocalDate secondLastDayOfMonth = lastDayOfMonth.minusDays(1);
         return loanDocumentDataList.stream()
-                .collect(Collectors.groupingBy(li1 -> Arrays.asList(li1.getClientId(), li1.getProductTypeName()),
+                .collect(Collectors.groupingBy(
+                        li1 -> Arrays.asList(li1.getClientId(), li1.getProductTypeName(), li1.getClientCollectionHouseId()),
                         Collectors.collectingAndThen(Collectors.toList(), list -> {
                             final BigDecimal interestPaid = list.stream().map(LoanDocumentData::getInterestPaid).reduce(BigDecimal.ZERO,
                                     BigDecimal::add);
@@ -178,8 +179,9 @@ public class FacturaElectronicaMensualPoster {
                                     .clientFirstName(loanDocumentData.getClientFirstName())
                                     .clientMiddleName(loanDocumentData.getClientMiddleName())
                                     .clientTelephone(loanDocumentData.getClientTelephone())
-                                    .collectionHouseName(loanDocumentData.getCollectionHouseName())
-                                    .collectionHouseNit(loanDocumentData.getCollectionHouseNit())
+                                    .clientCollectionHouseId(loanDocumentData.getClientCollectionHouseId())
+                                    .clientCollectionHouseNit(loanDocumentData.getClientCollectionHouseNit())
+                                    .clientCollectionHouseName(loanDocumentData.getClientCollectionHouseName())
                                     .voluntaryInsuranceCode(voluntaryInsuranceCode).voluntaryInsuranceName(voluntaryInsuranceName)
                                     .mandatoryInsuranceCode(mandatoryInsuranceCode).mandatoryInsuranceName(mandatoryInsuranceName)
                                     .voluntaryInsuranceNIT(voluntaryInsuranceNIT).mandatoryInsuranceNIT(mandatoryInsuranceNIT)

@@ -175,6 +175,8 @@ import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.collateralmanagement.domain.ClientCollateralManagement;
 import org.apache.fineract.portfolio.collateralmanagement.exception.LoanCollateralAmountNotSufficientException;
+import org.apache.fineract.portfolio.collectionhousemanagement.domain.CollectionHouseConfiguration;
+import org.apache.fineract.portfolio.collectionhousemanagement.service.CollectionHouseReadWriteServiceImpl;
 import org.apache.fineract.portfolio.collectionsheet.command.CollectionSheetBulkDisbursalCommand;
 import org.apache.fineract.portfolio.collectionsheet.command.CollectionSheetBulkRepaymentCommand;
 import org.apache.fineract.portfolio.collectionsheet.command.SingleDisbursalCommand;
@@ -312,6 +314,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
     private final LoanCreditNoteRepository loanCreditNoteRepository;
     private final LoanAccrualPlatformService loanAccrualPlatformService;
+    private final CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService;
 
     @PostConstruct
     public void registerForNotification() {
@@ -1233,6 +1236,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     final LoanChargePaidBy vatChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, vat, cumulativeVatFee,
                             installmentNumber);
                     applyLoanChargeTransaction.getLoanChargesPaid().add(vatChargePaidBy);
+                }
+                final ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
+                        .retrieveClientAdditionalData(loan.getClientId());
+                final String nit = ObjectUtils.defaultIfNull(clientAdditionalInformation.getNit(), clientAdditionalInformation.getCedula());
+                final CollectionHouseConfiguration collectionHouse = this.collectionHouseReadWriteService
+                        .retrieveCollectionHouseByClientFromHistory(nit);
+                if (collectionHouse != null) {
+                    applyLoanChargeTransaction.setCollectionHouse(collectionHouse);
                 }
                 loan.addLoanTransaction(applyLoanChargeTransaction);
             }
@@ -5044,8 +5055,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 facturaElectronicaMensualDuplicate.setPrecio_unitario(honorariosPaid);
                 facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
                 facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
-                facturaElectronicaMensualDuplicate.setId_mandante(loanDocumentData.getCollectionHouseNit());
-                facturaElectronicaMensualDuplicate.setDescripcion_mandante(loanDocumentData.getCollectionHouseName());
+                facturaElectronicaMensualDuplicate.setId_mandante(loanDocumentData.getClientCollectionHouseNit());
+                facturaElectronicaMensualDuplicate.setDescripcion_mandante(loanDocumentData.getClientCollectionHouseName());
                 final ClasificacionConceptosData clasificacionConceptosData = this
                         .getClasificacionConceptosData(loanDocumentConcept.name());
                 this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, honorariosVatPaid);
