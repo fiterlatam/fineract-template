@@ -94,9 +94,9 @@ public final class DisbursementData implements Comparable<DisbursementData> {
     }
 
     public boolean isDueForDisbursement(LoanScheduleType loanScheduleType, final LocalDate fromDate, final LocalDate toDate) {
-        // EA-359: add buffer to ensure second disbursement appears after 1st installment
-        final int buffer = 5;
-        final LocalDate dueDate = disbursementDate().plusDays(buffer);
+        // EA-359: consider the cut-off date which is 15 days to repayment (17 to cater for weekends)
+        final int daysToCutOff = 17;
+        final LocalDate dueDate = disbursementDate().plusDays(daysToCutOff);
         return switch (loanScheduleType) {
             case CUMULATIVE -> occursOnDayFromAndUpToAndIncluding(fromDate, toDate, dueDate);
             case PROGRESSIVE -> occursOnDayFromAndIncludingAndUpTo(fromDate, toDate, dueDate);
