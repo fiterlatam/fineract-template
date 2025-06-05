@@ -6321,6 +6321,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @SuppressWarnings({ "squid:S3776" })
     public void regenerateRepaymentScheduleWithInterestRecalculation(final ScheduleGeneratorDTO generatorDTO) {
         LocalDate lastTransactionDate = getLastUserTransactionDate();
+        if (this.summary != null && this.summary.getTotalPrincipalRepaid() != null) {
+            generatorDTO.setTotalRepaid(this.summary.getTotalPrincipalRepaid());
+        }
         final LoanScheduleDTO loanSchedule = getRecalculatedSchedule(generatorDTO);
         if (loanSchedule == null) {
             return;
@@ -6678,7 +6681,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         loanApplicationTerms.setLoanProductName(this.getLoanProduct().getName());
-
+        if (scheduleGeneratorDTO.getTotalRepaid() != null) {
+            loanApplicationTerms.setTotalRepaid(scheduleGeneratorDTO.getTotalRepaid());
+        }
         return loanApplicationTerms;
     }
 
