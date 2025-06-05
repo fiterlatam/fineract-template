@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.portfolio.calendar.data.CalendarHistoryDataWrapper;
@@ -46,6 +47,7 @@ public class ScheduleGeneratorDTO {
     final boolean isFirstRepaymentDateAllowedOnHoliday;
     final boolean isInterestToBeRecoveredFirstWhenGreaterThanEMI;
     final boolean isPrincipalCompoundingDisabledForOverdueLoans;
+    private BigDecimal totalRepaid;
 
     public ScheduleGeneratorDTO(final LoanScheduleGeneratorFactory loanScheduleFactory, final ApplicationCurrency applicationCurrency,
             final LocalDate calculatedRepaymentsStartingFromDate, final HolidayDetailDTO holidayDetailDTO,
@@ -159,5 +161,13 @@ public class ScheduleGeneratorDTO {
 
     public boolean isPrincipalCompoundingDisabledForOverdueLoans() {
         return isPrincipalCompoundingDisabledForOverdueLoans;
+    }
+
+    public BigDecimal getTotalRepaid() {
+        return totalRepaid;
+    }
+
+    public void setTotalRepaid(BigDecimal totalRepaid) {
+        this.totalRepaid = totalRepaid;
     }
 }

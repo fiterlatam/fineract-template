@@ -3105,9 +3105,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             sqlBuilder.append("JOIN m_product_loan mpl on mpl.id = l.product_id ");
             sqlBuilder.append("JOIN m_code_value mcv on mcv.id = mpl.product_type ");
             sqlBuilder.append("JOIN m_currency rc on rc." + sqlGenerator.escape("code") + " = l.currency_code ");
-            sqlBuilder.append("JOIN m_loan_repayment_schedule ls ON ls.loan_id = l.id AND ls.completed_derived = false ");
+            sqlBuilder.append("LEFT JOIN m_loan_repayment_schedule ls ON ls.loan_id = l.id AND ls.completed_derived = false ");
             sqlBuilder.append(
-                    "JOIN((SELECT ls.loan_id, ls.duedate as datedue FROM m_loan_repayment_schedule ls WHERE ls.loan_id = ? and ls.completed_derived = false ORDER BY ls.duedate LIMIT 1)) asq on asq.loan_id = ls.loan_id ");
+                    "LEFT JOIN((SELECT ls.loan_id, ls.duedate as datedue FROM m_loan_repayment_schedule ls WHERE ls.loan_id = ? and ls.completed_derived = false ORDER BY ls.duedate LIMIT 1)) asq on asq.loan_id = ls.loan_id ");
             sqlBuilder.append("AND asq.datedue = ls.duedate ");
             sqlBuilder.append("WHERE l.id = ? LIMIT 1");
             return sqlBuilder.toString();

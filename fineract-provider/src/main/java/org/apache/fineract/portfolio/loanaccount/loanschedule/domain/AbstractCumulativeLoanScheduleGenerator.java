@@ -1454,6 +1454,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 // validation check for amount not exceeds specified max
                 // amount as per the configuration
                 Money maxOutstandingBalance = loanApplicationTerms.getMaxOutstandingBalance();
+                if (loanApplicationTerms.getTotalRepaid() != null) {
+                    // For multiple disbursements, consider repaid amounts
+                    maxOutstandingBalance = maxOutstandingBalance.plus(loanApplicationTerms.getTotalRepaid());
+                }
                 if (scheduleParams.getOutstandingBalance().plus(disburseDetail.getValue()).isGreaterThan(maxOutstandingBalance)) {
                     String errorMsg = "Outstanding balance must not exceed the amount: " + maxOutstandingBalance;
                     throw new MultiDisbursementOutstandingAmoutException(errorMsg, maxOutstandingBalance.getAmount(),

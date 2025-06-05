@@ -252,6 +252,10 @@ public final class LoanApplicationTerms {
 
     List<LoanTermVariationsData> loanTermVariationsDataList;
 
+    @Getter
+    @Setter
+    private BigDecimal totalRepaid;
+
     public static LoanApplicationTerms assembleFrom(final ApplicationCurrency currency, final Integer loanTermFrequency,
             final PeriodFrequencyType loanTermPeriodFrequencyType, final Integer numberOfRepayments, final Integer repaymentEvery,
             final PeriodFrequencyType repaymentPeriodFrequencyType, Integer nthDay, DayOfWeekType weekDayType,
