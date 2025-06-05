@@ -427,17 +427,8 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             final List<LoanRescheduleRequestToTermVariationMapping> loanRescheduleRequestToTermVariationMappings, final Boolean isActive,
             final boolean isSpecificToInstallment, final BigDecimal decimalValue, LoanTermVariations parent) {
 
-        // For interest rate changes, find the next installment that starts after the reschedule date
+        // Use the reschedule date directly for interest rate changes
         LocalDate effectiveDate = rescheduleFromDate;
-        if (termType.equals(LoanTermVariationType.INTEREST_RATE_FROM_INSTALLMENT.getValue())) {
-            for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
-                // Apply new interest rate to any unpaid installment that starts after the reschedule date
-                if (!installment.isObligationsMet() && DateUtils.isAfter(installment.getFromDate(), rescheduleFromDate)) {
-                    effectiveDate = installment.getFromDate();
-                    break;
-                }
-            }
-        }
 
         final LoanTermVariations loanTermVariation = new LoanTermVariations(termType, effectiveDate, decimalValue, adjustedDueDate,
                 isSpecificToInstallment, loan, loan.getStatus().getValue(), isActive, parent);
