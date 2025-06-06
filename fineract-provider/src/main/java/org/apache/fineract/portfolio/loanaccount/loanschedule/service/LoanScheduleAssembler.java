@@ -253,7 +253,7 @@ public class LoanScheduleAssembler {
             }
             // total amount of topup loan must include the outstanding on the topup loan
             BigDecimal loanOutstanding = this.loanReadPlatformService
-                    .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanId, expectedDisbursementDate).getAmount();
+                    .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanId, expectedDisbursementDate).getOutstandingLoanBalance();
 
             topupAmount = topupAmount.add(loanOutstanding);
         }

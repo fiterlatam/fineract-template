@@ -1201,10 +1201,18 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
         public String schema() {
             return """
-                     ls.loan_id as loanId, coalesce(lp.installment_number,0) as lastUnpaidInstallment, ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, ls.obligations_met_on_date as obligationsMetOnDate, ls.completed_derived as complete,\
-                     ls.principal_amount as principalDue, ls.principal_completed_derived as principalPaid, ls.principal_writtenoff_derived as principalWrittenOff, \
-                     ls.interest_amount as interestDue, ls.interest_completed_derived as interestPaid, ls.interest_waived_derived as interestWaived, ls.interest_writtenoff_derived as interestWrittenOff, \
-                     ls.fee_charges_amount as feeChargesDue, ls.fee_charges_completed_derived as feeChargesPaid, ls.fee_charges_waived_derived as feeChargesWaived, ls.fee_charges_writtenoff_derived as feeChargesWrittenOff, \
+                     ls.loan_id as loanId, 
+                     ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, 
+                     ls.obligations_met_on_date as obligationsMetOnDate, ls.completed_derived as complete,\
+                     ls.principal_amount as principalDue, ls.principal_completed_derived as principalPaid, 
+                     ls.principal_writtenoff_derived as principalWrittenOff, \
+                     (select min(rs.installment) as installment_number 
+                        from m_loan_repayment_schedule rs where rs.completed_derived = false and ml.id=rs.loan_id
+                     ) as lastUnpaidInstallment, \
+                     ls.interest_amount as interestDue, ls.interest_completed_derived as interestPaid, 
+                     ls.interest_waived_derived as interestWaived, ls.interest_writtenoff_derived as interestWrittenOff, \
+                     ls.fee_charges_amount as feeChargesDue, ls.fee_charges_completed_derived as feeChargesPaid, 
+                     ls.fee_charges_waived_derived as feeChargesWaived, ls.fee_charges_writtenoff_derived as feeChargesWrittenOff, \
                      ls.penalty_charges_amount as penaltyChargesDue, ls.penalty_charges_completed_derived as penaltyChargesPaid, ls.penalty_charges_waived_derived as penaltyChargesWaived, ls.penalty_charges_writtenoff_derived as penaltyChargesWrittenOff, \
                      ls.total_paid_in_advance_derived as totalPaidInAdvanceForPeriod, ls.total_paid_late_derived as totalPaidLateForPeriod, \
                      mc.amount,mc.id as chargeId \
