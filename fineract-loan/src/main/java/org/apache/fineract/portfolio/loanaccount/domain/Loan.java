@@ -913,12 +913,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         LocalDate transactionDate = null;
+        final LocalDate currentDate = DateUtils.getBusinessLocalDate();
 
         if (suppliedTransactionDate != null) {
             transactionDate = suppliedTransactionDate;
         } else {
             transactionDate = loanCharge.getDueLocalDate();
-            final LocalDate currentDate = DateUtils.getBusinessLocalDate();
 
             // if loan charge is to be applied on a future date, the loan transaction would show today's date as applied
             // date
@@ -937,6 +937,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, loanCharge,
                 loanCharge.getAmount(getCurrency()).getAmount(), installmentNumber);
         applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
+        // if the transaction date is in the past and this is a penalty,
+        // let's retrospectively set the created-on date
+        if (loanCharge.isPenaltyCharge() && transactionDate.isBefore(currentDate)) {
+            applyLoanChargeTransaction.setCustomCreatedDate(DateUtils.toAuditOffsetDateTime(transactionDate));
+            applyLoanChargeTransaction.setCustomLastModifiedDate(DateUtils.toAuditOffsetDateTime(transactionDate));
+        }
         addLoanTransaction(applyLoanChargeTransaction);
         return applyLoanChargeTransaction;
     }
@@ -6815,13 +6821,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private boolean isOverdueInstallment(LoanRepaymentScheduleInstallment repaymentScheduleInstallment) {
-        final LocalDate fromDate = repaymentScheduleInstallment.getFromDate();
         boolean isOverdueInstallment = false;
-        Collection<LoanCharge> charges = this.getLoanCharges();
-        for (LoanCharge loanCharge : charges) {
-            if (loanCharge.isOverdueInstallmentCharge() && DateUtils.isAfter(loanCharge.getDueLocalDate(), fromDate)
-                    && loanCharge.isActive()) {
+        final Collection<LoanCharge> chargesList = this.getLoanCharges();
+        for (LoanCharge loanCharge : chargesList) {
+            final LoanOverdueInstallmentCharge loanOverdueInstallmentCharge = loanCharge.getOverdueInstallmentCharge();
+            if (loanOverdueInstallmentCharge != null && loanOverdueInstallmentCharge.getInstallment() != null
+                    && Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(),
+                            loanOverdueInstallmentCharge.getInstallment().getInstallmentNumber())
+                    && loanCharge.isOverdueInstallmentCharge() && loanCharge.isActive() && !loanCharge.isPaid()) {
                 isOverdueInstallment = true;
+                break;
             }
         }
         return isOverdueInstallment;
@@ -7664,7 +7673,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     interest = interest.plus(installment.getInterestOutstanding(currency));
                     penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
                     fee = fee.plus(installment.getFeeChargesOutstanding(currency));
-                } else if (DateUtils.isAfter(paymentDate, installment.getFromDate())) {
+                } else if (DateUtils.isAfter(paymentDate, installment.getFromDate())
+                        || DateUtils.isEqual(paymentDate, installment.getFromDate())) {
                     final Money[] balancesForCurrentPeriod = fetchInterestFeeAndPenaltyTillDate(paymentDate, installment,
                             principalLoanBalanceOutstanding, scheduleGeneratorDTO);
                     if (balancesForCurrentPeriod[0].isGreaterThan(balancesForCurrentPeriod[5])) {
@@ -8125,6 +8135,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public Integer getLoanSubStatus() {
         return this.loanSubStatus;
+    }
+
+    public void setLoanSubStatus(Integer loanSubStatus) {
+        this.loanSubStatus = loanSubStatus;
     }
 
     private boolean isForeclosure() {

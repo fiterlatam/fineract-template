@@ -36,9 +36,6 @@ import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingR
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.portfolio.client.service.ClientWritePlatformService;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanArrearsAgingService;
 import org.springframework.dao.DataAccessException;
@@ -55,17 +52,14 @@ import org.springframework.stereotype.Component;
 public class LoanArrearsAgeingUpdateHandler {
 
     public static final String BLOCKING_REASON_NAME = BlockingReasonSettingEnum.CLIENT_MORA.getDatabaseString();
-    private static final String BLOCKING_COMMENT = "Cliente bloqueado por defecto";
-    private static final String UNBLOCKING_COMMENT = "Cliente desbloqueado por defecto";//
+    public static final String BLOCKING_COMMENT = "Cliente bloqueado por defecto";
+    public static final String UNBLOCKING_COMMENT = "Cliente desbloqueado por defecto";//
     private static final String BLOCKING_REASON_LISTAS_DE_CONTROL = "LISTAS DE CONTROL";
     private final JdbcTemplate jdbcTemplate;
     private final PlatformSecurityContext context;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final LoanArrearsAgingService loanArrearsAgingService;
-    private final ClientWritePlatformService clientWritePlatformService;
     private final BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper;
-    private final LoanRepositoryWrapper loanRepositoryWrapper;
-    private final LoanBlockingReasonRepository loanBlockingReasonRepository;
 
     public void truncateLoanArrearsAgingDetails() {
         jdbcTemplate.execute("truncate table m_loan_arrears_aging");

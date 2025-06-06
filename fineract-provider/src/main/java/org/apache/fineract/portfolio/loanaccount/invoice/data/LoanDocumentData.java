@@ -101,11 +101,14 @@ public class LoanDocumentData {
     private String mandatoryInsuranceCode;
     private String voluntaryInsuranceName;
     private String mandatoryInsuranceName;
+    private String voluntaryInsuranceNIT;
+    private String mandatoryInsuranceNIT;
     private Integer loansCount;
     private Integer itemsCount;
     private Long loanTransactionId;
-    private String collectionHouseNit;
-    private String collectionHouseName;
+    private Long clientCollectionHouseId;
+    private String clientCollectionHouseNit;
+    private String clientCollectionHouseName;
 
     public FacturaElectronicaMensual toEntity() {
         final FacturaElectronicaMensual facturaElectronicaMensual = new FacturaElectronicaMensual();

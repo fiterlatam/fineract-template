@@ -425,6 +425,23 @@ public final class DateUtils {
         return !targetDate.isBefore(startDate) && !targetDate.isAfter(endDate);
     }
 
+    /**
+     * Converts a LocalDate to an OffsetDateTime at the start of the day (00:00:00) in UTC time zone.
+     *
+     * @param localDate
+     *            the LocalDate to convert
+     * @return an OffsetDateTime representation of the provided date at midnight UTC, or null if input is null
+     */
+    public static OffsetDateTime toAuditOffsetDateTime(LocalDate localDate) {
+        if (localDate == null) {
+            return null;
+        }
+        // Convert LocalDate to LocalDateTime at start of day (midnight)
+        LocalDateTime localDateTime = localDate.atStartOfDay();
+        // Convert to OffsetDateTime in UTC
+        return localDateTime.atOffset(ZoneOffset.UTC);
+    }
+
     @NotNull
     private static DateTimeFormatter getDateFormatter(String format, Locale locale) {
         DateTimeFormatter formatter = DEFAULT_DATE_FORMATTER;

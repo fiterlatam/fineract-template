@@ -129,7 +129,7 @@ public class PrincipalInterestCalculator {
         }
 
         final boolean ignoreCurrencyDigitsAfterDecimal = false;
-        final boolean truncateInterestAmount = false;
+        final boolean truncateInterestAmount = true;
         final PrincipalInterest result = loanApplicationTerms.calculateTotalInterestForPeriod(calculator,
                 interestCalculationGraceOnRepaymentPeriodFraction, periodNumber, mc, cumulatingInterestDueToGrace,
                 balanceForInterestCalculation, interestStartDate, periodEndDate, ignoreCurrencyDigitsAfterDecimal, truncateInterestAmount);

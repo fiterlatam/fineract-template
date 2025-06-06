@@ -300,12 +300,19 @@ public class FacturaElectronicaMensual extends AbstractPersistableCustom impleme
     @Column(name = "is_fully_offset_by_cn")
     private boolean isFullyOffsetByCN;
 
+    @Column(name = "accrual_transaction_ids")
+    private String accrualTransactionIds;
+
     public BigDecimal getImpuesto_item() {
         return this.impuesto_item == null ? BigDecimal.ZERO : this.impuesto_item;
     }
 
     public BigDecimal getTotal() {
         return this.total == null ? BigDecimal.ZERO : this.total;
+    }
+
+    public BigDecimal getBase() {
+        return this.base == null ? BigDecimal.ZERO : this.base;
     }
 
     @Override
