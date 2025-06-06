@@ -18,7 +18,9 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
+import static org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler.BLOCKING_COMMENT;
 import static org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler.BLOCKING_REASON_NAME;
+import static org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler.UNBLOCKING_COMMENT;
 
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
@@ -125,7 +127,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
         OriginalScheduleExtractor originalScheduleExtractor = new OriginalScheduleExtractor(loan.getId().toString(), sqlGenerator);
         Map<Long, List<LoanSchedulePeriodData>> scheduleDate = this.jdbcTemplate.query(originalScheduleExtractor.schema,
                 originalScheduleExtractor);
-        if (scheduleDate.size() > 0) {
+        if (scheduleDate != null && !scheduleDate.isEmpty()) {
             List<Map<String, Object>> transactions = getLoanSummary(loan.getId(), loan.getLoanSummary());
             updateScheduleWithPaidDetail(scheduleDate, transactions);
             createInsertStatements(updateStatement, scheduleDate, count == 0);
@@ -160,6 +162,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                 this.jdbcTemplate.update(deletestatement, loan.getId()); // NOSONAR
                 handleMoraRemoval(loan.getClientId());
                 handleUnBlockingCredit(loan);
+                handleUnblockingReasonCreditAfterArrearsAging(loan.getId());
             } else {
                 this.jdbcTemplate.update(updateStatement);
                 handleMoraAddition(loan);
@@ -583,7 +586,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     private void handleMoraRemoval(final Long clientId) {
         if (clientHasNoAdditionalLoanInArrears(clientId)) {
             clientWritePlatformService.unblockClientBlockingReason(clientId, DateUtils.getLocalDateOfTenant(), BLOCKING_REASON_NAME,
-                    "Cliente desbloqueado por defecto");
+                    UNBLOCKING_COMMENT);
 
         }
     }
@@ -595,8 +598,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
     }
 
     private void handleMoraAddition(Loan loan) {
-        clientWritePlatformService.blockClientWithInActiveLoan(loan.getClientId(), BLOCKING_REASON_NAME, "Cliente bloqueado por defecto",
-                false);
+        clientWritePlatformService.blockClientWithInActiveLoan(loan.getClientId(), BLOCKING_REASON_NAME, BLOCKING_COMMENT, false);
     }
 
     private void handleBlockingCredit(Loan loan) {
@@ -610,8 +612,8 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                     || loan.getLoanCustomizationDetail().getBlockStatus().getPriority() > blockingReasonSetting.getPriority()) {
                 loan.getLoanCustomizationDetail().setBlockStatus(blockingReasonSetting);
             }
-            final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting,
-                    "Cliente bloqueado por defecto", DateUtils.getLocalDateOfTenant());
+            final LoanBlockingReason loanBlockingReason = LoanBlockingReason.instance(loan, blockingReasonSetting, BLOCKING_COMMENT,
+                    DateUtils.getLocalDateOfTenant());
             loanBlockingReasonRepository.saveAndFlush(loanBlockingReason);
         }
 
@@ -632,7 +634,7 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                     .orElseThrow(() -> new LoanBlockingReasonNotFoundException(loan.getId(), blockingReasonSetting.getId()));
             blockingReason.setActive(false);
             blockingReason.setDeactivatedBy(currentUser);
-            blockingReason.setUnblockComment("Cliente desbloqueado por defecto");
+            blockingReason.setUnblockComment(UNBLOCKING_COMMENT);
             blockingReason.setDeactivatedOn(DateUtils.getLocalDateOfTenant());
 
             final BlockingReasonSetting existingBlockingReasonSetting = loan.getLoanCustomizationDetail().getBlockStatus();
@@ -753,6 +755,27 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
                 }
             }
         }
+    }
+
+    private void handleUnblockingReasonCreditAfterArrearsAging(Long loanId) {
+
+        // Delete all the records from m_credit_blocking_reason table where loan_id is not in m_loan_arrears_aging
+        String query = """
+                    delete from m_credit_blocking_reason where loan_id in
+                     (
+                     	select ml.id from m_loan ml where ml.block_status_id = (select id from m_blocking_reason_setting where name_of_reason = ? and level = ?)
+                     	and ml.id = ? and ml.id not in (select loan_id from m_loan_arrears_aging)
+                     )
+                """;
+
+        jdbcTemplate.update(query, BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString(), loanId);
+
+        // Update m_loan table block_status_id to null where id is not in m_loan_arrears_aging
+        query = """
+                update m_loan set block_status_id = null where block_status_id = (select id from m_blocking_reason_setting where name_of_reason = ? and level = ?)
+                      and id = ? and id not in (select loan_id from m_loan_arrears_aging)
+                """;
+        jdbcTemplate.update(query, BLOCKING_REASON_NAME, BlockLevel.CREDIT.toString(), loanId);
     }
 
 }

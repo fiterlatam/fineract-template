@@ -1180,7 +1180,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             // allocation rule is NEXT_INSTALLMENT or LAST_INSTALLMENT hence the list has only one element.
             // As per SU+ requirements, advance payment goes to outstanding balance so first immediate advance
             // installment
-            // will always be seleted
+            // will always be selected
             List<LoanRepaymentScheduleInstallment> inAdvanceInstallments = new ArrayList<>();
             if (FutureInstallmentAllocationRule.REAMORTIZATION.equals(futureInstallmentAllocationRule)) {
                 inAdvanceInstallments = installments.stream().filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
