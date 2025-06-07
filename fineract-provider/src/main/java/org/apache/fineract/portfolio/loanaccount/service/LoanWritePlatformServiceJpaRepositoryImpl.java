@@ -5371,6 +5371,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             return 0; // Don't create new installments
         }
 
+        // If all installments are paid (notPaidInstallmentNr == 0) and there was a new disbursement,
+        // we need to create new installments based on product specifications
+        if (notPaidInstallmentNr == 0 && loan.getLoanSummary().getTotalOutstanding().compareTo(BigDecimal.ZERO) > 0) {
+            return productNrOfRepayments;
+        }
+
         return Math.max(0, productNrOfRepayments - notPaidInstallmentNr.intValue());
     }
 
@@ -5383,7 +5389,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
             if (installment.getDueDate().isAfter(disbursementDate)) {
                 long diff = ChronoUnit.DAYS.between(disbursementDate, installment.getDueDate());
-                if (diff < 15) {
+                if (diff < 17) {
                     // Add the variation to next installment
                     installmentNumberToAddDisbursement = installment.getInstallmentNumber() + 1;
                     variationDate = installment.getDueDate().plusDays(2);
