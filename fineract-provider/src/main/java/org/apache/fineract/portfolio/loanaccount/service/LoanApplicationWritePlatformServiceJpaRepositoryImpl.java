@@ -678,10 +678,25 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.creditorotativo.first.repayment.date.mandatory",
                         "First Repayment date shall be provided when product is Credito Rotativo");
             } else {
-                if ((!newLoanApplication.isMigratedLoan()) && expectedfirstRepaymentDate.getDayOfMonth() != 1
-                        && expectedfirstRepaymentDate.getDayOfMonth() != 10 && expectedfirstRepaymentDate.getDayOfMonth() != 20) {
-                    throw new GeneralPlatformDomainRuleException("error.msg.loan.creditorotativo.first.repayment.date.must.be.day.1.10.20",
-                            "Disbursement date must be 1, 10 or 20");
+                if (expectedfirstRepaymentDate.getDayOfMonth() != 1 && expectedfirstRepaymentDate.getDayOfMonth() != 10
+                        && expectedfirstRepaymentDate.getDayOfMonth() != 20) {
+                    if (newLoanApplication.isMigratedLoan()) {
+                        // EA-367: Adjust first repayment date for migrated loans.
+                        // This is because the date from the migration data could have
+                        // been adjusted to a business day if 1, 10 or 20 fell on a non-business day
+                        if (expectedfirstRepaymentDate.getDayOfMonth() < 10) {
+                            expectedfirstRepaymentDate = expectedfirstRepaymentDate.withDayOfMonth(1);
+                        } else if (expectedfirstRepaymentDate.getDayOfMonth() < 20) {
+                            expectedfirstRepaymentDate = expectedfirstRepaymentDate.withDayOfMonth(10);
+                        } else {
+                            expectedfirstRepaymentDate = expectedfirstRepaymentDate.withDayOfMonth(20);
+                        }
+                        newLoanApplication.setExpectedFirstRepaymentOnDate(expectedfirstRepaymentDate);
+                    } else {
+                        throw new GeneralPlatformDomainRuleException(
+                                "error.msg.loan.creditorotativo.first.repayment.date.must.be.day.1.10.20",
+                                "Disbursement date must be 1, 10 or 20");
+                    }
                 }
 
             }
