@@ -966,10 +966,15 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                 .collect(Collectors.groupingBy(PaymentAllocationType::getDueType, LinkedHashMap::new,
                         mapping(Function.identity(), toList())));
 
-        for (Map.Entry<DueType, List<PaymentAllocationType>> paymentAllocationsEntry : paymentAllocationsMap.entrySet()) {
-            transactionAmountUnprocessed = processAllocationsHorizontally(loanTransaction, currency, installments,
-                    transactionAmountUnprocessed, paymentAllocationsEntry.getValue(),
-                    paymentAllocationRule.getFutureInstallmentAllocationRule(), transactionMappings, charges, balances);
+        // If there is a remaining amount, process the installments till completion.
+        // If all installments were already paid, leave loan as overpaid
+        while (transactionAmountUnprocessed.isGreaterThanZero()
+                && installments.stream().filter(notPaid -> Boolean.FALSE.equals(notPaid.isObligationsMet())).count() > 0) {
+            for (Map.Entry<DueType, List<PaymentAllocationType>> paymentAllocationsEntry : paymentAllocationsMap.entrySet()) {
+                transactionAmountUnprocessed = processAllocationsHorizontally(loanTransaction, currency, installments,
+                        transactionAmountUnprocessed, paymentAllocationsEntry.getValue(),
+                        paymentAllocationRule.getFutureInstallmentAllocationRule(), transactionMappings, charges, balances);
+            }
         }
         return transactionAmountUnprocessed;
     }
