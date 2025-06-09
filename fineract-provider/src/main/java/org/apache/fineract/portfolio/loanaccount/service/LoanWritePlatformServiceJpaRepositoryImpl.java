@@ -2969,6 +2969,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         LocalDate startDate = dueDate;
         if (Objects.equals(lastUnpaidInstallment, installmentNumber)) {
             startDate = dueDate.plusDays(penaltyWaitPeriodValue.intValue() + 1);
+        }else {
+            startDate = dueDate.plusDays(1);
         }
         Integer frequencyNunber = 1;
         if (feeFrequency == null) {
@@ -3006,7 +3008,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             for (Map.Entry<Integer, LocalDate> entry : scheduleDates.entrySet()) {
 
                 final LoanCharge loanCharge = LoanCharge.createNewFromJson(loan, chargeDefinition, command, entry.getValue(), installment,
-                        penaltyWaitPeriodValue);
+                        penaltyWaitPeriodValue,lastUnpaidInstallment);
 
                 if (BigDecimal.ZERO.compareTo(loanCharge.amount()) == 0) {
                     continue;
