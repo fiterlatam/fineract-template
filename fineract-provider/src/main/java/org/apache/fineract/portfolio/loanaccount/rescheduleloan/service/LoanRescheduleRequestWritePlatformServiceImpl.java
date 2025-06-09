@@ -130,6 +130,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
     private final LoanTermVariationsRepository loanTermVariationsRepository;
     private final InsuranceIncidentRepository insuranceIncidentRepository;
     private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
+    private final LoanRescheduleInterestRateService loanRescheduleInterestRateService;
 
     /**
      * create a new instance of the LoanRescheduleRequest object from the JsonCommand object and persist
@@ -427,7 +428,6 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             final List<LoanRescheduleRequestToTermVariationMapping> loanRescheduleRequestToTermVariationMappings, final Boolean isActive,
             final boolean isSpecificToInstallment, final BigDecimal decimalValue, LoanTermVariations parent) {
 
-
         final LoanTermVariations loanTermVariation = new LoanTermVariations(termType, rescheduleFromDate, decimalValue, adjustedDueDate,
                 isSpecificToInstallment, loan, loan.getStatus().getValue(), isActive, parent);
 
@@ -478,6 +478,9 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     .createLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan, loanRescheduleRequest);
 
             final LoanApplicationTerms loanApplicationTerms = loan.constructLoanApplicationTerms(scheduleGeneratorDTO);
+
+            // Handle mid-installment interest rate change if needed
+            loanRescheduleInterestRateService.handleMidInstallmentInterestRateChange(loan, loanRescheduleRequest);
 
             LocalDate rescheduleFromDate = null;
             Set<LoanTermVariations> activeLoanTermVariations = loan.getActiveLoanTermVariations();
@@ -561,8 +564,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     this.loanRescheduleRequestRepository.saveAndFlush(loanRescheduleRequest);
                 }
             }
-            if (!isJobTriggered && rediferirVariations.isEmpty()
-                    && Boolean.FALSE.equals(loanProduct.getCustomAllowRefinance())) {
+            if (!isJobTriggered && rediferirVariations.isEmpty() && Boolean.FALSE.equals(loanProduct.getCustomAllowRefinance())) {
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.not.allowed.on.product",
                         "Reschedule is not allowed on this product");
             }
