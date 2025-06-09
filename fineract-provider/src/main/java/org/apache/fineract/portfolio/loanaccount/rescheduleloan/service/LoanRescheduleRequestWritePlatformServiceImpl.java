@@ -130,6 +130,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
     private final LoanTermVariationsRepository loanTermVariationsRepository;
     private final InsuranceIncidentRepository insuranceIncidentRepository;
     private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
+    private final LoanRescheduleInterestRateService loanRescheduleInterestRateService;
 
     /**
      * create a new instance of the LoanRescheduleRequest object from the JsonCommand object and persist
@@ -427,10 +428,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             final List<LoanRescheduleRequestToTermVariationMapping> loanRescheduleRequestToTermVariationMappings, final Boolean isActive,
             final boolean isSpecificToInstallment, final BigDecimal decimalValue, LoanTermVariations parent) {
 
-        // Use the reschedule date directly for interest rate changes
-        LocalDate effectiveDate = rescheduleFromDate;
-
-        final LoanTermVariations loanTermVariation = new LoanTermVariations(termType, effectiveDate, decimalValue, adjustedDueDate,
+        final LoanTermVariations loanTermVariation = new LoanTermVariations(termType, rescheduleFromDate, decimalValue, adjustedDueDate,
                 isSpecificToInstallment, loan, loan.getStatus().getValue(), isActive, parent);
 
         loan.getLoanTermVariations().add(loanTermVariation);
@@ -481,6 +479,9 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
 
             final LoanApplicationTerms loanApplicationTerms = loan.constructLoanApplicationTerms(scheduleGeneratorDTO);
 
+            // Handle mid-installment interest rate change if needed
+            loanRescheduleInterestRateService.handleMidInstallmentInterestRateChange(loan, loanRescheduleRequest);
+
             LocalDate rescheduleFromDate = null;
             Set<LoanTermVariations> activeLoanTermVariations = loan.getActiveLoanTermVariations();
             LoanTermVariations dueDateVariationInCurrentRequest = loanRescheduleRequest.getDueDateTermVariationIfExists();
@@ -523,7 +524,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 mapping.getLoanTermVariations().updateIsActive(true);
             }
             if (!rediferirVariations.isEmpty()) {
-                if (Boolean.FALSE.equals(isJobTriggered) && Boolean.TRUE.equals(!loanProduct.getCustomAllowReferido())) {
+                if (!isJobTriggered && !loanProduct.getCustomAllowReferido()) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.rediferir.not.allowed",
                             "Rediferir is not allowed on this product");
                 }
@@ -563,8 +564,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                     this.loanRescheduleRequestRepository.saveAndFlush(loanRescheduleRequest);
                 }
             }
-            if (Boolean.FALSE.equals(isJobTriggered) && rediferirVariations.isEmpty()
-                    && Boolean.FALSE.equals(loanProduct.getCustomAllowRefinance())) {
+            if (!isJobTriggered && rediferirVariations.isEmpty() && Boolean.FALSE.equals(loanProduct.getCustomAllowRefinance())) {
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.reschedule.not.allowed.on.product",
                         "Reschedule is not allowed on this product");
             }
