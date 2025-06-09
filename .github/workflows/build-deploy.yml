@@ -50,7 +50,7 @@ jobs:
           ./gradlew --no-daemon --console=plain :integration-tests:cleanTest :integration-tests:test -PcargoDisabled --info
           ./gradlew --stop
   continuous-integration:
-    if: github.ref == 'refs/heads/fiter/sumas/dev'
+    if: github.ref == 'refs/heads/fiter/sumas/dev' || github.ref == 'refs/heads/fiter/sumas/v1.0.0'
     needs: [integration-tests]
     runs-on: ubuntu-latest
     steps:
