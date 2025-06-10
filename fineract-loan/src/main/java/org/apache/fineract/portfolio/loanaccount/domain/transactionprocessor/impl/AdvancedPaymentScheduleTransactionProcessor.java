@@ -966,16 +966,12 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                 .collect(Collectors.groupingBy(PaymentAllocationType::getDueType, LinkedHashMap::new,
                         mapping(Function.identity(), toList())));
 
-        // If there is a remaining amount, process the installments till completion.
-        // If all installments were already paid, leave loan as overpaid
-        while (transactionAmountUnprocessed.isGreaterThanZero()
-                && installments.stream().filter(notPaid -> Boolean.FALSE.equals(notPaid.isObligationsMet())).count() > 0) {
-            for (Map.Entry<DueType, List<PaymentAllocationType>> paymentAllocationsEntry : paymentAllocationsMap.entrySet()) {
-                transactionAmountUnprocessed = processAllocationsHorizontally(loanTransaction, currency, installments,
-                        transactionAmountUnprocessed, paymentAllocationsEntry.getValue(),
-                        paymentAllocationRule.getFutureInstallmentAllocationRule(), transactionMappings, charges, balances);
-            }
+        for (Map.Entry<DueType, List<PaymentAllocationType>> paymentAllocationsEntry : paymentAllocationsMap.entrySet()) {
+            transactionAmountUnprocessed = processAllocationsHorizontally(loanTransaction, currency, installments,
+                    transactionAmountUnprocessed, paymentAllocationsEntry.getValue(),
+                    paymentAllocationRule.getFutureInstallmentAllocationRule(), transactionMappings, charges, balances);
         }
+
         return transactionAmountUnprocessed;
     }
 
@@ -1179,29 +1175,22 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                 stopProcessingAdvanceInstallment = true;
 
                                             } else {
-                                                if (transactionAmountUnprocessed.isGreaterThanZero()) {
-                                                    transactionAmountUnprocessed = processPaymentAllocationComponent(loanTransaction,
-                                                            currency, transactionAmountUnprocessed, transactionMappings, charges, balances,
-                                                            paymentAllocationType, inAdvanceInstallment, firstNormalInstallmentNumber);
+                                                balances.setAggregatedPrincipalPortion(
+                                                        balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
+                                                inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(
+                                                        loanTransaction.getTransactionDate(), currency);
 
-                                                } else {
-                                                    balances.setAggregatedPrincipalPortion(
-                                                            balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
-                                                    inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(
-                                                            loanTransaction.getTransactionDate(), currency);
+                                                inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
+                                                        loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
+                                                inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
+                                                        .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
+                                                inAdvanceInstallment.setRecalculateEMI(loanTransaction.recalculateEMI());
+                                                LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
+                                                        transactionMappings, loanTransaction, inAdvanceInstallment, currency);
+                                                addToTransactionMapping(loanTransactionToRepaymentScheduleMapping,
+                                                        transactionAmountUnprocessed, zero, zero, zero);
 
-                                                    inAdvanceInstallment.trackAdvanceAndLateTotalsForRepaymentPeriod(
-                                                            loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
-                                                    inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
-                                                            .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
-                                                    inAdvanceInstallment.setRecalculateEMI(loanTransaction.recalculateEMI());
-                                                    LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
-                                                            transactionMappings, loanTransaction, inAdvanceInstallment, currency);
-                                                    addToTransactionMapping(loanTransactionToRepaymentScheduleMapping,
-                                                            transactionAmountUnprocessed, zero, zero, zero);
-
-                                                    transactionAmountUnprocessed = Money.zero(currency);
-                                                }
+                                                transactionAmountUnprocessed = Money.zero(currency);
                                             }
                                         }
                                     }
