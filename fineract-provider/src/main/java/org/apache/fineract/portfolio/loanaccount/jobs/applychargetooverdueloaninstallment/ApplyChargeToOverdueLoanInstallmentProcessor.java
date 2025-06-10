@@ -49,10 +49,14 @@ public class ApplyChargeToOverdueLoanInstallmentProcessor {
     @Transactional(isolation = Isolation.READ_UNCOMMITTED, rollbackFor = Exception.class)
     public void processOverdueCharges() throws JobExecutionException {
         List<Throwable> exceptions = new ArrayList<>();
+        log.info("Applying Charges due for overdue loans for {} installments", this.overdueLoanScheduledInstallments.size());
         if (!overdueLoanScheduledInstallments.isEmpty()) {
             final Map<Long, Collection<OverdueLoanScheduleData>> overdueScheduleData = new HashMap<>();
             for (final OverdueLoanScheduleData overdueInstallment : overdueLoanScheduledInstallments) {
+                log.info("Processing overdue installment for loanId: {}, chargeId: {}, dueDate: {}", overdueInstallment.getLoanId(),
+                        overdueInstallment.getChargeId(), overdueInstallment.getDueDate());
                 final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(overdueInstallment.getChargeId());
+                log.info("Processing charge with ID: {}, name: {} ", chargeDefinition.getId(), chargeDefinition.getName());
                 if (chargeDefinition.getParentChargeId() == null) {
                     if (overdueScheduleData.containsKey(overdueInstallment.getLoanId())) {
                         overdueScheduleData.get(overdueInstallment.getLoanId()).add(overdueInstallment);
@@ -77,6 +81,7 @@ public class ApplyChargeToOverdueLoanInstallmentProcessor {
                 }
             }
 
+            log.info("Total accounts with overdue installments: {}", overdueScheduleData.size());
             for (Map.Entry<Long, Collection<OverdueLoanScheduleData>> entry : overdueScheduleData.entrySet()) {
                 try {
                     log.debug("Applying Charges due for overdue loans for account {}", entry.getKey());
