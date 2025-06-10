@@ -98,6 +98,7 @@ public class LoanApprovalContactabilityEventProcessor extends BaseCustomWebhookE
                 && validacionContactaData.getUsuarioAsignadoCdUsuarioAsignado().compareTo(0L) > 0 //
                 && Objects.isNull(validacionContactaData.getFechaInicioContactabilidad()) //
                 && Objects.nonNull(validacionContactaData.getCorreoUsuarioAsignadoCdCorreoUsuarioAsignado()) //
+                && validacionContactaData.getCorreoUsuarioAsignadoCdCorreoUsuarioAsignado().compareTo(0L) > 0 //
                 && (Objects.isNull(validacionContactaData.getValidacionContactabilidadCdValidacionContactabilidad()) //
                         || validacionContactaData.getValidacionContactabilidadCdValidacionContactabilidad() == 0)) { //
 
