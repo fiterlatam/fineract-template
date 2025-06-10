@@ -91,7 +91,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleIns
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariationType;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTermVariations;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanApplicationDateException;
 import org.apache.fineract.portfolio.loanaccount.exception.MinDaysBetweenDisbursalAndFirstRepaymentViolationException;
@@ -239,25 +238,11 @@ public class LoanScheduleAssembler {
 
         // disbursement details
         final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
-        final Boolean isTopup = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isTopup, element);
         final LocalDate expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed("expectedDisbursementDate", element);
         final LocalDate repaymentsStartingFromDate = this.fromApiJsonHelper.extractLocalDateNamed("repaymentsStartingFromDate", element);
         LocalDate calculatedRepaymentsStartingFromDate = repaymentsStartingFromDate;
 
-        BigDecimal topupAmount = BigDecimal.ZERO;
-        if (Boolean.TRUE.equals(isTopup)) {
-            final Long loanId = this.fromApiJsonHelper.extractLongNamed("loanIdToClose", element);
-            final Loan loan = this.loanRepository.findOneWithNotFoundDetection(loanId);
-            if (!loan.isOpen()) {
-                throw new IllegalStateException("error.msg.loan.topup.not.active");
-            }
-            // total amount of topup loan must include the outstanding on the topup loan
-            BigDecimal loanOutstanding = this.loanReadPlatformService
-                    .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanId, expectedDisbursementDate).getOutstandingLoanBalance();
-
-            topupAmount = topupAmount.add(loanOutstanding);
-        }
-        final Money principalMoney = Money.of(currency, principal.add(topupAmount));
+        final Money principalMoney = Money.of(currency, principal);
 
         final Boolean synchDisbursement = this.fromApiJsonHelper.extractBooleanNamed("syncDisbursementWithMeeting", element);
         final Long calendarId = this.fromApiJsonHelper.extractLongNamed("calendarId", element);

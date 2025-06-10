@@ -194,6 +194,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanSubStatus;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanSummary;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanSummaryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTrancheDisbursementCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
@@ -498,7 +499,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                     + " should be after last transaction date of loan to be closed " + lastUserTransactionOnLoanToClose);
                 }
 
-                final BigDecimal waiveInterestAmount = loanToClose.getSummary().getTotalInterestOutstanding();
+                LoanSummary summary = loanToClose.getSummary();
+                final BigDecimal waiveInterestAmount = summary.getTotalInterestOutstanding();
                 if (waiveInterestAmount.compareTo(BigDecimal.ZERO)>0) {
                     final Money waiveInterestTransactionAmount = Money.of(currency, waiveInterestAmount);
                     if (waiveInterestTransactionAmount.isGreaterThanZero()) {
@@ -525,28 +527,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                     "Failed to waive interest on loan application " + loanIdToClose);
                         }
                     }
-                    BigDecimal totalPenaltyChargesOutstanding = loanToClose.getSummary().getTotalPenaltyChargesOutstanding();
-                    if (totalPenaltyChargesOutstanding.compareTo(BigDecimal.ZERO) > 0) {
-                        //waive penalty charges
-                        final String localeAsString = "en";
-                        final String dateFormat = "dd MMMM yyyy";
-                        final JsonObject jsonObject = new JsonObject();
-                        jsonObject.addProperty("locale", localeAsString);
-                        jsonObject.addProperty("dateFormat", dateFormat);
-
-                        loanToClose.getLoanCharges().forEach(loanCharge -> {
-                            if (loanCharge.amountOutstanding().compareTo(BigDecimal.ZERO)>0){
-                                final JsonCommand waivePenaltyChargesJsonCommand = JsonCommand.from(jsonObject.toString(), jsonObject,
-                                        this.fromApiJsonHelper, "LOANCHARGE", loanCharge.getId(), null, null, null, loanIdToClose, null, null, null, null, null,
-                                        null);
-                                this.waiveLoanCharge(loanIdToClose,loanCharge.getId(),waivePenaltyChargesJsonCommand);
-                            }
-                        });
-                    }
                 }
-                BigDecimal loanOutstanding = this.loanReadPlatformService
-                        .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose, actualDisbursementDate).getOutstandingLoanBalance();
+                final BigDecimal principalOutstanding = summary.getTotalPrincipalOutstanding();
+                BigDecimal totalFeeChargesOutstanding = summary.getTotalFeeChargesOutstanding();
+                BigDecimal totalPenaltyChargesOutstanding = summary.getTotalPenaltyChargesOutstanding();
 
+                BigDecimal loanOutstanding = principalOutstanding.add(totalFeeChargesOutstanding).add(totalPenaltyChargesOutstanding);
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
                 if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
