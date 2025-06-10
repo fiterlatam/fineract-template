@@ -309,6 +309,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private static final String ADJUSTED_DUE_DATE_PARAM = "adjustedDueDate";
     private static final String EXTRA_TERMS = "extraTerms";
 
+    // CUTOFF_DAYS: Number of days before the due date to determine if a new disbursement
+    // should be included in the next installment or trigger a new set of installments.
+    // Business rule: 15 days + 2 days for weekends = 17 days.
+    private static final int CUTOFF_DAYS = 17;
+
     private final PlatformSecurityContext context;
     private final LoanEventApiJsonValidator loanEventApiJsonValidator;
     private final LoanUpdateCommandFromApiJsonDeserializer loanUpdateCommandFromApiJsonDeserializer;
@@ -5383,7 +5388,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
             if (installment.getDueDate().isAfter(disbursementDate)) {
                 long diff = ChronoUnit.DAYS.between(disbursementDate, installment.getDueDate());
-                if (diff < 15) {
+                if (diff < CUTOFF_DAYS) {
                     // Add the variation to next installment
                     installmentNumberToAddDisbursement = installment.getInstallmentNumber() + 1;
                     variationDate = installment.getDueDate().plusDays(2);
@@ -5413,7 +5418,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             if (lastInstallmentDueDateOpt.isPresent()) {
                 LocalDate lastInstallmentDueDate = lastInstallmentDueDateOpt.get();
                 long diff = ChronoUnit.DAYS.between(lastInstallmentDueDate, disbursementDate);
-                if (diff < 15) {
+                if (diff < CUTOFF_DAYS) {
                     installmentNumberToAddDisbursement = loan.getRepaymentScheduleInstallments().size() - 1;
                 }
             }
