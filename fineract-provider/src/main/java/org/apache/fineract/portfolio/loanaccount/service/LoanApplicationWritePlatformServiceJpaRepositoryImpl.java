@@ -75,6 +75,8 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
 import org.apache.fineract.organisation.bankcheque.domain.Cheque;
 import org.apache.fineract.organisation.bankcheque.domain.ChequeBatchRepositoryWrapper;
+import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
 import org.apache.fineract.organisation.prequalification.domain.LoanAdditionProperties;
@@ -134,6 +136,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCollateralManagement;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanDisbursementDetails;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
@@ -2696,13 +2699,21 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                             "Disbursal date of this loan application " + loan.getDisbursementDate()
                                     + " should be after last transaction date of loan to be closed " + lastUserTransactionOnLoanToClose);
                 }
+
                 LoanSummary summary = loanToClose.getSummary();
+                final LoanRepaymentScheduleInstallment foreCloseDetail = loanToClose.fetchLoanForeclosureDetail(loan.getDisbursementDate());
+                MonetaryCurrency currency = loan.getCurrency();
+                Money interestPortion = foreCloseDetail.getInterestCharged(currency);
 
                 final BigDecimal principalOutstanding = summary.getTotalPrincipalOutstanding();
                 BigDecimal totalFeeChargesOutstanding = summary.getTotalFeeChargesOutstanding();
                 BigDecimal totalPenaltyChargesOutstanding = summary.getTotalPenaltyChargesOutstanding();
+                BigDecimal totalInterestOutstanding = summary.getTotalInterestOutstanding();
 
-                BigDecimal loanOutstanding = principalOutstanding.add(totalFeeChargesOutstanding).add(totalPenaltyChargesOutstanding);
+                BigDecimal loanOutstanding = principalOutstanding.
+                        add(totalFeeChargesOutstanding).
+                        add(totalPenaltyChargesOutstanding).
+                        add(interestPortion.getAmount());
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
                 if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
