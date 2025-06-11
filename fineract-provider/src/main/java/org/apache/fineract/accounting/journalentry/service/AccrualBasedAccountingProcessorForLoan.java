@@ -131,7 +131,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         // reversal)
         if (loanTransactionDTO.isLoanToLoanTransfer()) {
             this.helper.createAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
-                    AccrualAccountsForLoan.LOAN_PORTFOLIO.getValue(), FinancialActivity.ASSET_TRANSFER.getValue(), loanProductId,
+                    AccrualAccountsForLoan.LOAN_PORTFOLIO.getValue(), AccrualAccountsForLoan.TRANSFERS_SUSPENSE.getValue(), loanProductId,
                     paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversed, fundSourceGlAccountId);
         } else if (loanTransactionDTO.isAccountTransfer()) {
             this.helper.createAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
@@ -319,7 +319,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                         transactionDate, totalDebitAmount, isReversal, fundSourceGlAccountId);
             } else {
                 if (loanTransactionDTO.isLoanToLoanTransfer()) {
-                    this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode, FinancialActivity.ASSET_TRANSFER.getValue(),
+                    this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode, AccrualAccountsForLoan.TRANSFERS_SUSPENSE.getValue() ,
                             loanProductId, paymentTypeId, loanId, transactionId, transactionDate, totalDebitAmount, isReversal,
                             fundSourceGlAccountId);
                 } else if (loanTransactionDTO.isAccountTransfer()) {

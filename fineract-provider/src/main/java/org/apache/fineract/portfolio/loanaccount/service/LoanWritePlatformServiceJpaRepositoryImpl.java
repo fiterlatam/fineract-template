@@ -500,7 +500,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
 
                 LoanSummary summary = loanToClose.getSummary();
-                final BigDecimal waiveInterestAmount = summary.getTotalInterestOutstanding();
+                final LoanRepaymentScheduleInstallment foreCloseDetail = loanToClose.fetchLoanForeclosureDetail(loan.getDisbursementDate());
+                Money interestPortion = foreCloseDetail.getInterestCharged(currency);
+
+                final BigDecimal outstandingInterest = summary.getTotalInterestOutstanding();
+                BigDecimal waiveInterestAmount = outstandingInterest.subtract(interestPortion.getAmount());
                 if (waiveInterestAmount.compareTo(BigDecimal.ZERO)>0) {
                     final Money waiveInterestTransactionAmount = Money.of(currency, waiveInterestAmount);
                     if (waiveInterestTransactionAmount.isGreaterThanZero()) {
@@ -528,12 +532,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
                     }
                 }
+
                 final BigDecimal principalOutstanding = summary.getTotalPrincipalOutstanding();
                 BigDecimal totalFeeChargesOutstanding = summary.getTotalFeeChargesOutstanding();
                 BigDecimal totalPenaltyChargesOutstanding = summary.getTotalPenaltyChargesOutstanding();
 
-                BigDecimal loanOutstanding = principalOutstanding.add(totalFeeChargesOutstanding).add(totalPenaltyChargesOutstanding);
+                BigDecimal loanOutstanding = principalOutstanding.
+                        add(totalFeeChargesOutstanding).
+                        add(totalPenaltyChargesOutstanding).
+                        add(interestPortion.getAmount());
+
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
+
                 if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
                             "Topup loan amount should be greater than outstanding amount of loan to be closed.");
