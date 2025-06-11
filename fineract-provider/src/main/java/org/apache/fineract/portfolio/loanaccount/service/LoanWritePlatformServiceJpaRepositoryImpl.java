@@ -5413,7 +5413,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             // NumberOfInstallnebts
             Optional<LocalDate> lastInstallmentDueDateOpt = loan.getRepaymentScheduleInstallments().stream()
                     .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber).reversed()).findFirst()
-                    .map(dt -> dt.getDueDate());
+                    .map(LoanRepaymentScheduleInstallment::getDueDate);
 
             if (lastInstallmentDueDateOpt.isPresent()) {
                 LocalDate lastInstallmentDueDate = lastInstallmentDueDateOpt.get();
