@@ -312,7 +312,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     // CUTOFF_DAYS: Number of days before the due date to determine if a new disbursement
     // should be included in the next installment or trigger a new set of installments.
     // Business rule: 15 days + 2 days for weekends = 17 days.
-    private static final int CUTOFF_DAYS = 15;
+    private static final int CUTOFF_DAYS = 17;
 
     private final PlatformSecurityContext context;
     private final LoanEventApiJsonValidator loanEventApiJsonValidator;
