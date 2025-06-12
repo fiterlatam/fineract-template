@@ -48,6 +48,7 @@ public class LoanTransactionEnumData {
     private final boolean refund;
     private final boolean refundForActiveLoans;
     private final boolean creditBalanceRefund;
+    private final boolean loanTopupPayment;
 
     public LoanTransactionEnumData(final Long id, final String code, final String value) {
         this.id = id;
@@ -73,6 +74,7 @@ public class LoanTransactionEnumData {
         this.chargePayment = Long.valueOf(17).equals(this.id);
         this.refundForActiveLoans = Long.valueOf(18).equals(this.id);
         this.creditBalanceRefund = Long.valueOf(20).equals(this.id);
+        this.loanTopupPayment = Long.valueOf(24).equals(this.id);
     }
 
     public Long id() {
@@ -101,7 +103,7 @@ public class LoanTransactionEnumData {
     }
 
     public boolean isRepaymentType() {
-        if (isRepayment() || isMerchantIssuedRefund() || isPayoutRefund() || isGoodwillCredit()) {
+        if (isRepayment() || isMerchantIssuedRefund() || isPayoutRefund() || isGoodwillCredit() || isLoanTopupPayment()) {
             return true;
         }
         return false;
@@ -181,6 +183,9 @@ public class LoanTransactionEnumData {
 
     public boolean isCreditBalanceRefund() {
         return this.creditBalanceRefund;
+    }
+    public boolean isLoanTopupPayment() {
+        return this.loanTopupPayment;
     }
 
 }

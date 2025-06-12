@@ -134,6 +134,7 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
         final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
         final BigDecimal disbursalAmount = loanTransactionDTO.getAmount();
         final BigDecimal principalPortion = loanTransactionDTO.getPrincipal();
+        final BigDecimal loanTopupAmount = loanTransactionDTO.getLoanTopupAmount();
         final BigDecimal feesPortion = loanTransactionDTO.getFees();
         final boolean isReversal = loanTransactionDTO.isReversed();
         final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
@@ -150,7 +151,7 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
             this.helper.createCashBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
                     CashAccountsForLoan.LOAN_PORTFOLIO.getValue(), CashAccountsForLoan.FUND_SOURCE.getValue(), loanProductId, paymentTypeId,
                     loanId, transactionId, transactionDate, disbursalAmount, isReversal, fundSourceGlAccountId, principalPortion,
-                    feesPortion);
+                    feesPortion, loanTopupAmount);
         }
 
     }

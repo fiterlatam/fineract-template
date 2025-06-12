@@ -61,4 +61,9 @@ public class LoanTransactionDTO {
 
     @Setter
     private Long glAccountId;
+    @Setter
+    private BigDecimal loanTopupAmount;
+
+    @Setter
+    private Boolean postAccountingForWaivers;
 }

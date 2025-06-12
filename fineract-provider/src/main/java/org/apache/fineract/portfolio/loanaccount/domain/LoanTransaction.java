@@ -118,6 +118,21 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "manually_adjusted_or_reversed", nullable = false)
     private boolean manuallyAdjustedOrReversed;
 
+    @Setter
+    @Getter
+    @Column(name = "post_accounting_for_waivers", nullable = false)
+    private Boolean postAccountingForWaivers;
+
+    @Setter
+    @Getter
+    @Column(name = "loan_topup_amount", nullable = false)
+    private BigDecimal loanTopupAmount;
+
+    @Setter
+    @Getter
+    @Column(name = "topup_loan_id", nullable = false)
+    private BigDecimal loanTopupId;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "loanTransaction")
     private Set<LoanCollateralManagement> loanCollateralManagementSet = new HashSet<>();
 
@@ -136,6 +151,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Setter
     @Getter
     private Boolean isForeclosureTransaction;
+
+
 
     protected LoanTransaction() {}
 
@@ -500,7 +517,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean isRepaymentType() {
-        return isRepayment() || isMerchantIssuedRefund() || isPayoutRefund() || isGoodwillCredit();
+        return isRepayment() || isMerchantIssuedRefund() || isPayoutRefund() || isGoodwillCredit()|| isLoanTopupPayment();
     }
 
     public boolean isRepayment() {
@@ -517,6 +534,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isGoodwillCredit() {
         return LoanTransactionType.GOODWILL_CREDIT.equals(getTypeOf()) && isNotReversed();
+    }
+    public boolean isLoanTopupPayment() {
+        return LoanTransactionType.LOAN_TOPUP_REPAYMENT.equals(getTypeOf()) && isNotReversed();
     }
 
     public boolean isNotRepaymentType() {
@@ -662,6 +682,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         thisTransactionData.put("feeChargesPortion", this.feeChargesPortion);
         thisTransactionData.put("penaltyChargesPortion", this.penaltyChargesPortion);
         thisTransactionData.put("overPaymentPortion", this.overPaymentPortion);
+        thisTransactionData.put("loanTopupAmount", this.loanTopupAmount);
+        thisTransactionData.put("postAccountingForWaivers", this.postAccountingForWaivers);
 
         if (this.paymentDetail != null) {
             thisTransactionData.put("paymentTypeId", this.paymentDetail.getPaymentType().getId());

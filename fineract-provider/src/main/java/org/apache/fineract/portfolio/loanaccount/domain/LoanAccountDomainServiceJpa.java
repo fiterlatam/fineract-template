@@ -275,7 +275,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private LoanBusinessEvent getLoanRepaymentTypeBusinessEvent(LoanTransactionType repaymentTransactionType, boolean isRecoveryRepayment,
             Loan loan) {
         LoanBusinessEvent repaymentEvent = null;
-        if (repaymentTransactionType.isRepayment()) {
+        if (repaymentTransactionType.isRepayment()||repaymentTransactionType.isTopupRepayment()) {
             repaymentEvent = new LoanTransactionMakeRepaymentPreBusinessEvent(loan);
         } else if (repaymentTransactionType.isMerchantIssuedRefund()) {
             repaymentEvent = new LoanTransactionMerchantIssuedRefundPreBusinessEvent(loan);
@@ -292,7 +292,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private LoanTransactionBusinessEvent getTransactionRepaymentTypeBusinessEvent(LoanTransactionType repaymentTransactionType,
             boolean isRecoveryRepayment, LoanTransaction transaction) {
         LoanTransactionBusinessEvent repaymentEvent = null;
-        if (repaymentTransactionType.isRepayment()) {
+        if (repaymentTransactionType.isRepayment() ||repaymentTransactionType.isTopupRepayment()) {
             repaymentEvent = new LoanTransactionMakeRepaymentPostBusinessEvent(transaction);
         } else if (repaymentTransactionType.isMerchantIssuedRefund()) {
             repaymentEvent = new LoanTransactionMerchantIssuedRefundPostBusinessEvent(transaction);
@@ -492,14 +492,16 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     @Transactional
     @Override
     public LoanTransaction makeDisburseTransaction(final Long loanId, final LocalDate transactionDate, final BigDecimal transactionAmount,
-            final PaymentDetail paymentDetail, final String noteText, final String txnExternalId) {
-        return makeDisburseTransaction(loanId, transactionDate, transactionAmount, paymentDetail, noteText, txnExternalId, false);
+            final PaymentDetail paymentDetail, final String noteText, final String txnExternalId, BigDecimal loanTopupAmount) {
+        return makeDisburseTransaction(loanId, transactionDate, transactionAmount, paymentDetail, noteText, txnExternalId, false,
+                loanTopupAmount);
     }
 
     @Transactional
     @Override
     public LoanTransaction makeDisburseTransaction(final Long loanId, final LocalDate transactionDate, final BigDecimal transactionAmount,
-            final PaymentDetail paymentDetail, final String noteText, final String txnExternalId, final boolean isLoanToLoanTransfer) {
+            final PaymentDetail paymentDetail, final String noteText, final String txnExternalId, final boolean isLoanToLoanTransfer,
+            BigDecimal loanTopupAmount) {
         final Loan loan = this.loanAccountAssembler.assembleFrom(loanId);
         checkClientOrGroupActive(loan);
         boolean isAccountTransfer = true;
@@ -508,6 +510,12 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final Money amount = Money.of(loan.getCurrency(), transactionAmount);
         LoanTransaction disbursementTransaction = LoanTransaction.disbursement(loan.getOffice(), amount, paymentDetail, transactionDate,
                 txnExternalId);
+        disbursementTransaction.setLoanTopupAmount(loanTopupAmount);
+        Money principal = amount;
+        if (loanTopupAmount.compareTo(BigDecimal.ZERO) > 0) {
+            principal = amount.minus(loanTopupAmount);
+        }
+        disbursementTransaction.updateComponents(principal, principal.zero(), principal.zero(), principal.zero());
 
         // Subtract Previous loan outstanding balance from netDisbursalAmount
         loan.deductFromNetDisbursalAmount(transactionAmount);
@@ -781,6 +789,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             Money unrecognizedIncome = interestToWaive.zero();
             final LoanTransaction waiveInterestTransaction = LoanTransaction.waiver(loan.getOffice(), loan, interestToWaive,
                     foreClosureDate, interestToWaive, unrecognizedIncome);
+            waiveInterestTransaction.setPostAccountingForWaivers(false);
             loan.waiveInterest(waiveInterestTransaction, defaultLoanLifecycleStateMachine(), existingTransactionIds,
                     existingReversedTransactionIds, scheduleGeneratorDTO);
         }

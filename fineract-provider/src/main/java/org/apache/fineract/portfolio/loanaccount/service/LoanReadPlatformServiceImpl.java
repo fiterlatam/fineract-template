@@ -1201,17 +1201,17 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
         public String schema() {
             return """
-                     ls.loan_id as loanId, 
-                     ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, 
+                     ls.loan_id as loanId,
+                     ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate,
                      ls.obligations_met_on_date as obligationsMetOnDate, ls.completed_derived as complete,\
-                     ls.principal_amount as principalDue, ls.principal_completed_derived as principalPaid, 
+                     ls.principal_amount as principalDue, ls.principal_completed_derived as principalPaid,
                      ls.principal_writtenoff_derived as principalWrittenOff, \
-                     (select min(rs.installment) as installment_number 
+                     (select min(rs.installment) as installment_number
                         from m_loan_repayment_schedule rs where rs.completed_derived = false and ml.id=rs.loan_id
                      ) as lastUnpaidInstallment, \
-                     ls.interest_amount as interestDue, ls.interest_completed_derived as interestPaid, 
+                     ls.interest_amount as interestDue, ls.interest_completed_derived as interestPaid,
                      ls.interest_waived_derived as interestWaived, ls.interest_writtenoff_derived as interestWrittenOff, \
-                     ls.fee_charges_amount as feeChargesDue, ls.fee_charges_completed_derived as feeChargesPaid, 
+                     ls.fee_charges_amount as feeChargesDue, ls.fee_charges_completed_derived as feeChargesPaid,
                      ls.fee_charges_waived_derived as feeChargesWaived, ls.fee_charges_writtenoff_derived as feeChargesWrittenOff, \
                      ls.penalty_charges_amount as penaltyChargesDue, ls.penalty_charges_completed_derived as penaltyChargesPaid, ls.penalty_charges_waived_derived as penaltyChargesWaived, ls.penalty_charges_writtenoff_derived as penaltyChargesWrittenOff, \
                      ls.total_paid_in_advance_derived as totalPaidInAdvanceForPeriod, ls.total_paid_late_derived as totalPaidLateForPeriod, \
@@ -1767,7 +1767,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         }
         // Only apply for duedate = yesterday (so that we don't apply
         // penalties on the duedate itself)
-        sqlBuilder.append(" and ls.duedate >= " + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "(? + 1)", "day")+ " ORDER BY ml.id, ls.installment ASC ");
+        sqlBuilder.append(" and ls.duedate >= " + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "(? + 1)", "day")
+                + " ORDER BY ml.id, ls.installment ASC ");
 
         return this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, penaltyWaitPeriod);
     }
@@ -2727,10 +2728,17 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     }
 
     @Override
-    public Collection<LoanAccountData> retrieveClientActiveLoans(Long clientId) {
+    public Collection<Loan> retrieveClientActiveLoans(Long clientId, LocalDate disbursementDate) {
         final LoanMapper rm = new LoanMapper(sqlGenerator);
-        final String sql = "select distinct " + rm.loanSchema() + " where l.client_id = ? and l.loan_status_id = ?";
-        return this.jdbcTemplate.query(sql, rm, new Object[] { clientId, LoanStatus.ACTIVE.getValue() });
+        List<Loan> activeLoans = this.loanRepositoryWrapper.findActiveLoanByClientId(clientId);
+        if (disbursementDate != null) {
+            activeLoans.forEach(account -> {
+                final LoanRepaymentScheduleInstallment foreCloseDetail = account.fetchLoanForeclosureDetail(disbursementDate);
+                Money interestPortion = foreCloseDetail.getInterestCharged(account.getCurrency());
+                account.setChargedInterestAmount(interestPortion.getAmount());
+            });
+        }
+        return activeLoans;
     }
 
     @Override
@@ -2755,6 +2763,13 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         }
 
         return groupLoanAdditionalData;
+    }
+
+    @Override
+    public Collection<LoanAccountData> retrieveClientActiveLoansAccounts(Long clientId, LocalDate disbursementLocalDate) {
+        final LoanMapper rm = new LoanMapper(sqlGenerator);
+        final String sql = "select distinct " + rm.loanSchema() + " where l.client_id = ? and l.loan_status_id = ?";
+        return this.jdbcTemplate.query(sql, rm, new Object[] { clientId, LoanStatus.ACTIVE.getValue() });
     }
 
     private static final class AdditionalGroupLoanData implements RowMapper<GroupLoanAdditionalData> {

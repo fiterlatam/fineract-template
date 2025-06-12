@@ -55,7 +55,7 @@ public enum LoanTransactionType {
     CREDIT_BALANCE_REFUND(20, "loanTransactionType.creditBalanceRefund"), //
     MERCHANT_ISSUED_REFUND(21, "loanTransactionType.merchantIssuedRefund"), //
     PAYOUT_REFUND(22, "loanTransactionType.payoutRefund"), //
-    GOODWILL_CREDIT(23, "loanTransactionType.goodwillCredit");
+    GOODWILL_CREDIT(23, "loanTransactionType.goodwillCredit"), LOAN_TOPUP_REPAYMENT(24, "loanTransactionType.loantopuprepayment");
 
     private final Integer value;
     private final String code;
@@ -147,6 +147,9 @@ public enum LoanTransactionType {
             case 23:
                 loanTransactionType = LoanTransactionType.GOODWILL_CREDIT;
             break;
+            case 24:
+                loanTransactionType = LoanTransactionType.LOAN_TOPUP_REPAYMENT;
+            break;
             default:
                 loanTransactionType = LoanTransactionType.INVALID;
             break;
@@ -208,6 +211,10 @@ public enum LoanTransactionType {
 
     public boolean isRefundForActiveLoan() {
         return this.value.equals(LoanTransactionType.REFUND_FOR_ACTIVE_LOAN.getValue());
+    }
+
+    public boolean isTopupRepayment() {
+        return this.value.equals(LoanTransactionType.LOAN_TOPUP_REPAYMENT.getValue());
     }
 
     public boolean isIncomePosting() {

@@ -2710,16 +2710,14 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 BigDecimal totalPenaltyChargesOutstanding = summary.getTotalPenaltyChargesOutstanding();
                 BigDecimal totalInterestOutstanding = summary.getTotalInterestOutstanding();
 
-                BigDecimal loanOutstanding = principalOutstanding.
-                        add(totalFeeChargesOutstanding).
-                        add(totalPenaltyChargesOutstanding).
-                        add(interestPortion.getAmount());
+                BigDecimal loanOutstanding = principalOutstanding.add(totalFeeChargesOutstanding).add(totalPenaltyChargesOutstanding)
+                        .add(interestPortion.getAmount());
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
                 if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
                             "Topup loan amount should be greater than outstanding amount of loan to be closed.");
                 }
-                BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(loanOutstanding);
+                BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(principalOutstanding);
                 loan.adjustNetDisbursalAmount(netDisbursalAmount);
             }
 
