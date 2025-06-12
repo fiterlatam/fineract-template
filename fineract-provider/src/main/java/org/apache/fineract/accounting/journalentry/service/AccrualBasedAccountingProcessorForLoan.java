@@ -51,7 +51,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             this.helper.checkForBranchClosures(latestGLClosure, transactionDate);
 
             // if transaction is waiver for Friendship bridge, dont post accounting for interest waivers
-            if (loanTransactionDTO.getTransactionType().isWaiveInterest()) {
+            if (loanTransactionDTO.getTransactionType().isWaiveInterest() && Boolean.FALSE.equals(loanTransactionDTO.getPostAccountingForWaivers())) {
                 continue;
             }
             /** Handle Disbursements **/
@@ -123,6 +123,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
         final BigDecimal disbursalAmount = loanTransactionDTO.getAmount();
         final BigDecimal principal = loanTransactionDTO.getPrincipal();
+        final BigDecimal loanTopupAmount = loanTransactionDTO.getLoanTopupAmount();
         final BigDecimal disbursementCharges = loanTransactionDTO.getFees();
         final boolean isReversed = loanTransactionDTO.isReversed();
         final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
@@ -131,7 +132,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         // reversal)
         if (loanTransactionDTO.isLoanToLoanTransfer()) {
             this.helper.createAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
-                    AccrualAccountsForLoan.LOAN_PORTFOLIO.getValue(), AccrualAccountsForLoan.TRANSFERS_SUSPENSE.getValue(), loanProductId,
+                    AccrualAccountsForLoan.LOAN_PORTFOLIO.getValue(), FinancialActivity.ASSET_TRANSFER.getValue(), loanProductId,
                     paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversed, fundSourceGlAccountId);
         } else if (loanTransactionDTO.isAccountTransfer()) {
             this.helper.createAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
@@ -141,7 +142,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             this.helper.createAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
                     AccrualAccountsForLoan.LOAN_PORTFOLIO.getValue(), AccrualAccountsForLoan.FUND_SOURCE.getValue(), loanProductId,
                     paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversed, fundSourceGlAccountId, principal,
-                    disbursementCharges);
+                    disbursementCharges, loanTopupAmount);
         }
 
     }
@@ -318,10 +319,10 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                         AccrualAccountsForLoan.LOSSES_WRITTEN_OFF.getValue(), loanProductId, paymentTypeId, loanId, transactionId,
                         transactionDate, totalDebitAmount, isReversal, fundSourceGlAccountId);
             } else {
-                if (loanTransactionDTO.isLoanToLoanTransfer()) {
-                    this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode, AccrualAccountsForLoan.TRANSFERS_SUSPENSE.getValue() ,
-                            loanProductId, paymentTypeId, loanId, transactionId, transactionDate, totalDebitAmount, isReversal,
-                            fundSourceGlAccountId);
+                if (loanTransactionDTO.isLoanToLoanTransfer()|| loanTransactionDTO.getTransactionType().isLoanTopupPayment()) {
+                    this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode,
+                            AccrualAccountsForLoan.TRANSFERS_SUSPENSE.getValue(), loanProductId, paymentTypeId, loanId, transactionId,
+                            transactionDate, totalDebitAmount, isReversal, fundSourceGlAccountId);
                 } else if (loanTransactionDTO.isAccountTransfer()) {
                     this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode,
                             FinancialActivity.LIABILITY_TRANSFER.getValue(), loanProductId, paymentTypeId, loanId, transactionId,

@@ -326,9 +326,9 @@ public class LoanCharge extends AbstractPersistableCustom {
 
     // For FriendshipBridge
     public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
-                      final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
-                      final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
-                      LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue, Integer lastUnpaidInstallment) {
+            final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
+            final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
+            LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue, Integer lastUnpaidInstallment) {
         this.loan = loan;
         this.charge = chargeDefinition;
         this.penaltyCharge = chargeDefinition.isPenalty();
@@ -371,12 +371,13 @@ public class LoanCharge extends AbstractPersistableCustom {
             this.chargePaymentMode = chargePaymentMode.getValue();
         }
 
-        populateDerivedFields(loanPrincipal, chargeAmount, numberOfRepayments, loanCharge, installment, penaltyWaitPeriodValue, dueDate,lastUnpaidInstallment);
+        populateDerivedFields(loanPrincipal, chargeAmount, numberOfRepayments, loanCharge, installment, penaltyWaitPeriodValue, dueDate,
+                lastUnpaidInstallment);
         this.paid = determineIfFullyPaid();
     }
 
     public static LoanCharge createNewFromJson(Loan loan, Charge chargeDefinition, JsonCommand command, LocalDate dueDate,
-                                               LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue, Integer lastUnpaidInstallment) {
+            LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue, Integer lastUnpaidInstallment) {
         final BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount");
 
         final ChargeTimeType chargeTime = null;
@@ -497,8 +498,8 @@ public class LoanCharge extends AbstractPersistableCustom {
     }
 
     private void populateDerivedFields(final BigDecimal amountPercentageAppliedTo, final BigDecimal chargeAmount,
-                                       Integer numberOfRepayments, BigDecimal loanCharge, LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue,
-                                       LocalDate dueDate, Integer lastUnpaidInstallment) {
+            Integer numberOfRepayments, BigDecimal loanCharge, LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue,
+            LocalDate dueDate, Integer lastUnpaidInstallment) {
 
         switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
             case INVALID:
@@ -539,7 +540,8 @@ public class LoanCharge extends AbstractPersistableCustom {
                         loanCharge = loanCharge.divide(BigDecimal.valueOf(30), MathContext.DECIMAL64);
 
                         // If penalty wait period is set, then we need to add the penalty wait period charges
-                        if (installment.getDueDate().plusDays(penaltyWaitPeriodValue + 1).equals(dueDate) && installment.getInstallmentNumber().equals(lastUnpaidInstallment)) {
+                        if (installment.getDueDate().plusDays(penaltyWaitPeriodValue + 1).equals(dueDate)
+                                && installment.getInstallmentNumber().equals(lastUnpaidInstallment)) {
                             BigDecimal penaltyWaitPeriodCharges = loanCharge.multiply(BigDecimal.valueOf(penaltyWaitPeriodValue));
                             loanCharge = loanCharge.add(penaltyWaitPeriodCharges);
                         }

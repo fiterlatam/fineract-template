@@ -62,6 +62,8 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.persistence.Version;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
@@ -423,6 +425,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Column(name = "disbursed_by_cheque_date")
     private LocalDate disbursedByChequeDate;
+
+    @Transient
+    @Getter
+    @Setter
+    private BigDecimal chargedInterestAmount;
 
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,

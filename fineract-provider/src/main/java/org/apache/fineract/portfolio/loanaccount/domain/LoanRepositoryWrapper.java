@@ -178,6 +178,18 @@ public class LoanRepositoryWrapper {
         return loans;
     }
 
+    @Transactional(readOnly = true)
+    public List<Loan> findActiveLoanByClientId(@Param("clientId") Long clientId) {
+        List<Loan> loans = this.repository.findActiveLoanByClientId(clientId);
+        if (loans != null && loans.size() > 0) {
+            for (Loan loan : loans) {
+                loan.initilizeTransactions();
+                loan.initializeLoanOfficerHistory();
+            }
+        }
+        return loans;
+    }
+
     // Root entities are enough
     public List<Loan> findByGroupId(@Param("groupId") Long groupId) {
         return this.repository.findByGroupId(groupId);

@@ -37,7 +37,7 @@ public interface LoanAccountDomainService {
             BigDecimal transactionAmount, PaymentDetail paymentDetail, String noteText, String txnExternalId);
 
     LoanTransaction makeDisburseTransaction(Long loanId, LocalDate transactionDate, BigDecimal transactionAmount,
-            PaymentDetail paymentDetail, String noteText, String txnExternalId, boolean isLoanToLoanTransfer);
+            PaymentDetail paymentDetail, String noteText, String txnExternalId, boolean isLoanToLoanTransfer, BigDecimal loanTopupAmount);
 
     void reverseTransfer(LoanTransaction loanTransaction);
 
@@ -45,7 +45,7 @@ public interface LoanAccountDomainService {
             PaymentDetail paymentDetail, String noteText, String txnExternalId, Integer transactionType, Integer installmentNumber);
 
     LoanTransaction makeDisburseTransaction(Long loanId, LocalDate transactionDate, BigDecimal transactionAmount,
-            PaymentDetail paymentDetail, String noteText, String txnExternalId);
+            PaymentDetail paymentDetail, String noteText, String txnExternalId, BigDecimal loanTopupAmount);
 
     LoanTransaction makeRefundForActiveLoan(Long accountId, CommandProcessingResultBuilder builderResult, LocalDate transactionDate,
             BigDecimal transactionAmount, PaymentDetail paymentDetail, String noteText, String txnExternalId);

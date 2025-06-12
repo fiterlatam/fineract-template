@@ -55,6 +55,7 @@ public class AccountTransferDTO {
     private final SavingsAccount fromSavingsAccount;
     private final Boolean isRegularTransaction;
     private final Boolean isExceptionForBalanceCheck;
+    private final BigDecimal loanTopupAmount;
 
     public AccountTransferDTO(final LocalDate transactionDate, final BigDecimal transactionAmount,
             final PortfolioAccountType fromAccountType, final PortfolioAccountType toAccountType, final Long fromAccountId,
@@ -88,6 +89,42 @@ public class AccountTransferDTO {
         this.fromSavingsAccount = fromSavingsAccount;
         this.isRegularTransaction = isRegularTransaction;
         this.isExceptionForBalanceCheck = isExceptionForBalanceCheck;
+        this.loanTopupAmount = BigDecimal.ZERO;
+    }
+
+    public AccountTransferDTO(final LocalDate transactionDate, final BigDecimal transactionAmount,
+            final PortfolioAccountType fromAccountType, final PortfolioAccountType toAccountType, final Long fromAccountId,
+            final Long toAccountId, final String description, final Locale locale, final DateTimeFormatter fmt,
+            final PaymentDetail paymentDetail, final Integer fromTransferType, final Integer toTransferType, final Long chargeId,
+            Integer loanInstallmentNumber, Integer transferType, final AccountTransferDetails accountTransferDetails, final String noteText,
+            final String txnExternalId, final Loan loan, SavingsAccount toSavingsAccount, final SavingsAccount fromSavingsAccount,
+            final Boolean isRegularTransaction, Boolean isExceptionForBalanceCheck, BigDecimal loanTopupAmount) {
+        this.transactionDate = transactionDate;
+        this.transactionAmount = transactionAmount;
+        this.fromAccountType = fromAccountType;
+        this.toAccountType = toAccountType;
+        this.fromAccountId = fromAccountId;
+        this.toAccountId = toAccountId;
+        this.description = description;
+        this.locale = locale;
+        this.fmt = fmt;
+        this.paymentDetail = paymentDetail;
+        this.fromTransferType = fromTransferType;
+        this.toTransferType = toTransferType;
+        this.chargeId = chargeId;
+        this.loanInstallmentNumber = loanInstallmentNumber;
+        this.transferType = transferType;
+        this.accountTransferDetails = accountTransferDetails;
+        this.noteText = noteText;
+        this.txnExternalId = txnExternalId;
+        this.loan = loan;
+        this.fromLoan = null;
+        this.toLoan = null;
+        this.toSavingsAccount = toSavingsAccount;
+        this.fromSavingsAccount = fromSavingsAccount;
+        this.isRegularTransaction = isRegularTransaction;
+        this.isExceptionForBalanceCheck = isExceptionForBalanceCheck;
+        this.loanTopupAmount = loanTopupAmount;
     }
 
     public AccountTransferDTO(final LocalDate transactionDate, final BigDecimal transactionAmount,
@@ -120,6 +157,7 @@ public class AccountTransferDTO {
         this.fromSavingsAccount = null;
         this.isRegularTransaction = null;
         this.isExceptionForBalanceCheck = null;
+        this.loanTopupAmount = BigDecimal.ZERO;
     }
 
     public LocalDate getTransactionDate() {
@@ -224,5 +262,9 @@ public class AccountTransferDTO {
 
     public void setPaymentDetail(PaymentDetail paymentDetail) {
         this.paymentDetail = paymentDetail;
+    }
+
+    public BigDecimal getLoanTopupAmount() {
+        return loanTopupAmount;
     }
 }

@@ -2499,4 +2499,8 @@ public final class LoanAccountData {
     public Long getGroupId() {
         return groupId;
     }
+
+    public Long getId() {
+        return id;
+    }
 }

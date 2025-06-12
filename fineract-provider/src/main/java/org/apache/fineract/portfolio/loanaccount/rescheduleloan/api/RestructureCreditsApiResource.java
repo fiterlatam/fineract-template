@@ -19,7 +19,10 @@
 package org.apache.fineract.portfolio.loanaccount.rescheduleloan.api;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
+import java.util.Locale;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -103,10 +106,19 @@ public class RestructureCreditsApiResource {
                 .validateHasReadPermission(RescheduleLoansApiConstants.RESTRUCTURE_CREDITS_RESOURCE);
         MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
         String isextenstion = queryParameters.getFirst("isextenstion");
+        String disbursementDate = queryParameters.getFirst("disburesementDate");
+        LocalDate disbursementLocalDate = null;
+        if (!StringUtils.isBlank(disbursementDate)) {
+            String locale = queryParameters.getFirst("locale");
+            String dateFormat = queryParameters.getFirst("dateFormat");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(Locale.forLanguageTag(locale));
+            disbursementLocalDate = LocalDate.parse(disbursementDate, formatter);
+        }
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
         ClientData clientData = this.clientReadPlatformService.retrieveOneLookup(clientId);
         RestructureCreditsRequestData requestData = this.restructureCreditsReadPlatformService.retrievePendingRestructure(clientId);
-        Collection<LoanAccountData> loanAccounts = this.loanReadPlatformService.retrieveClientActiveLoans(clientId);
+        Collection<LoanAccountData> loanAccounts = this.loanReadPlatformService.retrieveClientActiveLoansAccounts(clientId,
+                disbursementLocalDate);
         Collection<LoanProductData> loanProductData = this.loanProductReadPlatformService.retrieveAllLoanProducts();
         Collection<GroupPrequalificationData> groupPrequalificationData = null;
         if (Boolean.TRUE.equals(Boolean.valueOf(isextenstion))) {
