@@ -5338,11 +5338,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             loan = this.loanAssembler.assembleFrom(loan.getId());
             Long loanRescheduleReasonId = getLoanRescheduleReasonId();
             if (loan.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+                log.info("Processing Credito Rotativo disbursement for loanId={}", loan.getId());
                 ImmutablePair<Integer, LocalDate> pair = calculateInstallmentsToAdd(loan, actualDisbursementDate);
                 if (pair != null && pair.getKey().compareTo(0) > 0) {
                     Integer nrOfInstallmentsToAdd = pair.left;
                     LocalDate variationDate = pair.right;
+                    log.info("Creating reschedule request with variationDate={}, nrOfInstallmentsToAdd={}", variationDate,
+                            nrOfInstallmentsToAdd);
+                    // Pass the variation date to be used as the start date for new installments
                     createRescheduleRequestForCreditoRotativo(loan, variationDate, loanRescheduleReasonId, nrOfInstallmentsToAdd);
+                } else {
+                    log.info("No reschedule request created - pair={}", pair);
                 }
             } else {
                 Integer nrOfInstallmentsToAdd = calculateInstallmentsToAdd(loan);
@@ -5380,11 +5386,69 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     private ImmutablePair<Integer, LocalDate> calculateInstallmentsToAdd(Loan loan, LocalDate disbursementDate) {
+        log.info("calculateInstallmentsToAdd - Start: loanId={}, disbursementDate={}", loan.getId(), disbursementDate);
+
         ImmutablePair<Integer, LocalDate> pair;
         LocalDate variationDate = disbursementDate;
         Integer productNrOfRepayments = loan.getOriginalNumberOfRepayments();
         Integer installmentNumberToAddDisbursement = null;
         boolean addVariationToNextInstallment = false;
+
+        log.info("Product number of repayments: {}", productNrOfRepayments);
+
+        // Check if all installments are paid
+        boolean allInstallmentsPaid = loan.getRepaymentScheduleInstallments().stream()
+                .allMatch(LoanRepaymentScheduleInstallment::isObligationsMet);
+
+        log.info("All installments paid: {}, Total installments: {}", allInstallmentsPaid, loan.getRepaymentScheduleInstallments().size());
+
+        // Special handling for revolving credit when all installments are paid
+        if (allInstallmentsPaid && loan.getRepaymentScheduleInstallments().size() > 0) {
+            LoanRepaymentScheduleInstallment lastInstallment = loan.getLastLoanRepaymentScheduleInstallment();
+            LocalDate lastInstallmentDueDate = lastInstallment.getDueDate();
+            long daysBetween = ChronoUnit.DAYS.between(lastInstallmentDueDate, disbursementDate);
+
+            log.info("Last installment due date: {}, Days between: {}, Cut-off days: {}", lastInstallmentDueDate, daysBetween, CUTOFF_DAYS);
+
+            // For revolving credit, when all installments are paid:
+            // - If disbursement is within cut-off period (< 15 days), skip creating the immediate next installment
+            // - If disbursement is after cut-off period (>= 15 days), create full set of installments
+            if (daysBetween < CUTOFF_DAYS) {
+                // Within cut-off period - the next installment should be skipped
+                // For revolving credit, we need to properly calculate the next installment date
+                // If last installment was on Feb 3rd and disbursement is on Feb 16th (within 15 days),
+                // the next installment should be April 1st (skipping March 3rd)
+
+                // Calculate the next regular installment date after the last one
+                LocalDate nextRegularDate = lastInstallmentDueDate.plusMonths(1);
+                // Then skip to the following month
+                variationDate = nextRegularDate.plusMonths(1);
+
+                // Adjust to the first day of the month for revolving credit
+                if (variationDate.getDayOfMonth() != 1) {
+                    variationDate = variationDate.withDayOfMonth(1);
+                }
+
+                log.info("Within cut-off period - Setting variation date to: {}, Installments to add: {}", variationDate,
+                        productNrOfRepayments);
+                return ImmutablePair.of(productNrOfRepayments, variationDate);
+            } else {
+                // After cut-off period - create full set starting from next regular date
+                // Calculate the next installment date based on the disbursement date
+                LocalDate nextInstallmentDate = disbursementDate.plusMonths(1);
+
+                // Adjust to the first day of the month for revolving credit
+                if (nextInstallmentDate.getDayOfMonth() != 1) {
+                    nextInstallmentDate = nextInstallmentDate.withDayOfMonth(1);
+                }
+
+                variationDate = nextInstallmentDate;
+                log.info("After cut-off period - Setting variation date to: {}, Installments to add: {}", variationDate,
+                        productNrOfRepayments);
+                return ImmutablePair.of(productNrOfRepayments, variationDate);
+            }
+        }
+
         for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
             if (installment.getDueDate().isAfter(disbursementDate)) {
                 long diff = ChronoUnit.DAYS.between(disbursementDate, installment.getDueDate());
@@ -5401,6 +5465,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
             }
         }
+
         if (installmentNumberToAddDisbursement == null) {
             // Can only be null if disbursement date is after last installment due date. So create all installments
             installmentNumberToAddDisbursement = loan.getRepaymentScheduleInstallments().size();
@@ -5413,7 +5478,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             // NumberOfInstallnebts
             Optional<LocalDate> lastInstallmentDueDateOpt = loan.getRepaymentScheduleInstallments().stream()
                     .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber).reversed()).findFirst()
-                    .map(dt -> dt.getDueDate());
+                    .map(LoanRepaymentScheduleInstallment::getDueDate);
 
             if (lastInstallmentDueDateOpt.isPresent()) {
                 LocalDate lastInstallmentDueDate = lastInstallmentDueDateOpt.get();
@@ -5426,16 +5491,20 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             variationDate = loan.getLastLoanRepaymentScheduleInstallment().getDueDate();
             return ImmutablePair.of(installmentNumberToAddDisbursement, variationDate);
         }
+
         Integer actualNumberOfRepayments = loan.getTermFrequency();
         int requiredInstallments = installmentNumberToAddDisbursement + actualNumberOfRepayments - 1;
         if (requiredInstallments == 0) {
             return null;
         }
         int installmentsToAdd = requiredInstallments - loan.getRepaymentScheduleInstallments().size();
+
         if (installmentsToAdd <= 0) {
+            log.info("No installments to add (installmentsToAdd={}), returning null", installmentsToAdd);
             return null;
         }
         pair = new ImmutablePair<>(installmentsToAdd, variationDate);
+        log.info("calculateInstallmentsToAdd - End: installmentsToAdd={}, variationDate={}", installmentsToAdd, variationDate);
         return pair;
     }
 
@@ -5453,29 +5522,90 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     private void createRescheduleRequestForCreditoRotativo(Loan loan, LocalDate actualDisbursementDate, Long loanRescheduleReasonId,
             Integer nrOfNewInstallments) {
-        try {
-            JsonCommand createRescheduleRequestCommand = createRescheduleRequestAction(fromApiJsonHelper, null, loan.getId(),
-                    actualDisbursementDate, loanRescheduleReasonId, nrOfNewInstallments);
-            CommandProcessingResult result = loanRescheduleRequestWritePlatformService.create(createRescheduleRequestCommand);
-            Long requestId = result.getResourceId();
-            Optional<LoanRescheduleRequest> rescheduleRequestDataOpt = loanRescheduleRequestRepository.findById(requestId);
-            if (rescheduleRequestDataOpt.isPresent()) {
-                final AppUser appUser = this.platformSecurityContext.authenticatedUser();
-                LoanRescheduleRequest request = rescheduleRequestDataOpt.get();
-                loan.updateRescheduledByUser(appUser);
-                loan.updateRescheduledOnDate(DateUtils.getBusinessLocalDate());
-                request.approve(appUser, LocalDate.now());
-                loanRescheduleRequestRepository.save(request);
-                for (LoanRescheduleRequestToTermVariationMapping mapping : request.getLoanRescheduleRequestToTermVariationMappings()) {
-                    LoanTermVariations variation = mapping.getLoanTermVariations();
-                    variation.updateIsActive(true);
-                    // loan.getLoanTermVariations().add(variation);
-                }
-                loanRepository.save(loan);
+        log.info("createRescheduleRequestForCreditoRotativo - Start: loanId={}, actualDisbursementDate={}, nrOfNewInstallments={}",
+                loan.getId(), actualDisbursementDate, nrOfNewInstallments);
+
+        // Check if all installments are paid
+        boolean allInstallmentsPaid = loan.getRepaymentScheduleInstallments().stream()
+                .allMatch(LoanRepaymentScheduleInstallment::isObligationsMet);
+
+        if (allInstallmentsPaid && loan.getRepaymentScheduleInstallments().size() > 0) {
+            log.info("All installments are paid, directly regenerating schedule for {} new installments starting from {}",
+                    nrOfNewInstallments, actualDisbursementDate);
+
+            // For revolving credit with all installments paid, we need to create new installments
+            // The actualDisbursementDate parameter already contains the calculated variation date
+
+            // Create new installments manually
+            final List<Long> existingTransactionIds = loan.findExistingTransactionIds();
+            final List<Long> existingReversedTransactionIds = loan.findExistingReversedTransactionIds();
+
+            // Get the current highest installment number
+            Integer lastInstallmentNumber = loan.getRepaymentScheduleInstallments().stream()
+                    .mapToInt(LoanRepaymentScheduleInstallment::getInstallmentNumber).max().orElse(0);
+
+            // Create the new installments
+            LocalDate installmentDueDate = actualDisbursementDate;
+            BigDecimal principalPerInstallment = loan.getPrincipal().getAmount().divide(BigDecimal.valueOf(nrOfNewInstallments),
+                    MoneyHelper.getMathContext());
+
+            for (int i = 0; i < nrOfNewInstallments; i++) {
+                Integer installmentNumber = lastInstallmentNumber + i + 1;
+                LocalDate fromDate = i == 0 ? loan.getDisbursementDate() : installmentDueDate.minusMonths(1);
+
+                // Create new installment
+                LoanRepaymentScheduleInstallment newInstallment = new LoanRepaymentScheduleInstallment(loan, installmentNumber, fromDate,
+                        installmentDueDate, principalPerInstallment, BigDecimal.ZERO, // Interest will be calculated
+                        BigDecimal.ZERO, // Fees
+                        BigDecimal.ZERO, // Penalties
+                        false, null);
+
+                loan.addLoanRepaymentScheduleInstallment(newInstallment);
+
+                // Move to next month
+                installmentDueDate = installmentDueDate.plusMonths(1);
             }
-        } catch (JsonProcessingException ex) {
-            throw new GeneralPlatformDomainRuleException("error.msg.loan.does.cannot.create.extension",
-                    "Loan could not be automatically create and approve its extension.");
+
+            // Update loan summary fields
+            loan.updateLoanSummaryDerivedFields();
+
+            // Recalculate the schedule with proper interest
+            ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
+            loan.regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
+
+            // Save the loan with updated schedule
+            loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+
+            // Post journal entries for the changes
+            postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
+
+            log.info("Successfully regenerated schedule with {} new installments", nrOfNewInstallments);
+        } else {
+            // Use the existing reschedule logic for cases where not all installments are paid
+            try {
+                JsonCommand createRescheduleRequestCommand = createRescheduleRequestAction(fromApiJsonHelper, null, loan.getId(),
+                        actualDisbursementDate, loanRescheduleReasonId, nrOfNewInstallments);
+                CommandProcessingResult result = loanRescheduleRequestWritePlatformService.create(createRescheduleRequestCommand);
+                Long requestId = result.getResourceId();
+                Optional<LoanRescheduleRequest> rescheduleRequestDataOpt = loanRescheduleRequestRepository.findById(requestId);
+                if (rescheduleRequestDataOpt.isPresent()) {
+                    final AppUser appUser = this.platformSecurityContext.authenticatedUser();
+                    LoanRescheduleRequest request = rescheduleRequestDataOpt.get();
+                    loan.updateRescheduledByUser(appUser);
+                    loan.updateRescheduledOnDate(DateUtils.getBusinessLocalDate());
+                    request.approve(appUser, LocalDate.now());
+                    loanRescheduleRequestRepository.save(request);
+                    for (LoanRescheduleRequestToTermVariationMapping mapping : request.getLoanRescheduleRequestToTermVariationMappings()) {
+                        LoanTermVariations variation = mapping.getLoanTermVariations();
+                        variation.updateIsActive(true);
+                        // loan.getLoanTermVariations().add(variation);
+                    }
+                    loanRepository.save(loan);
+                }
+            } catch (JsonProcessingException ex) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.does.cannot.create.extension",
+                        "Loan could not be automatically create and approve its extension.");
+            }
         }
     }
 
