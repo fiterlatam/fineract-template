@@ -73,7 +73,7 @@ public class InstallmentChargeAccrualTasklet implements Tasklet {
         long start = System.currentTimeMillis();
         log.info("Starting Installment Charge Accrual posting for the date: {}", accrualDate);
         log.debug("Reading Load Ids for installment charge accrual processing!");
-        List<Long> loanIds = this.loanReadPlatformService.retrieveIdsForActiveLoans(pageSize, maxLoanIdInList);
+        List<Long> loanIds = this.loanReadPlatformService.retrieveLoanIdsForInsuranceAccrualsPosting(pageSize, maxLoanIdInList);
         if (loanIds != null && !loanIds.isEmpty()) {
             loanIds = Collections.synchronizedList(loanIds);
             long finish = System.currentTimeMillis();
@@ -123,7 +123,7 @@ public class InstallmentChargeAccrualTasklet implements Tasklet {
             while (queue.size() <= QUEUE_SIZE) {
                 log.debug("Fetching while threads are running!");
                 List<Long> loanIdList = Collections
-                        .synchronizedList(this.loanReadPlatformService.retrieveIdsForActiveLoans(pageSize, maxId));
+                        .synchronizedList(this.loanReadPlatformService.retrieveLoanIdsForInsuranceAccrualsPosting(pageSize, maxId));
                 if (loanIdList.isEmpty()) {
                     break;
                 }
@@ -167,7 +167,8 @@ public class InstallmentChargeAccrualTasklet implements Tasklet {
 
         while (queue.size() <= QUEUE_SIZE) {
             log.debug("Fetching while threads are running!..:: this is not supposed to run........");
-            loanIds = Collections.synchronizedList(this.loanReadPlatformService.retrieveIdsForActiveLoans(pageSize, maxId));
+            loanIds = Collections
+                    .synchronizedList(this.loanReadPlatformService.retrieveLoanIdsForInsuranceAccrualsPosting(pageSize, maxId));
             if (loanIds.isEmpty()) {
                 break;
             }
