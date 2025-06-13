@@ -8483,8 +8483,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             return false;
         }
 
-        return installments.stream()
-                .filter(installment -> !installment.isFullyGraced()) // Exclude grace period installments
+        return installments.stream().filter(installment -> !installment.isFullyGraced()) // Exclude grace period
+                                                                                         // installments
                 .allMatch(LoanRepaymentScheduleInstallment::isObligationsMet);
     }
 
