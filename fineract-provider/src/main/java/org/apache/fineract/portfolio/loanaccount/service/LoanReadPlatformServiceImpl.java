@@ -4162,7 +4162,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     loan_id
                 FROM MustHaveAccrualCharges
                 WHERE must_have_accrual <> current_accrual
-                AND loan_status_id = ?  
+                AND loan_status_id = ?
                 AND loan_id > ?
                 ORDER BY loan_id LIMIT ?;
                 """;

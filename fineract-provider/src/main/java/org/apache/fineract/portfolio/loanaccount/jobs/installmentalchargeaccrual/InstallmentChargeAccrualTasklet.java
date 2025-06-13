@@ -167,7 +167,8 @@ public class InstallmentChargeAccrualTasklet implements Tasklet {
 
         while (queue.size() <= QUEUE_SIZE) {
             log.debug("Fetching while threads are running!..:: this is not supposed to run........");
-            loanIds = Collections.synchronizedList(this.loanReadPlatformService.retrieveLoanIdsForInsuranceAccrualsPosting(pageSize, maxId));
+            loanIds = Collections
+                    .synchronizedList(this.loanReadPlatformService.retrieveLoanIdsForInsuranceAccrualsPosting(pageSize, maxId));
             if (loanIds.isEmpty()) {
                 break;
             }
