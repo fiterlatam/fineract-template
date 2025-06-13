@@ -4115,6 +4115,60 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         return this.namedParameterJdbcTemplate.query(schemaSQL, parameters, loanElectronicInvoiceMapper);
     }
 
+    @Override
+    public List<Long> retrieveLoanIdsForInsuranceAccrualsPosting(int pageSize, Long minLoanId) {
+        final String sql = """
+                WITH ProductsWithCharges AS (
+                    SELECT
+                        plc.product_loan_id,
+                        c.charge_calculation_enum,
+                        c.insurance_company
+                    FROM m_product_loan_charge plc
+                    INNER JOIN m_charge c ON plc.charge_id = c.id
+                    WHERE c.insurance_code IS NOT NULL
+                ),
+                CurrentAccrual AS (
+                    SELECT
+                        lt.loan_id,
+                        COUNT(*) AS current_accrual
+                    FROM m_loan_transaction lt
+                    INNER JOIN m_loan_charge_paid_by lcpb ON lt.id = lcpb.loan_transaction_id
+                    INNER JOIN m_loan_charge lc ON lcpb.loan_charge_id = lc.id
+                    INNER JOIN m_charge c ON lc.charge_id = c.id
+                    WHERE c.insurance_code IS NOT NULL
+                      AND lt.transaction_type_enum = 10
+                      AND lt.is_reversed = FALSE
+                    GROUP BY lt.loan_id
+                ),
+                MustHaveAccrualCharges AS (
+                    SELECT
+                        lrs.loan_id,
+                        l.loan_status_id,
+                        SUM(
+                            CASE\s
+                                WHEN lrs.fromdate <= CURRENT_DATE AND lrs.installment <> 0 THEN 1\s
+                                ELSE 0\s
+                            END
+                        ) AS must_have_accrual,
+                        COALESCE(ca.current_accrual, 0) AS current_accrual
+                    FROM m_loan_repayment_schedule lrs
+                    INNER JOIN m_loan l ON lrs.loan_id = l.id
+                    INNER JOIN ProductsWithCharges pwc ON l.product_id = pwc.product_loan_id
+                    LEFT JOIN CurrentAccrual ca ON lrs.loan_id = ca.loan_id
+                    WHERE l.block_status_id IS NULL OR l.block_status_id <> 17
+                    GROUP BY lrs.loan_id, l.loan_status_id, ca.current_accrual
+                )
+                SELECT
+                    loan_id
+                FROM MustHaveAccrualCharges
+                WHERE must_have_accrual <> current_accrual
+                AND loan_status_id = ?  
+                AND loan_id > ?
+                ORDER BY loan_id LIMIT ?;
+                """;
+        return this.jdbcTemplate.queryForList(sql, Long.class, LoanStatus.ACTIVE.getValue(), minLoanId, pageSize).stream().toList();
+    }
+
     private static class LoanElectronicInvoiceMapper implements RowMapper<LoanElectronicInvoiceData> {
 
         public String schema() {

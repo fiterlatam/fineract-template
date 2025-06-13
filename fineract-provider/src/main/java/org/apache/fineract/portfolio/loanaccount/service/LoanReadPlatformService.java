@@ -192,4 +192,6 @@ public interface LoanReadPlatformService {
 
     List<LoanElectronicInvoiceData> retrieveAvailableElectronicInvoicesToBeOffset(String idCliente, String tipoProd, String sku);
 
+    List<Long> retrieveLoanIdsForInsuranceAccrualsPosting(int pageSize, Long minLoanId);
+
 }

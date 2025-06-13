@@ -5258,7 +5258,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     private List<LoanCharge> filterInstallmentCharges(Set<LoanCharge> charges) {
         return charges.stream()
-                .filter(loanCharge -> loanCharge.getCharge().getChargeTimeType().equals(ChargeTimeType.DISBURSEMENT.getValue())
+                .filter(loanCharge -> loanCharge.getCharge().getChargeTimeType().equals(ChargeTimeType.INSTALMENT_FEE.getValue())
                         && !loanCharge.isWaived() && !loanCharge.isFullyPaid())
                 .toList();
     }
