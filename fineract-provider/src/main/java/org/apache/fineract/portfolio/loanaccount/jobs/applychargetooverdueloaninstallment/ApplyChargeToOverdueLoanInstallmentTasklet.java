@@ -33,6 +33,7 @@ import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDoma
 import org.apache.fineract.infrastructure.core.config.TaskExecutorConstant;
 import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
+import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.jetbrains.annotations.NotNull;
@@ -60,40 +61,55 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
 
     @Override
     public RepeatStatus execute(@NotNull StepContribution contribution, ChunkContext chunkContext) throws Exception {
-        final int threadPoolSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("thread-pool-size"));
-        log.info("Thread pool size for Apply Penalties to Overdue Loans job is set to {}", threadPoolSize);
-        taskExecutor.setMaxPoolSize(threadPoolSize);
-        taskExecutor.setCorePoolSize(threadPoolSize);
-        final int batchSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
-        log.info("Batch size for Apply Penalties to Overdue Loans job is set to {}", batchSize);
-        final int pageSize = batchSize * threadPoolSize;
-        log.info("Page size for Apply Penalties to Overdue Loans job is set to {}", pageSize);
-        Long maxLoanId = 0L;
-        final Long penaltyWaitPeriodValue = configurationDomainService.retrievePenaltyWaitPeriod();
-        final Boolean backdatePenalties = configurationDomainService.isBackdatePenaltiesEnabled();
-        long start = System.currentTimeMillis();
-        log.info("Starting Apply Penalties to Overdue Loans job");
-        log.debug("Reading overdue loan scheduled installments for processing!");
-        List<OverdueLoanScheduleData> overdueLoanScheduledInstallments = loanReadPlatformService
-                .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties, pageSize, maxLoanId);
-        long finish = System.currentTimeMillis();
-        log.debug("Done fetching overdue loan scheduled installments within {} milliseconds", finish - start);
-        log.info("Found {} overdue loan scheduled installments to process", overdueLoanScheduledInstallments.size());
-        if (!overdueLoanScheduledInstallments.isEmpty()) {
-            overdueLoanScheduledInstallments = Collections.synchronizedList(overdueLoanScheduledInstallments);
-            queue.add(overdueLoanScheduledInstallments);
-            if (!CollectionUtils.isEmpty(queue)) {
-                do {
-                    final List<OverdueLoanScheduleData> queueElement = queue.element();
-                    maxLoanId = queueElement.get(queueElement.size() - 1).getLoanId();
-                    this.applyPenaltiesToOverdueInstallments(queue.remove(), threadPoolSize, pageSize, maxLoanId, penaltyWaitPeriodValue,
-                            backdatePenalties);
-                } while (!CollectionUtils.isEmpty(queue));
+        final List<Throwable> exceptions = new ArrayList<>();
+        int maxRetryCount = 3;
+        while (maxRetryCount > 0) {
+            try {
+                final int threadPoolSize = Integer
+                        .parseInt((String) chunkContext.getStepContext().getJobParameters().get("thread-pool-size"));
+                log.info("Thread pool size for Apply Penalties to Overdue Loans job is set to {}", threadPoolSize);
+                taskExecutor.setMaxPoolSize(threadPoolSize);
+                taskExecutor.setCorePoolSize(threadPoolSize);
+                final int batchSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
+                log.info("Batch size for Apply Penalties to Overdue Loans job is set to {}", batchSize);
+                final int pageSize = batchSize * threadPoolSize;
+                log.info("Page size for Apply Penalties to Overdue Loans job is set to {}", pageSize);
+                Long maxLoanId = 0L;
+                final Long penaltyWaitPeriodValue = configurationDomainService.retrievePenaltyWaitPeriod();
+                final Boolean backdatePenalties = configurationDomainService.isBackdatePenaltiesEnabled();
+                long start = System.currentTimeMillis();
+                log.info("Starting Apply Penalties to Overdue Loans job");
+                log.debug("Reading overdue loan scheduled installments for processing!");
+                List<OverdueLoanScheduleData> overdueLoanScheduledInstallments = loanReadPlatformService
+                        .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties, pageSize, maxLoanId);
+                long finish = System.currentTimeMillis();
+                log.debug("Done fetching overdue loan scheduled installments within {} milliseconds", finish - start);
+                log.info("Found {} overdue loan scheduled installments to process", overdueLoanScheduledInstallments.size());
+                if (!overdueLoanScheduledInstallments.isEmpty()) {
+                    overdueLoanScheduledInstallments = Collections.synchronizedList(overdueLoanScheduledInstallments);
+                    queue.add(overdueLoanScheduledInstallments);
+                    if (!CollectionUtils.isEmpty(queue)) {
+                        do {
+                            final List<OverdueLoanScheduleData> queueElement = queue.element();
+                            maxLoanId = queueElement.get(queueElement.size() - 1).getLoanId();
+                            this.applyPenaltiesToOverdueInstallments(queue.remove(), threadPoolSize, pageSize, maxLoanId,
+                                    penaltyWaitPeriodValue, backdatePenalties);
+                        } while (!CollectionUtils.isEmpty(queue));
+                    }
+                }
+                final long finishTime = System.currentTimeMillis();
+                final long timeSpent = (finishTime - start) / (1000 * 60);
+                log.info("Apply Penalties to Overdue Loans job completed in {} minutes", timeSpent);
+                return RepeatStatus.FINISHED;
+            } catch (final Exception e) {
+                log.error("Error occurred while applying penalties to overdue loans", e);
+                exceptions.add(e);
+                maxRetryCount--;
+                if (maxRetryCount == 0) {
+                    throw new JobExecutionException(exceptions);
+                }
             }
         }
-        final long finishTime = System.currentTimeMillis();
-        final long timeSpent = (finishTime - start) / (1000 * 60);
-        log.info("Apply Penalties to Overdue Loans job completed in {} minutes", timeSpent);
         return RepeatStatus.FINISHED;
     }
 
