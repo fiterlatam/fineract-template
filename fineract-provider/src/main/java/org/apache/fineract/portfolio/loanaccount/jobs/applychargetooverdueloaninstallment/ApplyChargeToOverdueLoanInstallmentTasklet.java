@@ -35,6 +35,7 @@ import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -58,51 +59,56 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
     private final LoanReadPlatformService loanReadPlatformService;
 
     @Override
-    public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+    public RepeatStatus execute(@NotNull StepContribution contribution, ChunkContext chunkContext) throws Exception {
         final int threadPoolSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("thread-pool-size"));
+        log.info("Thread pool size for Apply Penalties to Overdue Loans job is set to {}", threadPoolSize);
         taskExecutor.setMaxPoolSize(threadPoolSize);
         taskExecutor.setCorePoolSize(threadPoolSize);
         final int batchSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
+        log.info("Batch size for Apply Penalties to Overdue Loans job is set to {}", batchSize);
         final int pageSize = batchSize * threadPoolSize;
+        log.info("Page size for Apply Penalties to Overdue Loans job is set to {}", pageSize);
         Long maxLoanId = 0L;
         final Long penaltyWaitPeriodValue = configurationDomainService.retrievePenaltyWaitPeriod();
         final Boolean backdatePenalties = configurationDomainService.isBackdatePenaltiesEnabled();
-
         long start = System.currentTimeMillis();
         log.info("Starting Apply Penalties to Overdue Loans job");
         log.debug("Reading overdue loan scheduled installments for processing!");
         List<OverdueLoanScheduleData> overdueLoanScheduledInstallments = loanReadPlatformService
                 .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties, pageSize, maxLoanId);
+        long finish = System.currentTimeMillis();
+        log.debug("Done fetching overdue loan scheduled installments within {} milliseconds", finish - start);
         log.info("Found {} overdue loan scheduled installments to process", overdueLoanScheduledInstallments.size());
         if (!overdueLoanScheduledInstallments.isEmpty()) {
             overdueLoanScheduledInstallments = Collections.synchronizedList(overdueLoanScheduledInstallments);
-            long finish = System.currentTimeMillis();
-            log.debug("Done fetching overdue loan scheduled installments within {} milliseconds", finish - start);
             queue.add(overdueLoanScheduledInstallments);
-
             if (!CollectionUtils.isEmpty(queue)) {
                 do {
-                    List<OverdueLoanScheduleData> queueElement = queue.element();
+                    final List<OverdueLoanScheduleData> queueElement = queue.element();
                     maxLoanId = queueElement.get(queueElement.size() - 1).getLoanId();
                     this.applyPenaltiesToOverdueInstallments(queue.remove(), threadPoolSize, pageSize, maxLoanId, penaltyWaitPeriodValue,
                             backdatePenalties);
                 } while (!CollectionUtils.isEmpty(queue));
             }
         }
+        final long finishTime = System.currentTimeMillis();
+        final long timeSpent = (finishTime - start) / (1000 * 60);
+        log.info("Apply Penalties to Overdue Loans job completed in {} minutes", timeSpent);
         return RepeatStatus.FINISHED;
     }
 
-    private void applyPenaltiesToOverdueInstallments(List<OverdueLoanScheduleData> overdueLoanScheduledInstallments, int threadPoolSize,
-            int pageSize, Long maxLoanId, Long penaltyWaitPeriodValue, Boolean backdatePenalties) {
-        List<Callable<Void>> posters = new ArrayList<>();
+    @SuppressWarnings("all")
+    private void applyPenaltiesToOverdueInstallments(List<OverdueLoanScheduleData> overdueLoanScheduledInstallments,
+            final int threadPoolSize, final int pageSize, final Long maxLoanId, final Long penaltyWaitPeriodValue,
+            final Boolean backdatePenalties) {
+        final List<Callable<Void>> posters = new ArrayList<>();
         int fromIndex = 0;
         int size = overdueLoanScheduledInstallments.size();
         int batchSize = (int) Math.ceil((double) size / threadPoolSize);
-
+        log.info("Batch size for Apply Penalties to Overdue Loans job is set to {}", batchSize);
         if (batchSize == 0) {
             return;
         }
-
         int toIndex = (batchSize > size - 1) ? size : batchSize;
         while (toIndex < size && overdueLoanScheduledInstallments.get(toIndex - 1).getLoanId()
                 .equals(overdueLoanScheduledInstallments.get(toIndex).getLoanId())) {
@@ -110,10 +116,9 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
         }
         boolean lastBatch = false;
         int loopCount = size / batchSize + 1;
-
-        FineractContext context = ThreadLocalContextUtil.getContext();
-
-        Callable<Void> fetchData = () -> {
+        log.info("Loop count for Apply Penalties to Overdue Loans job is set to {}", loopCount);
+        final FineractContext context = ThreadLocalContextUtil.getContext();
+        final Callable<Void> fetchData = () -> {
             ThreadLocalContextUtil.init(context);
             Long maxId = maxLoanId;
             if (!queue.isEmpty()) {
@@ -158,8 +163,7 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
                 toIndex++;
             }
         }
-
-        List<Future<Void>> responses = new ArrayList<>();
+        final List<Future<Void>> responses = new ArrayList<>();
         posters.forEach(poster -> responses.add(taskExecutor.submit(poster)));
         Long maxId = maxLoanId;
         if (!queue.isEmpty()) {
