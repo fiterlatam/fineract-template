@@ -1585,10 +1585,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             BigDecimal disbursedAmount = BigDecimal.ZERO;
             for (final DisbursementData data : disbursementData) {
                 boolean isDueForDisbursement = data.isDueForDisbursement(loanScheduleType, fromDate, dueDate);
-                if (((fromDate.equals(this.disbursement.disbursementDate()) && data.disbursementDate().equals(fromDate))
+                boolean isDisbursementAllowed = ((fromDate.equals(this.disbursement.disbursementDate()) && data.disbursementDate().equals(fromDate))
                         || (fromDate.equals(dueDate) && data.disbursementDate().equals(fromDate))
                         || canAddDisbursementData(data, isDueForDisbursement, excludePastUnDisbursed))
-                        && !disbursementPeriodIds.contains(data.getId())) {
+                        && !disbursementPeriodIds.contains(data.getId());
+                if (isDisbursementAllowed) {
                     disbursedAmount = disbursedAmount.add(data.getPrincipal());
                     LoanSchedulePeriodData periodData = createLoanSchedulePeriodData(data, disbursementChargeAmount, waivedChargeAmount);
                     periods.add(periodData);
