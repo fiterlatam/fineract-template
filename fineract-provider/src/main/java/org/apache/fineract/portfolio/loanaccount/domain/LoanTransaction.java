@@ -152,8 +152,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Getter
     private Boolean isForeclosureTransaction;
 
-
-
     protected LoanTransaction() {}
 
     public static LoanTransaction incomePosting(final Loan loan, final Office office, final LocalDate dateOf, final BigDecimal amount,
@@ -217,6 +215,15 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
             final Money waived, final Money unrecognizedPortion) {
         LoanTransaction loanTransaction = new LoanTransaction(loan, office, LoanTransactionType.WAIVE_INTEREST, amount.getAmount(),
                 waiveDate, null);
+        loanTransaction.updateInterestComponent(waived, unrecognizedPortion);
+        return loanTransaction;
+    }
+
+    public static LoanTransaction waiverNoAccounting(final Office office, final Loan loan, final Money amount, final LocalDate waiveDate,
+            final Money waived, final Money unrecognizedPortion, Boolean postAccountingForWaivers) {
+        LoanTransactionType waiveInterest = postAccountingForWaivers ? LoanTransactionType.WAIVE_INTEREST
+                : LoanTransactionType.WAIVE_INTEREST_TOPUP;
+        LoanTransaction loanTransaction = new LoanTransaction(loan, office, waiveInterest, amount.getAmount(), waiveDate, null);
         loanTransaction.updateInterestComponent(waived, unrecognizedPortion);
         return loanTransaction;
     }
@@ -517,7 +524,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean isRepaymentType() {
-        return isRepayment() || isMerchantIssuedRefund() || isPayoutRefund() || isGoodwillCredit()|| isLoanTopupPayment();
+        return isRepayment() || isMerchantIssuedRefund() || isPayoutRefund() || isGoodwillCredit() || isLoanTopupPayment();
     }
 
     public boolean isRepayment() {
@@ -535,8 +542,13 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     public boolean isGoodwillCredit() {
         return LoanTransactionType.GOODWILL_CREDIT.equals(getTypeOf()) && isNotReversed();
     }
+
     public boolean isLoanTopupPayment() {
         return LoanTransactionType.LOAN_TOPUP_REPAYMENT.equals(getTypeOf()) && isNotReversed();
+    }
+
+    public boolean isLoanTopupInterestWaiver() {
+        return LoanTransactionType.WAIVE_INTEREST_TOPUP.equals(getTypeOf()) && isNotReversed();
     }
 
     public boolean isNotRepaymentType() {
@@ -568,15 +580,12 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean isInterestWaiver() {
-        return LoanTransactionType.WAIVE_INTEREST.equals(getTypeOf()) && isNotReversed();
+        return (LoanTransactionType.WAIVE_INTEREST.equals(getTypeOf()) || LoanTransactionType.WAIVE_INTEREST_TOPUP.equals(getTypeOf()))
+                && isNotReversed();
     }
 
     public boolean isChargesWaiver() {
         return LoanTransactionType.WAIVE_CHARGES.equals(getTypeOf()) && isNotReversed();
-    }
-
-    public boolean isNotInterestWaiver() {
-        return !isInterestWaiver();
     }
 
     public boolean isWaiver() {

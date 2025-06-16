@@ -134,7 +134,7 @@ public class AccountingProcessorHelper {
             final BigDecimal loanTopupAmount = (BigDecimal) map.get("loanTopupAmount");
             final boolean reversed = (Boolean) map.get("reversed");
             boolean postAccountingForWaivers = true;
-            if (map.containsKey("postAccountingForWaivers") && map.get("postAccountingForWaivers")!= null) {
+            if (map.containsKey("postAccountingForWaivers") && map.get("postAccountingForWaivers") != null) {
                 postAccountingForWaivers = (Boolean) map.get("postAccountingForWaivers");
             }
             final Long paymentTypeId = (Long) map.get("paymentTypeId");
@@ -168,7 +168,7 @@ public class AccountingProcessorHelper {
                     transactionDate, transactionType, amount, principal, interest, incomeInterest, receivableInterest, fees, penalties,
                     overPayments, reversed, penaltyPaymentDetails, feePaymentDetails, isAccountTransfer);
             transaction.setGlAccountId(transactionGlAccountId != null ? transactionGlAccountId : glAccountId);
-            transaction.setLoanTopupAmount(loanTopupAmount!=null?loanTopupAmount:BigDecimal.ZERO);
+            transaction.setLoanTopupAmount(loanTopupAmount != null ? loanTopupAmount : BigDecimal.ZERO);
             transaction.setPostAccountingForWaivers(postAccountingForWaivers);
             Boolean isLoanToLoanTransfer = (Boolean) accountingBridgeData.get("isLoanToLoanTransfer");
             if (isLoanToLoanTransfer != null && isLoanToLoanTransfer) {

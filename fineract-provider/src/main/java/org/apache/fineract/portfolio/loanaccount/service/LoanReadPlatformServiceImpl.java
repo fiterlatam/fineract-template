@@ -825,7 +825,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " l.create_standing_instruction_at_disbursement as createStandingInstructionAtDisbursement, "
                     + " lpvi.minimum_gap as minimuminstallmentgap, lpvi.maximum_gap as maximuminstallmentgap, "
                     + " lp.can_use_for_topup as canUseForTopup, " + " l.is_topup as isTopup, " + " topup.closure_loan_id as closureLoanId, "
-                    + " l.total_recovered_derived as totalRecovered" + ", topuploan.account_no as closureLoanAccountNo, "
+                    + " l.total_recovered_derived as totalRecovered"
+                    + ", concat(topuploan.account_no, ' (', topupProduct.name,')') as closureLoanAccountNo, "
                     + " (ifnull(sa.account_balance_derived, 0)- ifnull(sa.total_savings_amount_on_hold,0) - ifnull(on_hold_funds_derived,0)) as actualGuaranteeAmount, "
                     + " topup.topup_amount as topupAmount " + " from m_loan l" //
                     + " join m_product_loan lp on lp.id = l.product_id" //
@@ -855,6 +856,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " left join m_product_loan_variable_installment_config lpvi on lpvi.loan_product_id = l.product_id"
                     + " left join m_loan_topup as topup on l.id = topup.loan_id"
                     + " left join m_loan as topuploan on topuploan.id = topup.closure_loan_id"
+                    + " left join m_product_loan topupProduct on topupProduct.id = topuploan.product_id"
                     + " LEFT JOIN (SELECT DISTINCT sc.loan_id AS loan_id, sc.duedate AS first_duedate"
                     + "            FROM m_loan_repayment_schedule sc " + "            WHERE sc.installment = 1 "
                     + "            ORDER BY sc.duedate DESC " + "            ) mlrs ON mlrs.loan_id = l.id "

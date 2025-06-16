@@ -3340,7 +3340,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             throw new InvalidLoanStateTransitionException("transaction", "cannot.be.a.future.date", errorMessage, loanTransactionDate);
         }
 
-        if (loanTransaction.isInterestWaiver()) {
+        if (loanTransaction.isInterestWaiver() || loanTransaction.isLoanTopupInterestWaiver()) {
             Money totalInterestOutstandingOnLoan = getTotalInterestOutstandingOnLoan();
             if (adjustedTransaction != null) {
                 totalInterestOutstandingOnLoan = totalInterestOutstandingOnLoan.plus(adjustedTransaction.getAmount(loanCurrency()));
@@ -3776,7 +3776,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             this.loanStatus = LoanStatus.ACTIVE.getValue();
         }
 
-        if (newTransactionDetail.isRepaymentType() || newTransactionDetail.isInterestWaiver()) {
+        if (newTransactionDetail.isRepaymentType() || newTransactionDetail.isInterestWaiver()
+                || newTransactionDetail.isLoanTopupInterestWaiver()) {
             changedTransactionDetail = handleRepaymentOrRecoveryOrWaiverTransaction(newTransactionDetail, loanLifecycleStateMachine,
                     transactionForAdjustment, scheduleGeneratorDTO);
         }
@@ -4582,7 +4583,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     && !transaction.getTransactionDate().isAfter(tillDate)) {
                 if (transaction.isAccrual()) {
                     receivableInterest = receivableInterest.plus(transaction.getInterestPortion(getCurrency()));
-                } else if (transaction.isRepaymentType() || transaction.isInterestWaiver()) {
+                } else if (transaction.isRepaymentType() || transaction.isInterestWaiver() || transaction.isLoanTopupInterestWaiver()) {
                     receivableInterest = receivableInterest.minus(transaction.getInterestPortion(getCurrency()));
                 }
             }
@@ -6380,7 +6381,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Collections.reverse(loanTransactions);
         for (final LoanTransaction previousTransaction : loanTransactions) {
             if (lastTransactionDate.isBefore(previousTransaction.getTransactionDate())) {
-                if (previousTransaction.isRepaymentType() || previousTransaction.isWaiver() || previousTransaction.isChargePayment()) {
+                if (previousTransaction.isRepaymentType() || previousTransaction.isWaiver()
+                        || previousTransaction.isLoanTopupInterestWaiver() || previousTransaction.isChargePayment()) {
                     throw new UndoLastTrancheDisbursementException(previousTransaction.getId());
                 }
             }
