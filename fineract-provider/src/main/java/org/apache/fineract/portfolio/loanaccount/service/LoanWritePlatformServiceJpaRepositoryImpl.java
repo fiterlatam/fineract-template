@@ -1444,8 +1444,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 unrecognizedIncome = transactionAmountAsMoney.minus(receivableInterest);
             }
         }
-        final LoanTransaction waiveInterestTransaction = LoanTransaction.waiver(loan.getOffice(), loan, transactionAmountAsMoney,
-                transactionDate, interestComponent, unrecognizedIncome);
+        final LoanTransaction waiveInterestTransaction = LoanTransaction.waiverNoAccounting(loan.getOffice(), loan,
+                transactionAmountAsMoney, transactionDate, interestComponent, unrecognizedIncome, postAccountingForWaivers);
         waiveInterestTransaction.setPostAccountingForWaivers(Boolean.TRUE.equals(postAccountingForWaivers));
         businessEventNotifierService.notifyPreBusinessEvent(new LoanWaiveInterestBusinessEvent(waiveInterestTransaction));
         LocalDate recalculateFrom = null;

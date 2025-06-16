@@ -51,7 +51,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             this.helper.checkForBranchClosures(latestGLClosure, transactionDate);
 
             // if transaction is waiver for Friendship bridge, dont post accounting for interest waivers
-            if (loanTransactionDTO.getTransactionType().isWaiveInterest() && Boolean.FALSE.equals(loanTransactionDTO.getPostAccountingForWaivers())) {
+            if (loanTransactionDTO.getTransactionType().isWaiveInterestLoanTopup() || !loanTransactionDTO.getPostAccountingForWaivers()) {
                 continue;
             }
             /** Handle Disbursements **/
@@ -319,7 +319,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                         AccrualAccountsForLoan.LOSSES_WRITTEN_OFF.getValue(), loanProductId, paymentTypeId, loanId, transactionId,
                         transactionDate, totalDebitAmount, isReversal, fundSourceGlAccountId);
             } else {
-                if (loanTransactionDTO.isLoanToLoanTransfer()|| loanTransactionDTO.getTransactionType().isLoanTopupPayment()) {
+                if (loanTransactionDTO.isLoanToLoanTransfer() || loanTransactionDTO.getTransactionType().isLoanTopupPayment()) {
                     this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode,
                             AccrualAccountsForLoan.TRANSFERS_SUSPENSE.getValue(), loanProductId, paymentTypeId, loanId, transactionId,
                             transactionDate, totalDebitAmount, isReversal, fundSourceGlAccountId);

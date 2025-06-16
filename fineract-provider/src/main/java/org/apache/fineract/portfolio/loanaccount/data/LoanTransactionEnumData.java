@@ -36,6 +36,7 @@ public class LoanTransactionEnumData {
     private final boolean goodwillCredit;
     private final boolean contra;
     private final boolean waiveInterest;
+    private final boolean waiveInterestLoanTopup;
     private final boolean waiveCharges;
     private final boolean accrual;
     private final boolean writeOff;
@@ -75,6 +76,7 @@ public class LoanTransactionEnumData {
         this.refundForActiveLoans = Long.valueOf(18).equals(this.id);
         this.creditBalanceRefund = Long.valueOf(20).equals(this.id);
         this.loanTopupPayment = Long.valueOf(24).equals(this.id);
+        this.waiveInterestLoanTopup = Long.valueOf(25).equals(this.id);
     }
 
     public Long id() {
@@ -184,8 +186,13 @@ public class LoanTransactionEnumData {
     public boolean isCreditBalanceRefund() {
         return this.creditBalanceRefund;
     }
+
     public boolean isLoanTopupPayment() {
         return this.loanTopupPayment;
+    }
+
+    public boolean isWaiveInterestLoanTopup() {
+        return this.waiveInterestLoanTopup;
     }
 
 }
