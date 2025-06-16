@@ -373,7 +373,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final Loan newLoanApplication = this.loanAssembler.assembleFrom(command);
             newLoanApplication.setOriginalNrOfRepayments();
 
-            if (!newLoanApplication.isMigratedLoan()) {
+            if (newLoanApplication.isMigratedLoan()) {
+                // Add disbursement charges to the loan if they exist on the loan product and have not already been
+                // added to the loan
+                addDisbursementChargesFromLoanProduct(newLoanApplication);
+            } else {
                 validateMicrocreditoProductCharges(newLoanApplication);
             }
 
@@ -2090,6 +2094,59 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             loan.recalculateAllCharges();
 
             loanRepository.save(loan);
+        }
+    }
+
+    /**
+     * Adds disbursement charges to the loan if they exist on the loan product and have not already been added to the
+     * loan
+     *
+     * @param loan
+     *            The loan to add disbursement charges to
+     */
+    private void addDisbursementChargesFromLoanProduct(Loan loan) {
+        LoanProduct loanProduct = loan.getLoanProduct();
+
+        // Get all charges from the loan product
+        List<Charge> productCharges = loanProduct.getLoanProductCharges();
+
+        if (productCharges != null && !productCharges.isEmpty()) {
+            // Filter for disbursement charges
+            List<Charge> disbursementCharges = productCharges.stream()
+                    .filter(charge -> charge.getChargeTimeType() == ChargeTimeType.DISBURSEMENT.getValue() && charge.isActive()).toList();
+
+            if (!disbursementCharges.isEmpty()) {
+                // Check if the loan already has these charges
+                Collection<LoanCharge> existingLoanCharges = loan.getLoanCharges();
+
+                for (Charge disbursementCharge : disbursementCharges) {
+                    // Check if this charge is already added to the loan
+                    boolean chargeAlreadyAdded = false;
+
+                    if (existingLoanCharges != null) {
+                        chargeAlreadyAdded = existingLoanCharges.stream()
+                                .anyMatch(loanCharge -> loanCharge.getCharge().getId().equals(disbursementCharge.getId()));
+                    }
+
+                    // If the charge is not already added, add it to the loan
+                    if (!chargeAlreadyAdded) {
+                        final LoanCharge loanCharge = new LoanCharge(loan, disbursementCharge, loan.getProposedPrincipal(),
+                                disbursementCharge.getAmount(), ChargeTimeType.fromInt(disbursementCharge.getChargeTimeType()),
+                                ChargeCalculationType.fromInt(disbursementCharge.getChargeCalculation()),
+                                loan.getExpectedDisbursedOnLocalDate(),
+                                ChargePaymentMode.fromInt(disbursementCharge.getChargePaymentMode()), null, BigDecimal.ZERO, null, false,
+                                null);
+
+                        loan.addLoanCharge(loanCharge);
+                    }
+                }
+
+                // Recalculate all charges
+                loan.recalculateAllCharges();
+
+                // Save the loan
+                loanRepository.save(loan);
+            }
         }
     }
 
