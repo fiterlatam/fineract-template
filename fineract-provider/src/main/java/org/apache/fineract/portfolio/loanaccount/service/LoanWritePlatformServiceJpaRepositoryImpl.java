@@ -472,7 +472,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         checkClientOrGroupActive(loan);
 
         // Fail fast if cupo is not enough
-        checkCupo(loan);
+        if (!loan.isMigratedLoan()) {
+            checkCupo(loan);
+        }
 
         final LocalDate actualDisbursementDate = this.fromApiJsonHelper
                 .extractLocalDateNamed(LoanEventApiJsonValidator.ACTUAL_DISBURSEMENT_DATE_PARAM, command.parsedJson().getAsJsonObject());
