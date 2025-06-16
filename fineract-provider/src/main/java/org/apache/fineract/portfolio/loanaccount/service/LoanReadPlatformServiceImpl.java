@@ -1342,6 +1342,45 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     private static final class LoanScheduleResultSetExtractor implements ResultSetExtractor<LoanScheduleData> {
 
+        private static final String LOAN_REPAYMENT_SCHEDULE_QUERY = """
+             ls.loan_id as loanId,
+            ls.id as installmentId,
+            ls.installment as period,
+            ls.fromdate as fromDate,
+            ls.duedate as dueDate,
+            ls.obligations_met_on_date as obligationsMetOnDate,
+            ls.completed_derived as complete,
+            ls.principal_amount as principalDue,
+            ls.principal_completed_derived as principalPaid,
+            ls.principal_writtenoff_derived as principalWrittenOff,
+            ls.is_additional as isAdditional,
+            ls.interest_amount as interestDue,
+            ls.interest_completed_derived as interestPaid,
+            ls.interest_waived_derived as interestWaived,
+            ls.interest_writtenoff_derived as interestWrittenOff,
+            ls.fee_charges_amount as feeChargesDue,
+            ls.fee_charges_completed_derived as feeChargesPaid,
+            ls.fee_charges_waived_derived as feeChargesWaived,
+            ls.fee_charges_writtenoff_derived as feeChargesWrittenOff,
+            ls.penalty_charges_amount as penaltyChargesDue,
+            ls.penalty_charges_completed_derived as penaltyChargesPaid,
+            ls.penalty_charges_waived_derived as penaltyChargesWaived,
+            ls.penalty_charges_writtenoff_derived as penaltyChargesWrittenOff,
+            ls.total_paid_in_advance_derived as totalPaidInAdvanceForPeriod,
+            ls.total_paid_late_derived as totalPaidLateForPeriod,
+            ls.credits_amount as totalCredits,
+            ls.is_down_payment as isDownPayment,
+            ls.advance_principal_amount as advancePrincipalAmount,
+            life_insurance_charge_portion as lifeInsuranceChargePortion,
+            CASE
+                WHEN LAG(ls.obligations_met_on_date) OVER (PARTITION BY ls.loan_id ORDER BY ls.installment) IS NOT NULL
+                    THEN true
+                ELSE false
+                END as previousInstallmentPaid
+        FROM
+            m_loan_repayment_schedule ls
+        """;
+
         private final CurrencyData currency;
         private final DisbursementData disbursement;
         private final BigDecimal totalFeeChargesDueAtDisbursement;
@@ -1365,14 +1404,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         public String schema() {
 
-            return " ls.loan_id as loanId,ls.id as installmentId, ls.installment as period, ls.fromdate as fromDate, ls.duedate as dueDate, ls.obligations_met_on_date as obligationsMetOnDate, ls.completed_derived as complete,"
-                    + " ls.principal_amount as principalDue, ls.principal_completed_derived as principalPaid, ls.principal_writtenoff_derived as principalWrittenOff, ls.is_additional as isAdditional, "
-                    + " ls.interest_amount as interestDue, ls.interest_completed_derived as interestPaid, ls.interest_waived_derived as interestWaived, ls.interest_writtenoff_derived as interestWrittenOff, "
-                    + " ls.fee_charges_amount as feeChargesDue, ls.fee_charges_completed_derived as feeChargesPaid, ls.fee_charges_waived_derived as feeChargesWaived, ls.fee_charges_writtenoff_derived as feeChargesWrittenOff, "
-                    + " ls.penalty_charges_amount as penaltyChargesDue, ls.penalty_charges_completed_derived as penaltyChargesPaid, ls.penalty_charges_waived_derived as penaltyChargesWaived, "
-                    + " ls.penalty_charges_writtenoff_derived as penaltyChargesWrittenOff, ls.total_paid_in_advance_derived as totalPaidInAdvanceForPeriod, "
-                    + " ls.total_paid_late_derived as totalPaidLateForPeriod, ls.credits_amount as totalCredits, ls.is_down_payment isDownPayment, ls.advance_principal_amount advancePrincipalAmount, life_insurance_charge_portion lifeInsuranceChargePortion "
-                    + " from m_loan_repayment_schedule ls ";
+            return LOAN_REPAYMENT_SCHEDULE_QUERY;
         }
 
         @SuppressWarnings({ "squid:S3776" })
@@ -1437,11 +1469,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 final LocalDate dueDate = JdbcSupport.getLocalDate(rs, LoanReadPlatformServiceImpl.DUE_DATE_PARAM);
                 final LocalDate obligationsMetOnDate = JdbcSupport.getLocalDate(rs, "obligationsMetOnDate");
                 final boolean complete = rs.getBoolean("complete");
+                final boolean previousInstallmentPaid = rs.getBoolean("previousInstallmentPaid");
                 final boolean isAdditional = rs.getBoolean("isAdditional");
                 BigDecimal disbursedAmount = BigDecimal.ZERO;
                 if (!isAdditional) {
                     disbursedAmount = processDisbursementData(loanScheduleType, disbursementData, fromDate, dueDate, disbursementPeriodIds,
-                            disbursementChargeAmount, waivedChargeAmount, periods);
+                            disbursementChargeAmount, waivedChargeAmount, periods,previousInstallmentPaid);
 
                 }
                 // Add the Charge back or Credits to the initial amount to avoid negative balance
@@ -1581,16 +1614,16 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         @SuppressWarnings({ "squid:S107" })
         private BigDecimal processDisbursementData(LoanScheduleType loanScheduleType, Collection<DisbursementData> disbursementData,
                 LocalDate fromDate, LocalDate dueDate, Set<Long> disbursementPeriodIds, BigDecimal disbursementChargeAmount,
-                BigDecimal waivedChargeAmount, List<LoanSchedulePeriodData> periods) {
+                BigDecimal waivedChargeAmount, List<LoanSchedulePeriodData> periods, boolean previousInstallmentPaid) {
             BigDecimal disbursedAmount = BigDecimal.ZERO;
             for (final DisbursementData data : disbursementData) {
                 boolean isDueForDisbursement = data.isDueForDisbursement(loanScheduleType, fromDate, dueDate);
-                int isFirstDisbursement = findPositionInCollection(disbursementData, data);
+                boolean isFirstDisbursement = findPositionInCollection(disbursementData, data) ==0;
                 boolean isDisbursementAllowed = ((fromDate.equals(this.disbursement.disbursementDate()) && data.disbursementDate().equals(fromDate))
                         || (fromDate.equals(dueDate) && data.disbursementDate().equals(fromDate))
                         || canAddDisbursementData(data, isDueForDisbursement, excludePastUnDisbursed))
                         && !disbursementPeriodIds.contains(data.getId());
-                if (isDisbursementAllowed) {
+                if (isDisbursementAllowed || (!isFirstDisbursement && previousInstallmentPaid)) {
                     disbursedAmount = disbursedAmount.add(data.getPrincipal());
                     LoanSchedulePeriodData periodData = createLoanSchedulePeriodData(data, disbursementChargeAmount, waivedChargeAmount);
                     periods.add(periodData);
