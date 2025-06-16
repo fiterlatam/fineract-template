@@ -8476,4 +8476,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return this.getLoanProduct().getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())
                 || this.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode());
     }
+
+    public boolean hasAllInstallmentsPaid() {
+        List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
+        if (installments.isEmpty()) {
+            return false;
+        }
+
+        return installments.stream().filter(installment -> !installment.isFullyGraced()) // Exclude grace period
+                                                                                         // installments
+                .allMatch(LoanRepaymentScheduleInstallment::isObligationsMet);
+    }
+
 }
