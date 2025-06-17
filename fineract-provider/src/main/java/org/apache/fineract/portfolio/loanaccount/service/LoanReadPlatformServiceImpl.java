@@ -1624,7 +1624,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         || (fromDate.equals(dueDate) && data.disbursementDate().equals(fromDate))
                         || canAddDisbursementData(data, isDueForDisbursement, excludePastUnDisbursed))
                         && !disbursementPeriodIds.contains(data.getId());
-                if (isDisbursementAllowed || (!isFirstDisbursement && previousInstallmentPaid)) {
+                if (isDisbursementAllowed) {
                     disbursedAmount = disbursedAmount.add(data.getPrincipal());
                     LoanSchedulePeriodData periodData = createLoanSchedulePeriodData(data, disbursementChargeAmount, waivedChargeAmount);
                     periods.add(periodData);
