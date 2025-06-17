@@ -5338,7 +5338,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
             loan = this.loanAssembler.assembleFrom(loan.getId());
             Long loanRescheduleReasonId = getLoanRescheduleReasonId();
-            if (loan.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+            if (loan.isRevolvingLoan()) {
                 ImmutablePair<Integer, LocalDate> pair = calculateInstallmentsToAdd(loan, actualDisbursementDate);
                 if (pair != null && pair.getKey().compareTo(0) > 0) {
                     Integer nrOfInstallmentsToAdd = pair.left;
@@ -5381,13 +5381,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     private ImmutablePair<Integer, LocalDate> calculateInstallmentsToAdd(Loan loan, LocalDate disbursementDate) {
-        // First check if this is a revolving credit product and all installments are paid
-        if (loan.isRevolvingLoan() && loan.hasAllInstallmentsPaid()) {
-            // For revolving credit with all installments paid, create new installments
+        if (loan.isRevolvingLoan()) {
             Integer actualNumberOfRepayments = loan.getTermFrequency();
-            log.info("Revolving credit loan with all installments paid. Creating {} new installments from date {}",
-                    actualNumberOfRepayments, disbursementDate);
-            return ImmutablePair.of(actualNumberOfRepayments, disbursementDate);
+            LocalDate lastInstallmentDueDate = loan.getLastLoanRepaymentScheduleInstallment().getDueDate();
+            LocalDate cutoffDate = RevolvingLoanUtil.calculateCutoffDate(lastInstallmentDueDate);
+
+            if (disbursementDate.isAfter(cutoffDate)) {
+                log.info("Revolving credit: Adding {} new installments starting from {}", actualNumberOfRepayments, disbursementDate);
+                return ImmutablePair.of(actualNumberOfRepayments, disbursementDate);
+            }
+            // If not after cutoff, continue to rest of method
         }
 
         // Original logic for non-revolving or partially paid loans
@@ -5418,8 +5421,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (installmentNumberToAddDisbursement == null) {
             installmentNumberToAddDisbursement = loan.getRepaymentScheduleInstallments().size();
 
-            Optional<LocalDate> lastInstallmentDueDateOpt = loan.getRepaymentScheduleInstallments().stream()
-                    .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber).reversed()).findFirst()
+            Optional<LocalDate> lastInstallmentDueDateOpt = loan.getRepaymentScheduleInstallments().stream().max(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber))
                     .map(LoanRepaymentScheduleInstallment::getDueDate);
 
             if (lastInstallmentDueDateOpt.isPresent()) {
