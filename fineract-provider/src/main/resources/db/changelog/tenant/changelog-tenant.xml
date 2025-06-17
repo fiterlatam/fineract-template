@@ -169,4 +169,5 @@
     <include file="parts/0143-FBR-720_CONFIGURE_PRODUCT_INTEREST_WAIVER.xml" relativeToChangelogFile="true"/>
     <include file="parts/0144-FBR-1.2.1_ADD_REPAYMENT_SCHEDULE_RECALCULATION_CONFIG.xml" relativeToChangelogFile="true"/>
     <include file="parts/0145-FBR-1.2.1_MAINTAIN_LOAN_TOPUP_DATAILS_ON_TRANSACTIONS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0146-FBR-1.2.1_MAINTAIN_RESCTURE_REQUEST_ID_LOAN.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
