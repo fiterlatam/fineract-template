@@ -47,6 +47,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
@@ -144,10 +145,15 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.xhtmlrenderer.pdf.ITextRenderer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @AllArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, LoanReadPlatformServiceCommon {
+
+    private static final Logger log = LoggerFactory.getLogger(LoanReadPlatformServiceImpl.class);
 
     private static final String SQL_SELECT = "SELECT ";
     private static final String ACCRUAL_ON_CHARGE_SUBMITTED_ON_DATE = "submitted-date";
@@ -1435,7 +1441,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         disbursementChargeAmount = disbursementChargeAmount.subtract(data.getChargeAmount());
                     }
                 }
-                this.outstandingLoanPrincipalBalance = BigDecimal.ZERO;
+                this.outstandingLoanPrincipalBalance = disbursementData.stream()
+                    .map(DisbursementData::getPrincipal)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
             }
 
             Money totalPrincipalExpected = Money.zero(monCurrency);
@@ -1616,22 +1625,41 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 LocalDate fromDate, LocalDate dueDate, Set<Long> disbursementPeriodIds, BigDecimal disbursementChargeAmount,
                 BigDecimal waivedChargeAmount, List<LoanSchedulePeriodData> periods, boolean previousInstallmentPaid) {
             BigDecimal disbursedAmount = BigDecimal.ZERO;
+            log.info("Processing disbursement data for period from {} to {}", fromDate, dueDate);
+            log.info("Current outstanding balance before processing: {}", this.outstandingLoanPrincipalBalance);
+            
             for (final DisbursementData data : disbursementData) {
                 boolean isDueForDisbursement = data.isDueForDisbursement(loanScheduleType, fromDate, dueDate);
                 boolean isFirstDisbursement = findPositionInCollection(disbursementData, data) == 0;
+                
+                log.info("Processing disbursement ID: {}, Date: {}, Amount: {}, IsFirst: {}, IsDue: {}", 
+                        data.getId(), data.disbursementDate(), data.getPrincipal(), isFirstDisbursement, isDueForDisbursement);
+                
                 boolean isDisbursementAllowed = ((fromDate.equals(this.disbursement.disbursementDate())
                         && data.disbursementDate().equals(fromDate))
                         || (fromDate.equals(dueDate) && data.disbursementDate().equals(fromDate))
                         || canAddDisbursementData(data, isDueForDisbursement, excludePastUnDisbursed))
                         && !disbursementPeriodIds.contains(data.getId());
-                if (isDisbursementAllowed || (!isFirstDisbursement && previousInstallmentPaid)) {
+                
+                log.info("Disbursement allowed: {}, Already processed: {}", isDisbursementAllowed, disbursementPeriodIds.contains(data.getId()));
+                
+                if (isDisbursementAllowed) {
                     disbursedAmount = disbursedAmount.add(data.getPrincipal());
                     LoanSchedulePeriodData periodData = createLoanSchedulePeriodData(data, disbursementChargeAmount, waivedChargeAmount);
                     periods.add(periodData);
-                    this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(periodData.getPrincipalDisbursed());
-                    disbursementPeriodIds.add(data.getId());
+                    
+                    // Only add to outstanding balance if it's a new disbursement
+                    if (!disbursementPeriodIds.contains(data.getId())) {
+                        this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(periodData.getPrincipalDisbursed());
+                        disbursementPeriodIds.add(data.getId());
+                        log.info("Added disbursement to schedule - ID: {}, Date: {}, Amount: {}, Outstanding Balance: {}", 
+                                data.getId(), data.disbursementDate(), data.getPrincipal(), this.outstandingLoanPrincipalBalance);
+                    }
                 }
             }
+            
+            log.info("Completed processing disbursement data. Total disbursed amount: {}, Final outstanding balance: {}", 
+                    disbursedAmount, this.outstandingLoanPrincipalBalance);
             return disbursedAmount;
         }
 
