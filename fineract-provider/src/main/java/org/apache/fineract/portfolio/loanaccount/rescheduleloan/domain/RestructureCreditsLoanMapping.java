@@ -27,6 +27,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanSummary;
 
 @Entity
 @Table(name = "m_restructure_credits_loans_mapping")
@@ -81,7 +82,10 @@ public class RestructureCreditsLoanMapping extends AbstractPersistableCustom {
     public static RestructureCreditsLoanMapping instance(final Loan loan, final Integer statusEnum,
             final RestructureCreditsRequest restructureCreditsRequest) {
 
-        return new RestructureCreditsLoanMapping(loan, statusEnum, restructureCreditsRequest, loan.getSummary().getTotalOutstanding(),
+        LoanSummary summary = loan.getSummary();
+        BigDecimal principalOutstanding = summary.getTotalPrincipalOutstanding()
+                .add(summary.getTotalFeeChargesOutstanding().add(summary.getTotalPenaltyChargesOutstanding()));
+        return new RestructureCreditsLoanMapping(loan, statusEnum, restructureCreditsRequest, principalOutstanding,
                 loan.getDisbursementDate(), loan.getMaturityDate());
     }
 

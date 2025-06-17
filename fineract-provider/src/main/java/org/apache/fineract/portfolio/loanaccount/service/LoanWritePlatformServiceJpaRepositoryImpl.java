@@ -579,6 +579,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                 // disburseLoanToLoan(loan, command, loanTopupOutstandingAmount, paymentDetail);
             }
+            if (loan.getRestructureRequestId()!=null){
+                String totalRestructureCreditQuery = "select sum(outstanding_balance) from m_restructure_credits_loans_mapping where new_loan_id=?";
+                BigDecimal totalRestructureCreditAmount = this.jdbcTemplate.queryForObject(totalRestructureCreditQuery, BigDecimal.class, loanId);
+                loanTopupOutstandingAmount = loanTopupOutstandingAmount.add(totalRestructureCreditAmount);
+            }
 
             if (isAccountTransfer) {
                 disburseLoanToSavingsFBR(loan, command, amountToDisburse, paymentDetail, loanTopupOutstandingAmount);
@@ -653,7 +658,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             updatePostDatedChecks(postDatedChecks);
         }
         if (loan.isTopup()) {
-            makeLoanTopupRepayment(loan, command, loanTopupOutstandingAmount, paymentDetail, loanToClose);
+            makeLoanTopupRepayment(command, loanTopupOutstandingAmount, paymentDetail, loanToClose);
         }
 
         businessEventNotifierService.notifyPostBusinessEvent(new LoanDisbursalBusinessEvent(loan));
@@ -2293,8 +2298,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         loan.getTopupLoanDetails().setTopupAmount(amount);
     }
 
-    public void makeLoanTopupRepayment(final Loan loan, final JsonCommand command, final BigDecimal amount,
-            final PaymentDetail paymentDetail, Loan loanToClose) {
+    public void makeLoanTopupRepayment(final JsonCommand command, final BigDecimal amount, final PaymentDetail paymentDetail,
+            Loan loanToClose) {
 
         final LocalDate transactionDate = command.localDateValueOfParameterNamed("actualDisbursementDate");
         final String txnExternalId = command.stringValueOfParameterNamedAllowingNull("externalId");
@@ -3484,6 +3489,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withCommandId(command.commandId()).with(changes) //
                 .build();
 
+    }
+
+    @Override
+    public void makeLoanRestructureRepayment(JsonCommand command, BigDecimal totalLoanOutStanding, Loan loanToClose) {
+        final Map<String, Object> changes = new LinkedHashMap<>();
+
+        final PaymentDetail paymentDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command, changes);
+        this.makeLoanTopupRepayment(command, totalLoanOutStanding, paymentDetail, loanToClose);
     }
 
     @Override

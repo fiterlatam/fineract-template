@@ -426,6 +426,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "disbursed_by_cheque_date")
     private LocalDate disbursedByChequeDate;
 
+    @Getter
+    @Setter
+    @Column(name = "restructure_request_id")
+    private Long restructureRequestId;
+
     @Transient
     @Getter
     @Setter
