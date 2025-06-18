@@ -808,8 +808,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         // Check if a different supplied date must be used for this loan
         // Determine the applicable transaction date based on insurance accrual
         LocalDate insuranceAccrualCutoffDate = getLastInsuranceAccrualTransaction();
-        LocalDate effectiveTransactionDate = suppliedTransactionDate.isAfter(insuranceAccrualCutoffDate)
-                ? insuranceAccrualCutoffDate
+        LocalDate effectiveTransactionDate = suppliedTransactionDate.isAfter(insuranceAccrualCutoffDate) ? insuranceAccrualCutoffDate
                 : suppliedTransactionDate;
 
         // get only installments between the transaction date and current date
@@ -5829,11 +5828,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private LocalDate getLastInsuranceAccrualTransaction() {
-        return this.loanTransactions.stream()
-                .filter(txn -> txn.isAccrual() && txn.isInstallmentAccrual() && !txn.isReversed())
-                .map(LoanTransaction::getTransactionDate)
-                .max(LocalDate::compareTo)
-                .orElseGet(this::getDisbursementDate);
+        return this.loanTransactions.stream().filter(txn -> txn.isAccrual() && txn.isInstallmentAccrual() && !txn.isReversed())
+                .map(LoanTransaction::getTransactionDate).max(LocalDate::compareTo).orElseGet(this::getDisbursementDate);
     }
 
     public Set<LoanCharge> getActiveCharges() {
