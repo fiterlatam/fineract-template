@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -162,6 +164,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     @Autowired
     private CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Transactional
     @Override
@@ -1608,20 +1613,20 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     @SuppressWarnings("all")
     @Transactional
     @Override
-    public void cleanUpLoan(Long loanId) {
+    public void cleanUpLoan(final Long loanId) {
         log.info("Starting cleanup for Loan ID: {}", loanId);
-        final Loan loan = this.loanAccountAssembler.assembleFrom(loanId);
         log.info("Step 1: Unset loan sub status and set loan to active for Loan ID: {}", loanId);
         this.unsetLoanSubStatus(loanId);
         log.info("Step 2: Remove non-migrated repayments for Loan ID: {}", loanId);
         this.removeNonMigratedRepayments(loanId);
         log.info("Step 3: Reset repayment schedule for Loan ID: {}", loanId);
         this.resetRepaymentSchedule(loanId);
-        log.info("Step 4: Create honorarios and aval charges for recreated installments for Loan ID: {}", loanId);
+        log.info("Step 4: Create honorarios and aval charges for recreated clinstallments for Loan ID: {}", loanId);
         this.recreateInstallmentCharges(loanId);
         log.info("Step 5: Update loan balances for Loan ID: {}", loanId);
         this.updateLoanBalances(loanId);
         log.info("Step 6: Repost transactions from the portfolio command source for Loan ID: {}", loanId);
+        this.entityManager.flush();
         String sql = "select * from m_portfolio_command_source where loan_id = ? and action_name in ('REPAYMENT', 'FORECLOSURE') order by made_on_date_utc";
         final List<Map<String, Object>> results = this.jdbcTemplate.queryForList(sql, loanId);
         if (!results.isEmpty()) {
@@ -1641,6 +1646,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 } else {
                     log.info("Reposting foreclosure for Loan ID: {}", loanId);
                     this.updatePrincipalDueBeforeForeclosure(loanId);
+                    final Loan loan = this.loanAccountAssembler.assembleFrom(loanId);
                     final ChangedTransactionDetail changedTransactionDetail = loan.reprocessAfterCleanUp();
                     if (changedTransactionDetail != null) {
                         for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings()
@@ -1668,6 +1674,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         log.info("Step 8: Removing arrears aging for Loan ID: {}", loanId);
         sql = "delete from m_loan_arrears_aging mlaa where loan_id = ?";
         this.jdbcTemplate.update(sql, loanId);
+        this.entityManager.flush();
     }
 
     private void unsetLoanSubStatus(Long loanId) {
@@ -1676,6 +1683,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         // delete from arrears_aging just in case
         sql = "delete from m_loan_arrears_aging mlaa where loan_id = ?";
         this.jdbcTemplate.update(sql, loanId);
+        this.entityManager.flush();
     }
 
     private void removeNonMigratedRepayments(Long loanId) {
@@ -1695,6 +1703,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         this.jdbcTemplate.update(sql, loanId);
         sql = "delete from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null";
         this.jdbcTemplate.update(sql, loanId);
+        this.entityManager.flush();
     }
 
     private void resetRepaymentSchedule(Long loanId) {
@@ -1738,6 +1747,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
         sql = "update m_loan_repayment_schedule set migrated_installment = completed_derived where loan_id = ?";
         this.jdbcTemplate.update(sql, loanId);
+        this.entityManager.flush();
     }
 
     private void recreateInstallmentCharges(Long loanId) {
@@ -1787,6 +1797,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 order by mlc.id, mlrs.installment
                 """;
         this.jdbcTemplate.update(sql, loanId);
+        this.entityManager.flush();
     }
 
     private void updateLoanBalances(Long loanId) {
@@ -1869,6 +1880,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         this.jdbcTemplate.update(sql, loanId);
         this.jdbcTemplate.update(sql, loanId);
         this.jdbcTemplate.update(sql, loanId);
+        this.entityManager.flush();
     }
 
     private void updatePrincipalDueBeforeForeclosure(Long loanId) {
