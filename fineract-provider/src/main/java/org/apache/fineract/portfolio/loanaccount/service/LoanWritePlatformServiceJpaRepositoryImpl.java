@@ -5421,7 +5421,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (installmentNumberToAddDisbursement == null) {
             installmentNumberToAddDisbursement = loan.getRepaymentScheduleInstallments().size();
 
-            Optional<LocalDate> lastInstallmentDueDateOpt = loan.getRepaymentScheduleInstallments().stream().max(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber))
+            Optional<LocalDate> lastInstallmentDueDateOpt = loan.getRepaymentScheduleInstallments().stream()
+                    .max(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber))
                     .map(LoanRepaymentScheduleInstallment::getDueDate);
 
             if (lastInstallmentDueDateOpt.isPresent()) {

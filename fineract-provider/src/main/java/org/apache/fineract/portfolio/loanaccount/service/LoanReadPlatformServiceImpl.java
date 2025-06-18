@@ -248,7 +248,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     private FeeCalculationHonorario calculateFeeDetails(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment,
-                                                        BigDecimal repaymentAmount) {
+            BigDecimal repaymentAmount) {
         // SU-529 Get maximum age of any of the client's loan
         List<Loan> clientActiveLoans = this.loanRepositoryWrapper
                 .findActiveLoansByClientId(loanRepaymentScheduleInstallment.getLoan().getClientId());
@@ -306,8 +306,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     @Override
     public LoanScheduleData retrieveRepaymentSchedule(final Long loanId,
-                                                      final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedLoanData, Collection<DisbursementData> disbursementData,
-                                                      boolean isInterestRecalculationEnabled, LoanScheduleType loanScheduleType) {
+            final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedLoanData, Collection<DisbursementData> disbursementData,
+            boolean isInterestRecalculationEnabled, LoanScheduleType loanScheduleType) {
 
         try {
             this.context.authenticatedUser();
@@ -482,7 +482,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     @Override
     public LoanTransactionData retrieveLoanPrePaymentTemplate(final LoanTransactionType repaymentTransactionType, final Long loanId,
-                                                              LocalDate onDate) {
+            LocalDate onDate) {
 
         this.context.authenticatedUser();
         this.loanUtilService.validateRepaymentTransactionType(repaymentTransactionType);
@@ -1391,7 +1391,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         private boolean excludePastUnDisbursed;
 
         LoanScheduleResultSetExtractor(final RepaymentScheduleRelatedLoanData repaymentScheduleRelatedLoanData,
-                                       Collection<DisbursementData> disbursementData, boolean isInterestRecalculationEnabled, LoanScheduleType loanScheduleType) {
+                Collection<DisbursementData> disbursementData, boolean isInterestRecalculationEnabled, LoanScheduleType loanScheduleType) {
             this.currency = repaymentScheduleRelatedLoanData.getCurrency();
             this.disbursement = repaymentScheduleRelatedLoanData.disbursementData();
             this.totalFeeChargesDueAtDisbursement = repaymentScheduleRelatedLoanData.getTotalFeeChargesAtDisbursement();
@@ -1613,8 +1613,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         @SuppressWarnings({ "squid:S107" })
         private BigDecimal processDisbursementData(LoanScheduleType loanScheduleType, Collection<DisbursementData> disbursementData,
-                                                   LocalDate fromDate, LocalDate dueDate, Set<Long> disbursementPeriodIds, BigDecimal disbursementChargeAmount,
-                                                   BigDecimal waivedChargeAmount, List<LoanSchedulePeriodData> periods, boolean previousInstallmentPaid) {
+                LocalDate fromDate, LocalDate dueDate, Set<Long> disbursementPeriodIds, BigDecimal disbursementChargeAmount,
+                BigDecimal waivedChargeAmount, List<LoanSchedulePeriodData> periods, boolean previousInstallmentPaid) {
             BigDecimal disbursedAmount = BigDecimal.ZERO;
             for (final DisbursementData data : disbursementData) {
                 boolean isDueForDisbursement = data.isDueForDisbursement(loanScheduleType, fromDate, dueDate);
@@ -1652,7 +1652,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         }
 
         private LoanSchedulePeriodData createLoanSchedulePeriodData(final DisbursementData data, BigDecimal disbursementChargeAmount,
-                                                                    BigDecimal waivedChargeAmount) {
+                BigDecimal waivedChargeAmount) {
             BigDecimal chargeAmount = data.getChargeAmount() == null ? disbursementChargeAmount
                     : disbursementChargeAmount.add(data.getChargeAmount()).subtract(waivedChargeAmount);
             return LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.getPrincipal(), chargeAmount,
@@ -1667,7 +1667,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     public static void defineInstallmentStatus(LocalDate obligationsMetOnDate, LoanSchedulePeriodData periodData,
-                                               BigDecimal totalOutstandingForPeriod, LocalDate dueDate) {
+            BigDecimal totalOutstandingForPeriod, LocalDate dueDate) {
 
         // if paid
         if (Objects.nonNull(obligationsMetOnDate)) {
@@ -2109,7 +2109,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     @Override
     public List<OverdueLoanScheduleData> retrieveAllLoansWithOverdueInstallments(final Long penaltyWaitPeriod,
-                                                                                 final Boolean backdatePenalties, int pageSize, Long minLoanId) {
+            final Boolean backdatePenalties, int pageSize, Long minLoanId) {
         final MusoniOverdueLoanScheduleMapper rm = new MusoniOverdueLoanScheduleMapper();
 
         String loanIdOffset = "and ml.id >";
@@ -2146,7 +2146,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     private void addOtherLoanInstallmentsToList(List<OverdueLoanScheduleData> installments, String sql, MusoniOverdueLoanScheduleMapper rm,
-                                                Long penaltyWaitPeriod, Boolean backdatePenalties) {
+            Long penaltyWaitPeriod, Boolean backdatePenalties) {
         Long lastLoanId = installments.get(installments.size() - 1).getLoanId();
 
         List<OverdueLoanScheduleData> otherInstallments = Boolean.TRUE.equals(backdatePenalties)
@@ -2365,7 +2365,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         Map<String, Object> paramMap = new HashMap<>(3);
         final StringBuilder sqlBuilder = new StringBuilder(400);
         sqlBuilder.append(LoanReadPlatformServiceImpl.SQL_SELECT).append(mapper.schema()).append(
-                        " where (recaldet.is_compounding_to_be_posted_as_transaction is null or recaldet.is_compounding_to_be_posted_as_transaction = false ) ")
+                " where (recaldet.is_compounding_to_be_posted_as_transaction is null or recaldet.is_compounding_to_be_posted_as_transaction = false ) ")
                 .append(" and (((ls.fee_charges_amount <> COALESCE(ls.accrual_fee_charges_derived, 0 ))")
                 .append(" or ( ls.penalty_charges_amount <> COALESCE(ls.accrual_penalty_charges_derived, 0))")
                 .append(" or ( ls.interest_amount <> COALESCE(ls.accrual_interest_derived, 0)))")
@@ -2391,7 +2391,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         Map<String, Object> paramMap = new HashMap<>(3);
         final StringBuilder sqlBuilder = new StringBuilder(400);
         sqlBuilder.append(LoanReadPlatformServiceImpl.SQL_SELECT).append(mapper.schema()).append(
-                        " where ( recaldet.is_compounding_to_be_posted_as_transaction is null or recaldet.is_compounding_to_be_posted_as_transaction = false) ")
+                " where ( recaldet.is_compounding_to_be_posted_as_transaction is null or recaldet.is_compounding_to_be_posted_as_transaction = false) ")
                 .append(" and ((( ls.fee_charges_amount <> COALESCE(ls.accrual_fee_charges_derived, 0))")
                 .append(" or ( ls.penalty_charges_amount <> COALESCE(ls.accrual_penalty_charges_derived, 0))")
                 .append(" or ( ls.interest_amount <> COALESCE(ls.accrual_interest_derived, 0)))")
@@ -2428,7 +2428,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         LocalDate organisationStartDate = this.configurationDomainService.retrieveOrganisationStartDate();
         final StringBuilder sqlBuilder = new StringBuilder(400);
         sqlBuilder.append(LoanReadPlatformServiceImpl.SQL_SELECT).append(mapper.schema()).append(
-                        " where (recaldet.is_compounding_to_be_posted_as_transaction is null or recaldet.is_compounding_to_be_posted_as_transaction = false) ")
+                " where (recaldet.is_compounding_to_be_posted_as_transaction is null or recaldet.is_compounding_to_be_posted_as_transaction = false) ")
                 .append(" and (((ls.fee_charges_amount <> COALESCE(ls.accrual_fee_charges_derived, 0))")
                 .append(" or (ls.penalty_charges_amount <> COALESCE(ls.accrual_penalty_charges_derived, 0))")
                 .append(" or (ls.interest_amount <> COALESCE(ls.accrual_interest_derived, 0)))")
@@ -2452,12 +2452,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     private Collection<LoanScheduleAccrualData> retrievePeriodicAccrualDataForChargeSubmittedDateProcessing(final LocalDate tillDate,
-                                                                                                            final Loan loan) {
+            final Loan loan) {
         LoanSchedulePeriodicAccrualMapper mapper = new LoanSchedulePeriodicAccrualMapper();
         LocalDate organisationStartDate = this.configurationDomainService.retrieveOrganisationStartDate();
         final StringBuilder sqlBuilder = new StringBuilder(400);
         sqlBuilder.append(LoanReadPlatformServiceImpl.SQL_SELECT).append(mapper.schema()).append(
-                        " where (recaldet.is_compounding_to_be_posted_as_transaction is null or recaldet.is_compounding_to_be_posted_as_transaction = false) ")
+                " where (recaldet.is_compounding_to_be_posted_as_transaction is null or recaldet.is_compounding_to_be_posted_as_transaction = false) ")
                 .append(" and (((ls.fee_charges_amount <> COALESCE(ls.accrual_fee_charges_derived, 0))")
                 .append(" or (ls.penalty_charges_amount <> COALESCE(ls.accrual_penalty_charges_derived, 0))")
                 .append(" or (ls.interest_amount <> COALESCE(ls.accrual_interest_derived, 0)))")
@@ -2955,8 +2955,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     }
 
     private LoanTransactionData retrieveRefundTemplate(Long loanId, LoanTransactionType loanTransactionType,
-                                                       Collection<PaymentTypeData> paymentOptions, MonetaryCurrency currency, BigDecimal transactionAmount, BigDecimal netDisbursal,
-                                                       ExternalId externalLoanId) {
+            Collection<PaymentTypeData> paymentOptions, MonetaryCurrency currency, BigDecimal transactionAmount, BigDecimal netDisbursal,
+            ExternalId externalLoanId) {
 
         final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepository.findOneWithNotFoundDetection(currency);
 
@@ -3022,7 +3022,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     public Collection<Long> retrieveLoanIdsWithPendingIncomePostingTransactions() {
         LocalDate currentdate = DateUtils.getBusinessLocalDate();
         StringBuilder sqlBuilder = new StringBuilder().append(" select distinct loan.id from m_loan as loan ").append(
-                        " inner join m_loan_recalculation_details as recdet on (recdet.loan_id = loan.id and recdet.is_compounding_to_be_posted_as_transaction is not null and recdet.is_compounding_to_be_posted_as_transaction = true) ")
+                " inner join m_loan_recalculation_details as recdet on (recdet.loan_id = loan.id and recdet.is_compounding_to_be_posted_as_transaction is not null and recdet.is_compounding_to_be_posted_as_transaction = true) ")
                 .append(" inner join m_loan_repayment_schedule as repsch on repsch.loan_id = loan.id ")
                 .append(" inner join m_loan_interest_recalculation_additional_details as adddet on adddet.loan_repayment_schedule_id = repsch.id ")
                 .append(" left join m_loan_transaction as trans on (trans.is_reversed <> true and trans.transaction_type_enum = 19 and trans.loan_id = loan.id and trans.transaction_date = adddet.effective_date) ")
@@ -3387,7 +3387,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     @Override
     public void exportLoanSchedulePDF(LoanAccountData loanBasicDetails, String scheduleType, LoanScheduleData repaymentSchedule,
-                                      HttpServletResponse httpServletResponse) throws DocumentException, IOException {
+            HttpServletResponse httpServletResponse) throws DocumentException, IOException {
 
         boolean isRepaymentSchedule = scheduleType.equalsIgnoreCase("repayment");
         final ClientAdditionalFieldsData loanAdditionalFieldsData = this.clientReadPlatformService
@@ -3546,7 +3546,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     @Override
     public List<DefaultOrCancelInsuranceInstallmentData> getLoanDataWithDefaultOrCancelInsurance(Long loanId, Long insuranceCode,
-                                                                                                 LocalDate date) {
+            LocalDate date) {
 
         final DefaultInsuranceMapper rowMapper = new DefaultInsuranceMapper();
         String sql = LoanReadPlatformServiceImpl.SQL_SELECT + rowMapper.schema();
