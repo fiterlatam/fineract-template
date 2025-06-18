@@ -5828,7 +5828,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private LocalDate getLastInsuranceAccrualTransaction() {
-        return this.loanTransactions.stream().filter(txn -> txn.isAccrual() && txn.isInstallmentAccrual() && !txn.isReversed())
+        return this.loanTransactions.stream()
+                .filter(txn -> txn.isAccrual() && txn.isInstallmentAccrual() && !txn.isReversed()
+                        && txn.getAmount().compareTo(BigDecimal.ZERO) > 0)
                 .map(LoanTransaction::getTransactionDate).max(LocalDate::compareTo).orElseGet(this::getDisbursementDate);
     }
 
