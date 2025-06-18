@@ -4278,7 +4278,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
     }
 
-    @SuppressWarnings({ "squid:S3776" })
+    @SuppressWarnings({ "squid:S3776", "squid:S135" })
     private ChannelData validateUndoRepaymentChannel(final String channelName, final LoanProduct loanProduct, Long transactionId,
             Long loanId) {
         final LoanTransaction loanTransaction = this.loanTransactionRepository.findByIdAndLoanId(transactionId, loanId)
@@ -5300,11 +5300,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         } else {
             // Original validation for non-revolving credit products
             BigDecimal disbursementAmountSum = loanDisbursementDetailsRepository.findAllByLoanId(loan.getId()).stream()
-                    .filter(disbursed -> Objects.nonNull(disbursed.getDisbursementDate())).map(x -> x.getPrincipal())
+                    .filter(disbursed -> Objects.nonNull(disbursed.getDisbursementDate())).map(LoanDisbursementDetails::getPrincipal)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal loanTransactionRepaymentSum = loanTransactionRepository.findAllByLoanIdAndTypeOf(loan.getId(), 2).stream()
-                    .filter(nR -> !nR.isReversed()).map(x -> x.getPrincipalPortion()).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    .filter(nR -> !nR.isReversed()).map(LoanTransaction::getPrincipalPortion).reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal loanApprovedPrincipal = loan.getApprovedPrincipal();
 
@@ -5320,8 +5320,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     private void processLoanDisbursementDetails(Loan loan, LocalDate actualDisbursementDate, BigDecimal principal) {
         Long nrOfDisbursalsSoFar = loanDisbursementDetailsRepository.findAllByLoanId(loan.getId()).stream()
-                .filter(wasDisbursed -> wasDisbursed.getActualDisbursementDate() != null)
-                .filter(notReversed -> Boolean.FALSE.equals(notReversed.isReversed())).count();
+                .filter(wasDisbursed -> wasDisbursed.getActualDisbursementDate() != null).filter(notReversed -> !notReversed.isReversed())
+                .count();
 
         // If first disbursement was made, create a new disbursement detail for the next ones
         if (nrOfDisbursalsSoFar.compareTo(1L) >= 0) {
@@ -5338,7 +5338,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
             loan = this.loanAssembler.assembleFrom(loan.getId());
             Long loanRescheduleReasonId = getLoanRescheduleReasonId();
-            if (loan.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+            if (loan.isRevolvingLoan()) {
                 ImmutablePair<Integer, LocalDate> pair = calculateInstallmentsToAdd(loan, actualDisbursementDate);
                 if (pair != null && pair.getKey().compareTo(0) > 0) {
                     Integer nrOfInstallmentsToAdd = pair.left;
@@ -5381,38 +5381,48 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     private ImmutablePair<Integer, LocalDate> calculateInstallmentsToAdd(Loan loan, LocalDate disbursementDate) {
-        ImmutablePair<Integer, LocalDate> pair;
+        if (loan.isRevolvingLoan()) {
+            Integer actualNumberOfRepayments = loan.getTermFrequency();
+            LocalDate lastInstallmentDueDate = loan.getLastLoanRepaymentScheduleInstallment().getDueDate();
+            LocalDate cutoffDate = RevolvingLoanUtil.calculateCutoffDate(lastInstallmentDueDate);
+
+            if (disbursementDate.isAfter(cutoffDate)) {
+                log.info("Revolving credit: Adding {} new installments starting from {}", actualNumberOfRepayments, disbursementDate);
+                return ImmutablePair.of(actualNumberOfRepayments, disbursementDate);
+            }
+            // If not after cutoff, continue to rest of method
+        }
+
+        // Original logic for non-revolving or partially paid loans
         LocalDate variationDate = disbursementDate;
         Integer installmentNumberToAddDisbursement = null;
         boolean addVariationToNextInstallment = false;
+
         for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
             if (installment.getDueDate().isAfter(disbursementDate)) {
                 long diff = ChronoUnit.DAYS.between(disbursementDate, installment.getDueDate());
                 if (diff < CUTOFF_DAYS) {
-                    // Add the variation to next installment
                     installmentNumberToAddDisbursement = installment.getInstallmentNumber() + 1;
                     variationDate = installment.getDueDate().plusDays(2);
                     addVariationToNextInstallment = true;
+                    log.info("Disbursement within cutoff period. Adding variation to next installment {}. Variation date: {}",
+                            installmentNumberToAddDisbursement, variationDate);
                     break;
                 } else {
                     installmentNumberToAddDisbursement = installment.getInstallmentNumber();
                     variationDate = installment.getDueDate();
+                    log.info("Disbursement after cutoff period. Adding variation to current installment {}. Variation date: {}",
+                            installmentNumberToAddDisbursement, variationDate);
                     break;
                 }
             }
         }
+
         if (installmentNumberToAddDisbursement == null) {
-            // Can only be null if disbursement date is after last installment due date. So create all installments
             installmentNumberToAddDisbursement = loan.getRepaymentScheduleInstallments().size();
 
-            // 12 Installment loans - 1 paid - 2nd disbursal after last installment date
-            // If the the second disbursal is done before the cutoff date of the last installments then Fineract should
-            // add NumberOfnstallments -1.
-            // In your example: 12 - 1 = 11
-            // If the last disbursal is done after the cutoff date the of last installment, then fineract should add
-            // NumberOfInstallnebts
             Optional<LocalDate> lastInstallmentDueDateOpt = loan.getRepaymentScheduleInstallments().stream()
-                    .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber).reversed()).findFirst()
+                    .max(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber))
                     .map(LoanRepaymentScheduleInstallment::getDueDate);
 
             if (lastInstallmentDueDateOpt.isPresent()) {
@@ -5420,23 +5430,27 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 long diff = ChronoUnit.DAYS.between(lastInstallmentDueDate, disbursementDate);
                 if (diff < CUTOFF_DAYS) {
                     installmentNumberToAddDisbursement = loan.getRepaymentScheduleInstallments().size() - 1;
+                    log.info("Disbursement within cutoff period of last installment. Creating {} installments",
+                            installmentNumberToAddDisbursement);
+                } else {
+                    log.info("Disbursement after cutoff period of last installment. Creating {} installments",
+                            installmentNumberToAddDisbursement);
                 }
             }
-
             variationDate = loan.getLastLoanRepaymentScheduleInstallment().getDueDate();
             return ImmutablePair.of(installmentNumberToAddDisbursement, variationDate);
         }
+
         Integer actualNumberOfRepayments = loan.getTermFrequency();
         int requiredInstallments = installmentNumberToAddDisbursement + actualNumberOfRepayments - 1;
         if (requiredInstallments == 0) {
+            log.info("No installments required to be added");
             return null;
         }
         int installmentsToAdd = requiredInstallments - loan.getRepaymentScheduleInstallments().size();
-        if (installmentsToAdd <= 0) {
-            return null;
-        }
-        pair = new ImmutablePair<>(installmentsToAdd, variationDate);
-        return pair;
+
+        log.info("Adding {} new installments starting from date {}", installmentsToAdd, variationDate);
+        return ImmutablePair.of(installmentsToAdd, variationDate);
     }
 
     private void createRescheduleRequest(Loan loan, LocalDate actualDisbursementDate, Long loanRescheduleReasonId,
