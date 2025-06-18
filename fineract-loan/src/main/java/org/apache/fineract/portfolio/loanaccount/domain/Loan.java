@@ -795,8 +795,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return changedTransactionDetail;
     }
 
-    // just like handleChargeAppliedTransaction , create a new method to handle charges per installment using locan
-    // charge installement
+    // just like handleChargeAppliedTransaction , create a new method to handle charges per installment using local
+    // charge installment
     public void handleChargeAppliedTransactionPerInstallment(final List<LoanCharge> charges, final LocalDate suppliedTransactionDate,
             final boolean hasOccurredOnSuspendedAccount) {
         for (LoanCharge loanCharge : charges) {
@@ -804,12 +804,19 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             validateLoanChargeIsNotWaived(loanCharge);
         }
 
-        // get only installements beteween the transaction date and current date
+        // FIX for previous installments where the insurance accrual was not generated
+        // Check if a different supplied date must be used for this loan
+        // Determine the applicable transaction date based on insurance accrual
+        LocalDate insuranceAccrualCutoffDate = getLastInsuranceAccrualTransaction();
+        LocalDate effectiveTransactionDate = suppliedTransactionDate.isAfter(insuranceAccrualCutoffDate) ? insuranceAccrualCutoffDate
+                : suppliedTransactionDate;
+
+        // get only installments between the transaction date and current date
         LocalDate currentDate = DateUtils.getLocalDateOfTenant();
         List<LoanRepaymentScheduleInstallment> applicableInstallments = getRepaymentScheduleInstallments().stream()
                 .filter(installment -> installment.getInstallmentNumber() > 0 && // Exclude the graced installment
                         ( // The installment overlaps with the date range
-                        (!installment.getDueDate().isBefore(suppliedTransactionDate) && !installment.getFromDate().isAfter(currentDate)) ||
+                        (!installment.getDueDate().isBefore(effectiveTransactionDate) && !installment.getFromDate().isAfter(currentDate)) ||
                         // Or the installment starts on the current date
                                 installment.getFromDate().equals(currentDate)))
                 .sorted(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
@@ -5818,6 +5825,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             lastTransaction = getLastUserTransactionDate();
         }
         return lastTransaction;
+    }
+
+    private LocalDate getLastInsuranceAccrualTransaction() {
+        return this.loanTransactions.stream().filter(txn -> txn.isAccrual() && txn.isInstallmentAccrual() && !txn.isReversed())
+                .map(LoanTransaction::getTransactionDate).max(LocalDate::compareTo).orElseGet(this::getDisbursementDate);
     }
 
     public Set<LoanCharge> getActiveCharges() {
