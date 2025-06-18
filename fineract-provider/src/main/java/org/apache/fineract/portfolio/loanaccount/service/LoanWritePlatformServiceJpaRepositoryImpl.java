@@ -5511,7 +5511,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 this.loanAccountDomainService.cleanUpLoan(loanId);
                 log.info("Loan with ID: {} cleaned up successfully", loanId);
             } catch (final Exception ex) {
-                log.error("Loan clean up failed for Loan ID: {}", loanId);
+                log.error("Loan clean up failed for Loan ID: " + loanId, ex);
             }
         }
     }
