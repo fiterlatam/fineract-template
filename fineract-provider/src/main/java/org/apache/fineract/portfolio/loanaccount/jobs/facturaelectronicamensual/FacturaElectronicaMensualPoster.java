@@ -25,7 +25,9 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -64,8 +66,21 @@ public class FacturaElectronicaMensualPoster {
             final String invoiceTransactionIds = loanInvoiceDataList.stream().map(LoanDocumentData::getTransactionIds)
                     .collect(Collectors.joining(","));
             final List<LoanDocumentData> groupedLoanInvoices = groupByClientIdAndProductTypeAndCollectionHouseId(loanInvoiceDataList);
-            for (final LoanDocumentData groupedLoanInvoice : groupedLoanInvoices) {
-                this.loanWritePlatformService.processInvoiceFor(groupedLoanInvoice);
+            final Map<String, List<LoanDocumentData>> loanInvoicesMap = new HashMap<>();
+            for (final LoanDocumentData loanDocumentData : groupedLoanInvoices) {
+                final String key = loanDocumentData.getClientId() + "_" + loanDocumentData.getProductTypeName();
+                if (loanInvoicesMap.containsKey(key)) {
+                    final List<LoanDocumentData> existingList = loanInvoicesMap.get(key);
+                    existingList.add(loanDocumentData);
+                } else {
+                    loanInvoicesMap.put(key, new ArrayList<>(List.of(loanDocumentData)));
+                }
+            }
+            for (final Map.Entry<String, List<LoanDocumentData>> entry : loanInvoicesMap.entrySet()) {
+                final String key = entry.getKey();
+                log.info("Processing invoice for client/product type with key: {}", key);
+                final List<LoanDocumentData> loanDocuments = entry.getValue();
+                this.loanWritePlatformService.processInvoicesForClientIdAndProductType(loanDocuments);
             }
             if (StringUtils.isNotBlank(invoiceTransactionIds)) {
                 final String updateLoanTransactionSQL = "UPDATE m_loan_transaction SET is_invoiced_generated_by_job = TRUE WHERE id IN ("

@@ -4911,7 +4911,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                     loanDocumentData.setPenaltyChargesPaid(penaltyChargesPaid);
                     loanDocumentData.setPenaltyChargesVatPaid(penaltyChargesVatPaid);
-                    this.processInvoiceFor(loanDocumentData);
+                    this.processInvoicesForClientIdAndProductType(List.of(loanDocumentData));
                     this.loanTransactionRepository.saveAndFlush(loanTransaction);
                     for (final LoanTransaction accrualTransaction : invoicedByAccrualTransactionSet) {
                         if (!accrualTransaction.isPartiallyInvoiced()) {
@@ -4944,160 +4944,164 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
     }
 
+    @SuppressWarnings("all")
     @Override
-    public void processInvoiceFor(final LoanDocumentData loanDocumentData) {
-        loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
-        final List<FacturaElectronicaMensual> facturaElectronicaMensuals = new ArrayList<>();
-        final BigDecimal interestPaid = loanDocumentData.getInterestPaid();
-        final BigDecimal interestVatPaid = BigDecimal.ZERO;
+    public void processInvoicesForClientIdAndProductType(final List<LoanDocumentData> loanDocumentDataList) {
+        if (CollectionUtils.isNotEmpty(loanDocumentDataList)) {
+            synchronized (this) {
+                final LoanDocumentData firstLoanDocumentData = loanDocumentDataList.get(0);
+                log.info("Acquiring lock for loan document processing with client id: {}", firstLoanDocumentData.getClientIdNumber());
+                final LoanProductParameterization loanProductParameterization = this.productParameterizationRepository
+                        .findById(firstLoanDocumentData.getProductTypeParamId())
+                        .orElseThrow(() -> new LoanProductParameterizationNotFoundException(firstLoanDocumentData.getProductTypeParamId()));
+                log.info("Generating document number to be the same for all invoices for client id: {} and product type: {}",
+                        firstLoanDocumentData.getClientIdNumber(), loanProductParameterization.getProductType());
+                final String documentNumber = nextDocumentNumber(loanProductParameterization);
+                log.info("Document number generated: {}", documentNumber);
+                final List<FacturaElectronicaMensual> facturaElectronicaMensuals = new ArrayList<>();
 
-        final BigDecimal penaltyChargesPaid = loanDocumentData.getPenaltyChargesPaid();
-        final BigDecimal penaltyChargesVatPaid = loanDocumentData.getPenaltyChargesVatPaid();
+                for (final LoanDocumentData loanDocumentData : loanDocumentDataList) {
+                    loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
+                    final BigDecimal interestPaid = loanDocumentData.getInterestPaid();
+                    final BigDecimal interestVatPaid = BigDecimal.ZERO;
 
-        final BigDecimal mandatoryInsurancePaid = loanDocumentData.getMandatoryInsurancePaid();
-        final BigDecimal mandatoryInsuranceVatPaid = loanDocumentData.getMandatoryInsuranceVatPaid();
+                    final BigDecimal penaltyChargesPaid = loanDocumentData.getPenaltyChargesPaid();
+                    final BigDecimal penaltyChargesVatPaid = loanDocumentData.getPenaltyChargesVatPaid();
 
-        final BigDecimal voluntaryInsurancePaid = loanDocumentData.getVoluntaryInsurancePaid();
-        final BigDecimal voluntaryInsuranceVatPaid = loanDocumentData.getVoluntaryInsuranceVatPaid();
+                    final BigDecimal mandatoryInsurancePaid = loanDocumentData.getMandatoryInsurancePaid();
+                    final BigDecimal mandatoryInsuranceVatPaid = loanDocumentData.getMandatoryInsuranceVatPaid();
 
-        final BigDecimal honorariosPaid = loanDocumentData.getHonorariosPaid();
-        final BigDecimal honorariosVatPaid = loanDocumentData.getHonorariosVatPaid();
+                    final BigDecimal voluntaryInsurancePaid = loanDocumentData.getVoluntaryInsurancePaid();
+                    final BigDecimal voluntaryInsuranceVatPaid = loanDocumentData.getVoluntaryInsuranceVatPaid();
 
-        synchronized (this) {
-            log.info("Acquiring lock for loan document processing with client id: {}", loanDocumentData.getClientIdNumber());
-            final LoanProductParameterization loanProductParameterization = this.productParameterizationRepository
-                    .findById(loanDocumentData.getProductTypeParamId())
-                    .orElseThrow(() -> new LoanProductParameterizationNotFoundException(loanDocumentData.getProductTypeParamId()));
-            FacturaElectronicaMensual facturaElectronicaMensual = generateInvoice(loanDocumentData, loanProductParameterization);
+                    final BigDecimal honorariosPaid = loanDocumentData.getHonorariosPaid();
+                    final BigDecimal honorariosVatPaid = loanDocumentData.getHonorariosVatPaid();
+                    final FacturaElectronicaMensual facturaElectronicaMensual = generateInvoice(loanDocumentData,
+                            loanProductParameterization, documentNumber);
+                    facturaElectronicaMensual.setAccrualTransactionIds(loanDocumentData.getTransactionIds());
 
-            long itemPosition = 0L;
-            if (interestPaid.compareTo(BigDecimal.ZERO) > 0) {
-                final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.INT_CORRIENTE;
-                final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
-                itemPosition = itemPosition + 1;
-                facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
-                facturaElectronicaMensualDuplicate.setCosto_total(interestPaid);
-                facturaElectronicaMensualDuplicate.setPrecio_unitario(interestPaid);
-                facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
-                facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
-                facturaElectronicaMensualDuplicate.setId_mandante(null);
-                facturaElectronicaMensualDuplicate.setDescripcion_mandante(null);
+                    if (interestPaid.compareTo(BigDecimal.ZERO) > 0) {
+                        final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.INT_CORRIENTE;
+                        final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+                        facturaElectronicaMensualDuplicate.setCosto_total(interestPaid);
+                        facturaElectronicaMensualDuplicate.setPrecio_unitario(interestPaid);
+                        facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+                        facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+                        facturaElectronicaMensualDuplicate.setId_mandante(null);
+                        facturaElectronicaMensualDuplicate.setDescripcion_mandante(null);
 
-                final ClasificacionConceptosData clasificacionConceptosData = this
-                        .getClasificacionConceptosData(loanDocumentConcept.name());
-                this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, interestVatPaid);
-                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+                        final ClasificacionConceptosData clasificacionConceptosData = this
+                                .getClasificacionConceptosData(loanDocumentConcept.name());
+                        this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, interestVatPaid);
+                        facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+                    }
+                    if (penaltyChargesPaid.compareTo(BigDecimal.ZERO) > 0) {
+                        final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.INT_DE_MORA;
+                        final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+                        facturaElectronicaMensualDuplicate.setCosto_total(penaltyChargesPaid);
+                        facturaElectronicaMensualDuplicate.setPrecio_unitario(penaltyChargesPaid);
+                        facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+                        facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+                        facturaElectronicaMensualDuplicate.setId_mandante(null);
+                        facturaElectronicaMensualDuplicate.setDescripcion_mandante(null);
+                        final ClasificacionConceptosData clasificacionConceptosData = this
+                                .getClasificacionConceptosData(loanDocumentConcept.name());
+                        this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, penaltyChargesVatPaid);
+                        facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+                    }
+                    if (mandatoryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
+                        final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.SEGURO_OBLIGATORIO;
+                        final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+                        facturaElectronicaMensualDuplicate.setCosto_total(mandatoryInsurancePaid);
+                        facturaElectronicaMensualDuplicate.setPrecio_unitario(mandatoryInsurancePaid);
+                        facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+                        facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+
+                        final String mandatoryInsuranceNIT = loanDocumentData.getMandatoryInsuranceNIT();
+                        final String mandatoryInsuranceName = loanDocumentData.getMandatoryInsuranceName();
+
+                        facturaElectronicaMensualDuplicate.setId_mandante(mandatoryInsuranceNIT);
+                        facturaElectronicaMensualDuplicate.setDescripcion_mandante(mandatoryInsuranceName);
+
+                        final ClasificacionConceptosData clasificacionConceptosData = this
+                                .getClasificacionConceptosData(loanDocumentConcept.name());
+                        this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData,
+                                mandatoryInsuranceVatPaid);
+                        facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+                    }
+                    if (voluntaryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
+                        final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.SEGUROS_VOLUNTARIOS;
+                        final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+                        facturaElectronicaMensualDuplicate.setCosto_total(voluntaryInsurancePaid);
+                        facturaElectronicaMensualDuplicate.setPrecio_unitario(voluntaryInsurancePaid);
+                        facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+                        facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+
+                        final String voluntaryInsuranceNIT = loanDocumentData.getVoluntaryInsuranceNIT();
+                        final String voluntaryInsuranceName = loanDocumentData.getVoluntaryInsuranceName();
+
+                        facturaElectronicaMensualDuplicate.setId_mandante(voluntaryInsuranceNIT);
+                        facturaElectronicaMensualDuplicate.setDescripcion_mandante(voluntaryInsuranceName);
+
+                        final ClasificacionConceptosData clasificacionConceptosData = this
+                                .getClasificacionConceptosData(loanDocumentConcept.name());
+                        this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData,
+                                voluntaryInsuranceVatPaid);
+                        facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+                    }
+                    if (honorariosPaid.compareTo(BigDecimal.ZERO) > 0) {
+                        final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.HONORARIOS;
+                        final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
+                        facturaElectronicaMensualDuplicate.setCosto_total(honorariosPaid);
+                        facturaElectronicaMensualDuplicate.setPrecio_unitario(honorariosPaid);
+                        facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
+                        facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
+                        facturaElectronicaMensualDuplicate.setId_mandante(loanDocumentData.getClientCollectionHouseNit());
+                        facturaElectronicaMensualDuplicate.setDescripcion_mandante(loanDocumentData.getClientCollectionHouseName());
+                        final ClasificacionConceptosData clasificacionConceptosData = this
+                                .getClasificacionConceptosData(loanDocumentConcept.name());
+                        this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, honorariosVatPaid);
+                        facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+                    }
+                }
+
+                log.info("Final processing and persisting to the underlying database for client id: {} and product type: {}",
+                        firstLoanDocumentData.getClientIdNumber(), firstLoanDocumentData.getProductTypeName());
+                final BigDecimal totalImpuestoItem = facturaElectronicaMensuals.stream().map(FacturaElectronicaMensual::getImpuesto_item)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                final BigDecimal porcentajeImpuestoItem = facturaElectronicaMensuals.stream()
+                        .filter(f -> f.getPorcentaje_impuesto_item() != null).findFirst().orElse(new FacturaElectronicaMensual())
+                        .getPorcentaje_impuesto_item();
+
+                long itemPosition = 1L;
+                long itemCounts = facturaElectronicaMensuals.size();
+                for (final FacturaElectronicaMensual facturaElectronicaMensualItem : facturaElectronicaMensuals) {
+                    final BigDecimal totalValue = facturaElectronicaMensualItem.getTotal().add(totalImpuestoItem);
+                    facturaElectronicaMensualItem.setTotal(totalValue);
+                    facturaElectronicaMensualItem.setImpuesto(totalImpuestoItem);
+                    facturaElectronicaMensualItem.setPorcentaje_impuesto(porcentajeImpuestoItem);
+                    facturaElectronicaMensualItem.setPosicion(itemPosition);
+                    facturaElectronicaMensualItem.setTotal_unidades(String.valueOf(itemCounts));
+                    itemPosition = itemPosition + 1L;
+                }
+                if (!facturaElectronicaMensuals.isEmpty()) {
+                    this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
+                } else {
+                    // revert the counter to maintain consistency
+                    loanProductParameterization.setInvoiceCounter(loanProductParameterization.getInvoiceCounter() - 1L);
+                }
+                this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
+                log.info("Releasing lock for loan document processing with client id: {}", firstLoanDocumentData.getClientIdNumber());
             }
-            if (penaltyChargesPaid.compareTo(BigDecimal.ZERO) > 0) {
-                final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.INT_DE_MORA;
-                final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
-                itemPosition = itemPosition + 1;
-                facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
-                facturaElectronicaMensualDuplicate.setCosto_total(penaltyChargesPaid);
-                facturaElectronicaMensualDuplicate.setPrecio_unitario(penaltyChargesPaid);
-                facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
-                facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
-                facturaElectronicaMensualDuplicate.setId_mandante(null);
-                facturaElectronicaMensualDuplicate.setDescripcion_mandante(null);
-                final ClasificacionConceptosData clasificacionConceptosData = this
-                        .getClasificacionConceptosData(loanDocumentConcept.name());
-                this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, penaltyChargesVatPaid);
-                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
-            }
-            if (mandatoryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
-                final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.SEGURO_OBLIGATORIO;
-                final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
-                itemPosition = itemPosition + 1;
-                facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
-                facturaElectronicaMensualDuplicate.setCosto_total(mandatoryInsurancePaid);
-                facturaElectronicaMensualDuplicate.setPrecio_unitario(mandatoryInsurancePaid);
-                facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
-                facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
-
-                final String mandatoryInsuranceNIT = loanDocumentData.getMandatoryInsuranceNIT();
-                final String mandatoryInsuranceName = loanDocumentData.getMandatoryInsuranceName();
-
-                facturaElectronicaMensualDuplicate.setId_mandante(mandatoryInsuranceNIT);
-                facturaElectronicaMensualDuplicate.setDescripcion_mandante(mandatoryInsuranceName);
-
-                final ClasificacionConceptosData clasificacionConceptosData = this
-                        .getClasificacionConceptosData(loanDocumentConcept.name());
-                this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, mandatoryInsuranceVatPaid);
-                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
-            }
-            if (voluntaryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
-                final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.SEGUROS_VOLUNTARIOS;
-                final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
-                itemPosition = itemPosition + 1;
-                facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
-                facturaElectronicaMensualDuplicate.setCosto_total(voluntaryInsurancePaid);
-                facturaElectronicaMensualDuplicate.setPrecio_unitario(voluntaryInsurancePaid);
-                facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
-                facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
-
-                final String voluntaryInsuranceNIT = loanDocumentData.getVoluntaryInsuranceNIT();
-                final String voluntaryInsuranceName = loanDocumentData.getVoluntaryInsuranceName();
-
-                facturaElectronicaMensualDuplicate.setId_mandante(voluntaryInsuranceNIT);
-                facturaElectronicaMensualDuplicate.setDescripcion_mandante(voluntaryInsuranceName);
-
-                final ClasificacionConceptosData clasificacionConceptosData = this
-                        .getClasificacionConceptosData(loanDocumentConcept.name());
-                this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, voluntaryInsuranceVatPaid);
-                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
-            }
-            if (honorariosPaid.compareTo(BigDecimal.ZERO) > 0) {
-                final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.HONORARIOS;
-                final FacturaElectronicaMensual facturaElectronicaMensualDuplicate = facturaElectronicaMensual.clone();
-                itemPosition = itemPosition + 1;
-                facturaElectronicaMensualDuplicate.setPosicion(itemPosition);
-                facturaElectronicaMensualDuplicate.setCosto_total(honorariosPaid);
-                facturaElectronicaMensualDuplicate.setPrecio_unitario(honorariosPaid);
-                facturaElectronicaMensualDuplicate.setSku(loanDocumentConcept.getSku());
-                facturaElectronicaMensualDuplicate.setNom_articulo(loanDocumentConcept.getName());
-                facturaElectronicaMensualDuplicate.setId_mandante(loanDocumentData.getClientCollectionHouseNit());
-                facturaElectronicaMensualDuplicate.setDescripcion_mandante(loanDocumentData.getClientCollectionHouseName());
-                final ClasificacionConceptosData clasificacionConceptosData = this
-                        .getClasificacionConceptosData(loanDocumentConcept.name());
-                this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, honorariosVatPaid);
-                facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
-            }
-            final BigDecimal totalImpuestoItem = facturaElectronicaMensuals.stream().map(FacturaElectronicaMensual::getImpuesto_item)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            final BigDecimal porcentajeImpuestoItem = facturaElectronicaMensuals.stream()
-                    .filter(f -> f.getPorcentaje_impuesto_item() != null).findFirst().orElse(new FacturaElectronicaMensual())
-                    .getPorcentaje_impuesto_item();
-            for (final FacturaElectronicaMensual facturaElectronicaMensualItem : facturaElectronicaMensuals) {
-                final BigDecimal totalValue = facturaElectronicaMensualItem.getTotal().add(totalImpuestoItem);
-                facturaElectronicaMensualItem.setTotal(totalValue);
-                facturaElectronicaMensualItem.setImpuesto(totalImpuestoItem);
-                facturaElectronicaMensualItem.setPorcentaje_impuesto(porcentajeImpuestoItem);
-                facturaElectronicaMensualItem.setAccrualTransactionIds(loanDocumentData.getTransactionIds());
-            }
-            if (!facturaElectronicaMensuals.isEmpty()) {
-                this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
-            } else {
-                // revert the counter to maintain consistency
-                loanProductParameterization.setInvoiceCounter(loanProductParameterization.getInvoiceCounter() - 1L);
-            }
-            this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
-            log.info("Releasing lock for loan document processing with client id: {}", loanDocumentData.getClientIdNumber());
         }
     }
 
-    private FacturaElectronicaMensual generateInvoice(LoanDocumentData loanDocumentData,
-            LoanProductParameterization loanProductParameterization) {
+    private String nextDocumentNumber(final LoanProductParameterization loanProductParameterization) {
         long documentNumber;
-        Long currentCounter;
-        final FacturaElectronicaMensual facturaElectronicaMensual = loanDocumentData.toEntity();
-        final Integer itemsCount = loanDocumentData.getItemsCount();
-        facturaElectronicaMensual.setTotal_unidades(String.valueOf(itemsCount));
+        long currentCounter;
         final Long rangeStartNumber = loanProductParameterization.getRangeStartNumber();
         final Long invoiceCounter = loanProductParameterization.getInvoiceCounter();
         final Long rangeEndNumber = loanProductParameterization.getRangeEndNumber();
-
-        facturaElectronicaMensual.setFec_desde(loanProductParameterization.getGenerationDate());
-        facturaElectronicaMensual.setFec_hasta(loanProductParameterization.getExpirationDate());
         currentCounter = ObjectUtils.defaultIfNull(invoiceCounter, 0L) + 1L;
         documentNumber = rangeStartNumber + invoiceCounter;
         loanProductParameterization.setInvoiceCounter(currentCounter);
@@ -5106,8 +5110,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
                             loanProductParameterization.getProductType()));
         }
-        facturaElectronicaMensual.setNumero_doc(String.valueOf(documentNumber));
-        facturaElectronicaMensual.setReferencia(String.valueOf(documentNumber));
+        return String.valueOf(documentNumber);
+    }
+
+    private FacturaElectronicaMensual generateInvoice(final LoanDocumentData loanDocumentData,
+            final LoanProductParameterization loanProductParameterization, String documentNumber) {
+        final FacturaElectronicaMensual facturaElectronicaMensual = loanDocumentData.toEntity();
+        final Integer itemsCount = loanDocumentData.getItemsCount();
+        facturaElectronicaMensual.setFec_desde(loanProductParameterization.getGenerationDate());
+        facturaElectronicaMensual.setFec_hasta(loanProductParameterization.getExpirationDate());
+        facturaElectronicaMensual.setNumero_doc(documentNumber);
+        facturaElectronicaMensual.setReferencia(documentNumber);
         facturaElectronicaMensual.setCodigo_descuento("0");
         facturaElectronicaMensual.setPorcentajedescuento(BigDecimal.ZERO);
         facturaElectronicaMensual.setDescuento(BigDecimal.ZERO);
