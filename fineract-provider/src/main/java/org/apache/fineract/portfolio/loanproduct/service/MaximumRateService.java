@@ -29,10 +29,12 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class MaximumRateService {
+
     private final MaximumRateRepository maximumRateRepository;
 
     public MaximumCreditRateConfigurationData findByProductType(Long productTypeCVid) {
-        MaximumCreditRateConfiguration maximumCreditRateConfiguration = this.maximumRateRepository.findAllByProductTypeCv_Id(productTypeCVid).stream().findFirst().orElse(null);
+        MaximumCreditRateConfiguration maximumCreditRateConfiguration = this.maximumRateRepository
+                .findAllByProductTypeCv_Id(productTypeCVid).stream().findFirst().orElse(null);
         if (maximumCreditRateConfiguration == null) return null;
         return MaximumCreditRateConfigurationData.builder().eaRate(maximumCreditRateConfiguration.getEaRate())
                 .dailyNominalRate(maximumCreditRateConfiguration.getDailyNominalRate())

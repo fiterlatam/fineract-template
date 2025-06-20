@@ -76,7 +76,9 @@ public class MaximumCreditRateConfiguration extends AbstractPersistableCustom {
     @JoinColumn(name = "product_type_cv_id")
     private CodeValue productTypeCv;
 
-    public MaximumCreditRateConfiguration(BigDecimal eaRate, BigDecimal annualNominalRate, BigDecimal monthlyNominalRate, BigDecimal dailyNominalRate, BigDecimal currentInterestRate, BigDecimal overdueInterestRate, LocalDate appliedOnDate, CodeValue productTypeCv) {
+    public MaximumCreditRateConfiguration(BigDecimal eaRate, BigDecimal annualNominalRate, BigDecimal monthlyNominalRate,
+            BigDecimal dailyNominalRate, BigDecimal currentInterestRate, BigDecimal overdueInterestRate, LocalDate appliedOnDate,
+            CodeValue productTypeCv) {
         this.eaRate = eaRate;
         this.annualNominalRate = annualNominalRate;
         this.monthlyNominalRate = monthlyNominalRate;
@@ -100,8 +102,8 @@ public class MaximumCreditRateConfiguration extends AbstractPersistableCustom {
         final BigDecimal overdueInterestRate = command.bigDecimalValueOfParameterNamed("overdueInterestRate");
         final LocalDate appliedOnDate = command.localDateValueOfParameterNamed("appliedOnDate");
 
-        return new MaximumCreditRateConfiguration(eaRate, annualNominalRate, monthlyNominalRate, dailyNominalRate,
-                currentInterestRate, overdueInterestRate, appliedOnDate, productTypeCv);
+        return new MaximumCreditRateConfiguration(eaRate, annualNominalRate, monthlyNominalRate, dailyNominalRate, currentInterestRate,
+                overdueInterestRate, appliedOnDate, productTypeCv);
     }
 
     public Map<String, Object> update(final JsonCommand command) {

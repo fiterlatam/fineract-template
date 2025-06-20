@@ -41,4 +41,3 @@
                               columnDataType="int"
                               defaultNullValue="0"/> </changeSet>
 </databaseChangeLog>
-

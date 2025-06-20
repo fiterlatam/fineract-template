@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.loanproduct.service;
 
+import static org.apache.fineract.portfolio.loanproduct.serialization.LoanProductDataValidator.MAX_RATE_PRODUCTTYPE_ID;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -29,7 +31,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.*;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -53,7 +54,6 @@ import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
-import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityAccessType;
 import org.apache.fineract.infrastructure.entityaccess.service.FineractEntityAccessUtil;
 import org.apache.fineract.infrastructure.event.business.domain.loan.product.LoanProductCreateBusinessEvent;
@@ -72,7 +72,6 @@ import org.apache.fineract.portfolio.floatingrates.domain.FloatingRateRepository
 import org.apache.fineract.portfolio.fund.domain.Fund;
 import org.apache.fineract.portfolio.fund.domain.FundRepository;
 import org.apache.fineract.portfolio.fund.exception.FundNotFoundException;
-import org.apache.fineract.portfolio.interestrates.data.InterestRateData;
 import org.apache.fineract.portfolio.interestrates.domain.InterestRate;
 import org.apache.fineract.portfolio.interestrates.domain.InterestRateRepository;
 import org.apache.fineract.portfolio.interestrates.exception.InterestRateException;
@@ -90,7 +89,6 @@ import org.apache.fineract.portfolio.loanproduct.exception.AdvanceQuotaException
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductCannotBeModifiedDueToNonClosedLoansException;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductDateException;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
-import org.apache.fineract.portfolio.loanproduct.exception.MaximumLegalRateExceptions;
 import org.apache.fineract.portfolio.loanproduct.serialization.LoanProductDataValidator;
 import org.apache.fineract.portfolio.rate.domain.Rate;
 import org.apache.fineract.portfolio.rate.domain.RateRepositoryWrapper;
@@ -101,8 +99,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
-
-import static org.apache.fineract.portfolio.loanproduct.serialization.LoanProductDataValidator.MAX_RATE_PRODUCTTYPE_ID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -594,7 +590,8 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
         final BigDecimal minNominalInterestRatePerPeriod = loanProduct.getMinNominalInterestRatePerPeriod();
         final BigDecimal nominalInterestRatePerPeriod = loanProduct.getNominalInterestRatePerPeriod();
         final PeriodFrequencyType interestPeriodFrequencyType = loanProduct.getInterestPeriodFrequencyType();
-        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.maximumRateService.findByProductType(loanProduct.getProductType().getId());
+        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.maximumRateService
+                .findByProductType(loanProduct.getProductType().getId());
         if (maximumCreditRateConfigurationData == null) {
             return;
         }
@@ -650,7 +647,8 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             final BigDecimal eaRate = command.bigDecimalValueOfParameterNamed("eaRate");
             Long productTypeId = command.longValueOfParameterNamed(MAX_RATE_PRODUCTTYPE_ID);
             CodeValue productTypeCv = this.codeValueRepository.findOneWithNotFoundDetection(productTypeId);
-            final List<MaximumCreditRateConfiguration> maximumCreditRateConfigurations = this.maximumRateRepository.findAllByProductTypeCv_Id(productTypeId);
+            final List<MaximumCreditRateConfiguration> maximumCreditRateConfigurations = this.maximumRateRepository
+                    .findAllByProductTypeCv_Id(productTypeId);
             MaximumCreditRateConfiguration maximumCreditRateConfiguration;
             if (CollectionUtils.isEmpty(maximumCreditRateConfigurations)) {
                 maximumCreditRateConfiguration = MaximumCreditRateConfiguration.fromJson(command, productTypeCv);
@@ -663,8 +661,8 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             maximumCreditRateConfiguration.setAppliedBy(appliedBy);
             this.maximumRateRepository.saveAndFlush(maximumCreditRateConfiguration);
 
-            return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(maximumCreditRateConfiguration.getId()).withEaRate(eaRate).with(changes)
-                    .build();
+            return new CommandProcessingResultBuilder().withCommandId(command.commandId())
+                    .withEntityId(maximumCreditRateConfiguration.getId()).withEaRate(eaRate).with(changes).build();
         } catch (final DataIntegrityViolationException | JpaSystemException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.resourceResult(-1L);
