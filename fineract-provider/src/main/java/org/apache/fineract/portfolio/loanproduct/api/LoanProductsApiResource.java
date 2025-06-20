@@ -353,6 +353,7 @@ public class LoanProductsApiResource {
     public String getMaximumCreditConfigurations() {
         this.context.authenticatedUser().validateHasReadPermission("MAXIMUM_CREDIT_RATE");
         MaximumCreditRateConfigurationData result = this.loanProductReadPlatformService.retrieveMaximumCreditRateConfigurationData();
+        result.setProductTypeOptions(codeValueReadPlatformService.retrieveCodeValuesByCode("ProductType"));
         return this.toApiJsonSerializer.serialize(result);
     }
 

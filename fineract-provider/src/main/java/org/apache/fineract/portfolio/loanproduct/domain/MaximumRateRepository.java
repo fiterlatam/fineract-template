@@ -21,7 +21,10 @@ package org.apache.fineract.portfolio.loanproduct.domain;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import java.util.List;
+
 public interface MaximumRateRepository
         extends JpaRepository<MaximumCreditRateConfiguration, Long>, JpaSpecificationExecutor<MaximumCreditRateConfiguration> {
 
+    List<MaximumCreditRateConfiguration> findAllByProductTypeCv_Id(Long productTypeCvId);
 }

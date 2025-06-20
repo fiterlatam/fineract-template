@@ -46,12 +46,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.domain.MaximumLegalRateHistoryRepository;
 import org.apache.fineract.portfolio.loanproduct.domain.MaximumRateRepository;
 import org.apache.fineract.portfolio.loanproduct.serialization.LoanProductDataValidator;
-import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
-import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformServiceImpl;
-import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
-import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformServiceImpl;
-import org.apache.fineract.portfolio.loanproduct.service.LoanProductWritePlatformService;
-import org.apache.fineract.portfolio.loanproduct.service.LoanProductWritePlatformServiceJpaRepositoryImpl;
+import org.apache.fineract.portfolio.loanproduct.service.*;
 import org.apache.fineract.portfolio.rate.domain.RateRepositoryWrapper;
 import org.apache.fineract.portfolio.rate.service.RateReadService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -82,22 +77,23 @@ public class LoanProductConfiguration {
     @Bean
     @ConditionalOnMissingBean(LoanProductWritePlatformService.class)
     public LoanProductWritePlatformService loanProductWritePlatformService(PlatformSecurityContext context,
-            LoanProductDataValidator fromApiJsonDeserializer, LoanProductRepository loanProductRepository, AprCalculator aprCalculator,
-            FundRepository fundRepository, ChargeRepositoryWrapper chargeRepository, RateRepositoryWrapper rateRepository,
-            ProductToGLAccountMappingWritePlatformService accountMappingWritePlatformService,
-            FineractEntityAccessUtil fineractEntityAccessUtil, FloatingRateRepositoryWrapper floatingRateRepository,
-            LoanRepositoryWrapper loanRepositoryWrapper, BusinessEventNotifierService businessEventNotifierService,
-            DelinquencyBucketRepository delinquencyBucketRepository, MaximumRateRepository maximumRateRepository,
-            AdvanceQuotaRepository advanceQuotaRepository,
-            LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
-            AdvancedPaymentAllocationsJsonParser advancedPaymentJsonParser, CreditAllocationsJsonParser creditAllocationsJsonParser,
-            LoanProductReadPlatformService loanProductReadPlatformService, CodeValueRepositoryWrapper codeValueRepositoryWrapper,
-            SubChannelLoanProductReadWritePlatformService subChannelLoanProductReadWritePlatformService,
-            SubChannelLoanProductRepository subChannelLoanProductRepository, JdbcTemplate jdbcTemplate,
-            InterestRateRepository interestRateRepository, InterestRateReadPlatformService interestRateReadPlatformService,
-            ChannelRepository channelRepository, MaximumLegalRateHistoryRepository maximumLegalRateHistoryRepository) {
+                                                                           LoanProductDataValidator fromApiJsonDeserializer, LoanProductRepository loanProductRepository, AprCalculator aprCalculator,
+                                                                           FundRepository fundRepository, ChargeRepositoryWrapper chargeRepository, RateRepositoryWrapper rateRepository,
+                                                                           ProductToGLAccountMappingWritePlatformService accountMappingWritePlatformService,
+                                                                           FineractEntityAccessUtil fineractEntityAccessUtil, FloatingRateRepositoryWrapper floatingRateRepository,
+                                                                           LoanRepositoryWrapper loanRepositoryWrapper, BusinessEventNotifierService businessEventNotifierService,
+                                                                           DelinquencyBucketRepository delinquencyBucketRepository, MaximumRateRepository maximumRateRepository,
+                                                                           AdvanceQuotaRepository advanceQuotaRepository,
+                                                                           LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
+                                                                           AdvancedPaymentAllocationsJsonParser advancedPaymentJsonParser, CreditAllocationsJsonParser creditAllocationsJsonParser,
+                                                                           LoanProductReadPlatformService loanProductReadPlatformService, CodeValueRepositoryWrapper codeValueRepositoryWrapper,
+                                                                           SubChannelLoanProductReadWritePlatformService subChannelLoanProductReadWritePlatformService,
+                                                                           SubChannelLoanProductRepository subChannelLoanProductRepository, JdbcTemplate jdbcTemplate,
+                                                                           InterestRateRepository interestRateRepository, InterestRateReadPlatformService interestRateReadPlatformService,
+                                                                           ChannelRepository channelRepository, MaximumLegalRateHistoryRepository maximumLegalRateHistoryRepository,
+                                                                           MaximumRateService maximumRateService) {
         return new LoanProductWritePlatformServiceJpaRepositoryImpl(context, fromApiJsonDeserializer, loanProductRepository,
-                maximumRateRepository, advanceQuotaRepository, aprCalculator, fundRepository, chargeRepository, rateRepository,
+                maximumRateRepository, maximumRateService, advanceQuotaRepository, aprCalculator, fundRepository, chargeRepository, rateRepository,
                 accountMappingWritePlatformService, fineractEntityAccessUtil, floatingRateRepository, loanRepositoryWrapper,
                 businessEventNotifierService, delinquencyBucketRepository, loanRepaymentScheduleTransactionProcessorFactory,
                 advancedPaymentJsonParser, creditAllocationsJsonParser, loanProductReadPlatformService, codeValueRepositoryWrapper,

@@ -1053,7 +1053,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
     @Override
     public MaximumCreditRateConfigurationData retrieveMaximumCreditRateConfigurationData() {
         final MaximumRateMapper rm = new MaximumRateMapper();
-        final String sql = "SELECT " + rm.schema() + " WHERE mcrc.id IS NOT NULL";
+        final String sql = "SELECT " + rm.schema() + " WHERE mcrc.id IS NOT NULL and mcrc.product_type_cv_id = 0";
         return this.jdbcTemplate.queryForObject(sql, rm, new Object[] {});
     }
 

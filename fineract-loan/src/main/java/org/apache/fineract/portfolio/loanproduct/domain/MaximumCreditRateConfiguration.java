@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -70,6 +71,38 @@ public class MaximumCreditRateConfiguration extends AbstractPersistableCustom {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "appliedon_userid")
     private AppUser appliedBy;
+
+    @ManyToOne
+    @JoinColumn(name = "product_type_cv_id")
+    private CodeValue productTypeCv;
+
+    public MaximumCreditRateConfiguration(BigDecimal eaRate, BigDecimal annualNominalRate, BigDecimal monthlyNominalRate, BigDecimal dailyNominalRate, BigDecimal currentInterestRate, BigDecimal overdueInterestRate, LocalDate appliedOnDate, CodeValue productTypeCv) {
+        this.eaRate = eaRate;
+        this.annualNominalRate = annualNominalRate;
+        this.monthlyNominalRate = monthlyNominalRate;
+        this.dailyNominalRate = dailyNominalRate;
+        this.currentInterestRate = currentInterestRate;
+        this.overdueInterestRate = overdueInterestRate;
+        this.appliedOnDate = appliedOnDate;
+        this.productTypeCv = productTypeCv;
+    }
+
+    public MaximumCreditRateConfiguration() {
+
+    }
+
+    public static MaximumCreditRateConfiguration fromJson(final JsonCommand command, CodeValue productTypeCv) {
+        final BigDecimal eaRate = command.bigDecimalValueOfParameterNamed("eaRate");
+        final BigDecimal annualNominalRate = command.bigDecimalValueOfParameterNamed("annualNominalRate");
+        final BigDecimal monthlyNominalRate = command.bigDecimalValueOfParameterNamed("monthlyNominalRate");
+        final BigDecimal dailyNominalRate = command.bigDecimalValueOfParameterNamed("dailyNominalRate");
+        final BigDecimal currentInterestRate = command.bigDecimalValueOfParameterNamed("currentInterestRate");
+        final BigDecimal overdueInterestRate = command.bigDecimalValueOfParameterNamed("overdueInterestRate");
+        final LocalDate appliedOnDate = command.localDateValueOfParameterNamed("appliedOnDate");
+
+        return new MaximumCreditRateConfiguration(eaRate, annualNominalRate, monthlyNominalRate, dailyNominalRate,
+                currentInterestRate, overdueInterestRate, appliedOnDate, productTypeCv);
+    }
 
     public Map<String, Object> update(final JsonCommand command) {
         final Map<String, Object> actualChanges = new LinkedHashMap<>();

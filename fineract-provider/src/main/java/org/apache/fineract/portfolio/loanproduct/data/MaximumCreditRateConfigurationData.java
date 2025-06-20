@@ -20,10 +20,14 @@ package org.apache.fineract.portfolio.loanproduct.data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 
 /**
  * Immutable data object representing Maximum Credit Rate Configuration details.
@@ -43,4 +47,6 @@ public class MaximumCreditRateConfigurationData {
     private BigDecimal currentInterestRate;
     private BigDecimal overdueInterestRate;
     private LocalDate appliedOnDate;
+    private Collection<CodeValueData> productTypeOptions;
+    private Long productTypeId;
 }

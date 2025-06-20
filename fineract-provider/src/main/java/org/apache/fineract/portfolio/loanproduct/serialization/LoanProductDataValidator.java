@@ -111,6 +111,7 @@ public final class LoanProductDataValidator {
     public static final String ACCOUNTING_RULE = "accountingRule";
     public static final String MAXIMUM_EA_RATE = "eaRate";
     public static final String MAXIMUM_ANNUAL_NOMINAL_RATE = "annualNominalRate";
+    public static final String MAX_RATE_PRODUCTTYPE_ID = "productTypeId";
     public static final String MAXIMUM_MONTHLY_NOMINAL_RATE = "monthlyNominalRate";
     public static final String MAXIMUM_DAILY_NOMINAL_RATE = "dailyNominalRate";
     public static final String CURRENT_INTEREST_RATE = "currentInterestRate";
@@ -203,7 +204,7 @@ public final class LoanProductDataValidator {
 
     private static final Set<String> MAXIMUM_RATE_SUPPORTED_PARAMETERS = new HashSet<>(
             Arrays.asList("locale", "dateFormat", "eaRate", "annualNominalRate", "appliedBy", "appliedOnDate", "dailyNominalRate",
-                    "monthlyNominalRate", "currentInterestRate", "overdueInterestRate"));
+                    "monthlyNominalRate", "currentInterestRate", "overdueInterestRate", "productTypeId"));
 
     private static final Set<String> ADVANCE_QUOTA_SUPPORTED_PARAMETERS = new HashSet<>(
             Arrays.asList("locale", "dateFormat", "percentageValue", "enabled", "modifiedBy", "modifiedOnDate"));
@@ -1827,6 +1828,10 @@ public final class LoanProductDataValidator {
         final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
         final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("maximumRate");
         final JsonElement element = this.fromApiJsonHelper.parse(json);
+
+        final Long productTypeId = this.fromApiJsonHelper.extractLongNamed(MAX_RATE_PRODUCTTYPE_ID, element);
+        baseDataValidator.reset().parameter(MAX_RATE_PRODUCTTYPE_ID).value(productTypeId).notNull().longGreaterThanZero();
+
         if (this.fromApiJsonHelper.parameterExists(MAXIMUM_EA_RATE, element)) {
             final BigDecimal eaRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(MAXIMUM_EA_RATE, element);
             baseDataValidator.reset().parameter(MAXIMUM_EA_RATE).value(eaRate).notBlank().inMinAndMaxAmountRange(BigDecimal.ZERO,

@@ -28,11 +28,8 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -105,6 +102,8 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.apache.fineract.portfolio.loanproduct.serialization.LoanProductDataValidator.MAX_RATE_PRODUCTTYPE_ID;
+
 @Slf4j
 @RequiredArgsConstructor
 public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanProductWritePlatformService {
@@ -113,6 +112,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private final LoanProductDataValidator fromApiJsonDeserializer;
     private final LoanProductRepository loanProductRepository;
     private final MaximumRateRepository maximumRateRepository;
+    private final MaximumRateService maximumRateService;
     private final AdvanceQuotaRepository advanceQuotaRepository;
     private final AprCalculator aprCalculator;
     private final FundRepository fundRepository;
@@ -182,6 +182,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                     command.longValueOfParameterNamed(LoanProductConstants.PRODUCT_TYPE));
             final LoanProduct loanProduct = LoanProduct.assembleFromJson(fund, loanTransactionProcessingStrategyCode, charges, command,
                     floatingRate, rates, loanProductPaymentAllocationRules, loanProductCreditAllocationRules, interestRate);
+            loanProduct.setProductType(productType);
             this.validateMaximumInterestRate(loanProduct);
             loanProduct.updateLoanProductInRelatedClasses();
             loanProduct.setTransactionProcessingStrategyName(
@@ -192,7 +193,6 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                 loanProduct.setUseOtherLoansCupo(useOtherLoansCupo);
             }
             validateCreditoRotativoRepaymentType(loanProduct, productType);
-            loanProduct.setProductType(productType);
 
             if (command.parameterExists("delinquencyBucketId")) {
                 loanProduct
@@ -594,8 +594,10 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
         final BigDecimal minNominalInterestRatePerPeriod = loanProduct.getMinNominalInterestRatePerPeriod();
         final BigDecimal nominalInterestRatePerPeriod = loanProduct.getNominalInterestRatePerPeriod();
         final PeriodFrequencyType interestPeriodFrequencyType = loanProduct.getInterestPeriodFrequencyType();
-        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
-                .retrieveMaximumCreditRateConfigurationData();
+        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.maximumRateService.findByProductType(loanProduct.getProductType().getId());
+        if (maximumCreditRateConfigurationData == null) {
+            return;
+        }
         switch (interestPeriodFrequencyType) {
             case MONTHS -> {
                 final BigDecimal monthlyNominalRate = maximumCreditRateConfigurationData.getMonthlyNominalRate();
@@ -643,28 +645,25 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
 
         try {
             final AppUser appliedBy = this.context.authenticatedUser();
-            final List<MaximumCreditRateConfiguration> maximumCreditRateConfigurations = this.maximumRateRepository.findAll();
-            if (CollectionUtils.isEmpty(maximumCreditRateConfigurations)) {
-                throw new MaximumLegalRateExceptions();
-            }
-            final MaximumCreditRateConfiguration maximumCreditRateConfiguration = maximumCreditRateConfigurations.get(0);
-            final MaximumLegalRateHistory maximumLegalRateHistory = MaximumLegalRateHistory.createNew(maximumCreditRateConfiguration);
-            final Long id = maximumCreditRateConfiguration.getId();
             this.fromApiJsonDeserializer.validateMaximumRateForUpdate(command);
+            Map<String, Object> changes = new HashMap<>();
             final BigDecimal eaRate = command.bigDecimalValueOfParameterNamed("eaRate");
-            final Map<String, Object> changes = maximumCreditRateConfiguration.update(command);
-            final BigDecimal annualNominalRate = maximumCreditRateConfiguration.getAnnualNominalRate();
-            final SearchParameters searchParameters = SearchParameters.builder().currentRate(annualNominalRate).build();
-            List<InterestRateData> interestRateDataList = this.interestRateReadPlatformService.retrieveBySearchParams(searchParameters);
-            if (CollectionUtils.isNotEmpty(interestRateDataList)) {
-                throw new GeneralPlatformDomainRuleException("error.msg.interest.rates.exist.above.this.rate",
-                        "The change cannot be made since there is interest rates above the new rate, you must first modify the rates",
-                        annualNominalRate);
+            Long productTypeId = command.longValueOfParameterNamed(MAX_RATE_PRODUCTTYPE_ID);
+            CodeValue productTypeCv = this.codeValueRepository.findOneWithNotFoundDetection(productTypeId);
+            final List<MaximumCreditRateConfiguration> maximumCreditRateConfigurations = this.maximumRateRepository.findAllByProductTypeCv_Id(productTypeId);
+            MaximumCreditRateConfiguration maximumCreditRateConfiguration;
+            if (CollectionUtils.isEmpty(maximumCreditRateConfigurations)) {
+                maximumCreditRateConfiguration = MaximumCreditRateConfiguration.fromJson(command, productTypeCv);
+            } else {
+                maximumCreditRateConfiguration = maximumCreditRateConfigurations.get(0);
+                final MaximumLegalRateHistory maximumLegalRateHistory = MaximumLegalRateHistory.createNew(maximumCreditRateConfiguration);
+                maximumLegalRateHistoryRepository.saveAndFlush(maximumLegalRateHistory);
+                changes = maximumCreditRateConfiguration.update(command);
             }
             maximumCreditRateConfiguration.setAppliedBy(appliedBy);
             this.maximumRateRepository.saveAndFlush(maximumCreditRateConfiguration);
-            maximumLegalRateHistoryRepository.saveAndFlush(maximumLegalRateHistory);
-            return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(id).withEaRate(eaRate).with(changes)
+
+            return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(maximumCreditRateConfiguration.getId()).withEaRate(eaRate).with(changes)
                     .build();
         } catch (final DataIntegrityViolationException | JpaSystemException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
