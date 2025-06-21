@@ -124,6 +124,7 @@ import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementData
 import org.apache.fineract.portfolio.loanaccount.exception.UndoLastTrancheDisbursementException;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleDTO;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.*;
+import org.apache.fineract.portfolio.loanaccount.service.DisbursementCutoffContext;
 import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestCalculationPeriodMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
@@ -1596,9 +1597,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public void updateLoanSchedule(final LoanScheduleDTO loanSchedule) {
         List<LoanRepaymentScheduleInstallment> scheduleInstallments = loanSchedule.getInstallments();
         List<LoanRepaymentScheduleInstallment> removeInstallments = new ArrayList<>();
+        int installmentIdBeforeCutOff = DisbursementCutoffContext.getInstallmentsBeforeCutoff();
         for (LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             // Do not touch graced or fully paid installments
-            if (installment.getInstallmentNumber() == 0 || installment.isObligationsMet()) {
+            int currentInstallmentNumber = installment.getInstallmentNumber();
+            if (currentInstallmentNumber == 0 || installment.isObligationsMet() || currentInstallmentNumber <= installmentIdBeforeCutOff) {
                 continue;
             }
             LoanRepaymentScheduleInstallment scheduledInstallment = findByInstallmentNumber(scheduleInstallments,
