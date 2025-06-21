@@ -107,7 +107,8 @@ public class DisbursementCutoffContext {
      * @return the number of installments before the cutoff, or null if not set
      */
     public static Integer getInstallmentsBeforeCutoff() {
-        return installmentsBeforeCutoff.get();
+
+        return installmentsBeforeCutoff.get() != null ? installmentsBeforeCutoff.get() : 0;
     }
     
     /**
@@ -215,4 +216,6 @@ public class DisbursementCutoffContext {
     public static boolean isInstallmentsBeforeCutoffSet() {
         return installmentsBeforeCutoff.get() != null;
     }
+
+
 } 
