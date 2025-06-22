@@ -73,4 +73,4 @@ public class RevolvingLoanUtil {
         return date.isAfter(cutoffDate) && (date.isBefore(repaymentDate) || date.isEqual(repaymentDate));
     }
 
-} 
+}
