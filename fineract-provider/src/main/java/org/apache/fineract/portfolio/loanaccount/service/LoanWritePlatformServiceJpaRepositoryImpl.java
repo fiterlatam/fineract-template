@@ -5397,7 +5397,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Integer actualNumberOfRepayments = loan.getTermFrequency();
             LocalDate lastInstallmentDueDate = loan.getLastLoanRepaymentScheduleInstallment().getDueDate();
 
-            if (RevolvingLoanUtil.isAfterCutoff(disbursementDate,lastInstallmentDueDate)) {
+            if (RevolvingLoanUtil.isAfterCutoff(disbursementDate, lastInstallmentDueDate)) {
                 DisbursementCutoffContext.setIsAfterCutoff(true);
                 DisbursementCutoffContext.setInstallmentsBeforeCutoff(loan.getRepaymentScheduleInstallments().size());
                 log.info("Revolving credit: Adding {} new installments starting from {}", actualNumberOfRepayments, disbursementDate);

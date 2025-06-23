@@ -76,8 +76,10 @@ public class RevolvingLoanUtil {
     /**
      * Checks if a given date is on or before the calculated cutoff date.
      *
-     * @param date The date to check.
-     * @param repaymentDate The repayment date from which the cutoff is calculated.
+     * @param date
+     *            The date to check.
+     * @param repaymentDate
+     *            The repayment date from which the cutoff is calculated.
      * @return true if the date is on or before the cutoff date, false otherwise.
      */
     public static boolean isBeforeCutoff(LocalDate date, LocalDate repaymentDate) {
