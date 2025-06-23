@@ -373,7 +373,7 @@ public class LoanAssembler {
         loanApplication.loanApplicationSubmittal(loanScheduleModel, loanApplicationTerms, defaultLoanLifecycleStateMachine(),
                 submittedOnDate, externalId, allowTransactionsOnHoliday, holidays, workingDays, allowTransactionsOnNonWorkingDay);
         loanApplication.setPrequalificationGroup(prequalificationGroup);
-        if (isRestructuredLoan) {
+        if (Boolean.TRUE.equals(isRestructuredLoan)) {
             Long restructuredFromLoanId = this.fromApiJsonHelper.extractLongNamed("restructuredFromLoanId", element);
             if (restructuredFromLoanId == null) {
                 throw new IllegalStateException("Restructured loan id is required for a restructured loan.");
