@@ -36,6 +36,7 @@ public class DisbursementCutoffContext {
     private static final ThreadLocal<Boolean> isAfterCutoffContext = new ThreadLocal<>();
     private static final ThreadLocal<LocalDate> cutoffDate = new ThreadLocal<>();
     private static final ThreadLocal<Integer> installmentsBeforeCutoff = new ThreadLocal<>();
+    private static final ThreadLocal<Integer> numberOfNewInstallments = new ThreadLocal<>();
 
     /**
      * Set the cutoff calculation result pair
@@ -222,6 +223,15 @@ public class DisbursementCutoffContext {
      */
     public static boolean isInstallmentsBeforeCutoffSet() {
         return installmentsBeforeCutoff.get() != null;
+    }
+
+
+    public static Integer getNumberOfNewInstallments() {
+        return numberOfNewInstallments.get() != null ? numberOfNewInstallments.get() : 0;
+    }
+
+    public static void setNumberOfNewInstallments(Integer numberOfNewInstallmentsValue) {
+        numberOfNewInstallments.set(numberOfNewInstallmentsValue);
     }
 
 }
