@@ -4960,6 +4960,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 log.info("Document number generated: {}", documentNumber);
                 final List<FacturaElectronicaMensual> facturaElectronicaMensuals = new ArrayList<>();
 
+                BigDecimal totalInvoiceAmount = BigDecimal.ZERO;
+
                 for (final LoanDocumentData loanDocumentData : loanDocumentDataList) {
                     loanDocumentData.setDocumentType(LoanDocumentData.LoanDocumentType.INVOICE);
                     final BigDecimal interestPaid = loanDocumentData.getInterestPaid();
@@ -4978,6 +4980,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     final BigDecimal honorariosVatPaid = loanDocumentData.getHonorariosVatPaid();
                     final FacturaElectronicaMensual facturaElectronicaMensual = generateInvoice(loanDocumentData,
                             loanProductParameterization, documentNumber);
+                    totalInvoiceAmount = totalInvoiceAmount.add(facturaElectronicaMensual.getTotal());
                     facturaElectronicaMensual.setAccrualTransactionIds(loanDocumentData.getTransactionIds());
 
                     if (interestPaid.compareTo(BigDecimal.ZERO) > 0) {
@@ -5076,6 +5079,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 long itemPosition = 1L;
                 long itemCounts = facturaElectronicaMensuals.size();
                 for (final FacturaElectronicaMensual facturaElectronicaMensualItem : facturaElectronicaMensuals) {
+                    facturaElectronicaMensualItem.setBase(totalInvoiceAmount);
+                    facturaElectronicaMensualItem.setTotal(totalInvoiceAmount);
                     final BigDecimal totalValue = facturaElectronicaMensualItem.getTotal().add(totalImpuestoItem);
                     facturaElectronicaMensualItem.setTotal(totalValue);
                     facturaElectronicaMensualItem.setImpuesto(totalImpuestoItem);
@@ -5116,7 +5121,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private FacturaElectronicaMensual generateInvoice(final LoanDocumentData loanDocumentData,
             final LoanProductParameterization loanProductParameterization, String documentNumber) {
         final FacturaElectronicaMensual facturaElectronicaMensual = loanDocumentData.toEntity();
-        final Integer itemsCount = loanDocumentData.getItemsCount();
         facturaElectronicaMensual.setFec_desde(loanProductParameterization.getGenerationDate());
         facturaElectronicaMensual.setFec_hasta(loanProductParameterization.getExpirationDate());
         facturaElectronicaMensual.setNumero_doc(documentNumber);
