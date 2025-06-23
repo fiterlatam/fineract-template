@@ -33,7 +33,7 @@ public class RevolvingLoanUtil {
      *            the original repayment date
      * @return the calculated cutoff date
      */
-    public static LocalDate calculateCutoffDate(LocalDate repaymentDate) {
+    private static LocalDate calculateCutoffDate(LocalDate repaymentDate) {
         int day = repaymentDate.getDayOfMonth();
         int repaymentDay;
         if (day < 10) {
