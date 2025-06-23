@@ -73,4 +73,17 @@ public class RevolvingLoanUtil {
         return date.isAfter(cutoffDate) && (date.isBefore(repaymentDate) || date.isEqual(repaymentDate));
     }
 
+    /**
+     * Checks if a given date is on or before the calculated cutoff date.
+     *
+     * @param date The date to check.
+     * @param repaymentDate The repayment date from which the cutoff is calculated.
+     * @return true if the date is on or before the cutoff date, false otherwise.
+     */
+    public static boolean isBeforeCutoff(LocalDate date, LocalDate repaymentDate) {
+        LocalDate cutoffDate = calculateCutoffDate(repaymentDate);
+        // Return true if the date is before or on the same day as the cutoff date.
+        return date.isBefore(cutoffDate) || date.isEqual(cutoffDate);
+    }
+
 }
