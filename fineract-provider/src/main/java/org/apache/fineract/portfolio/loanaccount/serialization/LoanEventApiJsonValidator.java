@@ -204,7 +204,7 @@ public final class LoanEventApiJsonValidator {
         }
 
         // Disbursement should be not allowed if maxLoanProductCounter is greater than zero
-        if (loan.getLoanProduct().useBorrowerCycle() && loanProductCounter > 0 && !loan.isTopup()) {
+        if (loan.getLoanProduct().useBorrowerCycle() && loanProductCounter > 0 && !loan.isTopup() && !loan.isRestructuredLoans()) {
             throw new LoanDisbursalExistingActiveProduct(loan.getLoanProduct().getName());
         }
     }
@@ -217,7 +217,7 @@ public final class LoanEventApiJsonValidator {
 
         final Set<String> transactionParameters = new HashSet<>(Arrays.asList("transactionDate", "transactionAmount", "externalId", "note",
                 "locale", "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber",
-                "netAmountReceivable", "postAccountingForWaivers"));
+                "netAmountReceivable", "postAccountingForWaivers", "isAccountClosure"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);

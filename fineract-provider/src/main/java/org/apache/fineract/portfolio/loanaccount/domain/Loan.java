@@ -7195,4 +7195,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public void setExternalId(String externalId) {
         this.externalId = externalId;
     }
+
+    public boolean isRestructuredLoans() {
+        return this.restructureRequestId!=null;
+    }
 }

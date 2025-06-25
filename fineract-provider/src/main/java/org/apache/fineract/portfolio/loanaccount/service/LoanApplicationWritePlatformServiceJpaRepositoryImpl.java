@@ -348,6 +348,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             boolean isMeetingMandatoryForJLGLoans = configurationDomainService.isMeetingMandatoryForJLGLoans();
             final Long productId = this.fromJsonHelper.extractLongNamed("productId", command.parsedJson());
             final Boolean isTopup = command.booleanObjectValueOfParameterNamed(LoanApiConstants.isTopup);
+            final Boolean isRestructuredLoan = command.booleanObjectValueOfParameterNamed("isRestructuredLoan");
             final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
                     .orElseThrow(() -> new LoanProductNotFoundException(productId));
 
@@ -373,7 +374,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 // look for active loan products for client if active loan exists new request has to be a topup.
                 List<Long> activeLoansLoanProductIdsByClient = this.loanRepository.findActiveLoansLoanProductIdsByClient(clientId,
                         LoanStatus.ACTIVE.getValue());
-                if (activeLoansLoanProductIdsByClient.contains(productId) && !Boolean.TRUE.equals(isTopup)) {
+                if (activeLoansLoanProductIdsByClient.contains(productId) && !Boolean.TRUE.equals(isTopup) && !Boolean.TRUE.equals(isRestructuredLoan) ) {
                     throw new LoanDisbursalExistingActiveProduct(loanProduct.getName());
                 }
             }

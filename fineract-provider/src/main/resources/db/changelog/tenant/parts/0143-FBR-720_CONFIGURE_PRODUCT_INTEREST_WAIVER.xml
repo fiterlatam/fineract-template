@@ -32,5 +32,14 @@
             <column name="waive_interest_on_early_repayment" type="BOOLEAN" defaultValueBoolean="false" />
         </addColumn>
     </changeSet>
+    <changeSet id="2" author="fineract">
+        <sql>
+            <![CDATA[
+                ALTER TABLE m_loan_transaction
+                MODIFY COLUMN post_accounting_for_waivers bit(1) NULL DEFAULT true;
+                update m_loan_transaction set post_accounting_for_waivers = true where post_accounting_for_waivers is null;
+            ]]>
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>
