@@ -513,8 +513,37 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public Money getTotalOutstanding(final MonetaryCurrency currency) {
-        return getPrincipalOutstanding(currency).plus(getInterestOutstanding(currency)).plus(getFeeChargesOutstanding(currency))
-                .plus(getPenaltyChargesOutstanding(currency));
+        Money principalOutstanding = getPrincipalOutstanding(currency);
+        Money interestOutstanding = getInterestOutstanding(currency);
+        Money feesOutstanding = getFeeChargesOutstanding(currency);
+        Money penaltiesOutstanding = getPenaltyChargesOutstanding(currency);
+        if (this.getLoan() != null && this.getLoan().isMigratedLoan()) {
+            //For the EA migration, if any of the outstandings is negative, we need to force it to be zero
+            if (principalOutstanding.isLessThanZero()) {
+                this.principalCompleted = this.principal;
+                this.principalWrittenOff = BigDecimal.ZERO;
+                principalOutstanding = getPrincipalOutstanding(currency);
+            }
+            if (interestOutstanding.isLessThanZero()) {
+                this.interestPaid = this.interestCharged;
+                this.interestWaived = BigDecimal.ZERO;
+                this.interestWrittenOff = BigDecimal.ZERO;
+                interestOutstanding = getInterestOutstanding(currency);
+            }
+            if (feesOutstanding.isLessThanZero()) {
+                this.feeChargesPaid = this.feeChargesCharged;
+                this.feeChargesWaived = BigDecimal.ZERO;
+                this.feeChargesWrittenOff = BigDecimal.ZERO;
+                feesOutstanding = getFeeChargesOutstanding(currency);
+            }
+            if (penaltiesOutstanding.isLessThanZero()) {
+                this.penaltyChargesPaid = this.penaltyCharges;
+                this.penaltyChargesWaived = BigDecimal.ZERO;
+                this.penaltyChargesWrittenOff = BigDecimal.ZERO;
+                penaltiesOutstanding = getPenaltyChargesOutstanding(currency);
+            }
+        }
+        return principalOutstanding.plus(interestOutstanding).plus(feesOutstanding).plus(penaltiesOutstanding);
     }
 
     public Money getRediferirAmount(final MonetaryCurrency currency) {

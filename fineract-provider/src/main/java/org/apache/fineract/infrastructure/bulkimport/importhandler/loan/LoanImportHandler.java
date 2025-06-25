@@ -126,9 +126,16 @@ public class LoanImportHandler implements ImportHandler {
         if (ImportHandlerUtils.readAsLong(LoanConstants.LINK_ACCOUNT_ID, row) != null) {
             linkAccountId = Objects.requireNonNull(ImportHandlerUtils.readAsLong(LoanConstants.LINK_ACCOUNT_ID, row)).toString();
         }
+        BigDecimal disbursedPrincipal = null;
+        if (ImportHandlerUtils.readAsDouble(LoanConstants.STATUS_COL, row) != null) {
+            disbursedPrincipal = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.STATUS_COL, row));
+        }
 
         if (disbursedDate != null) {
-            return DisbursementData.importInstance(disbursedDate, linkAccountId, row.getRowNum(), locale, dateFormat, "Mifos");
+            DisbursementData data = DisbursementData.importInstance(disbursedDate, linkAccountId, row.getRowNum(), locale, dateFormat,
+                    "Mifos");
+            data.setTransactionAmount(disbursedPrincipal);
+            return data;
         }
         return null;
     }

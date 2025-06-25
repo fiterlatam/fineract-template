@@ -990,6 +990,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             LoanRepaymentScheduleInstallment oldestPastDueInstallment = installments.stream()
                     .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff).filter(e -> loanTransaction.isAfter(e.getDueDate()))
                     .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
+            if (oldestPastDueInstallment != null) {
+                oldestPastDueInstallment.setLoan(loanTransaction.getLoan());
+            }
             boolean found = false;
             if (loanTransaction.claimType() != null) {
                 Money installmentOutStandingFee = Money.zero(currency);
@@ -1032,6 +1035,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
                     .filter(e -> loanTransaction.isOnOrBetween(e.getFromDate(), e.getDueDate()) || loanTransaction.isOn(e.getDueDate()))
                     .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
+            if (dueInstallment != null) {
+                dueInstallment.setLoan(loanTransaction.getLoan());
+            }
 
             found = false;
             if (loanTransaction.claimType() != null) {
@@ -1089,6 +1095,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                         .filter(e -> loanTransaction.isBefore(e.getFromDate()))
                         .max(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).stream().toList();
             }
+            inAdvanceInstallments.forEach(i -> i.setLoan(loanTransaction.getLoan()));
 
             int firstNormalInstallmentNumber = LoanRepaymentScheduleProcessingWrapper.fetchFirstNormalInstallmentNumber(installments);
             boolean stopProcessingAdvanceInstallment = false;
