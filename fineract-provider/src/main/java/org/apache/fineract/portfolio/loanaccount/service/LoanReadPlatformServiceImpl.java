@@ -47,6 +47,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
@@ -147,6 +148,7 @@ import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
+@Slf4j
 @AllArgsConstructor
 @Transactional(readOnly = true)
 public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, LoanReadPlatformServiceCommon {
@@ -4079,29 +4081,63 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     @Override
     public List<LoanDocumentData> retrieveLoanInvoiceDataList(List<Long> loanIds, LocalDate secondLastDayOfMonth) {
+        log.info("Retrieving loan invoice data for {} loans with second last day of month: {}", loanIds.size(), secondLastDayOfMonth);
         final LoanInvoiceMapper loanInvoiceMapper = new LoanInvoiceMapper();
         final String invoiceQuery = "SELECT " + loanInvoiceMapper.invoiceSchema();
-        MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("loanIds", loanIds);
-        parameters.addValue("date", secondLastDayOfMonth);
-        return this.namedParameterJdbcTemplate.query(invoiceQuery, parameters, loanInvoiceMapper);
+        final List<LoanDocumentData> returnedList = new ArrayList<>();
+        final int batchSize = 1000;
+        for (int i = 0; i < loanIds.size(); i += batchSize) {
+            final int endIndex = Math.min(i + batchSize, loanIds.size());
+            final List<Long> batchLoanIds = loanIds.subList(i, endIndex);
+            log.info("Processing batch of {} loan IDs from index {} to {} with overall records of {} loans", batchLoanIds.size(), i,
+                    endIndex, loanIds.size());
+            MapSqlParameterSource parameters = new MapSqlParameterSource();
+            parameters.addValue("loanIds", batchLoanIds);
+            parameters.addValue("date", secondLastDayOfMonth);
+            final long startTime = System.currentTimeMillis();
+            final List<LoanDocumentData> batchLoanDocumentResults = this.namedParameterJdbcTemplate.query(invoiceQuery, parameters,
+                    loanInvoiceMapper);
+            final long endTime = System.currentTimeMillis();
+            log.info("Retrieved {} loan document results for batch from index {} to {} and it took {} seconds to complete",
+                    batchLoanDocumentResults.size(), i, endIndex, (endTime - startTime) / 1000.0);
+            returnedList.addAll(batchLoanDocumentResults);
+        }
+        log.info("Total loan document results retrieved: {}", returnedList.size());
+        return returnedList;
     }
 
     @Override
-    public List<Long> retrieveLoanIdsForInvoiceGenerationByClientIds(List<Long> clientIds, LocalDate secondLastDateOfMonth) {
-        final String sql = """
-                select distinct ml.id from m_loan_transaction mlt
-                     join m_loan ml on mlt.loan_id = ml.id
-                     where ml.client_id IN (:clientIds)
-                     and mlt.is_reversed = false
-                     AND mlt.transaction_type_enum = 10 AND mlt.occurred_on_suspended_account = FALSE
-                     AND mlt.is_invoiced_generated_by_job = false
-                     AND mlt.transaction_date <= :secondLastDateOfMonth
-                """;
-        final MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("clientIds", clientIds);
-        parameters.addValue("secondLastDateOfMonth", secondLastDateOfMonth);
-        return this.namedParameterJdbcTemplate.queryForList(sql, parameters, Long.class);
+    public List<Long> retrieveLoanIdsForInvoiceGenerationByClientIds(final List<Long> clientIds, final LocalDate secondLastDateOfMonth) {
+        log.info("Retrieving loan IDs for invoice generation for {} client IDs with second last date of month: {}", clientIds.size(),
+                secondLastDateOfMonth);
+        final List<Long> returnedList = new ArrayList<>();
+        final int batchSize = 10000;
+        for (int i = 0; i < clientIds.size(); i += batchSize) {
+            final int endIndex = Math.min(i + batchSize, clientIds.size());
+            final List<Long> batchClientIds = clientIds.subList(i, endIndex);
+            log.info("Processing batch of {} client IDs from index {} to {} for overall of {} clients", batchClientIds.size(), i, endIndex,
+                    clientIds.size());
+            final String sql = """
+                    select distinct ml.id from m_loan_transaction mlt
+                         join m_loan ml on mlt.loan_id = ml.id
+                         where ml.client_id IN (:clientIds)
+                         and mlt.is_reversed = false
+                         AND mlt.transaction_type_enum = 10 AND mlt.occurred_on_suspended_account = FALSE
+                         AND mlt.is_invoiced_generated_by_job = false
+                         AND mlt.transaction_date <= :secondLastDateOfMonth
+                    """;
+            final MapSqlParameterSource parameters = new MapSqlParameterSource();
+            parameters.addValue("clientIds", batchClientIds);
+            parameters.addValue("secondLastDateOfMonth", secondLastDateOfMonth);
+            final long startTime = System.currentTimeMillis();
+            final List<Long> batchLoanResults = this.namedParameterJdbcTemplate.queryForList(sql, parameters, Long.class);
+            final long endTime = System.currentTimeMillis();
+            log.info("Retrieved {} loan IDs for batch from index {} to {} and it took {} seconds to complete", batchLoanResults.size(), i,
+                    endIndex, (endTime - startTime) / 1000.0);
+            returnedList.addAll(batchLoanResults);
+        }
+        log.info("Total loan IDs retrieved for invoice generation: {}", returnedList.size());
+        return returnedList;
     }
 
     @Override

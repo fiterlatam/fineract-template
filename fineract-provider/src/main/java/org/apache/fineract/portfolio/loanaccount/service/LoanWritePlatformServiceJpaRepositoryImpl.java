@@ -4948,6 +4948,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     @Override
     public void processInvoicesForClientIdAndProductType(final List<LoanDocumentData> loanDocumentDataList) {
         if (CollectionUtils.isNotEmpty(loanDocumentDataList)) {
+            log.info("Processing invoices for client id: {} and product type: {}", loanDocumentDataList.get(0).getClientIdNumber(),
+                    loanDocumentDataList.get(0).getProductTypeName());
             synchronized (this) {
                 final LoanDocumentData firstLoanDocumentData = loanDocumentDataList.get(0);
                 log.info("Acquiring lock for loan document processing with client id: {}", firstLoanDocumentData.getClientIdNumber());
@@ -4997,6 +4999,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                 .getClasificacionConceptosData(loanDocumentConcept.name());
                         this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, interestVatPaid);
                         facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+                        log.info("Adding interest invoice item for client id: {} and product type: {}",
+                                firstLoanDocumentData.getClientIdNumber(), firstLoanDocumentData.getProductTypeName());
                     }
                     if (penaltyChargesPaid.compareTo(BigDecimal.ZERO) > 0) {
                         final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.INT_DE_MORA;
@@ -5011,6 +5015,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                 .getClasificacionConceptosData(loanDocumentConcept.name());
                         this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, penaltyChargesVatPaid);
                         facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+                        log.info("Adding penalty invoice item for client id: {} and product type: {}",
+                                firstLoanDocumentData.getClientIdNumber(), firstLoanDocumentData.getProductTypeName());
                     }
                     if (mandatoryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
                         final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.SEGURO_OBLIGATORIO;
@@ -5031,6 +5037,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData,
                                 mandatoryInsuranceVatPaid);
                         facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+                        log.info("Adding mandatory insurance invoice item for client id: {} and product type: {}",
+                                firstLoanDocumentData.getClientIdNumber(), firstLoanDocumentData.getProductTypeName());
                     }
                     if (voluntaryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
                         final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.SEGUROS_VOLUNTARIOS;
@@ -5051,6 +5059,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData,
                                 voluntaryInsuranceVatPaid);
                         facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+                        log.info("Adding voluntary insurance invoice item for client id: {} and product type: {}",
+                                firstLoanDocumentData.getClientIdNumber(), firstLoanDocumentData.getProductTypeName());
                     }
                     if (honorariosPaid.compareTo(BigDecimal.ZERO) > 0) {
                         final LoanDocumentConcept loanDocumentConcept = LoanDocumentConcept.HONORARIOS;
@@ -5065,6 +5075,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                 .getClasificacionConceptosData(loanDocumentConcept.name());
                         this.populateImpuestoItem(facturaElectronicaMensualDuplicate, clasificacionConceptosData, honorariosVatPaid);
                         facturaElectronicaMensuals.add(facturaElectronicaMensualDuplicate);
+                        log.info("Adding honorarios invoice item for client id: {} and product type: {}",
+                                firstLoanDocumentData.getClientIdNumber(), firstLoanDocumentData.getProductTypeName());
                     }
                 }
 
@@ -5090,6 +5102,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     itemPosition = itemPosition + 1L;
                 }
                 if (!facturaElectronicaMensuals.isEmpty()) {
+                    log.info("Saving invoice data for client id: {} and product type: {}", firstLoanDocumentData.getClientIdNumber(),
+                            firstLoanDocumentData.getProductTypeName());
                     this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
                 } else {
                     // revert the counter to maintain consistency
@@ -5098,6 +5112,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
                 log.info("Releasing lock for loan document processing with client id: {}", firstLoanDocumentData.getClientIdNumber());
             }
+            log.info("Completed processing invoices for client ID: {} and product type: {}",
+                    loanDocumentDataList.get(0).getClientIdNumber(), loanDocumentDataList.get(0).getProductTypeName());
         }
     }
 

@@ -71,10 +71,13 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
         final boolean enableMonthlyInvoiceGenerationOnJobTrigger = this.configurationDomainService
                 .enableMonthlyInvoiceGenerationOnJobTrigger();
         final int threadPoolSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("thread-pool-size"));
+        log.info("Thread pool size for FacturaElectronicaMensualTasklet: {}", threadPoolSize);
         taskExecutor.setMaxPoolSize(threadPoolSize);
         taskExecutor.setCorePoolSize(threadPoolSize);
         final int batchSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
+        log.info("Batch size for FacturaElectronicaMensualTasklet: {}", batchSize);
         final int pageSize = batchSize * threadPoolSize;
+        log.info("Page size for FacturaElectronicaMensualTasklet: {}", pageSize);
         Long maxClientIdInList = 0L;
 
         if (businessLocalDate.equals(secondLastDayOfMonth) || enableMonthlyInvoiceGenerationOnJobTrigger) {
