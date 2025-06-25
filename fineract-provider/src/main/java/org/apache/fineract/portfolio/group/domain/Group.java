@@ -806,6 +806,9 @@ public final class Group extends AbstractAuditableCustom {
             }
 
             this.groupMembers.add(group);
+            group.updateMeetingDay(this.meetingDay);
+            group.updateMeetingStart(this.meetingStart);
+            group.updateMeetingEnd(this.meetingEnd);
             differences.add(group.getId().toString());
             group.setParent(this);
             group.generateHierarchy();
