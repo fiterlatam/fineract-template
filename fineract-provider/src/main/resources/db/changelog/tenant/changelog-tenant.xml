@@ -408,4 +408,5 @@
     <include file="parts/202505222000001000_EA_334_webhook_disbursement_report.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240708120001_EA_334_add_mipyme_charges.xml" relativeToChangelogFile="true"/>
     <include file="parts/20240708120002_EA_334_add_mipyme_charges_no_tax.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202506252000001000_EA_378_apply_penalties_job_config.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
