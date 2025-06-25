@@ -756,6 +756,9 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
     @Transactional
     @Override
     public void applyOverdueChargesForLoan(final Long loanId, Collection<OverdueLoanScheduleData> overdueUnsortedLoanScheduleDataList) {
+
+        final long start = System.currentTimeMillis();
+
         // order the overdueLoanScheduleDataList by period number
         Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList = overdueUnsortedLoanScheduleDataList.stream()
                 .sorted(Comparator.comparing(OverdueLoanScheduleData::getPeriodNumber)).toList();
@@ -799,8 +802,20 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                 final JsonElement parsedCommand = this.fromApiJsonHelper.parse(overdueInstallment.toString());
                 final JsonCommand command = JsonCommand.from(overdueInstallment.toString(), parsedCommand, this.fromApiJsonHelper, null,
                         null, null, null, null, loanId, null, null, null, null, null, null, null);
+
+                final long startTime = System.currentTimeMillis();
+                log.info("Applying overdue charge for Loan: {} for period number: {} with charge id: {}", loanId,
+                        overdueInstallment.getPeriodNumber(), overdueInstallment.getChargeId());
+
                 LoanOverdueDTO overdueDTO = applyChargeToOverdueLoanInstallment(loan, overdueInstallment.getChargeId(),
                         overdueInstallment.getPeriodNumber(), command);
+
+                log.info("Overdue charge applied for Loan: {} for period number: {} with charge id: {}", loanId,
+                        overdueInstallment.getPeriodNumber(), overdueInstallment.getChargeId());
+                final long endTime = System.currentTimeMillis();
+                log.info("Time taken to apply overdue charge for Loan: {} for period number: {} with charge name: {} is {} ms", loanId,
+                        overdueInstallment.getPeriodNumber(), chargeDefinition.getName(), (endTime - startTime));
+
                 loan = overdueDTO.getLoan();
                 runInterestRecalculation = runInterestRecalculation || overdueDTO.isRunInterestRecalculation();
                 if (DateUtils.isAfter(recalculateFrom, overdueDTO.getRecalculateFrom())) {
@@ -843,11 +858,17 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
                 if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled() && runInterestRecalculation
                         && loan.isFeeCompoundingEnabledForInterestRecalculation()) {
+                    log.info("Recalculating accruals for Loan: {} after applying overdue charges", loanId);
                     this.loanAccountDomainService.recalculateAccruals(loan);
+                    log.info("Accruals recalculated for Loan: {} after applying overdue charges", loanId);
                 }
                 this.loanAccountDomainService.setLoanDelinquencyTag(loan, DateUtils.getBusinessLocalDate());
             }
         }
+
+        final long finish = System.currentTimeMillis();
+        log.info("Overdue charges applied for Loan: {} in {} ms with number of overdue installments: {}", loanId, (finish - start),
+                overdueLoanScheduleDataList.size());
     }
 
     private LoanTransaction applyChargeAdjustment(final Loan loan, final LoanCharge loanCharge, final BigDecimal transactionAmount,
