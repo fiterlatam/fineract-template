@@ -79,6 +79,7 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.LoanRejecte
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanUndoApprovalBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.staff.domain.Staff;
 import org.apache.fineract.portfolio.account.domain.AccountAssociationType;
 import org.apache.fineract.portfolio.account.domain.AccountAssociations;
@@ -159,7 +160,6 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
 import org.apache.fineract.portfolio.savings.service.GSIMReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
@@ -377,6 +377,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 // Add disbursement charges to the loan if they exist on the loan product and have not already been
                 // added to the loan
                 addDisbursementChargesFromLoanProduct(newLoanApplication);
+                // Add charges with IDs between 24 and 33 (MiPyme) to the loan if they exist on the loan product and
+                // have not already been
+                // added to the loan
+                newLoanApplication.setExpectedFirstRepaymentOnDate(
+                        RevolvingLoanUtil.adjustRepaymentDate(newLoanApplication.getExpectedFirstRepaymentOnDate()));
+                addSpecificChargesFromLoanProduct(newLoanApplication);
             } else {
                 validateMicrocreditoProductCharges(newLoanApplication);
             }
@@ -2091,8 +2097,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             loan.getLoanCharges().clear();
             loan.getLoanCharges().addAll(removedMiPymeList);
 
-            loan.recalculateAllCharges();
-
             loanRepository.save(loan);
         }
     }
@@ -2140,6 +2144,81 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         loan.addLoanCharge(loanCharge);
                     }
                 }
+                MonetaryCurrency currency = loan.getCurrency();
+                // Recalculate the charges based on other charges
+                for (LoanCharge charge : loan.getCharges()) {
+                    if (charge.getCharge().isPercentageOfAnotherCharge()) {
+                        // Get the other charge
+                        LoanCharge parentCharge = loan.getTheOtherCharge(charge.getCharge().getParentChargeId());
+                        if (parentCharge != null) {
+                            charge.setAmountPercentageAppliedTo(parentCharge.getAmount(currency).getAmount());
+                            charge.setAmount(
+                                    LoanCharge.percentageOf(parentCharge.getAmount(currency).getAmount(), charge.amountOrPercentage()));
+                            charge.setOutstandingAmount(charge.getAmountOutstanding());
+                        }
+                    }
+                }
+
+                // Save the loan
+                loanRepository.save(loan);
+            }
+        }
+    }
+
+    /**
+     * Adds charges with IDs between 24 and 32 (inclusive) (MiPyme) to the loan if they exist on the loan product and
+     * have not already been added to the loan
+     *
+     * @param loan
+     *            The loan to add specific charges to
+     *
+     *            TODO: Remove this method after data migration is done
+     */
+    private void addSpecificChargesFromLoanProduct(Loan loan) {
+        LoanProduct loanProduct = loan.getLoanProduct();
+
+        // Get all charges from the loan product
+        List<Charge> productCharges = loanProduct.getLoanProductCharges();
+
+        if (productCharges != null && !productCharges.isEmpty()) {
+            // Filter for charges with IDs between 24 and 33 (inclusive)
+            List<Charge> specificCharges = productCharges.stream()
+                    .filter(charge -> charge.getId() >= 24L && charge.getId() <= 33L && charge.isActive()).toList();
+            BigDecimal principal = loan.getProposedPrincipal();
+            BigDecimal smlvLimitBy4 = BigDecimal.valueOf(configurationDomainServiceJpa.retrieveSMVLLimit() * 4);
+            if (!specificCharges.isEmpty()) {
+                // Check if the loan already has these charges
+                Collection<LoanCharge> existingLoanCharges = loan.getLoanCharges();
+
+                for (Charge specificCharge : specificCharges) {
+                    // Check if this charge is already added to the loan
+                    boolean chargeAlreadyAdded = false;
+
+                    if (existingLoanCharges != null) {
+                        chargeAlreadyAdded = existingLoanCharges.stream()
+                                .anyMatch(loanCharge -> loanCharge.getCharge().getId().equals(specificCharge.getId()));
+                    }
+
+                    // If the charge is not already added, add it to the loan
+                    if (!chargeAlreadyAdded) {
+                        final LoanCharge loanCharge = new LoanCharge(loan, specificCharge, loan.getProposedPrincipal(),
+                                specificCharge.getAmount(), ChargeTimeType.fromInt(specificCharge.getChargeTimeType()),
+                                ChargeCalculationType.fromInt(specificCharge.getChargeCalculation()),
+                                loan.getExpectedDisbursedOnLocalDate(), ChargePaymentMode.fromInt(specificCharge.getChargePaymentMode()),
+                                null, BigDecimal.ZERO, null, false, null);
+                        // Check loan amount against SMLV config and microcredito product
+                        if (principal.compareTo(smlvLimitBy4) >= 0 && (loanCharge.getCharge().getName().toLowerCase().contains(" >= 4smlv")
+                                || loanCharge.getCharge().getName().toLowerCase().contains(" _____ 4smlv"))) {
+                            loan.addLoanCharge(loanCharge);
+                        } else if (principal.compareTo(smlvLimitBy4) < 0
+                                && (loanCharge.getCharge().getName().toLowerCase().contains(" < 4smlv")
+                                        || loanCharge.getCharge().getName().toLowerCase().contains(" _ 4smlv"))) {
+                            loan.addLoanCharge(loanCharge);
+                        } else if (loanCharge.getCharge().getName().toLowerCase().contains("seguro de vida nano")) {
+                            loan.addLoanCharge(loanCharge);
+                        }
+                    }
+                }
 
                 // Recalculate all charges
                 loan.recalculateAllCharges();
@@ -2150,7 +2229,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         }
     }
 
-    @NotNull
     private String constructMiPymeChargeFilterCriteria(Loan loan) {
         String filterCriteriaTmp = "capital pendiente";
 

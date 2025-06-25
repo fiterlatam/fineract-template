@@ -109,7 +109,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.CLIENT_ID_NUMBER, LoanApiConstants.DISCOUNT_VALUE, LoanApiConstants.DISCOUNT_TRANSFER_VALUE,
             "isWriteoffPunish", LoanApiConstants.AllYID, LoanApiConstants.POINT_OF_SALE_CODE, LoanApiConstants.MIGRAR_NIT,
             LoanApiConstants.MIGRAR_CODE, LoanApiConstants.MIGRAR_NUMERO_CREDITO, LoanApiConstants.MIGRAR_CEDULA,
-            LoanApiConstants.IS_MIGRAR_LOAN, LoanApiConstants.isRestructuredLoanParamName));
+            LoanApiConstants.IS_MIGRAR_LOAN, LoanApiConstants.isRestructuredLoanParamName, "approvedPrincipal", "proposedPrincipal"));
     public static final String LOANAPPLICATION_UNDO = "loanapplication.undo";
 
     private final FromJsonHelper fromApiJsonHelper;

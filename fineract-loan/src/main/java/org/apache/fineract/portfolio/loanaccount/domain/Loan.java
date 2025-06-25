@@ -3070,11 +3070,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             } else {
                 this.loanRepaymentScheduleDetail.setPrincipal(this.loanRepaymentScheduleDetail.getPrincipal().minus(diff).getAmount());
             }
-            if (!this.loanProduct().isMultiDisburseLoan() && diff.compareTo(BigDecimal.ZERO) < 0) {
-                final String errorMsg = "Loan can't be disbursed,disburse amount is exceeding approved amount ";
-                throw new LoanDisbursalException(errorMsg, "disburse.amount.must.be.less.than.approved.amount", principalDisbursed,
-                        this.loanRepaymentScheduleDetail.getPrincipal().getAmount());
-            }
+//            if (!this.loanProduct().isMultiDisburseLoan() && diff.compareTo(BigDecimal.ZERO) < 0) {
+//                final String errorMsg = "Loan can't be disbursed,disburse amount is exceeding approved amount ";
+//                throw new LoanDisbursalException(errorMsg, "disburse.amount.must.be.less.than.approved.amount", principalDisbursed,
+//                        this.loanRepaymentScheduleDetail.getPrincipal().getAmount());
+//            }
         }
         return disburseAmount;
     }
@@ -3243,6 +3243,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
         updateLoanDerivedFields();
+    }
+
+    public LoanCharge getTheOtherCharge(Long parentChargeId) {
+        for (LoanCharge charge : this.getCharges()) {
+            if (charge.getCharge().getId().equals(parentChargeId)) {
+                return charge;
+            }
+        }
+        return null;
     }
 
     public LoanScheduleModel regenerateScheduleModel(final ScheduleGeneratorDTO scheduleGeneratorDTO) {

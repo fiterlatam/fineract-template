@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
 
@@ -30,6 +31,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanSchedul
  */
 @RequiredArgsConstructor
 @Getter
+@Setter
 public final class DisbursementData implements Comparable<DisbursementData> {
 
     private final Long id;
@@ -48,6 +50,7 @@ public final class DisbursementData implements Comparable<DisbursementData> {
     private String note;
     private transient String linkAccountId;
     private String channelName;
+    private BigDecimal transactionAmount;
 
     public static DisbursementData importInstance(LocalDate actualDisbursementDate, String linkAccountId, Integer rowIndex, String locale,
             String dateFormat, String channelName) {

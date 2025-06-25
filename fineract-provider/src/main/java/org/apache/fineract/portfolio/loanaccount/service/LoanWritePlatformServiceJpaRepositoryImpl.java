@@ -42,6 +42,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -594,8 +595,26 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             Money disburseAmount = loan.adjustDisburseAmount(command, actualDisbursementDate);
             Money amountToDisburse = disburseAmount.copy();
-            boolean recalculateSchedule = amountBeforeAdjust.isNotEqualTo(loan.getPrincipal());
+            boolean recalculateSchedule = amountBeforeAdjust.isNotEqualTo(loan.getPrincipal()) || loan.isMigratedLoan();
             final ExternalId txnExternalId = externalIdFactory.createFromCommand(command, LoanApiConstants.externalIdParameterName);
+            if (amountBeforeAdjust.isNotEqualTo(loan.getPrincipal())) {
+                // The amount to disburse is different, so we need to remove the disbursement fees if any
+                Set<LoanCharge> charges = loan.getActiveCharges();
+                Set<LoanCharge> chargesToRemove = new HashSet<>();
+                if (charges != null && !charges.isEmpty()) {
+                    for (LoanCharge charge : charges) {
+                        if (charge.isDisbursementCharge()) {
+                            chargesToRemove.add(charge);
+                        } else if (charge.isCustomPercentageBasedOfAnotherCharge()) {
+                            LoanCharge parentCharge = loan.getTheOtherCharge(charge.getCharge().getParentChargeId());
+                            if (parentCharge.isDisbursementCharge()) {
+                                chargesToRemove.add(charge);
+                            }
+                        }
+                    }
+                    loan.getCharges().removeAll(chargesToRemove);
+                }
+            }
 
             if (loan.isTopup() && loan.getClientId() != null) {
                 final Long loanIdToClose = loan.getTopupLoanDetails().getLoanIdToClose();

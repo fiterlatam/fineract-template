@@ -44,7 +44,7 @@ public class RevolvingLoanUtil {
             repaymentDay = 20;
         }
         // Set the normalized repayment date
-        LocalDate normalizedRepaymentDate = repaymentDate.withDayOfMonth(repaymentDay);
+        LocalDate normalizedRepaymentDate = adjustRepaymentDate(repaymentDate);
         // Calculate cutoff date based on normalized repayment day
         LocalDate previousMonth = normalizedRepaymentDate.minusMonths(1);
         int cutoffDay = switch (repaymentDay) {
@@ -56,6 +56,29 @@ public class RevolvingLoanUtil {
         };
         // Return cutoff date in previous month
         return previousMonth.withDayOfMonth(cutoffDay);
+    }
+
+    /**
+     * Adjusts the given repayment date to the nearest predefined repayment day based on the following rules: - If the
+     * day of the month is less than 10, the repayment day will be set to 1. - If the day of the month is between 10
+     * (inclusive) and 20 (exclusive), the repayment day will be set to 10. - If the day of the month is 20 or greater,
+     * the repayment day will be set to 20.
+     *
+     * @param repaymentDate
+     *            the original repayment date to be adjusted
+     * @return a {@code LocalDate} representing the adjusted repayment date
+     */
+    public static LocalDate adjustRepaymentDate(LocalDate repaymentDate) {
+        int day = repaymentDate.getDayOfMonth();
+        int repaymentDay;
+        if (day < 10) {
+            repaymentDay = 1;
+        } else if (day < 20) {
+            repaymentDay = 10;
+        } else {
+            repaymentDay = 20;
+        }
+        return repaymentDate.withDayOfMonth(repaymentDay);
     }
 
     /**
