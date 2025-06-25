@@ -27,4 +27,9 @@ public class LoanProductParameterizationNotFoundException extends AbstractPlatfo
                 "Loan product parameterization with identifier " + id + " does not exist", id);
     }
 
+    public LoanProductParameterizationNotFoundException(final String id) {
+        super("error.msg.loan.product.parameterization.id.invalid",
+                "Loan product parameterization with identifier " + id + " does not exist", id);
+    }
+
 }
