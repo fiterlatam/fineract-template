@@ -358,9 +358,11 @@ public class LoanProductsApiResource {
     @Path("maximumCreditRate/{productTypeId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public String getMaximumCreditConfigurations(@PathParam("productTypeId") @Parameter(description = "productTypeId") final Long productTypeId) {
+    public String getMaximumCreditConfigurations(
+            @PathParam("productTypeId") @Parameter(description = "productTypeId") final Long productTypeId) {
         this.context.authenticatedUser().validateHasReadPermission("MAXIMUM_CREDIT_RATE");
-        MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService.retrieveMaximumCreditRateConfigurationDataByProductType(productTypeId);
+        MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
+                .retrieveMaximumCreditRateConfigurationDataByProductType(productTypeId);
 
         return this.toApiJsonSerializer.serialize(maximumCreditRateConfigurationData);
     }
@@ -380,7 +382,8 @@ public class LoanProductsApiResource {
     @Path("maximumCreditRate/history/{productTypeId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public String getMaximumCreditRateHistory(@PathParam("productTypeId") @Parameter(description = "productTypeId") final Long productTypeId) {
+    public String getMaximumCreditRateHistory(
+            @PathParam("productTypeId") @Parameter(description = "productTypeId") final Long productTypeId) {
         this.context.authenticatedUser().validateHasReadPermission("MAXIMUM_CREDIT_RATE");
         final Collection<MaximumCreditRateConfigurationHistoryData> result = this.loanProductReadPlatformService
                 .retrieveMaximumCreditRateConfigurationHistory(productTypeId);

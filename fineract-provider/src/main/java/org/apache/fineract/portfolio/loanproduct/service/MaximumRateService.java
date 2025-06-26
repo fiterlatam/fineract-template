@@ -39,7 +39,8 @@ public class MaximumRateService {
         if (maximumCreditRateConfiguration == null) return null;
         return MaximumCreditRateConfigurationData.builder().eaRate(maximumCreditRateConfiguration.getEaRate())
                 .dailyNominalRate(maximumCreditRateConfiguration.getDailyNominalRate())
-                .productType(CodeValueData.instance(maximumCreditRateConfiguration.getProductTypeCv().getId(), maximumCreditRateConfiguration.getProductTypeCv().getLabel()))
+                .productType(CodeValueData.instance(maximumCreditRateConfiguration.getProductTypeCv().getId(),
+                        maximumCreditRateConfiguration.getProductTypeCv().getLabel()))
                 .annualNominalRate(maximumCreditRateConfiguration.getAnnualNominalRate())
                 .appliedOnDate(maximumCreditRateConfiguration.getAppliedOnDate())
                 .monthlyNominalRate(maximumCreditRateConfiguration.getMonthlyNominalRate())
