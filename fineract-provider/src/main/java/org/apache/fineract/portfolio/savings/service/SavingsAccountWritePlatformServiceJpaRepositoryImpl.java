@@ -2305,32 +2305,24 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     }
 
     protected CommandProcessingResult rebalanceAllSavingsAccounts() {
-        final int batchSize = 100;
-        int offset = 0;
-        while (true) {
-            String query = """
-                        SELECT savings_account_id
-                        FROM m_savings_account_transaction
-                        WHERE running_balance_derived < 0
-                        GROUP BY savings_account_id
-                        ORDER BY savings_account_id
-                        LIMIT %d OFFSET %d
-                    """.formatted(batchSize, offset);
+        String query = """
+                    SELECT savings_account_id
+                    FROM m_savings_account_transaction
+                    WHERE running_balance_derived < 0
+                    GROUP BY savings_account_id
+                    ORDER BY savings_account_id
+                    LIMIT 1000
+                """;
 
-            List<Long> accountIds = jdbcTemplate.query(query, (rs, rowNum) -> rs.getLong("savings_account_id"));
+        List<Long> accountIds = jdbcTemplate.query(query, (rs, rowNum) -> rs.getLong("savings_account_id"));
 
-            if (accountIds.isEmpty()) break;
-
-            for (Long accountId : accountIds) {
-                try {
-                    LOG.info("Rebalancing account with ID: {}", accountId);
-                    rebalanceSingleAccount(accountId);
-                } catch (Exception e) {
-                    LOG.error("Failed to rebalance account ID: {}", accountId, e);
-                }
+        for (Long accountId : accountIds) {
+            try {
+                LOG.info("Rebalancing account with ID: {}", accountId);
+                rebalanceSingleAccount(accountId);
+            } catch (Exception e) {
+                LOG.error("Failed to rebalance account ID: {}", accountId, e);
             }
-
-            offset += batchSize;
         }
 
         return CommandProcessingResult.empty();
