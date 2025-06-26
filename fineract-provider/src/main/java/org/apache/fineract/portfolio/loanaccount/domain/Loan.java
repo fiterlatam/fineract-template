@@ -7197,6 +7197,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean isRestructuredLoans() {
-        return this.restructureRequestId!=null;
+        return this.restructureRequestId != null;
     }
 }

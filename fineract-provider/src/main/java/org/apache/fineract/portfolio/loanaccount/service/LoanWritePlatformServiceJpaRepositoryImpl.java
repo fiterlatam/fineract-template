@@ -586,7 +586,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                 // disburseLoanToLoan(loan, command, loanTopupOutstandingAmount, paymentDetail);
             }
-            if (loan.isRestructuredLoans()){
+            if (loan.isRestructuredLoans()) {
                 BigDecimal totalLoanRestructureAmount = this.closeRestructuredLoans(command, loan, actualDisbursementDate);
                 loanTopupOutstandingAmount = loanTopupOutstandingAmount.add(totalLoanRestructureAmount);
             }
@@ -724,7 +724,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Long loanIdToClose = mapping.getLoan().getId();
             Loan loanToClose = this.loanRepositoryWrapper.findNonClosedLoanThatBelongsToClient(loanIdToClose, loan.getClientId());
 
-
             LoanSummary summary = loanToClose.getSummary();
             final LoanRepaymentScheduleInstallment foreCloseDetail = loanToClose.fetchLoanForeclosureDetail(disbursementDate);
             MonetaryCurrency currency = loanToClose.getCurrency();
@@ -748,8 +747,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 jsonObject.addProperty("note", note);
                 final JsonCommand waiveInterestJsonCommand = JsonCommand.from(jsonObject.toString(), jsonObject, this.fromApiJsonHelper,
                         null, loanIdToClose, null, null, null, loanIdToClose, null, null, null, null, null, null);
-                final CommandProcessingResult waiveInterestResult = this.waiveInterestOnLoan(loanIdToClose,
-                        waiveInterestJsonCommand);
+                final CommandProcessingResult waiveInterestResult = this.waiveInterestOnLoan(loanIdToClose, waiveInterestJsonCommand);
                 if (waiveInterestResult.getLoanId() == null) {
                     throw new GeneralPlatformDomainRuleException("error.message.loan.failed.to.waive.interest.on.loan",
                             "Failed to waive interest on loan application " + loanIdToClose);
@@ -776,8 +774,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     jsonObject.addProperty("note", note);
                     final JsonCommand waiveInterestJsonCommand = JsonCommand.from(jsonObject.toString(), jsonObject, this.fromApiJsonHelper,
                             null, loanIdToClose, null, null, null, loanIdToClose, null, null, null, null, null, null);
-                    final CommandProcessingResult waiveInterestResult = this.waiveInterestOnLoan(loanIdToClose,
-                            waiveInterestJsonCommand);
+                    final CommandProcessingResult waiveInterestResult = this.waiveInterestOnLoan(loanIdToClose, waiveInterestJsonCommand);
                     if (waiveInterestResult.getLoanId() == null) {
                         throw new GeneralPlatformDomainRuleException("error.message.loan.failed.to.waive.interest.on.loan",
                                 "Failed to waive interest on loan application " + loanIdToClose);
@@ -1568,7 +1565,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
         }
         final LoanTransaction waiveInterestTransaction = LoanTransaction.waiverNoAccounting(loan.getOffice(), loan,
-                transactionAmountAsMoney, transactionDate, interestComponent, unrecognizedIncome,isAccountClosure);
+                transactionAmountAsMoney, transactionDate, interestComponent, unrecognizedIncome, isAccountClosure);
         waiveInterestTransaction.setPostAccountingForWaivers(Boolean.TRUE.equals(postAccountingForWaivers));
         businessEventNotifierService.notifyPreBusinessEvent(new LoanWaiveInterestBusinessEvent(waiveInterestTransaction));
         LocalDate recalculateFrom = null;
