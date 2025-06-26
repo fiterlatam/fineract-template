@@ -35,4 +35,16 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="2">
+        <insert tableName="c_configuration">
+            <column name="name" value="rebalance-all-savings-accounts"/>
+            <column name="value" valueNumeric="0"/>
+            <column name="date_value"/>
+            <column name="string_value"/>
+            <column name="enabled" valueBoolean="false"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+            <column name="description" value="Rebalance All Savings Accounts"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>
