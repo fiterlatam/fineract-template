@@ -2302,8 +2302,9 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     protected CommandProcessingResult rebalanceAllSavingsAccounts() {
         String accountsQuery = "select savings_account_id from m_savings_account_transaction where running_balance_derived <0 GROUP BY savings_account_id";
         List<Long> accountIds = this.jdbcTemplate.query(accountsQuery, (rs, rowNum) -> rs.getLong("savings_account_id"));
-        accountIds.forEach(accountId -> {
+        accountIds.parallelStream().forEach(accountId -> {
             try {
+                LOG.info("Going to Rebalance account with ID: {}", accountId);
                 this.rebalanceSingleAccount(accountId);
             } catch (Exception e) {
                 LOG.error("Error rebalancing account with ID: {}", accountId, e);
