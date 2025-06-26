@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.loanproduct.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.domain.MaximumCreditRateConfiguration;
 import org.apache.fineract.portfolio.loanproduct.domain.MaximumRateRepository;
@@ -38,7 +39,7 @@ public class MaximumRateService {
         if (maximumCreditRateConfiguration == null) return null;
         return MaximumCreditRateConfigurationData.builder().eaRate(maximumCreditRateConfiguration.getEaRate())
                 .dailyNominalRate(maximumCreditRateConfiguration.getDailyNominalRate())
-                .productTypeId(maximumCreditRateConfiguration.getProductTypeCv().getId())
+                .productType(CodeValueData.instance(maximumCreditRateConfiguration.getProductTypeCv().getId(), maximumCreditRateConfiguration.getProductTypeCv().getLabel()))
                 .annualNominalRate(maximumCreditRateConfiguration.getAnnualNominalRate())
                 .appliedOnDate(maximumCreditRateConfiguration.getAppliedOnDate())
                 .monthlyNominalRate(maximumCreditRateConfiguration.getMonthlyNominalRate())

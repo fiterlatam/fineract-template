@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import lombok.Setter;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.domain.AuditableFieldsConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -65,6 +66,10 @@ public class MaximumLegalRateHistory extends AbstractPersistableCustom {
     @Column(name = AuditableFieldsConstants.CREATED_DATE_DB_FIELD)
     private OffsetDateTime createdDate;
 
+    @ManyToOne
+    @JoinColumn(name = "product_type_cv_id")
+    private CodeValue productTypeCv;
+
     public static MaximumLegalRateHistory createNew(final MaximumCreditRateConfiguration maximumCreditRateConfiguration) {
         final MaximumLegalRateHistory maximumLegalRateHistory = new MaximumLegalRateHistory();
         maximumLegalRateHistory.eaRate = maximumCreditRateConfiguration.getEaRate();
@@ -76,6 +81,7 @@ public class MaximumLegalRateHistory extends AbstractPersistableCustom {
         maximumLegalRateHistory.currentInterestRate = maximumCreditRateConfiguration.getCurrentInterestRate();
         maximumLegalRateHistory.overdueInterestRate = maximumCreditRateConfiguration.getOverdueInterestRate();
         maximumLegalRateHistory.createdDate = OffsetDateTime.now();
+        maximumLegalRateHistory.productTypeCv = maximumCreditRateConfiguration.getProductTypeCv();
         return maximumLegalRateHistory;
     }
 }

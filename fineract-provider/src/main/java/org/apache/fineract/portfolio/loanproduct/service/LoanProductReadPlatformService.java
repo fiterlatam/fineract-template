@@ -64,7 +64,11 @@ public interface LoanProductReadPlatformService {
 
     MaximumCreditRateConfigurationData retrieveMaximumCreditRateConfigurationData();
 
-    Collection<MaximumCreditRateConfigurationHistoryData> retrieveMaximumCreditRateConfigurationHistory();
+    MaximumCreditRateConfigurationData retrieveMaximumCreditRateConfigurationDataByProductType(Long productTypeId);
+
+    Collection<MaximumCreditRateConfigurationData> retrieveMaximumCreditRatesConfigurationData();
+
+    Collection<MaximumCreditRateConfigurationHistoryData> retrieveMaximumCreditRateConfigurationHistory(Long productTypeId);
 
     AdvanceQuotaConfigurationData retrieveAdvanceQuotaConfigurationData();
 

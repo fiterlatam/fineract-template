@@ -94,11 +94,7 @@ import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
-import org.apache.fineract.portfolio.loanproduct.data.AdvanceQuotaConfigurationData;
-import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
-import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
-import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationHistoryData;
-import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
+import org.apache.fineract.portfolio.loanproduct.data.*;
 import org.apache.fineract.portfolio.loanproduct.domain.AllocationType;
 import org.apache.fineract.portfolio.loanproduct.domain.CreditAllocationTransactionType;
 import org.apache.fineract.portfolio.loanproduct.domain.FutureInstallmentAllocationRule;
@@ -352,9 +348,21 @@ public class LoanProductsApiResource {
     @Produces(MediaType.APPLICATION_JSON)
     public String getMaximumCreditConfigurations() {
         this.context.authenticatedUser().validateHasReadPermission("MAXIMUM_CREDIT_RATE");
-        MaximumCreditRateConfigurationData result = this.loanProductReadPlatformService.retrieveMaximumCreditRateConfigurationData();
+        MaximumCreditRateTemplateData result = new MaximumCreditRateTemplateData();
         result.setProductTypeOptions(codeValueReadPlatformService.retrieveCodeValuesByCode("ProductType"));
+        result.setRates(this.loanProductReadPlatformService.retrieveMaximumCreditRatesConfigurationData());
         return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @GET
+    @Path("maximumCreditRate/{productTypeId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getMaximumCreditConfigurations(@PathParam("productTypeId") @Parameter(description = "productTypeId") final Long productTypeId) {
+        this.context.authenticatedUser().validateHasReadPermission("MAXIMUM_CREDIT_RATE");
+        MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService.retrieveMaximumCreditRateConfigurationDataByProductType(productTypeId);
+
+        return this.toApiJsonSerializer.serialize(maximumCreditRateConfigurationData);
     }
 
     @PUT
@@ -369,13 +377,13 @@ public class LoanProductsApiResource {
 
     // add a endpoint to fetch maximum credit rate history
     @GET
-    @Path("maximumCreditRate/history")
+    @Path("maximumCreditRate/history/{productTypeId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public String getMaximumCreditRateHistory(@Context final UriInfo uriInfo) {
+    public String getMaximumCreditRateHistory(@PathParam("productTypeId") @Parameter(description = "productTypeId") final Long productTypeId) {
         this.context.authenticatedUser().validateHasReadPermission("MAXIMUM_CREDIT_RATE");
         final Collection<MaximumCreditRateConfigurationHistoryData> result = this.loanProductReadPlatformService
-                .retrieveMaximumCreditRateConfigurationHistory();
+                .retrieveMaximumCreditRateConfigurationHistory(productTypeId);
         return this.toApiJsonSerializer.serialize(result);
     }
 

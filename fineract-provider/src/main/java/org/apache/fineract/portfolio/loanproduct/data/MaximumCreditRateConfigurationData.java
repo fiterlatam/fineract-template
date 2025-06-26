@@ -45,6 +45,5 @@ public class MaximumCreditRateConfigurationData {
     private BigDecimal currentInterestRate;
     private BigDecimal overdueInterestRate;
     private LocalDate appliedOnDate;
-    private Collection<CodeValueData> productTypeOptions;
-    private Long productTypeId;
+    private CodeValueData productType;
 }

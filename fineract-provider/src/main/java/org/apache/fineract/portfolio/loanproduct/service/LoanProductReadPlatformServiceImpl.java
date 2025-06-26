@@ -1058,10 +1058,28 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
     }
 
     @Override
-    public Collection<MaximumCreditRateConfigurationHistoryData> retrieveMaximumCreditRateConfigurationHistory() {
-        MaximumRateHistoryMapper rm = new MaximumRateHistoryMapper();
-        final String sql = "SELECT " + rm.schema() + " ORDER BY mcrc.id DESC";
+    public MaximumCreditRateConfigurationData retrieveMaximumCreditRateConfigurationDataByProductType(Long productTypeId) {
+        try {
+            final MaximumRateMapper rm = new MaximumRateMapper();
+            final String sql = "SELECT " + rm.schema() + " WHERE mcrc.id IS NOT NULL and mcrc.product_type_cv_id = ?";
+            return this.jdbcTemplate.queryForObject(sql, rm, productTypeId);
+        } catch (EmptyResultDataAccessException e) {
+            return new MaximumCreditRateConfigurationData();
+        }
+    }
+
+    @Override
+    public Collection<MaximumCreditRateConfigurationData> retrieveMaximumCreditRatesConfigurationData() {
+        final MaximumRateMapper rm = new MaximumRateMapper();
+        final String sql = "SELECT " + rm.schema() + " WHERE mcrc.id IS NOT NULL and mcrc.product_type_cv_id != 0";
         return this.jdbcTemplate.query(sql, rm, new Object[] {});
+    }
+
+    @Override
+    public Collection<MaximumCreditRateConfigurationHistoryData> retrieveMaximumCreditRateConfigurationHistory(Long productTypeId) {
+        MaximumRateHistoryMapper rm = new MaximumRateHistoryMapper();
+        final String sql = "SELECT " + rm.schema() + " WHERE mcrc.product_type_cv_id = ? ORDER BY mcrc.id DESC";
+        return this.jdbcTemplate.query(sql, rm, productTypeId);
     }
 
     private static final class MaximumRateMapper implements RowMapper<MaximumCreditRateConfigurationData> {
@@ -1076,9 +1094,12 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                     mcrc.current_interest_rate AS "currentInterestRate",
                     mcrc.overdue_interest_rate AS "overdueInterestRate",
                     mcrc.appliedon_date AS "appliedOnDate",
+                    mcrc.product_type_cv_id as productTypeId,
+                    pt.code_value as productTypeValue,
                     CONCAT(ma.firstname, ' ', ma.lastname) AS "appliedByUsername"
                     FROM m_maximum_credit_rate_configuration mcrc
                     LEFT OUTER JOIN m_appuser ma ON ma.id = mcrc.appliedon_userid
+                    LEFT JOIN m_code_value pt ON pt.id = mcrc.product_type_cv_id
                     """;
         }
 
@@ -1094,9 +1115,13 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             final BigDecimal currentInterestRate = rs.getBigDecimal("currentInterestRate");
             final BigDecimal overdueInterestRate = rs.getBigDecimal("overdueInterestRate");
             final LocalDate appliedOnDate = JdbcSupport.getLocalDate(rs, "appliedOnDate");
+            Long productTypeId = rs.getLong("productTypeId");
+            String productTypeValue = rs.getString("productTypeValue");
+            CodeValueData productType = CodeValueData.instance(productTypeId, productTypeValue);
             return MaximumCreditRateConfigurationData.builder().id(id).appliedByUsername(appliedByUsername).eaRate(eaRate)
                     .annualNominalRate(annualNominalRate).monthlyNominalRate(monthlyNominalRate).dailyNominalRate(dailyNominalRate)
-                    .currentInterestRate(currentInterestRate).overdueInterestRate(overdueInterestRate).appliedOnDate(appliedOnDate).build();
+                    .currentInterestRate(currentInterestRate).overdueInterestRate(overdueInterestRate).appliedOnDate(appliedOnDate)
+                    .productType(productType).build();
         }
     }
 
