@@ -132,4 +132,6 @@ public interface ConfigurationDomainService {
     long getNumberOfDaysToKeepRunningBalance();
 
     Long getMaximumBackDateDaysAllowed();
+
+    boolean isRebalanceAllAccounts();
 }

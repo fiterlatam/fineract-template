@@ -146,6 +146,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -2254,9 +2255,19 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
     @Override
     public CommandProcessingResult recalculateRunningBalances(Long accountId) {
+        boolean rebalanceAllAccounts = this.configurationDomainService.isRebalanceAllAccounts();
+        if (rebalanceAllAccounts) {
+            return rebalanceAllSavingsAccounts();
+        }
+        return rebalanceSingleAccount(accountId);
+    }
+
+    @Async
+    protected CommandProcessingResult rebalanceSingleAccount(Long accountId) {
         final int pageSize = 100;
         int offset = 0;
         Sort sort = Sort.by("dateOf", "createdDate", "id");
+
         SavingsAccount account = this.savingAccountRepositoryWrapper.findOneWithNotFoundDetection(accountId);
         this.savingAccountAssembler.setHelpers(account);
         account.resetBalances();
@@ -2277,15 +2288,28 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
                 }
                 if (!runningBalance.isEqualTo(transactionRunningBalance)) {
                     transaction.updateRunningBalance(runningBalance);
-                    this.savingsAccountTransactionRepository.save(transaction);
+                    this.savingsAccountTransactionRepository.saveAndFlush(transaction);
                 }
             }
             account.updateSummaryCumulative(transactions);
 
             offset += 1; // next page
         } while (!transactions.isEmpty());
-        this.savingAccountRepositoryWrapper.save(account);
+        this.savingAccountRepositoryWrapper.saveAndFlush(account);
         return CommandProcessingResult.resourceResult(accountId, null);
+    }
+
+    protected CommandProcessingResult rebalanceAllSavingsAccounts() {
+        String accountsQuery = "select savings_account_id from m_savings_account_transaction where running_balance_derived <0 GROUP BY savings_account_id";
+        List<Long> accountIds = this.jdbcTemplate.query(accountsQuery, (rs, rowNum) -> rs.getLong("savings_account_id"));
+        accountIds.forEach(accountId -> {
+            try {
+                this.rebalanceSingleAccount(accountId);
+            } catch (Exception e) {
+                LOG.error("Error rebalancing account with ID: {}", accountId, e);
+            }
+        });
+        return CommandProcessingResult.empty();
     }
 
 }
