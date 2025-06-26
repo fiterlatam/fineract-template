@@ -146,7 +146,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -2303,16 +2302,15 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         int offset = 0;
         while (true) {
             String query = """
-            SELECT savings_account_id
-            FROM m_savings_account_transaction
-            WHERE running_balance_derived < 0
-            GROUP BY savings_account_id
-            ORDER BY savings_account_id
-            LIMIT %d OFFSET %d
-        """.formatted(batchSize, offset);
+                        SELECT savings_account_id
+                        FROM m_savings_account_transaction
+                        WHERE running_balance_derived < 0
+                        GROUP BY savings_account_id
+                        ORDER BY savings_account_id
+                        LIMIT %d OFFSET %d
+                    """.formatted(batchSize, offset);
 
-            List<Long> accountIds = jdbcTemplate.query(query,
-                    (rs, rowNum) -> rs.getLong("savings_account_id"));
+            List<Long> accountIds = jdbcTemplate.query(query, (rs, rowNum) -> rs.getLong("savings_account_id"));
 
             if (accountIds.isEmpty()) break;
 
