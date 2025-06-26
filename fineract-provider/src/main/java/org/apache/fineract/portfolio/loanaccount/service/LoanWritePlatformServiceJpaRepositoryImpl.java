@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -222,6 +223,10 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.ScheduledDa
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleAssembler;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain.LoanRescheduleRequest;
+import org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain.RestructureCreditsLoanMapping;
+import org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain.RestructureCreditsRequest;
+import org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain.RestructureCreditsRequestRepository;
+import org.apache.fineract.portfolio.loanaccount.rescheduleloan.exception.RestructureRequestNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationCommandFromApiJsonHelper;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanEventApiJsonValidator;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanUpdateCommandFromApiJsonDeserializer;
@@ -235,6 +240,7 @@ import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
+import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
 import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
@@ -244,7 +250,6 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
-import org.apache.fineract.portfolio.savings.service.SavingsAccountReadPlatformService;
 import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
 import org.apache.fineract.portfolio.transfer.api.TransferApiConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -311,7 +316,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
     private final LoanScheduleAssembler loanScheduleAssembler;
     private final ClientRepositoryWrapper clientRepository;
-    private final SavingsAccountReadPlatformService savingsAccountReadPlatformService;
+    private final RestructureCreditsRequestRepository restructureCreditsRequestRepository;
     private final PaymentTypeReadPlatformService paymentTypeReadPlatformService;
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
@@ -519,6 +524,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         jsonObject.addProperty("transactionAmount", chargedInterest.getAmount());
                         jsonObject.addProperty("transactionDate", localDateString);
                         jsonObject.addProperty("postAccountingForWaivers", true);
+                        jsonObject.addProperty("isAccountClosure", true);
                         final String note = "Préstamo complementario " + loanId;
                         jsonObject.addProperty("note", note);
                         final JsonCommand waiveInterestJsonCommand = JsonCommand.from(jsonObject.toString(), jsonObject,
@@ -550,6 +556,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         jsonObject.addProperty("transactionAmount", waiveInterestAmount);
                         jsonObject.addProperty("transactionDate", localDateString);
                         jsonObject.addProperty("postAccountingForWaivers", false);
+                        jsonObject.addProperty("isAccountClosure", true);
                         final String note = "Préstamo complementario " + loanId;
                         jsonObject.addProperty("note", note);
                         final JsonCommand waiveInterestJsonCommand = JsonCommand.from(jsonObject.toString(), jsonObject,
@@ -579,10 +586,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                 // disburseLoanToLoan(loan, command, loanTopupOutstandingAmount, paymentDetail);
             }
-            if (loan.getRestructureRequestId()!=null){
-                String totalRestructureCreditQuery = "select sum(outstanding_balance) from m_restructure_credits_loans_mapping where new_loan_id=?";
-                BigDecimal totalRestructureCreditAmount = this.jdbcTemplate.queryForObject(totalRestructureCreditQuery, BigDecimal.class, loanId);
-                loanTopupOutstandingAmount = loanTopupOutstandingAmount.add(totalRestructureCreditAmount);
+            if (loan.isRestructuredLoans()) {
+                BigDecimal totalLoanRestructureAmount = this.closeRestructuredLoans(command, loan, actualDisbursementDate);
+                loanTopupOutstandingAmount = loanTopupOutstandingAmount.add(totalLoanRestructureAmount);
             }
 
             if (isAccountTransfer) {
@@ -686,6 +692,114 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withLoanId(loanId) //
                 .with(changes) //
                 .build();
+    }
+
+    private BigDecimal closeRestructuredLoans(JsonCommand command, Loan loan, LocalDate actualDisbursementDate) {
+        Long restructureRequestId = loan.getRestructureRequestId();
+        RestructureCreditsRequest request = this.restructureCreditsRequestRepository.findById(restructureRequestId)
+                .orElseThrow(() -> new RestructureRequestNotFoundException(restructureRequestId));
+        JsonObject closeObject = new JsonObject();
+        closeObject.add("actualDisbursementDate", command.jsonElement("actualDisbursementDate"));
+        closeObject.add("locale", command.jsonElement("locale"));
+        closeObject.add("note", command.jsonElement("notes"));
+        closeObject.add("dateFormat", command.jsonElement("dateFormat"));
+        LocalDate disbursementDate = request.getNewDisbursementDate().toLocalDate();
+        BigDecimal totalLoanAmount = request.getTotalLoanAmount();
+        BigDecimal totalLoanRestructureAmount = BigDecimal.ZERO;
+
+        Collection<PaymentTypeData> allPaymentTypes = this.paymentTypeReadPlatformService.retrieveAllPaymentTypes();
+        Long paymentTypeId = 1L;
+        if (!allPaymentTypes.isEmpty()) {
+            Optional<PaymentTypeData> firstPaymentType = allPaymentTypes.stream().findFirst();
+            if (firstPaymentType.isPresent()) {
+                paymentTypeId = firstPaymentType.get().getId();
+            }
+        }
+        closeObject.addProperty("paymentTypeId", paymentTypeId);
+
+        Collection<RestructureCreditsLoanMapping> creditMappings = request.getCreditMappings();
+        for (RestructureCreditsLoanMapping mapping : creditMappings) {
+            closeObject.add("transactionDate", command.jsonElement("actualDisbursementDate"));
+            JsonElement finalCommand = this.fromApiJsonHelper.parse(closeObject.toString());
+            Long loanIdToClose = mapping.getLoan().getId();
+            Loan loanToClose = this.loanRepositoryWrapper.findNonClosedLoanThatBelongsToClient(loanIdToClose, loan.getClientId());
+
+            LoanSummary summary = loanToClose.getSummary();
+            final LoanRepaymentScheduleInstallment foreCloseDetail = loanToClose.fetchLoanForeclosureDetail(disbursementDate);
+            MonetaryCurrency currency = loanToClose.getCurrency();
+            Money chargedInterest = foreCloseDetail.getInterestCharged(currency);
+            BigDecimal futureInterest = loanToClose.getSummary().getTotalInterestOutstanding().subtract(chargedInterest.getAmount());
+            if (chargedInterest.isGreaterThanZero()) {
+                final String localeAsString = "en";
+                final String dateFormat = "dd MMMM yyyy";
+                final JsonObject jsonObject = new JsonObject();
+                final LocalDate localDate = DateUtils.getBusinessLocalDate();
+                Locale locale = JsonParserHelper.localeFromString(localeAsString);
+                final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+                final String localDateString = localDate.format(dateTimeFormatter);
+                jsonObject.addProperty("locale", localeAsString);
+                jsonObject.addProperty("dateFormat", dateFormat);
+                jsonObject.addProperty("transactionAmount", chargedInterest.getAmount());
+                jsonObject.addProperty("transactionDate", localDateString);
+                jsonObject.addProperty("postAccountingForWaivers", true);
+                jsonObject.addProperty("isAccountClosure", true);
+                final String note = "Restructure Request " + request.getId();
+                jsonObject.addProperty("note", note);
+                final JsonCommand waiveInterestJsonCommand = JsonCommand.from(jsonObject.toString(), jsonObject, this.fromApiJsonHelper,
+                        null, loanIdToClose, null, null, null, loanIdToClose, null, null, null, null, null, null);
+                final CommandProcessingResult waiveInterestResult = this.waiveInterestOnLoan(loanIdToClose, waiveInterestJsonCommand);
+                if (waiveInterestResult.getLoanId() == null) {
+                    throw new GeneralPlatformDomainRuleException("error.message.loan.failed.to.waive.interest.on.loan",
+                            "Failed to waive interest on loan application " + loanIdToClose);
+                }
+            }
+
+            if (futureInterest.compareTo(BigDecimal.ZERO) > 0) {
+                final Money waiveInterestTransactionAmount = Money.of(currency, futureInterest);
+                if (waiveInterestTransactionAmount.isGreaterThanZero()) {
+                    final String localeAsString = "en";
+                    final String dateFormat = "dd MMMM yyyy";
+                    final JsonObject jsonObject = new JsonObject();
+                    final LocalDate localDate = DateUtils.getBusinessLocalDate();
+                    Locale locale = JsonParserHelper.localeFromString(localeAsString);
+                    final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+                    final String localDateString = localDate.format(dateTimeFormatter);
+                    jsonObject.addProperty("locale", localeAsString);
+                    jsonObject.addProperty("dateFormat", dateFormat);
+                    jsonObject.addProperty("transactionAmount", futureInterest);
+                    jsonObject.addProperty("transactionDate", localDateString);
+                    jsonObject.addProperty("postAccountingForWaivers", false);
+                    jsonObject.addProperty("isAccountClosure", true);
+                    final String note = "Préstamo complementario " + request.getId();
+                    jsonObject.addProperty("note", note);
+                    final JsonCommand waiveInterestJsonCommand = JsonCommand.from(jsonObject.toString(), jsonObject, this.fromApiJsonHelper,
+                            null, loanIdToClose, null, null, null, loanIdToClose, null, null, null, null, null, null);
+                    final CommandProcessingResult waiveInterestResult = this.waiveInterestOnLoan(loanIdToClose, waiveInterestJsonCommand);
+                    if (waiveInterestResult.getLoanId() == null) {
+                        throw new GeneralPlatformDomainRuleException("error.message.loan.failed.to.waive.interest.on.loan",
+                                "Failed to waive interest on loan application " + loanIdToClose);
+                    }
+                }
+            }
+
+            final BigDecimal principalOutstanding = summary.getTotalPrincipalOutstanding();
+            BigDecimal totalFeeChargesOutstanding = summary.getTotalFeeChargesOutstanding();
+            BigDecimal totalPenaltyChargesOutstanding = summary.getTotalPenaltyChargesOutstanding();
+
+            BigDecimal totalLoanOutStanding = principalOutstanding.add(totalFeeChargesOutstanding).add(totalPenaltyChargesOutstanding);
+
+            if (totalLoanOutStanding.compareTo(totalLoanAmount) > 0) {
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
+                        "Topup loan amount should be greater than outstanding amount of loan to be closed.");
+            }
+            JsonCommand paymentCommand = JsonCommand.fromExistingCommand(command, finalCommand);
+
+            this.makeLoanRestructureRepayment(paymentCommand, totalLoanOutStanding, loanToClose);
+
+            totalLoanAmount = totalLoanAmount.subtract(totalLoanOutStanding);
+            totalLoanRestructureAmount = totalLoanRestructureAmount.add(totalLoanOutStanding);
+        }
+        return totalLoanRestructureAmount;
     }
 
     private void updatePostDatedChecks(Set<PostDatedChecks> postDatedChecks) {
@@ -1432,6 +1546,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final LocalDate transactionDate = command.localDateValueOfParameterNamed("transactionDate");
         final BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed("transactionAmount");
         final Boolean postAccountingForWaivers = command.booleanObjectValueOfParameterNamed("postAccountingForWaivers");
+        final Boolean isAccountClosure = command.booleanObjectValueOfParameterNamed("isAccountClosure");
 
         final Loan loan = this.loanAssembler.assembleFrom(loanId);
         checkClientOrGroupActive(loan);
@@ -1450,7 +1565,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
         }
         final LoanTransaction waiveInterestTransaction = LoanTransaction.waiverNoAccounting(loan.getOffice(), loan,
-                transactionAmountAsMoney, transactionDate, interestComponent, unrecognizedIncome, postAccountingForWaivers);
+                transactionAmountAsMoney, transactionDate, interestComponent, unrecognizedIncome, isAccountClosure);
         waiveInterestTransaction.setPostAccountingForWaivers(Boolean.TRUE.equals(postAccountingForWaivers));
         businessEventNotifierService.notifyPreBusinessEvent(new LoanWaiveInterestBusinessEvent(waiveInterestTransaction));
         LocalDate recalculateFrom = null;

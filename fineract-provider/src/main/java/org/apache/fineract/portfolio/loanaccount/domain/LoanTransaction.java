@@ -220,8 +220,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public static LoanTransaction waiverNoAccounting(final Office office, final Loan loan, final Money amount, final LocalDate waiveDate,
-            final Money waived, final Money unrecognizedPortion, Boolean postAccountingForWaivers) {
-        LoanTransactionType waiveInterest = postAccountingForWaivers ? LoanTransactionType.WAIVE_INTEREST
+            final Money waived, final Money unrecognizedPortion, Boolean isAccountClosure) {
+        LoanTransactionType waiveInterest = Boolean.TRUE.equals(isAccountClosure) ? LoanTransactionType.WAIVE_INTEREST
                 : LoanTransactionType.WAIVE_INTEREST_TOPUP;
         LoanTransaction loanTransaction = new LoanTransaction(loan, office, waiveInterest, amount.getAmount(), waiveDate, null);
         loanTransaction.updateInterestComponent(waived, unrecognizedPortion);
