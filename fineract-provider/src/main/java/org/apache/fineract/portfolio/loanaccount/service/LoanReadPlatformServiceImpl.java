@@ -2052,6 +2052,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     @Override
     public List<OverdueLoanScheduleData> retrieveAllLoansWithOverdueInstallments(final Long penaltyWaitPeriod,
             final Boolean backdatePenalties, int pageSize, Long minLoanId) {
+        log.info(
+                "Apply penalty to overdue loans:: Fetching overdue installments with penalty wait period: {}, backdate penalties: {}, page size: {}, min loan id: {}",
+                penaltyWaitPeriod, backdatePenalties, pageSize, minLoanId);
+        final long fetchStartTime = System.currentTimeMillis();
         final MusoniOverdueLoanScheduleMapper rm = new MusoniOverdueLoanScheduleMapper();
 
         String loanIdOffset = "and ml.id >";
@@ -2064,7 +2068,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ").append(loanIdOffset).append(" ? ");
 
         List<OverdueLoanScheduleData> installments;
-        if (backdatePenalties) {
+        if (Boolean.TRUE.equals(backdatePenalties)) {
             sqlBuilder.append(" order by ml.id");
             sqlBuilder.append(" limit ").append(pageSize);
             installments = this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, minLoanId);
@@ -2084,6 +2088,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             String sql = sqlBuilder.toString().replaceAll(loanIdOffset, loanFilter);
             this.addOtherLoanInstallmentsToList(installments, sql, rm, penaltyWaitPeriod, backdatePenalties);
         }
+        final long fetchEndTime = System.currentTimeMillis();
+        log.info("Apply penalty to overdue loans:: Fetched {} overdue installments in {} seconds", installments.size(),
+                (fetchEndTime - fetchStartTime) / 1000.0);
         return installments;
     }
 
