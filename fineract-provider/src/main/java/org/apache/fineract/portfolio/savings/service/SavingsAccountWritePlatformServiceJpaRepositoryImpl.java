@@ -147,6 +147,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
@@ -2261,7 +2262,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         return rebalanceSingleAccount(accountId);
     }
 
-    protected CommandProcessingResult rebalanceSingleAccount(Long accountId) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public CommandProcessingResult rebalanceSingleAccount(Long accountId) {
         final int pageSize = 100;
         int offset = 0;
         Sort sort = Sort.by("dateOf", "createdDate", "id");
@@ -2272,6 +2274,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         MonetaryCurrency currency = account.getCurrency();
         Money runningBalance = Money.zero(currency);
         List<SavingsAccountTransaction> transactions;
+        List<SavingsAccountTransaction> dirtyTxs = new ArrayList<>();
+
         do {
             Pageable pageRequest = PageRequest.of(offset, pageSize, sort);
             transactions = this.savingsAccountTransactionRepository.findAllBySavingsAccount_IdAndReversed(accountId, false, pageRequest)
@@ -2286,14 +2290,17 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
                 }
                 if (!runningBalance.isEqualTo(transactionRunningBalance)) {
                     transaction.updateRunningBalance(runningBalance);
-                    this.savingsAccountTransactionRepository.saveAndFlush(transaction);
+                    dirtyTxs.add(transaction);
                 }
             }
+            savingsAccountTransactionRepository.saveAll(dirtyTxs);
+            savingsAccountTransactionRepository.flush();
+
             account.updateSummaryCumulative(transactions);
 
             offset += 1; // next page
         } while (!transactions.isEmpty());
-        this.savingAccountRepositoryWrapper.saveAndFlush(account);
+        this.savingAccountRepositoryWrapper.save(account);
         return CommandProcessingResult.resourceResult(accountId, null);
     }
 
