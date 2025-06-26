@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.loanaccount.service;
 
 import java.time.LocalDate;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +37,9 @@ public class DisbursementCutoffContext {
     private static final ThreadLocal<Boolean> isAfterCutoffContext = new ThreadLocal<>();
     private static final ThreadLocal<LocalDate> cutoffDate = new ThreadLocal<>();
     private static final ThreadLocal<Integer> installmentsBeforeCutoff = new ThreadLocal<>();
+    private static final ThreadLocal<Integer> firstInstallmentAFterCutoff = new ThreadLocal<>();
     private static final ThreadLocal<Integer> numberOfNewInstallments = new ThreadLocal<>();
+    private static final ThreadLocal<Money> disbursementAmount = new ThreadLocal<>();
 
     /**
      * Set the cutoff calculation result pair
@@ -102,7 +105,11 @@ public class DisbursementCutoffContext {
      *            the number of installments before the cutoff
      */
     public static void setInstallmentsBeforeCutoff(Integer installments) {
+        if (installments == null) {
+            installments =0;
+        }
         installmentsBeforeCutoff.set(installments);
+        firstInstallmentAFterCutoff.set(installments+1);
     }
 
     /**
@@ -123,6 +130,9 @@ public class DisbursementCutoffContext {
         isAfterCutoffContext.remove();
         cutoffDate.remove();
         installmentsBeforeCutoff.remove();
+        firstInstallmentAFterCutoff.remove();
+        numberOfNewInstallments.remove();
+        disbursementAmount.remove();
     }
 
     /**
@@ -232,6 +242,22 @@ public class DisbursementCutoffContext {
 
     public static void setNumberOfNewInstallments(Integer numberOfNewInstallmentsValue) {
         numberOfNewInstallments.set(numberOfNewInstallmentsValue);
+    }
+
+    public static  Integer getFirstInstallmentBeforeCutoff() {
+        return firstInstallmentAFterCutoff.get() != null ? firstInstallmentAFterCutoff.get() : 0;
+    }
+
+
+    public static Money getDisbursementAmount() {
+        return disbursementAmount.get() ;
+    }
+    public static void setDisbursementAmount(Money disbursementAmountValue) {
+        disbursementAmount.set(disbursementAmountValue);
+    }
+
+    public static boolean isInstallmentCalculationAllowedUsingDisbursementAmount(int periodNumber){
+        return disbursementAmount.get() != null  && periodNumber>= getFirstInstallmentBeforeCutoff() && getIsAfterCutoff() && getNumberOfNewInstallments() > 0;
     }
 
 }
