@@ -49,7 +49,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.domain.BitaCoraMasterRepository;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
@@ -2257,7 +2256,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     @Override
     public CommandProcessingResult recalculateRunningBalances(Long accountId) {
         boolean rebalanceAllAccounts = this.configurationDomainService.isRebalanceAllAccounts();
-        if (rebalanceAllAccounts){
+        if (rebalanceAllAccounts) {
             return rebalanceAllSavingsAccounts();
         }
         return rebalanceSingleAccount(accountId);
