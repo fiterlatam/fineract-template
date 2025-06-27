@@ -4914,7 +4914,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                     loanDocumentData.setPenaltyChargesPaid(penaltyChargesPaid);
                     loanDocumentData.setPenaltyChargesVatPaid(penaltyChargesVatPaid);
-                    this.processInvoicesForClientIdAndProductType(List.of(loanDocumentData));
+                    final boolean isTriggeredByJob = false;
+                    this.processInvoicesForClientIdAndProductType(List.of(loanDocumentData), isTriggeredByJob);
                     this.loanTransactionRepository.saveAndFlush(loanTransaction);
                     for (final LoanTransaction accrualTransaction : invoicedByAccrualTransactionSet) {
                         if (!accrualTransaction.isPartiallyInvoiced()) {
@@ -4949,7 +4950,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     @SuppressWarnings("all")
     @Override
-    public void processInvoicesForClientIdAndProductType(final List<LoanDocumentData> loanDocumentDataList) {
+    public void processInvoicesForClientIdAndProductType(final List<LoanDocumentData> loanDocumentDataList,
+            final boolean isTriggeredByJob) {
         if (CollectionUtils.isNotEmpty(loanDocumentDataList)) {
             log.info("Processing invoices for client id: {} and product type: {}", loanDocumentDataList.get(0).getClientIdNumber(),
                     loanDocumentDataList.get(0).getProductTypeName());
@@ -4959,7 +4961,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     .orElseThrow(() -> new LoanProductParameterizationNotFoundException(firstLoanDocumentData.getProductTypeParamId()));
             log.info("Generating document number to be the same for all invoices for client id: {} and product type: {}",
                     firstLoanDocumentData.getClientIdNumber(), loanProductParameterization.getProductType());
-            final String documentNumber = generateInvoiceNumber();
+            final String documentNumber = isTriggeredByJob ? generateInvoiceNumber() : nextDocumentNumber(loanProductParameterization);
             log.info("Document number generated: {}", documentNumber);
             final List<FacturaElectronicaMensual> facturaElectronicaMensuals = new ArrayList<>();
 
@@ -5104,6 +5106,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 log.info("Saving invoice data for client id: {} and product type: {}", firstLoanDocumentData.getClientIdNumber(),
                         firstLoanDocumentData.getProductTypeName());
                 this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
+                if (!isTriggeredByJob) {
+                    this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
+                }
             }
             log.info("Completed processing invoices for client ID: {} and product type: {}",
                     loanDocumentDataList.get(0).getClientIdNumber(), loanDocumentDataList.get(0).getProductTypeName());
@@ -5117,6 +5122,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final long randomLong = random.nextLong();
         final String combinedNumber = Long.toHexString(timestamp) + uuid + Long.toHexString(randomLong);
         return "TEMPORARY_" + combinedNumber.substring(0, 25).toUpperCase();
+    }
+
+    private String nextDocumentNumber(final LoanProductParameterization loanProductParameterization) {
+        final long rangeStartNumber = loanProductParameterization.getRangeStartNumber();
+        final long invoiceCounter = loanProductParameterization.getInvoiceCounter();
+        final long rangeEndNumber = loanProductParameterization.getRangeEndNumber();
+        final long currentCounter = ObjectUtils.defaultIfNull(invoiceCounter, 0L) + 1L;
+        final long documentNumber = rangeStartNumber + invoiceCounter;
+        if (currentCounter > rangeEndNumber) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.invoice.counter.exceeds.range.end.number",
+                    String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
+                            loanProductParameterization.getProductType()));
+        }
+        loanProductParameterization.setInvoiceCounter(currentCounter);
+        return String.valueOf(documentNumber);
     }
 
     private FacturaElectronicaMensual generateInvoice(final LoanDocumentData loanDocumentData,

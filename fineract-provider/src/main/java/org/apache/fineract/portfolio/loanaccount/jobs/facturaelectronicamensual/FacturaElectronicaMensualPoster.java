@@ -92,7 +92,8 @@ public class FacturaElectronicaMensualPoster {
                 log.info("Processing invoice for client/product type with key: {}", key);
                 final List<LoanDocumentData> loanDocuments = entry.getValue();
                 final long startProcessingTime = System.currentTimeMillis();
-                this.loanWritePlatformService.processInvoicesForClientIdAndProductType(loanDocuments);
+                final boolean isTriggeredByJob = true;
+                this.loanWritePlatformService.processInvoicesForClientIdAndProductType(loanDocuments, isTriggeredByJob);
                 final long endProcessingTime = System.currentTimeMillis();
                 log.info("Processed {} invoices for client/product type with key: {} in {} ms", loanDocuments.size(), key,
                         (endProcessingTime - startProcessingTime));
