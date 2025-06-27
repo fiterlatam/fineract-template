@@ -681,23 +681,21 @@ public class LoanCreditNoteWriteServiceImpl implements LoanCreditNoteWriteServic
 
             log.info("Number of new CreditNote Documents: {}", newCreditNoteDocuments.size());
             if (!newCreditNoteDocuments.isEmpty()) {
-                final int itemsCount = newCreditNoteDocuments.size();
                 final BigDecimal totalImpuestoItem = newCreditNoteDocuments.stream().map(FacturaElectronicaMensual::getImpuesto_item)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 final BigDecimal porcentajeImpuestoItem = newCreditNoteDocuments.stream()
                         .filter(f -> Objects.nonNull(f.getPorcentaje_impuesto_item())).findFirst().orElse(new FacturaElectronicaMensual())
                         .getPorcentaje_impuesto_item();
-                final BigDecimal creditNoteBaseValue = newCreditNoteDocuments.stream().map(FacturaElectronicaMensual::getBase)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-                final BigDecimal creditNoteTotalValue = creditNoteBaseValue.add(totalImpuestoItem);
                 for (final FacturaElectronicaMensual facturaElectronicaMensualItem : newCreditNoteDocuments) {
+                    final BigDecimal creditNoteBaseValueItem = facturaElectronicaMensualItem.getBase();
+                    final BigDecimal creditNoteTotalValueItem = creditNoteBaseValueItem
+                            .add(facturaElectronicaMensualItem.getImpuesto_item());
                     final String documentNumber = String.valueOf(rangeStartNumber + currentCounter);
                     facturaElectronicaMensualItem.setNumero_doc(documentNumber);
-                    facturaElectronicaMensualItem.setBase(creditNoteBaseValue);
-                    facturaElectronicaMensualItem.setTotal(creditNoteTotalValue);
+                    facturaElectronicaMensualItem.setTotal(creditNoteTotalValueItem);
                     facturaElectronicaMensualItem.setImpuesto(totalImpuestoItem);
                     facturaElectronicaMensualItem.setPorcentaje_impuesto(porcentajeImpuestoItem);
-                    facturaElectronicaMensualItem.setTotal_unidades(String.valueOf(itemsCount));
+                    facturaElectronicaMensualItem.setTotal_unidades("1");
                     currentCounter = ObjectUtils.defaultIfNull(currentCounter, 0L) + 1L;
                 }
                 this.facturaElectronicMensualRepository.saveAllAndFlush(newCreditNoteDocuments);
