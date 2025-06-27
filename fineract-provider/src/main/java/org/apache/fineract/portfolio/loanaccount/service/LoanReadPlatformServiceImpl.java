@@ -1805,7 +1805,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 paymentDetailData = new PaymentDetailData(id, paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
                         bankNumber, channelName, channelHash, pointOfSalesData);
                 final String bankName = rs.getString("BankName");
-                final Long bankId = rs.getLong("BankId");
+                Number number = (Number) rs.getObject("BankId");
+                Long bankId = (number != null) ? number.longValue() : null;
                 paymentDetailData.setBankId(bankId);
                 paymentDetailData.setBankName(bankName);
             }
