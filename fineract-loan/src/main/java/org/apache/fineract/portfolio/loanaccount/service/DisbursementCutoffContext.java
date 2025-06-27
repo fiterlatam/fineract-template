@@ -106,10 +106,10 @@ public class DisbursementCutoffContext {
      */
     public static void setInstallmentsBeforeCutoff(Integer installments) {
         if (installments == null) {
-            installments =0;
+            installments = 0;
         }
         installmentsBeforeCutoff.set(installments);
-        firstInstallmentAFterCutoff.set(installments+1);
+        firstInstallmentAFterCutoff.set(installments + 1);
     }
 
     /**
@@ -196,7 +196,8 @@ public class DisbursementCutoffContext {
      */
     public static boolean isContextSet() {
         return pairContext.get() != null || isAfterCutoffContext.get() != null || cutoffDate.get() != null
-                || installmentsBeforeCutoff.get() != null;
+                || installmentsBeforeCutoff.get() != null || firstInstallmentAFterCutoff.get() != null
+                || numberOfNewInstallments.get() != null || disbursementAmount.get() != null || cutoffDate.get() != null;
     }
 
     /**
@@ -235,7 +236,6 @@ public class DisbursementCutoffContext {
         return installmentsBeforeCutoff.get() != null;
     }
 
-
     public static Integer getNumberOfNewInstallments() {
         return numberOfNewInstallments.get() != null ? numberOfNewInstallments.get() : 0;
     }
@@ -244,20 +244,42 @@ public class DisbursementCutoffContext {
         numberOfNewInstallments.set(numberOfNewInstallmentsValue);
     }
 
-    public static  Integer getFirstInstallmentBeforeCutoff() {
+    public static Integer getFirstInstallmentBeforeCutoff() {
         return firstInstallmentAFterCutoff.get() != null ? firstInstallmentAFterCutoff.get() : 0;
     }
 
-
     public static Money getDisbursementAmount() {
-        return disbursementAmount.get() ;
+        return disbursementAmount.get();
     }
+
     public static void setDisbursementAmount(Money disbursementAmountValue) {
         disbursementAmount.set(disbursementAmountValue);
     }
 
-    public static boolean isInstallmentCalculationAllowedUsingDisbursementAmount(int periodNumber){
-        return disbursementAmount.get() != null  && periodNumber>= getFirstInstallmentBeforeCutoff() && getIsAfterCutoff() && getNumberOfNewInstallments() > 0;
+    public static boolean isInstallmentCalculationAllowedUsingDisbursementAmount(int periodNumber) {
+        return disbursementAmount.get() != null && getInstallmentsBeforeCutoff() > 0 && periodNumber >= getInstallmentsBeforeCutoff()
+                && getIsAfterCutoff() && getNumberOfNewInstallments() > 0;
     }
 
+    public static boolean doesNextRepaymentExist(int currentInstallment, boolean isNextRepaymentAvailable) {
+        // If context is not set, just return the default
+        if (!isContextSet() || !isAfterCutoffContextSet()) {
+            return isNextRepaymentAvailable;
+        }
+
+        Integer numberOfNewInstallments = getNumberOfNewInstallments();
+        Integer installmentsBeforeCutoff = getInstallmentsBeforeCutoff();
+        if (numberOfNewInstallments == null || installmentsBeforeCutoff == null) {
+            return isNextRepaymentAvailable;
+        }
+
+        int firstInstallmentAfterCutoff = installmentsBeforeCutoff + 1;
+
+        // Only allow up to the specified number of new installments after the cutoff
+        if (firstInstallmentAfterCutoff > 1 && currentInstallment >= (firstInstallmentAfterCutoff + numberOfNewInstallments - 1)) {
+            return false;
+        }
+
+        return isNextRepaymentAvailable;
+    }
 }

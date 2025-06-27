@@ -59,6 +59,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleM
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleParams;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.MultiDisbursementOutstandingAmoutException;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.ScheduleDateException;
+import org.apache.fineract.portfolio.loanaccount.service.DisbursementCutoffContext;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
 
@@ -236,6 +237,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         boolean isLastInstallmentPeriod = false;
         Integer numberOfInstallmentsToIgnore = loanApplicationTerms.getNumberOfInstallmentsToIgnore();
         while (!scheduleParams.getOutstandingBalance().isZero() || !scheduleParams.getDisburseDetailMap().isEmpty()) {
+
+            System.out.println("scheduleParams.getOutstandingBalance(): " + scheduleParams.getOutstandingBalance());
             // In some cases outstanding balance becomes less than zero and above condition still holds valid
             if (scheduleParams.getOutstandingBalance().isLessThanZero()) {
                 break;
@@ -502,6 +505,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             updatePrincipalPortionBasedOnPreviousEarlyPayments(currency, scheduleParams, currentPeriodParams);
             // updates amounts with current earlyPaidAmount
             updateAmountsBasedOnCurrentEarlyPayments(mc, loanApplicationTerms, scheduleParams, currentPeriodParams);
+
+            Integer currenPeriodNumber = scheduleParams.getPeriodNumber();
+
+            isNextRepaymentAvailable = DisbursementCutoffContext.doesNextRepaymentExist(currenPeriodNumber, isNextRepaymentAvailable);
 
             if (scheduleParams.getOutstandingBalance().isLessThanZero() || !isNextRepaymentAvailable) {
                 currentPeriodParams.plusPrincipalForThisPeriod(scheduleParams.getOutstandingBalance());
@@ -3915,6 +3922,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             installment = new LoanRepaymentScheduleInstallment(null, scheduledLoanInstallment.periodNumber(),
                     scheduledLoanInstallment.periodFromDate(), scheduledLoanInstallment.periodDueDate(),
                     scheduledLoanInstallment.principalDue(), scheduledLoanInstallment.interestDue(),
+
                     scheduledLoanInstallment.feeChargesDue(), scheduledLoanInstallment.penaltyChargesDue(),
                     scheduledLoanInstallment.isRecalculatedInterestComponent(), scheduledLoanInstallment.getLoanCompoundingDetails(),
                     scheduledLoanInstallment.rescheduleInterestPortion(), scheduledLoanInstallment.isDownPaymentPeriod());

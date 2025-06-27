@@ -48,6 +48,7 @@ import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsDataWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
+import org.apache.fineract.portfolio.loanaccount.service.DisbursementCutoffContext;
 import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestCalculationPeriodMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
@@ -506,6 +507,12 @@ public final class LoanApplicationTerms {
 
     public Money adjustPrincipalIfLastRepaymentPeriod(final Money principalForPeriod, final Money totalCumulativePrincipalToDate,
             final int periodNumber) {
+
+        // Add your cutoff check here
+        if (DisbursementCutoffContext.isInstallmentCalculationAllowedUsingDisbursementAmount(periodNumber)) {
+            // For new installments after cutoff, don't adjust the principal
+            return principalForPeriod;
+        }
 
         Money adjusted = principalForPeriod;
 
@@ -1375,6 +1382,14 @@ public final class LoanApplicationTerms {
 
     private Money calculateEqualPrincipalDueForInstallment(final MathContext mc, final int periodNumber) {
         Money principal = this.principal;
+
+        // Add your cutoff check here too
+        if (DisbursementCutoffContext.isInstallmentCalculationAllowedUsingDisbursementAmount(periodNumber)) {
+            Money disbursementAmount = DisbursementCutoffContext.getDisbursementAmount();
+            this.fixedPrincipalAmount = disbursementAmount.getAmount();
+            return Money.of(getCurrency(), getFixedPrincipalAmount());
+        }
+
         if (this.fixedPrincipalAmount == null) {
             final Integer numberOfPrincipalPaymentPeriods = calculateNumberOfRemainingPrincipalPaymentPeriods(this.actualNumberOfRepayments,
                     periodNumber);
@@ -1393,6 +1408,13 @@ public final class LoanApplicationTerms {
     }
 
     public void updateFixedPrincipalAmount(final MathContext mc, final int periodNumber, final Money outstandingAmount) {
+        if (DisbursementCutoffContext.isInstallmentCalculationAllowedUsingDisbursementAmount(periodNumber)) {
+            Money principal = DisbursementCutoffContext.getDisbursementAmount();
+            this.fixedPrincipalAmount = principal.getAmount();
+            this.currentPeriodFixedEmiAmount = this.fixedPrincipalAmount;
+            return;
+        }
+
         Integer numberOfPrincipalPaymentPeriods = calculateNumberOfRemainingPrincipalPaymentPeriods(this.actualNumberOfRepayments,
                 periodNumber - 1);
 
