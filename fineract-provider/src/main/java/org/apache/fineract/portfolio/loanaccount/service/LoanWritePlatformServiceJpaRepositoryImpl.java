@@ -464,7 +464,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         BigDecimal disbursement = command.bigDecimalValueOfParameterDefaultToZeroIfNull("transactionAmount");
-        DisbursementCutoffContext.setDisbursementAmount(Money.of(loan.getCurrency() , disbursement));
+        DisbursementCutoffContext.setDisbursementAmount(Money.of(loan.getCurrency(), disbursement));
 
         final LoanProduct loanProduct = loan.loanProduct();
         if (loan.isTopup() && Boolean.TRUE.equals(!loanProduct.getCustomAllowRestructure())) {
@@ -5407,7 +5407,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 DisbursementCutoffContext.setNumberOfNewInstallments(actualNumberOfRepayments);
                 log.info("Revolving credit: Adding {} new installments starting from {}", actualNumberOfRepayments, disbursementDate);
                 return ImmutablePair.of(actualNumberOfRepayments, disbursementDate);
-            }else{
+            } else {
                 DisbursementCutoffContext.clear();
             }
             // If not after cutoff, continue to rest of method
