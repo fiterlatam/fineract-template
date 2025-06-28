@@ -1385,9 +1385,14 @@ public final class LoanApplicationTerms {
 
         // Add your cutoff check here too
         if (DisbursementCutoffContext.isInstallmentCalculationAllowedUsingDisbursementAmount(periodNumber)) {
-            Money disbursementAmount = DisbursementCutoffContext.getDisbursementAmount();
-            this.fixedPrincipalAmount = disbursementAmount.getAmount();
-            return Money.of(getCurrency(), getFixedPrincipalAmount());
+            this.actualNumberOfRepayments = DisbursementCutoffContext.getNumberOfNewInstallments();
+            int numberOfNewInstallments = DisbursementCutoffContext.getNumberOfNewInstallments();
+            Money principalInstallmentAmount = DisbursementCutoffContext.getDisbursementAmount().dividedBy(numberOfNewInstallments, mc.getRoundingMode());
+            this.fixedPrincipalAmount = principalInstallmentAmount.getAmount();
+            this.numberOfRepayments =numberOfNewInstallments;
+            this.approvedPrincipal = principalInstallmentAmount;
+            setFixedEmiAmount(principalInstallmentAmount.getAmount());
+            return principalInstallmentAmount;
         }
 
         if (this.fixedPrincipalAmount == null) {

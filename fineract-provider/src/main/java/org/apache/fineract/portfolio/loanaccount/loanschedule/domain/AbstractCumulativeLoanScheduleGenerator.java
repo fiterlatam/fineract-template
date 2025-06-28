@@ -412,11 +412,19 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     loanApplicationTerms.setAnnualNominalInterestRate(annualNominalInterestRate);
                 }
 
+                // Add this BEFORE the calculatePrincipalInterestComponentsForPeriod call:
+                Money principalForThisPeriod = outstandingBalance;
+                if (DisbursementCutoffContext.isInstallmentCalculationAllowedUsingDisbursementAmount(periodNumber)) {
+                    principalForThisPeriod = DisbursementCutoffContext.getDisbursementAmount();
+                }
+
                 principalInterestForThisPeriod = calculatePrincipalInterestComponentsForPeriod(calculator,
                         interestCalculationGraceOnRepaymentPeriodFractionParam, totalCumulativePrincipal, totalCumulativeInterest,
-                        totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, outstandingBalance, loanApplicationTerms,
+                        totalInterestDueForLoan, cumulatingInterestPaymentDueToGrace, principalForThisPeriod, loanApplicationTerms,
                         periodNumber, mc, principalVariation, compoundingMap, periodStartDateApplicableForInterest, periodEndDate,
                         interestRates, accruedInterestByAdvancePmt);
+
+
                 prevfixEmiAmout = loanApplicationTerms.getFixedEmiAmount();
 
             } else {
@@ -1498,7 +1506,12 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
                     scheduleParams.addOutstandingBalanceAsPerRest(remainingPrincipal);
                 }
-                loanApplicationTerms.setPrincipal(loanApplicationTerms.getPrincipal().plus(remainingPrincipal));
+                if (DisbursementCutoffContext.getIsAfterCutoff()){
+                   loanApplicationTerms.setPrincipal(DisbursementCutoffContext.getDisbursementAmount());
+                }else{
+                    loanApplicationTerms.setPrincipal(loanApplicationTerms.getPrincipal().plus(remainingPrincipal));
+                }
+
                 if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
                     updateAmortization(mc, loanApplicationTerms, scheduleParams.getPeriodNumber(), scheduleParams.getOutstandingBalance());
                 }
