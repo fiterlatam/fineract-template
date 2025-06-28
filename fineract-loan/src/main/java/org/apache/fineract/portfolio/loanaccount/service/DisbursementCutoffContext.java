@@ -19,267 +19,262 @@
 package org.apache.fineract.portfolio.loanaccount.service;
 
 import java.time.LocalDate;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 
 /**
  * ThreadLocal context to store disbursement cutoff calculation results to avoid duplicate calculations during
  * disbursement operations.
  */
+@Slf4j
 public class DisbursementCutoffContext {
 
-    private static final Logger log = LoggerFactory.getLogger(DisbursementCutoffContext.class);
-
-    private static final ThreadLocal<ImmutablePair<Integer, LocalDate>> pairContext = new ThreadLocal<>();
-    private static final ThreadLocal<Boolean> isAfterCutoffContext = new ThreadLocal<>();
-    private static final ThreadLocal<LocalDate> cutoffDate = new ThreadLocal<>();
-    private static final ThreadLocal<Integer> installmentsBeforeCutoff = new ThreadLocal<>();
-    private static final ThreadLocal<Integer> firstInstallmentAFterCutoff = new ThreadLocal<>();
-    private static final ThreadLocal<Integer> numberOfNewInstallments = new ThreadLocal<>();
-    private static final ThreadLocal<Money> disbursementAmount = new ThreadLocal<>();
+    private static final ThreadLocal<CutoffCalculationResult> cutoffResult = new ThreadLocal<>();
 
     /**
-     * Set the cutoff calculation result pair
-     *
-     * @param pair
-     *            the cutoff calculation result as ImmutablePair
+     * Record containing all cutoff calculation results in a single, immutable structure.
+     * This consolidates the previously scattered ThreadLocal variables into a single, cohesive data structure.
      */
-    public static void setCutoffPair(ImmutablePair<Integer, LocalDate> pair) {
-        pairContext.set(pair);
-    }
+    public record CutoffCalculationResult(
+            boolean isAfterCutoff,
+            int installmentsBeforeCutoff,
+            int numberOfNewInstallments,
+            LocalDate cutoffDate,
+            LocalDate disbursementDate,
+            Money disbursementAmount,
+            LoanRepaymentScheduleInstallment lastInstallmentBeforeCutoff,
+            ImmutablePair<Integer, LocalDate> calculationPair) {
 
-    /**
-     * Set the isAfterCutoff flag
-     *
-     * @param isAfterCutoff
-     *            whether the disbursement is after cutoff
-     */
-    public static void setIsAfterCutoff(boolean isAfterCutoff) {
-        isAfterCutoffContext.set(isAfterCutoff);
-    }
-
-    /**
-     * Get the cutoff calculation result pair
-     *
-     * @return the cutoff calculation result pair, or null if not set
-     */
-    public static ImmutablePair<Integer, LocalDate> getCutoffPair() {
-        return pairContext.get();
-    }
-
-    /**
-     * Get the isAfterCutoff flag
-     *
-     * @return the isAfterCutoff flag, or null if not set
-     */
-    public static Boolean getIsAfterCutoff() {
-        return Boolean.TRUE.equals(isAfterCutoffContext.get());
-    }
-
-    /**
-     * Set the cutoff date
-     *
-     * @param date
-     *            the cutoff date
-     */
-    public static void setCutoffDate(LocalDate date) {
-        cutoffDate.set(date);
-    }
-
-    /**
-     * Get the cutoff date
-     *
-     * @return the cutoff date, or null if not set
-     */
-    public static LocalDate getCutoffDate() {
-        return cutoffDate.get();
-    }
-
-    /**
-     * Set the number of installments before the cutoff
-     *
-     * @param installments
-     *            the number of installments before the cutoff
-     */
-    public static void setInstallmentsBeforeCutoff(Integer installments) {
-        if (installments == null) {
-            installments = 0;
+        /**
+         * Factory method to create a cutoff result for after-cutoff scenarios
+         */
+        public static CutoffCalculationResult afterCutoff(
+                int installmentsBeforeCutoff,
+                int numberOfNewInstallments,
+                LocalDate disbursementDate,
+                Money disbursementAmount,
+                LoanRepaymentScheduleInstallment lastInstallmentBeforeCutoff) {
+            
+            LocalDate cutoffDate = calculateCutoffDate(lastInstallmentBeforeCutoff.getDueDate());
+            ImmutablePair<Integer, LocalDate> pair = ImmutablePair.of(numberOfNewInstallments, disbursementDate);
+            
+            return new CutoffCalculationResult(
+                    true,
+                    installmentsBeforeCutoff,
+                    numberOfNewInstallments,
+                    cutoffDate,
+                    disbursementDate,
+                    disbursementAmount,
+                    lastInstallmentBeforeCutoff,
+                    pair
+            );
         }
-        installmentsBeforeCutoff.set(installments);
-        firstInstallmentAFterCutoff.set(installments + 1);
+
+        /**
+         * Factory method to create a cutoff result for before-cutoff scenarios
+         */
+        public static CutoffCalculationResult beforeCutoff(
+                LocalDate disbursementDate,
+                Money disbursementAmount,
+                ImmutablePair<Integer, LocalDate> calculationPair) {
+            
+            return new CutoffCalculationResult(
+                    false,
+                    0,
+                    0,
+                    null,
+                    disbursementDate,
+                    disbursementAmount,
+                    null,
+                    calculationPair
+            );
+        }
+
+        /**
+         * Calculate the cutoff date based on the last installment due date
+         */
+        private static LocalDate calculateCutoffDate(LocalDate repaymentDate) {
+            int day = repaymentDate.getDayOfMonth();
+            int repaymentDay;
+            if (day < 10) {
+                repaymentDay = 1;
+            } else if (day < 20) {
+                repaymentDay = 10;
+            } else {
+                repaymentDay = 20;
+            }
+            
+            LocalDate normalizedRepaymentDate = repaymentDate.withDayOfMonth(repaymentDay);
+            LocalDate previousMonth = normalizedRepaymentDate.minusMonths(1);
+            
+            int cutoffDay = switch (repaymentDay) {
+                case 1 -> 15;
+                case 10 -> 25;
+                case 20 -> 5;
+                default -> throw new IllegalArgumentException("Invalid repayment day: " + repaymentDay);
+            };
+            
+            return previousMonth.withDayOfMonth(cutoffDay);
+        }
+
+        /**
+         * Get the first installment number after cutoff
+         */
+        public int getFirstInstallmentAfterCutoff() {
+            return installmentsBeforeCutoff + 1;
+        }
+
+        /**
+         * Check if installment calculation is allowed using disbursement amount for the given period
+         */
+        public boolean isInstallmentCalculationAllowedOnPeriodNumberUsingDisbursementAmount(int periodNumber) {
+            return disbursementAmount != null 
+                    && installmentsBeforeCutoff > 0 
+                    && periodNumber >= installmentsBeforeCutoff
+                    && isAfterCutoff 
+                    && numberOfNewInstallments > 0;
+        }
+
+        /**
+         * Check if next repayment exists for the current installment
+         */
+        public boolean doesNextRepaymentExist(int currentInstallment, boolean isNextRepaymentAvailable) {
+            if (!isAfterCutoff) {
+                return isNextRepaymentAvailable;
+            }
+
+            int firstInstallmentAfterCutoff = getFirstInstallmentAfterCutoff();
+            
+            // If we're beyond the last new installment, there's no next repayment
+            if (firstInstallmentAfterCutoff > 1 && currentInstallment >= (firstInstallmentAfterCutoff + numberOfNewInstallments - 1)) {
+                return false;
+            }
+
+            return isNextRepaymentAvailable;
+        }
     }
 
     /**
-     * Get the number of installments before the cutoff
-     *
-     * @return the number of installments before the cutoff, or null if not set
+     * Set the cutoff calculation result
      */
-    public static Integer getInstallmentsBeforeCutoff() {
+    public static void setCutoffResult(CutoffCalculationResult result) {
+        cutoffResult.set(result);
+    }
 
-        return installmentsBeforeCutoff.get() != null ? installmentsBeforeCutoff.get() : 0;
+    /**
+     * Get the cutoff calculation result
+     */
+    public static CutoffCalculationResult getCutoffResult() {
+        return cutoffResult.get();
+    }
+
+    /**
+     * Check if the context is set
+     */
+    public static boolean isContextSet() {
+        return cutoffResult.get() != null;
     }
 
     /**
      * Clear the context for the current thread
      */
     public static void clear() {
-        pairContext.remove();
-        isAfterCutoffContext.remove();
-        cutoffDate.remove();
-        installmentsBeforeCutoff.remove();
-        firstInstallmentAFterCutoff.remove();
-        numberOfNewInstallments.remove();
-        disbursementAmount.remove();
+        cutoffResult.remove();
+    }
+
+    /**
+     * Check if installment calculation is allowed using disbursement amount for the given period
+     */
+    public static boolean isInstallmentCalculationAllowedUsingDisbursementAmount(int periodNumber) {
+        CutoffCalculationResult result = getCutoffResult();
+        return result != null && result.isInstallmentCalculationAllowedOnPeriodNumberUsingDisbursementAmount(periodNumber);
+    }
+
+    /**
+     * Check if next repayment exists for the current installment
+     */
+    public static boolean doesNextRepaymentExist(int currentInstallment, boolean isNextRepaymentAvailable) {
+        CutoffCalculationResult result = getCutoffResult();
+        if (result == null) {
+            return isNextRepaymentAvailable;
+        }
+        return result.doesNextRepaymentExist(currentInstallment, isNextRepaymentAvailable);
+    }
+
+    /**
+     * Get the number of installments before cutoff
+     */
+    public static int getInstallmentsBeforeCutoff() {
+        CutoffCalculationResult result = getCutoffResult();
+        return result != null ? result.installmentsBeforeCutoff() : 0;
+    }
+
+    /**
+     * Get the number of new installments
+     */
+    public static int getNumberOfNewInstallments() {
+        CutoffCalculationResult result = getCutoffResult();
+        return result != null ? result.numberOfNewInstallments() : 0;
+    }
+
+    /**
+     * Get the disbursement amount
+     */
+    public static Money getDisbursementAmount() {
+        CutoffCalculationResult result = getCutoffResult();
+        return result != null ? result.disbursementAmount() : null;
+    }
+
+    /**
+     * Check if the disbursement is after cutoff
+     */
+    public static boolean isAfterCutoff() {
+        CutoffCalculationResult result = getCutoffResult();
+        return result != null && result.isAfterCutoff();
     }
 
     /**
      * Determine if schedule recalculation is needed based on cutoff logic
-     *
-     * @return true if schedule recalculation is needed, false otherwise
      */
     public static boolean shouldRecalculateSchedule() {
-        Boolean isAfterCutoff = getIsAfterCutoff();
-
-        if (isAfterCutoff == null) {
-            // Fallback: if context wasn't set, default to no recalculation for safety
-            log.warn("DisbursementCutoffContext.isAfterCutoff was not set, defaulting to no recalculation");
+        CutoffCalculationResult result = getCutoffResult();
+        
+        if (result == null) {
+            log.warn("DisbursementCutoffContext was not set, defaulting to no recalculation");
             return false;
         }
 
         // Recalculate if disbursement is BEFORE cutoff (not after cutoff)
         // This means we should modify existing installments rather than create new ones
-        return !isAfterCutoff;
+        return !result.isAfterCutoff();
     }
 
     /**
      * Determine if schedule recalculation is needed with fallback calculation
-     *
-     * @param loan
-     *            the loan being processed
-     * @param disbursementDate
-     *            the actual disbursement date
-     * @param calculateInstallmentsToAddFunction
-     *            function to calculate installments if context is not set
-     * @return true if schedule recalculation is needed, false otherwise
      */
     public static boolean shouldRecalculateSchedule(Loan loan, LocalDate disbursementDate,
             java.util.function.BiFunction<Loan, LocalDate, ImmutablePair<Integer, LocalDate>> calculateInstallmentsToAddFunction) {
-        Boolean isAfterCutoff = getIsAfterCutoff();
+        
+        CutoffCalculationResult result = getCutoffResult();
 
-        if (isAfterCutoff == null) {
+        if (result == null) {
             // Fallback: calculate it now if context wasn't set
-            log.warn("DisbursementCutoffContext.isAfterCutoff was not set for loan {}, calculating cutoff result on-demand", loan.getId());
+            log.warn("DisbursementCutoffContext was not set for loan {}, calculating cutoff result on-demand", loan.getId());
             ImmutablePair<Integer, LocalDate> pair = calculateInstallmentsToAddFunction.apply(loan, disbursementDate);
 
-            if (pair != null) {
-                // Determine if after cutoff based on the result
+            if (pair != null && pair.getLeft() != null && pair.getLeft() > 0) {
                 // If installmentsToAdd > 0, it's after cutoff (we need new installments)
-                isAfterCutoff = (pair.getLeft() != null && pair.getLeft() > 0);
+                return false; // Don't recalculate for after-cutoff scenarios
             } else {
                 // No result means not after cutoff (safe default)
-                isAfterCutoff = false;
+                return true; // Recalculate for before-cutoff scenarios
             }
         }
 
         // Recalculate if disbursement is BEFORE cutoff (not after cutoff)
-        // This means we should modify existing installments rather than create new ones
-        return !isAfterCutoff;
-    }
-
-    /**
-     * Check if the context is set for the current thread
-     *
-     * @return true if context is set, false otherwise
-     */
-    public static boolean isContextSet() {
-        return pairContext.get() != null || isAfterCutoffContext.get() != null || cutoffDate.get() != null
-                || installmentsBeforeCutoff.get() != null || firstInstallmentAFterCutoff.get() != null
-                || numberOfNewInstallments.get() != null || disbursementAmount.get() != null || cutoffDate.get() != null;
-    }
-
-    /**
-     * Check if the pair context is set
-     *
-     * @return true if pair context is set, false otherwise
-     */
-    public static boolean isPairContextSet() {
-        return pairContext.get() != null;
-    }
-
-    /**
-     * Check if the isAfterCutoff context is set
-     *
-     * @return true if isAfterCutoff context is set, false otherwise
-     */
-    public static boolean isAfterCutoffContextSet() {
-        return isAfterCutoffContext.get() != null;
-    }
-
-    /**
-     * Check if the cutoff date is set
-     *
-     * @return true if cutoff date is set, false otherwise
-     */
-    public static boolean isCutoffDateSet() {
-        return cutoffDate.get() != null;
-    }
-
-    /**
-     * Check if the installments before cutoff is set
-     *
-     * @return true if installments before cutoff is set, false otherwise
-     */
-    public static boolean isInstallmentsBeforeCutoffSet() {
-        return installmentsBeforeCutoff.get() != null;
-    }
-
-    public static Integer getNumberOfNewInstallments() {
-        return numberOfNewInstallments.get() != null ? numberOfNewInstallments.get() : 0;
-    }
-
-    public static void setNumberOfNewInstallments(Integer numberOfNewInstallmentsValue) {
-        numberOfNewInstallments.set(numberOfNewInstallmentsValue);
-    }
-
-    public static Integer getFirstInstallmentBeforeCutoff() {
-        return firstInstallmentAFterCutoff.get() != null ? firstInstallmentAFterCutoff.get() : 0;
-    }
-
-    public static Money getDisbursementAmount() {
-        return disbursementAmount.get();
-    }
-
-    public static void setDisbursementAmount(Money disbursementAmountValue) {
-        disbursementAmount.set(disbursementAmountValue);
-    }
-
-    public static boolean isInstallmentCalculationAllowedUsingDisbursementAmount(int periodNumber) {
-        return disbursementAmount.get() != null && getInstallmentsBeforeCutoff() > 0 && periodNumber >= getInstallmentsBeforeCutoff()
-                && getIsAfterCutoff() && getNumberOfNewInstallments() > 0;
-    }
-
-    public static boolean doesNextRepaymentExist(int currentInstallment, boolean isNextRepaymentAvailable) {
-        // If context is not set, just return the default
-        if (!isContextSet() || !isAfterCutoffContextSet()) {
-            return isNextRepaymentAvailable;
-        }
-
-        Integer numberOfNewInstallments = getNumberOfNewInstallments();
-        Integer installmentsBeforeCutoff = getInstallmentsBeforeCutoff();
-        if (numberOfNewInstallments == null || installmentsBeforeCutoff == null) {
-            return isNextRepaymentAvailable;
-        }
-
-        int firstInstallmentAfterCutoff = installmentsBeforeCutoff + 1;
-
-        // Only allow up to the specified number of new installments after the cutoff
-        if (firstInstallmentAfterCutoff > 1 && currentInstallment >= (firstInstallmentAfterCutoff + numberOfNewInstallments - 1)) {
-            return false;
-        }
-
-        return isNextRepaymentAvailable;
+        return !result.isAfterCutoff();
     }
 }
