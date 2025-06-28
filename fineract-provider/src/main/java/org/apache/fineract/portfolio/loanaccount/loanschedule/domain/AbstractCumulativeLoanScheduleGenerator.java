@@ -1506,7 +1506,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
                     scheduleParams.addOutstandingBalanceAsPerRest(remainingPrincipal);
                 }
-                if (DisbursementCutoffContext.getIsAfterCutoff()){
+                if (DisbursementCutoffContext.isAfterCutoff()){
                    loanApplicationTerms.setPrincipal(DisbursementCutoffContext.getDisbursementAmount());
                 }else{
                     loanApplicationTerms.setPrincipal(loanApplicationTerms.getPrincipal().plus(remainingPrincipal));

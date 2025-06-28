@@ -74,6 +74,23 @@ public class DisbursementCutoffContext {
         }
 
         /**
+         * Factory method to create a cutoff result for after-cutoff scenarios using loan data
+         */
+        public static CutoffCalculationResult afterCutoff(Loan loan, LocalDate disbursementDate, Money disbursementAmount) {
+            LoanRepaymentScheduleInstallment lastInstallment = loan.getLastLoanRepaymentScheduleInstallment();
+            int installmentsBeforeCutoff = loan.getRepaymentScheduleInstallments().size();
+            int numberOfNewInstallments = loan.getTermFrequency();
+            
+            return afterCutoff(
+                installmentsBeforeCutoff,
+                numberOfNewInstallments,
+                disbursementDate,
+                disbursementAmount,
+                lastInstallment
+            );
+        }
+
+        /**
          * Factory method to create a cutoff result for before-cutoff scenarios
          */
         public static CutoffCalculationResult beforeCutoff(
@@ -94,9 +111,27 @@ public class DisbursementCutoffContext {
         }
 
         /**
+         * Factory method to create a cutoff result for before-cutoff scenarios using loan data
+         */
+        public static CutoffCalculationResult beforeCutoff(Loan loan, LocalDate disbursementDate, Money disbursementAmount, 
+                ImmutablePair<Integer, LocalDate> calculationPair) {
+            
+            return new CutoffCalculationResult(
+                    false,
+                    0,
+                    0,
+                    null,
+                    disbursementDate,
+                    disbursementAmount,
+                    null,
+                    calculationPair
+            );
+        }
+
+        /**
          * Calculate the cutoff date based on the last installment due date
          */
-        private static LocalDate calculateCutoffDate(LocalDate repaymentDate) {
+        public static LocalDate calculateCutoffDate(LocalDate repaymentDate) {
             int day = repaymentDate.getDayOfMonth();
             int repaymentDay;
             if (day < 10) {
@@ -162,6 +197,56 @@ public class DisbursementCutoffContext {
      */
     public static void setCutoffResult(CutoffCalculationResult result) {
         cutoffResult.set(result);
+    }
+
+    /**
+     * Set after-cutoff context using loan data
+     */
+    public static void setAfterCutoff(Loan loan, LocalDate disbursementDate, ImmutablePair<Integer, LocalDate> pair) {
+        Money disbursementAmount = getDisbursementAmount();
+        // Create a custom result with the provided pair instead of the default one
+        LoanRepaymentScheduleInstallment lastInstallment = loan.getLastLoanRepaymentScheduleInstallment();
+        int installmentsBeforeCutoff = loan.getRepaymentScheduleInstallments().size();
+        int numberOfNewInstallments = loan.getTermFrequency();
+        LocalDate cutoffDate = CutoffCalculationResult.calculateCutoffDate(lastInstallment.getDueDate());
+        
+        CutoffCalculationResult result = new CutoffCalculationResult(
+            true,
+            installmentsBeforeCutoff,
+            numberOfNewInstallments,
+            cutoffDate,
+            disbursementDate,
+            disbursementAmount,
+            lastInstallment,
+            pair
+        );
+        setCutoffResult(result);
+    }
+
+    /**
+     * Set before-cutoff context using loan data
+     */
+    public static void setBeforeCutoff(Loan loan, LocalDate disbursementDate, 
+            ImmutablePair<Integer, LocalDate> calculationPair) {
+        Money disbursementAmount = getDisbursementAmount();
+        CutoffCalculationResult result = CutoffCalculationResult.beforeCutoff(loan, disbursementDate, disbursementAmount, calculationPair);
+        setCutoffResult(result);
+    }
+
+    /**
+     * Set the disbursement amount with internal context creation
+     */
+    public static void setDisbursementAmount(Money disbursementAmount) {
+        CutoffCalculationResult currentResult = getCutoffResult();
+        LocalDate disbursementDate = currentResult != null ? currentResult.disbursementDate() : null;
+        ImmutablePair<Integer, LocalDate> calculationPair = currentResult != null ? currentResult.calculationPair() : null;
+        
+        CutoffCalculationResult newResult = CutoffCalculationResult.beforeCutoff(
+            disbursementDate,
+            disbursementAmount,
+            calculationPair
+        );
+        setCutoffResult(newResult);
     }
 
     /**

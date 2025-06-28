@@ -467,7 +467,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         DisbursementCutoffContext.setDisbursementAmount(Money.of(loan.getCurrency(), disbursement));
 
         final LoanProduct loanProduct = loan.loanProduct();
-        if (loan.isTopup() && Boolean.TRUE.equals(!loanProduct.getCustomAllowRestructure())) {
+        if (loan.isTopup() && !loanProduct.getCustomAllowRestructure()) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.product.does.not.allow.topup",
                     "Loan product does not allow topup.");
         }
@@ -5350,8 +5350,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Long loanRescheduleReasonId = getLoanRescheduleReasonId();
             if (loan.isRevolvingLoan()) {
                 ImmutablePair<Integer, LocalDate> pair = calculateInstallmentsToAdd(loan, actualDisbursementDate);
-                // Store the result in context for use in regenerateScheduleOnDisbursement
-                DisbursementCutoffContext.setCutoffPair(pair);
                 if (pair != null && pair.getKey().compareTo(0) > 0) {
                     Integer nrOfInstallmentsToAdd = pair.left;
                     LocalDate variationDate = pair.right;
@@ -5359,10 +5357,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
             } else {
                 Integer nrOfInstallmentsToAdd = calculateInstallmentsToAdd(loan);
-                // Store the result in context for use in regenerateScheduleOnDisbursement
-                // For non-revolving loans, we create a pair with the number of installments and the disbursement date
-                ImmutablePair<Integer, LocalDate> pair = ImmutablePair.of(nrOfInstallmentsToAdd, actualDisbursementDate);
-                DisbursementCutoffContext.setCutoffPair(pair);
 
                 if (nrOfInstallmentsToAdd.compareTo(0) > 0) {
                     createRescheduleRequest(loan, actualDisbursementDate, loanRescheduleReasonId, nrOfInstallmentsToAdd);
@@ -5402,11 +5396,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             LocalDate lastInstallmentDueDate = loan.getLastLoanRepaymentScheduleInstallment().getDueDate();
 
             if (RevolvingLoanUtil.isAfterCutoff(disbursementDate, lastInstallmentDueDate)) {
-                DisbursementCutoffContext.setIsAfterCutoff(true);
-                DisbursementCutoffContext.setInstallmentsBeforeCutoff(loan.getRepaymentScheduleInstallments().size());
-                DisbursementCutoffContext.setNumberOfNewInstallments(actualNumberOfRepayments);
+
+                ImmutablePair<Integer,LocalDate> installmentsToAdd = ImmutablePair.of(actualNumberOfRepayments, lastInstallmentDueDate);
+                DisbursementCutoffContext.setAfterCutoff(loan, disbursementDate,installmentsToAdd);
                 log.info("Revolving credit: Adding {} new installments starting from {}", actualNumberOfRepayments, disbursementDate);
-                return ImmutablePair.of(actualNumberOfRepayments, disbursementDate);
+                return installmentsToAdd;
             } else {
                 DisbursementCutoffContext.clear();
             }
