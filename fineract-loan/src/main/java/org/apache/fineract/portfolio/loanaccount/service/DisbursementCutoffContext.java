@@ -46,7 +46,9 @@ public class DisbursementCutoffContext {
             LocalDate disbursementDate,
             Money disbursementAmount,
             LoanRepaymentScheduleInstallment lastInstallmentBeforeCutoff,
-            ImmutablePair<Integer, LocalDate> calculationPair) {
+            ImmutablePair<Integer, LocalDate> calculationPair,
+            Money totalRepaid,
+            Money totalOutstanding) {
 
         /**
          * Factory method to create a cutoff result for after-cutoff scenarios
@@ -56,7 +58,9 @@ public class DisbursementCutoffContext {
                 int numberOfNewInstallments,
                 LocalDate disbursementDate,
                 Money disbursementAmount,
-                LoanRepaymentScheduleInstallment lastInstallmentBeforeCutoff) {
+                LoanRepaymentScheduleInstallment lastInstallmentBeforeCutoff,
+                Money totalRepaid,
+                Money totalOutstanding) {
             
             LocalDate cutoffDate = calculateCutoffDate(lastInstallmentBeforeCutoff.getDueDate());
             ImmutablePair<Integer, LocalDate> pair = ImmutablePair.of(numberOfNewInstallments, disbursementDate);
@@ -69,7 +73,9 @@ public class DisbursementCutoffContext {
                     disbursementDate,
                     disbursementAmount,
                     lastInstallmentBeforeCutoff,
-                    pair
+                    pair,
+                    totalRepaid,
+                    totalOutstanding
             );
         }
 
@@ -81,12 +87,18 @@ public class DisbursementCutoffContext {
             int installmentsBeforeCutoff = loan.getRepaymentScheduleInstallments().size();
             int numberOfNewInstallments = loan.getTermFrequency();
             
+            // Get total repaid and outstanding from loan summary
+            Money totalRepaid = Money.of(loan.getCurrency(), loan.getLoanSummary().getTotalRepayment());
+            Money totalOutstanding = loan.getLoanSummary().getTotalOutstanding(loan.getCurrency());
+            
             return afterCutoff(
                 installmentsBeforeCutoff,
                 numberOfNewInstallments,
                 disbursementDate,
                 disbursementAmount,
-                lastInstallment
+                lastInstallment,
+                totalRepaid,
+                totalOutstanding
             );
         }
 
@@ -96,7 +108,9 @@ public class DisbursementCutoffContext {
         public static CutoffCalculationResult beforeCutoff(
                 LocalDate disbursementDate,
                 Money disbursementAmount,
-                ImmutablePair<Integer, LocalDate> calculationPair) {
+                ImmutablePair<Integer, LocalDate> calculationPair,
+                Money totalRepaid,
+                Money totalOutstanding) {
             
             return new CutoffCalculationResult(
                     false,
@@ -106,7 +120,9 @@ public class DisbursementCutoffContext {
                     disbursementDate,
                     disbursementAmount,
                     null,
-                    calculationPair
+                    calculationPair,
+                    totalRepaid,
+                    totalOutstanding
             );
         }
 
@@ -116,6 +132,10 @@ public class DisbursementCutoffContext {
         public static CutoffCalculationResult beforeCutoff(Loan loan, LocalDate disbursementDate, Money disbursementAmount, 
                 ImmutablePair<Integer, LocalDate> calculationPair) {
             
+            // Get total repaid and outstanding from loan summary
+            Money totalRepaid = Money.of(loan.getCurrency(), loan.getLoanSummary().getTotalRepayment());
+            Money totalOutstanding = loan.getLoanSummary().getTotalOutstanding(loan.getCurrency());
+            
             return new CutoffCalculationResult(
                     false,
                     0,
@@ -124,7 +144,9 @@ public class DisbursementCutoffContext {
                     disbursementDate,
                     disbursementAmount,
                     null,
-                    calculationPair
+                    calculationPair,
+                    totalRepaid,
+                    totalOutstanding
             );
         }
 
@@ -190,6 +212,21 @@ public class DisbursementCutoffContext {
 
             return isNextRepaymentAvailable;
         }
+
+        /**
+         * Calculate total forgiven amount (sum of total repaid and total outstanding)
+         * This represents the total amount that should be treated as fully paid
+         */
+        public Money getTotalForgiven() {
+            if (totalRepaid == null && totalOutstanding == null) {
+                return null;
+            }
+            
+            Money repaid = totalRepaid != null ? totalRepaid : Money.zero(totalOutstanding.getCurrency());
+            Money outstanding = totalOutstanding != null ? totalOutstanding : Money.zero(repaid.getCurrency());
+            
+            return repaid.plus(outstanding);
+        }
     }
 
     /**
@@ -210,6 +247,10 @@ public class DisbursementCutoffContext {
         int numberOfNewInstallments = loan.getTermFrequency();
         LocalDate cutoffDate = CutoffCalculationResult.calculateCutoffDate(lastInstallment.getDueDate());
         
+        // Get total repaid and outstanding from loan summary
+        Money totalRepaid = Money.of(loan.getCurrency(), loan.getLoanSummary().getTotalRepayment());
+        Money totalOutstanding = loan.getLoanSummary().getTotalOutstanding(loan.getCurrency());
+        
         CutoffCalculationResult result = new CutoffCalculationResult(
             true,
             installmentsBeforeCutoff,
@@ -218,7 +259,9 @@ public class DisbursementCutoffContext {
             disbursementDate,
             disbursementAmount,
             lastInstallment,
-            pair
+            pair,
+            totalRepaid,
+            totalOutstanding
         );
         setCutoffResult(result);
     }
@@ -240,11 +283,15 @@ public class DisbursementCutoffContext {
         CutoffCalculationResult currentResult = getCutoffResult();
         LocalDate disbursementDate = currentResult != null ? currentResult.disbursementDate() : null;
         ImmutablePair<Integer, LocalDate> calculationPair = currentResult != null ? currentResult.calculationPair() : null;
+        Money totalRepaid = currentResult != null ? currentResult.totalRepaid() : null;
+        Money totalOutstanding = currentResult != null ? currentResult.totalOutstanding() : null;
         
         CutoffCalculationResult newResult = CutoffCalculationResult.beforeCutoff(
             disbursementDate,
             disbursementAmount,
-            calculationPair
+            calculationPair,
+            totalRepaid,
+            totalOutstanding
         );
         setCutoffResult(newResult);
     }
@@ -319,6 +366,31 @@ public class DisbursementCutoffContext {
     public static boolean isAfterCutoff() {
         CutoffCalculationResult result = getCutoffResult();
         return result != null && result.isAfterCutoff();
+    }
+
+    /**
+     * Get the total repaid amount from the current context
+     */
+    public static Money getTotalRepaid() {
+        CutoffCalculationResult result = getCutoffResult();
+        return result != null ? result.totalRepaid() : null;
+    }
+
+    /**
+     * Get the total outstanding amount from the current context
+     */
+    public static Money getTotalOutstanding() {
+        CutoffCalculationResult result = getCutoffResult();
+        return result != null ? result.totalOutstanding() : null;
+    }
+
+    /**
+     * Get the total forgiven amount (sum of total repaid and total outstanding)
+     * This represents the total amount that should be treated as fully paid
+     */
+    public static Money getTotalForgiven() {
+        CutoffCalculationResult result = getCutoffResult();
+        return result != null ? result.getTotalForgiven() : null;
     }
 
     /**

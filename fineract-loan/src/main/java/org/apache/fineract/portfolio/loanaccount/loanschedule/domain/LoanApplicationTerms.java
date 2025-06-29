@@ -2093,4 +2093,7 @@ public final class LoanApplicationTerms {
     public void setLoanTermVariationsDataList(List<LoanTermVariationsData> loanTermVariationsDataList) {
         this.loanTermVariationsDataList = loanTermVariationsDataList;
     }
+    public boolean isRevolvingLoanTerm() {
+        return LoanProductType.CREDITO_ROTATIVO.getCode().equalsIgnoreCase(getLoanProductName());
+    }
 }

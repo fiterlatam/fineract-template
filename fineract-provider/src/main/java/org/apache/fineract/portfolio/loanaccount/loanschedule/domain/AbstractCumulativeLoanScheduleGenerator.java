@@ -36,6 +36,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
@@ -60,9 +62,11 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleP
 import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.MultiDisbursementOutstandingAmoutException;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.ScheduleDateException;
 import org.apache.fineract.portfolio.loanaccount.service.DisbursementCutoffContext;
+import org.apache.fineract.portfolio.loanaccount.service.RevolvingLoanUtil;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
 
+@Slf4j
 public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanScheduleGenerator {
 
     public static final String STRING_PRINCIPAL_APPROVED_AMOUNT = "principalApprovedAmount";
@@ -618,7 +622,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         if (scheduleParams.getScheduleTillDate() != null) {
             currentDate = scheduleParams.getScheduleTillDate();
         }
-        if (scheduleParams.applyInterestRecalculation() && scheduleParams.getLatePaymentMap().size() > 0
+        if (scheduleParams.applyInterestRecalculation() && !scheduleParams.getLatePaymentMap().isEmpty()
                 && DateUtils.isAfter(currentDate, scheduleParams.getPeriodStartDate())) {
             Money totalInterest = addInterestOnlyRepaymentScheduleForCurrentDate(mc, loanApplicationTerms, holidayDetailDTO, currency,
                     periods, currentDate, loanRepaymentScheduleTransactionProcessor, transactions, loanCharges, scheduleParams);
@@ -1398,8 +1402,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
     private void removeAppliedDisbursementsFromMap(LoanApplicationTerms loanApplicationTerms, Map<LocalDate, Money> disburseDetailMap,
             LocalDate scheduledDueDate) {
         List<LocalDate> removeFromMap = new ArrayList<>();
+        boolean isRevolvingLoan = loanApplicationTerms.isRevolvingLoanTerm();
         for (Map.Entry<LocalDate, Money> entry : disburseDetailMap.entrySet()) {
-            if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+            if (isRevolvingLoan) {
                 if (!DateUtils.isAfter(entry.getKey(), scheduledDueDate)
                         && ChronoUnit.DAYS.between(entry.getKey(), scheduledDueDate) >= 15) {
                     removeFromMap.add(entry.getKey());
@@ -1408,8 +1413,11 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 removeFromMap.add(entry.getKey());
             }
         }
+
         for (LocalDate date : removeFromMap) {
-            disburseDetailMap.remove(date);
+                disburseDetailMap.remove(date);
+
+
         }
     }
 
@@ -1465,6 +1473,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     && !DateUtils.isAfter(disburseDetail.getKey(), scheduledDueDate)) {
                 allowed = true;
             }
+
             if (allowed) {
                 // validation check for amount not exceeds specified max
                 // amount as per the configuration
@@ -1503,7 +1512,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 Money remainingPrincipal = disburseDetail.getValue().minus(downPaymentAmt);
                 scheduleParams.addOutstandingBalance(remainingPrincipal);
                 scheduleParams.addPrincipalToBeScheduled(remainingPrincipal);
-                if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+                if (loanApplicationTerms.isRevolvingLoanTerm()) {
                     scheduleParams.addOutstandingBalanceAsPerRest(remainingPrincipal);
                 }
                 if (DisbursementCutoffContext.isAfterCutoff()){
@@ -1512,7 +1521,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     loanApplicationTerms.setPrincipal(loanApplicationTerms.getPrincipal().plus(remainingPrincipal));
                 }
 
-                if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+                if (loanApplicationTerms.isRevolvingLoanTerm()) {
                     updateAmortization(mc, loanApplicationTerms, scheduleParams.getPeriodNumber(), scheduleParams.getOutstandingBalance());
                 }
             }
@@ -2345,7 +2354,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         TreeMap<LocalDate, Money> map = new TreeMap<>(params.getLatePaymentMap());
         for (Map.Entry<LocalDate, Money> mapEntry : params.getDisburseDetailMap().entrySet()) {
             boolean allowed = false;
-            if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+            if (loanApplicationTerms.isRevolvingLoanTerm()) {
                 if (!DateUtils.isAfter(mapEntry.getKey(), params.getActualRepaymentDate())
                         && ChronoUnit.DAYS.between(mapEntry.getKey(), params.getActualRepaymentDate()) >= 15) {
                     allowed = true;
@@ -3289,7 +3298,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             Money outstandingBalanceAsPerRest = outstandingBalance;
             loanScheduleParams.setOutstandingBalanceAsPerRest(outstandingBalanceAsPerRest);
 
-            if (loanApplicationTerms.getLoanProductName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+            if (loanApplicationTerms.isRevolvingLoanTerm()) {
                 /* fetches the first tranche amount and also updates other tranche details to map */
                 MonetaryCurrency currency = outstandingBalance.getCurrency();
                 final Map<LocalDate, Money> disburseDetailMap = new HashMap<>();
