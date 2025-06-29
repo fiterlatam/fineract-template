@@ -1387,9 +1387,10 @@ public final class LoanApplicationTerms {
         if (DisbursementCutoffContext.isInstallmentCalculationAllowedUsingDisbursementAmount(periodNumber)) {
             this.actualNumberOfRepayments = DisbursementCutoffContext.getNumberOfNewInstallments();
             int numberOfNewInstallments = DisbursementCutoffContext.getNumberOfNewInstallments();
-            Money principalInstallmentAmount = DisbursementCutoffContext.getDisbursementAmount().dividedBy(numberOfNewInstallments, mc.getRoundingMode());
+            Money principalInstallmentAmount = DisbursementCutoffContext.getDisbursementAmount().dividedBy(numberOfNewInstallments,
+                    mc.getRoundingMode());
             this.fixedPrincipalAmount = principalInstallmentAmount.getAmount();
-            this.numberOfRepayments =numberOfNewInstallments;
+            this.numberOfRepayments = numberOfNewInstallments;
             this.approvedPrincipal = principalInstallmentAmount;
             setFixedEmiAmount(principalInstallmentAmount.getAmount());
             return principalInstallmentAmount;
@@ -2093,6 +2094,7 @@ public final class LoanApplicationTerms {
     public void setLoanTermVariationsDataList(List<LoanTermVariationsData> loanTermVariationsDataList) {
         this.loanTermVariationsDataList = loanTermVariationsDataList;
     }
+
     public boolean isRevolvingLoanTerm() {
         return LoanProductType.CREDITO_ROTATIVO.getCode().equalsIgnoreCase(getLoanProductName());
     }

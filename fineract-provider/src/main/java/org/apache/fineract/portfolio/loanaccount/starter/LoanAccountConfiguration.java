@@ -124,44 +124,7 @@ import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationTr
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanChargeApiJsonValidator;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanEventApiJsonValidator;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanUpdateCommandFromApiJsonDeserializer;
-import org.apache.fineract.portfolio.loanaccount.service.BulkLoansReadPlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.BulkLoansReadPlatformServiceImpl;
-import org.apache.fineract.portfolio.loanaccount.service.GLIMAccountInfoReadPlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.GLIMAccountInfoReadPlatformServiceImpl;
-import org.apache.fineract.portfolio.loanaccount.service.GLIMAccountInfoWritePlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.GLIMAccountInfoWritePlatformServiceImpl;
-import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualPlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualPlatformServiceImpl;
-import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualTransactionBusinessEventService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualTransactionBusinessEventServiceImpl;
-import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualWritePlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualWritePlatformServiceImpl;
-import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePlatformServiceJpaRepositoryImpl;
-import org.apache.fineract.portfolio.loanaccount.service.LoanArrearsAgingService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanArrearsAgingServiceImpl;
-import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
-import org.apache.fineract.portfolio.loanaccount.service.LoanBlockWritePlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanCalculateRepaymentPastDueService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanChargeAssembler;
-import org.apache.fineract.portfolio.loanaccount.service.LoanChargePaidByReadPlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanChargePaidByReadPlatformServiceImpl;
-import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformServiceImpl;
-import org.apache.fineract.portfolio.loanaccount.service.LoanChargeWritePlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanChargeWritePlatformServiceImpl;
-import org.apache.fineract.portfolio.loanaccount.service.LoanDownPaymentHandlerService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanDownPaymentHandlerServiceImpl;
-import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformServiceImpl;
-import org.apache.fineract.portfolio.loanaccount.service.LoanStatusChangePlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanStatusChangePlatformServiceImpl;
-import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformServiceJpaRepositoryImpl;
-import org.apache.fineract.portfolio.loanaccount.service.RecalculateInterestPoster;
-import org.apache.fineract.portfolio.loanaccount.service.ReplayedTransactionBusinessEventService;
-import org.apache.fineract.portfolio.loanaccount.service.ReplayedTransactionBusinessEventServiceImpl;
+import org.apache.fineract.portfolio.loanaccount.service.*;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.serialization.LoanProductDataValidator;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
@@ -470,7 +433,8 @@ public class LoanAccountConfiguration {
             DelinquencyReadPlatformService delinquencyReadPlatformService,
             LoanDisbursementDetailsRepository loanDisbursementDetailsRepository,
             LoanRescheduleRequestWritePlatformService loanRescheduleRequestWritePlatformService,
-            CodeValueReadPlatformService codeValueReadPlatformService, LoanRescheduleRequestRepository loanRescheduleRequestRepository) {
+            CodeValueReadPlatformService codeValueReadPlatformService, LoanRescheduleRequestRepository loanRescheduleRequestRepository,
+            FirstPaymentDateAdjustmentService firstPaymentDateAdjustmentService) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
@@ -490,7 +454,8 @@ public class LoanAccountConfiguration {
                 loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository, loanScheduleFactory,
                 blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository, productParameterizationRepository,
                 customChargeHonorarioMapRepository, delinquencyReadPlatformService, loanDisbursementDetailsRepository,
-                loanRescheduleRequestWritePlatformService, codeValueReadPlatformService, loanRescheduleRequestRepository);
+                loanRescheduleRequestWritePlatformService, codeValueReadPlatformService, loanRescheduleRequestRepository,
+                firstPaymentDateAdjustmentService);
     }
 
     @Bean
