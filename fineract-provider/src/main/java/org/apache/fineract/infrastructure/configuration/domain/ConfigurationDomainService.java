@@ -136,4 +136,6 @@ public interface ConfigurationDomainService {
     Boolean isHierarchyEnabledForAccounting();
 
     Boolean isRepaymentScheduleRecalculationEnabled();
+
+    boolean isRebalanceAllAccounts();
 }
