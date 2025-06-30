@@ -3467,32 +3467,37 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     disbursementDetail.reverse();
                 }
             } else {
-                // Pick last active disbursal
-                Optional<LoanDisbursementDetails> lastActiveDDOpt = this.disbursementDetails.stream()
-                        .filter(isNotRev -> Boolean.FALSE.equals(isNotRev.isReversed()))
-                        .filter(disb -> Objects.nonNull(disb.actualDisbursementDate()))
-                        .sorted(Comparator.comparing(LoanDisbursementDetails::expectedDisbursementDateAsLocalDate).reversed()).findFirst();
+                if (this.containsRevolvingLoan()) {
+                    // Pick last active disbursal
+                    Optional<LoanDisbursementDetails> lastActiveDDOpt = this.disbursementDetails.stream()
+                            .filter(isNotRev -> Boolean.FALSE.equals(isNotRev.isReversed()))
+                            .filter(disb -> Objects.nonNull(disb.actualDisbursementDate()))
+                            .sorted(Comparator.comparing(LoanDisbursementDetails::expectedDisbursementDateAsLocalDate).reversed())
+                            .findFirst();
 
-                // Check how many active disbursals
-                Long activeDisbursalsCounter = this.disbursementDetails.stream()
-                        .filter(isNotRev -> Boolean.FALSE.equals(isNotRev.isReversed()))
-                        .filter(disb -> Objects.nonNull(disb.actualDisbursementDate())).count();
+                    // Check how many active disbursals
+                    Long activeDisbursalsCounter = this.disbursementDetails.stream()
+                            .filter(isNotRev -> Boolean.FALSE.equals(isNotRev.isReversed()))
+                            .filter(disb -> Objects.nonNull(disb.actualDisbursementDate())).count();
 
-                if (lastActiveDDOpt.isPresent()) {
-                    LoanDisbursementDetails details = lastActiveDDOpt.get();
+                    if (lastActiveDDOpt.isPresent()) {
+                        LoanDisbursementDetails details = lastActiveDDOpt.get();
 
-                    // If there is only 1 active disbursal remaining, restore principal to approved amount
-                    if (activeDisbursalsCounter.compareTo(1L) == 0) {
-                        details.updateActualDisbursementDate(null);
-                        details.updatePrincipal(this.getApprovedPrincipal());
+                        // If there is only 1 active disbursal remaining, restore principal to approved amount
+                        if (activeDisbursalsCounter.compareTo(1L) == 0) {
+                            details.updateActualDisbursementDate(null);
+                            details.updatePrincipal(this.getApprovedPrincipal());
 
-                        updateLoanToPreDisbursalState = true;
-                    } else {
-                        throw new GeneralPlatformDomainRuleException("validation.msg.undo.disbursal.transaction.first",
-                                "Undo disbursal is only allowed when there is only 1 active disbursal. Use Undo from Transactions Tab instead.");
+                            updateLoanToPreDisbursalState = true;
+                        } else {
+                            throw new GeneralPlatformDomainRuleException("validation.msg.undo.disbursal.transaction.first",
+                                    "Undo disbursal is only allowed when there is only 1 active disbursal. Use Undo from Transactions Tab instead.");
+                        }
+
+                        isDisbursedAmountChanged = true;
                     }
-
-                    isDisbursedAmountChanged = true;
+                } else {
+                    updateLoanToPreDisbursalState = true;
                 }
             }
 
