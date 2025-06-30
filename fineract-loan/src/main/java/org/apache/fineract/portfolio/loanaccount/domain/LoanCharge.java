@@ -896,6 +896,11 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
         return this.isFlatSpecificDueDateCharge()
                 && occursOnDayFromExclusiveAndUpToAndIncluding(installment.getFromDate(), installment.getDueDate(), this.dueDate);
     }
+    public boolean isSpecificDueDateChargeForInstallment(final LoanRepaymentScheduleInstallment installment) {
+        return this.getChargeTimeType().isOnSpecifiedDueDate()
+                && this.getChargeCalculation().isFlat()
+                && occursOnDayFromExclusiveAndUpToAndIncluding(installment.getFromDate(), installment.getDueDate(), this.dueDate);
+    }
 
     public boolean isDueForCollectionForInstallmentByInstallmentNumber(final Integer installmentNumber) {
         return this.getOverdueInstallmentCharge() != null

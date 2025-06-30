@@ -342,7 +342,7 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                     .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
             // ADD THIS NEW CODE: Calculate flat charges with specific due dates for this installment
             BigDecimal flatSpecificDueDateAmount = loan.getLoanCharges().stream()
-                    .filter(loanCharge -> loanCharge.isFlatSpecificDueDateChargeForInstallment(repaymentScheduleInstallment))
+                    .filter(loanCharge -> loanCharge.isSpecificDueDateChargeForInstallment(repaymentScheduleInstallment))
                     .map(LoanCharge::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
 
             avalAmount = avalAmount.add(flatSpecificDueDateAmount);
