@@ -531,4 +531,9 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         }
         return property.getValue();
     }
+
+    @Override
+    public boolean isRebalanceAllAccounts() {
+        return getGlobalConfigurationPropertyData("rebalance-all-savings-accounts").isEnabled();
+    }
 }
