@@ -269,7 +269,7 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
     private LoanApplicationTerms constructLoanApplicationTerms(final Loan loan) {
         final LocalDate recalculateFrom = null;
         ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
-      return loan.constructLoanApplicationTerms(scheduleGeneratorDTO);
+        return loan.constructLoanApplicationTerms(scheduleGeneratorDTO);
 
     }
 
