@@ -257,7 +257,11 @@ public class FromJsonHelper {
     }
 
     public BigDecimal extractBigDecimalNamed(final String parameterName, final JsonElement element, final Locale locale) {
-        return this.helperDelegator.extractBigDecimalNamed(parameterName, element.getAsJsonObject(), locale, new HashSet<String>());
+        if (locale.toLanguageTag().startsWith("es") && extractStringNamed(parameterName, element).contains(".")) {
+            return this.extractBigDecimalNamed(parameterName, element, new HashSet<>());
+        } else {
+            return this.helperDelegator.extractBigDecimalNamed(parameterName, element.getAsJsonObject(), locale, new HashSet<String>());
+        }
     }
 
     public BigDecimal extractBigDecimalNamed(final String parameterName, final JsonElement element,
