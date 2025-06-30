@@ -1634,23 +1634,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             return disbursedAmount;
         }
 
-        private static int findPositionInCollection(Collection<DisbursementData> collection, DisbursementData target) {
-            // Convert to list if needed to access by index
-            if (collection instanceof List) {
-                return ((List<DisbursementData>) collection).indexOf(target);
-            }
-
-            // Fallback: manually track index
-            int index = 0;
-            for (DisbursementData data : collection) {
-                if (data.equals(target)) {
-                    return index;
-                }
-                index++;
-            }
-            return -1; // not found
-        }
-
         private LoanSchedulePeriodData createLoanSchedulePeriodData(final DisbursementData data, BigDecimal disbursementChargeAmount,
                 BigDecimal waivedChargeAmount) {
             BigDecimal chargeAmount = data.getChargeAmount() == null ? disbursementChargeAmount

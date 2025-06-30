@@ -33,7 +33,7 @@ public class RevolvingLoanUtil {
      *            the original repayment date
      * @return the calculated cutoff date
      */
-    public static LocalDate calculateCutoffDate(LocalDate repaymentDate) {
+    private static LocalDate calculateCutoffDate(LocalDate repaymentDate) {
         int day = repaymentDate.getDayOfMonth();
         int repaymentDay;
         if (day < 10) {
@@ -71,6 +71,21 @@ public class RevolvingLoanUtil {
         LocalDate cutoffDate = calculateCutoffDate(repaymentDate);
         // Only return true if date is after cutoff and on or before repayment date
         return date.isAfter(cutoffDate) && (date.isBefore(repaymentDate) || date.isEqual(repaymentDate));
+    }
+
+    /**
+     * Checks if a given date is on or before the calculated cutoff date.
+     *
+     * @param date
+     *            The date to check.
+     * @param repaymentDate
+     *            The repayment date from which the cutoff is calculated.
+     * @return true if the date is on or before the cutoff date, false otherwise.
+     */
+    public static boolean isBeforeCutoff(LocalDate date, LocalDate repaymentDate) {
+        LocalDate cutoffDate = calculateCutoffDate(repaymentDate);
+        // Return true if the date is before or on the same day as the cutoff date.
+        return date.isBefore(cutoffDate) || date.isEqual(cutoffDate);
     }
 
 }

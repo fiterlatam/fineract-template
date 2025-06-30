@@ -380,6 +380,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final LoanRescheduleRequestWritePlatformService loanRescheduleRequestWritePlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final LoanRescheduleRequestRepository loanRescheduleRequestRepository;
+    private final FirstPaymentDateAdjustmentService firstPaymentDateAdjustmentService;
 
     @PostConstruct
     public void registerForNotification() {
@@ -442,9 +443,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     public CommandProcessingResult disburseLoan(final Long loanId, final JsonCommand command, Boolean isAccountTransfer) {
 
         final AppUser currentUser = getAppUserIfPresent();
+        final LocalDate actualDisbursementDate = this.fromApiJsonHelper
+                .extractLocalDateNamed(LoanEventApiJsonValidator.ACTUAL_DISBURSEMENT_DATE_PARAM, command.parsedJson().getAsJsonObject());
 
         this.loanEventApiJsonValidator.validateDisbursement(command.json(), isAccountTransfer);
         Boolean isWriteoffPunish = command.booleanObjectValueOfParameterNamed("isWriteoffPunish");
+
         if (isWriteoffPunish == null) {
             isWriteoffPunish = false;
         }
@@ -462,8 +466,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         Loan loan = this.loanAssembler.assembleFrom(loanId);
+        // Check and adjust first payment date if needed
+        firstPaymentDateAdjustmentService.adjustFirstPaymentDateIfNeeded(loan, actualDisbursementDate);
+
+        BigDecimal disbursement = command.bigDecimalValueOfParameterDefaultToZeroIfNull("transactionAmount");
+        DisbursementCutoffContext.setDisbursementAmount(Money.of(loan.getCurrency(), disbursement));
+
         final LoanProduct loanProduct = loan.loanProduct();
-        if (loan.isTopup() && Boolean.TRUE.equals(!loanProduct.getCustomAllowRestructure())) {
+        if (loan.isTopup() && !loanProduct.getCustomAllowRestructure()) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.product.does.not.allow.topup",
                     "Loan product does not allow topup.");
         }
@@ -476,8 +486,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             checkCupo(loan);
         }
 
-        final LocalDate actualDisbursementDate = this.fromApiJsonHelper
-                .extractLocalDateNamed(LoanEventApiJsonValidator.ACTUAL_DISBURSEMENT_DATE_PARAM, command.parsedJson().getAsJsonObject());
         final LocalDate nextPossibleRepaymentDate = loan.getNextPossibleRepaymentDateForRescheduling();
         final LocalDate rescheduledRepaymentDate = command.localDateValueOfParameterNamed("adjustRepaymentDate");
 
@@ -579,6 +587,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         // Recalculate first repayment date based in actual disbursement date.
         updateLoanCounters(loan, actualDisbursementDate);
+        // Check and adjust first payment date if needed
         Money amountBeforeAdjust = loan.getPrincipal();
         boolean canDisburse = loan.canDisburse(actualDisbursementDate);
         ChangedTransactionDetail changedTransactionDetail = null;
@@ -675,7 +684,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                  */
                 recalculateSchedule = true;
             }
-            if (loan.getLoanProduct().getName().equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+            if (loan.getLoanProduct().isRevolvingLoanProduct()) {
                 createAndSaveLoanScheduleArchiveForCreditoRotativo(loan, scheduleGeneratorDTO);
             }
             regenerateScheduleOnDisbursement(command, loan, recalculateSchedule, scheduleGeneratorDTO, nextPossibleRepaymentDate,
@@ -824,6 +833,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 transaction.markAsOccurredOnSuspendedAccount();
             }
         }
+        // Clean up the DisbursementCutoffContext after disbursement processing
+        DisbursementCutoffContext.clear();
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
@@ -3655,7 +3666,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         // Always recalculate schedule for multi-disbursal loans
         if (loan.isMultiDisburmentLoan()) {
-            recalculateSchedule = true;
+            recalculateSchedule = DisbursementCutoffContext.shouldRecalculateSchedule(loan, actualDisbursementDate,
+                    this::calculateInstallmentsToAdd);
+
+            log.info("Multi-disbursement loan {}: recalculateSchedule = {}", loan.getId(), recalculateSchedule);
+
         }
 
         loan.regenerateScheduleOnDisbursement(scheduleGeneratorDTO, recalculateSchedule, actualDisbursementDate, emiAmount,
@@ -5384,11 +5399,15 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (loan.isRevolvingLoan()) {
             Integer actualNumberOfRepayments = loan.getTermFrequency();
             LocalDate lastInstallmentDueDate = loan.getLastLoanRepaymentScheduleInstallment().getDueDate();
-            LocalDate cutoffDate = RevolvingLoanUtil.calculateCutoffDate(lastInstallmentDueDate);
 
-            if (disbursementDate.isAfter(cutoffDate)) {
+            if (RevolvingLoanUtil.isAfterCutoff(disbursementDate, lastInstallmentDueDate)) {
+
+                ImmutablePair<Integer, LocalDate> installmentsToAdd = ImmutablePair.of(actualNumberOfRepayments, lastInstallmentDueDate);
+                DisbursementCutoffContext.setAfterCutoff(loan, disbursementDate, installmentsToAdd);
                 log.info("Revolving credit: Adding {} new installments starting from {}", actualNumberOfRepayments, disbursementDate);
-                return ImmutablePair.of(actualNumberOfRepayments, disbursementDate);
+                return installmentsToAdd;
+            } else {
+                DisbursementCutoffContext.clear();
             }
             // If not after cutoff, continue to rest of method
         }
