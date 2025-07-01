@@ -803,18 +803,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             final String localeAsString = "en";
                             final String dateFormat = "dd MMMM yyyy";
                             final JsonObject jsonObject = new JsonObject();
-                            final LocalDate localDate = DateUtils.getBusinessLocalDate();
-                            Locale locale = JsonParserHelper.localeFromString(localeAsString);
-                            final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
-                            final String localDateString = localDate.format(dateTimeFormatter);
                             jsonObject.addProperty("locale", localeAsString);
                             jsonObject.addProperty("dateFormat", dateFormat);
-                            jsonObject.addProperty("transactionAmount", chargeAmount);
-                            jsonObject.addProperty("transactionDate", localDateString);
-                            jsonObject.addProperty("postAccountingForWaivers", false);
-                            jsonObject.addProperty("isAccountClosure", true);
-                            final String note = "Restructure Request " + request.getId();
-                            jsonObject.addProperty("note", note);
                             final JsonCommand waiveChargeJsonCommand = JsonCommand.from(jsonObject.toString(), jsonObject,
                                     this.fromApiJsonHelper, null, loanIdToClose, null, null, null, loanIdToClose, null, null, null, null,
                                     null, null);
@@ -838,7 +828,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             JsonCommand paymentCommand = JsonCommand.fromExistingCommand(command, finalCommand);
 
-            this.makeLoanRestructureRepayment(paymentCommand, totalLoanOutStanding, loanToClose);
+            Loan finalLoanToClose = this.loanAssembler.assembleFrom(loanIdToClose);
+            this.makeLoanRestructureRepayment(paymentCommand, totalLoanOutStanding, finalLoanToClose);
 
             totalLoanAmount = totalLoanAmount.subtract(totalLoanOutStanding);
             totalLoanRestructureAmount = totalLoanRestructureAmount.add(totalLoanOutStanding);
