@@ -19,8 +19,10 @@
 package org.apache.fineract.portfolio.loanaccount.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.springframework.stereotype.Service;
@@ -34,8 +36,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class LoanOverpaymentValidationService {
 
+    private static final String BANCOS_PARAM = "Bancos";
+
     /**
-     * Validates if an overpayment is allowed for the given loan and transaction amount.
+     * Validates if an overpayment is allowed for the given loan, transaction amount, and channel. This is the main
+     * entry point for all overpayment validation logic.
      *
      * @param loan
      *            The loan for which the repayment is being made
@@ -43,12 +48,14 @@ public class LoanOverpaymentValidationService {
      *            The amount of the repayment transaction
      * @param foreclosureAmount
      *            The foreclosure amount (total outstanding amount)
+     * @param channelData
+     *            The channel data for the repayment
      * @throws GeneralPlatformDomainRuleException
      *             if overpayment is not allowed
      */
-    public void validateOverpayment(Loan loan, BigDecimal transactionAmount, BigDecimal foreclosureAmount) {
-        log.info("Validating overpayment for loan ID: {}, transaction amount: {}, foreclosure amount: {}", loan.getId(), transactionAmount,
-                foreclosureAmount);
+    public void validateOverpayment(Loan loan, BigDecimal transactionAmount, BigDecimal foreclosureAmount, ChannelData channelData) {
+        log.info("Validating overpayment for loan ID: {}, transaction amount: {}, foreclosure amount: {}, channel: {}", loan.getId(),
+                transactionAmount, foreclosureAmount, channelData.getName());
 
         // Check if this is an overpayment (transaction amount exceeds foreclosure amount)
         if (transactionAmount.compareTo(foreclosureAmount) <= 0) {
@@ -56,8 +63,35 @@ public class LoanOverpaymentValidationService {
             return;
         }
 
-        // Apply product-specific validation rules
+        // First, apply channel-based validation rules
+        validateChannelBasedOverpayment(transactionAmount, foreclosureAmount, channelData);
+
+        // Then, apply product-specific validation rules
         validateRevolvingCreditOverpayment(loan, transactionAmount, foreclosureAmount);
+    }
+
+    /**
+     * Validates overpayment based on channel rules. Currently, only the "Bancos" channel allows overpayments for
+     * non-revolving loans.
+     *
+     * @param transactionAmount
+     *            The amount of the repayment transaction
+     * @param foreclosureAmount
+     *            The foreclosure amount (total outstanding amount)
+     * @param channelData
+     *            The channel data for the repayment
+     * @throws GeneralPlatformDomainRuleException
+     *             if overpayment is not allowed for this channel
+     */
+    private void validateChannelBasedOverpayment(BigDecimal transactionAmount, BigDecimal foreclosureAmount, ChannelData channelData) {
+        // For non-Bancos channels, overpayments are not allowed (unless overridden by product-specific rules)
+        if (!BANCOS_PARAM.equalsIgnoreCase(channelData.getName())) {
+            String repaymentStr = transactionAmount.setScale(2, RoundingMode.HALF_EVEN).toPlainString();
+            String foreclosureStr = foreclosureAmount.setScale(2, RoundingMode.HALF_EVEN).toPlainString();
+
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.repayment.exceeds.foreclosure.amount",
+                    String.format("Repayment amount (%s) exceeds Foreclosure amount (%s)", repaymentStr, foreclosureStr), BANCOS_PARAM);
+        }
     }
 
     /**

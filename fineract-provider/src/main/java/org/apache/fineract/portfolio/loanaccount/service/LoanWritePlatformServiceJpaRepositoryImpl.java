@@ -1411,11 +1411,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     "Bank is mandatory for bank channel", LoanWritePlatformServiceJpaRepositoryImpl.BANCOS_PARAM);
         }
 
-        validateOverpaymentAllowance(loanId, transactionDate, channelData, transactionAmount);
-
-        // Validate product-specific overpayment rules
+        // Validate all overpayment rules (channel-based and product-specific)
         LoanTransactionData foreclosureData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(loanId, transactionDate, false);
-        this.loanOverpaymentValidationService.validateOverpayment(loan, transactionAmount, foreclosureData.getAmount());
+        this.loanOverpaymentValidationService.validateOverpayment(loan, transactionAmount, foreclosureData.getAmount(), channelData);
 
         final Long channelId = channelData.getId();
         changes.put("channelId", channelId);
@@ -1508,22 +1506,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withGroupId(loan.getGroupId()) //
                 .with(changes) //
                 .build();
-    }
-
-    private void validateOverpaymentAllowance(Long loanId, LocalDate transactionDate, ChannelData channelData,
-            BigDecimal transactionAmount) {
-        // Validate overpayments allowed only for Bank channel
-        LoanTransactionData ltd = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(loanId, transactionDate, false);
-
-        if (Boolean.FALSE.equals(channelData.getName().equalsIgnoreCase(LoanWritePlatformServiceJpaRepositoryImpl.BANCOS_PARAM))
-                && transactionAmount.compareTo(ltd.getAmount()) > 0) {
-            String repaymentStr = transactionAmount.setScale(2, RoundingMode.HALF_EVEN).toPlainString();
-            String foreclosureStr = ltd.getAmount().setScale(2, RoundingMode.HALF_EVEN).toPlainString();
-
-            throw new GeneralPlatformDomainRuleException("error.msg.loan.repayment.exceeds.foreclosure.amount",
-                    String.format("Repayment amount (%s) exceeds Foreclosure amount (%s)", repaymentStr, foreclosureStr),
-                    LoanWritePlatformServiceJpaRepositoryImpl.BANCOS_PARAM);
-        }
     }
 
     private static void handleOverPaidException(String totalOverpaid) {
