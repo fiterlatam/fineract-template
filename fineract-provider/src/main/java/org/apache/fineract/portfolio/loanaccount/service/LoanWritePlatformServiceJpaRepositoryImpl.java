@@ -828,7 +828,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             JsonCommand paymentCommand = JsonCommand.fromExistingCommand(command, finalCommand);
 
-            this.makeLoanRestructureRepayment(paymentCommand, totalLoanOutStanding, loanToClose);
+            Loan finalLoanToClose = this.loanAssembler.assembleFrom(loanIdToClose);
+            this.makeLoanRestructureRepayment(paymentCommand, totalLoanOutStanding, finalLoanToClose);
 
             totalLoanAmount = totalLoanAmount.subtract(totalLoanOutStanding);
             totalLoanRestructureAmount = totalLoanRestructureAmount.add(totalLoanOutStanding);
