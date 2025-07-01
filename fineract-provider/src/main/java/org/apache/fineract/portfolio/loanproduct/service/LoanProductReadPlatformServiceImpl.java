@@ -283,6 +283,8 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
                                 	lp.grace_on_charges_periods AS "graceOnChargesPayment",
                                 	lp.grace_interest_free_periods AS "graceOnInterestCharged",
                                 	lp.grace_on_arrears_ageing AS "graceOnArrearsAgeing",
+                                	lp.is_advanced_payments_enabled as "advancedPaymentsEnabled",
+                                	lp.max_percentage_principal_payment_allowed as "maxPercentagePrincipalPaymentAllowed",
                                 	lp.overdue_days_for_npa AS "overdueDaysForNPA",
                                 	lp.min_days_between_disbursal_and_first_repayment AS "minimumDaysBetweenDisbursalAndFirstRepayment",
                                 	lp.amortization_method_enum AS "amortizationMethod",
@@ -758,6 +760,11 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
             loanProductData.setVoluntaryInsuranceId(voluntaryInsuranceId);
             loanProductData.setPurchaseCharge(isPurchaseCharge);
             loanProductData.setInterestStartsAfterGracePeriod(isInterestStartsAfterGracePeriod);
+
+            final boolean isAdvancedPaymentEnabled = rs.getBoolean("advancedPaymentsEnabled");
+            final BigDecimal maxPercentagePrincipalPaymentAllowed = rs.getBigDecimal("maxPercentagePrincipalPaymentAllowed");
+            loanProductData.setAdvancedPaymentEnabled(isAdvancedPaymentEnabled);
+            loanProductData.setMaxPercentagePrincipalPaymentAllowed(maxPercentagePrincipalPaymentAllowed);
             return loanProductData;
         }
     }

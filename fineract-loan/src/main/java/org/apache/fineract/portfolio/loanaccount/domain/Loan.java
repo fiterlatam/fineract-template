@@ -8496,4 +8496,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 .allMatch(LoanRepaymentScheduleInstallment::isObligationsMet);
     }
 
+    public boolean isAdvancedPaymentsAllowed() {
+        return this.loanProduct.isAdvancedPaymentsEnabled();
+    }
+
+    public BigDecimal maxPercentageOfPrincipalAllowedForAdvancedPayments() {
+        if (isAdvancedPaymentsAllowed()) {
+            return this.loanProduct.getMaxPercentagePrincipalPaymentAllowed();
+        }
+        return null;
+    }
 }

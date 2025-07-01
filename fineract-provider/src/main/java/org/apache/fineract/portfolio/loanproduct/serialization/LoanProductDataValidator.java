@@ -199,7 +199,8 @@ public final class LoanProductDataValidator {
             LoanProductConstants.CUSTOM_COLLECTION_SUBCHANNEL_LOAN_PRODUC_MAPPER_PARAM_NAME, LoanProductConstants.REQUIRE_POINT_PARAM_NAME,
             LoanProductConstants.INTEREST_RATE_ID_PARAM_NAME, LoanProductConstants.REPAYMENT_CHANNELS_PARAM_NAME,
             LoanProductConstants.VOLUNTARY_INSURANCE_ID_PARAM_NAME, LoanProductConstants.IS_PURCHASE_CHARGE_PARAM_NAME,
-            LoanProductConstants.INTEREST_STARTS_AFTER_GRACE_PERIOD, LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME));
+            LoanProductConstants.INTEREST_STARTS_AFTER_GRACE_PERIOD, LoanProductConstants.USE_OTHER_LOANS_CUPO_PARAM_NAME,
+            LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME, LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME));
 
     private static final Set<String> MAXIMUM_RATE_SUPPORTED_PARAMETERS = new HashSet<>(
             Arrays.asList("locale", "dateFormat", "eaRate", "annualNominalRate", "appliedBy", "appliedOnDate", "dailyNominalRate",
@@ -572,6 +573,20 @@ public final class LoanProductDataValidator {
 
         if (holdGuaranteeFunds != null && holdGuaranteeFunds) {
             validateGuaranteeParams(element, baseDataValidator, null);
+        }
+
+        Boolean isAdvancedPaymentsEnabled = false;
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME, element)) {
+            isAdvancedPaymentsEnabled = this.fromApiJsonHelper.extractBooleanNamed(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME, element);
+            baseDataValidator.reset().parameter(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME).value(isAdvancedPaymentsEnabled).notNull()
+                    .isOneOfTheseValues(true, false);
+        }
+
+        if (isAdvancedPaymentsEnabled) {
+            BigDecimal maxPercentagePrincipalPaymentAllowed = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME, element);
+            baseDataValidator.reset().parameter(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME)
+                    .value(maxPercentagePrincipalPaymentAllowed).notLessThanMin(BigDecimal.ONE)
+                    .notGreaterThanMax(BigDecimal.valueOf(100));
         }
 
         BigDecimal principalThresholdForLastInstallment = this.fromApiJsonHelper
@@ -1549,6 +1564,20 @@ public final class LoanProductDataValidator {
 
         if (holdGuaranteeFunds != null && holdGuaranteeFunds) {
             validateGuaranteeParams(element, baseDataValidator, null);
+        }
+
+        Boolean isAdvancedPaymentsEnabled = false;
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME, element)) {
+            isAdvancedPaymentsEnabled = this.fromApiJsonHelper.extractBooleanNamed(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME, element);
+            baseDataValidator.reset().parameter(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME).value(isAdvancedPaymentsEnabled).notNull()
+                    .isOneOfTheseValues(true, false);
+        }
+
+        if (isAdvancedPaymentsEnabled) {
+            BigDecimal maxPercentagePrincipalPaymentAllowed = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME, element);
+            baseDataValidator.reset().parameter(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME)
+                    .value(maxPercentagePrincipalPaymentAllowed).notLessThanMin(BigDecimal.ONE)
+                    .notGreaterThanMax(BigDecimal.valueOf(100));
         }
 
         if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.principalThresholdForLastInstallmentParamName, element)) {

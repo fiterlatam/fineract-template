@@ -143,6 +143,8 @@ public class LoanProductData implements Serializable {
     private final EnumOptionData repaymentStartDateType;
     private final EnumOptionData repaymentReschedulingType;
     private final Integer repaymentReschedulingTypeConfig;
+    private boolean isAdvancedPaymentEnabled;
+    private BigDecimal maxPercentagePrincipalPaymentAllowed;
 
     // charges
     private final Collection<ChargeData> charges;

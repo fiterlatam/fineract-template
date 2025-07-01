@@ -382,6 +382,16 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "is_interest_starts_after_grace_period")
     private boolean interestStartsAfterGracePeriod;
 
+    @Getter
+    @Setter
+    @Column(name = "is_advanced_payments_enabled")
+    private boolean isAdvancedPaymentsEnabled;
+
+    @Getter
+    @Setter
+    @Column(name = "max_percentage_principal_payment_allowed")
+    private BigDecimal maxPercentagePrincipalPaymentAllowed;
+
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, FloatingRate floatingRate, final List<Rate> productRates,
             List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules,
@@ -520,6 +530,12 @@ public class LoanProduct extends AbstractPersistableCustom {
             interestRecalculationSettings = LoanProductInterestRecalculationDetails.createFrom(command);
         }
 
+        final boolean isAdvancedPaymentsEnabled = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME);
+        BigDecimal maxPercentagePrincipalPaymentAllowed = BigDecimal.ZERO;
+        if (isAdvancedPaymentsEnabled) {
+            maxPercentagePrincipalPaymentAllowed = command.bigDecimalValueOfParameterNamed(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME);
+        }
+
         final boolean holdGuarantorFunds = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.holdGuaranteeFundsParamName);
         LoanProductGuaranteeDetails loanProductGuaranteeDetails = null;
         if (holdGuarantorFunds) {
@@ -625,6 +641,8 @@ public class LoanProduct extends AbstractPersistableCustom {
         product.setAdvance(advance);
         product.setRequirePoints(requirePoints);
         product.setInterestStartsAfterGracePeriod(shouldInterestStartAfterGracePeriod);
+        product.setAdvancedPaymentsEnabled(isAdvancedPaymentsEnabled);
+        product.setMaxPercentagePrincipalPaymentAllowed(maxPercentagePrincipalPaymentAllowed);
         return product;
 
     }
@@ -1638,6 +1656,18 @@ public class LoanProduct extends AbstractPersistableCustom {
             final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS);
             actualChanges.put(LoanProductConstants.EXTEND_TERM_FOR_MONTHLY_REPAYMENTS, newValue);
             this.extendTermForMonthlyRepayments = newValue;
+        }
+
+        if (command.isChangeInBooleanParameterNamed(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME, this.isAdvancedPaymentsEnabled)) {
+            final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME);
+            actualChanges.put(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME, newValue);
+            this.isAdvancedPaymentsEnabled = newValue;
+        }
+
+        if(command.isChangeInBigDecimalParameterNamed(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME, this.maxPercentagePrincipalPaymentAllowed)){
+            final BigDecimal maxPercentagePrincipalAllowed = command.bigDecimalValueOfParameterNamed(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME);
+            actualChanges.put(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME, maxPercentagePrincipalAllowed);
+            this.maxPercentagePrincipalPaymentAllowed = maxPercentagePrincipalAllowed;
         }
 
         return actualChanges;
