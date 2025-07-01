@@ -339,17 +339,17 @@ public final class LoanEventApiJsonValidator {
             throw new InvalidJsonException();
         }
 
-        final Set<String> transactionParameters = new HashSet<>(
-                Arrays.asList(LoanEventApiJsonValidator.TRANSACTION_DATE_PARAM, LoanEventApiJsonValidator.TRANSACTION_AMOUNT_PARAM,
-                        LoanEventApiJsonValidator.EXTERNAL_ID_PARAM, "note", LoanEventApiJsonValidator.LOCALE_PARAM,
-                        LoanEventApiJsonValidator.DATE_FORMAT_PARAM, LoanEventApiJsonValidator.PAYMENT_TYPE_ID_PARAM,
-                        LoanEventApiJsonValidator.ACCOUNT_NUMBER_PARAM, LoanEventApiJsonValidator.CHECK_NUMBER_PARAM,
-                        LoanEventApiJsonValidator.ROUTING_CODE_PARAM, LoanEventApiJsonValidator.RECEIPT_NUMBER_PARAM,
-                        LoanEventApiJsonValidator.BANK_NUMBER_PARAM, "loanId", LoanEventApiJsonValidator.CHANNEL_HASH_PARAM, "channelName",
-                        "pointOfSalesCode", LoanEventApiJsonValidator.IS_IMPORTED_TRANSACTION_PARAM,
-                        LoanEventApiJsonValidator.REPAYMENT_CHANNEL_ID_PARAM, LoanEventApiJsonValidator.REPAYMENT_BANK_ID_PARAM,
-                        LoanEventApiJsonValidator.TRANSACTION_PROCESSING_STRATEGY_PARAM, LoanEventApiJsonValidator.CLIENT_ID_NUMBER_PARAM,
-                        "reduceInstallmentAmount", LoanEventApiJsonValidator.HONORARIOS_AMOUNT_PARAM, "occurredOnSuspendedAccount"));
+        final Set<String> transactionParameters = new HashSet<>(Arrays.asList(LoanEventApiJsonValidator.TRANSACTION_DATE_PARAM,
+                LoanEventApiJsonValidator.TRANSACTION_AMOUNT_PARAM, LoanEventApiJsonValidator.EXTERNAL_ID_PARAM, "note",
+                LoanEventApiJsonValidator.LOCALE_PARAM, LoanEventApiJsonValidator.DATE_FORMAT_PARAM,
+                LoanEventApiJsonValidator.PAYMENT_TYPE_ID_PARAM, LoanEventApiJsonValidator.ACCOUNT_NUMBER_PARAM,
+                LoanEventApiJsonValidator.CHECK_NUMBER_PARAM, LoanEventApiJsonValidator.ROUTING_CODE_PARAM,
+                LoanEventApiJsonValidator.RECEIPT_NUMBER_PARAM, LoanEventApiJsonValidator.BANK_NUMBER_PARAM, "loanId",
+                LoanEventApiJsonValidator.CHANNEL_HASH_PARAM, "channelName", "pointOfSalesCode",
+                LoanEventApiJsonValidator.IS_IMPORTED_TRANSACTION_PARAM, LoanEventApiJsonValidator.REPAYMENT_CHANNEL_ID_PARAM,
+                LoanEventApiJsonValidator.REPAYMENT_BANK_ID_PARAM, LoanEventApiJsonValidator.TRANSACTION_PROCESSING_STRATEGY_PARAM,
+                LoanEventApiJsonValidator.CLIENT_ID_NUMBER_PARAM, "reduceInstallmentAmount", "reduceTerm",
+                LoanEventApiJsonValidator.HONORARIOS_AMOUNT_PARAM, "occurredOnSuspendedAccount"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);
@@ -375,6 +375,19 @@ public final class LoanEventApiJsonValidator {
 
         final String note = this.fromApiJsonHelper.extractStringNamed("note", element);
         baseDataValidator.reset().parameter("note").value(note).notExceedingLengthOf(1000);
+
+        // Validate reduceInstallmentAmount and reduceTerm parameters
+        final Boolean reduceInstallmentAmount = this.fromApiJsonHelper.extractBooleanNamed("reduceInstallmentAmount", element);
+        final Boolean reduceTerm = this.fromApiJsonHelper.extractBooleanNamed("reduceTerm", element);
+
+        // Ensure both parameters cannot be true at the same time
+        if (Boolean.TRUE.equals(reduceInstallmentAmount) && Boolean.TRUE.equals(reduceTerm)) {
+            final ApiParameterError error = ApiParameterError.parameterError(
+                    "validation.msg.loan.repayment.both.reduce.options.not.allowed",
+                    "Both reduceInstallmentAmount and reduceTerm cannot be true at the same time. Please choose only one option.",
+                    "reduceInstallmentAmount", "reduceTerm");
+            dataValidationErrors.add(error);
+        }
 
         final String transactionProcessingStrategy = this.fromApiJsonHelper
                 .extractStringNamed(LoanEventApiJsonValidator.TRANSACTION_PROCESSING_STRATEGY_PARAM, element);
