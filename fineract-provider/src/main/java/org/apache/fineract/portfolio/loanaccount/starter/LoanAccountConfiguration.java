@@ -435,7 +435,8 @@ public class LoanAccountConfiguration {
             LoanRescheduleRequestWritePlatformService loanRescheduleRequestWritePlatformService,
             CodeValueReadPlatformService codeValueReadPlatformService, LoanRescheduleRequestRepository loanRescheduleRequestRepository,
             FirstPaymentDateAdjustmentService firstPaymentDateAdjustmentService,
-            LoanOverpaymentValidationService loanOverpaymentValidationService) {
+            LoanOverpaymentValidationService loanOverpaymentValidationService,
+            LoanAdvancedPaymentValidationService loanAdvancedPaymentValidationService) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
@@ -456,7 +457,7 @@ public class LoanAccountConfiguration {
                 blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository, productParameterizationRepository,
                 customChargeHonorarioMapRepository, delinquencyReadPlatformService, loanDisbursementDetailsRepository,
                 loanRescheduleRequestWritePlatformService, codeValueReadPlatformService, loanRescheduleRequestRepository,
-                firstPaymentDateAdjustmentService, loanOverpaymentValidationService);
+                firstPaymentDateAdjustmentService, loanOverpaymentValidationService, loanAdvancedPaymentValidationService);
     }
 
     @Bean
