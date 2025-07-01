@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.persistence.Transient;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.dataqueries.data.DatatableData;
@@ -264,6 +265,9 @@ public final class LoanAccountData {
     private Integer borrowerCycle;
 
     private LoanAdditionalData loanAdditionalData;
+
+    @Setter
+    private BigDecimal chargedInterestAmount;
 
     private Collection<CodeValueData> loanCycleCompletedOptions;
     private Collection<CodeValueData> loanPurposeOptions;

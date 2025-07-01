@@ -2731,11 +2731,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
     @Override
     public Collection<Loan> retrieveClientActiveLoans(Long clientId, LocalDate disbursementDate) {
-        final LoanMapper rm = new LoanMapper(sqlGenerator);
         List<Loan> activeLoans = this.loanRepositoryWrapper.findActiveLoanByClientId(clientId);
         if (disbursementDate != null) {
             activeLoans.forEach(account -> {
-                final LoanRepaymentScheduleInstallment foreCloseDetail = account.fetchLoanForeclosureDetail(disbursementDate);
+                LoanRepaymentScheduleInstallment foreCloseDetail = account.fetchLoanForeclosureDetail(disbursementDate);
                 Money interestPortion = foreCloseDetail.getInterestCharged(account.getCurrency());
                 account.setChargedInterestAmount(interestPortion.getAmount());
             });
@@ -2770,8 +2769,19 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     @Override
     public Collection<LoanAccountData> retrieveClientActiveLoansAccounts(Long clientId, LocalDate disbursementLocalDate) {
         final LoanMapper rm = new LoanMapper(sqlGenerator);
+        if (disbursementLocalDate == null) disbursementLocalDate = DateUtils.getBusinessLocalDate();
         final String sql = "select distinct " + rm.loanSchema() + " where l.client_id = ? and l.loan_status_id = ?";
-        return this.jdbcTemplate.query(sql, rm, new Object[] { clientId, LoanStatus.ACTIVE.getValue() });
+        Collection<LoanAccountData> loanAccountData = this.jdbcTemplate.query(sql, rm,
+                new Object[] { clientId, LoanStatus.ACTIVE.getValue() });
+
+        final LocalDate finalDisbursementLocalDate = disbursementLocalDate;
+        loanAccountData.forEach(account -> {
+            Loan loanDetails = this.loanRepositoryWrapper.findOneWithNotFoundDetection(account.getId());
+            LoanRepaymentScheduleInstallment foreCloseDetail = loanDetails.fetchLoanForeclosureDetail(finalDisbursementLocalDate);
+            Money interestPortion = foreCloseDetail.getInterestCharged(loanDetails.getCurrency());
+            account.setChargedInterestAmount(interestPortion.getAmount());
+        });
+        return loanAccountData;
     }
 
     private static final class AdditionalGroupLoanData implements RowMapper<GroupLoanAdditionalData> {

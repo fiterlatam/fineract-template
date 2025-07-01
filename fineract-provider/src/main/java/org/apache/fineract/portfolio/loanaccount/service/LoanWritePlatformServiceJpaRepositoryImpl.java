@@ -587,7 +587,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 // disburseLoanToLoan(loan, command, loanTopupOutstandingAmount, paymentDetail);
             }
             if (loan.isRestructuredLoans()) {
-                BigDecimal totalLoanRestructureAmount = this.closeRestructuredLoans(command, loan, actualDisbursementDate);
+                BigDecimal totalLoanRestructureAmount = closeRestructuredLoans(command, loan, actualDisbursementDate);
                 loanTopupOutstandingAmount = loanTopupOutstandingAmount.add(totalLoanRestructureAmount);
             }
 
@@ -722,41 +722,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             closeObject.add("transactionDate", command.jsonElement("actualDisbursementDate"));
             JsonElement finalCommand = this.fromApiJsonHelper.parse(closeObject.toString());
             Long loanIdToClose = mapping.getLoan().getId();
-            Loan loanToClose = this.loanRepositoryWrapper.findNonClosedLoanThatBelongsToClient(loanIdToClose, loan.getClientId());
+            Loan loanToClose = this.loanAssembler.assembleFrom(loanIdToClose);
 
             LoanSummary summary = loanToClose.getSummary();
-            final LoanRepaymentScheduleInstallment foreCloseDetail = loanToClose.fetchLoanForeclosureDetail(disbursementDate);
-            MonetaryCurrency currency = loanToClose.getCurrency();
-            Money chargedInterest = foreCloseDetail.getInterestCharged(currency);
-            BigDecimal futureInterest = loanToClose.getSummary().getTotalInterestOutstanding().subtract(chargedInterest.getAmount());
-            if (chargedInterest.isGreaterThanZero()) {
-                final String localeAsString = "en";
-                final String dateFormat = "dd MMMM yyyy";
-                final JsonObject jsonObject = new JsonObject();
-                final LocalDate localDate = DateUtils.getBusinessLocalDate();
-                Locale locale = JsonParserHelper.localeFromString(localeAsString);
-                final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
-                final String localDateString = localDate.format(dateTimeFormatter);
-                jsonObject.addProperty("locale", localeAsString);
-                jsonObject.addProperty("dateFormat", dateFormat);
-                jsonObject.addProperty("transactionAmount", chargedInterest.getAmount());
-                jsonObject.addProperty("transactionDate", localDateString);
-                jsonObject.addProperty("postAccountingForWaivers", true);
-                jsonObject.addProperty("isAccountClosure", true);
-                final String note = "Restructure Request " + request.getId();
-                jsonObject.addProperty("note", note);
-                final JsonCommand waiveInterestJsonCommand = JsonCommand.from(jsonObject.toString(), jsonObject, this.fromApiJsonHelper,
-                        null, loanIdToClose, null, null, null, loanIdToClose, null, null, null, null, null, null);
-                final CommandProcessingResult waiveInterestResult = this.waiveInterestOnLoan(loanIdToClose, waiveInterestJsonCommand);
-                if (waiveInterestResult.getLoanId() == null) {
-                    throw new GeneralPlatformDomainRuleException("error.message.loan.failed.to.waive.interest.on.loan",
-                            "Failed to waive interest on loan application " + loanIdToClose);
-                }
-            }
+            Boolean waiveInterestOnRestructureCredits = this.configurationDomainService.isWaiveInterestOnRestructureCredits();
+            Boolean waiveChargesAndFeesOnRestructureCredits = this.configurationDomainService.isWaiveChargesAndFeesOnRestructureCredits();
 
-            if (futureInterest.compareTo(BigDecimal.ZERO) > 0) {
-                final Money waiveInterestTransactionAmount = Money.of(currency, futureInterest);
-                if (waiveInterestTransactionAmount.isGreaterThanZero()) {
+            final BigDecimal principalOutstanding = summary.getTotalPrincipalOutstanding();
+            BigDecimal totalLoanOutStanding = principalOutstanding;
+
+            if (Boolean.TRUE.equals(waiveInterestOnRestructureCredits)) {
+                final LoanRepaymentScheduleInstallment foreCloseDetail = loanToClose.fetchLoanForeclosureDetail(disbursementDate);
+                MonetaryCurrency currency = loanToClose.getCurrency();
+                Money chargedInterest = foreCloseDetail.getInterestCharged(currency);
+                BigDecimal futureInterest = loanToClose.getSummary().getTotalInterestOutstanding().subtract(chargedInterest.getAmount());
+                if (chargedInterest.isGreaterThanZero()) {
                     final String localeAsString = "en";
                     final String dateFormat = "dd MMMM yyyy";
                     final JsonObject jsonObject = new JsonObject();
@@ -766,11 +746,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     final String localDateString = localDate.format(dateTimeFormatter);
                     jsonObject.addProperty("locale", localeAsString);
                     jsonObject.addProperty("dateFormat", dateFormat);
-                    jsonObject.addProperty("transactionAmount", futureInterest);
+                    jsonObject.addProperty("transactionAmount", chargedInterest.getAmount());
                     jsonObject.addProperty("transactionDate", localDateString);
-                    jsonObject.addProperty("postAccountingForWaivers", false);
+                    jsonObject.addProperty("postAccountingForWaivers", true);
                     jsonObject.addProperty("isAccountClosure", true);
-                    final String note = "Préstamo complementario " + request.getId();
+                    final String note = "Restructure Request " + request.getId();
                     jsonObject.addProperty("note", note);
                     final JsonCommand waiveInterestJsonCommand = JsonCommand.from(jsonObject.toString(), jsonObject, this.fromApiJsonHelper,
                             null, loanIdToClose, null, null, null, loanIdToClose, null, null, null, null, null, null);
@@ -780,13 +760,77 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                 "Failed to waive interest on loan application " + loanIdToClose);
                     }
                 }
+                if (futureInterest.compareTo(BigDecimal.ZERO) > 0) {
+                    final Money waiveInterestTransactionAmount = Money.of(currency, futureInterest);
+                    if (waiveInterestTransactionAmount.isGreaterThanZero()) {
+                        final String localeAsString = "en";
+                        final String dateFormat = "dd MMMM yyyy";
+                        final JsonObject jsonObject = new JsonObject();
+                        final LocalDate localDate = DateUtils.getBusinessLocalDate();
+                        Locale locale = JsonParserHelper.localeFromString(localeAsString);
+                        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+                        final String localDateString = localDate.format(dateTimeFormatter);
+                        jsonObject.addProperty("locale", localeAsString);
+                        jsonObject.addProperty("dateFormat", dateFormat);
+                        jsonObject.addProperty("transactionAmount", futureInterest);
+                        jsonObject.addProperty("transactionDate", localDateString);
+                        jsonObject.addProperty("postAccountingForWaivers", false);
+                        jsonObject.addProperty("isAccountClosure", true);
+                        final String note = "Préstamo complementario " + request.getId();
+                        jsonObject.addProperty("note", note);
+                        final JsonCommand waiveInterestJsonCommand = JsonCommand.from(jsonObject.toString(), jsonObject,
+                                this.fromApiJsonHelper, null, loanIdToClose, null, null, null, loanIdToClose, null, null, null, null, null,
+                                null);
+                        final CommandProcessingResult waiveInterestResult = this.waiveInterestOnLoan(loanIdToClose,
+                                waiveInterestJsonCommand);
+                        if (waiveInterestResult.getLoanId() == null) {
+                            throw new GeneralPlatformDomainRuleException("error.message.loan.failed.to.waive.interest.on.loan",
+                                    "Failed to waive interest on loan application " + loanIdToClose);
+                        }
+                    }
+                }
+            } else {
+                totalLoanOutStanding = totalLoanOutStanding.add(summary.getTotalInterestOutstanding());
             }
 
-            final BigDecimal principalOutstanding = summary.getTotalPrincipalOutstanding();
-            BigDecimal totalFeeChargesOutstanding = summary.getTotalFeeChargesOutstanding();
-            BigDecimal totalPenaltyChargesOutstanding = summary.getTotalPenaltyChargesOutstanding();
-
-            BigDecimal totalLoanOutStanding = principalOutstanding.add(totalFeeChargesOutstanding).add(totalPenaltyChargesOutstanding);
+            if (Boolean.TRUE.equals(waiveChargesAndFeesOnRestructureCredits)) {
+                Collection<LoanCharge> loanCharges = loanToClose.getLoanCharges();
+                loanCharges.forEach(charge -> {
+                    // if charge is not paid or waived, waive the charge
+                    if (charge.isChargePending()) {
+                        BigDecimal chargeAmount = charge.amountOutstanding();
+                        if (chargeAmount.compareTo(BigDecimal.ZERO) > 0) {
+                            final String localeAsString = "en";
+                            final String dateFormat = "dd MMMM yyyy";
+                            final JsonObject jsonObject = new JsonObject();
+                            final LocalDate localDate = DateUtils.getBusinessLocalDate();
+                            Locale locale = JsonParserHelper.localeFromString(localeAsString);
+                            final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+                            final String localDateString = localDate.format(dateTimeFormatter);
+                            jsonObject.addProperty("locale", localeAsString);
+                            jsonObject.addProperty("dateFormat", dateFormat);
+                            jsonObject.addProperty("transactionAmount", chargeAmount);
+                            jsonObject.addProperty("transactionDate", localDateString);
+                            jsonObject.addProperty("postAccountingForWaivers", false);
+                            jsonObject.addProperty("isAccountClosure", true);
+                            final String note = "Restructure Request " + request.getId();
+                            jsonObject.addProperty("note", note);
+                            final JsonCommand waiveChargeJsonCommand = JsonCommand.from(jsonObject.toString(), jsonObject,
+                                    this.fromApiJsonHelper, null, loanIdToClose, null, null, null, loanIdToClose, null, null, null, null,
+                                    null, null);
+                            final CommandProcessingResult waiveChargeResult = this.waiveLoanCharge(loanIdToClose, charge.getId(),
+                                    waiveChargeJsonCommand);
+                            if (waiveChargeResult.getLoanId() == null) {
+                                throw new GeneralPlatformDomainRuleException("error.message.loan.failed.to.waive.charges.on.loan",
+                                        "Failed to waive charges on loan application " + loanIdToClose);
+                            }
+                        }
+                    }
+                });
+            } else {
+                totalLoanOutStanding = totalLoanOutStanding.add(summary.getTotalFeeChargesOutstanding())
+                        .add(summary.getTotalPenaltyChargesOutstanding());
+            }
 
             if (totalLoanOutStanding.compareTo(totalLoanAmount) > 0) {
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",

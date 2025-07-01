@@ -550,4 +550,14 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     public boolean isRebalanceAllAccounts() {
         return getGlobalConfigurationPropertyData("rebalance-all-savings-accounts").isEnabled();
     }
+
+    @Override
+    public Boolean isWaiveInterestOnRestructureCredits() {
+        return getGlobalConfigurationPropertyData("waive-interest-on-restructure").isEnabled();
+    }
+
+    @Override
+    public Boolean isWaiveChargesAndFeesOnRestructureCredits() {
+        return getGlobalConfigurationPropertyData("waive-charges-and-penalties-on-restructure").isEnabled();
+    }
 }

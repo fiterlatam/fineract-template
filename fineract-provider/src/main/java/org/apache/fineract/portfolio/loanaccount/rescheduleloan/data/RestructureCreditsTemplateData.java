@@ -22,6 +22,7 @@ import java.util.Collection;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 
 /**
@@ -31,23 +32,30 @@ public final class RestructureCreditsTemplateData {
 
     private final Long id;
     private final Long clientId;
+    private final Boolean waiveInterest;
+    private final Boolean waiveChargesAndFees;
     private final ClientData clientData;
     private final RestructureCreditsRequestData requestData;
     private final Collection<LoanAccountData> activeLoans;
     private final Collection<LoanProductData> loanProductData;
     private final Collection<GroupPrequalificationData> clientPrequalificatoins;
+    private final Collection<Loan> loanAccounts;
 
     private RestructureCreditsTemplateData(Long id, Long clientId, ClientData clientData, Collection<LoanAccountData> activeLoans,
             RestructureCreditsRequestData requestData, Collection<LoanProductData> loanProductData,
-            Collection<GroupPrequalificationData> groupPrequalificationData) {
+            Collection<GroupPrequalificationData> groupPrequalificationData, Boolean waiveInterest, Boolean waiveChargesAndFees,
+            Collection<Loan> loanAccounts) {
 
         this.id = id;
         this.clientId = clientId;
         this.clientData = clientData;
         this.activeLoans = activeLoans;
+        this.loanAccounts = loanAccounts;
         this.requestData = requestData;
         this.loanProductData = loanProductData;
         this.clientPrequalificatoins = groupPrequalificationData;
+        this.waiveInterest = waiveInterest;
+        this.waiveChargesAndFees = waiveChargesAndFees;
     }
 
     /**
@@ -58,13 +66,15 @@ public final class RestructureCreditsTemplateData {
      * @param requestData
      * @param loanProductData
      * @param groupPrequalificationData
+     * @param loans
      * @return
      */
     public static RestructureCreditsTemplateData instance(ClientData clientData, Collection<LoanAccountData> activeLoans,
             RestructureCreditsRequestData requestData, Collection<LoanProductData> loanProductData,
-            Collection<GroupPrequalificationData> groupPrequalificationData) {
+            Collection<GroupPrequalificationData> groupPrequalificationData, Boolean waiveInterest, Boolean waiveChargesAndFees,
+            Collection<Loan> loanAccounts) {
 
         return new RestructureCreditsTemplateData(null, null, clientData, activeLoans, requestData, loanProductData,
-                groupPrequalificationData);
+                groupPrequalificationData, waiveInterest, waiveChargesAndFees, loanAccounts);
     }
 }
