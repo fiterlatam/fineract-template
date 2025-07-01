@@ -530,10 +530,12 @@ public class LoanProduct extends AbstractPersistableCustom {
             interestRecalculationSettings = LoanProductInterestRecalculationDetails.createFrom(command);
         }
 
-        final boolean isAdvancedPaymentsEnabled = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME);
+        final boolean isAdvancedPaymentsEnabled = command
+                .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME);
         BigDecimal maxPercentagePrincipalPaymentAllowed = BigDecimal.ZERO;
         if (isAdvancedPaymentsEnabled) {
-            maxPercentagePrincipalPaymentAllowed = command.bigDecimalValueOfParameterNamed(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME);
+            maxPercentagePrincipalPaymentAllowed = command
+                    .bigDecimalValueOfParameterNamed(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME);
         }
 
         final boolean holdGuarantorFunds = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.holdGuaranteeFundsParamName);
@@ -1658,14 +1660,18 @@ public class LoanProduct extends AbstractPersistableCustom {
             this.extendTermForMonthlyRepayments = newValue;
         }
 
-        if (command.isChangeInBooleanParameterNamed(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME, this.isAdvancedPaymentsEnabled)) {
-            final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME);
+        if (command.isChangeInBooleanParameterNamed(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME,
+                this.isAdvancedPaymentsEnabled)) {
+            final boolean newValue = command
+                    .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME);
             actualChanges.put(LoanProductConstants.isAdvancedPaymentsEnabled_PARAM_NAME, newValue);
             this.isAdvancedPaymentsEnabled = newValue;
         }
 
-        if(command.isChangeInBigDecimalParameterNamed(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME, this.maxPercentagePrincipalPaymentAllowed)){
-            final BigDecimal maxPercentagePrincipalAllowed = command.bigDecimalValueOfParameterNamed(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME);
+        if (command.isChangeInBigDecimalParameterNamed(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME,
+                this.maxPercentagePrincipalPaymentAllowed)) {
+            final BigDecimal maxPercentagePrincipalAllowed = command
+                    .bigDecimalValueOfParameterNamed(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME);
             actualChanges.put(LoanProductConstants.maxPercentagePrincipalPaymentAllowed_PARAM_NAME, maxPercentagePrincipalAllowed);
             this.maxPercentagePrincipalPaymentAllowed = maxPercentagePrincipalAllowed;
         }
