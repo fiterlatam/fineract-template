@@ -1,0 +1,116 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.fineract.portfolio.loanaccount.service;
+
+import java.math.BigDecimal;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
+import org.springframework.stereotype.Service;
+
+/**
+ * Service responsible for validating overpayments on loans based on product type and business rules.
+ * This service handles different validation logic for various loan product types.
+ */
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class LoanOverpaymentValidationService {
+
+    /**
+     * Validates if an overpayment is allowed for the given loan and transaction amount.
+     * 
+     * @param loan The loan for which the repayment is being made
+     * @param transactionAmount The amount of the repayment transaction
+     * @param foreclosureAmount The foreclosure amount (total outstanding amount)
+     * @throws GeneralPlatformDomainRuleException if overpayment is not allowed
+     */
+    public void validateOverpayment(Loan loan, BigDecimal transactionAmount, BigDecimal foreclosureAmount) {
+        log.info("Validating overpayment for loan ID: {}, transaction amount: {}, foreclosure amount: {}",
+                loan.getId(), transactionAmount, foreclosureAmount);
+
+        // Check if this is an overpayment (transaction amount exceeds foreclosure amount)
+        if (transactionAmount.compareTo(foreclosureAmount) <= 0) {
+            log.info("Transaction amount does not exceed foreclosure amount, no overpayment validation needed");
+            return;
+        }
+
+        // Apply product-specific validation rules
+        validateRevolvingCreditOverpayment(loan, transactionAmount, foreclosureAmount);
+        
+        // Future: Add other product-specific validation methods here
+        // validateOtherProductTypeOverpayment(loan, transactionAmount, foreclosureAmount);
+    }
+
+    /**
+     * Validates overpayment for revolving credit products.
+     * Revolving credit products do not allow overpayments as they would create balances in favor of the client.
+     * 
+     * @param loan The loan for which the repayment is being made
+     * @param transactionAmount The amount of the repayment transaction
+     * @param foreclosureAmount The foreclosure amount (total outstanding amount)
+     * @throws GeneralPlatformDomainRuleException if overpayment is not allowed for revolving credit
+     */
+    private void validateRevolvingCreditOverpayment(Loan loan, BigDecimal transactionAmount, BigDecimal foreclosureAmount) {
+        // Check if this is a revolving credit product
+        if (isRevolvingCreditProduct(loan)) {
+            log.debug("Loan {} is a revolving credit product, overpayments are not allowed", loan.getId());
+            
+            BigDecimal overpaymentAmount = transactionAmount.subtract(foreclosureAmount);
+            String errorMessage = String.format("Overpayments are not allowed for revolving credit products. " +
+                    "Transaction amount (%s) exceeds foreclosure amount (%s) by %s", 
+                    transactionAmount, foreclosureAmount, overpaymentAmount);
+            
+            throw new GeneralPlatformDomainRuleException(
+                    "error.msg.loan.revolving.credit.overpayment.not.allowed",
+                    errorMessage,
+                    transactionAmount, foreclosureAmount, overpaymentAmount);
+        }
+    }
+
+    /**
+     * Determines if a loan is a revolving credit product.
+     * 
+     * @param loan The loan to check
+     * @return true if the loan is a revolving credit product, false otherwise
+     */
+    private boolean isRevolvingCreditProduct(Loan loan) {
+        return loan.isRevolvingLoan();
+    }
+
+    /**
+     * Future method for validating overpayments for other product types.
+     * This method can be implemented when additional product-specific validation rules are needed.
+     * 
+     * @param loan The loan for which the repayment is being made
+     * @param transactionAmount The amount of the repayment transaction
+     * @param foreclosureAmount The foreclosure amount (total outstanding amount)
+     */
+    /*
+    private void validateOtherProductTypeOverpayment(Loan loan, BigDecimal transactionAmount, BigDecimal foreclosureAmount) {
+        // Add validation logic for other product types here
+        // Example:
+        // if (isSomeOtherProductType(loan)) {
+        //     // Apply specific validation rules
+        // }
+    }
+    */
+} 

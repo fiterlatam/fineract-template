@@ -381,6 +381,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final LoanRescheduleRequestRepository loanRescheduleRequestRepository;
     private final FirstPaymentDateAdjustmentService firstPaymentDateAdjustmentService;
+    private final LoanOverpaymentValidationService loanOverpaymentValidationService;
 
     @PostConstruct
     public void registerForNotification() {
@@ -1411,6 +1412,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         validateOverpaymentAllowance(loanId, transactionDate, channelData, transactionAmount);
+
+        // Validate product-specific overpayment rules
+        LoanTransactionData foreclosureData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(loanId, transactionDate, false);
+        this.loanOverpaymentValidationService.validateOverpayment(loan, transactionAmount, foreclosureData.getAmount());
 
         final Long channelId = channelData.getId();
         changes.put("channelId", channelId);
