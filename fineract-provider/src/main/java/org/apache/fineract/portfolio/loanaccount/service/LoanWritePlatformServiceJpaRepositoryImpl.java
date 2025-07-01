@@ -1139,6 +1139,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             throw new GeneralPlatformDomainRuleException(LoanWritePlatformServiceJpaRepositoryImpl.ERROR_MESSAGE_LABEL_CHARGE_OFF_LOAN,
                     "Undo Loan: " + loanId + " disbursement is not allowed. Loan Account is Charged-off", loanId);
         }
+
+        // check if there is any active repayment transaction and abort if exists
+        if (loan.getLoanTransactions().stream().filter(rep -> rep.isRepayment()).filter(notRev -> !notRev.isReversed()).count() > 0) {
+            throw new GeneralPlatformDomainRuleException("validation.msg.cannot.undo.disbursal.with.active.transaction",
+                    "Undo Disbursal is not allowed for loans with existing transactions. You may undo the transactions first.");
+        }
+
         businessEventNotifierService.notifyPreBusinessEvent(new LoanUndoDisbursalBusinessEvent(loan));
         removeLoanCycle(loan);
         final List<Long> existingTransactionIds = new ArrayList<>();
