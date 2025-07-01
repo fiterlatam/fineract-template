@@ -33,4 +33,42 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="fineract" id="2">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sqlCheck expectedResult="1">
+                    select count(*) from c_configuration where name = 'waive-charges-and-penalties-on-restructure';
+                </sqlCheck>
+            </not>
+        </preConditions>
+        <insert tableName="c_configuration">
+            <column name="name" value="waive-charges-and-penalties-on-restructure"/>
+            <column name="value" valueNumeric="0"/>
+            <column name="date_value"/>
+            <column name="string_value"/>
+            <column name="enabled" valueBoolean="true"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+            <column name="description" value="Waive Charges And Penalties On Restructure"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="3">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sqlCheck expectedResult="1">
+                    select count(*) from c_configuration where name = 'waive-interest-on-restructure';
+                </sqlCheck>
+            </not>
+        </preConditions>
+        <insert tableName="c_configuration">
+            <column name="name" value="waive-interest-on-restructure"/>
+            <column name="value" valueNumeric="0"/>
+            <column name="date_value"/>
+            <column name="string_value"/>
+            <column name="enabled" valueBoolean="true"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+            <column name="description" value="Waive Interest On Restructure"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>

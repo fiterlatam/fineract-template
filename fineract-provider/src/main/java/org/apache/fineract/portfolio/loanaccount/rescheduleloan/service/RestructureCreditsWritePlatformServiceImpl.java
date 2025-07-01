@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -78,6 +79,7 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
     private final FromJsonHelper fromApiJsonHelper;
     private final PaymentTypeRepositoryWrapper paymentTypeRepositoryWrapper;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final ConfigurationDomainService configurationDomainService;
 
     /**
      * LoanRescheduleRequestWritePlatformServiceImpl constructor
@@ -92,7 +94,7 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
             final LoanWritePlatformService loanWritePlatformService,
             final RestructureCreditsRequestRepository restructureCreditsRequestRepository,
             final ClientRepositoryWrapper clientRepositoryWrapper, final PaymentTypeRepositoryWrapper paymentTypeRepositoryWrapper,
-            final LoanRepositoryWrapper loanRepositoryWrapper) {
+            final LoanRepositoryWrapper loanRepositoryWrapper, ConfigurationDomainService configurationDomainService) {
         this.jdbcTemplate = jdbcTemplate;
         this.clientRepositoryWrapper = clientRepositoryWrapper;
         this.rescheduleCreditsDataValidator = rescheduleCreditsDataValidator;
@@ -105,6 +107,7 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         this.loanApplicationWritePlatformService = loanApplicationWritePlatformService;
         this.paymentTypeRepositoryWrapper = paymentTypeRepositoryWrapper;
         this.loanRepositoryWrapper = loanRepositoryWrapper;
+        this.configurationDomainService = configurationDomainService;
     }
 
     @Override
@@ -211,8 +214,12 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
     private List<RestructureCreditsLoanMapping> createRestructureMappings(List<Loan> loanAccounts, RestructureCreditsRequest request) {
         List<RestructureCreditsLoanMapping> mappings = new ArrayList<>();
         for (Loan loan : loanAccounts) {
+            Boolean waiveInterestOnRestructureCredits = this.configurationDomainService.isWaiveInterestOnRestructureCredits();
+            Boolean waiveChargesAndFeesOnRestructureCredits = this.configurationDomainService.isWaiveChargesAndFeesOnRestructureCredits();
+
             RestructureCreditsLoanMapping creditsLoanMapping = RestructureCreditsLoanMapping.instance(loan,
-                    RestructureCreditStatus.PENDING.getValue(), request);
+                    RestructureCreditStatus.PENDING.getValue(), request, waiveInterestOnRestructureCredits,
+                    waiveChargesAndFeesOnRestructureCredits);
             mappings.add(creditsLoanMapping);
         }
         return mappings;
@@ -221,8 +228,16 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
     private BigDecimal getTotalOutstanding(List<Loan> loanAccounts) {
         BigDecimal totalOutstanding = BigDecimal.ZERO;
         for (Loan loan : loanAccounts) {
-            totalOutstanding = totalOutstanding.add(loan.getSummary().getTotalPrincipalOutstanding()
-                    .add(loan.getSummary().getTotalFeeChargesOutstanding().add(loan.getSummary().getTotalPenaltyChargesOutstanding())));
+            Boolean waiveInterestOnRestructureCredits = this.configurationDomainService.isWaiveInterestOnRestructureCredits();
+            Boolean waiveChargesAndFeesOnRestructureCredits = this.configurationDomainService.isWaiveChargesAndFeesOnRestructureCredits();
+            totalOutstanding = totalOutstanding.add(loan.getSummary().getTotalPrincipalOutstanding());
+            if (!Boolean.TRUE.equals(waiveInterestOnRestructureCredits)) {
+                totalOutstanding = totalOutstanding.add(loan.getSummary().getTotalInterestOutstanding());
+            }
+            if (!Boolean.TRUE.equals(waiveChargesAndFeesOnRestructureCredits)) {
+                totalOutstanding = totalOutstanding.add(loan.getSummary().getTotalFeeChargesOutstanding())
+                        .add(loan.getSummary().getTotalPenaltyChargesOutstanding());
+            }
         }
         return totalOutstanding;
     }

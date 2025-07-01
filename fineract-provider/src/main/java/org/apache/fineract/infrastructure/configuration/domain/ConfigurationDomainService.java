@@ -138,4 +138,8 @@ public interface ConfigurationDomainService {
     Boolean isRepaymentScheduleRecalculationEnabled();
 
     boolean isRebalanceAllAccounts();
+
+    Boolean isWaiveInterestOnRestructureCredits();
+
+    Boolean isWaiveChargesAndFeesOnRestructureCredits();
 }

@@ -80,11 +80,18 @@ public class RestructureCreditsLoanMapping extends AbstractPersistableCustom {
      * @return a new instance of the LoanRescheduleRequest class
      **/
     public static RestructureCreditsLoanMapping instance(final Loan loan, final Integer statusEnum,
-            final RestructureCreditsRequest restructureCreditsRequest) {
+            final RestructureCreditsRequest restructureCreditsRequest, Boolean waiveInterestOnRestructureCredits,
+            Boolean waiveChargesAndFeesOnRestructureCredits) {
 
         LoanSummary summary = loan.getSummary();
-        BigDecimal principalOutstanding = summary.getTotalPrincipalOutstanding()
-                .add(summary.getTotalFeeChargesOutstanding().add(summary.getTotalPenaltyChargesOutstanding()));
+        BigDecimal principalOutstanding = summary.getTotalPrincipalOutstanding();
+        if (!Boolean.TRUE.equals(waiveInterestOnRestructureCredits)) {
+            principalOutstanding = principalOutstanding.add(summary.getTotalInterestOutstanding());
+        }
+        if (!Boolean.TRUE.equals(waiveChargesAndFeesOnRestructureCredits)) {
+            principalOutstanding = principalOutstanding.add(summary.getTotalFeeChargesOutstanding())
+                    .add(summary.getTotalPenaltyChargesOutstanding());
+        }
         return new RestructureCreditsLoanMapping(loan, statusEnum, restructureCreditsRequest, principalOutstanding,
                 loan.getDisbursementDate(), loan.getMaturityDate());
     }
