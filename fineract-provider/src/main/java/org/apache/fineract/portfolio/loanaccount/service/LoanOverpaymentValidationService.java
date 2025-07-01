@@ -23,7 +23,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.springframework.stereotype.Service;
 
 /**
@@ -55,9 +54,6 @@ public class LoanOverpaymentValidationService {
 
         // Apply product-specific validation rules
         validateRevolvingCreditOverpayment(loan, transactionAmount, foreclosureAmount);
-        
-        // Future: Add other product-specific validation methods here
-        // validateOtherProductTypeOverpayment(loan, transactionAmount, foreclosureAmount);
     }
 
     /**
@@ -72,7 +68,7 @@ public class LoanOverpaymentValidationService {
     private void validateRevolvingCreditOverpayment(Loan loan, BigDecimal transactionAmount, BigDecimal foreclosureAmount) {
         // Check if this is a revolving credit product
         if (isRevolvingCreditProduct(loan)) {
-            log.debug("Loan {} is a revolving credit product, overpayments are not allowed", loan.getId());
+            log.info("Loan {} is a revolving credit product, overpayments are not allowed", loan.getId());
             
             BigDecimal overpaymentAmount = transactionAmount.subtract(foreclosureAmount);
             String errorMessage = String.format("Overpayments are not allowed for revolving credit products. " +
@@ -96,21 +92,5 @@ public class LoanOverpaymentValidationService {
         return loan.isRevolvingLoan();
     }
 
-    /**
-     * Future method for validating overpayments for other product types.
-     * This method can be implemented when additional product-specific validation rules are needed.
-     * 
-     * @param loan The loan for which the repayment is being made
-     * @param transactionAmount The amount of the repayment transaction
-     * @param foreclosureAmount The foreclosure amount (total outstanding amount)
-     */
-    /*
-    private void validateOtherProductTypeOverpayment(Loan loan, BigDecimal transactionAmount, BigDecimal foreclosureAmount) {
-        // Add validation logic for other product types here
-        // Example:
-        // if (isSomeOtherProductType(loan)) {
-        //     // Apply specific validation rules
-        // }
-    }
-    */
+
 } 
