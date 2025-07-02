@@ -7799,9 +7799,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
 
+        final boolean isFirstRepaymentInstallment = Objects.equals(loanRepaymentScheduleInstallment.getInstallmentNumber(), 1);
         Money feeForCurrentPeriod = Money.zero(currency);
         Money feeAccountedForCurrentPeriod = Money.zero(currency);
-        if (tillDays > 0) {
+        if (tillDays > 0 || isFirstRepaymentInstallment) {
             feeForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesCharged(currency);
             feeAccountedForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesWaived(currency)
                     .plus(loanRepaymentScheduleInstallment.getFeeChargesPaid(currency))
