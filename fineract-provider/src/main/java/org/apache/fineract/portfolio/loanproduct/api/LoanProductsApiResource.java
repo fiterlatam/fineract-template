@@ -537,6 +537,9 @@ public class LoanProductsApiResource {
                 creditAllocationAllocationTypes, workingDaysData.getRepaymentRescheduleOptions(),
                 workingDays.getRepaymentReschedulingType(), productTypeOptions);
 
+        ret.setAdvancedPaymentEnabled(productData.isAdvancedPaymentEnabled());
+        ret.setMaxPercentagePrincipalPaymentAllowed(productData.getMaxPercentagePrincipalPaymentAllowed());
+
         ret.setCustomAllowCreateOrDisburse(productData.getCustomAllowCreateOrDisburse());
         ret.setCustomAllowCreateOrDisburseSms(productData.getCustomAllowCreateOrDisburseSms());
 
