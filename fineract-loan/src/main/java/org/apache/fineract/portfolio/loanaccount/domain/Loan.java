@@ -7762,7 +7762,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         principalLoanBalanceOutstanding.setCurrency(interestCalculationCurrency);
         int totalPeriodDays = Math.toIntExact(
                 ChronoUnit.DAYS.between(loanRepaymentScheduleInstallment.getFromDate(), loanRepaymentScheduleInstallment.getDueDate()));
-        int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(loanRepaymentScheduleInstallment.getFromDate(), transactionDate));
+        final int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(loanRepaymentScheduleInstallment.getFromDate(), transactionDate));
         BigDecimal interestCharged = loanRepaymentScheduleInstallment.getInterestCharged(getCurrency()).getAmount();
         if (loanRepaymentScheduleInstallment.originalInterestChargedAmount() != null
                 && loanRepaymentScheduleInstallment.originalInterestChargedAmount().compareTo(BigDecimal.ZERO) > 0) {
@@ -7799,10 +7799,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
 
-        final Money feeForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesCharged(currency);
-        final Money feeAccountedForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesWaived(currency)
-                .plus(loanRepaymentScheduleInstallment.getFeeChargesPaid(currency))
-                .plus(loanRepaymentScheduleInstallment.getFeeChargesWrittenOff(currency));
+        Money feeForCurrentPeriod = Money.zero(currency);
+        Money feeAccountedForCurrentPeriod = Money.zero(currency);
+        if (tillDays > 0) {
+            feeForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesCharged(currency);
+            feeAccountedForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesWaived(currency)
+                    .plus(loanRepaymentScheduleInstallment.getFeeChargesPaid(currency))
+                    .plus(loanRepaymentScheduleInstallment.getFeeChargesWrittenOff(currency));
+        }
 
         // SU-446 Since penalty calculation for an installment is changed and penaltis till date are accumulated and
         // charged.
