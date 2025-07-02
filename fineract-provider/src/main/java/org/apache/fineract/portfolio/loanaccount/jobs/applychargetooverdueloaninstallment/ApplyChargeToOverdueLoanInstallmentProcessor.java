@@ -46,13 +46,20 @@ public class ApplyChargeToOverdueLoanInstallmentProcessor {
     private final LoanChargeWritePlatformService loanChargeWritePlatformService;
     private final ChargeRepositoryWrapper chargeRepository;
 
+    @SuppressWarnings("all")
     @Transactional(isolation = Isolation.READ_UNCOMMITTED, rollbackFor = Exception.class)
     public void processOverdueCharges() throws JobExecutionException {
-        List<Throwable> exceptions = new ArrayList<>();
+        final List<Throwable> exceptions = new ArrayList<>();
+        log.info("Apply penalty to overdue loans::  Applying Charges due for overdue loans for {} installments",
+                this.overdueLoanScheduledInstallments.size());
         if (!overdueLoanScheduledInstallments.isEmpty()) {
             final Map<Long, Collection<OverdueLoanScheduleData>> overdueScheduleData = new HashMap<>();
             for (final OverdueLoanScheduleData overdueInstallment : overdueLoanScheduledInstallments) {
+                log.info("Apply penalty to overdue loans:: Processing overdue installment for loanId: {}, chargeId: {}, dueDate: {}",
+                        overdueInstallment.getLoanId(), overdueInstallment.getChargeId(), overdueInstallment.getDueDate());
                 final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(overdueInstallment.getChargeId());
+                log.info("Apply penalty to overdue loans:: Processing charge with ID: {}, name: {} ", chargeDefinition.getId(),
+                        chargeDefinition.getName());
                 if (chargeDefinition.getParentChargeId() == null) {
                     if (overdueScheduleData.containsKey(overdueInstallment.getLoanId())) {
                         overdueScheduleData.get(overdueInstallment.getLoanId()).add(overdueInstallment);
@@ -77,25 +84,28 @@ public class ApplyChargeToOverdueLoanInstallmentProcessor {
                 }
             }
 
+            log.info("Apply penalty to overdue loans:: Total accounts with overdue installments: {}", overdueScheduleData.size());
             for (Map.Entry<Long, Collection<OverdueLoanScheduleData>> entry : overdueScheduleData.entrySet()) {
                 try {
-                    log.debug("Applying Charges due for overdue loans for account {}", entry.getKey());
+                    log.debug("Apply penalty to overdue loans:: Applying Charges due for overdue loans for account {}", entry.getKey());
                     this.loanChargeWritePlatformService.applyOverdueChargesForLoan(entry.getKey(), entry.getValue());
-                    log.debug("Applied Charges due for overdue loans for account {}", entry.getKey());
+                    log.debug("Apply penalty to overdue loans:: Applied Charges due for overdue loans for account {}", entry.getKey());
 
                 } catch (final PlatformApiDataValidationException e) {
                     final List<ApiParameterError> errors = e.getErrors();
                     for (final ApiParameterError error : errors) {
-                        log.error("Apply Charges due for overdue loans failed for account {} with message: {}", entry.getKey(),
-                                error.getDeveloperMessage(), e);
+                        log.error(
+                                "Apply penalty to overdue loans:: Apply Charges due for overdue loans failed for account {} with message: {}",
+                                entry.getKey(), error.getDeveloperMessage(), e);
                     }
                     exceptions.add(e);
                 } catch (final AbstractPlatformDomainRuleException e) {
-                    log.error("Apply Charges due for overdue loans failed for account {} with message: {}", entry.getKey(),
-                            e.getDefaultUserMessage(), e);
+                    log.error("Apply penalty to overdue loans:: Apply Charges due for overdue loans failed for account {} with message: {}",
+                            entry.getKey(), e.getDefaultUserMessage(), e);
                     exceptions.add(e);
                 } catch (Exception e) {
-                    log.error("Apply Charges due for overdue loans failed for account {}", entry.getKey(), e);
+                    log.error("Apply penalty to overdue loans:: Apply Charges due for overdue loans failed for account {}", entry.getKey(),
+                            e);
                     exceptions.add(e);
                 }
             }

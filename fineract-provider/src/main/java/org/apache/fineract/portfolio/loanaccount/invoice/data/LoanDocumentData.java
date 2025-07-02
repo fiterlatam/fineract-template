@@ -113,24 +113,6 @@ public class LoanDocumentData {
     public FacturaElectronicaMensual toEntity() {
         final FacturaElectronicaMensual facturaElectronicaMensual = new FacturaElectronicaMensual();
         final LocalDate businessLocalDate = DateUtils.getBusinessLocalDate();
-        int conceptCount = 0;
-        if (this.interestPaid.compareTo(BigDecimal.ZERO) > 0) {
-            conceptCount++;
-        }
-        if (this.mandatoryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
-            conceptCount++;
-        }
-        if (this.voluntaryInsurancePaid.compareTo(BigDecimal.ZERO) > 0) {
-            conceptCount++;
-        }
-        if (this.honorariosPaid.compareTo(BigDecimal.ZERO) > 0) {
-            conceptCount++;
-        }
-        if (this.penaltyChargesPaid.compareTo(BigDecimal.ZERO) > 0) {
-            conceptCount++;
-        }
-        this.itemsCount = conceptCount;
-
         BigDecimal totalPaidAmount = this.interestPaid.add(this.mandatoryInsurancePaid).add(this.voluntaryInsurancePaid)
                 .add(this.honorariosPaid).add(this.penaltyChargesPaid);
         // INFORMATION AT RESOLUTION LEVEL

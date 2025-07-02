@@ -70,6 +70,7 @@ public enum JobName {
     ARCHIVE_LOAN_HISTORY("Archivo de cartera"), //
     INSURANCE_CHARGE_SUSPENSION_DUE_TO_DEFAULT("Suspension temporal por mora"), //
     FACTURA_ELECTRONICA_MENSUAL("Factura Electronica Mensual"), //
+    NOTA_DE_CREDITO_ELECTRONICA_MENSUAL("Nota de Credito Electronica Mensual"), //
     INVOICE_NUMBERING_LIMIT("Control de Límite de Numeración de Facturación Electrónica"), //
     INVOICE_EXPIRY_RESOLUTION("Control de Vencimiento de Resolución de Facturación Electrónica"), //
     COLLECTION_HOUSE_HISTORY("Casas de Cobro para Clientes");

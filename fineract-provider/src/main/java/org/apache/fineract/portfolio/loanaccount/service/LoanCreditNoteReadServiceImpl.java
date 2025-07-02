@@ -38,7 +38,7 @@ public class LoanCreditNoteReadServiceImpl implements LoanCreditNoteReadService 
     public List<Long> retrieveCreditNoteIdsForInvoiceProcessing() {
         final String sql = """
                 select id FROM m_loan_credit_note mlcn
-                WHERE mlcn.is_fully_used_by_invoice = ?;
+                WHERE mlcn.is_fully_used_by_invoice = ?
                 """;
         return this.jdbcTemplate.queryForList(sql, Long.class, false);
     }

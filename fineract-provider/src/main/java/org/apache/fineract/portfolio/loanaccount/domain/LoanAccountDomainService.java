@@ -124,4 +124,6 @@ public interface LoanAccountDomainService {
 
     void updateRepaymentInstalmentCharge(LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment, Integer numberOfRepayment);
 
+    void cleanUpLoan(Long loanId);
+
 }

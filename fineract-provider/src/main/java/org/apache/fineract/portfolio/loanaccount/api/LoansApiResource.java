@@ -1542,7 +1542,7 @@ public class LoansApiResource {
     @Path("cleanuploans")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String cleanupLoans(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+    public String cleanupLoans() {
         this.loanWritePlatformService.cleanUpLoans();
         return "Loan clean up completed";
     }

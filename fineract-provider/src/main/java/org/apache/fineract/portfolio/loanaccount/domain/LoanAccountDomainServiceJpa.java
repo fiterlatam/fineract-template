@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -29,6 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
+import org.apache.fineract.commands.domain.CommandWrapper;
+import org.apache.fineract.commands.service.CommandWrapperBuilder;
+import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMapRepository;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
@@ -106,7 +111,6 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanSchedul
 import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualTransactionBusinessEventService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
-import org.apache.fineract.portfolio.loanaccount.service.LoanBlockWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.apache.fineract.portfolio.loanaccount.service.ReplayedTransactionBusinessEventService;
 import org.apache.fineract.portfolio.note.domain.Note;
@@ -159,7 +163,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final ClientReadPlatformService clientReadPlatformService;
     @Autowired
     private CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
-    private final LoanBlockWritePlatformService loanBlockWritePlatformService;
+    private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Transactional
     @Override
@@ -1601,6 +1608,295 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             honorariosAmount = honorariosAmount.add(honorariosTermChargeAmount).add(chargeAmount);
         }
         return Money.of(loan.getCurrency(), honorariosAmount);
+    }
+
+    @SuppressWarnings("all")
+    @Transactional
+    @Override
+    public void cleanUpLoan(final Long loanId) {
+        log.info("Starting cleanup for Loan ID: {}", loanId);
+        log.info("Step 1: Unset loan sub status and set loan to active for Loan ID: {}", loanId);
+        this.unsetLoanSubStatus(loanId);
+        log.info("Step 2: Remove non-migrated repayments for Loan ID: {}", loanId);
+        this.removeNonMigratedRepayments(loanId);
+        log.info("Step 3: Reset repayment schedule for Loan ID: {}", loanId);
+        this.resetRepaymentSchedule(loanId);
+        log.info("Step 4: Create honorarios and aval charges for recreated clinstallments for Loan ID: {}", loanId);
+        this.recreateInstallmentCharges(loanId);
+        log.info("Step 5: Update loan balances for Loan ID: {}", loanId);
+        this.updateLoanBalances(loanId);
+        log.info("Step 6: Repost transactions from the portfolio command source for Loan ID: {}", loanId);
+        this.entityManager.flush();
+        String sql = "select * from m_portfolio_command_source where loan_id = ? and action_name in ('REPAYMENT', 'FORECLOSURE') order by made_on_date_utc";
+        final List<Map<String, Object>> results = this.jdbcTemplate.queryForList(sql, loanId);
+        if (!results.isEmpty()) {
+            for (final Map<String, Object> result : results) {
+                if (result.get("action_name").toString().equals("REPAYMENT")) {
+                    log.info("Reposting repayment for Loan ID: {}", loanId);
+                    String payload = result.get("command_as_json").toString();
+                    final CommandWrapper commandWrapper = new CommandWrapperBuilder().loanRepaymentTransaction(loanId).withJson(payload)
+                            .build();
+                    try {
+                        log.info("Reposting repayment for Loan ID: {}", loanId);
+                        commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                    } catch (Exception ex) {
+                        log.error("Failed to repost repayment for Loan ID: {}, with error: {}", loanId, ex.getMessage());
+                        throw ex;
+                    }
+                } else {
+                    log.info("Reposting foreclosure for Loan ID: {}", loanId);
+                    this.updatePrincipalDueBeforeForeclosure(loanId);
+                    final Loan loan = this.loanAccountAssembler.assembleFrom(loanId);
+                    final ChangedTransactionDetail changedTransactionDetail = loan.reprocessAfterCleanUp();
+                    if (changedTransactionDetail != null) {
+                        for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings()
+                                .entrySet()) {
+                            saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.getValue());
+                            updateLoanTransaction(mapEntry.getKey(), mapEntry.getValue());
+                        }
+                        replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
+                    }
+                    final String payloadJson = result.get("command_as_json").toString();
+                    final CommandWrapper commandWrapper = new CommandWrapperBuilder().loanForeclosure(loanId).withJson(payloadJson).build();
+                    try {
+                        log.info("Reposting foreclosure for Loan ID: {}", loanId);
+                        commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                    } catch (Exception ex) {
+                        log.error("Failed to repost foreclosure for Loan ID: {}, with error: {}", loanId, ex.getMessage());
+                        throw ex;
+                    }
+                }
+            }
+        }
+        log.info("Step 7: Marking loan as processed for Loan ID: {}", loanId);
+        sql = "UPDATE tmp_loan_cleanup SET processed = true, date_processed = NOW() WHERE loan_id = ?";
+        this.jdbcTemplate.update(sql, loanId);
+        log.info("Step 8: Removing arrears aging for Loan ID: {}", loanId);
+        sql = "delete from m_loan_arrears_aging mlaa where loan_id = ?";
+        this.jdbcTemplate.update(sql, loanId);
+        this.entityManager.flush();
+    }
+
+    private void unsetLoanSubStatus(Long loanId) {
+        String sql = "UPDATE m_loan SET loan_sub_status_id = null, loan_status_id = 300 WHERE id = ?";
+        this.jdbcTemplate.update(sql, loanId);
+        // delete from arrears_aging just in case
+        sql = "delete from m_loan_arrears_aging mlaa where loan_id = ?";
+        this.jdbcTemplate.update(sql, loanId);
+        this.entityManager.flush();
+    }
+
+    private void removeNonMigratedRepayments(Long loanId) {
+        String sql = "update m_loan_transaction set is_reversed = false where loan_id = ? and transaction_type_enum = 2 and installment_id is null and is_reversed = true";
+        this.jdbcTemplate.update(sql, loanId);
+        sql = "delete from m_loan_transaction_repayment_schedule_mapping where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        this.jdbcTemplate.update(sql, loanId);
+        sql = "delete from m_loan_charge_paid_by where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        this.jdbcTemplate.update(sql, loanId);
+
+        sql = "delete from m_payment_detail_forclousure where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        this.jdbcTemplate.update(sql, loanId);
+        sql = "delete from m_partial_invoiced_transaction where repayment_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        this.jdbcTemplate.update(sql, loanId);
+
+        sql = "delete from m_loan_transaction_relation where from_loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        this.jdbcTemplate.update(sql, loanId);
+        sql = "delete from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null";
+        this.jdbcTemplate.update(sql, loanId);
+        this.entityManager.flush();
+    }
+
+    private void resetRepaymentSchedule(Long loanId) {
+        String sql = """
+                INSERT INTO public.m_loan_repayment_schedule
+                (loan_id, fromdate, duedate, installment, principal_amount, interest_amount, fee_charges_amount, penalty_charges_amount, completed_derived, created_by, created_date, lastmodified_date, last_modified_by, created_on_utc, last_modified_on_utc)
+                SELECT loan_id, fromdate, duedate, installment, principal_amount, interest_amount, fee_charges_amount, penalty_charges_amount, false, createdby_id, created_date, lastmodified_date, lastmodifiedby_id, created_on_utc, last_modified_on_utc
+                FROM public.m_loan_repayment_schedule_history
+                where loan_id = ?
+                and version = 1
+                and installment not in (select installment from m_loan_repayment_schedule mlrs where mlrs.loan_id = ?)
+                order by installment
+                """;
+        this.jdbcTemplate.update(sql, loanId, loanId);
+
+        sql = """
+                    update m_loan_repayment_schedule mlrs
+                    	set fromdate = mlrsh.fromdate,
+                    	duedate = mlrsh.duedate,
+                    	principal_amount = mlrsh.principal_amount,
+                    	interest_amount = mlrsh.interest_amount,
+                    	fee_charges_amount = mlrsh.fee_charges_amount\s
+                    	from m_loan_repayment_schedule_history mlrsh
+                    	where mlrs.loan_id = mlrsh.loan_id
+                    	and mlrs.loan_id = ?
+                    	and mlrsh.version = 2
+                    	and mlrs.installment = mlrsh.installment
+                """;
+        this.jdbcTemplate.update(sql, loanId);
+
+        // reset non migrated loan installments
+        sql = """
+                update m_loan_repayment_schedule set principal_completed_derived = null, interest_completed_derived = null, interest_writtenoff_derived = null,
+                                fee_charges_completed_derived = null, penalty_charges_completed_derived = null, principal_writtenoff_derived = null, advance_principal_amount = null,
+                                fee_charges_writtenoff_derived = null, penalty_charges_writtenoff_derived = null, completed_derived = false, obligations_met_on_date = null,
+                                accrual_interest_derived = null, reschedule_interest_portion = null, total_paid_in_advance_derived = null, original_interest_charged = null
+                        where loan_id = ? and migrated_installment = false
+                """;
+
+        this.jdbcTemplate.update(sql, loanId);
+
+        sql = "update m_loan_repayment_schedule set migrated_installment = completed_derived where loan_id = ?";
+        this.jdbcTemplate.update(sql, loanId);
+        this.entityManager.flush();
+    }
+
+    private void recreateInstallmentCharges(Long loanId) {
+        // NOTE: ref SU-702: this being throwaway code, I have hardcoded produciton ids. The plan is to verify
+        // this using a dump from production and then finally on production. After the clean up this code
+        // should be discarded.
+        String sql = """
+                INSERT INTO m_loan_installment_charge
+                (loan_charge_id, loan_schedule_id, due_date, amount)
+                select mlc.id loan_charge_id, mlrs.id loan_schedule_id, null::date due_date, 0 amount from m_loan ml join m_loan_charge mlc on ml.id = mlc.loan_id
+                join m_loan_repayment_schedule mlrs on ml.id = mlrs.loan_id
+                where mlc.charge_id in (4,5)
+                and mlc.loan_id = ?
+                and mlc.id not in (select loan_charge_id from m_loan_installment_charge where loan_charge_id = mlc.id and loan_schedule_id = mlrs.id)
+                and mlrs.id not in (select loan_schedule_id from m_loan_installment_charge where loan_charge_id = mlc.id)
+                and mlrs.installment > 0
+                order by mlc.id, mlrs.installment
+                """;
+        this.jdbcTemplate.update(sql, loanId);
+
+        sql = """
+                    INSERT INTO m_loan_installment_charge
+                (loan_charge_id, loan_schedule_id, due_date, amount)
+                select mlc.id loan_charge_id, mlrs.id loan_schedule_id, null::date due_date, mlc.charge_amount_or_percentage amount\s
+                from m_loan ml join m_loan_charge mlc on ml.id = mlc.loan_id
+                join m_loan_repayment_schedule mlrs on ml.id = mlrs.loan_id
+                where mlc.charge_id = 6
+                and mlc.loan_id = ?
+                and mlc.id not in (select loan_charge_id from m_loan_installment_charge where loan_charge_id = mlc.id and loan_schedule_id = mlrs.id)
+                and mlrs.id not in (select loan_schedule_id from m_loan_installment_charge where loan_charge_id = mlc.id)
+                and mlrs.installment > 0
+                order by mlc.id, mlrs.installment
+                """;
+        this.jdbcTemplate.update(sql, loanId);
+
+        sql = """
+                INSERT INTO m_loan_installment_charge
+                (loan_charge_id, loan_schedule_id, due_date, amount)
+                select mlc.id loan_charge_id, mlrs.id loan_schedule_id, null::date due_date, ((mlc.calculation_percentage * mlc.calculation_on_amount / 100))::int amount\s
+                from m_loan ml join m_loan_charge mlc on ml.id = mlc.loan_id
+                join m_loan_repayment_schedule mlrs on ml.id = mlrs.loan_id
+                where mlc.charge_id = 7
+                and mlc.loan_id = ?
+                and mlc.id not in (select loan_charge_id from m_loan_installment_charge where loan_charge_id = mlc.id and loan_schedule_id = mlrs.id)
+                and mlrs.id not in (select loan_schedule_id from m_loan_installment_charge where loan_charge_id = mlc.id)
+                and mlrs.installment > 0
+                order by mlc.id, mlrs.installment
+                """;
+        this.jdbcTemplate.update(sql, loanId);
+        this.entityManager.flush();
+    }
+
+    private void updateLoanBalances(Long loanId) {
+        String sql = """
+                UPDATE m_loan_transaction lt
+                SET outstanding_loan_balance_derived = (
+                    SELECT ml.principal_disbursed_derived - COALESCE(SUM(lt2.principal_portion_derived), 0)
+                    FROM m_loan ml
+                    LEFT JOIN m_loan_transaction lt2 ON lt2.loan_id = ml.id
+                    where ml.id = lt.loan_id and lt2.transaction_date <= lt.transaction_date
+                    and lt2.transaction_type_enum = 2
+                    group by ml.principal_disbursed_derived
+                )
+                where lt.outstanding_loan_balance_derived IS DISTINCT FROM (
+                    SELECT ml.principal_disbursed_derived - COALESCE(SUM(lt2.principal_portion_derived), 0)
+                    FROM m_loan ml
+                    LEFT JOIN m_loan_transaction lt2 ON lt2.loan_id = lt.loan_id
+                    WHERE ml.id = lt.loan_id
+                    AND lt2.transaction_date <= lt.transaction_date
+                    and lt2.transaction_type_enum = 2
+                    group by ml.principal_disbursed_derived
+                ) and lt.loan_id = ?
+                """;
+        this.jdbcTemplate.update(sql, loanId);
+
+        sql = """
+
+                    update
+                	m_loan ml
+                set
+                	principal_repaid_derived = (
+                	select
+                		coalesce(SUM(mlrs.principal_completed_derived),
+                		0)
+                	from
+                		m_loan_repayment_schedule mlrs
+                	where
+                		mlrs.principal_completed_derived is not null
+                		and mlrs.loan_id = ml.id
+                ),
+                	interest_repaid_derived = (
+                	select
+                		coalesce(SUM(mlrs.interest_completed_derived),
+                		0)
+                	from
+                		m_loan_repayment_schedule mlrs
+                	where
+                		mlrs.interest_completed_derived is not null
+                		and mlrs.loan_id = ml.id
+                ),
+                	fee_charges_repaid_derived = (
+                	select
+                		coalesce(SUM(mlrs.fee_charges_completed_derived),
+                		0)
+                	from
+                		m_loan_repayment_schedule mlrs
+                	where
+                		mlrs.fee_charges_completed_derived is not null
+                		and mlrs.loan_id = ml.id
+                ),
+                	penalty_charges_repaid_derived = (
+                	select
+                		coalesce(SUM(mlrs.penalty_charges_completed_derived),
+                		0)
+                	from
+                		m_loan_repayment_schedule mlrs
+                	where
+                		mlrs.penalty_charges_completed_derived is not null
+                		and mlrs.loan_id = ml.id
+                ),
+                principal_outstanding_derived = principal_disbursed_derived - principal_repaid_derived,
+                interest_outstanding_derived  = interest_charged_derived - interest_repaid_derived,
+                fee_charges_outstanding_derived = fee_charges_charged_derived - fee_charges_repaid_derived,
+                total_repayment_derived = principal_repaid_derived + interest_repaid_derived + fee_charges_repaid_derived + penalty_charges_repaid_derived,
+                total_outstanding_derived = principal_outstanding_derived + interest_outstanding_derived + fee_charges_outstanding_derived,
+                total_overpaid_derived = null
+                where ml.id = ?
+                """;
+        // run this thrice for accuracy
+        this.jdbcTemplate.update(sql, loanId);
+        this.jdbcTemplate.update(sql, loanId);
+        this.jdbcTemplate.update(sql, loanId);
+        this.entityManager.flush();
+    }
+
+    private void updatePrincipalDueBeforeForeclosure(Long loanId) {
+        String sql = """
+                update m_loan_repayment_schedule
+                set principal_amount = (select ml.principal_disbursed_derived - rs.total_principal diff from m_loan ml
+                join
+                (select sum(principal_amount) + sum(coalesce(advance_principal_amount, 0)) total_principal, loan_id from m_loan_repayment_schedule mlrs
+                where mlrs.loan_id = ?
+                and mlrs.installment < (select max(installment) from m_loan_repayment_schedule where loan_id = ?)
+                group by loan_id) rs
+                on ml.id = rs.loan_id
+                where ml.id = ?)
+                where loan_id = ? and installment = (select max(installment) from m_loan_repayment_schedule where loan_id = ?)
+                """;
+        this.jdbcTemplate.update(sql, loanId, loanId, loanId, loanId, loanId);
     }
 
 }
