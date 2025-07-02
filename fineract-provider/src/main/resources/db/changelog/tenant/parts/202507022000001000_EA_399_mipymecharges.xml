@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="10" author="fineract">
+        <sql>
+            <![CDATA[
+                -- Create new charges
+                update m_charge mc set
+                      name = CONCAT(name, ' --Disabled')
+                    , is_active = false
+                    , is_deleted = true
+                where name in ('MiPyme', 'IVA_Mipyme');
+
+                INSERT INTO m_charge ("name", currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, is_free_withdrawal, free_withdrawal_charge_frequency, restart_frequency, restart_frequency_enum, is_payment_type, payment_type_id, income_or_liability_account_id, tax_group_id, grace_on_charge_period_enum, grace_on_charge_period_amount, parent_charge_id, interest_rate_id, insurance_name, insurance_charged_as, insurance_company, insurer_name, insurance_code, insurance_plan, base_value, vat_value, total_value, deadline, is_get_percentage_from_table, days_in_arrears)
+                VALUES('MiPyme', 'COP', 1, 8, 286, 0, 1.00000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, false, NULL, NULL, NULL, false, NULL, NULL, NULL, 1, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL);
+
+                INSERT INTO m_charge ("name", currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, is_free_withdrawal, free_withdrawal_charge_frequency, restart_frequency, restart_frequency_enum, is_payment_type, payment_type_id, income_or_liability_account_id, tax_group_id, grace_on_charge_period_enum, grace_on_charge_period_amount, parent_charge_id, interest_rate_id, insurance_name, insurance_charged_as, insurance_company, insurer_name, insurance_code, insurance_plan, base_value, vat_value, total_value, deadline, is_get_percentage_from_table, days_in_arrears)
+                VALUES('IVA_MiPyme', 'COP', 1, 8, 342, 0, 19.00000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, false, NULL, NULL, NULL, false, NULL, NULL, NULL, 1, 0, (select id from m_charge where name = 'MiPyme'), 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL);
+
+
+                -- Add the charges to Microcredito and Microcredito M
+                INSERT INTO m_product_loan_charge (product_loan_id, charge_id)
+                values
+                    ((select id from m_product_loan where name = 'Microcredito'), (select id from m_charge where name = 'MiPyme')),
+                    ((select id from m_product_loan where name = 'Microcredito'), (select id from m_charge where name = 'IVA_MiPyme')),
+                    ((select id from m_product_loan where name = 'Microcredito M'), (select id from m_charge where name = 'MiPyme')),
+                    ((select id from m_product_loan where name = 'Microcredito M'), (select id from m_charge where name = 'IVA_MiPyme'));
+
+
+                -- Rename charges to Microcredito and Microcredito M to do not add original comission charges
+                update m_product_loan set name = 'Microcrédito' where name = 'Microcredito';
+                update m_product_loan set name = 'Microcrédito M' where name = 'Microcredito M';
+
+                /*
+                -- AFTER MIGRATION SCRIPT, Restore the original product names to Microcredito and Microcredito M
+                update m_product_loan set name = 'Microcredito' where name = 'Microcrédito';
+                update m_product_loan set name = 'Microcredito M' where name = 'Microcrédito M';
+
+                DELETE FROM m_product_loan_charge
+                WHERE product_loan_id IN (
+                    (select id from m_product_loan where name = 'Microcrédito'),
+                    (select id from m_product_loan where name = 'Microcrédito M')
+                ) AND charge_id IN (
+                    (select id from m_charge where name = 'MiPyme'),
+                    (select id from m_charge where name = 'IVA_MiPyme')
+                );
+
+                -- Shall we delete the charges?
+                update m_charge mc set
+                      name = CONCAT(name, ' --Disabled')
+                    , is_active = false
+                    , is_deleted = true
+                where name in ('MiPyme', 'IVA_Mipyme');
+
+                */
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
