@@ -539,10 +539,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     }
                 }
 
-                BigDecimal waiveInterestAmount = futureInterest;
-
-                if (waiveInterestAmount.compareTo(BigDecimal.ZERO) > 0) {
-                    final Money waiveInterestTransactionAmount = Money.of(currency, waiveInterestAmount);
+                if (futureInterest.compareTo(BigDecimal.ZERO) > 0) {
+                    final Money waiveInterestTransactionAmount = Money.of(currency, futureInterest);
                     if (waiveInterestTransactionAmount.isGreaterThanZero()) {
                         final String localeAsString = "en";
                         final String dateFormat = "dd MMMM yyyy";
@@ -553,7 +551,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         final String localDateString = localDate.format(dateTimeFormatter);
                         jsonObject.addProperty("locale", localeAsString);
                         jsonObject.addProperty("dateFormat", dateFormat);
-                        jsonObject.addProperty("transactionAmount", waiveInterestAmount);
+                        jsonObject.addProperty("transactionAmount", futureInterest);
                         jsonObject.addProperty("transactionDate", localDateString);
                         jsonObject.addProperty("postAccountingForWaivers", false);
                         jsonObject.addProperty("isAccountClosure", true);
@@ -740,7 +738,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     final String localeAsString = "en";
                     final String dateFormat = "dd MMMM yyyy";
                     final JsonObject jsonObject = new JsonObject();
-                    final LocalDate localDate = DateUtils.getBusinessLocalDate();
+                    final LocalDate localDate = actualDisbursementDate;
                     Locale locale = JsonParserHelper.localeFromString(localeAsString);
                     final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
                     final String localDateString = localDate.format(dateTimeFormatter);
@@ -759,6 +757,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         throw new GeneralPlatformDomainRuleException("error.message.loan.failed.to.waive.interest.on.loan",
                                 "Failed to waive interest on loan application " + loanIdToClose);
                     }
+                    this.loanAccountDomainService.recalculateAccruals(loanToClose);
                 }
                 if (futureInterest.compareTo(BigDecimal.ZERO) > 0) {
                     final Money waiveInterestTransactionAmount = Money.of(currency, futureInterest);
@@ -766,7 +765,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         final String localeAsString = "en";
                         final String dateFormat = "dd MMMM yyyy";
                         final JsonObject jsonObject = new JsonObject();
-                        final LocalDate localDate = DateUtils.getBusinessLocalDate();
+                        final LocalDate localDate = actualDisbursementDate;
                         Locale locale = JsonParserHelper.localeFromString(localeAsString);
                         final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
                         final String localDateString = localDate.format(dateTimeFormatter);
@@ -787,6 +786,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             throw new GeneralPlatformDomainRuleException("error.message.loan.failed.to.waive.interest.on.loan",
                                     "Failed to waive interest on loan application " + loanIdToClose);
                         }
+                        this.loanAccountDomainService.recalculateAccruals(loanToClose);
                     }
                 }
             } else {
@@ -814,6 +814,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                 throw new GeneralPlatformDomainRuleException("error.message.loan.failed.to.waive.charges.on.loan",
                                         "Failed to waive charges on loan application " + loanIdToClose);
                             }
+                            this.loanAccountDomainService.recalculateAccruals(loanToClose);
                         }
                     }
                 });
@@ -828,8 +829,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             JsonCommand paymentCommand = JsonCommand.fromExistingCommand(command, finalCommand);
 
-            Loan finalLoanToClose = this.loanAssembler.assembleFrom(loanIdToClose);
-            this.makeLoanRestructureRepayment(paymentCommand, totalLoanOutStanding, finalLoanToClose);
+            this.loanAccountDomainService.recalculateAccruals(loanToClose);
+
+            this.makeLoanRestructureRepayment(paymentCommand, totalLoanOutStanding, loanToClose);
 
             totalLoanAmount = totalLoanAmount.subtract(totalLoanOutStanding);
             totalLoanRestructureAmount = totalLoanRestructureAmount.add(totalLoanOutStanding);
@@ -1592,7 +1594,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final Money transactionAmountAsMoney = Money.of(loan.getCurrency(), transactionAmount);
         Money unrecognizedIncome = transactionAmountAsMoney.zero();
         Money interestComponent = transactionAmountAsMoney;
-        if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()) {
+        if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct() && !isAccountClosure) {
             Money receivableInterest = loan.getReceivableInterest(transactionDate);
             if (transactionAmountAsMoney.isGreaterThan(receivableInterest)) {
                 interestComponent = receivableInterest;
