@@ -4163,9 +4163,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     @Override
     public void recalculateInterestForMaximumLegalRate(List<LoanRescheduleData> loanLoanRescheduleDataList,
             MaximumCreditRateConfigurationData maximumCreditRateConfigurationData) throws JobExecutionException {
+        log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Recalculating interest for maximum legal rate for {} loans",
+                loanLoanRescheduleDataList.size());
         final List<Throwable> exceptions = new ArrayList<>();
         final LocalDate appliedOnDate = maximumCreditRateConfigurationData.getAppliedOnDate();
         final BigDecimal maximumLegalAnnualNominalRateValue = maximumCreditRateConfigurationData.getAnnualNominalRate();
+        log.info(
+                "Recalculate Loan Interest After Maximum Legal Rate Change:: Applied on date: {}, Maximum legal annual nominal rate value: {}",
+                appliedOnDate, maximumLegalAnnualNominalRateValue);
         if (CollectionUtils.isNotEmpty(loanLoanRescheduleDataList)) {
             final String locale = "es";
             final String dateFormat = "dd MMMM yyyy";
@@ -4177,6 +4182,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 if (codeValueData.getName()
                         .equalsIgnoreCase(LoanRescheduleRequestWritePlatformServiceImpl.MAX_LEGAL_RATE_REASON_FOR_RESCHEDULE)) {
                     rescheduleReasonId = codeValueData.getId();
+                    log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Reschedule reason ID: {}", rescheduleReasonId);
                     break;
                 }
             }
@@ -4188,13 +4194,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             rescheduleJsonObject.addProperty("adjustedDueDate", "");
             rescheduleJsonObject.addProperty("graceOnPrincipal", "");
             rescheduleJsonObject.addProperty("extraTerms", "");
+            log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Reschedule JSON Object: {}", rescheduleJsonObject);
 
             for (final LoanRescheduleData loanRescheduleData : loanLoanRescheduleDataList) {
+                log.info(
+                        "Recalculate Loan Interest After Maximum Legal Rate Change:: Started processing loan reschedule data for loan ID: {}",
+                        loanRescheduleData.getId());
                 final Long loanId = loanRescheduleData.getId();
                 final Loan loan = this.loanRepository.findById(loanId).orElseThrow(() -> new LoanNotFoundException(loanId));
+                log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Processing loan ID: {} of product type: {}", loanId,
+                        loan.getLoanProduct().getName());
                 final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
                         .getInstallmentByScheduleFromDate(appliedOnDate);
                 if (loanRepaymentScheduleInstallment == null) {
+                    log.warn("Recalculate Loan Interest After Maximum Legal Rate Change:: No installment found for loan ID: {} on date: {}",
+                            loanId, appliedOnDate);
                     continue;
                 }
                 final BigDecimal rescheduledAnnualRate = ObjectUtils.defaultIfNull(loanRescheduleData.getRescheduledAnnualRate(),
@@ -4208,6 +4222,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         && rescheduledAnnualRate.compareTo(maximumLegalAnnualNominalRateValue) != 0) {
                     newInterestRate = maximumLegalAnnualNominalRateValue;
                 } else {
+                    log.info(
+                            "Recalculate Loan Interest After Maximum Legal Rate Change:: No reschedule needed for loan ID: {} as the interest rate is already at maximum legal rate or below",
+                            loanId);
                     continue;
                 }
                 rescheduleJsonObject.addProperty("newInterestRate", newInterestRate);
@@ -4223,8 +4240,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 CommandWrapper commandWrapper = new CommandWrapperBuilder()
                         .createLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME).withJson(rescheduleRequestBodyAsJson).build();
                 try {
-                    log.info("Create Loan Reschedule Request with Loan ID: {}", loanId);
+                    log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Create Loan Reschedule Request with Loan ID: {}",
+                            loanId);
+                    final long startTime = System.currentTimeMillis();
                     CommandProcessingResult commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                    final long createRescheduleRequestEndTime = System.currentTimeMillis();
+                    log.info(
+                            "Recalculate Loan Interest After Maximum Legal Rate Change:: Create Loan Reschedule Request took {} seconds for Loan ID: {}",
+                            (createRescheduleRequestEndTime - startTime) / 1000.0, loanId);
                     if (commandProcessingResult.getResourceId() != null) {
                         final Long loanRescheduleId = commandProcessingResult.getResourceId();
                         final JsonObject approvalJsonObject = new JsonObject();
@@ -4237,25 +4260,36 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         commandWrapper = new CommandWrapperBuilder()
                                 .approveLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, loanRescheduleId)
                                 .withJson(approvalRequestBodyAsJson).build();
-                        log.info("Approve Loan Rescheduling with Loan ID: {}", loanId);
+                        log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Approve Loan Rescheduling with Loan ID: {}",
+                                loanId);
                         commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                        final long approveRescheduleRequestEndTime = System.currentTimeMillis();
+                        log.info(
+                                "Recalculate Loan Interest After Maximum Legal Rate Change:: Approve Loan Rescheduling took {} seconds for Loan ID: {}",
+                                (approveRescheduleRequestEndTime - createRescheduleRequestEndTime) / 1000.0, loanId);
                         if (commandProcessingResult.getResourceId() != null) {
                             final String successMessage = "Reprogramar la cuenta de préstamo: " + loanId
                                     + " con la tasa de interés al máximo legal";
-                            log.info(successMessage);
+                            log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: " + successMessage);
                         }
                     }
                 } catch (final PlatformApiDataValidationException e) {
                     final List<ApiParameterError> errors = e.getErrors();
                     for (final ApiParameterError error : errors) {
-                        log.error("Reprogramar la cuenta de préstamo {} falló con el mensaje: {}", loanId, error.getDeveloperMessage(), e);
+                        log.error(
+                                "Recalculate Loan Interest After Maximum Legal Rate Change:: Reprogramar la cuenta de préstamo {} falló con el mensaje: {}",
+                                loanId, error.getDeveloperMessage(), e);
                     }
                     exceptions.add(e);
                 } catch (final AbstractPlatformDomainRuleException e) {
-                    log.error("Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}", loanId, e.getDefaultUserMessage(), e);
+                    log.error(
+                            "Recalculate Loan Interest After Maximum Legal Rate Change:: Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}",
+                            loanId, e.getDefaultUserMessage(), e);
                     exceptions.add(e);
                 } catch (Exception e) {
-                    log.error("Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}", loanId, e.getMessage(), e);
+                    log.error(
+                            "Recalculate Loan Interest After Maximum Legal Rate Change:: Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}",
+                            loanId, e.getMessage(), e);
                     exceptions.add(e);
                 }
             }
