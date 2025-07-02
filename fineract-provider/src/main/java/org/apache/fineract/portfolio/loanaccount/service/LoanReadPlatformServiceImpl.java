@@ -47,6 +47,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
@@ -147,6 +148,7 @@ import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
+@Slf4j
 @AllArgsConstructor
 @Transactional(readOnly = true)
 public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, LoanReadPlatformServiceCommon {
@@ -1803,7 +1805,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 paymentDetailData = new PaymentDetailData(id, paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
                         bankNumber, channelName, channelHash, pointOfSalesData);
                 final String bankName = rs.getString("BankName");
-                final Long bankId = rs.getLong("BankId");
+                Number number = (Number) rs.getObject("BankId");
+                Long bankId = (number != null) ? number.longValue() : null;
                 paymentDetailData.setBankId(bankId);
                 paymentDetailData.setBankName(bankName);
             }
@@ -2050,6 +2053,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     @Override
     public List<OverdueLoanScheduleData> retrieveAllLoansWithOverdueInstallments(final Long penaltyWaitPeriod,
             final Boolean backdatePenalties, int pageSize, Long minLoanId) {
+        log.info(
+                "Apply penalty to overdue loans:: Fetching overdue installments with penalty wait period: {}, backdate penalties: {}, page size: {}, min loan id: {}",
+                penaltyWaitPeriod, backdatePenalties, pageSize, minLoanId);
+        final long fetchStartTime = System.currentTimeMillis();
         final MusoniOverdueLoanScheduleMapper rm = new MusoniOverdueLoanScheduleMapper();
 
         String loanIdOffset = "and ml.id >";
@@ -2062,7 +2069,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ").append(loanIdOffset).append(" ? ");
 
         List<OverdueLoanScheduleData> installments;
-        if (backdatePenalties) {
+        if (Boolean.TRUE.equals(backdatePenalties)) {
             sqlBuilder.append(" order by ml.id");
             sqlBuilder.append(" limit ").append(pageSize);
             installments = this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, minLoanId);
@@ -2082,6 +2089,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             String sql = sqlBuilder.toString().replaceAll(loanIdOffset, loanFilter);
             this.addOtherLoanInstallmentsToList(installments, sql, rm, penaltyWaitPeriod, backdatePenalties);
         }
+        final long fetchEndTime = System.currentTimeMillis();
+        log.info("Apply penalty to overdue loans:: Fetched {} overdue installments in {} seconds", installments.size(),
+                (fetchEndTime - fetchStartTime) / 1000.0);
         return installments;
     }
 
@@ -4079,29 +4089,63 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     @Override
     public List<LoanDocumentData> retrieveLoanInvoiceDataList(List<Long> loanIds, LocalDate secondLastDayOfMonth) {
+        log.info("Retrieving loan invoice data for {} loans with second last day of month: {}", loanIds.size(), secondLastDayOfMonth);
         final LoanInvoiceMapper loanInvoiceMapper = new LoanInvoiceMapper();
         final String invoiceQuery = "SELECT " + loanInvoiceMapper.invoiceSchema();
-        MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("loanIds", loanIds);
-        parameters.addValue("date", secondLastDayOfMonth);
-        return this.namedParameterJdbcTemplate.query(invoiceQuery, parameters, loanInvoiceMapper);
+        final List<LoanDocumentData> returnedList = new ArrayList<>();
+        final int batchSize = 1000;
+        for (int i = 0; i < loanIds.size(); i += batchSize) {
+            final int endIndex = Math.min(i + batchSize, loanIds.size());
+            final List<Long> batchLoanIds = loanIds.subList(i, endIndex);
+            log.info("Processing batch of {} loan IDs from index {} to {} with overall records of {} loans", batchLoanIds.size(), i,
+                    endIndex, loanIds.size());
+            MapSqlParameterSource parameters = new MapSqlParameterSource();
+            parameters.addValue("loanIds", batchLoanIds);
+            parameters.addValue("date", secondLastDayOfMonth);
+            final long startTime = System.currentTimeMillis();
+            final List<LoanDocumentData> batchLoanDocumentResults = this.namedParameterJdbcTemplate.query(invoiceQuery, parameters,
+                    loanInvoiceMapper);
+            final long endTime = System.currentTimeMillis();
+            log.info("Retrieved {} loan document results for batch from index {} to {} and it took {} seconds to complete",
+                    batchLoanDocumentResults.size(), i, endIndex, (endTime - startTime) / 1000.0);
+            returnedList.addAll(batchLoanDocumentResults);
+        }
+        log.info("Total loan document results retrieved: {}", returnedList.size());
+        return returnedList;
     }
 
     @Override
-    public List<Long> retrieveLoanIdsForInvoiceGenerationByClientIds(List<Long> clientIds, LocalDate secondLastDateOfMonth) {
-        final String sql = """
-                select distinct ml.id from m_loan_transaction mlt
-                     join m_loan ml on mlt.loan_id = ml.id
-                     where ml.client_id IN (:clientIds)
-                     and mlt.is_reversed = false
-                     AND mlt.transaction_type_enum = 10 AND mlt.occurred_on_suspended_account = FALSE
-                     AND mlt.is_invoiced_generated_by_job = false
-                     AND mlt.transaction_date <= :secondLastDateOfMonth
-                """;
-        final MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("clientIds", clientIds);
-        parameters.addValue("secondLastDateOfMonth", secondLastDateOfMonth);
-        return this.namedParameterJdbcTemplate.queryForList(sql, parameters, Long.class);
+    public List<Long> retrieveLoanIdsForInvoiceGenerationByClientIds(final List<Long> clientIds, final LocalDate secondLastDateOfMonth) {
+        log.info("Retrieving loan IDs for invoice generation for {} client IDs with second last date of month: {}", clientIds.size(),
+                secondLastDateOfMonth);
+        final List<Long> returnedList = new ArrayList<>();
+        final int batchSize = 10000;
+        for (int i = 0; i < clientIds.size(); i += batchSize) {
+            final int endIndex = Math.min(i + batchSize, clientIds.size());
+            final List<Long> batchClientIds = clientIds.subList(i, endIndex);
+            log.info("Processing batch of {} client IDs from index {} to {} for overall of {} clients", batchClientIds.size(), i, endIndex,
+                    clientIds.size());
+            final String sql = """
+                    select distinct ml.id from m_loan_transaction mlt
+                         join m_loan ml on mlt.loan_id = ml.id
+                         where ml.client_id IN (:clientIds)
+                         and mlt.is_reversed = false
+                         AND mlt.transaction_type_enum = 10 AND mlt.occurred_on_suspended_account = FALSE
+                         AND mlt.is_invoiced_generated_by_job = false
+                         AND mlt.transaction_date <= :secondLastDateOfMonth
+                    """;
+            final MapSqlParameterSource parameters = new MapSqlParameterSource();
+            parameters.addValue("clientIds", batchClientIds);
+            parameters.addValue("secondLastDateOfMonth", secondLastDateOfMonth);
+            final long startTime = System.currentTimeMillis();
+            final List<Long> batchLoanResults = this.namedParameterJdbcTemplate.queryForList(sql, parameters, Long.class);
+            final long endTime = System.currentTimeMillis();
+            log.info("Retrieved {} loan IDs for batch from index {} to {} and it took {} seconds to complete", batchLoanResults.size(), i,
+                    endIndex, (endTime - startTime) / 1000.0);
+            returnedList.addAll(batchLoanResults);
+        }
+        log.info("Total loan IDs retrieved for invoice generation: {}", returnedList.size());
+        return returnedList;
     }
 
     @Override
@@ -4113,6 +4157,60 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         parameters.addValue("sku", sku);
         parameters.addValue("tipoProd", tipoProd);
         return this.namedParameterJdbcTemplate.query(schemaSQL, parameters, loanElectronicInvoiceMapper);
+    }
+
+    @Override
+    public List<Long> retrieveLoanIdsForInsuranceAccrualsPosting(int pageSize, Long minLoanId) {
+        final String sql = """
+                WITH ProductsWithCharges AS (
+                    SELECT
+                        plc.product_loan_id,
+                        c.charge_calculation_enum,
+                        c.insurance_company
+                    FROM m_product_loan_charge plc
+                    INNER JOIN m_charge c ON plc.charge_id = c.id
+                    WHERE c.insurance_code IS NOT NULL
+                ),
+                CurrentAccrual AS (
+                    SELECT
+                        lt.loan_id,
+                        COUNT(*) AS current_accrual
+                    FROM m_loan_transaction lt
+                    INNER JOIN m_loan_charge_paid_by lcpb ON lt.id = lcpb.loan_transaction_id
+                    INNER JOIN m_loan_charge lc ON lcpb.loan_charge_id = lc.id
+                    INNER JOIN m_charge c ON lc.charge_id = c.id
+                    WHERE c.insurance_code IS NOT NULL
+                      AND lt.transaction_type_enum = 10
+                      AND lt.is_reversed = FALSE
+                    GROUP BY lt.loan_id
+                ),
+                MustHaveAccrualCharges AS (
+                    SELECT
+                        lrs.loan_id,
+                        l.loan_status_id,
+                        SUM(
+                            CASE\s
+                                WHEN lrs.fromdate <= CURRENT_DATE AND lrs.installment <> 0 THEN 1\s
+                                ELSE 0\s
+                            END
+                        ) AS must_have_accrual,
+                        COALESCE(ca.current_accrual, 0) AS current_accrual
+                    FROM m_loan_repayment_schedule lrs
+                    INNER JOIN m_loan l ON lrs.loan_id = l.id
+                    INNER JOIN ProductsWithCharges pwc ON l.product_id = pwc.product_loan_id
+                    LEFT JOIN CurrentAccrual ca ON lrs.loan_id = ca.loan_id
+                    WHERE l.block_status_id IS NULL OR l.block_status_id <> 17
+                    GROUP BY lrs.loan_id, l.loan_status_id, ca.current_accrual
+                )
+                SELECT
+                    loan_id
+                FROM MustHaveAccrualCharges
+                WHERE must_have_accrual <> current_accrual
+                AND loan_status_id = ?
+                AND loan_id > ?
+                ORDER BY loan_id LIMIT ?;
+                """;
+        return this.jdbcTemplate.queryForList(sql, Long.class, LoanStatus.ACTIVE.getValue(), minLoanId, pageSize).stream().toList();
     }
 
     private static class LoanElectronicInvoiceMapper implements RowMapper<LoanElectronicInvoiceData> {

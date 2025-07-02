@@ -794,8 +794,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return changedTransactionDetail;
     }
 
-    // just like handleChargeAppliedTransaction , create a new method to handle charges per installment using locan
-    // charge installement
+    // just like handleChargeAppliedTransaction , create a new method to handle charges per installment using local
+    // charge installment
     public void handleChargeAppliedTransactionPerInstallment(final List<LoanCharge> charges, final LocalDate suppliedTransactionDate,
             final boolean hasOccurredOnSuspendedAccount) {
         for (LoanCharge loanCharge : charges) {
@@ -803,12 +803,19 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             validateLoanChargeIsNotWaived(loanCharge);
         }
 
-        // get only installements beteween the transaction date and current date
+        // FIX for previous installments where the insurance accrual was not generated
+        // Check if a different supplied date must be used for this loan
+        // Determine the applicable transaction date based on insurance accrual
+        LocalDate insuranceAccrualCutoffDate = getLastInsuranceAccrualTransaction();
+        LocalDate effectiveTransactionDate = suppliedTransactionDate.isAfter(insuranceAccrualCutoffDate) ? insuranceAccrualCutoffDate
+                : suppliedTransactionDate;
+
+        // get only installments between the transaction date and current date
         LocalDate currentDate = DateUtils.getLocalDateOfTenant();
         List<LoanRepaymentScheduleInstallment> applicableInstallments = getRepaymentScheduleInstallments().stream()
                 .filter(installment -> installment.getInstallmentNumber() > 0 && // Exclude the graced installment
                         ( // The installment overlaps with the date range
-                        (!installment.getDueDate().isBefore(suppliedTransactionDate) && !installment.getFromDate().isAfter(currentDate)) ||
+                        (!installment.getDueDate().isBefore(effectiveTransactionDate) && !installment.getFromDate().isAfter(currentDate)) ||
                         // Or the installment starts on the current date
                                 installment.getFromDate().equals(currentDate)))
                 .sorted(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
@@ -3781,6 +3788,21 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return changedTransactionDetail;
     }
 
+    public ChangedTransactionDetail reprocessAfterCleanUp() {
+        final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
+        final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
+                .determineProcessor(this.transactionProcessingStrategyCode);
+        final ChangedTransactionDetail changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(
+                getDisbursementDate(), allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(),
+                getActiveCharges());
+        for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
+            mapEntry.getValue().updateLoan(this);
+        }
+        this.loanTransactions.addAll(changedTransactionDetail.getNewTransactionMappings().values());
+        updateLoanSummaryDerivedFields();
+        return changedTransactionDetail;
+    }
+
     private LoanRepaymentScheduleInstallment fetchLoanRepaymentScheduleInstallment(LocalDate dueDate) {
         LoanRepaymentScheduleInstallment installment = null;
         List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments().stream()
@@ -5804,6 +5826,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return lastTransaction;
     }
 
+    private LocalDate getLastInsuranceAccrualTransaction() {
+        return this.loanTransactions.stream()
+                .filter(txn -> txn.isAccrual() && txn.isInstallmentAccrual() && !txn.isReversed()
+                        && txn.getAmount().compareTo(BigDecimal.ZERO) > 0)
+                .map(LoanTransaction::getTransactionDate).max(LocalDate::compareTo).orElseGet(this::getDisbursementDate);
+    }
+
     public Set<LoanCharge> getActiveCharges() {
         // LinkedHashset is required here to maintain the charge order.
         // In case of charge calculation as percentage of another charge, parent charge must be processed first
@@ -7732,7 +7761,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         principalLoanBalanceOutstanding.setCurrency(interestCalculationCurrency);
         int totalPeriodDays = Math.toIntExact(
                 ChronoUnit.DAYS.between(loanRepaymentScheduleInstallment.getFromDate(), loanRepaymentScheduleInstallment.getDueDate()));
-        int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(loanRepaymentScheduleInstallment.getFromDate(), transactionDate));
+        final int tillDays = Math.toIntExact(ChronoUnit.DAYS.between(loanRepaymentScheduleInstallment.getFromDate(), transactionDate));
         BigDecimal interestCharged = loanRepaymentScheduleInstallment.getInterestCharged(getCurrency()).getAmount();
         if (loanRepaymentScheduleInstallment.originalInterestChargedAmount() != null
                 && loanRepaymentScheduleInstallment.originalInterestChargedAmount().compareTo(BigDecimal.ZERO) > 0) {
@@ -7769,10 +7798,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
 
-        final Money feeForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesCharged(currency);
-        final Money feeAccountedForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesWaived(currency)
-                .plus(loanRepaymentScheduleInstallment.getFeeChargesPaid(currency))
-                .plus(loanRepaymentScheduleInstallment.getFeeChargesWrittenOff(currency));
+        Money feeForCurrentPeriod = Money.zero(currency);
+        Money feeAccountedForCurrentPeriod = Money.zero(currency);
+        if (tillDays > 0) {
+            feeForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesCharged(currency);
+            feeAccountedForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesWaived(currency)
+                    .plus(loanRepaymentScheduleInstallment.getFeeChargesPaid(currency))
+                    .plus(loanRepaymentScheduleInstallment.getFeeChargesWrittenOff(currency));
+        }
 
         // SU-446 Since penalty calculation for an installment is changed and penaltis till date are accumulated and
         // charged.

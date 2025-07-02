@@ -23,23 +23,31 @@ import java.time.YearMonth;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.config.TaskExecutorConstant;
 import org.apache.fineract.infrastructure.core.domain.FineractContext;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
-import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanCreditNoteReadService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanCreditNoteWriteService;
+import org.apache.fineract.portfolio.loanproductparameterization.domain.LoanProductParameterization;
+import org.apache.fineract.portfolio.loanproductparameterization.domain.LoanProductParameterizationRepository;
+import org.apache.fineract.portfolio.loanproductparameterization.exception.LoanProductParameterizationNotFoundException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -47,6 +55,8 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
@@ -63,8 +73,8 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
     private final ClientReadPlatformService clientReadPlatformService;
     private boolean dataFetched = false;
     private final ConfigurationDomainService configurationDomainService;
-    private final LoanCreditNoteReadService loanCreditNoteReadService;
-    private final LoanCreditNoteWriteService loanCreditNoteWriteService;
+    private final LoanProductParameterizationRepository productParameterizationRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public RepeatStatus execute(@NotNull StepContribution contribution, @NotNull ChunkContext chunkContext) throws Exception {
@@ -76,12 +86,14 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
         final boolean enableMonthlyInvoiceGenerationOnJobTrigger = this.configurationDomainService
                 .enableMonthlyInvoiceGenerationOnJobTrigger();
         final int threadPoolSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("thread-pool-size"));
+        log.info("Thread pool size for FacturaElectronicaMensualTasklet: {}", threadPoolSize);
         taskExecutor.setMaxPoolSize(threadPoolSize);
         taskExecutor.setCorePoolSize(threadPoolSize);
         final int batchSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
+        log.info("Batch size for FacturaElectronicaMensualTasklet: {}", batchSize);
         final int pageSize = batchSize * threadPoolSize;
+        log.info("Page size for FacturaElectronicaMensualTasklet: {}", pageSize);
         Long maxClientIdInList = 0L;
-
         if (businessLocalDate.equals(secondLastDayOfMonth) || enableMonthlyInvoiceGenerationOnJobTrigger) {
             long start = System.currentTimeMillis();
             log.info("Starting FacturaElectronicaMensualTasklet job for the date: {}", businessLocalDate);
@@ -104,28 +116,10 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
                     } while (!CollectionUtils.isEmpty(queue));
                 }
             }
-            this.processInvoicesOffsetByCreditNotes();
         }
+        this.adjustElectronicInvoiceDocumentNumbers();
         log.info("Completed FacturaElectronicaMensualTasklet job for the date: {}", businessLocalDate);
         return RepeatStatus.FINISHED;
-    }
-
-    private void processInvoicesOffsetByCreditNotes() throws JobExecutionException {
-        final List<Throwable> errors = new ArrayList<>();
-        final List<Long> creditNoteIdsForProcessing = this.loanCreditNoteReadService.retrieveCreditNoteIdsForInvoiceProcessing();
-        log.info("Processing invoices offset by creditNoteIds with count of: {}", creditNoteIdsForProcessing.size());
-        for (final Long creditNoteId : creditNoteIdsForProcessing) {
-            try {
-                this.loanCreditNoteWriteService.processInvoiceOffsetByCreditNote(creditNoteId);
-            } catch (final Exception e) {
-                log.error(String.format("Error while processing invoices offset by credit Note Id: %s ", creditNoteId), e);
-                errors.add(e);
-            }
-        }
-        if (!errors.isEmpty()) {
-            throw new JobExecutionException(errors);
-        }
-        log.info("Completed processing invoices offset by creditNoteIds");
     }
 
     private void processInvoices(List<Long> clientIdList, int threadPoolSize, LocalDate secondLastDayOfMonth, int pageSize,
@@ -247,5 +241,86 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
         } catch (ExecutionException e2) {
             log.error("Execution exception while processing invoices for FacturaElectronicaMensualTasklet", e2);
         }
+    }
+
+    @SuppressWarnings("all")
+    private void adjustElectronicInvoiceDocumentNumbers() {
+        log.info("Start adjusting electronic invoice document numbers");
+        final List<LoanProductParameterization> productParameterizations = productParameterizationRepository.findAll();
+        final List<ElectronicInvoiceDto> temporaryElectronicInvoices = this.findTemporaryElectronicInvoices();
+        log.info("Found {} electronic invoices to adjust", temporaryElectronicInvoices.size());
+        if (!productParameterizations.isEmpty() && !temporaryElectronicInvoices.isEmpty()) {
+            final Map<String, List<ElectronicInvoiceDto>> documentNumberElectronicInvoicesMap = new HashMap<>();
+            for (final ElectronicInvoiceDto electronicInvoiceDto : temporaryElectronicInvoices) {
+                final String mapKey = electronicInvoiceDto.getNumeroDoc();
+                if (mapKey != null && !mapKey.isEmpty()) {
+                    if (!documentNumberElectronicInvoicesMap.containsKey(mapKey)) {
+                        documentNumberElectronicInvoicesMap.put(mapKey, new ArrayList<>(List.of(electronicInvoiceDto)));
+                    } else {
+                        log.info("Adjusting invoice numero_doc: Found duplicate document number: {} for client ID: {}", mapKey,
+                                electronicInvoiceDto.getClientId());
+                        final List<ElectronicInvoiceDto> existingList = documentNumberElectronicInvoicesMap.get(mapKey);
+                        existingList.add(electronicInvoiceDto);
+                    }
+                }
+            }
+            log.info("Found {} unique document numbers to adjust", documentNumberElectronicInvoicesMap.size());
+            for (final Map.Entry<String, List<ElectronicInvoiceDto>> documentNumberEntry : documentNumberElectronicInvoicesMap.entrySet()) {
+                final List<ElectronicInvoiceDto> electronicInvoices = documentNumberEntry.getValue();
+                if (!electronicInvoices.isEmpty()) {
+                    final String documentNumber = documentNumberEntry.getKey();
+                    final String productType = electronicInvoices.get(0).getTipoProd();
+                    final LoanProductParameterization loanProductParameterization = productParameterizations.stream()
+                            .filter(param -> param.getProductType().equals(productType)).findFirst()
+                            .orElseThrow(() -> new LoanProductParameterizationNotFoundException(productType));
+                    final String nextDocumentNumber = nextDocumentNumber(loanProductParameterization);
+                    log.info("Adjusting document number from {} to {} for product type {}", documentNumber, nextDocumentNumber,
+                            productType);
+                    for (final ElectronicInvoiceDto electronicInvoiceDto : electronicInvoices) {
+                        electronicInvoiceDto.setNumeroDoc(nextDocumentNumber);
+                    }
+                }
+            }
+            final List<Object[]> batchArgs = temporaryElectronicInvoices.stream()
+                    .map(dto -> new Object[] { dto.getNumeroDoc(), dto.getId() }).collect(Collectors.toList());
+            final int[] updateCounts = this.jdbcTemplate.batchUpdate("UPDATE c_facturacion_electronica SET numero_doc = ? WHERE id = ?",
+                    batchArgs);
+            log.info("Adjust numero_doc:: Updated {} records in batch", updateCounts.length);
+            this.productParameterizationRepository.saveAllAndFlush(productParameterizations);
+        }
+        log.info("Finished adjusting electronic invoice document numbers");
+    }
+
+    private String nextDocumentNumber(final LoanProductParameterization loanProductParameterization) {
+        final long rangeStartNumber = loanProductParameterization.getRangeStartNumber();
+        final long invoiceCounter = loanProductParameterization.getInvoiceCounter();
+        final long rangeEndNumber = loanProductParameterization.getRangeEndNumber();
+        final long currentCounter = ObjectUtils.defaultIfNull(invoiceCounter, 0L) + 1L;
+        final long documentNumber = rangeStartNumber + invoiceCounter;
+        if (currentCounter > rangeEndNumber) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.invoice.counter.exceeds.range.end.number",
+                    String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
+                            loanProductParameterization.getProductType()));
+        }
+        loanProductParameterization.setInvoiceCounter(currentCounter);
+        return String.valueOf(documentNumber);
+    }
+
+    public List<ElectronicInvoiceDto> findTemporaryElectronicInvoices() {
+        final String sql = "SELECT cfe.id, cfe.numero_doc, cfe.id_cliente, cfe.tipo_prod FROM c_facturacion_electronica cfe WHERE cfe.numero_doc LIKE 'TEMPORARY%'";
+        RowMapper<ElectronicInvoiceDto> rowMapper = (rs, rowNum) -> new ElectronicInvoiceDto(rs.getLong("id"), rs.getString("numero_doc"),
+                rs.getString("id_cliente"), rs.getString("tipo_prod"));
+        return this.jdbcTemplate.query(sql, rowMapper);
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ElectronicInvoiceDto {
+
+        private Long id;
+        private String numeroDoc;
+        private String clientId;
+        private String tipoProd;
     }
 }
