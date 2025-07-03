@@ -161,6 +161,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
 import org.apache.fineract.portfolio.savings.service.GSIMReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -230,6 +231,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
     private final ConfigurationDomainServiceJpa configurationDomainServiceJpa;
     private final ChargeRepository chargeRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @SuppressWarnings({ "squid:S3776" })
     @Transactional
@@ -380,8 +382,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 // Add charges with IDs between 24 and 33 (MiPyme) to the loan if they exist on the loan product and
                 // have not already been
                 // added to the loan
-                newLoanApplication.setExpectedFirstRepaymentOnDate(
-                        RevolvingLoanUtil.adjustRepaymentDate(newLoanApplication.getExpectedFirstRepaymentOnDate()));
+                if (!newLoanApplication.isMultiDisburmentLoan()
+                        || loanProduct.getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode())) {
+
+                    newLoanApplication.setExpectedFirstRepaymentOnDate(
+                            RevolvingLoanUtil.adjustRepaymentDate(newLoanApplication.getExpectedFirstRepaymentOnDate()));
+                }
                 addSpecificChargesFromLoanProduct(newLoanApplication);
             } else {
                 validateMicrocreditoProductCharges(newLoanApplication);
@@ -2150,6 +2156,13 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     if (charge.getCharge().isPercentageOfAnotherCharge()) {
                         // Get the other charge
                         LoanCharge parentCharge = loan.getTheOtherCharge(charge.getCharge().getParentChargeId());
+                        // EA-382: Update parent charge amount from tmp Mambu data
+                        String sql = "select base_disbursement_fees from tmp_loanaccount tl where tl.\"ID\" = ?";
+                        BigDecimal chargeAmount = this.jdbcTemplate.queryForObject(sql, BigDecimal.class, loan.getExternalId().getValue());
+                        if (chargeAmount != null) {
+                            parentCharge.setAmount(chargeAmount);
+                            parentCharge.setOutstandingAmount(chargeAmount);
+                        }
                         if (parentCharge != null) {
                             charge.setAmountPercentageAppliedTo(parentCharge.getAmount(currency).getAmount());
                             charge.setAmount(

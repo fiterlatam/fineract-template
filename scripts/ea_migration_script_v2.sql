@@ -19,24 +19,24 @@ join identificationdocument i on i.CLIENTKEY = c.ENCODEDKEY
 where state = 'ACTIVE';
 
 -- tmp_loanaccount
-select * from loanaccount l where accountstate = 'ACTIVE' OR (accountstate = 'ACTIVE_IN_ARREARS' and accountsubstate IS NULL);
+select * from loanaccount l where accountstate in ('PENDING_APPROVAL', 'APPROVED', 'ACTIVE') OR (accountstate = 'ACTIVE_IN_ARREARS' and accountsubstate IS NULL);
 
 -- tmp_loantransaction
 select t.* from loantransaction t
 join loanaccount l on l.ENCODEDKEY = t.PARENTACCOUNTKEY
-where l.ACCOUNTSTATE in ('ACTIVE', 'ACTIVE_IN_ARREARS')
+where l.ACCOUNTSTATE in ('PENDING_APPROVAL', 'APPROVED', 'ACTIVE', 'ACTIVE_IN_ARREARS')
 and t.`TYPE` in ('REPAYMENT', 'DISBURSMENT')
 and t.REVERSALTRANSACTIONKEY is null;
 
 -- tmp_disbursementdetails
 select d.* from disbursementdetails d 
 join loanaccount l on l.DISBURSEMENTDETAILSKEY = d.ENCODEDKEY
-where l.ACCOUNTSTATE in ('ACTIVE', 'ACTIVE_IN_ARREARS');
+where l.ACCOUNTSTATE in ('PENDING_APPROVAL', 'APPROVED', 'ACTIVE', 'ACTIVE_IN_ARREARS');
 
 -- tmp_loan_repayment_schedule
 select r.* from repayment r
 join loanaccount l on l.ENCODEDKEY  = r.PARENTACCOUNTKEY 
-where l.ACCOUNTSTATE in ('ACTIVE', 'ACTIVE_IN_ARREARS')
+where l.ACCOUNTSTATE in ('PENDING_APPROVAL', 'APPROVED', 'ACTIVE', 'ACTIVE_IN_ARREARS')
 order by r.PARENTACCOUNTKEY, r.DUEDATE;
 
 -- tmp_loan_product
@@ -49,7 +49,7 @@ from customfieldvalue cfv
 join customfield c on c.ENCODEDKEY = cfv.CUSTOMFIELDKEY
 join loanaccount l on l.ENCODEDKEY = cfv.PARENTKEY
 where 
-l.ACCOUNTSTATE in ('ACTIVE', 'ACTIVE_IN_ARREARS')
+l.ACCOUNTSTATE in ('PENDING_APPROVAL', 'APPROVED', 'ACTIVE', 'ACTIVE_IN_ARREARS')
 -- cfv.PARENTKEY = '8a4441fd9148030d019148d5289c291b'
 order by l.encodedkey, c.id, c.name;
 
@@ -69,6 +69,10 @@ and pf.AMOUNTCALCULATIONMETHOD  !='FLAT'
 -- group by l3.ENCODEDKEY having count(pf.name) > 1
 order by l3.ENCODEDKEY , pf.NAME;
 
+select * from tmp_loantransaction tl where tl."PARENTACCOUNTKEY" = '8a4452b6975f1fdd01975f50d5764a14'
+
+--select * from tmp_flat_loan_charges tlc where "NAME" like 'F%';
+
 
 -- flat loan charges
 -- tmp_flat_loan_charges
@@ -83,7 +87,7 @@ join loanproduct l3 on l3.encodedkey = l2.PRODUCTTYPEKEY
 where 
 fee.AMOUNTCALCULATIONMETHOD = 'FLAT'
 and l.REVERSALTRANSACTIONKEY is null and l.type in ('FEE')
-and l2.ACCOUNTSTATE in ('ACTIVE','ACTIVE_IN_ARREARS')
+and l2.ACCOUNTSTATE in ('PENDING_APPROVAL', 'APPROVED', 'ACTIVE','ACTIVE_IN_ARREARS')
 -- and fee.name like 'Comisión MiPyme%'
 -- and l3.id not in ('Nano_cred_sem','Credito_Rotativo','Nano_cred_dia')
 -- and l3.id = 'Microcredito_B'
@@ -96,6 +100,7 @@ order by l2.ENCODEDKEY, r.DUEDATE;
 -- tmp_principalpaymentaccountsettings
 select * from principalpaymentaccountsettings
 
+select * from tmp_flat_loan_charges;
 -------------------------------------
 
 CREATE INDEX tmp_loanaccount_id_idx ON public.tmp_loanaccount ("ID");
@@ -322,6 +327,14 @@ INSERT INTO m_code_value
 (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
 VALUES((select id from m_code where code_name='Ciudad'), 'FLORENCIA (CAQUETÁ)', '', 11320, '99790', true, false);
 
+INSERT INTO m_code_value
+(code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+VALUES((select id from m_code where code_name='Ciudad'), 'Jumbo', '', 11320, '99790', true, false);
+
+INSERT INTO m_code_value
+(code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+VALUES((select id from m_code where code_name='Ciudad'), 'Fortual', '', 11320, '99790', true, false);
+
 
 
 -- Update empty cities
@@ -432,7 +445,7 @@ SET
     select r."PARENTACCOUNTKEY" ,r."ENCODEDKEY" ,"DUEDATE", row_number() over (partition by r."PARENTACCOUNTKEY" order by r."DUEDATE" ) inst_no
 from tmp_loan_repayment_schedule r 
 join tmp_loanaccount l on l."ENCODEDKEY"  = r."PARENTACCOUNTKEY"
-where l."ACCOUNTSTATE"  in ('ACTIVE', 'ACTIVE_IN_ARREARS')
+where l."ACCOUNTSTATE"  in ('ACTIVE', 'PENDING_APPROVAL', 'APPROVED', 'ACTIVE_IN_ARREARS')
 and r."STATE" !='GRACE'
   ) src 
 WHERE dest."PARENTACCOUNTKEY" = src."PARENTACCOUNTKEY"
@@ -582,7 +595,7 @@ case
                 end as rate
                 from tmp_loanaccount tcm
                 join tmp_loan_product tlp on tlp."ENCODEDKEY" = tcm."PRODUCTTYPEKEY"
-                where tcm."ACCOUNTSTATE" in ('ACTIVE', 'ACTIVE_IN_ARREARS')
+                where tcm."ACCOUNTSTATE" in ('ACTIVE', 'PENDING_APPROVAL', 'APPROVED', 'ACTIVE_IN_ARREARS')
 )
 select cte.productname, min(rate), max(rate)
 from cte
@@ -598,7 +611,7 @@ with cte as (
 select tlp."ENCODEDKEY", tlp."ID" productname, tcm."LOANAMOUNT"
                 from tmp_loanaccount tcm
                 join tmp_loan_product tlp on tlp."ENCODEDKEY" = tcm."PRODUCTTYPEKEY"
-                where tcm."ACCOUNTSTATE" in ('ACTIVE', 'ACTIVE_IN_ARREARS')
+                where tcm."ACCOUNTSTATE" in ('ACTIVE', 'PENDING_APPROVAL', 'APPROVED', 'ACTIVE_IN_ARREARS')
 )
 select cte."ENCODEDKEY", cte.productname, min("LOANAMOUNT"), max("LOANAMOUNT")
 from cte
@@ -659,63 +672,6 @@ UPDATE public.tmp_loanaccount
 -- Query to load loan accounts through loan import tool.
 -- Download loan template. Change external id column to text
 -- import loans from Bajo Monto,  Lib Inv, Credito Com_PN and microB products
-
--- -==== NEW QUERIES TO CREATE LOANS FOR THE OUTSTANDING BALANCES =====-- 
-
--- We need to reduce the minimum and maximum principal amounts for all loan products (maximum because some loans have accrued penalties without any repayments made)
-update m_product_loan set min_principal_amount = null, max_principal_amount = null; -- we'll use a back up to set these back or copy from Mambu
-update m_product_loan set nominal_interest_rate_per_period = null, max_nominal_interest_rate_per_period = null;
-
-select * from m_charge mc order by id desc;
-
--- Add a column to hold the current balance of the loan
-alter table tmp_loanaccount add column TOTAL_OUTSTANDING decimal(19,6);
-
--- Update the total outstanding for each loan
-update tmp_loanaccount tl set TOTAL_OUTSTANDING = tl."PRINCIPALBALANCE";
--- + tl."INTERESTBALANCE" + tl."FEESBALANCE" + tl."PENALTYBALANCE";
-
-
--- Add a column to hold the number of outstanding installments
-alter table tmp_loanaccount add column NO_OF_OUTSTANDING_INSTALLMENTS int;
-
--- Update the number of oustanding installments
-update tmp_loanaccount tcm
-set NO_OF_OUTSTANDING_INSTALLMENTS = (
-	select coalesce((tl."REPAYMENTINSTALLMENTS" - COUNT(tlrs."STATE")), tl."REPAYMENTINSTALLMENTS") outstanding_installments 
-	from tmp_loanaccount tl 
-	join tmp_loan_repayment_schedule tlrs on tl."ENCODEDKEY" = tlrs."PARENTACCOUNTKEY"
-	where tlrs."STATE" = 'PAID' and tcm."ID" = tl."ID" group by tl."ID", tl."REPAYMENTINSTALLMENTS"
-);
--- Set installment count to original installments if none is paid off
-update tmp_loanaccount set NO_OF_OUTSTANDING_INSTALLMENTS = "REPAYMENTINSTALLMENTS" where NO_OF_OUTSTANDING_INSTALLMENTS is null;
-
-select * from tmp_loanaccount tl;
-
-select * from m_loan where loan_status_id = 300;
-
--- Add a column to hold the new disbursement date
-alter table tmp_loanaccount add column NEW_DISBURSEMENT_DATE date;
--- Set the disbursement date: this should be the duedate of the last paid-off installment
-update tmp_loanaccount tcm
-set NEW_DISBURSEMENT_DATE = (
-	select MAX(tlrs."DUEDATE")::date disbursement_date from tmp_loanaccount tl join tmp_loan_repayment_schedule tlrs on tl."ENCODEDKEY" = tlrs."PARENTACCOUNTKEY"
-where tlrs."STATE" = 'PAID' and tcm."ID" = tl."ID" group by tl."ID"
-);
-
--- Add a column to hold the new first repayment date
-alter table tmp_loanaccount add column NEW_FIRST_REPAYMENT_DATE date;
--- set the first repayment date
-update tmp_loanaccount tcm
-set NEW_FIRST_REPAYMENT_DATE = (
-	select MIN(tlrs."DUEDATE")::date first_repayment_date from tmp_loanaccount tl join tmp_loan_repayment_schedule tlrs on tl."ENCODEDKEY" = tlrs."PARENTACCOUNTKEY"
-where tlrs."STATE" != 'PAID' and tcm."ID" = tl."ID" group by tl."ID"
-);
-
-select * from tmp_loanaccount tl where NEW_FIRST_REPAYMENT_DATE is null;
--- Default to disbursement date in disbursement details in the new one is null, in the script to populate the import file
-
--- -new query for outstanding loan balances
 select distinct
 	(select REPLACE(mo.name,' ', '_') from m_office mo where id = 1) as office_name,
 	'Individual' as loan_type,
@@ -726,9 +682,886 @@ select distinct
 	-- td.disbursementdate as submit_date,
 	-- td.disbursementdate as approved_date,
 	-- td.disbursementdate as disbursement_date,
-	to_date(to_char(coalesce(tcm.new_disbursement_date , td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
-	to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
-	to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
+	 to_date(to_char(td."DISBURSEMENTDATE", 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
+	 to_date(to_char(td."DISBURSEMENTDATE", 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
+	to_date(to_char(td."DISBURSEMENTDATE", 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
+	'' payment_type,
+	'' fund,
+	tcm."LOANAMOUNT" as principal_amount,
+	tcm."REPAYMENTINSTALLMENTS" as no_of_repayments,
+	tcm."REPAYMENTPERIODCOUNT"  repaid_every,
+	tcm."REPAYMENTPERIODUNIT"  repay_freq,
+	tcm."REPAYMENTINSTALLMENTS" loan_term,
+	tcm."REPAYMENTPERIODUNIT" loan_term_freq,
+	-- tcm.INTERESTRATE   as nominal_interest_rate,
+	case
+		when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_DAY' then tcm."INTERESTRATE"*365
+                    when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_WEEK' then  tcm."INTERESTRATE"*52
+                    when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_MONTH' then  tcm."INTERESTRATE"*12
+                   else tcm."INTERESTRATE"
+	end	 nominal_interest_rate,	
+	'Per Year' as interest_rate_per_month,
+	'Equal installments' as ammortization,
+	'Declining Balance' as interest_method,
+	case
+		when mpl.interest_calculated_in_period_enum = 0 then 'Daily'
+		else 'Same as repayment period'
+	end interest_calculation_period,
+	'0' arrears_tolerance,
+	mpl.loan_transaction_strategy_code repayment_strategy,
+	0 grace_on_principal_pmt,
+	0 grace_on_interest_pmt,
+	0 interest_free_period,
+	'' interest_charged_from, 
+	td."FIRSTREPAYMENTDATE" first_repayment_on,
+	'' amount_repaid,
+	'' date_last_repayment,
+	'' repayment_type,
+	'',
+	'',
+	'',
+	tcm."ID"  as external_id,
+	-- first_charge.charge_name first_charge, first_charge.iva_name first_iva,
+	-- second_charge.charge_name second_charge, second_charge.iva_name second_iva,
+	replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
+	replace(second_charge.charge_name, ' ', '_'), second_charge.fee_percentage, replace(second_charge.iva_name, ' ', '_'), second_charge.iva_percentage,
+	''
+	-- nit, code, cre_numerocredito::varchar, cli_nroid, 
+-- 	cre_fechafinancia
+from 
+	tmp_loanaccount tcm
+	join tmp_loanproduct_mapping tlm on tlm.ea_product_key = tcm."PRODUCTTYPEKEY"
+	join m_product_loan mpl on mpl.name = tlm.mifos_product_name
+	join tmp_disbursementdetails td on td."ENCODEDKEY" = tcm."DISBURSEMENTDETAILSKEY"
+	join tmp_cliente_migrar tcm2 on tcm2.ENCODEDKEY = tcm."ACCOUNTHOLDERKEY"
+	join m_client mc on mc.external_id = tcm2.ID 
+	left join lateral (
+		select tlc.loankey, mc1.id charge_id, mc1.name charge_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.id
+		end as iva_id,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.name
+		end as iva_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else 19
+		end as iva_percentage,
+		case
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE' then tlc.fee_percentage
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE_NUMBER_OF_INSTALLMENTS' then tlc.fee_percentage/tcm."REPAYMENTINSTALLMENTS"		
+		end as fee_percentage
+		from tmp_loan_charges tlc
+		left join tmp_charge_mapping charge_mapping1 on lower(charge_mapping1.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join tmp_charge_mapping charge_mapping2 on lower(charge_mapping2.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join m_charge mc1 on lower(mc1.tmp_name) = lower(charge_mapping1.fineract_charge_name)
+        left join m_charge mc2 on lower(mc2.tmp_name) = lower(charge_mapping2.fineract_iva_charge_name) 
+         where tlc.loankey = tcm."ENCODEDKEY"
+        order by tlc."NAME" desc limit 1
+	) first_charge on first_charge.loankey = tcm."ENCODEDKEY"
+	left join lateral (
+		select tlc.loankey, mc1.id charge_id, mc1.name charge_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.id
+		end as iva_id,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.name
+		end as iva_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else 19
+		end as iva_percentage,
+		case
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE' then tlc.fee_percentage
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE_NUMBER_OF_INSTALLMENTS' then tlc.fee_percentage/tcm."REPAYMENTINSTALLMENTS"			
+		end as fee_percentage		
+		from tmp_loan_charges tlc
+		left join tmp_charge_mapping charge_mapping1 on lower(charge_mapping1.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join tmp_charge_mapping charge_mapping2 on lower(charge_mapping2.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join m_charge mc1 on lower(mc1.tmp_name) = lower(charge_mapping1.fineract_charge_name)
+        left join m_charge mc2 on lower(mc2.tmp_name) = lower(charge_mapping2.fineract_iva_charge_name) 
+        where tlc.loankey = tcm."ENCODEDKEY"
+        order by tlc."NAME" asc limit 1
+	) second_charge on second_charge.loankey = tcm."ENCODEDKEY"
+	  where  mpl.id = 8
+	  --and tcm."ID" in ('0634643832', '5004368732', '5004368732', '0229761176', '1203523376', '1522804147')
+	 order by tcm."ID";
+	
+	select * from m_loan where loan_status_id = 300;
+
+--truncate table m_loan restart identity cascade;
+--truncate table m_document restart identity cascade;
+
+select * from m_charge mc where id in (select charge_id from m_product_loan_charge mplc) order by id;
+
+--0834809487
+
+-- import loans from micro and micro_m products for year 2021, 2022 and 2023
+-- UPDATE SMLV CONFIGURATION FOR MICROCREDITO and MICROCREDITO M LOANS. MAKE SURE TO UPDATE IT BACK TO CORRECT VALUE
+2021, 2022, 2023 => 1000000
+2024 => 1300000
+2025 => 1423500
+
+update c_configuration set value = 1000000 where name = 'SMLV';
+
+--select * from m_product_loan mpl order by id;
+
+--truncate m_loan restart identity cascade;
+--truncate m_document restart identity cascade;
+
+select distinct
+	(select REPLACE(mo.name,' ', '_') from m_office mo where id = 1) as office_name,
+	'Individual' as loan_type,
+	concat(trim(mc.display_name), '(', mc.id , ')') as client_name,
+	mc.external_id as client_external_id,
+	REpLACE(mpl.name, ' ', '_') as product_name,
+	'' loan_officer,
+	-- td.disbursementdate as submit_date,
+	-- td.disbursementdate as approved_date,
+	-- td.disbursementdate as disbursement_date,
+	 to_date(to_char(td."DISBURSEMENTDATE", 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
+	 to_date(to_char(td."DISBURSEMENTDATE", 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
+	to_date(to_char(td."DISBURSEMENTDATE", 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
+	'' payment_type,
+	'' fund,
+	tcm."LOANAMOUNT" as principal_amount,
+	tcm."REPAYMENTINSTALLMENTS" as no_of_repayments,
+	tcm."REPAYMENTPERIODCOUNT"  repaid_every,
+	tcm."REPAYMENTPERIODUNIT"  repay_freq,
+	tcm."REPAYMENTINSTALLMENTS" loan_term,
+	tcm."REPAYMENTPERIODUNIT" loan_term_freq,
+	-- tcm.INTERESTRATE   as nominal_interest_rate,
+	case
+		when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_DAY' then tcm."INTERESTRATE"*365
+                    when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_WEEK' then  tcm."INTERESTRATE"*52
+                    when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_MONTH' then  tcm."INTERESTRATE"*12
+                   else tcm."INTERESTRATE"
+	end	 nominal_interest_rate,	
+	'Per Year' as interest_rate_per_month,
+	'Equal installments' as ammortization,
+	'Declining Balance' as interest_method,
+case
+		when mpl.interest_calculated_in_period_enum = 0 then 'Daily'
+		else 'Same as repayment period'
+	end interest_calculation_period,
+	'0' arrears_tolerance,
+	mpl.loan_transaction_strategy_code repayment_strategy,
+	0 grace_on_principal_pmt,
+	0 grace_on_interest_pmt,
+	0 interest_free_period,
+	'' interest_charged_from, 
+	td."FIRSTREPAYMENTDATE" first_repayment_on,
+	'' amount_repaid,
+	'' date_last_repayment,
+	'' repayment_type,
+	'',
+	'',
+	'',
+	tcm."ID"  as external_id,
+	-- first_charge.charge_name first_charge, first_charge.iva_name first_iva,
+	-- second_charge.charge_name second_charge, second_charge.iva_name second_iva,
+	replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
+	case 
+		when mpl.id = 8 then replace(mipyme_charge.charge_name, ' ', '_')
+		else replace(second_charge.charge_name, ' ', '_')
+	end,
+	case 
+		when mpl.id = 8 then mipyme_charge.fee_percentage
+		else second_charge.fee_percentage
+	end, '',
+	case 
+		when mpl.id = 8 then replace(mipyme_charge.iva_name, ' ', '_')
+		else replace(second_charge.iva_name, ' ', '_')
+	end,
+	case 
+		when mpl.id = 8 then mipyme_charge.iva_percentage
+		else second_charge.iva_percentage
+	end,
+	''
+	-- nit, code, cre_numerocredito::varchar, cli_nroid, 
+-- 	cre_fechafinancia
+from 
+	tmp_loanaccount tcm
+	join tmp_loanproduct_mapping tlm on tlm.ea_product_key = tcm."PRODUCTTYPEKEY"
+	join m_product_loan mpl on mpl.name = tlm.mifos_product_name
+	join tmp_disbursementdetails td on td."ENCODEDKEY" = tcm."DISBURSEMENTDETAILSKEY"
+	join tmp_cliente_migrar tcm2 on tcm2.ENCODEDKEY = tcm."ACCOUNTHOLDERKEY"
+	join m_client mc on mc.external_id = tcm2.ID 
+	left join lateral (
+		select tlc.loankey, mc1.id charge_id, mc1.name charge_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.id
+		end as iva_id,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.name
+		end as iva_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else 19
+		end as iva_percentage,
+		case
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE' then tlc.fee_percentage
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE_NUMBER_OF_INSTALLMENTS' then tlc.fee_percentage/tcm."REPAYMENTINSTALLMENTS"		
+		end as fee_percentage
+		from tmp_loan_charges tlc
+		left join tmp_charge_mapping charge_mapping1 on lower(charge_mapping1.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join tmp_charge_mapping charge_mapping2 on lower(charge_mapping2.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join m_charge mc1 on lower(mc1.tmp_name) = lower(charge_mapping1.fineract_charge_name)
+        left join m_charge mc2 on lower(mc2.tmp_name) = lower(charge_mapping2.fineract_iva_charge_name) 
+         where tlc.loankey = tcm."ENCODEDKEY"
+        order by tlc."NAME" desc limit 1
+	) first_charge on first_charge.loankey = tcm."ENCODEDKEY"
+	left join lateral (
+		select tlc.loankey, mc1.id charge_id, mc1.name charge_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.id
+		end as iva_id,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.name
+		end as iva_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else 19
+		end as iva_percentage,
+		case
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE' then tlc.fee_percentage
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE_NUMBER_OF_INSTALLMENTS' then tlc.fee_percentage/tcm."REPAYMENTINSTALLMENTS"		
+		end as fee_percentage		
+		from tmp_loan_charges tlc
+		left join tmp_charge_mapping charge_mapping1 on lower(charge_mapping1.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join tmp_charge_mapping charge_mapping2 on lower(charge_mapping2.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join m_charge mc1 on lower(mc1.tmp_name) = lower(charge_mapping1.fineract_charge_name)
+        left join m_charge mc2 on lower(mc2.tmp_name) = lower(charge_mapping2.fineract_iva_charge_name) 
+        where tlc.loankey = tcm."ENCODEDKEY"
+        order by tlc."NAME" asc limit 1
+	) second_charge on second_charge.loankey = tcm."ENCODEDKEY"
+	left join lateral (
+		select tcm."ENCODEDKEY" loankey, mc1.id charge_id, mc1.name charge_name,
+		mc2.id iva_id,
+		 mc2.name iva_name,
+		mc2.amount iva_percentage,
+		mc1.amount fee_percentage		
+		from m_charge mc1
+		join m_charge mc2 on mc2.parent_charge_id = mc1.id
+		where 
+		mpl.id = 8
+		and case
+			when tcm."LOANAMOUNT" < 5694000 then mc1.tmp_name = 'Capital Pendiente Mi Pyme < 4SMLV'
+			when tcm."LOANAMOUNT" >= 5694000 then mc1.tmp_name = 'Capital Pendiente Mi Pyme >= 4SMLV'		
+			else mc1.tmp_name = 'none'
+		end
+		and case
+			when tcm."LOANAMOUNT" < 5694000 then mc2.tmp_name = 'IVA Capital Pendiente Mi Pyme < 4SMLV'
+			when tcm."LOANAMOUNT" >= 5694000 then  mc2.tmp_name = 'IVA Capital Pendiente Mi Pyme >= 4SMLV'			
+			else mc2.tmp_name = 'none'
+		end
+		) mipyme_charge on mipyme_charge.loankey = tcm."ENCODEDKEY"
+	where  mpl.id in (9,10) and trim(to_char(td."DISBURSEMENTDATE",'YYYY')) in ('2021','2022','2023')
+	  -- and tcm.id not in ('5926921620','5798558581','9043209288','4911099153','6171223614','2161289444','5775498843','8187153983','0022032372','7770432985','1426513226','3351179832','3532209966','8111747402','3780860737','5531840773','7534435854','0372390302','0673688145','4741881842','0890400726','6782519014','4761121438','8915931224','5966130912','8333585890','6241295657','5823029570','1515755714','5324318143','1090373796','6210443011','8162545940')
+	and tcm."ID" not in (select external_id from m_loan)
+		order by tcm."ID";
+	
+	select * from m_loan ml where loan_status_id = 300 order by id;
+
+select * from tmp_loanaccount tl where "ID" = '000002676';
+
+-- Now year 2024
+update c_configuration set value = 1300000 where name = 'SMLV';
+
+select distinct
+	(select REPLACE(mo.name,' ', '_') from m_office mo where id = 1) as office_name,
+	'Individual' as loan_type,
+	concat(trim(mc.display_name), '(', mc.id , ')') as client_name,
+	mc.external_id as client_external_id,
+	REpLACE(mpl.name, ' ', '_') as product_name,
+	'' loan_officer,
+	-- td.disbursementdate as submit_date,
+	-- td.disbursementdate as approved_date,
+	-- td.disbursementdate as disbursement_date,
+	 to_date(to_char(td."DISBURSEMENTDATE", 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
+	 to_date(to_char(td."DISBURSEMENTDATE", 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
+	to_date(to_char(td."DISBURSEMENTDATE", 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
+	'' payment_type,
+	'' fund,
+	tcm."LOANAMOUNT" as principal_amount,
+	tcm."REPAYMENTINSTALLMENTS" as no_of_repayments,
+	tcm."REPAYMENTPERIODCOUNT"  repaid_every,
+	tcm."REPAYMENTPERIODUNIT"  repay_freq,
+	tcm."REPAYMENTINSTALLMENTS" loan_term,
+	tcm."REPAYMENTPERIODUNIT" loan_term_freq,
+	-- tcm.INTERESTRATE   as nominal_interest_rate,
+	case
+		when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_DAY' then tcm."INTERESTRATE"*365
+                    when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_WEEK' then  tcm."INTERESTRATE"*52
+                    when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_MONTH' then  tcm."INTERESTRATE"*12
+                   else tcm."INTERESTRATE"
+	end	 nominal_interest_rate,	
+	'Per Year' as interest_rate_per_month,
+	'Equal installments' as ammortization,
+	'Declining Balance' as interest_method,
+case
+		when mpl.interest_calculated_in_period_enum = 0 then 'Daily'
+		else 'Same as repayment period'
+	end interest_calculation_period,
+	'0' arrears_tolerance,
+	mpl.loan_transaction_strategy_code repayment_strategy,
+	0 grace_on_principal_pmt,
+	0 grace_on_interest_pmt,
+	0 interest_free_period,
+	'' interest_charged_from, 
+	td."FIRSTREPAYMENTDATE" first_repayment_on,
+	'' amount_repaid,
+	'' date_last_repayment,
+	'' repayment_type,
+	'',
+	'',
+	'',
+	tcm."ID"  as external_id,
+	-- first_charge.charge_name first_charge, first_charge.iva_name first_iva,
+	-- second_charge.charge_name second_charge, second_charge.iva_name second_iva,
+	replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
+	case 
+		when mpl.id = 8 then replace(mipyme_charge.charge_name, ' ', '_')
+		else replace(second_charge.charge_name, ' ', '_')
+	end,
+	case 
+		when mpl.id = 8 then mipyme_charge.fee_percentage
+		else second_charge.fee_percentage
+	end, '',
+	case 
+		when mpl.id = 8 then replace(mipyme_charge.iva_name, ' ', '_')
+		else replace(second_charge.iva_name, ' ', '_')
+	end,
+	case 
+		when mpl.id = 8 then mipyme_charge.iva_percentage
+		else second_charge.iva_percentage
+	end,
+	''
+	-- nit, code, cre_numerocredito::varchar, cli_nroid, 
+-- 	cre_fechafinancia
+from 
+	tmp_loanaccount tcm
+	join tmp_loanproduct_mapping tlm on tlm.ea_product_key = tcm."PRODUCTTYPEKEY"
+	join m_product_loan mpl on mpl.name = tlm.mifos_product_name
+	join tmp_disbursementdetails td on td."ENCODEDKEY" = tcm."DISBURSEMENTDETAILSKEY"
+	join tmp_cliente_migrar tcm2 on tcm2.ENCODEDKEY = tcm."ACCOUNTHOLDERKEY"
+	join m_client mc on mc.external_id = tcm2.ID 
+	left join lateral (
+		select tlc.loankey, mc1.id charge_id, mc1.name charge_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.id
+		end as iva_id,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.name
+		end as iva_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else 19
+		end as iva_percentage,
+		case
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE' then tlc.fee_percentage
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE_NUMBER_OF_INSTALLMENTS' then tlc.fee_percentage/tcm."REPAYMENTINSTALLMENTS"		
+		end as fee_percentage
+		from tmp_loan_charges tlc
+		left join tmp_charge_mapping charge_mapping1 on lower(charge_mapping1.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join tmp_charge_mapping charge_mapping2 on lower(charge_mapping2.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join m_charge mc1 on lower(mc1.tmp_name) = lower(charge_mapping1.fineract_charge_name)
+        left join m_charge mc2 on lower(mc2.tmp_name) = lower(charge_mapping2.fineract_iva_charge_name) 
+         where tlc.loankey = tcm."ENCODEDKEY"
+        order by tlc."NAME" desc limit 1
+	) first_charge on first_charge.loankey = tcm."ENCODEDKEY"
+	left join lateral (
+		select tlc.loankey, mc1.id charge_id, mc1.name charge_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.id
+		end as iva_id,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.name
+		end as iva_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else 19
+		end as iva_percentage,
+		case
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE' then tlc.fee_percentage
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE_NUMBER_OF_INSTALLMENTS' then tlc.fee_percentage/tcm."REPAYMENTINSTALLMENTS"		
+		end as fee_percentage		
+		from tmp_loan_charges tlc
+		left join tmp_charge_mapping charge_mapping1 on lower(charge_mapping1.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join tmp_charge_mapping charge_mapping2 on lower(charge_mapping2.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join m_charge mc1 on lower(mc1.tmp_name) = lower(charge_mapping1.fineract_charge_name)
+        left join m_charge mc2 on lower(mc2.tmp_name) = lower(charge_mapping2.fineract_iva_charge_name) 
+        where tlc.loankey = tcm."ENCODEDKEY"
+        order by tlc."NAME" asc limit 1
+	) second_charge on second_charge.loankey = tcm."ENCODEDKEY"
+	left join lateral (
+		select tcm."ENCODEDKEY" loankey, mc1.id charge_id, mc1.name charge_name,
+		mc2.id iva_id,
+		 mc2.name iva_name,
+		mc2.amount iva_percentage,
+		mc1.amount fee_percentage		
+		from m_charge mc1
+		join m_charge mc2 on mc2.parent_charge_id = mc1.id
+		where 
+		mpl.id = 8
+		and case
+			when tcm."LOANAMOUNT" < 5694000 then mc1.tmp_name = 'Capital Pendiente Mi Pyme < 4SMLV'
+			when tcm."LOANAMOUNT" >= 5694000 then mc1.tmp_name = 'Capital Pendiente Mi Pyme >= 4SMLV'		
+			else mc1.tmp_name = 'none'
+		end
+		and case
+			when tcm."LOANAMOUNT" < 5694000 then mc2.tmp_name = 'IVA Capital Pendiente Mi Pyme < 4SMLV'
+			when tcm."LOANAMOUNT" >= 5694000 then  mc2.tmp_name = 'IVA Capital Pendiente Mi Pyme >= 4SMLV'			
+			else mc2.tmp_name = 'none'
+		end
+		) mipyme_charge on mipyme_charge.loankey = tcm."ENCODEDKEY"
+	where  mpl.id in (9,10) and trim(to_char(td."DISBURSEMENTDATE",'YYYY')) in ('2024')
+	  -- and tcm.id not in ('5926921620','5798558581','9043209288','4911099153','6171223614','2161289444','5775498843','8187153983','0022032372','7770432985','1426513226','3351179832','3532209966','8111747402','3780860737','5531840773','7534435854','0372390302','0673688145','4741881842','0890400726','6782519014','4761121438','8915931224','5966130912','8333585890','6241295657','5823029570','1515755714','5324318143','1090373796','6210443011','8162545940')
+		order by tcm."ID";
+
+	select count(*) from m_loan where loan_status_id = 300;
+
+-- Now year 2025
+update c_configuration set value = 1423500 where name = 'SMLV';
+
+select distinct
+	(select REPLACE(mo.name,' ', '_') from m_office mo where id = 1) as office_name,
+	'Individual' as loan_type,
+	concat(trim(mc.display_name), '(', mc.id , ')') as client_name,
+	mc.external_id as client_external_id,
+	REpLACE(mpl.name, ' ', '_') as product_name,
+	'' loan_officer,
+	-- td.disbursementdate as submit_date,
+	-- td.disbursementdate as approved_date,
+	-- td.disbursementdate as disbursement_date,
+	 to_date(to_char(td."DISBURSEMENTDATE", 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
+	 to_date(to_char(td."DISBURSEMENTDATE", 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
+	to_date(to_char(td."DISBURSEMENTDATE", 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
+	'' payment_type,
+	'' fund,
+	tcm."LOANAMOUNT" as principal_amount,
+	tcm."REPAYMENTINSTALLMENTS" as no_of_repayments,
+	tcm."REPAYMENTPERIODCOUNT"  repaid_every,
+	tcm."REPAYMENTPERIODUNIT"  repay_freq,
+	tcm."REPAYMENTINSTALLMENTS" loan_term,
+	tcm."REPAYMENTPERIODUNIT" loan_term_freq,
+	-- tcm.INTERESTRATE   as nominal_interest_rate,
+	case
+		when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_DAY' then tcm."INTERESTRATE"*365
+                    when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_WEEK' then  tcm."INTERESTRATE"*52
+                    when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_MONTH' then  tcm."INTERESTRATE"*12
+                   else tcm."INTERESTRATE"
+	end	 nominal_interest_rate,	
+	'Per Year' as interest_rate_per_month,
+	'Equal installments' as ammortization,
+	'Declining Balance' as interest_method,
+case
+		when mpl.interest_calculated_in_period_enum = 0 then 'Daily'
+		else 'Same as repayment period'
+	end interest_calculation_period,
+	'0' arrears_tolerance,
+	mpl.loan_transaction_strategy_code repayment_strategy,
+	0 grace_on_principal_pmt,
+	0 grace_on_interest_pmt,
+	0 interest_free_period,
+	'' interest_charged_from, 
+	td."FIRSTREPAYMENTDATE" first_repayment_on,
+	'' amount_repaid,
+	'' date_last_repayment,
+	'' repayment_type,
+	'',
+	'',
+	'',
+	tcm."ID"  as external_id,
+	-- first_charge.charge_name first_charge, first_charge.iva_name first_iva,
+	-- second_charge.charge_name second_charge, second_charge.iva_name second_iva,
+	replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
+	case 
+		when mpl.id = 8 then replace(mipyme_charge.charge_name, ' ', '_')
+		else replace(second_charge.charge_name, ' ', '_')
+	end,
+	case 
+		when mpl.id = 8 then mipyme_charge.fee_percentage
+		else second_charge.fee_percentage
+	end, '',
+	case 
+		when mpl.id = 8 then replace(mipyme_charge.iva_name, ' ', '_')
+		else replace(second_charge.iva_name, ' ', '_')
+	end,
+	case 
+		when mpl.id = 8 then mipyme_charge.iva_percentage
+		else second_charge.iva_percentage
+	end,
+	''
+	-- nit, code, cre_numerocredito::varchar, cli_nroid, 
+-- 	cre_fechafinancia
+from 
+	tmp_loanaccount tcm
+	join tmp_loanproduct_mapping tlm on tlm.ea_product_key = tcm."PRODUCTTYPEKEY"
+	join m_product_loan mpl on mpl.name = tlm.mifos_product_name
+	join tmp_disbursementdetails td on td."ENCODEDKEY" = tcm."DISBURSEMENTDETAILSKEY"
+	join tmp_cliente_migrar tcm2 on tcm2.ENCODEDKEY = tcm."ACCOUNTHOLDERKEY"
+	join m_client mc on mc.external_id = tcm2.ID 
+	left join lateral (
+		select tlc.loankey, mc1.id charge_id, mc1.name charge_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.id
+		end as iva_id,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.name
+		end as iva_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else 19
+		end as iva_percentage,
+		case
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE' then tlc.fee_percentage
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE_NUMBER_OF_INSTALLMENTS' then tlc.fee_percentage/tcm."REPAYMENTINSTALLMENTS"		
+		end as fee_percentage
+		from tmp_loan_charges tlc
+		left join tmp_charge_mapping charge_mapping1 on lower(charge_mapping1.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join tmp_charge_mapping charge_mapping2 on lower(charge_mapping2.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join m_charge mc1 on lower(mc1.tmp_name) = lower(charge_mapping1.fineract_charge_name)
+        left join m_charge mc2 on lower(mc2.tmp_name) = lower(charge_mapping2.fineract_iva_charge_name) 
+         where tlc.loankey = tcm."ENCODEDKEY"
+        order by tlc."NAME" desc limit 1
+	) first_charge on first_charge.loankey = tcm."ENCODEDKEY"
+	left join lateral (
+		select tlc.loankey, mc1.id charge_id, mc1.name charge_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.id
+		end as iva_id,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.name
+		end as iva_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else 19
+		end as iva_percentage,
+		case
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE' then tlc.fee_percentage
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE_NUMBER_OF_INSTALLMENTS' then tlc.fee_percentage/tcm."REPAYMENTINSTALLMENTS"		
+		end as fee_percentage		
+		from tmp_loan_charges tlc
+		left join tmp_charge_mapping charge_mapping1 on lower(charge_mapping1.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join tmp_charge_mapping charge_mapping2 on lower(charge_mapping2.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join m_charge mc1 on lower(mc1.tmp_name) = lower(charge_mapping1.fineract_charge_name)
+        left join m_charge mc2 on lower(mc2.tmp_name) = lower(charge_mapping2.fineract_iva_charge_name) 
+        where tlc.loankey = tcm."ENCODEDKEY"
+        order by tlc."NAME" asc limit 1
+	) second_charge on second_charge.loankey = tcm."ENCODEDKEY"
+	left join lateral (
+		select tcm."ENCODEDKEY" loankey, mc1.id charge_id, mc1.name charge_name,
+		mc2.id iva_id,
+		 mc2.name iva_name,
+		mc2.amount iva_percentage,
+		mc1.amount fee_percentage		
+		from m_charge mc1
+		join m_charge mc2 on mc2.parent_charge_id = mc1.id
+		where 
+		mpl.id = 8
+		and case
+			when tcm."LOANAMOUNT" < 5694000 then mc1.tmp_name = 'Capital Pendiente Mi Pyme < 4SMLV'
+			when tcm."LOANAMOUNT" >= 5694000 then mc1.tmp_name = 'Capital Pendiente Mi Pyme >= 4SMLV'		
+			else mc1.tmp_name = 'none'
+		end
+		and case
+			when tcm."LOANAMOUNT" < 5694000 then mc2.tmp_name = 'IVA Capital Pendiente Mi Pyme < 4SMLV'
+			when tcm."LOANAMOUNT" >= 5694000 then  mc2.tmp_name = 'IVA Capital Pendiente Mi Pyme >= 4SMLV'			
+			else mc2.tmp_name = 'none'
+		end
+		) mipyme_charge on mipyme_charge.loankey = tcm."ENCODEDKEY"
+	where  mpl.id in (9,10) and trim(to_char(td."DISBURSEMENTDATE",'YYYY')) in ('2025')
+	  -- and tcm.id not in ('5926921620','5798558581','9043209288','4911099153','6171223614','2161289444','5775498843','8187153983','0022032372','7770432985','1426513226','3351179832','3532209966','8111747402','3780860737','5531840773','7534435854','0372390302','0673688145','4741881842','0890400726','6782519014','4761121438','8915931224','5966130912','8333585890','6241295657','5823029570','1515755714','5324318143','1090373796','6210443011','8162545940')
+		order by tcm."ID";
+	
+	select * from m_charge order by id;
+
+
+select * from tmp_loanaccount tl where "ID" = '0039682591';
+
+select * from m_loan ml where external_id = '0039682591';
+
+select * from tmp_loan_repayment_schedule tlrs where "PARENTACCOUNTKEY" = '8a4453828aa8adca018aaa535fad32c8' order by "DUEDATE";
+
+--truncate table m_loan restart identity cascade;
+--truncate table m_document restart identity cascade;
+
+select * from tmp_migration_response tmr 
+select * from tmp_loanaccount tl where tl."ID" = '3933973486';
+truncate table tmp_migration_response;
+
+select * from tmp_loan_repayment_schedule tlrs where "PARENTACCOUNTKEY" = '8a444bdd92bf546e0192c036e2e071ad' order by "DUEDATE";
+
+---==== NEW QUERIES TO CREATE LOANS FOR THE OUTSTANDING BALANCES =====-- 
+
+--We need to reduce the minimum and maximum principal amounts for all loan products (maximum because some loans have accrued penalties without any repayments made)
+update m_product_loan set min_principal_amount = null, max_principal_amount = null; --we'll use a back up to set these back or copy from Mambu
+update m_product_loan set min_nominal_interest_rate_per_period = null, max_nominal_interest_rate_per_period = null;
+
+select * from m_charge mc order by id desc;
+
+--Add a column to hold the current balance of the loan
+alter table tmp_loanaccount add column TOTAL_OUTSTANDING decimal(19,6);
+
+--Update the total outstanding for each loan
+update tmp_loanaccount tl set TOTAL_OUTSTANDING = tl."PRINCIPALBALANCE";
+--+ tl."INTERESTBALANCE" + tl."FEESBALANCE" + tl."PENALTYBALANCE";
+
+
+alter table tmp_loanaccount add column DISBURSEMENT_FEES decimal(19,6);
+
+alter table tmp_loanaccount add column BASE_DISBURSEMENT_FEES decimal(19,6);
+
+select * from tmp_loantransaction tl 
+
+update tmp_loanaccount tcm
+set DISBURSEMENT_FEES = (select "FEESAMOUNT" from tmp_loantransaction tlt join tmp_loanaccount tl on tlt."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+where tlt."TYPE" = 'DISBURSMENT' and tl."ID" = tcm."ID" order by tlt."ENTRYDATE" limit 1);
+
+update tmp_loanaccount set BASE_DISBURSEMENT_FEES = round(DISBURSEMENT_FEES / 1.19, 2);
+
+select base_disbursement_fees from tmp_loanaccount tl where tl."ID" = '9888159019';
+
+select * from tmp_loantransaction tl where "PARENTACCOUNTKEY" = '8a4452b6975f1fdd01975f50d5764a14';
+
+select * from tmp_migration_response tmr 
+
+select * from m_loan where loan_status_id = 300;
+
+-- Add column if not already added
+ALTER TABLE tmp_loan_repayment_schedule ADD TOTALOUTSTANDING NUMERIC(50,10);
+
+-- UPDATE TOTALOUTSTANDING
+UPDATE tmp_loan_repayment_schedule tlrs
+SET "totaloutstanding" = (
+    (tlrs."PRINCIPALDUE" - tlrs."PRINCIPALPAID") +
+    (tlrs."INTERESTDUE" - tlrs."INTERESTPAID") +
+    (tlrs."PENALTYDUE" - tlrs."PENALTYPAID") +
+    (tlrs."TAXINTERESTDUE" - tlrs."TAXINTERESTPAID") +
+    (tlrs."TAXFEESDUE" - tlrs."TAXFEESPAID") +
+    (tlrs."TAXPENALTYDUE" - tlrs."TAXPENALTYPAID")
+);
+
+--Add a column to hold the new disbursement date
+alter table tmp_loanaccount add column NEW_DISBURSEMENT_DATE date;
+--Set the disbursement date: this should be the duedate of the last paid-off installment
+--update tmp_loanaccount tcm
+--set NEW_DISBURSEMENT_DATE = (
+--	select MAX(tlrs."DUEDATE")::date disbursement_date from tmp_loanaccount tl join tmp_loan_repayment_schedule tlrs on tl."ENCODEDKEY" = tlrs."PARENTACCOUNTKEY"
+--where tlrs."STATE" = 'PAID' and tcm."ID" = tl."ID" group by tl."ID"
+--);
+
+-- New Disbursement Date
+UPDATE tmp_loanaccount tcm
+SET NEW_DISBURSEMENT_DATE = sub.new_date
+FROM (
+  SELECT
+    tl."ID",
+    CASE
+      -- If the earliest outstanding installment has a balance < 30000, take the following installment
+      WHEN (
+        SELECT s1."totaloutstanding"
+        FROM tmp_loan_repayment_schedule s1
+        WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+          AND s1."STATE" = 'LATE'
+          order by s1."DUEDATE"
+          limit 1
+      ) < 30000 and (
+	       SELECT count(1)
+	        FROM tmp_loan_repayment_schedule s1
+	        WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+	          AND s1."STATE" = 'LATE'
+      ) > 1 THEN (
+        SELECT MIN(s2."DUEDATE")::date
+        FROM tmp_loan_repayment_schedule s2
+        WHERE s2."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+          AND s2."STATE" = 'LATE'
+          AND s2."totaloutstanding" < 30000
+          group by tl."ID"
+      )
+      -- Otherwise, take the last paid installment
+      ELSE (
+        SELECT MAX(s3."DUEDATE")::date
+        FROM tmp_loan_repayment_schedule s3
+        WHERE s3."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+          AND s3."STATE" IN ('PAID', 'GRACE')
+          group by tl."ID"
+      )
+    END AS new_date
+  FROM tmp_loanaccount tl
+  GROUP BY tl."ID", tl."ENCODEDKEY"
+) sub
+WHERE tcm."ID" = sub."ID";
+
+
+SELECT
+    tl."ID",
+    CASE
+      -- If there is an overdue installment with balance < 30000, take the following installment
+      WHEN  ((
+        SELECT s1."totaloutstanding"
+        FROM tmp_loan_repayment_schedule s1
+        WHERE s1."PARENTACCOUNTKEY" = '8a445c118bb4b170018bbf4f4c5751ff'-- tl."ENCODEDKEY"
+          AND s1."STATE" = 'LATE'
+          order by s1."DUEDATE"
+          limit 1
+      ) < 30000) and (
+	       SELECT count(1)
+	        FROM tmp_loan_repayment_schedule s1
+	        WHERE s1."PARENTACCOUNTKEY" = '8a445c118bb4b170018bbf4f4c5751ff'-- tl."ENCODEDKEY"
+	          AND s1."STATE" = 'LATE'
+	          group by s1."ENCODEDKEY"
+      ) > 1 THEN (
+        SELECT MIN(s2."DUEDATE")::date
+        FROM tmp_loan_repayment_schedule s2
+        WHERE s2."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+          AND s2."STATE" = 'LATE'
+          AND s2."totaloutstanding" < 30000
+          group by tl."ID"
+      )
+      -- Otherwise, take the last paid installment
+      ELSE (
+        SELECT MAX(s3."DUEDATE")::date
+        FROM tmp_loan_repayment_schedule s3
+        WHERE s3."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+          AND s3."STATE" = 'PAID'
+          group by tl."ID"
+      )
+    END AS new_date
+  FROM tmp_loanaccount tl
+  where tl."ID" = '4626647294'
+  GROUP BY tl."ID", tl."ENCODEDKEY"
+
+--Add a column to hold the new first repayment date
+alter table tmp_loanaccount add column NEW_FIRST_REPAYMENT_DATE date;
+--set the first repayment date
+--update tmp_loanaccount tcm
+--set NEW_FIRST_REPAYMENT_DATE = (
+--	select MIN(tlrs."DUEDATE")::date first_repayment_date from tmp_loanaccount tl join tmp_loan_repayment_schedule tlrs on tl."ENCODEDKEY" = tlrs."PARENTACCOUNTKEY"
+--where tlrs."STATE" not in ('GRACE', 'PAID') and tcm."ID" = tl."ID" group by tl."ID"
+--);
+
+-- New First Repayment Date --
+UPDATE tmp_loanaccount tcm
+SET NEW_FIRST_REPAYMENT_DATE = sub.new_date
+FROM (
+  SELECT
+    tl."ID",
+    CASE
+      -- If there is an overdue installment with balance < 30000, take the following installment
+      WHEN  (
+        SELECT s1."totaloutstanding"
+        FROM tmp_loan_repayment_schedule s1
+        WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+          AND s1."STATE" = 'LATE'
+          order by s1."DUEDATE"
+          limit 1
+      ) < 30000 and (
+	       SELECT count(1)
+	        FROM tmp_loan_repayment_schedule s1
+	        WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+	          AND s1."STATE" = 'LATE'
+      ) > 1 THEN (
+        SELECT MIN(s2."DUEDATE")::date
+        FROM tmp_loan_repayment_schedule s1
+        JOIN tmp_loan_repayment_schedule s2
+          ON s2."PARENTACCOUNTKEY" = s1."PARENTACCOUNTKEY"
+         AND s2."DUEDATE" > s1."DUEDATE"
+        WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+          AND s1."STATE" = 'LATE'
+          AND s1."totaloutstanding" < 30000
+      )
+      -- Otherwise, take the last paid installment
+      ELSE (
+        SELECT MIN(s3."DUEDATE")::date
+        FROM tmp_loan_repayment_schedule s3
+        WHERE s3."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+          AND s3."STATE" not in ('GRACE', 'PAID')
+      )
+    END AS new_date
+  FROM tmp_loanaccount tl
+  GROUP BY tl."ID", tl."ENCODEDKEY"
+) sub
+WHERE tcm."ID" = sub."ID";
+
+-- set new disbursement date to null if loan is in pending_approval or approved state
+update tmp_loanaccount set new_disbursement_date = null where "ACCOUNTSTATE" in ('PENDING_APPROVAL', 'APPROVED');
+
+--Add a column to hold the number of outstanding installments
+alter table tmp_loanaccount add column NO_OF_OUTSTANDING_INSTALLMENTS int;
+
+--Update the number of oustanding installments
+update tmp_loanaccount tcm
+set NO_OF_OUTSTANDING_INSTALLMENTS = (
+	select coalesce((tl."REPAYMENTINSTALLMENTS" - COUNT(tlrs."STATE")), tl."REPAYMENTINSTALLMENTS") outstanding_installments 
+	from tmp_loanaccount tl 
+	join tmp_loan_repayment_schedule tlrs on tl."ENCODEDKEY" = tlrs."PARENTACCOUNTKEY"
+	where (tlrs."STATE" = 'PAID' or (tlrs."STATE" = 'LATE' and tlrs."DUEDATE" <= tcm.new_disbursement_date)) and tcm."ID" = tl."ID" group by tl."ID", tl."REPAYMENTINSTALLMENTS"
+);
+--Set installment count to original installments if none is paid off
+update tmp_loanaccount set NO_OF_OUTSTANDING_INSTALLMENTS = "REPAYMENTINSTALLMENTS" where NO_OF_OUTSTANDING_INSTALLMENTS is null;
+
+select tl."ID", tl.new_disbursement_date, tl."new_first_repayment_date", tlrs."DUEDATE", tlrs."totaloutstanding", tlrs."STATE", tlrs.installment, tl.no_of_outstanding_installments 
+from tmp_loanaccount tl
+join tmp_loan_repayment_schedule tlrs ON tl."ENCODEDKEY" = tlrs."PARENTACCOUNTKEY"
+where tl."ID" = '0039682591' and tlrs."STATE" not in ('PAID', 'GRACE')
+order by tlrs."DUEDATE";
+
+select * from tmp_loanaccount tl where NEW_FIRST_REPAYMENT_DATE is null;
+--Default to disbursement date in disbursement details in the new one is null, in the script to populate the import file
+
+select * from tmp_disbursementdetails td where td."ENCODEDKEY" = '8a4424b493e46f500193e5f04f3604c6';
+
+select * from tmp_loanaccount tl where tl."ID" not in (select external_id from m_loan);
+
+select * from tmp_cliente_migrar tcm where encodedkey = '8a44389f946ff1070194702baa6c75a5';
+
+---new query for outstanding loan balances
+select distinct
+	(select REPLACE(mo.name,' ', '_') from m_office mo where id = 1) as office_name,
+	'Individual' as loan_type,
+	concat(trim(mc.display_name), '(', mc.id , ')') as client_name,
+	mc.external_id as client_external_id,
+	REpLACE(mpl.name, ' ', '_') as product_name,
+	'' loan_officer,
+	-- td.disbursementdate as submit_date,
+	-- td.disbursementdate as approved_date,
+	-- td.disbursementdate as disbursement_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as submit_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as approved_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then null
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as disbursement_date,
+	--to_date(to_char(coalesce(tcm.new_disbursement_date, coalesce(tcm."APPROVEDDATE", tcm."CREATIONDATE")), 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
+	--to_date(to_char(coalesce(tcm."new_disbursement_date", coalesce(td."DISBURSEMENTDATE", tcm."APPROVEDDATE")), 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
+	--to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
 	'' payment_type,
 	'' fund,
 	tcm."LOANAMOUNT" as principal_amount,
@@ -767,9 +1600,9 @@ select distinct
 	tcm."ID"  as external_id
 	-- first_charge.charge_name first_charge, first_charge.iva_name first_iva,
 	-- second_charge.charge_name second_charge, second_charge.iva_name second_iva,
-	-- replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
-	-- replace(second_charge.charge_name, ' ', '_'), second_charge.fee_percentage, replace(second_charge.iva_name, ' ', '_'), second_charge.iva_percentage,
-	-- ''
+	--replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
+	--replace(second_charge.charge_name, ' ', '_'), second_charge.fee_percentage, replace(second_charge.iva_name, ' ', '_'), second_charge.iva_percentage,
+	--''
 	-- nit, code, cre_numerocredito::varchar, cli_nroid, 
 -- 	cre_fechafinancia
 from 
@@ -832,30 +1665,27 @@ from
         order by tlc."NAME" asc limit 1
 	) second_charge on second_charge.loankey = tcm."ENCODEDKEY"
 	  where  mpl.id < 9
-	  -- and tcm.total_outstanding > 0
-	  -- and tcm."ID" not in (select external_id from m_loan)
-	 -- and tcm."ID" in ('9888159019')
+	  --and tcm.total_outstanding > 0
+	  and tcm."ID" not in (select external_id from m_loan)
+	 --and tcm."ID" in ('9888159019')
 	 order by tcm."ID";
 	
-	
-	-- truncate table m_loan restart identity cascade;
-	-- truncate table m_document restart identity cascade;
+	select count(*) from m_loan;
 	
 	
-	select * from m_loan_charge mlc where mlc.loan_id = 2;
+	select * from m_loan ml where loan_status_id = 300;
 
-select * from m_loan_transaction order by id desc;
 
-select * from m_loan where id = 446;
-	
-	
-	select * from tmp_cliente_migrar;
+select * from tmp_loanaccount tl where "ID" = '0053873138';
 
-select * from m_loan ml;
-	
-	select * from tmp_loanaccount tl where tl."ID" = '0039682591';
+select * from tmp_loan_repayment_schedule tlrs where "PARENTACCOUNTKEY" = '8a44290a9363b130019363cd7bfe2a5d' order by "DUEDATE" ;
 
-select * from tmp_loan_repayment_schedule tlrs where "PARENTACCOUNTKEY" = '8a44359f95aaf0f40195abb6af260535' order by "DUEDATE";
+select * from tmp_disbursementdetails td where td."ENCODEDKEY" = '8a4447229739deb501973c6217a4340d';
+
+select * from tmp_loanaccount tl where "ACCOUNTSTATE" = 'APPROVED'; -- is null;
+
+select * from tmp_migration_response tmr 
+	
 	
 -- Now year <2024
 update c_configuration set value = 1000000 where name = 'SMLV';
@@ -869,10 +1699,24 @@ select distinct
 	'' loan_officer,
 	-- td.disbursementdate as submit_date,
 	-- td.disbursementdate as approved_date,
-	-- td.disbursementdate as disbursement_date,
-	to_date(to_char(coalesce(tcm.new_disbursement_date , td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
-	to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
-	to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as submit_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as approved_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then null
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as disbursement_date,
+	--to_date(to_char(coalesce(tcm.new_disbursement_date, coalesce(tcm."APPROVEDDATE", tcm."CREATIONDATE")), 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
+	--to_date(to_char(coalesce(tcm."new_disbursement_date", coalesce(td."DISBURSEMENTDATE", tcm."APPROVEDDATE")), 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
+	--to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
 	'' payment_type,
 	'' fund,
 	tcm."LOANAMOUNT" as principal_amount,
@@ -911,24 +1755,24 @@ case
 	tcm."ID"  as external_id
 	-- first_charge.charge_name first_charge, first_charge.iva_name first_iva,
 	-- second_charge.charge_name second_charge, second_charge.iva_name second_iva,
-	-- replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
-	-- case 
+	--replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
+	--case 
 	--	when mpl.id = 8 then replace(mipyme_charge.charge_name, ' ', '_')
 	--	else replace(second_charge.charge_name, ' ', '_')
-	-- end,
-	-- case 
+	--end,
+	--case 
 	--	when mpl.id = 8 then mipyme_charge.fee_percentage
 	--	else second_charge.fee_percentage
-	-- end, '',
-	-- case 
+	--end, '',
+	--case 
 	--	when mpl.id = 8 then replace(mipyme_charge.iva_name, ' ', '_')
 	--	else replace(second_charge.iva_name, ' ', '_')
-	-- end,
-	-- case 
+	--end,
+	--case 
 	--	when mpl.id = 8 then mipyme_charge.iva_percentage
 	--	else second_charge.iva_percentage
-	-- end,
-	-- ''
+	--end,
+	--''
 	-- nit, code, cre_numerocredito::varchar, cli_nroid, 
 -- 	cre_fechafinancia
 from 
@@ -1014,7 +1858,7 @@ from
 	where  mpl.id in (9,10) and trim(to_char(td."DISBURSEMENTDATE",'YYYY')) in ('2021','2022','2023')
 	  -- and tcm.id not in ('5926921620','5798558581','9043209288','4911099153','6171223614','2161289444','5775498843','8187153983','0022032372','7770432985','1426513226','3351179832','3532209966','8111747402','3780860737','5531840773','7534435854','0372390302','0673688145','4741881842','0890400726','6782519014','4761121438','8915931224','5966130912','8333585890','6241295657','5823029570','1515755714','5324318143','1090373796','6210443011','8162545940')
 	and tcm."ID" not in (select external_id from m_loan)
-	  -- and tcm.total_outstanding > 0
+	  --and tcm.total_outstanding > 0
 		order by tcm."ID";
 	
 	
@@ -1032,9 +1876,24 @@ select distinct
 	-- td.disbursementdate as submit_date,
 	-- td.disbursementdate as approved_date,
 	-- td.disbursementdate as disbursement_date,
-	to_date(to_char(coalesce(tcm.new_disbursement_date , td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
-	to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
-	to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as submit_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as approved_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then null
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as disbursement_date,
+	--to_date(to_char(coalesce(tcm.new_disbursement_date, coalesce(tcm."APPROVEDDATE", tcm."CREATIONDATE")), 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
+	--to_date(to_char(coalesce(tcm."new_disbursement_date", coalesce(td."DISBURSEMENTDATE", tcm."APPROVEDDATE")), 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
+	--to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
 	'' payment_type,
 	'' fund,
 	tcm."LOANAMOUNT" as principal_amount,
@@ -1073,24 +1932,24 @@ case
 	tcm."ID"  as external_id
 	-- first_charge.charge_name first_charge, first_charge.iva_name first_iva,
 	-- second_charge.charge_name second_charge, second_charge.iva_name second_iva,
-	-- replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
-	-- case 
+	--replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
+	--case 
 	--	when mpl.id = 8 then replace(mipyme_charge.charge_name, ' ', '_')
 	--	else replace(second_charge.charge_name, ' ', '_')
-	-- end,
-	-- case 
+	--end,
+	--case 
 	--	when mpl.id = 8 then mipyme_charge.fee_percentage
 	--	else second_charge.fee_percentage
-	-- end, '',
-	-- case 
+	--end, '',
+	--case 
 	--	when mpl.id = 8 then replace(mipyme_charge.iva_name, ' ', '_')
 	--	else replace(second_charge.iva_name, ' ', '_')
-	-- end,
-	-- case 
+	--end,
+	--case 
 	--	when mpl.id = 8 then mipyme_charge.iva_percentage
 	--	else second_charge.iva_percentage
-	-- end,
-	-- ''
+	--end,
+	--''
 	-- nit, code, cre_numerocredito::varchar, cli_nroid, 
 -- 	cre_fechafinancia
 from 
@@ -1176,11 +2035,457 @@ from
 	where  mpl.id in (9,10) and trim(to_char(td."DISBURSEMENTDATE",'YYYY')) in ('2024')
 	  -- and tcm.id not in ('5926921620','5798558581','9043209288','4911099153','6171223614','2161289444','5775498843','8187153983','0022032372','7770432985','1426513226','3351179832','3532209966','8111747402','3780860737','5531840773','7534435854','0372390302','0673688145','4741881842','0890400726','6782519014','4761121438','8915931224','5966130912','8333585890','6241295657','5823029570','1515755714','5324318143','1090373796','6210443011','8162545940')
 	and tcm."ID" not in (select external_id from m_loan)
-	  -- and tcm.total_outstanding > 0
+	  --and tcm.total_outstanding > 0
+		order by tcm."ID";
+	
+--Minus date filter
+select distinct
+	(select REPLACE(mo.name,' ', '_') from m_office mo where id = 1) as office_name,
+	'Individual' as loan_type,
+	concat(trim(mc.display_name), '(', mc.id , ')') as client_name,
+	mc.external_id as client_external_id,
+	REpLACE(mpl.name, ' ', '_') as product_name,
+	'' loan_officer,
+	-- td.disbursementdate as submit_date,
+	-- td.disbursementdate as approved_date,
+	-- td.disbursementdate as disbursement_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as submit_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as approved_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then null
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as disbursement_date,
+	--to_date(to_char(coalesce(tcm.new_disbursement_date, coalesce(tcm."APPROVEDDATE", tcm."CREATIONDATE")), 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
+	--to_date(to_char(coalesce(tcm."new_disbursement_date", coalesce(td."DISBURSEMENTDATE", tcm."APPROVEDDATE")), 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
+	--to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
+	'' payment_type,
+	'' fund,
+	tcm."LOANAMOUNT" as principal_amount,
+	coalesce(tcm.no_of_outstanding_installments, 1) as no_of_repayments,
+	tcm."REPAYMENTPERIODCOUNT"  repaid_every,
+	tcm."REPAYMENTPERIODUNIT"  repay_freq,
+	coalesce(tcm.no_of_outstanding_installments, 1) loan_term,
+	tcm."REPAYMENTPERIODUNIT" loan_term_freq,
+	-- tcm.INTERESTRATE   as nominal_interest_rate,
+	case
+		when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_DAY' then tcm."INTERESTRATE"*365
+                    when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_WEEK' then  tcm."INTERESTRATE"*52
+                    when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_MONTH' then  tcm."INTERESTRATE"*12
+                   else tcm."INTERESTRATE"
+	end	 nominal_interest_rate,	
+	'Per Year' as interest_rate_per_month,
+	'Equal installments' as ammortization,
+	'Declining Balance' as interest_method,
+case
+		when mpl.interest_calculated_in_period_enum = 0 then 'Daily'
+		else 'Same as repayment period'
+	end interest_calculation_period,
+	'0' arrears_tolerance,
+	mpl.loan_transaction_strategy_code repayment_strategy,
+	0 grace_on_principal_pmt,
+	0 grace_on_interest_pmt,
+	0 interest_free_period,
+	'' interest_charged_from, 
+	coalesce(tcm.new_first_repayment_date, td."FIRSTREPAYMENTDATE") first_repayment_on,
+	'' amount_repaid,
+	'' date_last_repayment,
+	'' repayment_type,
+	tcm.total_outstanding as approved_principal,
+	'',
+	'',
+	tcm."ID"  as external_id
+	-- first_charge.charge_name first_charge, first_charge.iva_name first_iva,
+	-- second_charge.charge_name second_charge, second_charge.iva_name second_iva,
+	--replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
+	--case 
+	--	when mpl.id = 8 then replace(mipyme_charge.charge_name, ' ', '_')
+	--	else replace(second_charge.charge_name, ' ', '_')
+	--end,
+	--case 
+	--	when mpl.id = 8 then mipyme_charge.fee_percentage
+	--	else second_charge.fee_percentage
+	--end, '',
+	--case 
+	--	when mpl.id = 8 then replace(mipyme_charge.iva_name, ' ', '_')
+	--	else replace(second_charge.iva_name, ' ', '_')
+	--end,
+	--case 
+	--	when mpl.id = 8 then mipyme_charge.iva_percentage
+	--	else second_charge.iva_percentage
+	--end,
+	--''
+	-- nit, code, cre_numerocredito::varchar, cli_nroid, 
+-- 	cre_fechafinancia
+from 
+	tmp_loanaccount tcm
+	join tmp_loanproduct_mapping tlm on tlm.ea_product_key = tcm."PRODUCTTYPEKEY"
+	join m_product_loan mpl on mpl.name = tlm.mifos_product_name
+	join tmp_disbursementdetails td on td."ENCODEDKEY" = tcm."DISBURSEMENTDETAILSKEY"
+	join tmp_cliente_migrar tcm2 on tcm2.ENCODEDKEY = tcm."ACCOUNTHOLDERKEY"
+	join m_client mc on mc.external_id = tcm2.ID 
+	left join lateral (
+		select tlc.loankey, mc1.id charge_id, mc1.name charge_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.id
+		end as iva_id,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.name
+		end as iva_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else 19
+		end as iva_percentage,
+		case
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE' then tlc.fee_percentage
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE_NUMBER_OF_INSTALLMENTS' then tlc.fee_percentage/coalesce(tcm.no_of_outstanding_installments, 1)
+		end as fee_percentage
+		from tmp_loan_charges tlc
+		left join tmp_charge_mapping charge_mapping1 on lower(charge_mapping1.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join tmp_charge_mapping charge_mapping2 on lower(charge_mapping2.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join m_charge mc1 on lower(mc1.tmp_name) = lower(charge_mapping1.fineract_charge_name)
+        left join m_charge mc2 on lower(mc2.tmp_name) = lower(charge_mapping2.fineract_iva_charge_name) 
+         where tlc.loankey = tcm."ENCODEDKEY"
+        order by tlc."NAME" desc limit 1
+	) first_charge on first_charge.loankey = tcm."ENCODEDKEY"
+	left join lateral (
+		select tlc.loankey, mc1.id charge_id, mc1.name charge_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.id
+		end as iva_id,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.name
+		end as iva_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else 19
+		end as iva_percentage,
+		case
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE' then tlc.fee_percentage
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE_NUMBER_OF_INSTALLMENTS' then tlc.fee_percentage/coalesce(tcm.no_of_outstanding_installments, 1)
+		end as fee_percentage		
+		from tmp_loan_charges tlc
+		left join tmp_charge_mapping charge_mapping1 on lower(charge_mapping1.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join tmp_charge_mapping charge_mapping2 on lower(charge_mapping2.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join m_charge mc1 on lower(mc1.tmp_name) = lower(charge_mapping1.fineract_charge_name)
+        left join m_charge mc2 on lower(mc2.tmp_name) = lower(charge_mapping2.fineract_iva_charge_name) 
+        where tlc.loankey = tcm."ENCODEDKEY"
+        order by tlc."NAME" asc limit 1
+	) second_charge on second_charge.loankey = tcm."ENCODEDKEY"
+	left join lateral (
+		select tcm."ENCODEDKEY" loankey, mc1.id charge_id, mc1.name charge_name,
+		mc2.id iva_id,
+		 mc2.name iva_name,
+		mc2.amount iva_percentage,
+		mc1.amount fee_percentage		
+		from m_charge mc1
+		join m_charge mc2 on mc2.parent_charge_id = mc1.id
+		where 
+		mpl.id = 8
+		and case
+			when tcm."LOANAMOUNT" < 5694000 then mc1.tmp_name = 'Capital Pendiente Mi Pyme < 4SMLV'
+			when tcm."LOANAMOUNT" >= 5694000 then mc1.tmp_name = 'Capital Pendiente Mi Pyme >= 4SMLV'		
+			else mc1.tmp_name = 'none'
+		end
+		and case
+			when tcm."LOANAMOUNT" < 5694000 then mc2.tmp_name = 'IVA Capital Pendiente Mi Pyme < 4SMLV'
+			when tcm."LOANAMOUNT" >= 5694000 then  mc2.tmp_name = 'IVA Capital Pendiente Mi Pyme >= 4SMLV'			
+			else mc2.tmp_name = 'none'
+		end
+		) mipyme_charge on mipyme_charge.loankey = tcm."ENCODEDKEY"
+	where  mpl.id in (9,10) --and trim(to_char(td."DISBURSEMENTDATE",'YYYY')) in ('2024')
+	  -- and tcm.id not in ('5926921620','5798558581','9043209288','4911099153','6171223614','2161289444','5775498843','8187153983','0022032372','7770432985','1426513226','3351179832','3532209966','8111747402','3780860737','5531840773','7534435854','0372390302','0673688145','4741881842','0890400726','6782519014','4761121438','8915931224','5966130912','8333585890','6241295657','5823029570','1515755714','5324318143','1090373796','6210443011','8162545940')
+	and tcm."ID" not in (select external_id from m_loan)
+	  --and tcm.total_outstanding > 0
 		order by tcm."ID";
 	
 	
--- -==== END OF NEW QUERIES TO CREATE LOANS FOR THE OUTSTANDING BALANCES =====-- 
+	
+-- Now year 2025
+update c_configuration set value = 1423500 where name = 'SMLV';
+
+select distinct
+	(select REPLACE(mo.name,' ', '_') from m_office mo where id = 1) as office_name,
+	'Individual' as loan_type,
+	concat(trim(mc.display_name), '(', mc.id , ')') as client_name,
+	mc.external_id as client_external_id,
+	REpLACE(mpl.name, ' ', '_') as product_name,
+	'' loan_officer,
+	-- td.disbursementdate as submit_date,
+	-- td.disbursementdate as approved_date,
+	-- td.disbursementdate as disbursement_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as submit_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as approved_date,
+	case 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then null
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+	end as disbursement_date,
+	--to_date(to_char(coalesce(tcm.new_disbursement_date, coalesce(tcm."APPROVEDDATE", tcm."CREATIONDATE")), 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
+	--to_date(to_char(coalesce(tcm."new_disbursement_date", coalesce(td."DISBURSEMENTDATE", tcm."APPROVEDDATE")), 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
+	--to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
+	'' payment_type,
+	'' fund,
+	tcm."LOANAMOUNT" as principal_amount,
+	coalesce(tcm.no_of_outstanding_installments, 1) as no_of_repayments,
+	tcm."REPAYMENTPERIODCOUNT"  repaid_every,
+	tcm."REPAYMENTPERIODUNIT"  repay_freq,
+	coalesce(tcm.no_of_outstanding_installments, 1) loan_term,
+	tcm."REPAYMENTPERIODUNIT" loan_term_freq,
+	-- tcm.INTERESTRATE   as nominal_interest_rate,
+	case
+		when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_DAY' then tcm."INTERESTRATE"*365
+                    when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_WEEK' then  tcm."INTERESTRATE"*52
+                    when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_MONTH' then  tcm."INTERESTRATE"*12
+                   else tcm."INTERESTRATE"
+	end	 nominal_interest_rate,	
+	'Per Year' as interest_rate_per_month,
+	'Equal installments' as ammortization,
+	'Declining Balance' as interest_method,
+case
+		when mpl.interest_calculated_in_period_enum = 0 then 'Daily'
+		else 'Same as repayment period'
+	end interest_calculation_period,
+	'0' arrears_tolerance,
+	mpl.loan_transaction_strategy_code repayment_strategy,
+	0 grace_on_principal_pmt,
+	0 grace_on_interest_pmt,
+	0 interest_free_period,
+	'' interest_charged_from, 
+	coalesce(tcm.new_first_repayment_date, td."FIRSTREPAYMENTDATE") first_repayment_on,
+	'' amount_repaid,
+	'' date_last_repayment,
+	'' repayment_type,
+	tcm.total_outstanding as approved_principal,
+	'',
+	'',
+	tcm."ID"  as external_id
+	-- first_charge.charge_name first_charge, first_charge.iva_name first_iva,
+	-- second_charge.charge_name second_charge, second_charge.iva_name second_iva,
+	--replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
+	--case 
+	--	when mpl.id = 8 then replace(mipyme_charge.charge_name, ' ', '_')
+	--	else replace(second_charge.charge_name, ' ', '_')
+	--end,
+	--case 
+	--	when mpl.id = 8 then mipyme_charge.fee_percentage
+	--	else second_charge.fee_percentage
+	--end, '',
+	--case 
+	--	when mpl.id = 8 then replace(mipyme_charge.iva_name, ' ', '_')
+	--	else replace(second_charge.iva_name, ' ', '_')
+	--end,
+	--case 
+	--	when mpl.id = 8 then mipyme_charge.iva_percentage
+	--	else second_charge.iva_percentage
+	--end,
+	--''
+	-- nit, code, cre_numerocredito::varchar, cli_nroid, 
+-- 	cre_fechafinancia
+from 
+	tmp_loanaccount tcm
+	join tmp_loanproduct_mapping tlm on tlm.ea_product_key = tcm."PRODUCTTYPEKEY"
+	join m_product_loan mpl on mpl.name = tlm.mifos_product_name
+	join tmp_disbursementdetails td on td."ENCODEDKEY" = tcm."DISBURSEMENTDETAILSKEY"
+	join tmp_cliente_migrar tcm2 on tcm2.ENCODEDKEY = tcm."ACCOUNTHOLDERKEY"
+	join m_client mc on mc.external_id = tcm2.ID 
+	left join lateral (
+		select tlc.loankey, mc1.id charge_id, mc1.name charge_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.id
+		end as iva_id,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.name
+		end as iva_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else 19
+		end as iva_percentage,
+		case
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE' then tlc.fee_percentage
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE_NUMBER_OF_INSTALLMENTS' then tlc.fee_percentage/coalesce(tcm.no_of_outstanding_installments, 1)
+		end as fee_percentage
+		from tmp_loan_charges tlc
+		left join tmp_charge_mapping charge_mapping1 on lower(charge_mapping1.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join tmp_charge_mapping charge_mapping2 on lower(charge_mapping2.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join m_charge mc1 on lower(mc1.tmp_name) = lower(charge_mapping1.fineract_charge_name)
+        left join m_charge mc2 on lower(mc2.tmp_name) = lower(charge_mapping2.fineract_iva_charge_name) 
+         where tlc.loankey = tcm."ENCODEDKEY"
+        order by tlc."NAME" desc limit 1
+	) first_charge on first_charge.loankey = tcm."ENCODEDKEY"
+	left join lateral (
+		select tlc.loankey, mc1.id charge_id, mc1.name charge_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.id
+		end as iva_id,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else mc2.name
+		end as iva_name,
+		case
+			when lower(mc1.name) = 'seguro de vida' then null
+			else 19
+		end as iva_percentage,
+		case
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE' then tlc.fee_percentage
+			when tlc."AMOUNTCALCULATIONMETHOD" = 'LOAN_AMOUNT_PERCENTAGE_NUMBER_OF_INSTALLMENTS' then tlc.fee_percentage/coalesce(tcm.no_of_outstanding_installments, 1)
+		end as fee_percentage		
+		from tmp_loan_charges tlc
+		left join tmp_charge_mapping charge_mapping1 on lower(charge_mapping1.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join tmp_charge_mapping charge_mapping2 on lower(charge_mapping2.ea_charge_name) = lower(tlc."NAME") and charge_mapping1.charge_type = 'NORMAL'
+		left join m_charge mc1 on lower(mc1.tmp_name) = lower(charge_mapping1.fineract_charge_name)
+        left join m_charge mc2 on lower(mc2.tmp_name) = lower(charge_mapping2.fineract_iva_charge_name) 
+        where tlc.loankey = tcm."ENCODEDKEY"
+        order by tlc."NAME" asc limit 1
+	) second_charge on second_charge.loankey = tcm."ENCODEDKEY"
+	left join lateral (
+		select tcm."ENCODEDKEY" loankey, mc1.id charge_id, mc1.name charge_name,
+		mc2.id iva_id,
+		 mc2.name iva_name,
+		mc2.amount iva_percentage,
+		mc1.amount fee_percentage		
+		from m_charge mc1
+		join m_charge mc2 on mc2.parent_charge_id = mc1.id
+		where 
+		mpl.id = 8
+		and case
+			when tcm."LOANAMOUNT" < 5694000 then mc1.tmp_name = 'Capital Pendiente Mi Pyme < 4SMLV'
+			when tcm."LOANAMOUNT" >= 5694000 then mc1.tmp_name = 'Capital Pendiente Mi Pyme >= 4SMLV'		
+			else mc1.tmp_name = 'none'
+		end
+		and case
+			when tcm."LOANAMOUNT" < 5694000 then mc2.tmp_name = 'IVA Capital Pendiente Mi Pyme < 4SMLV'
+			when tcm."LOANAMOUNT" >= 5694000 then  mc2.tmp_name = 'IVA Capital Pendiente Mi Pyme >= 4SMLV'			
+			else mc2.tmp_name = 'none'
+		end
+		) mipyme_charge on mipyme_charge.loankey = tcm."ENCODEDKEY"
+	where  mpl.id in (9,10) and trim(to_char(td."DISBURSEMENTDATE",'YYYY')) in ('2025')
+	  -- and tcm.id not in ('5926921620','5798558581','9043209288','4911099153','6171223614','2161289444','5775498843','8187153983','0022032372','7770432985','1426513226','3351179832','3532209966','8111747402','3780860737','5531840773','7534435854','0372390302','0673688145','4741881842','0890400726','6782519014','4761121438','8915931224','5966130912','8333585890','6241295657','5823029570','1515755714','5324318143','1090373796','6210443011','8162545940')
+	and tcm."ID" not in (select external_id from m_loan)
+	  --and tcm.total_outstanding > 0
+		order by tcm."ID";
+	
+	
+update m_loan set account_no = account_no || '-old';
+update m_loan set account_no = concat('000000', id);
+
+--before migrating MD Loans:
+
+-- New Disbursement Date
+UPDATE tmp_loanaccount tcm
+SET NEW_DISBURSEMENT_DATE = sub.new_date
+FROM (
+  SELECT
+    tl."ID",
+    CASE
+      -- If the earliest outstanding installment has a balance < 30000, take the following installment
+      WHEN (
+        SELECT s1."totaloutstanding"
+        FROM tmp_loan_repayment_schedule s1
+        WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+          AND s1."STATE" = 'LATE'
+          order by s1."DUEDATE"
+          limit 1
+      ) < 30000 and (
+	       SELECT count(1)
+	        FROM tmp_loan_repayment_schedule s1
+	        WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+	          AND s1."STATE" = 'LATE'
+      ) > 1 THEN (
+        SELECT MIN(s2."DUEDATE")::date
+        FROM tmp_loan_repayment_schedule s2
+        WHERE s2."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+          AND s2."STATE" = 'LATE'
+          AND s2."totaloutstanding" < 30000
+          group by tl."ID"
+      )
+      -- Otherwise, take the last paid installment
+      ELSE (
+        SELECT MAX(s3."DUEDATE")::date
+        FROM tmp_loan_repayment_schedule s3
+        WHERE s3."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+          AND s3."STATE" IN ('PAID')
+          group by tl."ID"
+      )
+    END AS new_date
+  FROM tmp_loanaccount tl
+  GROUP BY tl."ID", tl."ENCODEDKEY"
+) sub
+WHERE tcm."ID" = sub."ID";
+
+-- New first repayment date
+-- Set missing first repayment dates to be 30 days after new disbursement date
+update tmp_loanaccount set new_disbursement_date = "APPROVEDDATE" 
+where "ACCOUNTSTATE" = 'APPROVED' and "LOANNAME" = 'Credito Rotativo' and new_disbursement_date is null;
+update tmp_loanaccount set new_first_repayment_date = new_disbursement_date + interval '1' month
+where new_disbursement_date is not null and new_first_repayment_date is null;
+
+--truncate table tmp_migration_response 
+
+select * from tmp_loanaccount tl where tl."ID" = '9012650206';
+
+select * from tmp_migration_response tmr 
+	
+	--import the MD Loans then run this:
+	
+	UPDATE m_loan AS l
+SET number_of_repayments = tmpl."REPAYMENTINSTALLMENTS" 
+FROM tmp_loanaccount tmpl, m_product_loan mpl
+WHERE tmpl."ID" = l.account_no
+  AND mpl.id = l.product_id
+  AND mpl.allow_multiple_disbursals = true;
+ 
+ select * from m_loan where product_id in (12,13,14);
+
+select * from tmp_migration_response tmr 
+
+select "ID" from tmp_loanaccount tl where "ID" not in (select external_id from m_loan)
+and tl.total_outstanding = 0;
+
+update m_charge set name = tmp_name;
+
+
+-- After migration of multi disbursal loans execute below queries
+update m_loan set account_no = account_no || '-old';
+update m_loan set account_no = m_loan.external_id;
+
+
+select * from tmp_loanaccount
+where "ID" not in (select external_id from m_loan);
+
+select tcm2.firstname, tcm2.lastname, tcm.new_disbursement_date, tcm.new_disbursement_date + interval '1' month, tcm.* from tmp_loanaccount tcm
+join tmp_cliente_migrar tcm2 on tcm."ACCOUNTHOLDERKEY" = tcm2.encodedkey 
+where "ID" not in (select external_id from m_loan);
+
+
+
+select * from tmp_loanaccount tl where tl."ID" = '1487200722';
+
+select * from tmp_loan_repayment_schedule tlrs where tlrs."PARENTACCOUNTKEY" = '8a44547097542eb4019755b30eec3ed4' order by "DUEDATE";
+
 
 -- Custom Fields -- DATA TABLES
 
@@ -1472,7 +2777,7 @@ left join tmp_customfieldvalue tc_tipo on tc_tipo."ENCODEDKEY" = tl."ENCODEDKEY"
 left join tmp_customfieldvalue tc_cuenta on tc_cuenta."ENCODEDKEY" = tl."ENCODEDKEY" and lower(tc_cuenta.field_id) = 'numero_de_cuenta';
 
 
--- ----- End Custom Fields ---------------------
+------- End Custom Fields ---------------------
 
 
 
@@ -1494,6 +2799,670 @@ from
 m_client mc;
 
 update m_savings_account set account_no = LPAD(id::text, 9, '0') ;
+	
+	
+---==== END OF NEW QUERIES TO CREATE LOANS FOR THE OUTSTANDING BALANCES =====-- 
+	
+
+--- insert flat loan charges
+alter table m_loan_charge add column loan_schedule_id bigint;
+
+INSERT INTO public.m_loan_charge
+(loan_id, charge_id, is_penalty, charge_time_enum, due_for_collection_as_of_date, charge_calculation_enum, charge_payment_mode_enum, 
+charge_amount_or_percentage, amount, amount_paid_derived, amount_waived_derived, amount_writtenoff_derived, amount_outstanding_derived,
+is_paid_derived, waived, min_cap, max_cap, is_active, submitted_on_date, applicable_from_installment, is_get_percentage_from_table, is_endorse, created_on_utc,
+last_modified_on_utc, created_by, last_modified_by, loan_schedule_id)
+select ml.id loan_id, (select id from m_charge where name = 'Flat Charge') charge_id, false is_penalty, 2 charge_time_enum, mlrs.duedate due_for_collection_as_of_date, 1030 charge_calculation_enum, 
+0 charge_payment_mode_enum, tflc."AMOUNT" charge_amount_or_percentage, tflc."AMOUNT" amount, 0 amount_paid_derived, 0 amount_waived_derived, 0 amount_writtenoff_derived, tflc."AMOUNT" amount_outstanding_derived,
+false is_paid_derived, false waived, null min_cap, null max_cap, true is_active, now() submitted_on_date, mlrs.installment, false is_get_percentage_from_table, false is_endorse,
+now() created_on_utc, now() last_modified_on_utc, 1 created_by, 1 last_modified_by, mlrs.id
+from 
+m_loan ml 
+join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+join tmp_flat_loan_charges tflc on tflc.loan_external_id = ml.external_id
+join tmp_loan_repayment_schedule tlrs on tlrs."ENCODEDKEY" = tflc.installmentkey
+where
+mlrs.installment = tlrs.installment
+-- and tlrs.state = 'PAID'
+and tflc.fee_name not like '%MiPyme%' --new update to skip MiPyme charge as it's added via import
+order by ml.id, mlrs.installment;
+
+
+---- Update fineract installment components with mambu data
+
+with cte as (
+select ml.id loan_id,tlrs.installment , tlrs."PRINCIPALDUE", tlrs."INTERESTDUE"
+from tmp_loan_repayment_schedule tlrs 
+join tmp_loanaccount tl on tl."ENCODEDKEY" = tlrs."PARENTACCOUNTKEY"
+join m_loan ml on ml.external_id = tl."ID"
+-- join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+order by ml.id, tlrs.installment
+)
+update m_loan_repayment_schedule mlrs
+set principal_amount = cte."PRINCIPALDUE",
+interest_amount = cte."INTERESTDUE"
+from cte
+where mlrs.loan_id = cte.loan_id
+and mlrs.installment = cte.installment;
+
+----- NOT NEEDED ANYMORE BUT THESE ARE HERE JUST IN CASE EA ASKS TO MIGRATE MIPYME CHARGE AS REGULAR CHARGE AND NOT AS FLAT CHARGE
+----- If not creating mipyme charge for micro B loans during loan import then do not run below queries
+--- update installment charge amount for microB loans productid = 8 for mipyme charge as it is based on outstanding principal which gets changed when components
+-- are copied from mambu
+ WITH principal_schedule AS (
+    SELECT 
+        mrs.id AS schedule_id,
+        mrs.loan_id,
+        mrs.installment,
+        mrs.principal_amount,
+        ml.approved_principal,
+        SUM(mrs2.principal_amount) AS principal_paid_before,
+        (ml.approved_principal - SUM(mrs2.principal_amount)) AS outstanding_principal
+    FROM m_loan_repayment_schedule mrs
+    JOIN m_loan ml ON ml.id = mrs.loan_id
+    LEFT JOIN m_loan_repayment_schedule mrs2 
+        ON mrs2.loan_id = mrs.loan_id 
+        AND mrs2.installment < mrs.installment
+        where mrs.loan_id in (select id from m_loan where product_id = 8)
+    GROUP BY mrs.id, mrs.loan_id, mrs.installment, mrs.principal_amount, ml.approved_principal
+),
+charge_update AS (
+    SELECT 
+        ps.installment, lic.id AS installment_charge_id,
+        ROUND((ps.outstanding_principal * lc.charge_amount_or_percentage) / 100, 2) AS new_amount
+    FROM m_loan_installment_charge lic
+    JOIN m_loan_charge lc ON lc.id = lic.loan_charge_id
+    JOIN principal_schedule ps 
+        ON ps.loan_id = lc.loan_id 
+       where ps.schedule_id = lic.loan_schedule_id
+       and lc.charge_id in (28, 32)
+    )
+    UPDATE m_loan_installment_charge lic
+SET amount = cu.new_amount
+FROM charge_update cu
+WHERE lic.id = cu.installment_charge_id
+and cu.new_amount is not null;
+
+--- Update mipyme iva charge amount
+drop table tmp_mipyme_micro_b_iva_amounts;
+
+create table tmp_mipyme_micro_b_iva_amounts as (
+with cte as (
+select ml.id loan_id,mlc.charge_id,  mlrs.id installment_id, mlrs.installment, mlic.amount parent_charge_amount, round(mlic.amount * 19/100, 2) iva_amount
+from m_loan_installment_charge mlic 
+join m_loan_charge mlc on mlc.id = mlic.loan_charge_id
+join m_loan_repayment_schedule mlrs on mlrs.id = mlic.loan_schedule_id
+join m_loan ml on ml.id = mlrs.loan_id
+where mlc.charge_id in (28, 32)
+and ml.product_id = 8
+-- and ml.id = 68
+order by ml.id, mlrs.installment
+)
+select * from cte
+);
+
+-- update mipyme 1
+UPDATE m_loan_installment_charge lic
+SET amount = iva.iva_amount
+FROM tmp_mipyme_micro_b_iva_amounts iva
+WHERE lic.loan_schedule_id  = iva.installment_id
+and iva.charge_id = 28
+and lic.loan_charge_id in (select id from m_loan_charge where charge_id = 29);
+
+-- update mipyme 2
+UPDATE m_loan_installment_charge lic
+SET amount = iva.iva_amount
+FROM tmp_mipyme_micro_b_iva_amounts iva
+WHERE lic.loan_schedule_id  = iva.installment_id
+and iva.charge_id = 32
+and lic.loan_charge_id in (select id from m_loan_charge where charge_id = 31);
+
+----
+-- update loan charge amounts for micro B
+update m_loan_charge mlc
+set amount = subquery.amt
+from (
+select mlic.loan_charge_id , sum(amount) amt
+from m_loan_installment_charge mlic
+group by mlic.loan_charge_id 
+) subquery
+where mlc.id = subquery.loan_charge_id
+and mlc.loan_id in (select id from m_loan where product_id = 8);
+
+------------ End NOT NEEDED Micro B changes ----------------
+
+-- There are cases where installment fee amount is a few cents less or greater than installment charge amount. Below query updates installment amount to be exact sum else transactions move into infinite loop
+
+-- Check the difference with below query
+
+with cte as (select loan_schedule_id, sum(amount) amt
+from m_loan_installment_charge mlic
+group by mlic.loan_schedule_id )
+select mpl.name,  mlrs.installment, mlrs.loan_id,mlrs.fee_charges_amount, cte.amt
+from m_loan_repayment_schedule mlrs
+join cte on cte.loan_schedule_id = mlrs.id
+join m_loan ml on ml.id = mlrs.loan_id
+join m_product_loan mpl on mpl.id = ml.product_id
+ where  mlrs.fee_charges_amount != cte.amt
+ order by ml.id, mlrs.installment;
+
+-------
+
+update m_loan_repayment_schedule mlrs
+set fee_charges_amount = subquery.amt
+from (
+select loan_schedule_id, sum(amount) amt
+from m_loan_installment_charge mlic
+group by mlic.loan_schedule_id 
+) subquery
+where mlrs.id = subquery.loan_schedule_id;
+
+-- update Flat charge amounts
+update m_loan_repayment_schedule mlrs
+set fee_charges_amount = fee_charges_amount + subquery.amt
+from (
+select ml.id, mlrs.installment, mlrs.id loan_schedule_id,  sum(amount) amt from m_loan_charge mlc 
+join m_loan ml on ml.id = mlc.loan_id
+join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+where 
+mlc.applicable_from_installment = mlrs.installment
+and mlc.loan_schedule_id = mlrs.id
+and mlc.charge_calculation_enum = 1030
+group by ml.id, mlrs.installment, mlrs.id
+) subquery
+where mlrs.loan_id = subquery.id and mlrs.installment = subquery.installment;
+
+
+-- Update penalty data for paid installments
+INSERT INTO public.m_loan_charge
+(loan_id, charge_id, is_penalty, charge_time_enum, due_for_collection_as_of_date, charge_calculation_enum, charge_payment_mode_enum, calculation_percentage, calculation_on_amount, 
+charge_amount_or_percentage, amount, amount_paid_derived, amount_waived_derived, amount_writtenoff_derived, amount_outstanding_derived, is_paid_derived, waived, min_cap, max_cap,
+is_active, external_id, submitted_on_date, applicable_from_installment, is_get_percentage_from_table, default_from_installment, amount_paid_in_default_installment, is_endorse, expire_date,
+insurance_name, insurance_id, created_on_utc, last_modified_on_utc, created_by, last_modified_by)
+select ml.id loan_id, mc.id charge_id, mc.is_penalty is_penalty, mc.charge_time_enum charge_time_enum, tlrs."REPAIDDATE" due_for_collection_as_of_date, mc.charge_calculation_enum charge_calculation_enum, mc.charge_payment_mode_enum charge_payment_mode_enum, mc.amount calculation_percentage, mlrs.principal_amount calculation_on_amount,
+mc.amount charge_amount_or_percentage, tlrs."PENALTYDUE" amount, 0 amount_paid_derived, 0 amount_waived_derived, 0 amount_writtenoff_derived, tlrs."PENALTYDUE" amount_outstanding_derived, false is_paid_derived, false waived,null min_cap, null max_cap,
+true is_active, mlrs.id external_id, mlrs.duedate submitted_on_date, null applicable_from_installment, false is_get_percentage_from_table, null default_from_installment, null amount_paid_in_default_installment, false is_endorse, null expire_date,
+null insurance_name, null insurance_id, now() created_on_utc, now() last_modified_on_utc, 1 created_by, 1 last_modified_by
+from m_loan ml 
+join m_product_loan mpl on mpl.id = ml.product_id
+join m_product_loan_charge mplc on mplc.product_loan_id = mpl.id
+join m_charge mc on mc.id = mplc.charge_id and mc.is_penalty = true
+join tmp_loanaccount tl on tl."ID" = ml.external_id
+join  tmp_loan_repayment_schedule tlrs on tlrs."PARENTACCOUNTKEY" = tl."ENCODEDKEY" 
+join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+where 
+tlrs."PENALTYDUE" > 0
+and tlrs."STATE" = 'PAID'
+and tlrs.installment = mlrs.installment
+order by tlrs."PARENTACCOUNTKEY" , tlrs.installment, tlrs."STATE";
+
+-- update paid penalties amounts for partial paid installments
+INSERT INTO public.m_loan_charge
+(loan_id, charge_id, is_penalty, charge_time_enum, due_for_collection_as_of_date, charge_calculation_enum, charge_payment_mode_enum,
+calculation_percentage, calculation_on_amount, 
+charge_amount_or_percentage, amount, amount_paid_derived, amount_waived_derived, amount_writtenoff_derived, amount_outstanding_derived, is_paid_derived, waived, min_cap, max_cap,
+is_active, external_id, submitted_on_date, applicable_from_installment, is_get_percentage_from_table, default_from_installment, amount_paid_in_default_installment, is_endorse, expire_date,
+insurance_name, insurance_id, created_on_utc, last_modified_on_utc, created_by, last_modified_by)
+select ml.id loan_id, mc.id charge_id, mc.is_penalty is_penalty, mc.charge_time_enum charge_time_enum, mlrs.fromdate due_for_collection_as_of_date, mc.charge_calculation_enum charge_calculation_enum, mc.charge_payment_mode_enum charge_payment_mode_enum,
+mc.amount calculation_percentage, mlrs.principal_amount calculation_on_amount,
+mc.amount charge_amount_or_percentage, tlrs."PENALTYPAID" amount, 0 amount_paid_derived, 0 amount_waived_derived, 0 amount_writtenoff_derived, tlrs."PENALTYPAID" amount_outstanding_derived, false is_paid_derived, false waived,null min_cap, null max_cap,
+true is_active, mlrs.id external_id, mlrs.fromdate submitted_on_date, null applicable_from_installment, false is_get_percentage_from_table, null default_from_installment, null amount_paid_in_default_installment, false is_endorse, null expire_date,
+null insurance_name, null insurance_id, now() created_on_utc, now() last_modified_on_utc, 1 created_by, 1 last_modified_by
+from m_loan ml 
+join m_product_loan mpl on mpl.id = ml.product_id
+join m_product_loan_charge mplc on mplc.product_loan_id = mpl.id
+join m_charge mc on mc.id = mplc.charge_id and mc.is_penalty = true
+join tmp_loanaccount tl on tl."ID" = ml.external_id
+join  tmp_loan_repayment_schedule tlrs on tlrs."PARENTACCOUNTKEY" = tl."ENCODEDKEY" 
+join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+where 
+tlrs."PENALTYPAID" > 0
+and tlrs."STATE" in ('LATE', 'PARTIALLY_PAID')
+and tlrs.installment = mlrs.installment
+order by tlrs."PARENTACCOUNTKEY" , tlrs.installment, tlrs."STATE";
+
+-- insert penalty charge - installment mapping
+INSERT INTO public.m_loan_overdue_installment_charge
+(loan_charge_id, loan_schedule_id, frequency_number)
+select mlc.id, mlrs.id, 1
+from m_loan_charge mlc 
+join m_loan_repayment_schedule mlrs on mlrs.id :: varchar = mlc.external_id
+where 
+mlc.is_penalty = true;
+
+
+
+
+
+---
+-- update penalty charge date as duedate of that installment
+update m_loan_charge mls
+set due_for_collection_as_of_date = sub.duedate
+from (
+select mloic.*, mlrs.duedate, mlc.due_for_collection_as_of_date from m_loan_overdue_installment_charge mloic 
+join m_loan_repayment_schedule mlrs on mlrs.id = mloic.loan_schedule_id
+join m_loan_charge mlc on mlc.id = mloic.loan_charge_id
+where mlc.due_for_collection_as_of_date > mlrs.duedate
+) sub
+where mls.id = sub.loan_charge_id;
+
+-- update penalty amounts in loan installments
+update m_loan_repayment_schedule mlrs
+set penalty_charges_amount = sub.penaltydue
+from (
+select ml.id loan_id, mloic.loan_charge_id , mloic.loan_schedule_id, mlrs.installment , sum(mlc.amount) penaltydue
+from
+m_loan ml
+join m_loan_charge mlc on mlc.loan_id = ml.id
+join m_loan_overdue_installment_charge mloic on mloic.loan_charge_id  = mlc.id 
+join m_loan_repayment_schedule mlrs on mloic.loan_schedule_id = mlrs.id
+ group by ml.id, mloic.loan_schedule_id,mlrs.installment , mloic.loan_charge_id
+ order by ml.id, mlrs.installment
+ ) as sub
+ where 
+ mlrs.loan_id = sub.loan_id
+ and mlrs.id = sub.loan_schedule_id;
+
+-- Update paid amounts
+update m_loan_repayment_schedule mlrs
+set principal_completed_derived = mlrs.principal_amount,
+	interest_completed_derived = mlrs.interest_amount,
+	fee_charges_completed_derived = mlrs.fee_charges_amount,
+	penalty_charges_completed_derived = mlrs.penalty_charges_amount,
+	migrated_installment = true,
+	completed_derived = true,
+	obligations_met_on_date = tlrs."REPAIDDATE" 
+from m_loan ml
+join tmp_loanaccount tl on tl."ID" = ml.external_id
+inner join tmp_loan_repayment_schedule tlrs  on  tlrs."PARENTACCOUNTKEY" = tl."ENCODEDKEY" 
+where ml.id = mlrs.loan_id
+and mlrs.installment = tlrs.installment
+and tlrs."STATE" = 'PAID';
+
+
+-- check this loan for duplicate repayments at this point --- 000001727 (see slack message)
+
+
+-- Alter loan_transaction add installment_id (we'll drop this after)
+alter table m_loan_transaction add column installment_id bigint;
+
+-- Insert transactions for completed installments
+INSERT INTO m_loan_transaction(
+	loan_id, office_id, payment_detail_id, is_reversed, external_id, installment_id, transaction_type_enum, transaction_date, amount, principal_portion_derived, interest_portion_derived, fee_charges_portion_derived, penalty_charges_portion_derived, outstanding_loan_balance_derived, submitted_on_date, created_by, last_modified_by, created_on_utc, last_modified_on_utc)
+select ml.id, mc.office_id, null, false, null, mlrs.id, 2, mlrs.obligations_met_on_date, coalesce(mlrs.principal_amount, 0) + coalesce(mlrs.interest_amount,0) + coalesce(mlrs.fee_charges_amount, 0) + coalesce(mlrs.penalty_charges_amount, 0),
+mlrs.principal_amount, mlrs.interest_amount, mlrs.fee_charges_amount, mlrs.penalty_charges_amount, null, mlrs.obligations_met_on_date, 1, 1, mlrs.obligations_met_on_date, mlrs.obligations_met_on_date
+from m_loan_repayment_schedule mlrs join m_loan ml on mlrs.loan_id = ml.id
+join m_client mc on ml.client_id = mc.id
+where mlrs.completed_derived = true
+and mlrs.installment > 0
+order by mlrs.installment;
+
+
+-- Insert transaction to schedule mapping
+INSERT INTO m_loan_transaction_repayment_schedule_mapping(
+	loan_transaction_id, loan_repayment_schedule_id, amount, principal_portion_derived, interest_portion_derived, fee_charges_portion_derived, penalty_charges_portion_derived)
+select mlt.id, mlrs.id, mlt.amount, mlt.principal_portion_derived, mlt.interest_portion_derived, mlt.fee_charges_portion_derived, mlt.penalty_charges_portion_derived
+from m_loan_repayment_schedule mlrs join m_loan_transaction mlt on mlrs.id = mlt.installment_id
+where mlrs.completed_derived = true and mlrs.installment > 0;
+
+-- Update loan balance in transactions (took about 7 minutes for 25K loans; took 27 minutes for 200K loans)
+UPDATE m_loan_transaction lt
+SET outstanding_loan_balance_derived = (
+    SELECT ml.principal_disbursed_derived - COALESCE(SUM(lt2.principal_portion_derived), 0)
+    FROM m_loan ml
+    LEFT JOIN m_loan_transaction lt2 ON lt2.loan_id = ml.id
+    where ml.id = lt.loan_id and lt2.transaction_date <= lt.transaction_date
+    and lt2.transaction_type_enum = 2
+    group by ml.principal_disbursed_derived
+)
+where lt.outstanding_loan_balance_derived IS DISTINCT FROM (
+    SELECT ml.principal_disbursed_derived - COALESCE(SUM(lt2.principal_portion_derived), 0)
+    FROM m_loan ml
+    LEFT JOIN m_loan_transaction lt2 ON lt2.loan_id = lt.loan_id
+    WHERE ml.id = lt.loan_id
+    AND lt2.transaction_date <= lt.transaction_date
+    and lt2.transaction_type_enum = 2
+    group by ml.principal_disbursed_derived
+);
+
+-- update loan summary
+update
+	m_loan ml
+set
+	penalty_charges_charged_derived = (
+	select
+		coalesce(SUM(mlrs.penalty_charges_amount),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.penalty_charges_amount is not null and mlrs.penalty_charges_amount > 0
+		and mlrs.loan_id = ml.id
+);
+
+
+update
+	m_loan ml
+set
+	principal_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.principal_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.principal_completed_derived is not null
+		and mlrs.loan_id = ml.id
+),
+	interest_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.interest_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.interest_completed_derived is not null
+		and mlrs.loan_id = ml.id
+),
+	fee_charges_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.fee_charges_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.fee_charges_completed_derived is not null
+		and mlrs.loan_id = ml.id
+),
+	penalty_charges_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.penalty_charges_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.penalty_charges_completed_derived is not null
+		and mlrs.loan_id = ml.id
+);
+
+
+update m_loan
+set principal_outstanding_derived = principal_disbursed_derived - principal_repaid_derived,
+	interest_outstanding_derived = interest_charged_derived - interest_repaid_derived,
+	fee_charges_outstanding_derived = fee_charges_charged_derived - fee_charges_repaid_derived,
+	penalty_charges_outstanding_derived = penalty_charges_charged_derived - penalty_charges_repaid_derived,
+	total_repayment_derived = principal_repaid_derived + interest_repaid_derived + fee_charges_repaid_derived + penalty_charges_repaid_derived,
+	total_outstanding_derived = principal_outstanding_derived + interest_outstanding_derived + fee_charges_outstanding_derived + penalty_charges_outstanding_derived;
+
+
+-------------- Charge Payments -----------------------------
+-- insert m_loan_charge_paid_by
+insert into m_loan_charge_paid_by (loan_transaction_id, loan_charge_id, amount, installment_number)
+select mlt.id, mlic.loan_charge_id, mlic.amount, mlrs.installment
+from m_loan_installment_charge mlic join m_loan_repayment_schedule mlrs on mlic.loan_schedule_id = mlrs.id
+join m_loan_transaction mlt on mlt.installment_id = mlrs.id
+and (select count(1) from m_loan_charge_paid_by where loan_transaction_id = mlt.id and loan_charge_id = mlic.loan_charge_id) = 0;
+
+-- insert flat charge paid by
+insert into m_loan_charge_paid_by (loan_transaction_id, loan_charge_id, amount, installment_number)
+select mlt.id, mlc.id, sum(mlc.amount) amt, mlrs.installment
+from m_loan ml
+join m_loan_charge mlc on mlc.loan_id = ml.id
+join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+join m_loan_transaction mlt on mlt.installment_id = mlrs.id
+and (select count(1) from m_loan_charge_paid_by where loan_transaction_id = mlt.id and loan_charge_id = mlc.id) = 0
+where
+mlc.charge_calculation_enum = 1030
+and mlc.applicable_from_installment = mlrs.installment
+and mlc.loan_schedule_id = mlrs.id
+group by ml.id, mlt.id, mlc.id, mlrs.installment,mlrs.id
+order by ml.id;
+
+-- insert penalty charges in m_loan_charge_paid_by for fully paid installments
+insert into m_loan_charge_paid_by (loan_transaction_id, loan_charge_id, amount, installment_number)
+select
+mlt.id, mlc.id, mlc.amount, mlrs.installment
+from
+m_loan_transaction mlt 
+join m_loan_repayment_schedule mlrs on mlrs.id = mlt.installment_id
+join m_loan_overdue_installment_charge mloic on mloic.loan_schedule_id = mlrs.id
+join m_loan_charge mlc on mlc.id = mloic.loan_charge_id;
+
+
+-- update m_loan_installment_charge with paid amount/status and outstanding
+update m_loan_installment_charge
+set amount_paid_derived = amount,
+	amount_outstanding_derived = 0,
+	is_paid_derived = true
+where loan_schedule_id in (select id from m_loan_repayment_schedule mlrs where mlrs.completed_derived = true);
+
+-- update m_loan_charge with paid and outstanding
+update m_loan_charge mlc
+set amount_paid_derived = (select sum(amount_paid_derived) from m_loan_installment_charge mlic where mlic.loan_charge_id = mlc.id and mlic.is_paid_derived = true);
+
+
+-- update m_loan_charge for flat charges
+update m_loan_charge mlc
+set amount_paid_derived = amount
+where charge_calculation_enum = 1030
+and loan_schedule_id in (select id from m_loan_repayment_schedule mlrs where mlrs.completed_derived = true);
+
+
+
+update m_loan_charge
+set amount_outstanding_derived = amount - amount_paid_derived
+where amount_paid_derived is not null;
+
+UPDATE public.c_configuration
+	SET enabled=true
+	WHERE name = 'allow-transactions-on-holiday';
+UPDATE public.c_configuration
+	SET enabled=true
+	WHERE name = 'allow-transactions-on-non_workingday';
+
+-- update recalculate EMI flag for last paid installment so that the next transaction updates
+with cte as (
+	select mlrs.loan_id, max(mlrs.installment) inst
+	from m_loan_repayment_schedule mlrs
+	where mlrs.migrated_installment = true
+	group by mlrs.loan_id
+	order by loan_id
+)
+update m_loan_repayment_schedule mlrs
+set recalculate_emi = true
+from cte
+where
+mlrs.loan_id = cte.loan_id
+and mlrs.installment = cte.inst;
+
+select * from tmp_loanaccount tl 
+
+
+
+----checkthe loan again 000001727 (for duplicates before importing the transactions)
+
+-- Execute transactions for partially paid installments through transaction import tool
+-- download the import file and change format of client id column to text
+with cte as (
+select ml.id loan_id, tl."ENCODEDKEY", tl."ID" external_id, tlrs."PRINCIPALPAID" +  tlrs."INTERESTPAID" + tlrs."FEESPAID" + tlrs."PENALTYPAID" amount,
+tlrs."PRINCIPALDUE" - tlrs."PRINCIPALPAID" principal, tlrs."INTERESTDUE" - tlrs."INTERESTPAID" interest, tlrs."FEESDUE" - tlrs."FEESPAID" fees 
+from tmp_loan_repayment_schedule tlrs 
+join tmp_loanaccount tl on tl."ENCODEDKEY" = tlrs."PARENTACCOUNTKEY"
+join m_loan ml on ml.external_id = tl."ID"
+where 
+ -- tl.encodedkey = '8a44524382b6c9620182b8c9f7a76315'  and
+ tlrs."STATE" in ('LATE', 'PARTIALLY_PAID')
+),
+cte2 as (
+	select loan_id, "ENCODEDKEY", external_id, sum(amount) amount
+	from cte
+	group by  loan_id, "ENCODEDKEY", external_id
+),
+cte_date as (
+select tl."ENCODEDKEY" , tl."ID" external_id,  max(tl2."ENTRYDATE") transaction_date from tmp_loantransaction tl2
+join tmp_loanaccount tl on tl."ENCODEDKEY" = tl2."PARENTACCOUNTKEY"
+join tmp_loan_repayment_schedule tlrs on tlrs."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+where 
+-- tl.id = '8666705854' 
+tlrs."STATE" in ('LATE', 'PARTIALLY_PAID')
+and tl2."TYPE" = 'REPAYMENT'
+group by 
+tl."ENCODEDKEY", tl."ID"
+)
+select distinct REPLACE(mo.name,' ', '_') as office_name , ccp."Cedula"::NUMERIC as client_id, ml.id as loan_id,
+cte2.amount as amount_repaid, to_char(cte_date.transaction_date, 'dd FMmonth yyyy'),
+'Money_Transfer' payment_type, 'Banco_de_la_República', cte_date.transaction_date
+from
+m_loan ml 
+join m_client mc on mc.id = ml.client_id
+join campos_cliente_persona ccp on ccp.client_id = mc.id
+join m_product_loan mpl on mpl.id = ml.product_id
+join m_office mo on mo.id = mc.office_id
+join cte2 on cte2.external_id = ml.external_id
+join cte_date on cte_date.external_id = ml.external_id
+where cte2.amount > 0
+-- and ml.id = 1721
+order by cte_date.transaction_date;
+
+select * from m_loan_repayment_schedule mlrs where loan_id = 1 order by installment;
+select * from m_document md 
+
+select count(*) from m_loan_transaction mlt; --123,600 + 1,573
+
+select created_on_utc, * from m_loan_transaction order by id desc;
+
+
+-- update unpaid penalty amounts for partial paid installments
+update m_loan_charge set external_id = external_id || '-paid'
+where is_penalty = true and external_id is not null;
+
+INSERT INTO public.m_loan_charge
+(loan_id, charge_id, is_penalty, charge_time_enum, due_for_collection_as_of_date, charge_calculation_enum, charge_payment_mode_enum,
+calculation_percentage, calculation_on_amount, 
+charge_amount_or_percentage, amount, amount_paid_derived, amount_waived_derived, amount_writtenoff_derived, amount_outstanding_derived, is_paid_derived, waived, min_cap, max_cap,
+is_active, external_id, submitted_on_date, applicable_from_installment, is_get_percentage_from_table, default_from_installment, amount_paid_in_default_installment, is_endorse, expire_date,
+insurance_name, insurance_id, created_on_utc, last_modified_on_utc, created_by, last_modified_by)
+select ml.id loan_id, mc.id charge_id, mc.is_penalty is_penalty, mc.charge_time_enum charge_time_enum, mlrs.fromdate due_for_collection_as_of_date, mc.charge_calculation_enum charge_calculation_enum, mc.charge_payment_mode_enum charge_payment_mode_enum,
+mc.amount calculation_percentage, mlrs.principal_amount calculation_on_amount,
+mc.amount charge_amount_or_percentage, tlrs."PENALTYDUE" - tlrs."PENALTYPAID" amount, 0 amount_paid_derived, 0 amount_waived_derived, 0 amount_writtenoff_derived, tlrs."PENALTYDUE" - tlrs."PENALTYPAID" amount_outstanding_derived, false is_paid_derived, false waived,null min_cap, null max_cap,
+true is_active, mlrs.id external_id, mlrs.fromdate submitted_on_date, null applicable_from_installment, false is_get_percentage_from_table, null default_from_installment, null amount_paid_in_default_installment, false is_endorse, null expire_date,
+null insurance_name, null insurance_id, now() created_on_utc, now() last_modified_on_utc, 1 created_by, 1 last_modified_by
+from m_loan ml 
+join m_product_loan mpl on mpl.id = ml.product_id
+join m_product_loan_charge mplc on mplc.product_loan_id = mpl.id
+join m_charge mc on mc.id = mplc.charge_id and mc.is_penalty = true
+join tmp_loanaccount tl on tl."ID" = ml.external_id
+join  tmp_loan_repayment_schedule tlrs on tlrs."PARENTACCOUNTKEY" = tl."ENCODEDKEY" 
+join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+where 
+tlrs."PENALTYDUE" > 0
+and tlrs."STATE" in ('LATE', 'PARTIALLY_PAID')
+and tlrs.installment = mlrs.installment
+order by tlrs."PARENTACCOUNTKEY" , tlrs.installment, tlrs."STATE";
+
+INSERT INTO public.m_loan_overdue_installment_charge
+(loan_charge_id, loan_schedule_id, frequency_number)
+select mlc.id, mlrs.id, 2
+from m_loan_charge mlc 
+join m_loan_repayment_schedule mlrs on mlrs.id :: varchar = mlc.external_id
+where 
+mlc.is_penalty = true;
+
+update m_loan_charge mls
+set due_for_collection_as_of_date = sub.duedate
+from (
+select mloic.*, mlrs.duedate, mlc.due_for_collection_as_of_date from m_loan_overdue_installment_charge mloic 
+join m_loan_repayment_schedule mlrs on mlrs.id = mloic.loan_schedule_id
+join m_loan_charge mlc on mlc.id = mloic.loan_charge_id
+where mlc.due_for_collection_as_of_date > mlrs.duedate
+) sub
+where mls.id = sub.loan_charge_id;
+
+update m_loan_repayment_schedule mlrs
+set penalty_charges_amount = sub.penaltydue
+from (
+select ml.id loan_id, mloic.loan_charge_id , mloic.loan_schedule_id, mlrs.installment , sum(mlc.amount) penaltydue
+from
+m_loan ml
+join m_loan_charge mlc on mlc.loan_id = ml.id
+join m_loan_overdue_installment_charge mloic on mloic.loan_charge_id  = mlc.id 
+join m_loan_repayment_schedule mlrs on mloic.loan_schedule_id = mlrs.id
+ group by ml.id, mloic.loan_schedule_id,mlrs.installment , mloic.loan_charge_id
+ order by ml.id, mlrs.installment
+ ) as sub
+ where 
+ mlrs.loan_id = sub.loan_id
+ and mlrs.id = sub.loan_schedule_id;
+
+update
+	m_loan ml
+set
+	penalty_charges_charged_derived = (
+	select
+		coalesce(SUM(mlrs.penalty_charges_amount),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.penalty_charges_amount is not null and mlrs.penalty_charges_amount > 0
+		and mlrs.loan_id = ml.id
+);
+
+
+update
+	m_loan ml
+set
+	principal_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.principal_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.principal_completed_derived is not null
+		and mlrs.loan_id = ml.id
+),
+	interest_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.interest_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.interest_completed_derived is not null
+		and mlrs.loan_id = ml.id
+),
+	fee_charges_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.fee_charges_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.fee_charges_completed_derived is not null
+		and mlrs.loan_id = ml.id
+),
+	penalty_charges_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.penalty_charges_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.penalty_charges_completed_derived is not null
+		and mlrs.loan_id = ml.id
+);
+
+update m_loan
+set principal_outstanding_derived = principal_disbursed_derived - principal_repaid_derived,
+	interest_outstanding_derived = interest_charged_derived - interest_repaid_derived,
+	fee_charges_outstanding_derived = fee_charges_charged_derived - fee_charges_repaid_derived,
+	penalty_charges_outstanding_derived = penalty_charges_charged_derived - penalty_charges_repaid_derived,
+	total_repayment_derived = principal_repaid_derived + interest_repaid_derived + fee_charges_repaid_derived + penalty_charges_repaid_derived,
+	total_outstanding_derived = principal_outstanding_derived + interest_outstanding_derived + fee_charges_outstanding_derived + penalty_charges_outstanding_derived;
+
+
+
 
 -- update submit and approved dates
 
@@ -1505,6 +3474,279 @@ join tmp_loanaccount lt on lt."ENCODEDKEY" = tld."ENCODEDKEY"
 join m_loan ml on ml.external_id = lt."ID"
 ) sub
 where mlt.id = sub.id;
+
+----------- add flat charges for interest and charges where mambu has paid more
+
+-- create tables to hold loans with installment difference
+
+drop table tmp_installment_difference;
+
+-- This table holds loan details where installment count is different between mambu and fineract
+create table tmp_installment_difference as 
+with cte as (
+select tl."ID", count(tlrs.installment) inst_count
+from tmp_loan_repayment_schedule tlrs 
+join tmp_loanaccount tl on tl."ENCODEDKEY" = tlrs."PARENTACCOUNTKEY"
+group by tl."ID"
+),
+cte2 as (select ml.external_id, count(mlrs.installment) inst_count
+from m_loan_repayment_schedule mlrs 
+join m_loan ml on ml.id = mlrs.loan_id
+group by ml.external_id
+)
+select cte."ID" loan_id, cte.inst_count mambu_count, cte2.inst_count fineract_count
+from cte 
+join cte2 on cte2.external_id = cte."ID"
+where cte.inst_count != cte2.inst_count;
+
+-- interest adjustment
+drop table tmp_installments_with_interest_difference;
+
+
+create table tmp_installments_with_interest_difference as 
+with mambu_data as (
+select tl."ID" loan_id, tlrs.installment , tlrs."STATE" , tlrs."INTERESTDUE", tlrs."FEESDUE"
+from tmp_loanaccount tl 
+join tmp_loan_repayment_schedule tlrs on tlrs."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+where tlrs."STATE" != 'PAID' and tlrs."STATE" != 'GRACE'
+order by tl."ENCODEDKEY", tlrs.installment
+),
+fineract_data as (
+select ml.id loan_id, ml.external_id external_id, mlrs.installment, mlrs.id installment_id, mlrs.interest_amount interestdue, mlrs.fee_charges_amount feesdue
+from m_loan ml 
+join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+where mlrs.obligations_met_on_date is null
+order by ml.external_id, mlrs.installment
+)
+select f.loan_id, f.external_id,  m.installment,f.installment_id , m."INTERESTDUE" mambu_interest, f.interestdue fineract_interest, m."INTERESTDUE" - f.interestdue diff
+from mambu_data m
+join fineract_data f on f.external_id = m.loan_id 
+where f.external_id not in (select loan_id from tmp_installment_difference)
+and m."INTERESTDUE" > f.interestdue
+and f.installment = m.installment;
+
+
+INSERT INTO public.m_loan_charge
+(loan_id, charge_id, is_penalty, charge_time_enum, due_for_collection_as_of_date, charge_calculation_enum, charge_payment_mode_enum, 
+charge_amount_or_percentage, amount, amount_paid_derived, amount_waived_derived, amount_writtenoff_derived, amount_outstanding_derived,
+is_paid_derived, waived, min_cap, max_cap, is_active, submitted_on_date, applicable_from_installment, is_get_percentage_from_table, is_endorse, created_on_utc,
+last_modified_on_utc, created_by, last_modified_by, loan_schedule_id)
+select mlrs.loan_id loan_id, (select id from m_charge where name = 'Cargo Manual Intereses') charge_id, false is_penalty, 2 charge_time_enum, mlrs.duedate due_for_collection_as_of_date, 286 charge_calculation_enum, 
+0 charge_payment_mode_enum, tflc.diff charge_amount_or_percentage, tflc.diff amount, 0 amount_paid_derived, 0 amount_waived_derived, 0 amount_writtenoff_derived, tflc.diff amount_outstanding_derived,
+false is_paid_derived, false waived, null min_cap, null max_cap, true is_active, now() submitted_on_date, mlrs.installment, false is_get_percentage_from_table, false is_endorse,
+now() created_on_utc, now() last_modified_on_utc, 1 created_by, 1 last_modified_by, mlrs.id
+from 
+m_loan_repayment_schedule mlrs
+join tmp_installments_with_interest_difference tflc on tflc.installment_id = mlrs.id 
+-- and tlrs.state = 'PAID'
+
+
+-- fee charge adjustment
+
+drop table tmp_installments_with_fee_difference;
+
+
+create table tmp_installments_with_fee_difference as 
+with mambu_data as (
+select tl."ID" loan_id, tlrs.installment , tlrs."STATE" , tlrs."INTERESTDUE", tlrs."FEESDUE"
+from tmp_loanaccount tl 
+join tmp_loan_repayment_schedule tlrs on tlrs."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+where tlrs."STATE" != 'PAID' and tlrs."STATE" != 'GRACE'
+order by tl."ENCODEDKEY", tlrs.installment
+),
+fineract_data as (
+select ml.id loan_id, ml.external_id external_id, mlrs.installment, mlrs.id installment_id, mlrs.interest_amount interestdue, mlrs.fee_charges_amount feesdue
+from m_loan ml 
+join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+where mlrs.obligations_met_on_date is null
+order by ml.external_id, mlrs.installment
+)
+select f.loan_id, f.external_id,  m.installment,f.installment_id , m."FEESDUE" mambu_fee, f.feesdue fineract_fee, m."FEESDUE" - f.feesdue diff
+from mambu_data m
+join fineract_data f on f.external_id = m.loan_id 
+where f.external_id not in (select loan_id from tmp_installment_difference)
+and m."FEESDUE" > f.feesdue
+and f.installment = m.installment;
+
+
+INSERT INTO public.m_loan_charge
+(loan_id, charge_id, is_penalty, charge_time_enum, due_for_collection_as_of_date, charge_calculation_enum, charge_payment_mode_enum, 
+charge_amount_or_percentage, amount, amount_paid_derived, amount_waived_derived, amount_writtenoff_derived, amount_outstanding_derived,
+is_paid_derived, waived, min_cap, max_cap, is_active, submitted_on_date, applicable_from_installment, is_get_percentage_from_table, is_endorse, created_on_utc,
+last_modified_on_utc, created_by, last_modified_by, loan_schedule_id)
+select mlrs.loan_id loan_id, (select id from m_charge where name = 'Cargo Manual Mipyme') charge_id, false is_penalty, 2 charge_time_enum, mlrs.duedate due_for_collection_as_of_date, 286 charge_calculation_enum, 
+0 charge_payment_mode_enum, tflc.diff charge_amount_or_percentage, tflc.diff amount, 0 amount_paid_derived, 0 amount_waived_derived, 0 amount_writtenoff_derived, tflc.diff amount_outstanding_derived,
+false is_paid_derived, false waived, null min_cap, null max_cap, true is_active, now() submitted_on_date, mlrs.installment, false is_get_percentage_from_table, false is_endorse,
+now() created_on_utc, now() last_modified_on_utc, 1 created_by, 1 last_modified_by, mlrs.id
+from 
+m_loan_repayment_schedule mlrs
+join tmp_installments_with_fee_difference tflc on tflc.installment_id = mlrs.id 
+-- and tlrs.state = 'PAID'
+
+-- update Flat charge amounts
+update m_loan_repayment_schedule mlrs
+set fee_charges_amount = fee_charges_amount + subquery.amt
+from (
+select ml.id, mlrs.installment, mlrs.id loan_schedule_id,  sum(amount) amt from m_loan_charge mlc 
+join m_loan ml on ml.id = mlc.loan_id
+join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+where 
+mlc.applicable_from_installment = mlrs.installment
+and mlc.loan_schedule_id = mlrs.id
+and mlc.charge_calculation_enum = 286
+and mlc.charge_id = (select id from m_charge where name = 'Cargo Manual Mipyme')
+group by ml.id, mlrs.installment, mlrs.id
+) subquery
+where mlrs.loan_id = subquery.id and mlrs.installment = subquery.installment;
+
+drop table tmp_installment_fee_total;
+
+create table tmp_installment_fee_total as 
+with mlic as (select sum(amount) amt, loan_schedule_id from m_loan_installment_charge mlic group by loan_schedule_id ),
+mlc as (select sum(amount) amt, loan_schedule_id from m_loan_charge where charge_id in (select id from m_charge where name in ('Cargo Manual Mipyme','Cargo Manual Intereses', 'Flat Charge')) group by loan_schedule_id)
+select mlrs.id, coalesce(mlc.amt, 0) mlc, coalesce(mlic.amt, 0) mlic, coalesce(mlc.amt, 0) + coalesce(mlic.amt, 0) total
+from m_loan_repayment_schedule mlrs 
+join m_loan ml on ml.id = mlrs.loan_id
+left join mlc on mlc.loan_schedule_id = mlrs.id
+left join mlic on mlic.loan_schedule_id = mlrs.id
+where
+ml.product_id < 12;
+
+
+update m_loan_repayment_schedule mlrs 
+set fee_charges_amount = fee.total
+from tmp_installment_fee_total fee
+where mlrs.id = fee.id;
+
+
+-- update loan summary
+update
+	m_loan ml
+set
+	fee_charges_charged_derived = (
+	select
+		coalesce(SUM(mlrs.fee_charges_amount),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.fee_charges_amount is not null and mlrs.fee_charges_amount > 0
+		and mlrs.loan_id = ml.id
+);
+
+
+update
+	m_loan ml
+set
+	principal_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.principal_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.principal_completed_derived is not null
+		and mlrs.loan_id = ml.id
+),
+	interest_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.interest_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.interest_completed_derived is not null
+		and mlrs.loan_id = ml.id
+),
+	fee_charges_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.fee_charges_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.fee_charges_completed_derived is not null
+		and mlrs.loan_id = ml.id
+),
+	penalty_charges_repaid_derived = (
+	select
+		coalesce(SUM(mlrs.penalty_charges_completed_derived),
+		0)
+	from
+		m_loan_repayment_schedule mlrs
+	where
+		mlrs.penalty_charges_completed_derived is not null
+		and mlrs.loan_id = ml.id
+);
+
+--Add disbursement fees to charges
+update
+	m_loan ml
+set
+	fee_charges_repaid_derived = coalesce(fee_charges_repaid_derived, 0) + (
+	select
+		coalesce(SUM(mlt.amount),
+		0)
+	from
+		m_loan_transaction mlt
+	where
+		mlt.transaction_type_enum = 5
+		and mlt.loan_id = ml.id
+),
+	fee_charges_charged_derived = coalesce(fee_charges_charged_derived, 0) + (
+	select
+		coalesce(SUM(mlt.amount),
+		0)
+	from
+		m_loan_transaction mlt
+	where
+		mlt.transaction_type_enum = 5
+		and mlt.loan_id = ml.id
+);
+
+
+--update disbursement fees to be marked as paid
+update m_loan_charge set amount_paid_derived = amount
+where charge_id in (select id from m_charge where charge_time_enum = 1);
+
+update m_loan
+set principal_outstanding_derived = principal_disbursed_derived - principal_repaid_derived,
+	interest_outstanding_derived = interest_charged_derived - interest_repaid_derived,
+	fee_charges_outstanding_derived = fee_charges_charged_derived - fee_charges_repaid_derived,
+	penalty_charges_outstanding_derived = penalty_charges_charged_derived - penalty_charges_repaid_derived,
+	total_repayment_derived = principal_repaid_derived + interest_repaid_derived + fee_charges_repaid_derived + penalty_charges_repaid_derived,
+	total_outstanding_derived = principal_outstanding_derived + interest_outstanding_derived + fee_charges_outstanding_derived + penalty_charges_outstanding_derived;
+
+
+-- Adjust interest component calculated more by fineract.
+-- First run the below query to create the table with necessary data. 
+-- Then execute SingleDisbursalAdjustmentProcessor.java file from the FineractLoanImport project. It will create special writeoff transactions for all the loans
+
+drop table tmp_loans_with_interest_paid_more_in_fineract;
+
+create table tmp_loans_with_interest_paid_more_in_fineract as 
+with mambu_data as (
+select tl."ID" loan_id , sum(tlrs."INTERESTDUE") interestdue
+from tmp_loanaccount tl 
+join tmp_loan_repayment_schedule tlrs on tlrs."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+where tlrs."STATE" != 'PAID' and tlrs."STATE" != 'GRACE'
+group by tl."ID"
+-- order by tl.encodedkey, tlrs.installment
+),
+fineract_data as (
+select ml.id loan_id, ml.external_id external_id, sum (mlrs.interest_amount - coalesce(mlrs.interest_writtenoff_derived,0)) interestdue
+from m_loan ml 
+join m_loan_repayment_schedule mlrs on mlrs.loan_id = ml.id
+where mlrs.obligations_met_on_date is null
+and ml.product_id < 11
+group by ml.id, ml.external_id
+)
+select f.loan_id, f.external_id, m.interestdue mambu_interest, f.interestdue fineract_interest, f.interestdue - m.interestdue amount
+from mambu_data m
+join fineract_data f on f.external_id = m.loan_id 
+where  f.external_id not in (select loan_id from tmp_installment_difference) and
+ m.interestdue < f.interestdue
+order by f.loan_id;
 
 -- update configuration penalty-start-date  set it to tomorrow's date
 

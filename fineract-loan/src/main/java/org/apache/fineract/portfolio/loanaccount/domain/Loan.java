@@ -1959,11 +1959,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         // the comparison should be done with the tenant date
         // (DateUtils.getBusinessDate()) and not the server date (new
         // LocalDate())
-        if (DateUtils.isDateInTheFuture(getSubmittedOnDate())) {
-            final String errorMessage = "The date on which a loan is submitted cannot be in the future.";
-            throw new InvalidLoanStateTransitionException(Loan.SUBMITTAL_PARAM, Loan.ERROR_MESSAGE_CANNOT_BE_A_FUTURE_DATE, errorMessage,
-                    getSubmittedOnDate());
-        }
+//        if (DateUtils.isDateInTheFuture(getSubmittedOnDate())) {
+//            final String errorMessage = "The date on which a loan is submitted cannot be in the future.";
+//            throw new InvalidLoanStateTransitionException(Loan.SUBMITTAL_PARAM, Loan.ERROR_MESSAGE_CANNOT_BE_A_FUTURE_DATE, errorMessage,
+//                    getSubmittedOnDate());
+//        }
 
         if (this.client != null && DateUtils.isBefore(getSubmittedOnDate(), this.client.getActivationDate())) {
             final String errorMessage = "The date on which a loan is submitted cannot be earlier than client's activation date.";
@@ -2464,11 +2464,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         updateLoanScheduleDependentDerivedFields();
 
-        if (DateUtils.isDateInTheFuture(submittedOn)) {
-            final String errorMessage = "The date on which a loan is submitted cannot be in the future.";
-            throw new InvalidLoanStateTransitionException(Loan.SUBMITTAL_PARAM, Loan.ERROR_MESSAGE_CANNOT_BE_A_FUTURE_DATE, errorMessage,
-                    submittedOn, DateUtils.getBusinessLocalDate());
-        }
+//        if (DateUtils.isDateInTheFuture(submittedOn)) {
+//            final String errorMessage = "The date on which a loan is submitted cannot be in the future.";
+//            throw new InvalidLoanStateTransitionException(Loan.SUBMITTAL_PARAM, Loan.ERROR_MESSAGE_CANNOT_BE_A_FUTURE_DATE, errorMessage,
+//                    submittedOn, DateUtils.getBusinessLocalDate());
+//        }
 
         if (this.client != null && this.client.isActivatedAfter(submittedOn)) {
             final String errorMessage = "The date on which a loan is submitted cannot be earlier than client's activation date.";
@@ -2721,11 +2721,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
             validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_APPROVED, approvedOn);
 
-            if (DateUtils.isDateInTheFuture(approvedOn)) {
-                final String errorMessage = "The date on which a loan is approved cannot be in the future.";
-                throw new InvalidLoanStateTransitionException(Loan.APPROVAL_PARAM, Loan.ERROR_MESSAGE_CANNOT_BE_A_FUTURE_DATE, errorMessage,
-                        getApprovedOnDate());
-            }
+//            if (DateUtils.isDateInTheFuture(approvedOn)) {
+//                final String errorMessage = "The date on which a loan is approved cannot be in the future.";
+//                throw new InvalidLoanStateTransitionException(Loan.APPROVAL_PARAM, Loan.ERROR_MESSAGE_CANNOT_BE_A_FUTURE_DATE, errorMessage,
+//                        getApprovedOnDate());
+//            }
 
             if (this.loanOfficer != null) {
                 final LoanOfficerAssignmentHistory loanOfficerAssignmentHistory = LoanOfficerAssignmentHistory.createNew(this,
@@ -3377,12 +3377,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_DISBURSED, disbursedOn);
 
-        if (DateUtils.isDateInTheFuture(disbursedOn)) {
-            final String errorMessage = "The date on which a loan with identifier : " + this.accountNumber
-                    + " is disbursed cannot be in the future.";
-            throw new InvalidLoanStateTransitionException(Loan.DISBURSAL_PARAM, Loan.ERROR_MESSAGE_CANNOT_BE_A_FUTURE_DATE, errorMessage,
-                    disbursedOn);
-        }
+//        if (DateUtils.isDateInTheFuture(disbursedOn)) {
+//            final String errorMessage = "The date on which a loan with identifier : " + this.accountNumber
+//                    + " is disbursed cannot be in the future.";
+//            throw new InvalidLoanStateTransitionException(Loan.DISBURSAL_PARAM, Loan.ERROR_MESSAGE_CANNOT_BE_A_FUTURE_DATE, errorMessage,
+//                    disbursedOn);
+//        }
 
     }
 
@@ -3663,11 +3663,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         validateRepaymentDateIsOnNonWorkingDay(paymentTransaction.getTransactionDate(), holidayDetailDTO.getWorkingDays(),
                 holidayDetailDTO.isAllowTransactionsOnNonWorkingDay());
 
-        if (DateUtils.isDateInTheFuture(paymentTransaction.getTransactionDate())) {
-            final String errorMessage = "The date on which a loan charge paid cannot be in the future.";
-            throw new InvalidLoanStateTransitionException("charge.payments", Loan.ERROR_MESSAGE_CANNOT_BE_A_FUTURE_DATE, errorMessage,
-                    paymentTransaction.getTransactionDate());
-        }
+//        if (DateUtils.isDateInTheFuture(paymentTransaction.getTransactionDate())) {
+//            final String errorMessage = "The date on which a loan charge paid cannot be in the future.";
+//            throw new InvalidLoanStateTransitionException("charge.payments", Loan.ERROR_MESSAGE_CANNOT_BE_A_FUTURE_DATE, errorMessage,
+//                    paymentTransaction.getTransactionDate());
+//        }
         existingTransactionIds.addAll(findExistingTransactionIds());
         existingReversedTransactionIds.addAll(findExistingReversedTransactionIds());
         LoanCharge charge = null;
@@ -3758,11 +3758,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     loanTransactionDate, getDisbursementDate());
         }
 
-        if (DateUtils.isDateInTheFuture(loanTransactionDate)) {
-            final String errorMessage = "The transaction date cannot be in the future.";
-            throw new InvalidLoanStateTransitionException(Loan.TRANSACTION_PARAM, Loan.ERROR_MESSAGE_CANNOT_BE_A_FUTURE_DATE, errorMessage,
-                    loanTransactionDate);
-        }
+//        if (DateUtils.isDateInTheFuture(loanTransactionDate)) {
+//            final String errorMessage = "The transaction date cannot be in the future.";
+//            throw new InvalidLoanStateTransitionException(Loan.TRANSACTION_PARAM, Loan.ERROR_MESSAGE_CANNOT_BE_A_FUTURE_DATE, errorMessage,
+//                    loanTransactionDate);
+//        }
 
         if (!isTransactionBeforeLastRepaymentTransaction(loanTransaction, getLoanTransactions())) {
             final String errorMessage = "The transaction date cannot be before last valid transaction: " + getDisbursementDate().toString();
@@ -7174,11 +7174,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     loanTransactionDate, getDisbursementDate());
         }
 
-        if (DateUtils.isDateInTheFuture(loanTransactionDate)) {
-            final String errorMessage = "The transaction date cannot be in the future.";
-            throw new InvalidLoanStateTransitionException(Loan.TRANSACTION_PARAM, Loan.ERROR_MESSAGE_CANNOT_BE_A_FUTURE_DATE, errorMessage,
-                    loanTransactionDate);
-        }
+//        if (DateUtils.isDateInTheFuture(loanTransactionDate)) {
+//            final String errorMessage = "The transaction date cannot be in the future.";
+//            throw new InvalidLoanStateTransitionException(Loan.TRANSACTION_PARAM, Loan.ERROR_MESSAGE_CANNOT_BE_A_FUTURE_DATE, errorMessage,
+//                    loanTransactionDate);
+//        }
 
         if (this.loanProduct.isMultiDisburseLoan() && adjustedTransaction == null) {
             BigDecimal totalDisbursed = getDisbursedAmount();
