@@ -25,6 +25,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.springframework.stereotype.Service;
@@ -53,7 +54,7 @@ public class LoanAdvancedPaymentValidationService {
         log.info("Validating advanced payment for loan ID: {}, transaction amount: {}", loan.getId(), transactionAmount);
 
         // Get the current business date (today)
-        LocalDate currentDate = LocalDate.now();
+        LocalDate currentDate = DateUtils.getBusinessLocalDate();
 
         // Get all installments
         List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments();
