@@ -208,4 +208,7 @@ public interface LoanProductConstants {
     String CUSTOM_ALLOW_REFERIDO_SMS_PARAM_NAME = "customAllowReferidoSms";
 
     String CUSTOM_COLLECTION_SUBCHANNEL_LOAN_PRODUC_MAPPER_PARAM_NAME = "subChannelLoanProductMapper";
+
+    String isAdvancedPaymentsEnabled_PARAM_NAME = "isAdvancedPaymentsEnabled";
+    String maxPercentagePrincipalPaymentAllowed_PARAM_NAME = "maxPercentagePrincipalPaymentAllowed";
 }
