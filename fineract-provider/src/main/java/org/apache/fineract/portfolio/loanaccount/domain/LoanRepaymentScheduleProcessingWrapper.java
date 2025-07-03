@@ -259,7 +259,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
                 } else if (loanCharge.getOverdueInstallmentCharge() != null) {
                     LoanOverdueInstallmentCharge overdueInstallmentCharge = loanCharge.getOverdueInstallmentCharge();
                     if (overdueInstallmentCharge.getInstallment().getInstallmentNumber().equals(period.getInstallmentNumber())) {
-                        cumulative = cumulative.plus(loanCharge.getAmountWaived(currency));
+                        cumulative = cumulative.plus(loanCharge.getAmountWrittenOff(currency));
                     }
                 }
             }
