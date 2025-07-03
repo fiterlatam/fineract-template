@@ -392,6 +392,10 @@ public class LoanProduct extends AbstractPersistableCustom {
     @Column(name = "max_percentage_principal_payment_allowed")
     private BigDecimal maxPercentagePrincipalPaymentAllowed;
 
+    public boolean isAdvancedPaymentsAllowed() {
+        return this.isAdvancedPaymentsEnabled;
+    }
+
     public static LoanProduct assembleFromJson(final Fund fund, final String loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, FloatingRate floatingRate, final List<Rate> productRates,
             List<LoanProductPaymentAllocationRule> loanProductPaymentAllocationRules,
