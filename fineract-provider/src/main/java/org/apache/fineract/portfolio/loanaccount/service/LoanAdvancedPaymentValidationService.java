@@ -66,7 +66,7 @@ public class LoanAdvancedPaymentValidationService {
         for (LoanRepaymentScheduleInstallment installment : installments) {
             BigDecimal installmentOutstanding = installment.getTotalOutstanding(loan.getCurrency()).getAmount();
 
-            if (installment.getDueDate().isAfter(currentDate)) {
+            if (currentDate.isBefore(installment.getFromDate())) {
                 // Future installment
                 totalAmountDueForFuture = totalAmountDueForFuture.add(installmentOutstanding);
             } else {
