@@ -7876,7 +7876,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 balances = fetchInterestFeeAndPenaltyTillDate(paymentDate, installment, principalLoanBalanceOutstanding,
                         scheduleGeneratorDTO);
                 break;
-            } else if (installment.getInstallmentNumber() == 1 && DateUtils.isEqual(paymentDate, installment.getFromDate())) {
+            } else if (installment.getInstallmentNumber() == 1 && DateUtils.isEqual(paymentDate, installment.getFromDate())
+                    && installment.isNotFullyPaidOff()) {
                 // Foreclosure being done on same date as disbursement date. Fee charge must be paid
                 // If loan is canceled on same date then only pay hono charge
                 Money fee = installment.getFeeChargesCharged(currency);
