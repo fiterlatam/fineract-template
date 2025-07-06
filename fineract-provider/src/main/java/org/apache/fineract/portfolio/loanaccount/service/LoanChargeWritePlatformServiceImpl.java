@@ -760,10 +760,12 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         final long start = System.currentTimeMillis();
 
         // order the overdueLoanScheduleDataList by period number
-        Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList = overdueUnsortedLoanScheduleDataList.stream()
+        final Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList = overdueUnsortedLoanScheduleDataList.stream()
                 .sorted(Comparator.comparing(OverdueLoanScheduleData::getPeriodNumber)).toList();
 
         Loan loan = this.loanAssembler.assembleFrom(loanId);
+        log.info("Apply penalty to overdue loans:: Applying overdue charges for Loan: {} with number of overdue installments: {}", loanId,
+                overdueLoanScheduleDataList.size());
         // add check duplication instalment number or invalid data
         Boolean duplicateNumberInstalment = loan
                 .getRepaymentScheduleInstallments().stream().filter(e -> e.getInstallmentNumber() > 0).collect(Collectors
@@ -772,7 +774,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
         if (Boolean.FALSE.equals(duplicateNumberInstalment)) {
             if (loan.isChargedOff()) {
-                log.warn("Adding charge to Loan: {} is not allowed. Loan Account is Charged-off", loanId);
+                log.warn("Apply penalty to overdue loans:: Adding charge to Loan: {} is not allowed. Loan Account is Charged-off", loanId);
                 return;
             }
             final List<Long> existingTransactionIds = loan.findExistingTransactionIds();
@@ -804,14 +806,12 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                         null, null, null, null, loanId, null, null, null, null, null, null, null);
 
                 final long startTime = System.currentTimeMillis();
-                log.info("Applying overdue charge for Loan: {} for period number: {} with charge id: {}", loanId,
-                        overdueInstallment.getPeriodNumber(), overdueInstallment.getChargeId());
-
+                log.info("Apply penalty to overdue loans:: Applying overdue charge for Loan: {} for period number: {} with charge id: {}",
+                        loanId, overdueInstallment.getPeriodNumber(), overdueInstallment.getChargeId());
                 LoanOverdueDTO overdueDTO = applyChargeToOverdueLoanInstallment(loan, overdueInstallment.getChargeId(),
                         overdueInstallment.getPeriodNumber(), command);
-
-                log.info("Overdue charge applied for Loan: {} for period number: {} with charge id: {}", loanId,
-                        overdueInstallment.getPeriodNumber(), overdueInstallment.getChargeId());
+                log.info("Apply penalty to overdue loans:: Overdue charge applied for Loan: {} for period number: {} with charge id: {}",
+                        loanId, overdueInstallment.getPeriodNumber(), overdueInstallment.getChargeId());
                 final long endTime = System.currentTimeMillis();
                 log.info("Time taken to apply overdue charge for Loan: {} for period number: {} with charge name: {} is {} ms", loanId,
                         overdueInstallment.getPeriodNumber(), chargeDefinition.getName(), (endTime - startTime));
@@ -841,16 +841,21 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                 }
 
                 if (reprocessRequired) {
-                    ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions();
-                    if (changedTransactionDetail != null) {
-                        for (final Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings()
-                                .entrySet()) {
-                            loanAccountDomainService.saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.getValue());
-                            accountTransfersWritePlatformService.updateLoanTransaction(mapEntry.getKey(), mapEntry.getValue());
-                        }
-                        // Trigger transaction replayed event
-                        replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
-                    }
+                    // No need to add new penalty installment. This has been handled in
+                    // SingleLoanChargeRepaymentScheduleProcessingWrapper.reprocess
+                    // addInstallmentIfPenaltyAppliedAfterLastDueDate(loan, lastChargeDate);
+
+                    // SU-613 Do not reprocess transactions when penalty charge is added
+                    /*
+                     * ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions(); if
+                     * (changedTransactionDetail != null) { for (final Map.Entry<Long, LoanTransaction> mapEntry :
+                     * changedTransactionDetail.getNewTransactionMappings() .entrySet()) {
+                     * loanAccountDomainService.saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.getValue())
+                     * ; accountTransfersWritePlatformService.updateLoanTransaction(mapEntry.getKey(),
+                     * mapEntry.getValue()); } // Trigger transaction replayed event
+                     * replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
+                     * }
+                     */
                     loan = loanAccountDomainService.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
                 }
 
@@ -858,17 +863,18 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
                 if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled() && runInterestRecalculation
                         && loan.isFeeCompoundingEnabledForInterestRecalculation()) {
-                    log.info("Recalculating accruals for Loan: {} after applying overdue charges", loanId);
+                    log.info("Apply penalty to overdue loans:: Recalculating accruals for Loan: {} after applying overdue charges", loanId);
                     this.loanAccountDomainService.recalculateAccruals(loan);
-                    log.info("Accruals recalculated for Loan: {} after applying overdue charges", loanId);
+                    log.info("Apply penalty to overdue loans:: Accruals recalculated for Loan: {} after applying overdue charges", loanId);
                 }
                 this.loanAccountDomainService.setLoanDelinquencyTag(loan, DateUtils.getBusinessLocalDate());
             }
         }
 
         final long finish = System.currentTimeMillis();
-        log.info("Overdue charges applied for Loan: {} in {} ms with number of overdue installments: {}", loanId, (finish - start),
-                overdueLoanScheduleDataList.size());
+        log.info(
+                "Apply penalty to overdue loans:: Overdue charges applied for Loan: {} in {} seconds with number of overdue installments: {}",
+                loanId, (finish - start) / 1000.0, overdueLoanScheduleDataList.size());
     }
 
     private LoanTransaction applyChargeAdjustment(final Loan loan, final LoanCharge loanCharge, final BigDecimal transactionAmount,
@@ -1101,7 +1107,6 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         return DateUtils.isBeforeBusinessDate(loanCharge.getDueLocalDate());
     }
 
-    @SuppressWarnings({ "squid:S3776" })
     private LoanOverdueDTO applyChargeToOverdueLoanInstallment(final Loan loan, final Long loanChargeId, final Integer periodNumber,
             final JsonCommand command) {
         boolean runInterestRecalculation = false;
@@ -1166,8 +1171,11 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
             for (Map.Entry<Integer, LocalDate> entry : scheduleDates.entrySet()) {
                 final LoanCharge loanCharge = loanChargeAssembler.createNewFromJson(loan, chargeDefinition, command, entry.getValue(),
                         installment, numberOfPenaltyDays);
-                if ((Objects.isNull(loanCharge.amount()) || BigDecimal.ZERO.compareTo(loanCharge.amount()) == 0)
-                        || (penaltyStartDate != null && loanCharge.getDueLocalDate().isBefore(penaltyStartDate))) {
+                if (Objects.isNull(loanCharge.amount()) || BigDecimal.ZERO.compareTo(loanCharge.amount()) == 0) {
+                    continue;
+                }
+                // If due date of charge is before penalty start date, continue
+                if (penaltyStartDate != null && loanCharge.getDueLocalDate().isBefore(penaltyStartDate)) {
                     continue;
                 }
                 LoanOverdueInstallmentCharge overdueInstallmentCharge = new LoanOverdueInstallmentCharge(loanCharge, installment,

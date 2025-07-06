@@ -105,14 +105,15 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
         return RepeatStatus.FINISHED;
     }
 
-    @SuppressWarnings({ "squid:S3776" })
-    private void applyPenaltiesToOverdueInstallments(List<OverdueLoanScheduleData> overdueLoanScheduledInstallments, int threadPoolSize,
-            int pageSize, Long maxLoanId, Long penaltyWaitPeriodValue, Boolean backdatePenalties) {
-        List<Callable<Void>> posters = new ArrayList<>();
+    @SuppressWarnings("all")
+    private void applyPenaltiesToOverdueInstallments(List<OverdueLoanScheduleData> overdueLoanScheduledInstallments,
+            final int threadPoolSize, final int pageSize, final Long maxLoanId, final Long penaltyWaitPeriodValue,
+            final Boolean backdatePenalties) {
+        final List<Callable<Void>> posters = new ArrayList<>();
         int fromIndex = 0;
         int size = overdueLoanScheduledInstallments.size();
         int batchSize = (int) Math.ceil((double) size / threadPoolSize);
-
+        log.info("Apply penalty to overdue loans:: Batch size for Apply Penalties to Overdue Loans job is set to {}", batchSize);
         if (batchSize == 0) {
             return;
         }
@@ -124,27 +125,26 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
         }
         boolean lastBatch = false;
         int loopCount = size / batchSize + 1;
-
-        FineractContext context = ThreadLocalContextUtil.getContext();
-
-        Callable<Void> fetchData = () -> {
+        log.info("Apply penalty to overdue loans:: Loop count for Apply Penalties to Overdue Loans job is set to {}", loopCount);
+        final FineractContext context = ThreadLocalContextUtil.getContext();
+        final Callable<Void> fetchData = () -> {
             ThreadLocalContextUtil.init(context);
             Long maxId = maxLoanId;
             if (!queue.isEmpty()) {
                 maxId = Math.max(maxLoanId, queue.element().get(queue.element().size() - 1).getLoanId());
             }
             while (queue.size() <= QUEUE_SIZE) {
-
-                log.debug("Fetching while threads are running!");
+                log.debug("Apply penalty to overdue loans:: Fetching while threads are running!");
                 final long start = System.currentTimeMillis();
 
                 List<OverdueLoanScheduleData> overdueLoanScheduleData = Collections.synchronizedList(this.loanReadPlatformService
                         .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties, pageSize, maxId));
 
                 final long finish = System.currentTimeMillis();
-                log.info("Done fetching overdue loan scheduled installments within {} milliseconds", finish - start);
-                log.info("Found {} overdue loan scheduled installments to process", overdueLoanScheduleData.size());
-
+                log.info("Apply penalty to overdue loans:: Done fetching overdue loan scheduled installments within {} milliseconds",
+                        finish - start);
+                log.info("Apply penalty to overdue loans:: Found {} overdue loan scheduled installments to process",
+                        overdueLoanScheduleData.size());
                 if (overdueLoanScheduleData.isEmpty()) {
                     break;
                 }
@@ -176,8 +176,7 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
                 toIndex++;
             }
         }
-
-        List<Future<Void>> responses = new ArrayList<>();
+        final List<Future<Void>> responses = new ArrayList<>();
         posters.forEach(poster -> responses.add(taskExecutor.submit(poster)));
         Long maxId = maxLoanId;
         if (!queue.isEmpty()) {
@@ -200,12 +199,12 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
                 break;
             }
             maxId = overdueLoanScheduledInstallments.get(overdueLoanScheduledInstallments.size() - 1).getLoanId();
-            log.debug("Add to the Queue");
+            log.debug("Apply penalty to overdue loans:: Add to the Queue");
             queue.add(overdueLoanScheduledInstallments);
         }
 
         checkCompletion(responses);
-        log.debug("Queue size {}", queue.size());
+        log.debug("Apply penalty to overdue loans:: Queue size {}", queue.size());
     }
 
     private <T> List<T> safeSubList(List<T> list, int fromIndex, int toIndex) {
@@ -234,15 +233,14 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
             }
             allThreadsExecuted = noOfThreadsExecuted == responses.size();
             if (!allThreadsExecuted) {
-                log.error("All threads could not execute.");
+                log.error("Apply penalty to overdue loans:: All threads could not execute.");
             } else {
-                log.info("Apply Penalties to Overdue Loans Job Completed");
+                log.info("Apply penalty to overdue loans:: Apply Penalties to Overdue Loans Job Completed");
             }
         } catch (InterruptedException e1) {
-            log.error("Interrupted while Applying Penalties to Overdue Loans", e1);
-            Thread.currentThread().interrupt();
+            log.error("Apply penalty to overdue loans:: Interrupted while Applying Penalties to Overdue Loans", e1);
         } catch (ExecutionException e2) {
-            log.error("Execution exception while Applying Penalties to Overdue Loans", e2);
+            log.error("Apply penalty to overdue loans:: Execution exception while Applying Penalties to Overdue Loans", e2);
         }
     }
 }
