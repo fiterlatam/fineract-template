@@ -7886,15 +7886,18 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
                 balances[1] = fee;
             } else if (DateUtils.isEqual(paymentDate, installment.getFromDate()) && installment.isNotFullyPaidOff()) {
-                Money fee = installment.getFeeChargesCharged(currency);
-                // SU-661: we need to deduct the Aval amount since the payment date is the due date of the previous
-                // installment
-                // So Aval doesn't apply today
-                if (installment.getInstallmentCharges() != null) {
-                    for (LoanInstallmentCharge loanInstallmentCharge : installment.getInstallmentCharges()) {
-                        if (loanInstallmentCharge.getLoanCharge().isAvalCharge()
-                                || loanInstallmentCharge.getLoanCharge().isVatChargeOfAvalCharge()) {
-                            fee = fee.minus(loanInstallmentCharge.getAmount(currency));
+                Money fee = Money.zero(currency);
+                if (installment.getFeeChargesAccountedFor(currency).isGreaterThanZero()) {
+                    fee = installment.getFeeChargesCharged(currency);
+                    // SU-661: we need to deduct the Aval amount since the payment date is the due date of the previous
+                    // installment
+                    // So Aval doesn't apply today
+                    if (installment.getInstallmentCharges() != null) {
+                        for (LoanInstallmentCharge loanInstallmentCharge : installment.getInstallmentCharges()) {
+                            if (loanInstallmentCharge.getLoanCharge().isAvalCharge()
+                                    || loanInstallmentCharge.getLoanCharge().isVatChargeOfAvalCharge()) {
+                                fee = fee.minus(loanInstallmentCharge.getAmount(currency));
+                            }
                         }
                     }
                 }

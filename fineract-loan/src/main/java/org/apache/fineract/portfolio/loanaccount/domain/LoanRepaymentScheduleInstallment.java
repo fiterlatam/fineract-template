@@ -405,6 +405,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         return getFeeChargesCharged(currency).minus(feeChargesAccountedFor);
     }
 
+    public Money getFeeChargesAccountedFor(final MonetaryCurrency currency) {
+        return getFeeChargesPaid(currency).plus(getFeeChargesWaived(currency)).plus(getFeeChargesWrittenOff(currency));
+    }
+
     public Money getFeeChargesOutstanding(final MonetaryCurrency currency, final LocalDate tillDate) {
         Money feeChargesOutstanding = Money.zero(currency);
         if (!DateUtils.isBefore(tillDate, this.dueDate)) {
