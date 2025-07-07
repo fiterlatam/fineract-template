@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.rescheduleloan.service;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -198,7 +199,8 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         JsonElement parse = this.fromApiJsonHelper.parse(this.fromApiJsonHelper.getGsonConverter().toJson(disbursementDate));
         loanObject.addProperty("prequalificationId", request.getPrequalificationId());
         loanObject.add("expectedDisbursementDate", parse);
-        loanObject.add("submittedOnDate", parse);
+        LocalDate businessLocalDate = DateUtils.getBusinessLocalDate();
+        loanObject.addProperty("submittedOnDate", businessLocalDate.format(simpleDateFormat));
         loanObject.add("principal", this.fromApiJsonHelper.parse(request.getTotalLoanAmount().toPlainString()));
         loanObject.add("locale", command.jsonElement("locale"));
         loanObject.add("dateFormat", command.jsonElement("dateFormat"));
