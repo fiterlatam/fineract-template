@@ -26,6 +26,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanSummary;
 
@@ -81,12 +82,12 @@ public class RestructureCreditsLoanMapping extends AbstractPersistableCustom {
      **/
     public static RestructureCreditsLoanMapping instance(final Loan loan, final Integer statusEnum,
             final RestructureCreditsRequest restructureCreditsRequest, Boolean waiveInterestOnRestructureCredits,
-            Boolean waiveChargesAndFeesOnRestructureCredits) {
+            Boolean waiveChargesAndFeesOnRestructureCredits, Money chargedInterest) {
 
         LoanSummary summary = loan.getSummary();
         BigDecimal principalOutstanding = summary.getTotalPrincipalOutstanding();
         if (!Boolean.TRUE.equals(waiveInterestOnRestructureCredits)) {
-            principalOutstanding = principalOutstanding.add(summary.getTotalInterestOutstanding());
+            principalOutstanding = principalOutstanding.add(chargedInterest.getAmount());
         }
         if (!Boolean.TRUE.equals(waiveChargesAndFeesOnRestructureCredits)) {
             principalOutstanding = principalOutstanding.add(summary.getTotalFeeChargesOutstanding())
