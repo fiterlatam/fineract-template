@@ -142,6 +142,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanSummary;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanSummaryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTopupDetails;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.loanaccount.exception.InvalidLoanStateTransitionException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanApplicationDateException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanApplicationNotInClosedStateCannotBeModified;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanApplicationNotInSubmittedAndPendingApprovalStateCannotBeDeleted;
@@ -3045,6 +3046,14 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final Loan loanAccount = this.loanRepositoryWrapper.findOneWithNotFoundDetection(disburseByChequesCommand.getLoanId());
             final Cheque cheque = this.chequeBatchRepositoryWrapper
                     .findOneChequeWithNotFoundDetection(disburseByChequesCommand.getChequeId());
+
+            if (DateUtils.getBusinessLocalDate().isBefore(loanAccount.getDisbursementDate())) {
+                final String errorMessage = "The date on which a check is assigned cannot be in the future.";
+                throw new InvalidLoanStateTransitionException("assigncheck", "cannot.be.a.future.date", errorMessage,
+                        loanAccount.getDisbursementDate());
+
+            }
+
             loanAccount.setCheque(cheque);
             loanAccount.setLoanStatus(LoanStatus.DISBURSE_AUTHORIZATION_PENDING.getValue());
             cheque.setStatus(BankChequeStatus.PENDING_ISSUANCE.getValue());
