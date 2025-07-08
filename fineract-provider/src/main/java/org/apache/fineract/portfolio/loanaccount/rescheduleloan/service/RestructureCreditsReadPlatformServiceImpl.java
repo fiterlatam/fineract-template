@@ -87,14 +87,18 @@ public class RestructureCreditsReadPlatformServiceImpl implements RestructureCre
         private final String schema;
 
         RestructureCreditsRequestMapper() {
-            this.schema = " " + "rcr.id, " + "rcr.total_loan_amount, " + "mc.display_name, " + "pl.name as productName, " + "rcr.status, "
-                    + "rcr.new_disbursement_date, " + "rcr.comments, " + "rcr.date_requested, " + "creator.username as createdBy, "
-                    + "approver.username as approvedBy," + "modifier.username as modifiedBy," + "rcr.date_approved, "
-                    + "rcr.product_id as productId, " + "rcr.lastmodified_date " + "from m_restructure_credit_requests rcr "
-                    + "inner join m_client mc on mc.id = rcr.client_id " + "inner join m_product_loan pl on pl.id = rcr.product_id "
-                    + "inner join m_appuser creator on creator.id = rcr.requested_by "
-                    + "left join m_appuser approver on rcr.approved_by = approver.id "
-                    + "left join m_appuser modifier on rcr.lastmodifiedby_id = modifier.id ";
+            this.schema = """
+                     rcr.id, rcr.total_loan_amount, mc.display_name, linkedGroup.id as linkedGroupId, pl.name as productName, rcr.status, \
+                    rcr.new_disbursement_date, rcr.comments, rcr.date_requested, creator.username as createdBy, \
+                    approver.username as approvedBy,modifier.username as modifiedBy,rcr.date_approved, \
+                    rcr.product_id as productId, rcr.lastmodified_date
+                    from m_restructure_credit_requests rcr \
+                    inner join m_client mc on mc.id = rcr.client_id inner join m_product_loan pl on pl.id = rcr.product_id \
+                    inner join m_appuser creator on creator.id = rcr.requested_by \
+                    left join m_group linkedGroup on linkedGroup.prequalification_id = rcr.prequalification_id \
+                    left join m_appuser approver on rcr.approved_by = approver.id \
+                    left join m_appuser modifier on rcr.lastmodifiedby_id = modifier.id\s
+                    """;
         }
 
         public String schema() {
@@ -119,9 +123,11 @@ public class RestructureCreditsReadPlatformServiceImpl implements RestructureCre
             final LocalDateTime dateModified = JdbcSupport.getLocalDateTime(rs, "lastmodified_date");
             final LocalDateTime newDisbursementDate = JdbcSupport.getLocalDateTime(rs, "new_disbursement_date");
             final BigDecimal totalLoanAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "total_loan_amount");
+            final Long linkedGroupId = JdbcSupport.getLong(rs, "linkedGroupId");
 
             return RestructureCreditsRequestData.instance(id, clientName, productName, productId, totalLoanAmount, status,
-                    newDisbursementDate, comments, dateRequested, createdBy, dateApproved, approvedBy, dateModified, modifiedBy);
+                    newDisbursementDate, comments, dateRequested, createdBy, dateApproved, approvedBy, dateModified, modifiedBy,
+                    linkedGroupId);
 
         }
     }

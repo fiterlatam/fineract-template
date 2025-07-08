@@ -32,6 +32,7 @@ public final class RestructureCreditsRequestData {
     private String clientName;
     private String productName;
     private Long productId;
+    private Long linkedGroupId;
     private BigDecimal totalLoanAmount;
     private EnumOptionData status;
     private LocalDateTime newDisbursementDate;
@@ -47,7 +48,7 @@ public final class RestructureCreditsRequestData {
     private RestructureCreditsRequestData(final Long id, final String clientName, final String productName, final Long productId,
             final BigDecimal totalLoanAmount, final EnumOptionData status, final LocalDateTime newDisbursementDate, final String comments,
             final LocalDateTime dateRequested, final String requestedByUser, final LocalDateTime approvedOnDate,
-            final String approvedByUser, final LocalDateTime lastModifiedDate, final String modifiedByUser) {
+            final String approvedByUser, final LocalDateTime lastModifiedDate, final String modifiedByUser, Long linkedGroupId) {
 
         this.id = id;
         this.clientName = clientName;
@@ -63,6 +64,7 @@ public final class RestructureCreditsRequestData {
         this.lastModifiedDate = lastModifiedDate;
         this.modifiedByUser = modifiedByUser;
         this.productId = productId;
+        this.linkedGroupId = linkedGroupId;
     }
 
     /**
@@ -73,10 +75,10 @@ public final class RestructureCreditsRequestData {
     public static RestructureCreditsRequestData instance(final Long id, final String clientName, final String productName,
             final Long productId, final BigDecimal totalLoanAmount, final EnumOptionData status, final LocalDateTime newDisbursementDate,
             final String comments, final LocalDateTime dateRequested, final String requestedByUser, final LocalDateTime approvedOnDate,
-            final String approvedByUser, final LocalDateTime lastModifiedDate, final String modifiedByUser) {
+            final String approvedByUser, final LocalDateTime lastModifiedDate, final String modifiedByUser, Long linkedGroupId) {
 
         return new RestructureCreditsRequestData(id, clientName, productName, productId, totalLoanAmount, status, newDisbursementDate,
-                comments, dateRequested, requestedByUser, approvedOnDate, approvedByUser, lastModifiedDate, modifiedByUser);
+                comments, dateRequested, requestedByUser, approvedOnDate, approvedByUser, lastModifiedDate, modifiedByUser, linkedGroupId);
     }
 
     public Long getId() {
@@ -89,5 +91,13 @@ public final class RestructureCreditsRequestData {
 
     public void setLoanMappingData(Collection<RestructureCreditsLoanMappingData> loanMappingData) {
         this.loanMappingData = loanMappingData;
+    }
+
+    public Long getLinkedGroupId() {
+        return linkedGroupId;
+    }
+
+    public void setLinkedGroupId(Long linkedGroupId) {
+        this.linkedGroupId = linkedGroupId;
     }
 }
