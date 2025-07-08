@@ -36,9 +36,12 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuild
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.data.RescheduleCreditsDataValidator;
@@ -218,10 +221,15 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         for (Loan loan : loanAccounts) {
             Boolean waiveInterestOnRestructureCredits = this.configurationDomainService.isWaiveInterestOnRestructureCredits();
             Boolean waiveChargesAndFeesOnRestructureCredits = this.configurationDomainService.isWaiveChargesAndFeesOnRestructureCredits();
+            MonetaryCurrency currency = loan.getCurrency();
+
+            final LoanRepaymentScheduleInstallment foreCloseDetail = loan
+                    .fetchLoanForeclosureDetail(request.getNewDisbursementDate().toLocalDate());
+            Money chargedInterest = foreCloseDetail.getInterestCharged(currency);
 
             RestructureCreditsLoanMapping creditsLoanMapping = RestructureCreditsLoanMapping.instance(loan,
                     RestructureCreditStatus.PENDING.getValue(), request, waiveInterestOnRestructureCredits,
-                    waiveChargesAndFeesOnRestructureCredits);
+                    waiveChargesAndFeesOnRestructureCredits, chargedInterest);
             mappings.add(creditsLoanMapping);
         }
         return mappings;
