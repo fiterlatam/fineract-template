@@ -7525,7 +7525,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public LoanRepaymentScheduleInstallment fetchLoanForeclosureDetail(final LocalDate closureDate,
             final ScheduleGeneratorDTO scheduleGeneratorDTO) {
-        Money[] receivables = retrieveIncomeOutstandingTillDate(closureDate, scheduleGeneratorDTO);
+        final Money[] receivables = retrieveIncomeOutstandingTillDate(closureDate, scheduleGeneratorDTO);
         Money totalPrincipal = Money.of(getCurrency(), this.getLoanSummary().getTotalPrincipalOutstanding());
         totalPrincipal = totalPrincipal.minus(receivables[3]);
         final LocalDate currentDate = DateUtils.getBusinessLocalDate();
@@ -7800,14 +7800,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         final boolean isFirstRepaymentInstallment = Objects.equals(loanRepaymentScheduleInstallment.getInstallmentNumber(), 1);
-        Money feeForCurrentPeriod = Money.zero(currency);
-        Money feeAccountedForCurrentPeriod = Money.zero(currency);
-        if (tillDays > 0 || isFirstRepaymentInstallment) {
-            feeForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesCharged(currency);
-            feeAccountedForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesWaived(currency)
-                    .plus(loanRepaymentScheduleInstallment.getFeeChargesPaid(currency))
-                    .plus(loanRepaymentScheduleInstallment.getFeeChargesWrittenOff(currency));
-        }
+        final Money feeForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesCharged(currency);
+        final Money feeAccountedForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesWaived(currency)
+                .plus(loanRepaymentScheduleInstallment.getFeeChargesPaid(currency))
+                .plus(loanRepaymentScheduleInstallment.getFeeChargesWrittenOff(currency));
 
         // SU-446 Since penalty calculation for an installment is changed and penaltis till date are accumulated and
         // charged.
@@ -7886,21 +7882,17 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
                 balances[1] = fee;
             } else if (DateUtils.isEqual(paymentDate, installment.getFromDate()) && installment.isNotFullyPaidOff()) {
-                Money fee = Money.zero(currency);
-                if (installment.getFeeChargesAccountedFor(currency).isGreaterThanZero()) {
-                    fee = installment.getFeeChargesCharged(currency);
-                    // SU-661: we need to deduct the Aval amount since the payment date is the due date of the previous
-                    // installment
-                    // So Aval doesn't apply today
-                    if (installment.getInstallmentCharges() != null) {
-                        for (LoanInstallmentCharge loanInstallmentCharge : installment.getInstallmentCharges()) {
-                            if (loanInstallmentCharge.getLoanCharge().isAvalCharge()
-                                    || loanInstallmentCharge.getLoanCharge().isVatChargeOfAvalCharge()) {
-                                fee = fee.minus(loanInstallmentCharge.getAmount(currency));
-                            }
-                        }
-                    }
-                }
+                final Money fee = installment.getFeeChargesCharged(currency);
+                // SU-661: we need to deduct the Aval amount since the payment date is the due date of the previous
+                // installment
+                // So Aval doesn't apply today
+                /**
+                 * SU-707: Pay all installment charges on fromDate if (installment.getInstallmentCharges() != null) {
+                 * for (LoanInstallmentCharge loanInstallmentCharge : installment.getInstallmentCharges()) { if
+                 * (loanInstallmentCharge.getLoanCharge().isAvalCharge() ||
+                 * loanInstallmentCharge.getLoanCharge().isVatChargeOfAvalCharge()) { fee =
+                 * fee.minus(loanInstallmentCharge.getAmount(currency)); } } }
+                 **/
                 balances[1] = fee;
             }
             principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(installment.getPrincipal(currency));
