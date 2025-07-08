@@ -4609,22 +4609,24 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         final BigDecimal interestPortionAccountedFor = partialInvoicedTransactions.stream()
                                 .map(PartialInvoicedTransaction::getInterest).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                        interestPaidRemaining = interestPaidRemaining.subtract(interestPortionAccountedFor);
-                        mandatoryInsurancePaidRemaining = mandatoryInsurancePaidRemaining.subtract(mandatoryInsurancePortionAccountedFor);
-                        mandatoryInsuranceVatPaidRemaining = mandatoryInsuranceVatPaidRemaining
+                        final BigDecimal interestToBeInvoiced = interestPortion.subtract(interestPortionAccountedFor);
+                        final BigDecimal mandatoryInsuranceToBeInvoiced = mandatoryInsurancePortion
+                                .subtract(mandatoryInsurancePortionAccountedFor);
+                        final BigDecimal mandatoryInsuranceVatToBeInvoiced = mandatoryInsuranceVatPortion
                                 .subtract(mandatoryInsuranceVatPortionAccountedFor);
-                        voluntaryInsurancePaidRemaining = voluntaryInsurancePaidRemaining.subtract(voluntaryInsurancePortionAccountedFor);
-                        voluntaryInsuranceVatPaidRemaining = voluntaryInsuranceVatPaidRemaining
+                        final BigDecimal voluntaryInsuranceToBeInvoiced = voluntaryInsurancePortion
+                                .subtract(voluntaryInsurancePortionAccountedFor);
+                        final BigDecimal voluntaryInsuranceVatToBeInvoiced = voluntaryInsuranceVatPortion
                                 .subtract(voluntaryInsuranceVatPortionAccountedFor);
-                        honorariosPaidRemaining = honorariosPaidRemaining.subtract(honorariosPortionAccountedFor);
-                        honorariosVatPaidRemaining = honorariosVatPaidRemaining.subtract(honorariosVatPortionAccountedFor);
-                        penaltyChargesPaidRemaining = penaltyChargesPaidRemaining.subtract(penaltyPortionAccountedFor);
-                        penaltyChargesVatPaidRemaining = penaltyChargesVatPaidRemaining.subtract(penaltyVatPortionAccountedFor);
+                        final BigDecimal honorariosToBeInvoiced = honorariosPortion.subtract(honorariosPortionAccountedFor);
+                        final BigDecimal honorariosVatToBeInvoiced = honorariosVatPortion.subtract(honorariosVatPortionAccountedFor);
+                        final BigDecimal penaltyToBeInvoiced = penaltyPortion.subtract(penaltyPortionAccountedFor);
+                        final BigDecimal penaltyVatToBeInvoiced = penaltyVatPortion.subtract(penaltyVatPortionAccountedFor);
 
-                        if (interestPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && interestPortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (interestPaidRemaining.compareTo(interestPortion) >= 0) {
-                                partialInvoicedTransaction.setInterest(interestPortion);
-                                interestPaidRemaining = interestPaidRemaining.subtract(interestPortion);
+                        if (interestPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && interestToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (interestPaidRemaining.compareTo(interestToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setInterest(interestToBeInvoiced);
+                                interestPaidRemaining = interestPaidRemaining.subtract(interestToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setInterest(interestPaidRemaining);
                                 interestPaidRemaining = BigDecimal.ZERO;
@@ -4634,10 +4636,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             invoicedByAccrualTransactionSet.add(accrualTransaction);
                         }
 
-                        if (penaltyChargesPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && penaltyPortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (penaltyChargesPaidRemaining.compareTo(penaltyPortion) >= 0) {
-                                partialInvoicedTransaction.setPenalty(penaltyPortion);
-                                penaltyChargesPaidRemaining = penaltyChargesPaidRemaining.subtract(penaltyPortion);
+                        if (penaltyChargesPaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && penaltyToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (penaltyChargesPaidRemaining.compareTo(penaltyToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setPenalty(penaltyToBeInvoiced);
+                                penaltyChargesPaidRemaining = penaltyChargesPaidRemaining.subtract(penaltyToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setPenalty(penaltyChargesPaidRemaining);
                                 penaltyChargesPaidRemaining = BigDecimal.ZERO;
@@ -4648,10 +4651,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
 
                         if (penaltyChargesVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                                && penaltyVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (penaltyChargesVatPaidRemaining.compareTo(penaltyVatPortion) >= 0) {
-                                partialInvoicedTransaction.setPenaltyVat(penaltyVatPortion);
-                                penaltyChargesVatPaidRemaining = penaltyChargesVatPaidRemaining.subtract(penaltyVatPortion);
+                                && penaltyVatToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (penaltyChargesVatPaidRemaining.compareTo(penaltyVatToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setPenaltyVat(penaltyVatToBeInvoiced);
+                                penaltyChargesVatPaidRemaining = penaltyChargesVatPaidRemaining.subtract(penaltyVatToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setPenaltyVat(penaltyChargesVatPaidRemaining);
                                 penaltyChargesVatPaidRemaining = BigDecimal.ZERO;
@@ -4662,10 +4665,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
 
                         if (mandatoryInsurancePaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                                && mandatoryInsurancePortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (mandatoryInsurancePaidRemaining.compareTo(mandatoryInsurancePortion) >= 0) {
-                                partialInvoicedTransaction.setMandatoryInsurance(mandatoryInsurancePortion);
-                                mandatoryInsurancePaidRemaining = mandatoryInsurancePaidRemaining.subtract(mandatoryInsurancePortion);
+                                && mandatoryInsuranceToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (mandatoryInsurancePaidRemaining.compareTo(mandatoryInsuranceToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setMandatoryInsurance(mandatoryInsuranceToBeInvoiced);
+                                mandatoryInsurancePaidRemaining = mandatoryInsurancePaidRemaining.subtract(mandatoryInsuranceToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setMandatoryInsurance(mandatoryInsurancePaidRemaining);
                                 mandatoryInsurancePaidRemaining = BigDecimal.ZERO;
@@ -4676,11 +4679,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
 
                         if (mandatoryInsuranceVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                                && mandatoryInsuranceVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (mandatoryInsuranceVatPaidRemaining.compareTo(mandatoryInsuranceVatPortion) >= 0) {
-                                partialInvoicedTransaction.setMandatoryInsuranceVat(mandatoryInsuranceVatPortion);
+                                && mandatoryInsuranceVatToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (mandatoryInsuranceVatPaidRemaining.compareTo(mandatoryInsuranceVatToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setMandatoryInsuranceVat(mandatoryInsuranceVatToBeInvoiced);
                                 mandatoryInsuranceVatPaidRemaining = mandatoryInsuranceVatPaidRemaining
-                                        .subtract(mandatoryInsuranceVatPortion);
+                                        .subtract(mandatoryInsuranceVatToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setMandatoryInsuranceVat(mandatoryInsuranceVatPaidRemaining);
                                 mandatoryInsuranceVatPaidRemaining = BigDecimal.ZERO;
@@ -4691,10 +4694,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
 
                         if (voluntaryInsurancePaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                                && voluntaryInsurancePortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (voluntaryInsurancePaidRemaining.compareTo(voluntaryInsurancePortion) >= 0) {
-                                partialInvoicedTransaction.setVoluntaryInsurance(voluntaryInsurancePortion);
-                                voluntaryInsurancePaidRemaining = voluntaryInsurancePaidRemaining.subtract(voluntaryInsurancePortion);
+                                && voluntaryInsuranceToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (voluntaryInsurancePaidRemaining.compareTo(voluntaryInsuranceToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setVoluntaryInsurance(voluntaryInsuranceToBeInvoiced);
+                                voluntaryInsurancePaidRemaining = voluntaryInsurancePaidRemaining.subtract(voluntaryInsuranceToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setVoluntaryInsurance(voluntaryInsurancePaidRemaining);
                                 voluntaryInsurancePaidRemaining = BigDecimal.ZERO;
@@ -4705,11 +4708,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
 
                         if (voluntaryInsuranceVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                                && voluntaryInsuranceVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (voluntaryInsuranceVatPaidRemaining.compareTo(voluntaryInsuranceVatPortion) >= 0) {
-                                partialInvoicedTransaction.setVoluntaryInsuranceVat(voluntaryInsuranceVatPortion);
+                                && voluntaryInsuranceVatToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (voluntaryInsuranceVatPaidRemaining.compareTo(voluntaryInsuranceVatToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setVoluntaryInsuranceVat(voluntaryInsuranceVatToBeInvoiced);
                                 voluntaryInsuranceVatPaidRemaining = voluntaryInsuranceVatPaidRemaining
-                                        .subtract(voluntaryInsuranceVatPortion);
+                                        .subtract(voluntaryInsuranceVatToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setVoluntaryInsuranceVat(voluntaryInsuranceVatPaidRemaining);
                                 voluntaryInsuranceVatPaidRemaining = BigDecimal.ZERO;
@@ -4719,10 +4722,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             invoicedByAccrualTransactionSet.add(accrualTransaction);
                         }
 
-                        if (honorariosPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && honorariosPortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (honorariosPaidRemaining.compareTo(honorariosPortion) >= 0) {
-                                partialInvoicedTransaction.setHonorarios(honorariosPortion);
-                                honorariosPaidRemaining = honorariosPaidRemaining.subtract(honorariosPortion);
+                        if (honorariosPaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && honorariosToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (honorariosPaidRemaining.compareTo(honorariosToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setHonorarios(honorariosToBeInvoiced);
+                                honorariosPaidRemaining = honorariosPaidRemaining.subtract(honorariosToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setHonorarios(honorariosPaidRemaining);
                                 honorariosPaidRemaining = BigDecimal.ZERO;
@@ -4733,10 +4737,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
 
                         if (honorariosVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                                && honorariosVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (honorariosVatPaidRemaining.compareTo(honorariosVatPortion) >= 0) {
-                                partialInvoicedTransaction.setHonorariosVat(honorariosVatPortion);
-                                honorariosVatPaidRemaining = honorariosVatPaidRemaining.subtract(honorariosVatPortion);
+                                && honorariosVatToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (honorariosVatPaidRemaining.compareTo(honorariosVatToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setHonorariosVat(honorariosVatToBeInvoiced);
+                                honorariosVatPaidRemaining = honorariosVatPaidRemaining.subtract(honorariosVatToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setHonorariosVat(honorariosVatPaidRemaining);
                                 honorariosVatPaidRemaining = BigDecimal.ZERO;
