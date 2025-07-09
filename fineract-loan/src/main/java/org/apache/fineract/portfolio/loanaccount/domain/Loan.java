@@ -7799,7 +7799,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
 
-        final boolean isFirstRepaymentInstallment = Objects.equals(loanRepaymentScheduleInstallment.getInstallmentNumber(), 1);
         final Money feeForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesCharged(currency);
         final Money feeAccountedForCurrentPeriod = loanRepaymentScheduleInstallment.getFeeChargesWaived(currency)
                 .plus(loanRepaymentScheduleInstallment.getFeeChargesPaid(currency))
@@ -7853,13 +7852,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public Money[] retriveIncomeForOverlappingPeriod(final LocalDate paymentDate, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
+        final boolean transactionOccurredOnDueDateOfFirstInstallment = this.repaymentScheduleInstallments.stream().anyMatch(
+                installment -> installment.getInstallmentNumber() == 1 && DateUtils.isEqual(paymentDate, installment.getDueDate()));
         Money[] balances = new Money[3];
         final MonetaryCurrency currency = getCurrency();
         balances[0] = balances[1] = balances[2] = Money.zero(currency);
         Money principalLoanBalanceOutstanding = this.getPrincipal();
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(installment.getAdvancePrincipalAmount());
-            if (DateUtils.isEqual(paymentDate, installment.getDueDate()) && installment.isNotFullyPaidOff()) {
+            if (DateUtils.isEqual(paymentDate, installment.getDueDate()) && installment.isNotFullyPaidOff()
+                    && !transactionOccurredOnDueDateOfFirstInstallment) {
                 Money interest = installment.getInterestCharged(currency);
                 Money fee = installment.getFeeChargesCharged(currency);
                 Money penalty = installment.getPenaltyChargesCharged(currency);
@@ -7998,14 +8000,29 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
+    private boolean isTransactionOnDueDateOfFirstInstallment(final LocalDate transactionDate) {
+        if (this.repaymentScheduleInstallments.isEmpty()) {
+            return false;
+        }
+        final LoanRepaymentScheduleInstallment firstInstallment = this.repaymentScheduleInstallments.stream()
+                .filter(installment -> installment.getInstallmentNumber() == 1).findFirst().orElse(null);
+        return firstInstallment != null && DateUtils.isEqual(transactionDate, firstInstallment.getDueDate());
+    }
+
+    @SuppressWarnings("all")
     public void updateInstallmentsPostDate(final LocalDate transactionDate, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
         List<LoanRepaymentScheduleInstallment> newInstallments = new ArrayList<>(this.repaymentScheduleInstallments);
         final MonetaryCurrency currency = getCurrency();
         Money totalPrincipal = Money.zero(currency);
         Money totalAdvanced = Money.zero(currency);
+        final boolean transactionOccurredOnDueDateOfFirstInstallment = this.repaymentScheduleInstallments.stream().anyMatch(
+                installment -> installment.getInstallmentNumber() == 1 && DateUtils.isEqual(transactionDate, installment.getDueDate()));
         Money[] balances = retriveIncomeForOverlappingPeriod(transactionDate, scheduleGeneratorDTO);
         boolean isInterestComponent = false;
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
+            if (transactionOccurredOnDueDateOfFirstInstallment && installment.getInstallmentNumber() == 1) {
+                continue;
+            }
             if (!DateUtils.isAfter(transactionDate, installment.getDueDate()) && installment.isNotFullyPaidOff()) {
                 totalPrincipal = totalPrincipal.plus(installment.getPrincipal(currency));
                 if (installment.getAdvancePrincipalAmount() != null
