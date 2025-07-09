@@ -2178,6 +2178,64 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         }
     }
 
+    private void addSpecificChargesFromLoanProduct(Loan loan) {
+        LoanProduct loanProduct = loan.getLoanProduct();
+
+        // Get all charges from the loan product
+        List<Charge> productCharges = loanProduct.getLoanProductCharges();
+
+        if (productCharges != null && !productCharges.isEmpty()) {
+            // Filter for charges with IDs between 54 and 55 (inclusive)
+            List<Long> chargeIds = List.of(33L, 54L, 55L);
+            List<Charge> specificCharges = productCharges.stream()
+                    .filter(charge -> chargeIds.contains(charge.getId()) && charge.isActive()).toList();
+            if (!specificCharges.isEmpty()) {
+                // Check if the loan already has these charges
+                Collection<LoanCharge> existingLoanCharges = loan.getLoanCharges();
+
+                for (Charge specificCharge : specificCharges) {
+                    // Check if this charge is already added to the loan
+                    boolean chargeAlreadyAdded = false;
+
+                    if (existingLoanCharges != null) {
+                        chargeAlreadyAdded = existingLoanCharges.stream()
+                                .anyMatch(loanCharge -> loanCharge.getCharge().getId().equals(specificCharge.getId()));
+                    }
+
+                    String sql = "select MIPYME_FEES from tmp_loanaccount tl where tl.\"ID\" = ?";
+                    BigDecimal chargeAmount = this.jdbcTemplate.queryForObject(sql, BigDecimal.class, loan.getExternalId().getValue());
+                    sql = "select MIPYME_FEES_TAX from tmp_loanaccount tl where tl.\"ID\" = ?";
+                    BigDecimal chargeTaxAmount = this.jdbcTemplate.queryForObject(sql, BigDecimal.class, loan.getExternalId().getValue());
+
+                    // If the charge is not already added, add it to the loan
+                    if (!chargeAlreadyAdded) {
+                        final LoanCharge loanCharge = new LoanCharge(loan, specificCharge, loan.getProposedPrincipal(),
+                                specificCharge.getAmount(), ChargeTimeType.fromInt(specificCharge.getChargeTimeType()),
+                                ChargeCalculationType.fromInt(specificCharge.getChargeCalculation()),
+                                loan.getExpectedDisbursedOnLocalDate(), ChargePaymentMode.fromInt(specificCharge.getChargePaymentMode()),
+                                null, BigDecimal.ZERO, null, false, null);
+                        if (loanCharge.getCharge().getName().toLowerCase().contains("seguro de vida nano")) {
+                            loan.addLoanCharge(loanCharge);
+                        } else if (specificCharge.isPercentageOfAnotherCharge()) {
+                            loan.addLoanCharge(loanCharge);
+                        } else {
+                            loanCharge.setAmountOrPercentage(chargeAmount);
+                            loanCharge.setAmount(chargeAmount);
+                            loanCharge.setOutstandingAmount(chargeAmount);
+                            loan.addLoanCharge(loanCharge);
+                        }
+                    }
+                }
+
+                // Recalculate all charges
+                loan.recalculateAllCharges();
+
+                // Save the loan
+                loanRepository.save(loan);
+            }
+        }
+    }
+
     /**
      * Adds charges with IDs between 24 and 32 (inclusive) (MiPyme) to the loan if they exist on the loan product and
      * have not already been added to the loan
@@ -2187,16 +2245,16 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
      *
      *            TODO: Remove this method after data migration is done
      */
-    private void addSpecificChargesFromLoanProduct(Loan loan) {
+    private void addSpecificChargesFromLoanProduct_bk(Loan loan) {
         LoanProduct loanProduct = loan.getLoanProduct();
 
         // Get all charges from the loan product
         List<Charge> productCharges = loanProduct.getLoanProductCharges();
 
         if (productCharges != null && !productCharges.isEmpty()) {
-            // Filter for charges with IDs between 24 and 33 (inclusive)
+            // Filter for charges with IDs between 54 and 55 (inclusive)
             List<Charge> specificCharges = productCharges.stream()
-                    .filter(charge -> charge.getId() >= 24L && charge.getId() <= 33L && charge.isActive()).toList();
+                    .filter(charge -> charge.getId() >= 54L && charge.getId() <= 55L && charge.isActive()).toList();
             BigDecimal principal = loan.getProposedPrincipal();
             BigDecimal smlvLimitBy4 = BigDecimal.valueOf(configurationDomainServiceJpa.retrieveSMVLLimit() * 4);
             if (!specificCharges.isEmpty()) {
