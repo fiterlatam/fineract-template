@@ -2125,7 +2125,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         BigDecimal chargeAmt;
         BigDecimal totalChargeAmt = BigDecimal.ZERO;
         if (!loanCharge.isOverdueInstallmentCharge()) {
-            if (loanCharge.getChargeCalculation().isPercentageBased()) {
+            if (loanCharge.getChargeCalculation().isPercentageBased() && !loanCharge.getLoan().isMigratedLoan()) {
                 amount = calculateAmountPercentageAppliedTo(loanCharge);
                 chargeAmt = loanCharge.getPercentage();
                 if (loanCharge.isInstalmentFee()) {
