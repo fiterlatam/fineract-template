@@ -971,7 +971,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     transactionAmountUnprocessed, paymentAllocationsEntry.getValue(),
                     paymentAllocationRule.getFutureInstallmentAllocationRule(), transactionMappings, charges, balances);
             if (transactionAmountUnprocessed.isZero()) {
-                //no more funds to process
+                // no more funds to process
                 break;
             }
         }
