@@ -2265,7 +2265,7 @@ update m_loan set account_no = m_loan.external_id;
 
 -- Update MiPyme charge to appear under insurance column
 update m_loan_charge set charge_calculation_enum = 807 where charge_id = 54;
-update m_loan_charge set charge_calculation_enum = 808 where charge_id = 54;
+update m_charge set charge_calculation_enum = 807 where id = 54;
 
 select count(*) from m_loan ml where loan_status_id = 300;
 
