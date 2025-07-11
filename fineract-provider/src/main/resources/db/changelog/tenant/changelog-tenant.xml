@@ -411,4 +411,6 @@
     <include file="parts/202506252000001000_EA_378_apply_penalties_job_config.xml" relativeToChangelogFile="true"/>
     <include file="parts/202507012000001000_EA_383_advanced_payments.xml" relativeToChangelogFile="true"/>
     <include file="parts/202507022000001000_EA_399_mipymecharges.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20241201000000_add_reduce_term_column.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20241201000001_add_reduce_term_to_loan_repayment_schedule.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

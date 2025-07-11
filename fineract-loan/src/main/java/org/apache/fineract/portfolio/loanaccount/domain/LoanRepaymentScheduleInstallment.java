@@ -165,6 +165,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     @Column(name = "recalculate_emi")
     private boolean recalculateEMI;
 
+    @Column(name = "reduce_term")
+    private boolean reduceTerm;
+
     @Column(name = "interest_recalculatedon_date", nullable = true)
     private LocalDate interestRecalculatedOnDate;
 
@@ -567,6 +570,14 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.recalculateEMI = recalculateEMI;
     }
 
+    public boolean reduceTerm() {
+        return this.reduceTerm;
+    }
+
+    public void setReduceTerm(boolean reduceTerm) {
+        this.reduceTerm = reduceTerm;
+    }
+
     public void resetDerivedComponents() {
         this.principalCompleted = null;
         this.principalWrittenOff = null;
@@ -583,6 +594,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.totalPaidLate = null;
         this.advancePrincipalAmount = null;
         this.recalculateEMI = false;
+        this.reduceTerm = false;
 
         this.obligationsMet = false;
         this.obligationsMetOnDate = null;
@@ -1905,6 +1917,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     public void updateComponents(LoanRepaymentScheduleInstallment copy, MonetaryCurrency currency) {
         this.setPrincipal(copy.getPrincipal(currency).getAmount());
         this.setRecalculateEMI(copy.recalculateEMI);
+        this.setReduceTerm(copy.reduceTerm);
         this.setRecalculatedInterestComponent(copy.recalculatedInterestComponent);
         this.setAdvancePrincipalAmount(copy.getAdvancePrincipalAmount());
         this.setPenaltyCharges(copy.getPenaltyChargesCharged(currency).getAmount());

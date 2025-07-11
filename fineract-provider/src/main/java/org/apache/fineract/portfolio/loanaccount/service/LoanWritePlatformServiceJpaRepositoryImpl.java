@@ -1447,11 +1447,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         boolean recalculateEMI = command.booleanPrimitiveValueOfParameterNamed("reduceInstallmentAmount");
         boolean reduceTerm = command.booleanPrimitiveValueOfParameterNamed("reduceTerm");
         loan.setRecalculateEMI(recalculateEMI);
-        // TODO: Implement reduceTerm business logic when both parameters are handled
-        // For now, we just validate that both cannot be true at the same time
         if (recalculateEMI && reduceTerm) {
             throw new GeneralPlatformDomainRuleException("validation.msg.loan.repayment.both.reduce.options.not.allowed",
                     "Both reduceInstallmentAmount and reduceTerm cannot be true at the same time. Please choose only one option.");
+        }
+        // After validation, set the reschedule strategy based on reduceTerm
+        if (reduceTerm) {
+            loan.setReduceTerm(true);
         }
 
         BigDecimal totalExpectedRepayment = loan.getLoanSummary().getTotalExpectedRepayment();

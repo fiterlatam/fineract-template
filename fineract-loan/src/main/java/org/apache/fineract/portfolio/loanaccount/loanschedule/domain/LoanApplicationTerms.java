@@ -233,6 +233,7 @@ public final class LoanApplicationTerms {
     private final LoanScheduleProcessingType loanScheduleProcessingType;
     private boolean extendTermForMonthlyRepayment;
     private boolean recalculateEMIForInstallment;
+    private boolean reduceTermForInstallment;
     private BigDecimal advancePrincipalAmountForInstallment;
     private Integer numberOfInstallmentsToIgnore;
 
@@ -2066,6 +2067,14 @@ public final class LoanApplicationTerms {
 
     public void setRecalculateEMIForInstallment(boolean recalculateEMIForInstallment) {
         this.recalculateEMIForInstallment = recalculateEMIForInstallment;
+    }
+
+    public boolean reduceTermForInstallment() {
+        return this.reduceTermForInstallment;
+    }
+
+    public void setReduceTermForInstallment(boolean reduceTermForInstallment) {
+        this.reduceTermForInstallment = reduceTermForInstallment;
     }
 
     public BigDecimal advancePrincipalAmountForInstallment() {

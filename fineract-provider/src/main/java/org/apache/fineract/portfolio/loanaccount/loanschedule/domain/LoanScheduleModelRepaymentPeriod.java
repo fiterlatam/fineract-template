@@ -52,6 +52,7 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     BigDecimal totalHonorariosCharged = BigDecimal.ZERO;
     BigDecimal totalLifeInsuranceCharged = BigDecimal.ZERO;
     private boolean recalculateEMIForInstallment;
+    private boolean reduceTermForInstallment;
     private BigDecimal advancePrincipalAmountForInstallment;
     private Collection<FeeDetails> feeDetails;
 
@@ -267,6 +268,16 @@ public final class LoanScheduleModelRepaymentPeriod implements LoanScheduleModel
     @Override
     public void setRecalculateEMIForInstallment(boolean recalculateEMIForInstallment) {
         this.recalculateEMIForInstallment = recalculateEMIForInstallment;
+    }
+
+    @Override
+    public boolean reduceTermForInstallment() {
+        return this.reduceTermForInstallment;
+    }
+
+    @Override
+    public void setReduceTermForInstallment(boolean reduceTermForInstallment) {
+        this.reduceTermForInstallment = reduceTermForInstallment;
     }
 
     @Override

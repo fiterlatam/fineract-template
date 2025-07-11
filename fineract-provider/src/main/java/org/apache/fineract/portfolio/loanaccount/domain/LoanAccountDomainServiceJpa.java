@@ -205,7 +205,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         } else {
             newRepaymentTransaction = LoanTransaction.repaymentType(repaymentTransactionType, loan.getOffice(), repaymentAmount,
                     paymentDetail, transactionDate, txnExternalId, chargeRefundChargeType, loan.getRepaymentTransactionProcessingType(),
-                    loan.recalculateEMI());
+                    loan.recalculateEMI(), loan.shouldReduceTerm());
         }
 
         LocalDate recalculateFrom = null;

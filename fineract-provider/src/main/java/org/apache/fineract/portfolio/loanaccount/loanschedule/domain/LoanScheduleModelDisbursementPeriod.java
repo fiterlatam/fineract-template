@@ -227,6 +227,16 @@ public final class LoanScheduleModelDisbursementPeriod implements LoanScheduleMo
     }
 
     @Override
+    public boolean reduceTermForInstallment() {
+        return false;
+    }
+
+    @Override
+    public void setReduceTermForInstallment(boolean reduceTermForInstallment) {
+        return;
+    }
+
+    @Override
     public BigDecimal advancePrincipalAmountForInstallment() {
         return null;
     }

@@ -518,6 +518,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     // methods to add this attribute as a parameter was creating a mess
     @Transient
     boolean recalculateEMI;
+    @Transient
+    private boolean reduceTerm;
 
     @Column(name = "claim_type")
     private String claimType;
@@ -6687,7 +6689,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         if (Objects.nonNull(this.getExpectedDisbursedOnLocalDate())) {
             loanApplicationTerms.setInstallmentDayOfMonth(this.getExpectedDisbursedOnLocalDate().getDayOfMonth());
         }
-
+        loanApplicationTerms.setReduceTermForInstallment(this.shouldReduceTerm());
         loanApplicationTerms.setLoanProductName(this.getLoanProduct().getName());
         if (scheduleGeneratorDTO.getTotalRepaid() != null) {
             loanApplicationTerms.setTotalRepaid(scheduleGeneratorDTO.getTotalRepaid());
@@ -8331,6 +8333,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setRecalculateEMI(boolean recalculateEMI) {
         this.recalculateEMI = recalculateEMI;
+    }
+
+    public void setReduceTerm(boolean reduceTerm) {
+        this.reduceTerm = reduceTerm;
+    }
+
+    public boolean shouldReduceTerm() {
+        return reduceTerm;
     }
 
     public String excludedForInsuranceClaim() {

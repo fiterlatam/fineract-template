@@ -71,29 +71,33 @@ public interface LoanScheduleModelPeriod {
 
     void setRescheduleInterestPortion(BigDecimal rescheduleInterestPortion);
 
-    public BigDecimal getTotalHonorariosCharged();
+    BigDecimal getTotalHonorariosCharged();
 
-    public void setTotalHonorariosCharged(BigDecimal totalHonorariosCharged);
+    void setTotalHonorariosCharged(BigDecimal totalHonorariosCharged);
 
-    public BigDecimal getTotalAvalCharged();
+    BigDecimal getTotalAvalCharged();
 
-    public void setTotalAvalCharged(BigDecimal totalAvalCharged);
+    void setTotalAvalCharged(BigDecimal totalAvalCharged);
 
-    public BigDecimal getTotalVoluntaryInsuranceCharged();
+    BigDecimal getTotalVoluntaryInsuranceCharged();
 
-    public void setTotalVoluntaryInsuranceCharged(BigDecimal totalVoluntaryInsuranceCharged);
+    void setTotalVoluntaryInsuranceCharged(BigDecimal totalVoluntaryInsuranceCharged);
 
-    public BigDecimal getTotalMandatoryInsuranceCharged();
+    BigDecimal getTotalMandatoryInsuranceCharged();
 
-    public void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged);
+    void setTotalMandatoryInsuranceCharged(BigDecimal totalMandatoryInsuranceCharged);
 
-    public BigDecimal getTotalLifeInsuranceCharged();
+    BigDecimal getTotalLifeInsuranceCharged();
 
-    public void setTotalLifeInsuranceCharged(BigDecimal totalLifeInsuranceCharged);
+    void setTotalLifeInsuranceCharged(BigDecimal totalLifeInsuranceCharged);
 
-    public boolean recalculateEMIForInstallment();
+    boolean recalculateEMIForInstallment();
 
     public void setRecalculateEMIForInstallment(boolean recalculateEMIForInstallment);
+
+    public boolean reduceTermForInstallment();
+
+    public void setReduceTermForInstallment(boolean reduceTermForInstallment);
 
     public BigDecimal advancePrincipalAmountForInstallment();
 
