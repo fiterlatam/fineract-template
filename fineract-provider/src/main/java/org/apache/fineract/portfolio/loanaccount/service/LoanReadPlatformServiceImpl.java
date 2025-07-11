@@ -2052,7 +2052,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
     @Override
     public List<OverdueLoanScheduleData> retrieveAllLoansWithOverdueInstallments(final Long penaltyWaitPeriod,
-            final Boolean backdatePenalties, int pageSize, Long minLoanId) {
+            final Boolean backdatePenalties, final LocalDate penaltyStartDate, int pageSize, Long minLoanId) {
         log.info(
                 "Apply penalty to overdue loans:: Fetching overdue installments with penalty wait period: {}, backdate penalties: {}, page size: {}, min loan id: {}",
                 penaltyWaitPeriod, backdatePenalties, pageSize, minLoanId);
@@ -2062,17 +2062,18 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         String loanIdOffset = "and ml.id >";
         String loanFilter = "and ml.id =";
         final StringBuilder sqlBuilder = new StringBuilder(400);
-        sqlBuilder.append("select ").append(rm.schema())
-                .append(" where " + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "?", "day") + " > ls.duedate ")
+        sqlBuilder.append("select ").append(rm.schema()).append(" where ")
+                .append(sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "?", "day")).append(" > ls.duedate ")
                 .append(" and ls.completed_derived <> true and mc.charge_applies_to_enum = 1 ")
                 .append(" and ls.recalculated_interest_component <> true ")
-                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ").append(loanIdOffset).append(" ? ");
+                .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ").append(" AND ls.installment > 0 ")
+                .append(" AND ml.is_charged_off = FALSE ").append(" AND ls.duedate >= ? ").append(loanIdOffset).append(" ? ");
 
         List<OverdueLoanScheduleData> installments;
         if (Boolean.TRUE.equals(backdatePenalties)) {
             sqlBuilder.append(" order by ml.id");
             sqlBuilder.append(" limit ").append(pageSize);
-            installments = this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, minLoanId);
+            installments = this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, penaltyStartDate, minLoanId);
         } else {
             // Only apply for duedate = yesterday (so that we don't apply
             // penalties on the duedate itself)
@@ -2081,13 +2082,14 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             sqlBuilder.append(" order by ml.id");
             // limit resultset
             sqlBuilder.append(" limit ").append(pageSize);
-            installments = this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, minLoanId, penaltyWaitPeriod);
+            installments = this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, penaltyStartDate, minLoanId,
+                    penaltyWaitPeriod);
         }
 
         // Add any other installments of the last loan
         if (!installments.isEmpty()) {
             String sql = sqlBuilder.toString().replaceAll(loanIdOffset, loanFilter);
-            this.addOtherLoanInstallmentsToList(installments, sql, rm, penaltyWaitPeriod, backdatePenalties);
+            this.addOtherLoanInstallmentsToList(installments, sql, rm, penaltyWaitPeriod, backdatePenalties, penaltyStartDate);
         }
         final long fetchEndTime = System.currentTimeMillis();
         log.info("Apply penalty to overdue loans:: Fetched {} overdue installments in {} seconds", installments.size(),
@@ -2095,13 +2097,14 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         return installments;
     }
 
-    private void addOtherLoanInstallmentsToList(List<OverdueLoanScheduleData> installments, String sql, MusoniOverdueLoanScheduleMapper rm,
-            Long penaltyWaitPeriod, Boolean backdatePenalties) {
+    private void addOtherLoanInstallmentsToList(final List<OverdueLoanScheduleData> installments, final String sql,
+            final MusoniOverdueLoanScheduleMapper rm, final Long penaltyWaitPeriod, final Boolean backdatePenalties,
+            final LocalDate penaltyStartDate) {
         Long lastLoanId = installments.get(installments.size() - 1).getLoanId();
 
-        List<OverdueLoanScheduleData> otherInstallments = backdatePenalties
-                ? this.jdbcTemplate.query(sql, rm, penaltyWaitPeriod, lastLoanId)
-                : this.jdbcTemplate.query(sql, rm, penaltyWaitPeriod, lastLoanId, penaltyWaitPeriod);
+        List<OverdueLoanScheduleData> otherInstallments = Boolean.TRUE.equals(backdatePenalties)
+                ? this.jdbcTemplate.query(sql, rm, penaltyWaitPeriod, penaltyStartDate, lastLoanId)
+                : this.jdbcTemplate.query(sql, rm, penaltyWaitPeriod, penaltyStartDate, lastLoanId, penaltyWaitPeriod);
         for (OverdueLoanScheduleData installment : otherInstallments) {
             if (!installments.contains(installment)) {
                 installments.add(installment);
