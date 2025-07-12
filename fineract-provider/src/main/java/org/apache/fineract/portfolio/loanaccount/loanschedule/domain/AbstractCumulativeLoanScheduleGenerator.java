@@ -2011,6 +2011,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     reducePrincipal = reducePrincipal.zero();
                 break;
                 case REDUCE_NUMBER_OF_INSTALLMENTS:
+                    handleReduceNumberOfInstallments(loanApplicationTerms);
+
                     // number of installments will reduce but emi amount won't
                     // get effected
                     reducePrincipal = reducePrincipal.zero();
