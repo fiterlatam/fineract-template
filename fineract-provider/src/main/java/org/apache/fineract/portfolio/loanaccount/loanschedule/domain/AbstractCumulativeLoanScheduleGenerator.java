@@ -3603,6 +3603,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         loanApplicationTerms.setFixedEmiAmount(null);
                         updateFixedInstallmentAmount(mc, loanApplicationTerms, instalmentNumber, outstandingBalance);
                         loanApplicationTerms.setRecalculateEMIForInstallment(installment.recalculateEMI());
+                    } else {
+                        // we need to reduce term if recalculateEMI is false
+                        handleReduceNumberOfInstallments(loanApplicationTerms);
                     }
                     //// SU-377 Get a list of transactions used to pay in advance for this installment to calculate
                     //// interest for this installment based on the formula
