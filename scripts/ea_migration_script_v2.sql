@@ -715,11 +715,11 @@ UPDATE public.tmp_loanaccount
 	WHERE "ID"='0492158972';
 
 
-select * from tmp_loanaccount tl where "ID" = '0039682591';
+select * from tmp_loanaccount tl where "ID" = '0149835149';
 
 select * from m_loan ml where external_id = '0039682591';
 
-select * from tmp_loan_repayment_schedule tlrs where "PARENTACCOUNTKEY" = '8a4453828aa8adca018aaa535fad32c8' order by "DUEDATE";
+select * from tmp_loan_repayment_schedule tlrs where "PARENTACCOUNTKEY" = '8a44485e96de6fd30196deeda4ce6385' order by "DUEDATE";
 
 -- truncate table m_loan restart identity cascade;
 -- truncate table m_document restart identity cascade;
@@ -802,19 +802,19 @@ FROM (
         SELECT s1."totaloutstanding"
         FROM tmp_loan_repayment_schedule s1
         WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
-          AND s1."STATE" = 'LATE'
+          AND s1."STATE" in ('LATE', 'PARTIALLY_PAID')
           order by s1."DUEDATE"
           limit 1
       ) < 30000 and (
 	       SELECT count(1)
 	        FROM tmp_loan_repayment_schedule s1
 	        WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
-	          AND s1."STATE" = 'LATE'
-      ) > 1 THEN (
+	          AND s1."STATE" in ('LATE', 'PARTIALLY_PAID')
+      ) > 0 THEN (
         SELECT MIN(s2."DUEDATE")::date
         FROM tmp_loan_repayment_schedule s2
         WHERE s2."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
-          AND s2."STATE" = 'LATE'
+          AND s2."STATE" in ('LATE', 'PARTIALLY_PAID')
           AND s2."totaloutstanding" < 30000
           group by tl."ID"
       )
@@ -841,21 +841,21 @@ SELECT
       WHEN  ((
         SELECT s1."totaloutstanding"
         FROM tmp_loan_repayment_schedule s1
-        WHERE s1."PARENTACCOUNTKEY" = '8a445c118bb4b170018bbf4f4c5751ff'-- tl."ENCODEDKEY"
-          AND s1."STATE" = 'LATE'
+        WHERE s1."PARENTACCOUNTKEY" = '8a4435d3974535650197455e137d34ba'-- tl."ENCODEDKEY"
+          AND s1."STATE" in ('LATE', 'PARTIALLY_PAID')
           order by s1."DUEDATE"
           limit 1
       ) < 30000) and (
 	       SELECT count(1)
 	        FROM tmp_loan_repayment_schedule s1
-	        WHERE s1."PARENTACCOUNTKEY" = '8a445c118bb4b170018bbf4f4c5751ff'-- tl."ENCODEDKEY"
-	          AND s1."STATE" = 'LATE'
+	        WHERE s1."PARENTACCOUNTKEY" = '8a4435d3974535650197455e137d34ba'-- tl."ENCODEDKEY"
+	          AND s1."STATE" in ('LATE', 'PARTIALLY_PAID')
 	          group by s1."ENCODEDKEY"
-      ) > 1 THEN (
+      ) > 0 THEN (
         SELECT MIN(s2."DUEDATE")::date
         FROM tmp_loan_repayment_schedule s2
         WHERE s2."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
-          AND s2."STATE" = 'LATE'
+          AND s2."STATE" in ('LATE', 'PARTIALLY_PAID')
           AND s2."totaloutstanding" < 30000
           group by tl."ID"
       )
@@ -864,13 +864,80 @@ SELECT
         SELECT MAX(s3."DUEDATE")::date
         FROM tmp_loan_repayment_schedule s3
         WHERE s3."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
-          AND s3."STATE" IN ('PAID', 'PARTIALLY_PAID')
+          AND s3."STATE" IN ('PAID', 'GRACE')
           group by tl."ID"
       )
     END AS new_date
   FROM tmp_loanaccount tl
-  where tl."ID" = '5313786011'
-  GROUP BY tl."ID", tl."ENCODEDKEY"
+  where tl."ID" = '0035045413'
+  GROUP BY tl."ID", tl."ENCODEDKEY";
+ 
+ 
+CREATE OR REPLACE PROCEDURE update_new_disbursement_dates(threshold_amount NUMERIC DEFAULT 30000)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  updated_count INTEGER := 0;
+BEGIN
+  -- Perform the update
+  WITH updated AS (
+    UPDATE tmp_loanaccount tcm
+    SET NEW_DISBURSEMENT_DATE = sub.new_date
+    FROM (
+      SELECT
+        tl."ID",
+        CASE
+          -- If the earliest outstanding installment has a balance < threshold and there is more than one
+          WHEN (
+            SELECT s1."totaloutstanding"
+            FROM tmp_loan_repayment_schedule s1
+            WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+              AND s1."STATE" IN ('LATE', 'PARTIALLY_PAID')
+            ORDER BY s1."DUEDATE"
+            LIMIT 1
+          ) < threshold_amount AND (
+            SELECT COUNT(1)
+            FROM tmp_loan_repayment_schedule s1
+            WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+              AND s1."STATE" IN ('LATE', 'PARTIALLY_PAID')
+          ) > 0 THEN (
+            SELECT MIN(s2."DUEDATE")::date
+            FROM tmp_loan_repayment_schedule s2
+            WHERE s2."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+              AND s2."STATE" IN ('LATE', 'PARTIALLY_PAID')
+              AND s2."totaloutstanding" < threshold_amount
+          )
+          -- Otherwise, take the last paid or grace installment
+          ELSE (
+            SELECT MAX(s3."DUEDATE")::date
+            FROM tmp_loan_repayment_schedule s3
+            WHERE s3."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+              AND s3."STATE" IN ('PAID', 'GRACE')
+              AND s3."installment" IS NOT NULL
+          )
+        END AS new_date
+      FROM tmp_loanaccount tl
+      GROUP BY tl."ID", tl."ENCODEDKEY"
+    ) sub
+    WHERE tcm."ID" = sub."ID"
+    RETURNING 1
+  )
+  SELECT COUNT(*) INTO updated_count FROM updated;
+  -- Optionally log how many rows were updated
+  RAISE NOTICE 'Updated % row(s) in tmp_loanaccount.', updated_count;
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE EXCEPTION 'Error updating disbursement dates: %', SQLERRM;
+END;
+$$;
+
+
+CALL update_new_disbursement_dates();
+--OR
+CALL update_new_disbursement_dates(30000);
+  
+  
+  
 
 -- Add a column to hold the new first repayment date
 alter table tmp_loanaccount add column NEW_FIRST_REPAYMENT_DATE date;
@@ -893,22 +960,22 @@ FROM (
         SELECT s1."totaloutstanding"
         FROM tmp_loan_repayment_schedule s1
         WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
-          AND s1."STATE" = 'LATE'
+          AND s1."STATE" in ('LATE', 'PARTIALLY_PAID')
           order by s1."DUEDATE"
           limit 1
       ) < 30000 and (
 	       SELECT count(1)
 	        FROM tmp_loan_repayment_schedule s1
 	        WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
-	          AND s1."STATE" = 'LATE'
-      ) > 1 THEN (
+	          AND s1."STATE" in ('LATE', 'PARTIALLY_PAID')
+      ) > 0 THEN (
         SELECT MIN(s2."DUEDATE")::date
         FROM tmp_loan_repayment_schedule s1
         JOIN tmp_loan_repayment_schedule s2
           ON s2."PARENTACCOUNTKEY" = s1."PARENTACCOUNTKEY"
          AND s2."DUEDATE" > s1."DUEDATE"
         WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
-          AND s1."STATE" = 'LATE'
+          AND s1."STATE" in ('LATE', 'PARTIALLY_PAID')
           AND s1."totaloutstanding" < 30000
       )
       -- Otherwise, take the last paid installment
@@ -940,7 +1007,7 @@ set NO_OF_OUTSTANDING_INSTALLMENTS = (
 	select coalesce((tl."REPAYMENTINSTALLMENTS" - COUNT(tlrs."STATE")), tl."REPAYMENTINSTALLMENTS") outstanding_installments 
 	from tmp_loanaccount tl 
 	join tmp_loan_repayment_schedule tlrs on tl."ENCODEDKEY" = tlrs."PARENTACCOUNTKEY"
-	where (tlrs."STATE" in ('PAID', 'GRACE') or (tlrs."STATE" = 'LATE' and tlrs."DUEDATE" <= tcm.new_disbursement_date)) and tcm."ID" = tl."ID" group by tl."ID", tl."REPAYMENTINSTALLMENTS"
+	where (tlrs."STATE" in ('PAID', 'GRACE') or (tlrs."STATE" in ('LATE', 'PARTIALLY_PAID') and tlrs."DUEDATE" <= tcm.new_disbursement_date)) and tcm."ID" = tl."ID" group by tl."ID", tl."REPAYMENTINSTALLMENTS"
 );
 -- Set installment count to original installments if none is paid off
 update tmp_loanaccount set NO_OF_OUTSTANDING_INSTALLMENTS = "REPAYMENTINSTALLMENTS" where NO_OF_OUTSTANDING_INSTALLMENTS is null;
@@ -960,12 +1027,16 @@ select ("LOANAMOUNT" * 0.045 / "REPAYMENTINSTALLMENTS"), * from tmp_loanaccount 
 
 select * from tmp_loan_charges tlc where loankey = '8a44524382b6c9620182b8cc2af91556';
 
-update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.045 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0;
+update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.045 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0
+and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" like '%4SMMLV%' and fee_percentage = 4.5);
+
+update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.075 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0
+and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" like '%4SMMLV%' and fee_percentage = 7.5);
 
 update tmp_loanaccount set MIPYME_FEES_TAX = MIPYME_FEES * 0.19;
 
 select fee_percentage from tmp_loan_charges tlc join tmp_loanaccount tl on tlc.loankey = tl."ENCODEDKEY" 
-where tlc."NAME" like '%Comisión MiPyme%' and fee_percentage != 4.5
+where tlc."NAME" like '%4SMMLV%' and fee_percentage != 4.5
 
 select * from m_charge mc order by id;
 
@@ -977,6 +1048,9 @@ select * from tmp_disbursementdetails td where td."ENCODEDKEY" = '8a4424b493e46f
 select * from tmp_loanaccount tl where tl."ID" not in (select external_id from m_loan);
 
 select * from tmp_cliente_migrar tcm where encodedkey = '8a44389f946ff1070194702baa6c75a5';
+
+update m_loan_charge set charge_calculation_enum = 286 where charge_id = 54;
+update m_charge set charge_calculation_enum = 286 where id = 54;
 
 -- -new query for outstanding loan balances
 select distinct
@@ -1112,7 +1186,7 @@ from
 	  where  mpl.id < 9
 	  -- and tcm.total_outstanding > 0
 	  and tcm."ID" not in (select external_id from m_loan)
-	 --and tcm."ID" in ('4640496251')
+	 --and tcm."ID" in ('0035045413', '0039682591', '0045804559', '0058126572', '0059952069', '0086081271', '0172331900', '0240593101', '0880890284', '0887087494', '0444457342', '1664592132', '2949964565', '3251282390', '4140812568', '0043371811', '0053873138', '0085800405', '0149835149', '4140812568', '0043371811', '0053873138', '0085800405', '0149835149', '0134707261', '0018416660', '0027742355', '0041686649', '0043826718', '0047805841', '0605287882', '0657234704', '1184984476', '1343769051', '1688426558', '0040557573', '0160048187', '0173037027', '0552820053', '0748108975')
 	 order by tcm."ID";
 	
 	select count(*) from m_loan;
@@ -1120,16 +1194,16 @@ from
 	
 	select * from m_loan ml where loan_status_id = 300;
 
-select * from m_loan where external_id ='4556469165';
+select * from m_loan where external_id ='4626647294';
 
 
-select * from tmp_loanaccount tl where "ID" = '0341147376';
+select * from tmp_loanaccount tl where "ID" = '0027742355';
 
-select * from tmp_loan_repayment_schedule tlrs where "PARENTACCOUNTKEY" = '8a4420bb96c3619c0196c4b4163a7b47' order by "DUEDATE";
+select * from tmp_loan_repayment_schedule tlrs where "PARENTACCOUNTKEY" = '8a44285488b9cb2b0188ba7e659a72c2' order by "DUEDATE";
 
 select * from tmp_flat_loan_charges tflc where loankey = '8a44524382b6c9620182b8cc2af91556';
 
-select * from tmp_loan_charges tlc where loankey = '8a44524382b6c9620182b8cc2af91556';
+select * from tmp_loan_charges tlc where loankey = '8a445ba787e6cec80187e756db0e2549';
 
 select * from tmp_disbursementdetails td where td."ENCODEDKEY" = '8a4447229739deb501973c6217a4340d';
 
@@ -1140,6 +1214,8 @@ select * from tmp_migration_response tmr;
 select * from tmp_loanproduct_mapping tlm where tlm.ea_product_key = '8a4442a98212792801821331924c521d'
 
 select * from m_charge mc order by id;
+
+select * from m_loan ml where ml.external_id = '000002398'
 
 select * from m_loan_charge ml where loan_id = 1641;
 
@@ -1293,8 +1369,8 @@ from
 		end
 		) mipyme_charge on mipyme_charge.loankey = tcm."ENCODEDKEY"
 	where  mpl.id in (9,10) and trim(to_char(td."DISBURSEMENTDATE",'YYYY')) in ('2021','2022','2023')
-	and tcm."ID" = '4640496251'
-	-- and tcm."ID" not in (select external_id from m_loan)
+	-- and tcm."ID" in ('0035045413', '0039682591', '0045804559', '0058126572', '0059952069', '0086081271', '0172331900', '0240593101', '0880890284', '0887087494', '0444457342', '1664592132', '2949964565', '3251282390', '4140812568', '0043371811', '0053873138', '0085800405', '0149835149', '4140812568', '0043371811', '0053873138', '0085800405', '0149835149', '0134707261', '0018416660', '0027742355', '0041686649', '0043826718', '0047805841', '0605287882', '0657234704', '1184984476', '1343769051', '1688426558', '0040557573', '0160048187', '0173037027', '0552820053', '0748108975')
+	 and tcm."ID" not in (select external_id from m_loan)
 	order by tcm."ID";
 
 select * from m_product_loan mpl;
@@ -1479,7 +1555,7 @@ from
 		) mipyme_charge on mipyme_charge.loankey = tcm."ENCODEDKEY"
 	where  mpl.id in (9,10) and trim(to_char(td."DISBURSEMENTDATE",'YYYY')) in ('2024')
 	-- and tcm."ID" in ('000000966')
-	  -- and tcm.id not in ('5926921620','5798558581','9043209288','4911099153','6171223614','2161289444','5775498843','8187153983','0022032372','7770432985','1426513226','3351179832','3532209966','8111747402','3780860737','5531840773','7534435854','0372390302','0673688145','4741881842','0890400726','6782519014','4761121438','8915931224','5966130912','8333585890','6241295657','5823029570','1515755714','5324318143','1090373796','6210443011','8162545940')
+	--and tcm."ID" in ('0035045413', '0039682591', '0045804559', '0058126572', '0059952069', '0086081271', '0172331900', '0240593101', '0880890284', '0887087494', '0444457342', '1664592132', '2949964565', '3251282390', '4140812568', '0043371811', '0053873138', '0085800405', '0149835149', '4140812568', '0043371811', '0053873138', '0085800405', '0149835149', '0134707261', '0018416660', '0027742355', '0041686649', '0043826718', '0047805841', '0605287882', '0657234704', '1184984476', '1343769051', '1688426558', '0040557573', '0160048187', '0173037027', '0552820053', '0748108975')
 	and tcm."ID" not in (select external_id from m_loan)
 	  -- and tcm.total_outstanding > 0
 		order by tcm."ID";
@@ -1651,8 +1727,9 @@ from
 			else mc2.tmp_name = 'none'
 		end
 		) mipyme_charge on mipyme_charge.loankey = tcm."ENCODEDKEY"
-	where  mpl.id in (9,10) --and trim(to_char(td."DISBURSEMENTDATE",'YYYY')) in ('2024')
-	  -- and tcm.id not in ('5926921620','5798558581','9043209288','4911099153','6171223614','2161289444','5775498843','8187153983','0022032372','7770432985','1426513226','3351179832','3532209966','8111747402','3780860737','5531840773','7534435854','0372390302','0673688145','4741881842','0890400726','6782519014','4761121438','8915931224','5966130912','8333585890','6241295657','5823029570','1515755714','5324318143','1090373796','6210443011','8162545940')
+	where  mpl.id in (8, 9,10) --and trim(to_char(td."DISBURSEMENTDATE",'YYYY')) in ('2024')
+	--and tcm."ID" in ('0035045413', '0039682591', '0045804559', '0058126572', '0059952069', '0086081271', '0172331900', '0240593101', '0880890284', '0887087494', '0444457342', '1664592132', '2949964565', '3251282390', '4140812568', '0043371811', '0053873138', '0085800405', '0149835149', '4140812568', '0043371811', '0053873138', '0085800405', '0149835149', '0134707261', '0018416660', '0027742355', '0041686649', '0043826718', '0047805841', '0605287882', '0657234704', '1184984476', '1343769051', '1688426558', '0040557573', '0160048187', '0173037027', '0552820053', '0748108975')
+	--and tcm."ID" = '0027742355'
 	and tcm."ID" not in (select external_id from m_loan)
 	  -- and tcm.total_outstanding > 0
 		order by tcm."ID";
@@ -1753,8 +1830,8 @@ from
 	join tmp_loanproduct_mapping tlm on tlm.ea_product_key = tcm."PRODUCTTYPEKEY"
 	join m_product_loan mpl on mpl.name = tlm.mifos_product_name
 	join tmp_disbursementdetails td on td."ENCODEDKEY" = tcm."DISBURSEMENTDETAILSKEY"
-	join tmp_cliente_migrar tcm2 on tcm2.ENCODEDKEY = tcm."ACCOUNTHOLDERKEY"
-	join m_client mc on mc.external_id = tcm2.ID 
+	join tmp_cliente_migrar tcm2 on tcm2."ENCODEDKEY" = tcm."ACCOUNTHOLDERKEY"
+	join m_client mc on mc.external_id = tcm2."ID"
 	left join lateral (
 		select tlc.loankey, mc1.id charge_id, mc1.name charge_name,
 		case
@@ -1837,11 +1914,14 @@ from
 	
 	
 update m_loan set account_no = account_no || '-old';
-update m_loan set account_no = external_id;
+update m_loan set account_no = concat('000000', id);
 
-select * from tmp_loanaccount tl where tl."ID" = '000000966';
+delete from tmp_migration_response where activity = 'disburse';
 
-select * from tmp_disbursementdetails td where td."ENCODEDKEY" = '8a44524382b6c9620182b8cc2af91557';
+select * from m_loan;
+select * from tmp_loanaccount tl where tl."ID" = '3018738986';
+
+select * from tmp_disbursementdetails td where td."ENCODEDKEY" = '8a4446c38ba9bc52018bab0a91d50c50';
 
 -- before migrating MD Loans:
 
@@ -1857,19 +1937,19 @@ FROM (
         SELECT s1."totaloutstanding"
         FROM tmp_loan_repayment_schedule s1
         WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
-          AND s1."STATE" = 'LATE'
+          AND s1."STATE" in ('LATE', 'PARTIALLY_PAID')
           order by s1."DUEDATE"
           limit 1
       ) < 30000 and (
 	       SELECT count(1)
 	        FROM tmp_loan_repayment_schedule s1
 	        WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
-	          AND s1."STATE" = 'LATE'
-      ) > 1 THEN (
+	          AND s1."STATE" in ('LATE', 'PARTIALLY_PAID')
+      ) > 0 THEN (
         SELECT MIN(s2."DUEDATE")::date
         FROM tmp_loan_repayment_schedule s2
         WHERE s2."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
-          AND s2."STATE" = 'LATE'
+          AND s2."STATE" in ('LATE', 'PARTIALLY_PAID')
           AND s2."totaloutstanding" < 30000
           group by tl."ID"
       )
@@ -1896,7 +1976,7 @@ where new_disbursement_date is not null and new_first_repayment_date is null;
 
 -- truncate table tmp_migration_response 
 
-select * from tmp_loanaccount tl where tl."ID" = '7014314532';
+select * from tmp_loanaccount tl where tl."ID" = '0041686649';
 
 select * from tmp_loanaccount tl where tl."ID" not in (select external_id from m_loan ml)
 
@@ -1904,8 +1984,16 @@ select * from tmp_migration_response tmr
 
 	
 	-- import the MD Loans then run this:
+
+-- After migration of multi disbursal loans execute below queries
+update m_loan set account_no = account_no || '-old';
+update m_loan set account_no = m_loan.external_id;
+
+-- Update MiPyme charge to appear under insurance column
+update m_loan_charge set charge_calculation_enum = 807 where charge_id = 54;
+update m_charge set charge_calculation_enum = 807 where id = 54;
 	
-	UPDATE m_loan AS l
+UPDATE m_loan AS l
 SET number_of_repayments = tmpl."REPAYMENTINSTALLMENTS" 
 FROM tmp_loanaccount tmpl, m_product_loan mpl
 WHERE tmpl."ID" = l.account_no
@@ -1922,11 +2010,6 @@ and tl.total_outstanding = 0;
 update m_charge set name = tmp_name;
 
 
--- After migration of multi disbursal loans execute below queries
-update m_loan set account_no = account_no || '-old';
-update m_loan set account_no = m_loan.external_id;
-
-
 select * from tmp_loanaccount
 where "ID" not in (select external_id from m_loan);
 
@@ -1936,9 +2019,9 @@ where "ID" not in (select external_id from m_loan);
 
 
 
-select * from tmp_loanaccount tl where tl."ID" = '1487200722';
+select * from tmp_loanaccount tl where tl."ID" = '000002790';
 
-select * from tmp_loan_repayment_schedule tlrs where tlrs."PARENTACCOUNTKEY" = '8a44547097542eb4019755b30eec3ed4' order by "DUEDATE";
+select * from tmp_loan_repayment_schedule tlrs where tlrs."PARENTACCOUNTKEY" = '8a44524382b6c9620182b8cdd8823c2e' order by "DUEDATE";
 
 select * from "Estado Cartera";
 
@@ -2262,10 +2345,6 @@ update m_savings_account set account_no = LPAD(id::text, 9, '0') ;
 -- After migration multi disbursal loans execute below queries
 update m_loan set account_no = account_no || '-old';
 update m_loan set account_no = m_loan.external_id;
-
--- Update MiPyme charge to appear under insurance column
-update m_loan_charge set charge_calculation_enum = 807 where charge_id = 54;
-update m_charge set charge_calculation_enum = 807 where id = 54;
 
 select count(*) from m_loan ml where loan_status_id = 300;
 
