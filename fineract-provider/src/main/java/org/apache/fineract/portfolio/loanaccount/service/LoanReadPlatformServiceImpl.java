@@ -1761,6 +1761,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     .formatted(sqlGenerator.escape("date"), sqlGenerator.escape("name"), sqlGenerator.escape("code"));
         }
 
+
         @Override
         public LoanTransactionData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
 

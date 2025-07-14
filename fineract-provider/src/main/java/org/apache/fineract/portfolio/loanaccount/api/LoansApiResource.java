@@ -62,6 +62,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -169,6 +170,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
+@Slf4j
 @Path("/v1/loans")
 @Component
 @Controller
@@ -1033,7 +1035,11 @@ public class LoansApiResource {
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
         ExternalId loanExternalId = ExternalIdFactory.produce(loanExternalIdStr);
         Long resolvedLoanId = getResolvedLoanId(loanId, loanExternalId);
-        LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(resolvedLoanId);
+        log.info("*****************************");
+        log.info("Start :->"+System.nanoTime());
+        LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(resolvedLoanId); //takes too long
+        log.info("End :->"+System.nanoTime());
+        log.info("*****************************");
         final Long interestRatePoints = loanBasicDetails.getInterestRatePoints();
         if (loanBasicDetails.isInterestRecalculationEnabled()) {
             Collection<CalendarData> interestRecalculationCalendarDatas = this.calendarReadPlatformService.retrieveCalendarsByEntity(
@@ -1139,7 +1145,7 @@ public class LoansApiResource {
 
             if (associationParameters.contains(DataTableApiConstant.transactionsAssociateParamName)) {
                 mandatoryResponseParameters.add(DataTableApiConstant.transactionsAssociateParamName);
-                currentLoanRepayments = this.loanReadPlatformService.retrieveLoanTransactions(resolvedLoanId);
+                currentLoanRepayments = this.loanReadPlatformService.retrieveLoanTransactions(resolvedLoanId);// too long to process
                 if (!CollectionUtils.isEmpty(currentLoanRepayments)) {
                     loanRepayments = currentLoanRepayments;
                 }
@@ -1154,7 +1160,7 @@ public class LoansApiResource {
 
             if (associationParameters.contains(DataTableApiConstant.chargesAssociateParamName)) {
                 mandatoryResponseParameters.add(DataTableApiConstant.chargesAssociateParamName);
-                charges = this.loanChargeReadPlatformService.retrieveLoanCharges(resolvedLoanId);
+                charges = this.loanChargeReadPlatformService.retrieveLoanCharges(resolvedLoanId);//takes too long too
                 if (CollectionUtils.isEmpty(charges)) {
                     charges = null;
                 }

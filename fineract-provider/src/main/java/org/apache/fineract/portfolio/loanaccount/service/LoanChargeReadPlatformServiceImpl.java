@@ -74,9 +74,13 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
                     + "lc.loan_id as loanId, c.currency_code as currencyCode, oc.name as currencyName, " //
                     + "date(coalesce(dd.disbursedon_date,dd.expected_disburse_date)) as disbursementDate, " //
                     + "oc.decimal_places as currencyDecimalPlaces, oc.currency_multiplesof as inMultiplesOf, oc.display_symbol as currencyDisplaySymbol, " //
-                    + "oc.internationalized_name_code as currencyNameCode, l.external_id as externalLoanId, lc.is_endorse as isEndorsed, lc.expire_date as expDate, lc.insurance_name as insuranceName,  lc.insurance_id as insuranceId from m_charge c " //
-                    + "join m_organisation_currency oc on c.currency_code = oc.code join m_loan_charge lc on lc.charge_id = c.id " //
-                    + "left join m_loan_tranche_disbursement_charge dc on dc.loan_charge_id=lc.id left join m_loan_disbursement_detail dd on dd.id=dc.disbursement_detail_id " //
+                    + "oc.internationalized_name_code as currencyNameCode, l.external_id as externalLoanId, lc.is_endorse as isEndorsed, "
+                    + "lc.expire_date as expDate, lc.insurance_name as insuranceName,  lc.insurance_id as insuranceId  "
+                    + "from m_loan_charge lc " //
+                    + "join m_charge c on c.id = lc.charge_id  " //
+                    + "join m_organisation_currency oc on c.currency_code = oc.code "
+                    + "left join m_loan_tranche_disbursement_charge dc on dc.loan_charge_id=lc.id "
+                    + "left join m_loan_disbursement_detail dd on dd.id=dc.disbursement_detail_id " //
                     + " join m_loan l on lc.loan_id = l.id";
         }
 
