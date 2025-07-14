@@ -61,6 +61,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleP
 import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.MultiDisbursementOutstandingAmoutException;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.ScheduleDateException;
 import org.apache.fineract.portfolio.loanaccount.service.DisbursementCutoffContext;
+import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.loanproduct.domain.RepaymentStartDateType;
 
@@ -239,8 +240,6 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         boolean isLastInstallmentPeriod = false;
         Integer numberOfInstallmentsToIgnore = loanApplicationTerms.getNumberOfInstallmentsToIgnore();
         while (!scheduleParams.getOutstandingBalance().isZero() || !scheduleParams.getDisburseDetailMap().isEmpty()) {
-
-            System.out.println("scheduleParams.getOutstandingBalance(): " + scheduleParams.getOutstandingBalance());
             // In some cases outstanding balance becomes less than zero and above condition still holds valid
             if (scheduleParams.getOutstandingBalance().isLessThanZero()) {
                 break;
@@ -2012,6 +2011,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     reducePrincipal = reducePrincipal.zero();
                 break;
                 case REDUCE_NUMBER_OF_INSTALLMENTS:
+                    handleReduceNumberOfInstallments(loanApplicationTerms);
+
                     // number of installments will reduce but emi amount won't
                     // get effected
                     reducePrincipal = reducePrincipal.zero();
@@ -2044,6 +2045,156 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             updateFixedInstallmentAmount(mc, loanApplicationTerms, periodNumber, principal.minus(totalCumulativePrincipal));
         }
 
+    }
+
+    /**
+     * Calculates the new number of installments based on principal balance and current installment amount. For equal
+     * installment (EMI) loans with interest, uses the log-based annuity formula. For equal principal loans or zero
+     * interest, uses simple division.
+     */
+    /**
+     * Main method that determines the number of installments based on amortization method. Routes to appropriate
+     * calculation method based on loan terms.
+     *
+     * @param loanApplicationTerms
+     *            The loan terms containing amortization method and interest rate
+     * @param principalBalance
+     *            The remaining principal amount
+     * @param principalPerInstallment
+     *            The installment amount
+     * @return The number of installments required
+     */
+    public int calculateNewNumberOfInstallments(LoanApplicationTerms loanApplicationTerms, Money principalBalance,
+            Money principalPerInstallment) {
+
+        if (loanApplicationTerms.getAmortizationMethod().isEqualInstallment()) {
+            return calculateInstallmentsForEqualInstallmentMethod(principalBalance, principalPerInstallment, loanApplicationTerms);
+        } else {
+            return calculateInstallmentsForEqualPrincipalMethod(principalBalance, principalPerInstallment);
+        }
+    }
+
+    /**
+     * Calculates the number of installments required for equal installment (EMI) loans. Uses logarithmic formula to
+     * account for compound interest.
+     *
+     * @param principalBalance
+     *            The remaining principal amount
+     * @param principalPerInstallment
+     *            The fixed installment amount
+     * @param loanApplicationTerms
+     *            The loan terms containing interest rate
+     * @return The number of installments required
+     */
+    public int calculateInstallmentsForEqualInstallmentMethod(Money principalBalance, Money principalPerInstallment,
+            LoanApplicationTerms loanApplicationTerms) {
+
+        double principalAmount = principalBalance.getAmount().doubleValue();
+        double installmentAmount = principalPerInstallment.getAmount().doubleValue();
+        double interestRatePerPeriod = loanApplicationTerms.getInterestRatePerPeriod().doubleValue();
+
+        if (interestRatePerPeriod > 0) {
+            return calculateInstallmentsWithInterest(principalAmount, installmentAmount, interestRatePerPeriod);
+        } else {
+            return calculateInstallmentsWithoutInterest(principalAmount, installmentAmount);
+        }
+    }
+
+    /**
+     * Calculates the number of installments required for equal principal or other amortization methods. Uses simple
+     * division without compound interest calculations.
+     *
+     * @param principalBalance
+     *            The remaining principal amount
+     * @param principalPerInstallment
+     *            The installment amount
+     * @return The number of installments required
+     */
+    public int calculateInstallmentsForEqualPrincipalMethod(Money principalBalance, Money principalPerInstallment) {
+
+        BigDecimal numberOfInstallments = principalBalance.getAmount().divide(principalPerInstallment.getAmount(), 10,
+                RoundingMode.HALF_UP);
+
+        return numberOfInstallments.setScale(0, RoundingMode.CEILING).intValue();
+    }
+
+    /**
+     * Calculates installments using compound interest formula. Formula: n = -log(1 - r*P/C) / log(1 + r) Where: P =
+     * principal, C = installment, r = interest rate per period
+     *
+     * @param principalAmount
+     *            The principal amount
+     * @param installmentAmount
+     *            The installment amount
+     * @param interestRatePerPeriod
+     *            The interest rate per period
+     * @return The number of installments required
+     */
+    private int calculateInstallmentsWithInterest(double principalAmount, double installmentAmount, double interestRatePerPeriod) {
+
+        double denominator = 1 - (interestRatePerPeriod * principalAmount / installmentAmount);
+
+        if (denominator <= 0) {
+            // Avoid mathematical error when installment amount is insufficient
+            // This occurs when installment < interest portion
+            return 1;
+        }
+
+        double logarithmicResult = -Math.log(denominator) / Math.log(1 + interestRatePerPeriod);
+        return (int) Math.ceil(logarithmicResult);
+    }
+
+    /**
+     * Calculates installments without interest using simple division.
+     *
+     * @param principalAmount
+     *            The principal amount
+     * @param installmentAmount
+     *            The installment amount
+     * @return The number of installments required
+     */
+    private int calculateInstallmentsWithoutInterest(double principalAmount, double installmentAmount) {
+        return (int) Math.ceil(principalAmount / installmentAmount);
+    }
+
+    private void handleReduceNumberOfInstallments(LoanApplicationTerms loanApplicationTerms) {
+        Money principalBalance = getPrincipalToBeScheduled(loanApplicationTerms);
+        AmortizationMethod amortizationMethod = loanApplicationTerms.getAmortizationMethod();
+        if (amortizationMethod == null) {
+            log.error("AmortizationMethod is null");
+            return;
+        }
+        log.info("Reduce number of installments using {} amortization method with principal balance: {}", amortizationMethod,
+                principalBalance);
+        if (amortizationMethod.isEqualPrincipal()) {
+            // EQUAL PRINCIPAL: Calculate based on principal per installment
+            handleReduceTermsForEqualPrincipal(loanApplicationTerms, principalBalance);
+        } else if (amortizationMethod.isEqualInstallment()) {
+            // EQUAL INSTALLMENTS: Calculate based on EMI amount
+            handleReduceTermsForEqualInstallments(loanApplicationTerms, principalBalance);
+        }
+    }
+
+    private void handleReduceTermsForEqualPrincipal(LoanApplicationTerms loanApplicationTerms, Money principalBalance) {
+        // Get the fixed principal amount per installment
+        Money principalPerInstallment = Money.of(loanApplicationTerms.getCurrency(),
+                loanApplicationTerms.getFixedPrincipalAmount() != null ? loanApplicationTerms.getFixedPrincipalAmount() : BigDecimal.ZERO);
+
+        if (principalPerInstallment.isGreaterThanZero()) {
+            int newNumberOfInstallments = calculateNewNumberOfInstallments(loanApplicationTerms, principalBalance, principalPerInstallment);
+            loanApplicationTerms.updateNumberOfRepayments(newNumberOfInstallments);
+        }
+    }
+
+    private void handleReduceTermsForEqualInstallments(LoanApplicationTerms loanApplicationTerms, Money principalBalance) {
+        // Get the EMI amount
+        Money emiAmount = Money.of(loanApplicationTerms.getCurrency(),
+                loanApplicationTerms.getFixedEmiAmount() != null ? loanApplicationTerms.getFixedEmiAmount() : BigDecimal.ZERO);
+
+        if (emiAmount.isGreaterThanZero()) {
+            int newNumberOfInstallments = calculateNewNumberOfInstallments(loanApplicationTerms, principalBalance, emiAmount);
+            loanApplicationTerms.updateNumberOfRepayments(newNumberOfInstallments);
+        }
     }
 
     /**
@@ -3452,6 +3603,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         loanApplicationTerms.setFixedEmiAmount(null);
                         updateFixedInstallmentAmount(mc, loanApplicationTerms, instalmentNumber, outstandingBalance);
                         loanApplicationTerms.setRecalculateEMIForInstallment(installment.recalculateEMI());
+                    } else {
+                        // we need to reduce term if recalculateEMI is false
+                        handleReduceNumberOfInstallments(loanApplicationTerms);
                     }
                     //// SU-377 Get a list of transactions used to pay in advance for this installment to calculate
                     //// interest for this installment based on the formula
@@ -3897,7 +4051,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         if (earlyPaidAmount.isLessThanZero()) {
             earlyPaidAmount = earlyPaidAmount.zero();
         }
-
+        log.info(
+                " Early Paid Amount: {}, Existing Early Payment: {}, Principal Portion: {}, Principal Portion Calculated: {}, Reduce Principal: {}",
+                earlyPaidAmount, existingEarlyPayment, principalPortion, principalPortionCalculated, reducePrincipal);
         if (isEarlyPaid && applicationTerms.getRescheduleStrategyMethod() != null) {
             switch (applicationTerms.getRescheduleStrategyMethod()) {
                 case REDUCE_EMI_AMOUNT:
@@ -3905,8 +4061,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     earlyPaidAmount = earlyPaidAmount.zero();
                 break;
                 case REDUCE_NUMBER_OF_INSTALLMENTS:
-                    // number of installments will reduce but emi amount won't
-                    // get effected
+                    handleReduceNumberOfInstallments(applicationTerms);
                     earlyPaidAmount = earlyPaidAmount.zero();
                 break;
                 case RESCHEDULE_NEXT_REPAYMENTS:

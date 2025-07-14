@@ -213,6 +213,16 @@ public final class LoanScheduleModelDownPaymentPeriod implements LoanScheduleMod
     }
 
     @Override
+    public boolean reduceTermForInstallment() {
+        return false;
+    }
+
+    @Override
+    public void setReduceTermForInstallment(boolean reduceTermForInstallment) {
+
+    }
+
+    @Override
     public BigDecimal advancePrincipalAmountForInstallment() {
         return null;
     }

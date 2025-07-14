@@ -139,6 +139,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "recalculate_emi", nullable = false)
     private boolean recalculateEMI;
 
+    @Column(name = "reduce_term", nullable = false)
+    private boolean reduceTerm;
+
     @Column(name = "claim_type")
     private String claimType;
 
@@ -201,9 +204,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public static LoanTransaction repaymentType(final LoanTransactionType repaymentType, final Office office, final Money amount,
             final PaymentDetail paymentDetail, final LocalDate paymentDate, final ExternalId externalId,
-            final String chargeRefundChargeType, LoanScheduleProcessingType loanScheduleProcessingType, boolean recalculateEMI) {
+            final String chargeRefundChargeType, LoanScheduleProcessingType loanScheduleProcessingType, boolean recalculateEMI,
+            boolean reduceTerm) {
         return new LoanTransaction(null, office, repaymentType, paymentDetail, amount.getAmount(), paymentDate, externalId,
-                chargeRefundChargeType, loanScheduleProcessingType, recalculateEMI);
+                chargeRefundChargeType, loanScheduleProcessingType, recalculateEMI, reduceTerm);
     }
 
     public static LoanTransaction chargeAdjustment(final Loan loan, final BigDecimal amount, final LocalDate transactionDate,
@@ -330,6 +334,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         newTransaction.loanScheduleProcessingType = loanTransaction.getLoanScheduleProcessingType();
         newTransaction.setClaimType(loanTransaction.claimType());
         newTransaction.setRecalculateEMI(loanTransaction.recalculateEMI());
+        newTransaction.setReduceTerm(loanTransaction.reduceTerm());
 
         // SU-533 set amounts paid by original transaction so that copied transaction also pays the same amounts
         // to avoid rollbacks
@@ -479,7 +484,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     private LoanTransaction(final Loan loan, final Office office, final LoanTransactionType type, final PaymentDetail paymentDetail,
             final BigDecimal amount, final LocalDate date, final ExternalId externalId, final String chargeRefundChargeType,
-            LoanScheduleProcessingType loanScheduleProcessingType, boolean recalculateEMI) {
+            LoanScheduleProcessingType loanScheduleProcessingType, boolean recalculateEMI, boolean reduceTerm) {
         this.loan = loan;
         this.typeOf = type.getValue();
         this.paymentDetail = paymentDetail;
@@ -491,6 +496,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         this.chargeRefundChargeType = chargeRefundChargeType;
         this.loanScheduleProcessingType = loanScheduleProcessingType;
         this.recalculateEMI = recalculateEMI;
+        this.reduceTerm = reduceTerm;
     }
 
     public void reverse() {
@@ -1106,6 +1112,14 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public void setRecalculateEMI(boolean recalculateEMI) {
         this.recalculateEMI = recalculateEMI;
+    }
+
+    public boolean reduceTerm() {
+        return this.reduceTerm;
+    }
+
+    public void setReduceTerm(boolean reduceTerm) {
+        this.reduceTerm = reduceTerm;
     }
 
     public String claimType() {
