@@ -300,7 +300,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
              ***/
             final String sql = rm.loanPaymentsSchema() + " where tr.loan_id = ? and tr.transaction_type_enum not in (0, 3) "
                     + " and (tr.is_reversed=false or tr.manually_adjusted_or_reversed = true)  order by tr.transaction_date, tr.created_on_utc, tr.id ";
-            Collection<LoanTransactionData> loanTransactionData = this.jdbcTemplate.query(sql, rm, loanId,loanId); // NOSONAR
+            Collection<LoanTransactionData> loanTransactionData = this.jdbcTemplate.query(sql, rm, loanId, loanId); // NOSONAR
             // TODO: would worth to rework in the future. It is not nice to fetch relations one by one... might worth to
             // give a try to get rid of native queries
             for (LoanTransactionData loanTransaction : loanTransactionData) {
@@ -1634,7 +1634,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                      AND parent.charge_calculation_enum IN (468, 575, 231) THEN mlcpd.amount
                                 ELSE 0
                             END) AS mandatory_insurance_vat,
-                    
+
                             -- Voluntary Insurance (base + VAT)
                             SUM(CASE
                                 WHEN mlc.charge_calculation_enum = 1034 THEN mlcpd.amount
@@ -1645,7 +1645,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                      AND parent.charge_calculation_enum = 1034 THEN mlcpd.amount
                                 ELSE 0
                             END) AS voluntary_insurance_vat,
-                    
+
                             -- Aval (base + VAT)
                             SUM(CASE
                                 WHEN mlc.charge_calculation_enum IN (41, 286) THEN mlcpd.amount
@@ -1656,7 +1656,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                      AND parent.charge_calculation_enum IN (41, 286) THEN mlcpd.amount
                                 ELSE 0
                             END) AS aval_vat,
-                    
+
                             -- Honorarios (base + VAT)
                             SUM(CASE
                                 WHEN mlc.charge_calculation_enum = 1009 THEN mlcpd.amount
@@ -1667,7 +1667,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                                      AND parent.charge_calculation_enum = 1009 THEN mlcpd.amount
                                 ELSE 0
                             END) AS hono_vat,
-                    
+
                             -- Penalty (base + VAT)
                             SUM(CASE
                                 WHEN mlc.is_penalty = true
@@ -1742,14 +1742,14 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         capos.name as pointOfSalesName,
                         capos.code as pointOfSalesCode,
                         capos.client_ally_id as clientAllyId,
-                    
+
                         -- Consolidated charge calculations
                         COALESCE(cc.mandatory_insurance_base, 0) + COALESCE(cc.mandatory_insurance_vat, 0) AS mandatory_insurance,
                         COALESCE(cc.voluntary_insurance_base, 0) + COALESCE(cc.voluntary_insurance_vat, 0) AS voluntary_insurance,
                         COALESCE(cc.hono_base, 0) + COALESCE(cc.hono_vat, 0) AS hono,
                         COALESCE(cc.aval_base, 0) + COALESCE(cc.aval_vat, 0) AS aval,
                         COALESCE(cc.penalty_base, 0) + COALESCE(cc.penalty_vat, 0) AS penalty,
-                    
+
                         -- Individual portions
                         COALESCE(cc.penalty_base, 0) AS "penaltyPortion",
                         COALESCE(cc.penalty_vat, 0) AS "penaltyVatPortion",
@@ -1759,7 +1759,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         COALESCE(cc.voluntary_insurance_vat, 0) AS "voluntaryInsuranceVatPortion",
                         COALESCE(cc.mandatory_insurance_base, 0) AS "mandatoryInsurancePortion",
                         COALESCE(cc.mandatory_insurance_vat, 0) AS "mandatoryInsuranceVatPortion",
-                    
+
                         trcu.firstname as creator_firstname,
                         trcu.lastname as creator_lastname,
                         trcu.firstname as modifier_firstname,
@@ -1777,8 +1777,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     LEFT JOIN custom.c_client_ally_point_of_sales capos ON capos.code = pd.point_of_sales_code
                     LEFT JOIN m_code_value bank ON bank.id = pd.payment_bank_cv_id
                     LEFT JOIN charge_calculations cc ON cc.loan_transaction_id = tr.id
-                    """
-                    .formatted(sqlGenerator.escape("date"), sqlGenerator.escape("name"), sqlGenerator.escape("code"));
+                    """.formatted(sqlGenerator.escape("date"), sqlGenerator.escape("name"), sqlGenerator.escape("code"));
         }
 
         @Override
