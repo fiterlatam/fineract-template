@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
@@ -75,7 +76,8 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
                     + "lc.loan_id as loanId, c.currency_code as currencyCode, oc.name as currencyName, " //
                     + "date(coalesce(dd.disbursedon_date,dd.expected_disburse_date)) as disbursementDate, " //
                     + "oc.decimal_places as currencyDecimalPlaces, oc.currency_multiplesof as inMultiplesOf, oc.display_symbol as currencyDisplaySymbol, " //
-                    + "oc.internationalized_name_code as currencyNameCode, l.external_id as externalLoanId, lc.is_endorse as isEndorsed, lc.expire_date as expDate, lc.insurance_name as insuranceName,  lc.insurance_id as insuranceId from m_charge c " //
+                    + "oc.internationalized_name_code as currencyNameCode, l.external_id as externalLoanId, lc.is_endorse as isEndorsed, lc.expire_date as expDate, lc.insurance_name as insuranceName,  lc.insurance_id as insuranceId, "
+                    + "lc.orig_charge_name as originalChargeName from m_charge c " //
                     + "join m_organisation_currency oc on c.currency_code = oc.code join m_loan_charge lc on lc.charge_id = c.id " //
                     + "left join m_loan_tranche_disbursement_charge dc on dc.loan_charge_id=lc.id left join m_loan_disbursement_detail dd on dd.id=dc.disbursement_detail_id " //
                     + " join m_loan l on lc.loan_id = l.id";
@@ -86,7 +88,8 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
             final Long id = rs.getLong("id");
             final Long chargeId = rs.getLong("chargeId");
             final Long loanId = rs.getLong("loanId");
-            final String name = rs.getString("name");
+            final String name = StringUtils.isNotBlank(rs.getString("originalChargeName")) ? rs.getString("originalChargeName")
+                    : rs.getString("name");
             final BigDecimal amount = rs.getBigDecimal("amountDue");
             final BigDecimal amountPaid = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "amountPaid");
             final BigDecimal amountWaived = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "amountWaived");
