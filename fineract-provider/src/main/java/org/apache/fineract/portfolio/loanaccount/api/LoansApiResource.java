@@ -1035,11 +1035,7 @@ public class LoansApiResource {
         this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSIONS);
         ExternalId loanExternalId = ExternalIdFactory.produce(loanExternalIdStr);
         Long resolvedLoanId = getResolvedLoanId(loanId, loanExternalId);
-        log.info("*****************************");
-        log.info("Start :->"+System.nanoTime());
-        LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(resolvedLoanId); //takes too long
-        log.info("End :->"+System.nanoTime());
-        log.info("*****************************");
+        LoanAccountData loanBasicDetails = this.loanReadPlatformService.retrieveOne(resolvedLoanId);
         final Long interestRatePoints = loanBasicDetails.getInterestRatePoints();
         if (loanBasicDetails.isInterestRecalculationEnabled()) {
             Collection<CalendarData> interestRecalculationCalendarDatas = this.calendarReadPlatformService.retrieveCalendarsByEntity(
@@ -1145,7 +1141,9 @@ public class LoansApiResource {
 
             if (associationParameters.contains(DataTableApiConstant.transactionsAssociateParamName)) {
                 mandatoryResponseParameters.add(DataTableApiConstant.transactionsAssociateParamName);
-                currentLoanRepayments = this.loanReadPlatformService.retrieveLoanTransactions(resolvedLoanId);// too long to process
+
+                currentLoanRepayments = this.loanReadPlatformService.retrieveLoanTransactions(resolvedLoanId);
+
                 if (!CollectionUtils.isEmpty(currentLoanRepayments)) {
                     loanRepayments = currentLoanRepayments;
                 }
@@ -1160,7 +1158,9 @@ public class LoansApiResource {
 
             if (associationParameters.contains(DataTableApiConstant.chargesAssociateParamName)) {
                 mandatoryResponseParameters.add(DataTableApiConstant.chargesAssociateParamName);
-                charges = this.loanChargeReadPlatformService.retrieveLoanCharges(resolvedLoanId);//takes too long too
+
+                charges = this.loanChargeReadPlatformService.retrieveLoanCharges(resolvedLoanId);
+
                 if (CollectionUtils.isEmpty(charges)) {
                     charges = null;
                 }
