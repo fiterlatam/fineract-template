@@ -62,7 +62,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -170,7 +169,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
-@Slf4j
 @Path("/v1/loans")
 @Component
 @Controller
@@ -1141,9 +1139,7 @@ public class LoansApiResource {
 
             if (associationParameters.contains(DataTableApiConstant.transactionsAssociateParamName)) {
                 mandatoryResponseParameters.add(DataTableApiConstant.transactionsAssociateParamName);
-
                 currentLoanRepayments = this.loanReadPlatformService.retrieveLoanTransactions(resolvedLoanId);
-
                 if (!CollectionUtils.isEmpty(currentLoanRepayments)) {
                     loanRepayments = currentLoanRepayments;
                 }
@@ -1158,9 +1154,7 @@ public class LoansApiResource {
 
             if (associationParameters.contains(DataTableApiConstant.chargesAssociateParamName)) {
                 mandatoryResponseParameters.add(DataTableApiConstant.chargesAssociateParamName);
-
                 charges = this.loanChargeReadPlatformService.retrieveLoanCharges(resolvedLoanId);
-
                 if (CollectionUtils.isEmpty(charges)) {
                     charges = null;
                 }
