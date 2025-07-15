@@ -1992,6 +1992,16 @@ update m_loan set account_no = m_loan.external_id;
 -- Update MiPyme charge to appear under insurance column
 update m_loan_charge set charge_calculation_enum = 807 where charge_id = 54;
 update m_charge set charge_calculation_enum = 807 where id = 54;
+
+-- Update original name of MiPyme charge
+update m_loan_charge mlc
+set orig_charge_name = tlc."NAME"
+from tmp_loan_charges tlc
+join tmp_loanaccount tl
+on tlc.loankey = tl."ENCODEDKEY"
+join m_loan ml on tl."ID" = ml.external_id
+where mlc.charge_id = 54 and mlc.loan_id = ml.id and tlc."NAME" like '%4SMMLV%';
+
 	
 UPDATE m_loan AS l
 SET number_of_repayments = tmpl."REPAYMENTINSTALLMENTS" 
