@@ -159,6 +159,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "expire_date", nullable = true)
     private LocalDate expDate;
 
+    @Column(name = "orig_charge_name", nullable = true)
+    private String origChargeName;
+
     @Column(name = "insurance_name", nullable = true)
     private String insuranceName;
 
