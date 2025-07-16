@@ -2187,11 +2187,18 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         if (productCharges != null && !productCharges.isEmpty()) {
             // Filter for charges with IDs between 54 and 55 (inclusive)
             List<Long> chargeIds = List.of(33L, 54L, 55L);
-            List<Charge> specificCharges = productCharges.stream()
-                    .filter(charge -> chargeIds.contains(charge.getId()) && charge.isActive()).toList();
+            List<Charge> specificCharges = productCharges.stream().filter(charge -> chargeIds.contains(charge.getId()) && charge.isActive())
+                    .toList();
             if (!specificCharges.isEmpty()) {
                 // Check if the loan already has these charges
                 Collection<LoanCharge> existingLoanCharges = loan.getLoanCharges();
+
+                String sql = "select MIPYME_FEES from tmp_loanaccount tl where tl.\"ID\" = ?";
+                BigDecimal chargeAmount = this.jdbcTemplate.queryForObject(sql, BigDecimal.class, loan.getExternalId().getValue());
+                sql = "select MIPYME_FEES_TAX from tmp_loanaccount tl where tl.\"ID\" = ?";
+                BigDecimal chargeTaxAmount = this.jdbcTemplate.queryForObject(sql, BigDecimal.class, loan.getExternalId().getValue());
+                sql = "select \"ACCOUNTSTATE\" from tmp_loanaccount tl where tl.\"ID\" = ?";
+                String accountState = this.jdbcTemplate.queryForObject(sql, String.class, loan.getExternalId().getValue());
 
                 for (Charge specificCharge : specificCharges) {
                     // Check if this charge is already added to the loan
@@ -2202,11 +2209,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                                 .anyMatch(loanCharge -> loanCharge.getCharge().getId().equals(specificCharge.getId()));
                     }
 
-                    String sql = "select MIPYME_FEES from tmp_loanaccount tl where tl.\"ID\" = ?";
-                    BigDecimal chargeAmount = this.jdbcTemplate.queryForObject(sql, BigDecimal.class, loan.getExternalId().getValue());
-                    sql = "select MIPYME_FEES_TAX from tmp_loanaccount tl where tl.\"ID\" = ?";
-                    BigDecimal chargeTaxAmount = this.jdbcTemplate.queryForObject(sql, BigDecimal.class, loan.getExternalId().getValue());
-
                     // If the charge is not already added, add it to the loan
                     if (!chargeAlreadyAdded) {
                         final LoanCharge loanCharge = new LoanCharge(loan, specificCharge, loan.getProposedPrincipal(),
@@ -2216,13 +2218,19 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                                 null, BigDecimal.ZERO, null, false, null);
                         if (loanCharge.getCharge().getName().toLowerCase().contains("seguro de vida nano")) {
                             loan.addLoanCharge(loanCharge);
-                        } else if (specificCharge.isPercentageOfAnotherCharge()) {
-                            loan.addLoanCharge(loanCharge);
                         } else {
-                            loanCharge.setAmountOrPercentage(chargeAmount);
-                            loanCharge.setAmount(chargeAmount);
-                            loanCharge.setOutstandingAmount(chargeAmount);
-                            loan.addLoanCharge(loanCharge);
+                            if (chargeAmount == null && (accountState.equals("PENDING_APPROVAL") || accountState.equals("APPROVED"))) {
+                                // skip the charge
+                                continue;
+                            }
+                            if (specificCharge.isPercentageOfAnotherCharge()) {
+                                loan.addLoanCharge(loanCharge);
+                            } else {
+                                loanCharge.setAmountOrPercentage(chargeAmount);
+                                loanCharge.setAmount(chargeAmount);
+                                loanCharge.setOutstandingAmount(chargeAmount);
+                                loan.addLoanCharge(loanCharge);
+                            }
                         }
                     }
                 }

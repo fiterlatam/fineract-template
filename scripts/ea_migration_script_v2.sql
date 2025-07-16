@@ -369,7 +369,6 @@ VALUES((select id from m_code where code_name='Ciudad'), 'Sabanalarga (Atlántic
 
 
 
-
 -- Update empty cities
 update tmp_cliente_migrar set city = 'CANDELARIA' where city = '';
 
@@ -1033,6 +1032,38 @@ and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" like '%4S
 update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.075 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0
 and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" like '%4SMMLV%' and fee_percentage = 7.5);
 
+
+update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.031106 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0
+and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" = 'MiPymeMes9Menor' and fee_percentage = 3.1106);
+
+update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.01891 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0
+and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" = 'MiPymeMes9Mayor' and fee_percentage = 1.891);
+
+update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.021543 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0
+and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" = 'MiPymeMes6Menor' and fee_percentage = 2.1543);
+
+update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.013097 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0
+and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" = 'MiPymeMes6Mayor' and fee_percentage = 1.3097);
+
+update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.012178 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0
+and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" = 'MiPymeMes3Menor' and fee_percentage = 1.2178);
+
+update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.007404 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0
+and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" = 'MiPymeMes3Mayor' and fee_percentage = 0.7404);
+
+update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.009101 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0
+and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" = 'MiPymeMes2Menor' and fee_percentage = 0.9101);
+
+update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.005533 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0
+and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" = 'MiPymeMes2Mayor' and fee_percentage = 0.5533);
+
+update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.003675 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0
+and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" = 'MiPymeMes1Mayor' and fee_percentage = 0.3675);
+
+update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.006045 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0
+and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" = 'MiPymeMes1Menor' and fee_percentage = 0.6045);
+
+--update tax
 update tmp_loanaccount set MIPYME_FEES_TAX = MIPYME_FEES * 0.19;
 
 select fee_percentage from tmp_loan_charges tlc join tmp_loanaccount tl on tlc.loankey = tl."ENCODEDKEY" 
@@ -1051,6 +1082,13 @@ select * from tmp_cliente_migrar tcm where encodedkey = '8a44389f946ff1070194702
 
 update m_loan_charge set charge_calculation_enum = 286 where charge_id = 54;
 update m_charge set charge_calculation_enum = 286 where id = 54;
+
+select * from m_loan ml where external_id ='0372390302';
+
+select * from tmp_loanaccount tl where tl."ID" = '0372390302';
+
+select * from tmp_loan_repayment_schedule tlrs where "PARENTACCOUNTKEY" ='8a443bca8cd4d5ef018cd56ea2533021' order by "DUEDATE" 
+
 
 -- -new query for outstanding loan balances
 select distinct
@@ -1197,13 +1235,15 @@ from
 select * from m_loan where external_id ='4626647294';
 
 
-select * from tmp_loanaccount tl where "ID" = '0027742355';
+select * from tmp_loanaccount tl where "ID" = '5531840773';
 
-select * from tmp_loan_repayment_schedule tlrs where "PARENTACCOUNTKEY" = '8a44285488b9cb2b0188ba7e659a72c2' order by "DUEDATE";
+select * from tmp_loan_repayment_schedule tlrs where "PARENTACCOUNTKEY" = '8a443bca8cd4d5ef018cd56ea2533021' order by "DUEDATE";
 
-select * from tmp_flat_loan_charges tflc where loankey = '8a44524382b6c9620182b8cc2af91556';
+select * from tmp_flat_loan_charges tflc where loankey = '8a443bca8cd4d5ef018cd56ea2533021';
 
-select * from tmp_loan_charges tlc where loankey = '8a445ba787e6cec80187e756db0e2549';
+select * from tmp_loan_charges tlc where loankey = '8a4451df8f1c428e018f1c44f3100224';
+
+select * from tmp_loan_charges tlc where "NAME" like 'MiPymeMes%';
 
 select * from tmp_disbursementdetails td where td."ENCODEDKEY" = '8a4447229739deb501973c6217a4340d';
 
