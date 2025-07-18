@@ -21,7 +21,6 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -111,7 +110,6 @@ import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.data.PostDated
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
@@ -1088,100 +1086,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
     @SuppressWarnings({ "squid:S3776" })
     private BigDecimal calculateHonoForForeclosure(Loan loan, BigDecimal transactionAmount, LocalDate transactionDate) {
+        // we will return 0 for now .
+        return BigDecimal.ZERO;
+
         /// SU-516 Calculate Hono Charge
-        BigDecimal cumulativeHonoFee = BigDecimal.ZERO;
-        BigDecimal cumulativeVatFee = BigDecimal.ZERO;
-        Optional<LoanCharge> honoChargeOptional = loan.getLoanCharges().stream().filter(LoanCharge::isFlatHono).findFirst();
-        if (honoChargeOptional.isPresent() && loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()) > 0) {
-            LoanCharge honoCharge = honoChargeOptional.get();
-            Optional<LoanCharge> vatChargeOptional = loan.getLoanCharges().stream()
-                    .filter(chg -> chg.isCustomPercentageBasedOfAnotherCharge()
-                            && chg.getCharge().getParentChargeId().equals(honoCharge.getCharge().getId()))
-                    .findFirst();
-            Money remainingAmount = Money.of(loan.getCurrency(), transactionAmount);
-            Integer installmentNumber = 0;
-            Long version = 0L;
-            if (honoCharge.getCustomChargeHonorarioMaps() != null && !honoCharge.getCustomChargeHonorarioMaps().isEmpty()) {
-                for (CustomChargeHonorarioMap map : honoCharge.getCustomChargeHonorarioMaps()) {
-                    if (map.getVersion() > version) {
-                        version = map.getVersion();
-                    }
-                }
-            }
-            version = version + 1;
-            for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
-                if (installment.isOverdueOn(transactionDate) && !installment.isObligationsMet()) {
-                    if (installmentNumber == 0) {
-                        installmentNumber = installment.getInstallmentNumber();
-                    }
-                    BigDecimal installmentOutstandingAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount();
-                    FeeCalculationHonorario fee;
-                    if (remainingAmount.isGreaterThanZero()
-                            && remainingAmount.isGreaterThanOrEqualTo(installment.getTotalOutstanding(loan.getCurrency()))) {
-                        fee = this.updateCalculationHonoLoanChargeOverDueVat(installmentOutstandingAmount, installment, installmentNumber,
-                                version);
-                        remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
-
-                    } else {
-                        fee = this.updateCalculationHonoLoanChargeOverDueVat(remainingAmount.getAmount(), installment, installmentNumber,
-                                version);
-                    }
-                    cumulativeHonoFee = cumulativeHonoFee.add(fee.getFeeBasis());
-                    if (vatChargeOptional.isPresent()) {
-                        cumulativeVatFee = cumulativeVatFee.add(fee.getFeeVat());
-                    }
-
-                    if (remainingAmount.isZero() || remainingAmount.isLessThanZero()) {
-                        break;
-                    }
-
-                }
-            }
-
-            // Add Accrual Transaction
-            boolean isSuspendedAccount = false;
-            Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
-                    .retriveMinimumDaysInArrearsToSuspendLoanAccount();
-            if (minimumDaysInArrearsToSuspendLoanAccount == null) {
-                minimumDaysInArrearsToSuspendLoanAccount = 90L;
-            }
-            LocalDate arrearsStartDate = LocalDate.now();
-            try {
-                arrearsStartDate = this.jdbcTemplate.queryForObject(
-                        "select overdue_since_date_derived aging_days from m_loan_arrears_aging mlaa where mlaa.loan_id =?",
-                        LocalDate.class, loan.getId());
-            } catch (final EmptyResultDataAccessException e) {
-                // not in arrears
-                arrearsStartDate = LocalDate.now();
-            }
-            long days = 0L;
-            if (arrearsStartDate != null) {
-                days = arrearsStartDate.until(transactionDate, ChronoUnit.DAYS);
-            }
-            if (days >= minimumDaysInArrearsToSuspendLoanAccount) {
-                isSuspendedAccount = true;
-            }
-
-            Money accrualAmount = Money.of(loan.getCurrency(), cumulativeHonoFee.add(cumulativeVatFee));
-            final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(loan, loan.getOffice(),
-                    accrualAmount, transactionDate, accrualAmount, Money.zero(loan.getCurrency()), ExternalId.empty());
-            if (isSuspendedAccount) {
-                applyLoanChargeTransaction.markAsOccurredOnSuspendedAccount();
-            }
-            final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, honoCharge, cumulativeHonoFee,
-                    installmentNumber);
-            applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
-
-            if (vatChargeOptional.isPresent()) {
-                LoanCharge vat = vatChargeOptional.get();
-
-                final LoanChargePaidBy vatChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, vat, cumulativeVatFee,
-                        installmentNumber);
-                applyLoanChargeTransaction.getLoanChargesPaid().add(vatChargePaidBy);
-            }
-            loan.addLoanTransaction(applyLoanChargeTransaction);
-        }
-        return cumulativeHonoFee.add(cumulativeVatFee);
     }
 
     @SuppressWarnings({ "squid:S3776" })

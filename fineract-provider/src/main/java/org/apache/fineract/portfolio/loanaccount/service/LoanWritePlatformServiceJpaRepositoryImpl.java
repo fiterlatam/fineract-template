@@ -66,7 +66,6 @@ import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
-import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMapRepository;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
@@ -257,7 +256,6 @@ import org.apache.fineract.useradministration.domain.AppUser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
@@ -1238,109 +1236,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final String chargeRefundChargeType = null;
         BigDecimal cumulativeHonoFee = BigDecimal.ZERO;
         BigDecimal cumulativeVatFee = BigDecimal.ZERO;
-        // SU-516 Calculate the hono charge for repayment only
-        if (!isRecoveryRepayment) {
-            Loan loan = this.loanAssembler.assembleFrom(loanId);
-            Optional<LoanCharge> honoChargeOptional = loan.getLoanCharges().stream().filter(LoanCharge::isFlatHono).findFirst();
-            if (honoChargeOptional.isPresent() && loan.getAgeOfOverdueDays(DateUtils.getBusinessLocalDate()) > 0) {
-                LoanCharge honoCharge = honoChargeOptional.get();
-                Optional<LoanCharge> vatChargeOptional = loan.getLoanCharges().stream()
-                        .filter(chg -> chg.isCustomPercentageBasedOfAnotherCharge()
-                                && chg.getCharge().getParentChargeId().equals(honoCharge.getCharge().getId()))
-                        .findFirst();
-                final LocalDate transactionDate = command
-                        .localDateValueOfParameterNamed(LoanWritePlatformServiceJpaRepositoryImpl.TRANSACTION_DATE_PARAM);
-                BigDecimal transactionAmount = command
-                        .bigDecimalValueOfParameterNamed(LoanWritePlatformServiceJpaRepositoryImpl.LOAN_TRANSACTION_AMOUNT);
-
-                BigDecimal honoAmount = command.bigDecimalValueOfParameterNamed("honorariosAmount");
-                if (honoAmount == null) {
-                    honoAmount = BigDecimal.ZERO;
-                }
-
-                Money remainingAmount = Money.of(loan.getCurrency(), transactionAmount);
-                // SU-516 Transaction amount may contain hono amount as well. ReCalculate hono charge amount based on
-                // the actual transaction amount
-                remainingAmount = remainingAmount.minus(honoAmount);
-                Integer installmentNumber = 0;
-                // increment the batch id which will be used to delete the rows from db table when a transaction is
-                // rollbacked. The rows with highest version will be roll backed
-                // because only the latest transaction can be reversed
-                Long version = 0L;
-                if (honoCharge.getCustomChargeHonorarioMaps() != null && !honoCharge.getCustomChargeHonorarioMaps().isEmpty()) {
-                    for (CustomChargeHonorarioMap map : honoCharge.getCustomChargeHonorarioMaps()) {
-                        if (map.getVersion() > version) {
-                            version = map.getVersion();
-                        }
-                    }
-                }
-                version = version + 1;
-                for (LoanRepaymentScheduleInstallment installment : loan.getRepaymentScheduleInstallments()) {
-                    if (installment.isOverdueOn(transactionDate) && !installment.isObligationsMet()) {
-                        if (installmentNumber == 0) {
-                            installmentNumber = installment.getInstallmentNumber();
-                        }
-                        BigDecimal installmentOutstandingAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount();
-                        FeeCalculationHonorario fee;
-                        if (remainingAmount.isGreaterThanZero()
-                                && remainingAmount.isGreaterThanOrEqualTo(installment.getTotalOutstanding(loan.getCurrency()))) {
-                            fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(installmentOutstandingAmount,
-                                    installment, installmentNumber, version);
-                            remainingAmount = remainingAmount.minus(installmentOutstandingAmount);
-                        } else {
-                            fee = this.loanAccountDomainService.updateCalculationHonoLoanChargeOverDueVat(remainingAmount.getAmount(),
-                                    installment, installmentNumber, version);
-                            remainingAmount = remainingAmount.zero();
-                        }
-                        cumulativeHonoFee = cumulativeHonoFee.add(fee.getFeeBasis());
-                        if (vatChargeOptional.isPresent()) {
-                            cumulativeVatFee = cumulativeVatFee.add(fee.getFeeVat());
-                        }
-                        if (remainingAmount.isZero() || remainingAmount.isLessThanZero()) {
-                            break;
-                        }
-                    }
-                }
-
-                // Add Accrual Transaction
-                Integer daysInArrears = 0;
-                boolean isSuspendedAccount = false;
-                Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
-                        .retriveMinimumDaysInArrearsToSuspendLoanAccount();
-                if (minimumDaysInArrearsToSuspendLoanAccount == null) {
-                    minimumDaysInArrearsToSuspendLoanAccount = 90L;
-                }
-                try {
-                    daysInArrears = this.jdbcTemplate.queryForObject(
-                            "select COALESCE(current_date - overdue_since_date_derived,0) aging_days from m_loan_arrears_aging mlaa where mlaa.loan_id =?",
-                            Integer.class, loan.getId());
-                } catch (final EmptyResultDataAccessException e) {
-                    // not in arrears
-                    daysInArrears = 0;
-                }
-                if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
-                    isSuspendedAccount = true;
-                }
-                Money accrualAmount = Money.of(loan.getCurrency(), cumulativeHonoFee.add(cumulativeVatFee));
-                final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(loan, loan.getOffice(),
-                        accrualAmount, transactionDate, accrualAmount, Money.zero(loan.getCurrency()), ExternalId.empty());
-                if (isSuspendedAccount) {
-                    applyLoanChargeTransaction.markAsOccurredOnSuspendedAccount();
-                }
-                final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, honoCharge, cumulativeHonoFee,
-                        installmentNumber);
-                applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
-
-                if (vatChargeOptional.isPresent()) {
-                    LoanCharge vat = vatChargeOptional.get();
-
-                    final LoanChargePaidBy vatChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, vat, cumulativeVatFee,
-                            installmentNumber);
-                    applyLoanChargeTransaction.getLoanChargesPaid().add(vatChargePaidBy);
-                }
-                loan.addLoanTransaction(applyLoanChargeTransaction);
-            }
-        }
         return makeLoanRepaymentWithChargeRefundChargeType(repaymentTransactionType, loanId, command, isRecoveryRepayment,
                 chargeRefundChargeType);
     }
@@ -1773,42 +1668,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 && loan.getDisbursementDetails().size() == 1) {
             throw new GeneralPlatformDomainRuleException("validation.msg.cannot.undo.last.disbursal.transaction",
                     "Undo disbursal transaction is not allowed for the 1st disbursal. Use Undo Disbursal from menu. ", transactionDate);
-        }
-
-        // SU-516 if transaction has a hono charge paid then delete the latest version in hono charge map
-        for (LoanChargePaidBy chargePaidBy : transactionToAdjust.getLoanChargesPaid()) {
-            if (chargePaidBy.getLoanCharge().isFlatHono()) {
-                List<CustomChargeHonorarioMap> remove = new ArrayList<>();
-                Long versionToBeDeleted = customChargeHonorarioMapRepository.getMaxVersionByLoan(loanId);
-                for (CustomChargeHonorarioMap map : chargePaidBy.getLoanCharge().getCustomChargeHonorarioMaps()) {
-                    if (map.getVersion().equals(versionToBeDeleted)) {
-                        remove.add(map);
-                    }
-                }
-                remove.forEach(chargePaidBy.getLoanCharge().getCustomChargeHonorarioMaps()::remove);
-                customChargeHonorarioMapRepository.deleteLatestVersionMapEntryOnReversal(loanId, versionToBeDeleted);
-                transactionToAdjust.getLoanTransactionToRepaymentScheduleMappings().clear();
-
-                // Reverse Accrual Transaction
-                for (int i = loan.getLoanTransactions().size(); i >= 0; i--) {
-                    LoanTransaction lastTransaction = loan.getLoanTransactions().get(i - 1);
-                    if (!lastTransaction.isReversed() && lastTransaction.isAccrual()
-                            && lastTransaction.getTransactionDate().equals(transactionToAdjust.getTransactionDate())) {
-                        for (LoanChargePaidBy accrualChargePaidBy : lastTransaction.getLoanChargesPaid()) {
-                            if (accrualChargePaidBy.getLoanCharge().isFlatHono()) {
-                                lastTransaction.manuallyAdjustedOrReversed();
-                                lastTransaction.reverse();
-                                i = -1;
-                                break;
-                            }
-                        }
-                    }
-                }
-                final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
-                wrapper.reprocess(loan.getCurrency(), loan.getDisbursementDate(), loan.getRepaymentScheduleInstallments(),
-                        loan.getActiveCharges());
-                break;
-            }
         }
         // We don't need auto generation for reversal external id... if it is not provided, it remains null (empty)
         final String reversalExternalId = command.stringValueOfParameterNamedAllowingNull(LoanApiConstants.REVERSAL_EXTERNAL_ID_PARAMNAME);
