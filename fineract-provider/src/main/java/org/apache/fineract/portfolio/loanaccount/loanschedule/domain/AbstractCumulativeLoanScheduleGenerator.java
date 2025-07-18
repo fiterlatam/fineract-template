@@ -3638,6 +3638,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         installment.setInterestCharged(BigDecimal.ZERO);
                         installment.setFeeChargesCharged(BigDecimal.ZERO);
                         installment.setPenaltyCharges(BigDecimal.ZERO);
+                        installment.setLifeInsuranceChargePortion(BigDecimal.ZERO);
                         installment.setRecalculatedInterestComponent(true);
                         installment.getInstallmentCharges().clear();
                         newRepaymentScheduleInstallments.add(installment);
