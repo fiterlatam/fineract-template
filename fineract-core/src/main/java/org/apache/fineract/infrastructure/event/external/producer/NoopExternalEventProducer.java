@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.event.external.exception.AcknowledgementTimeoutException;
+import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
@@ -31,5 +32,10 @@ import org.springframework.stereotype.Component;
 public class NoopExternalEventProducer implements ExternalEventProducer {
 
     @Override
-    public void sendEvents(Map<Long, List<byte[]>> messages) throws AcknowledgementTimeoutException {}
+    public void sendEvents(final Map<String, List<String>> messages) throws AcknowledgementTimeoutException {}
+
+    @Override
+    public void sendEvents(final String messageJson, final JobName jobName) throws AcknowledgementTimeoutException {
+        log.info("NoopExternalEventProducer: sendEvents called with messageJson: {} and jobName: {}", messageJson, jobName);
+    }
 }

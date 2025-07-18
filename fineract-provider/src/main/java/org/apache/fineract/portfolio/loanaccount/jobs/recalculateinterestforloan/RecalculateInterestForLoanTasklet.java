@@ -93,6 +93,8 @@ public class RecalculateInterestForLoanTasklet implements Tasklet {
     }
 
     private void recalculateInterest(OfficeData office, int threadPoolSize, int batchSize) {
+        final int availableProcessors = Runtime.getRuntime().availableProcessors();
+        log.info("Recalculate Interest For Loan Tasklet:: Available processors: {}", availableProcessors);
         final int pageSize = batchSize * threadPoolSize;
         taskExecutor.setCorePoolSize(threadPoolSize);
         taskExecutor.setMaxPoolSize(threadPoolSize);

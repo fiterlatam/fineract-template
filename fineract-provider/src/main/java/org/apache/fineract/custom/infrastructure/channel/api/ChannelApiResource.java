@@ -58,19 +58,18 @@ public class ChannelApiResource {
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final PlatformSecurityContext context;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
+    private final ChannelReadWritePlatformService service;
 
     @Autowired
     public ChannelApiResource(final DefaultToApiJsonSerializer<ChannelData> toApiJsonSerializer,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, final PlatformSecurityContext context,
-            final ApiRequestParameterHelper apiRequestParameterHelper) {
+            final ApiRequestParameterHelper apiRequestParameterHelper, ChannelReadWritePlatformService service) {
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.context = context;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
+        this.service = service;
     }
-
-    @Autowired
-    private ChannelReadWritePlatformService service;
 
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
@@ -101,7 +100,7 @@ public class ChannelApiResource {
     @Path("template")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveTemplate(final Long id, @Context final UriInfo uriInfo) {
+    public String retrieveTemplate(@Context final UriInfo uriInfo) {
         this.context.authenticatedUser().validateHasReadPermission(ChannelApiConstants.RESOURCE_NAME);
         final ChannelData channelData = ChannelData.builder()
                 .channelTypeOptions(List.of(ChannelType.DISBURSEMENT.asEnumOptionData(), ChannelType.REPAYMENT.asEnumOptionData())).build();

@@ -63,6 +63,8 @@ public class PostInterestForSavingTasklet implements Tasklet {
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+        final int availableProcessors = Runtime.getRuntime().availableProcessors();
+        log.info("Post Interest for Savings:: Available processors: {}", availableProcessors);
         final int threadPoolSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("thread-pool-size"));
         taskExecutor.setCorePoolSize(threadPoolSize);
         taskExecutor.setMaxPoolSize(threadPoolSize);

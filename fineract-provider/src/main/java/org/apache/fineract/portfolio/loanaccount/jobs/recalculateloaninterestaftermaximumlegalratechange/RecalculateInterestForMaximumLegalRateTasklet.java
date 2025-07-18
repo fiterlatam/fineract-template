@@ -148,7 +148,6 @@ public class RecalculateInterestForMaximumLegalRateTasklet implements Tasklet {
             RecalculateInterestForMLRProcessorTask recalculateInterestForMLRProcessorTask = applicationContext
                     .getBean(RecalculateInterestForMLRProcessorTask.class);
             recalculateInterestForMLRProcessorTask.setLoanRescheduleData(subList);
-            recalculateInterestForMLRProcessorTask.setMaximumCreditRateConfigurationData(maximumCreditRateConfigurationData);
             recalculateInterestForMLRProcessorTask.setContext(ThreadLocalContextUtil.getContext());
             posters.add(recalculateInterestForMLRProcessorTask);
 

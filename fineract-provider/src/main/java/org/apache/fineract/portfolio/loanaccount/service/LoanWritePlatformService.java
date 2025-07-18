@@ -39,7 +39,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.invoice.data.ClasificacionConceptosData;
 import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
-import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface LoanWritePlatformService {
@@ -128,8 +127,9 @@ public interface LoanWritePlatformService {
     @Transactional
     CommandProcessingResult undoChargeOff(JsonCommand command);
 
-    void recalculateInterestForMaximumLegalRate(List<LoanRescheduleData> loanLoanRescheduleDataList,
-            MaximumCreditRateConfigurationData maximumCreditRateConfigurationData) throws JobExecutionException;
+    void recalculateInterestForMaximumLegalRate(List<LoanRescheduleData> loanLoanRescheduleDataList) throws JobExecutionException;
+
+    void maximumLegalRateKafkaMessageHandler(String kafkaMessageJson) throws Exception;
 
     void recalculateInterestRate(Loan loan);
 
