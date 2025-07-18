@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.jobs.applychargetooverdueloaninstallment;
 
+import java.time.LocalDate;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,11 +78,13 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
                 Long maxLoanId = 0L;
                 final Long penaltyWaitPeriodValue = configurationDomainService.retrievePenaltyWaitPeriod();
                 final Boolean backdatePenalties = configurationDomainService.isBackdatePenaltiesEnabled();
+                final LocalDate penaltyStartDate = configurationDomainService.retrievePenaltyStartDate();
                 long start = System.currentTimeMillis();
                 log.info("Starting Apply Penalties to Overdue Loans job");
                 log.debug("Reading overdue loan scheduled installments for processing!");
                 List<OverdueLoanScheduleData> overdueLoanScheduledInstallments = loanReadPlatformService
-                        .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties, pageSize, maxLoanId);
+                        .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties, penaltyStartDate, pageSize,
+                                maxLoanId);
                 long finish = System.currentTimeMillis();
                 log.debug("Done fetching overdue loan scheduled installments within {} seconds", (finish - start) / 1000.0);
                 log.info("Found {} overdue loan scheduled installments to apply penalties to!", overdueLoanScheduledInstallments.size());
@@ -93,7 +96,7 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
                             final List<OverdueLoanScheduleData> queueElement = queue.element();
                             maxLoanId = queueElement.get(queueElement.size() - 1).getLoanId();
                             this.applyPenaltiesToOverdueInstallments(queue.remove(), threadPoolSize, pageSize, maxLoanId,
-                                    penaltyWaitPeriodValue, backdatePenalties);
+                                    penaltyWaitPeriodValue, backdatePenalties, penaltyStartDate);
                         } while (!CollectionUtils.isEmpty(queue));
                     }
                 }
@@ -116,7 +119,7 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
     @SuppressWarnings("all")
     private void applyPenaltiesToOverdueInstallments(List<OverdueLoanScheduleData> overdueLoanScheduledInstallments,
             final int threadPoolSize, final int pageSize, final Long maxLoanId, final Long penaltyWaitPeriodValue,
-            final Boolean backdatePenalties) {
+            final Boolean backdatePenalties, final LocalDate penaltyStartDate) {
         final List<Callable<Void>> posters = new ArrayList<>();
         int fromIndex = 0;
         int size = overdueLoanScheduledInstallments.size();
@@ -143,8 +146,9 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
             while (queue.size() <= QUEUE_SIZE) {
                 log.debug("Apply penalty to overdue loans:: Fetching while threads are running!");
                 final long start = System.currentTimeMillis();
-                List<OverdueLoanScheduleData> overdueLoanScheduleData = Collections.synchronizedList(this.loanReadPlatformService
-                        .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties, pageSize, maxId));
+                List<OverdueLoanScheduleData> overdueLoanScheduleData = Collections
+                        .synchronizedList(this.loanReadPlatformService.retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue,
+                                backdatePenalties, penaltyStartDate, pageSize, maxId));
                 final long finish = System.currentTimeMillis();
                 log.info("Apply penalty to overdue loans:: Done fetching overdue loan scheduled installments within {} milliseconds",
                         finish - start);
@@ -193,7 +197,7 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
             log.debug("Apply penalty to overdue loans:: Fetching overdue loan scheduled installments with maxId {}", maxId);
             final long start = System.currentTimeMillis();
             overdueLoanScheduledInstallments = Collections.synchronizedList(this.loanReadPlatformService
-                    .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties, pageSize, maxId));
+                    .retrieveAllLoansWithOverdueInstallments(penaltyWaitPeriodValue, backdatePenalties, penaltyStartDate, pageSize, maxId));
             final long finish = System.currentTimeMillis();
             log.info("Apply penalty to overdue loans:: Done fetching overdue loan scheduled installments within {} milliseconds",
                     finish - start);

@@ -7524,7 +7524,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public LoanRepaymentScheduleInstallment fetchLoanForeclosureDetail(final LocalDate closureDate,
             final ScheduleGeneratorDTO scheduleGeneratorDTO) {
-        Money[] receivables = retrieveIncomeOutstandingTillDate(closureDate, scheduleGeneratorDTO);
+        final Money[] receivables = retrieveIncomeOutstandingTillDate(closureDate, scheduleGeneratorDTO);
         Money totalPrincipal = Money.of(getCurrency(), this.getLoanSummary().getTotalPrincipalOutstanding());
         totalPrincipal = totalPrincipal.minus(receivables[3]);
         final LocalDate currentDate = DateUtils.getBusinessLocalDate();
@@ -7855,13 +7855,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public Money[] retriveIncomeForOverlappingPeriod(final LocalDate paymentDate, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
+        final TransactionOnDueDateDetails transactionOnDueDateDetail = this.getTransactionOnDueDateDetails(paymentDate);
         Money[] balances = new Money[3];
         final MonetaryCurrency currency = getCurrency();
         balances[0] = balances[1] = balances[2] = Money.zero(currency);
         Money principalLoanBalanceOutstanding = this.getPrincipal();
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(installment.getAdvancePrincipalAmount());
-            if (DateUtils.isEqual(paymentDate, installment.getDueDate()) && installment.isNotFullyPaidOff()) {
+            if (DateUtils.isEqual(paymentDate, installment.getDueDate()) && installment.isNotFullyPaidOff()
+                    && !transactionOnDueDateDetail.isTransactionOccurredOnDueDateWithExistingInstallmentsAfter(paymentDate)) {
                 Money interest = installment.getInterestCharged(currency);
                 Money fee = installment.getFeeChargesCharged(currency);
                 Money penalty = installment.getPenaltyChargesCharged(currency);
@@ -7874,7 +7876,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 balances = fetchInterestFeeAndPenaltyTillDate(paymentDate, installment, principalLoanBalanceOutstanding,
                         scheduleGeneratorDTO);
                 break;
-            } else if (installment.getInstallmentNumber() == 1 && DateUtils.isEqual(paymentDate, installment.getFromDate())) {
+            } else if (installment.getInstallmentNumber() == 1 && DateUtils.isEqual(paymentDate, installment.getFromDate())
+                    && installment.isNotFullyPaidOff()) {
                 // Foreclosure being done on same date as disbursement date. Fee charge must be paid
                 // If loan is canceled on same date then only pay hono charge
                 Money fee = installment.getFeeChargesCharged(currency);
@@ -7883,18 +7886,17 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
                 balances[1] = fee;
             } else if (DateUtils.isEqual(paymentDate, installment.getFromDate()) && installment.isNotFullyPaidOff()) {
-                Money fee = installment.getFeeChargesCharged(currency);
+                final Money fee = installment.getFeeChargesCharged(currency);
                 // SU-661: we need to deduct the Aval amount since the payment date is the due date of the previous
                 // installment
                 // So Aval doesn't apply today
-                if (installment.getInstallmentCharges() != null) {
-                    for (LoanInstallmentCharge loanInstallmentCharge : installment.getInstallmentCharges()) {
-                        if (loanInstallmentCharge.getLoanCharge().isAvalCharge()
-                                || loanInstallmentCharge.getLoanCharge().isVatChargeOfAvalCharge()) {
-                            fee = fee.minus(loanInstallmentCharge.getAmount(currency));
-                        }
-                    }
-                }
+                /**
+                 * SU-707: Pay all installment charges on fromDate if (installment.getInstallmentCharges() != null) {
+                 * for (LoanInstallmentCharge loanInstallmentCharge : installment.getInstallmentCharges()) { if
+                 * (loanInstallmentCharge.getLoanCharge().isAvalCharge() ||
+                 * loanInstallmentCharge.getLoanCharge().isVatChargeOfAvalCharge()) { fee =
+                 * fee.minus(loanInstallmentCharge.getAmount(currency)); } } }
+                 **/
                 balances[1] = fee;
             }
             principalLoanBalanceOutstanding = principalLoanBalanceOutstanding.minus(installment.getPrincipal(currency));
@@ -8000,14 +8002,61 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
+    private boolean isTransactionOnDueDateOfFirstInstallment(final LocalDate transactionDate) {
+        if (this.repaymentScheduleInstallments.isEmpty()) {
+            return false;
+        }
+        final LoanRepaymentScheduleInstallment firstInstallment = this.repaymentScheduleInstallments.stream()
+                .filter(installment -> installment.getInstallmentNumber() == 1).findFirst().orElse(null);
+        return firstInstallment != null && DateUtils.isEqual(transactionDate, firstInstallment.getDueDate());
+    }
+
+    private TransactionOnDueDateDetails getTransactionOnDueDateDetails(final LocalDate transactionDate) {
+        final LoanRepaymentScheduleInstallment installmentWithTransactionOnDueDate = this.repaymentScheduleInstallments.stream()
+                .filter(installment -> DateUtils.isEqual(transactionDate, installment.getDueDate())).findFirst().orElse(null);
+        boolean transactionOccurredOnDueDate = false;
+        boolean installmentsExistAfterTransactionOnDueDate = false;
+        if (installmentWithTransactionOnDueDate != null) {
+            transactionOccurredOnDueDate = true;
+            final List<LoanRepaymentScheduleInstallment> installmentsAfterTransactionDate = this.repaymentScheduleInstallments.stream()
+                    .filter(installment -> DateUtils.isAfter(installment.getDueDate(), transactionDate)).toList();
+            installmentsExistAfterTransactionOnDueDate = !installmentsAfterTransactionDate.isEmpty();
+        }
+        return new TransactionOnDueDateDetails(transactionOccurredOnDueDate, installmentsExistAfterTransactionOnDueDate,
+                installmentWithTransactionOnDueDate);
+    }
+
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    public static class TransactionOnDueDateDetails {
+
+        private final boolean transactionOccurredOnDueDate;
+        private final boolean installmentsExistAfterTransactionOnDueDate;
+        private final LoanRepaymentScheduleInstallment installmentWithTransactionOnDueDate;
+
+        public boolean isTransactionOccurredOnDueDateWithExistingInstallmentsAfter(final LocalDate dueDate) {
+            boolean returnValue = false;
+            if (installmentWithTransactionOnDueDate != null) {
+                returnValue = transactionOccurredOnDueDate && installmentsExistAfterTransactionOnDueDate
+                        && Objects.equals(installmentWithTransactionOnDueDate.getDueDate(), dueDate);
+            }
+            return returnValue;
+        }
+    }
+
+    @SuppressWarnings("all")
     public void updateInstallmentsPostDate(final LocalDate transactionDate, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
         List<LoanRepaymentScheduleInstallment> newInstallments = new ArrayList<>(this.repaymentScheduleInstallments);
         final MonetaryCurrency currency = getCurrency();
         Money totalPrincipal = Money.zero(currency);
         Money totalAdvanced = Money.zero(currency);
+        final TransactionOnDueDateDetails transactionOnDueDateDetail = this.getTransactionOnDueDateDetails(transactionDate);
         Money[] balances = retriveIncomeForOverlappingPeriod(transactionDate, scheduleGeneratorDTO);
         boolean isInterestComponent = false;
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
+            if (transactionOnDueDateDetail.isTransactionOccurredOnDueDateWithExistingInstallmentsAfter(installment.getDueDate())) {
+                continue;
+            }
             if (!DateUtils.isAfter(transactionDate, installment.getDueDate()) && installment.isNotFullyPaidOff()) {
                 totalPrincipal = totalPrincipal.plus(installment.getPrincipal(currency));
                 if (installment.getAdvancePrincipalAmount() != null

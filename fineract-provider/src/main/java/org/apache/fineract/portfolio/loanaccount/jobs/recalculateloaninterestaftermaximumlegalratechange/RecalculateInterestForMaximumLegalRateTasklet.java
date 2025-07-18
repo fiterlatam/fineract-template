@@ -62,23 +62,27 @@ public class RecalculateInterestForMaximumLegalRateTasklet implements Tasklet {
     @Override
     public RepeatStatus execute(@NotNull StepContribution contribution, @NotNull ChunkContext chunkContext) throws Exception {
         final int threadPoolSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("thread-pool-size"));
+        log.info("Recalculate Loan Interest After Maximum Legal Rate Change job:: Job started with thread pool size: {}", threadPoolSize);
         taskExecutor.setMaxPoolSize(threadPoolSize);
         taskExecutor.setCorePoolSize(threadPoolSize);
         final int batchSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
+        log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Job started with batch size: {}", batchSize);
         final int pageSize = batchSize * threadPoolSize;
         Long maximumLoanId = 0L;
         final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
                 .retrieveMaximumCreditRateConfigurationData();
 
         long start = System.currentTimeMillis();
-        log.info("Starting Recalculate Loan Interest After Maximum Legal Rate Change job");
-        log.debug("Reading loans for processing!");
+        log.info(
+                "Recalculate Loan Interest After Maximum Legal Rate Change:: Starting Recalculate Loan Interest After Maximum Legal Rate Change job");
+        log.debug("Recalculate Loan Interest After Maximum Legal Rate Change:: Reading loans for processing!");
         List<LoanRescheduleData> loanScheduleInstallments = loanReadPlatformService
                 .retrieveLoansForInterestRecalculation(maximumCreditRateConfigurationData, pageSize, maximumLoanId);
         if (loanScheduleInstallments != null && !loanScheduleInstallments.isEmpty()) {
             loanScheduleInstallments = Collections.synchronizedList(loanScheduleInstallments);
             long finish = System.currentTimeMillis();
-            log.debug("Done fetching loans within {} milliseconds", finish - start);
+            log.debug("Recalculate Loan Interest After Maximum Legal Rate Change:: Done fetching loans within {} seconds",
+                    (finish - start) / 1000.0);
             queue.add(loanScheduleInstallments);
 
             if (!CollectionUtils.isEmpty(queue)) {
@@ -122,9 +126,13 @@ public class RecalculateInterestForMaximumLegalRateTasklet implements Tasklet {
             }
             while (queue.size() <= QUEUE_SIZE) {
 
-                log.debug("Fetching while threads are running!");
+                log.debug("Recalculate Loan Interest After Maximum Legal Rate Change:: Fetching while threads are running!");
+                final long start = System.currentTimeMillis();
                 List<LoanRescheduleData> loanRescheduleData = Collections.synchronizedList(this.loanReadPlatformService
                         .retrieveLoansForInterestRecalculation(maximumCreditRateConfigurationData, pageSize, maxId));
+                final long finish = System.currentTimeMillis();
+                log.debug("Recalculate Loan Interest After Maximum Legal Rate Change:: Done fetching loans within {} seconds",
+                        (finish - start) / 1000.0);
                 if (loanRescheduleData.isEmpty()) {
                     break;
                 }
@@ -166,19 +174,20 @@ public class RecalculateInterestForMaximumLegalRateTasklet implements Tasklet {
         }
 
         while (queue.size() <= QUEUE_SIZE) {
-            log.debug("Fetching while threads are running!..:: this is not supposed to run........");
+            log.debug(
+                    "Recalculate Loan Interest After Maximum Legal Rate Change:: Fetching while threads are running!..:: this is not supposed to run........");
             loanRescheduleInstallments = Collections.synchronizedList(this.loanReadPlatformService
                     .retrieveLoansForInterestRecalculation(maximumCreditRateConfigurationData, pageSize, maxId));
             if (loanRescheduleInstallments.isEmpty()) {
                 break;
             }
             maxId = loanRescheduleInstallments.get(loanRescheduleInstallments.size() - 1).getId();
-            log.debug("Add to the Queue");
+            log.debug("Recalculate Loan Interest After Maximum Legal Rate Change:: Add to the Queue");
             queue.add(loanRescheduleInstallments);
         }
 
         checkCompletion(responses);
-        log.debug("Queue size {}", queue.size());
+        log.debug("Recalculate Loan Interest After Maximum Legal Rate Change:: Queue size {}", queue.size());
     }
 
     private <T> List<T> safeSubList(List<T> list, int fromIndex, int toIndex) {
