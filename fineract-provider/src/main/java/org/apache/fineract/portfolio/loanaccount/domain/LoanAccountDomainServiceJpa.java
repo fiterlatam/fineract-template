@@ -21,7 +21,6 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -111,7 +110,6 @@ import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.data.PostDated
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
