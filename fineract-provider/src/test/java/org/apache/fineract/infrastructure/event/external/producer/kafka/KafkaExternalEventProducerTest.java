@@ -18,14 +18,15 @@
  */
 package org.apache.fineract.infrastructure.event.external.producer.kafka;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.apache.fineract.infrastructure.core.config.FineractProperties;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -35,80 +36,78 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
+import org.springframework.messaging.Message;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressFBWarnings(value = "RV_EXCEPTION_NOT_THROWN", justification = "False positive")
 class KafkaExternalEventProducerTest {
 
     public static final String TOPIC_NAME = "unit-test";
-    @Mock
-    private KafkaTemplate<Long, byte[]> kafkaTemplate;
 
     @Mock
-    private SendResult<Long, byte[]> sendResult1;
+    private KafkaTemplate<String, String> kafkaTemplate;
 
     @Mock
-    private SendResult<Long, byte[]> sendResult2;
+    private FromJsonHelper fromJsonHelper;
 
     @Mock
-    private SendResult<Long, byte[]> sendResult3;
+    private SendResult<String, String> sendResult1;
 
-    private static final byte[] FIRST = "first".getBytes(Charset.defaultCharset());
-    private static final byte[] SECOND = "second".getBytes(Charset.defaultCharset());
-    private static final byte[] THIRD = "third".getBytes(Charset.defaultCharset());
+    @Mock
+    private SendResult<String, String> sendResult2;
+
+    @Mock
+    private SendResult<String, String> sendResult3;
+
+    private static final String FIRST = "first";
+    private static final String SECOND = "second";
+    private static final String THIRD = "third";
 
     @Test
     public void testSendOK() {
         // given
-        KafkaExternalEventProducer underTest = new KafkaExternalEventProducer(kafkaTemplate, createProperties());
-        Mockito.when(kafkaTemplate.send(TOPIC_NAME, 1L, FIRST)).thenReturn(CompletableFuture.completedFuture(sendResult1));
-        Mockito.when(kafkaTemplate.send(TOPIC_NAME, 1L, SECOND)).thenReturn(CompletableFuture.completedFuture(sendResult2));
-        Mockito.when(kafkaTemplate.send(TOPIC_NAME, 2L, THIRD)).thenReturn(CompletableFuture.completedFuture(sendResult2));
+        KafkaExternalEventProducer underTest = new KafkaExternalEventProducer(kafkaTemplate, createProperties(), fromJsonHelper);
+        Mockito.when(kafkaTemplate.send(any(Message.class))).thenReturn(CompletableFuture.completedFuture(sendResult1));
 
         // when
-        underTest.sendEvents(Map.of(1L, List.of(FIRST, SECOND), 2L, List.of(THIRD)));
+        Map<String, List<String>> strMap = Map.of("1", List.of(FIRST, SECOND), "2", List.of(THIRD));
+        underTest.sendEvents(strMap);
 
         // then
-        Mockito.verify(kafkaTemplate, times(1)).send(TOPIC_NAME, 1L, FIRST);
-        Mockito.verify(kafkaTemplate, times(1)).send(TOPIC_NAME, 1L, SECOND);
-        Mockito.verify(kafkaTemplate, times(1)).send(TOPIC_NAME, 2L, THIRD);
+        Mockito.verify(kafkaTemplate, times(3)).send(any(Message.class));
         Mockito.verifyNoMoreInteractions(kafkaTemplate);
     }
 
     @Test
     public void testSendOneFails() {
         // given
-        KafkaExternalEventProducer underTest = new KafkaExternalEventProducer(kafkaTemplate, createProperties());
-        Mockito.when(kafkaTemplate.send(TOPIC_NAME, 1L, FIRST)).thenReturn(CompletableFuture.completedFuture(sendResult1));
-        Mockito.when(kafkaTemplate.send(TOPIC_NAME, 1L, SECOND)).thenReturn(CompletableFuture.completedFuture(sendResult2));
-        Mockito.when(kafkaTemplate.send(TOPIC_NAME, 2L, THIRD))
+        KafkaExternalEventProducer underTest = new KafkaExternalEventProducer(kafkaTemplate, createProperties(), fromJsonHelper);
+        Mockito.when(kafkaTemplate.send(any(Message.class))).thenReturn(CompletableFuture.completedFuture(sendResult1))
+                .thenReturn(CompletableFuture.completedFuture(sendResult2))
                 .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Kafka error")));
 
         // when
-        Assertions.assertThrows(RuntimeException.class, () -> underTest.sendEvents(Map.of(1L, List.of(FIRST, SECOND), 2L, List.of(THIRD))));
+        Map<String, List<String>> strMap = Map.of("1", List.of(FIRST, SECOND), "2", List.of(THIRD));
+        Assertions.assertThrows(RuntimeException.class, () -> underTest.sendEvents(strMap));
 
         // then
-        Mockito.verify(kafkaTemplate, times(1)).send(TOPIC_NAME, 1L, FIRST);
-        Mockito.verify(kafkaTemplate, times(1)).send(TOPIC_NAME, 1L, SECOND);
-        Mockito.verify(kafkaTemplate, times(1)).send(TOPIC_NAME, 2L, THIRD);
+        Mockito.verify(kafkaTemplate, times(3)).send(any(Message.class));
         Mockito.verifyNoMoreInteractions(kafkaTemplate);
     }
 
     @Test
     public void testTimeOut() {
         // given
-        KafkaExternalEventProducer underTest = new KafkaExternalEventProducer(kafkaTemplate, createProperties());
-        Mockito.when(kafkaTemplate.send(TOPIC_NAME, 1L, FIRST)).thenReturn(CompletableFuture.completedFuture(sendResult1));
-        Mockito.when(kafkaTemplate.send(TOPIC_NAME, 1L, SECOND)).thenReturn(CompletableFuture.completedFuture(sendResult2));
-        Mockito.when(kafkaTemplate.send(TOPIC_NAME, 2L, THIRD)).thenReturn(new CompletableFuture<>());
+        KafkaExternalEventProducer underTest = new KafkaExternalEventProducer(kafkaTemplate, createProperties(), fromJsonHelper);
+        Mockito.when(kafkaTemplate.send(any(Message.class))).thenReturn(CompletableFuture.completedFuture(sendResult1))
+                .thenReturn(CompletableFuture.completedFuture(sendResult2)).thenReturn(new CompletableFuture<>());
 
         // when
-        Assertions.assertThrows(RuntimeException.class, () -> underTest.sendEvents(Map.of(1L, List.of(FIRST, SECOND), 2L, List.of(THIRD))));
+        Map<String, List<String>> strMap = Map.of("1", List.of(FIRST, SECOND), "2", List.of(THIRD));
+        Assertions.assertThrows(RuntimeException.class, () -> underTest.sendEvents(strMap));
 
         // then
-        Mockito.verify(kafkaTemplate, times(1)).send(TOPIC_NAME, 1L, FIRST);
-        Mockito.verify(kafkaTemplate, times(1)).send(TOPIC_NAME, 1L, SECOND);
-        Mockito.verify(kafkaTemplate, times(1)).send(TOPIC_NAME, 2L, THIRD);
+        Mockito.verify(kafkaTemplate, times(3)).send(any(Message.class));
         Mockito.verifyNoMoreInteractions(kafkaTemplate);
     }
 
@@ -135,5 +134,4 @@ class KafkaExternalEventProducerTest {
         kafkaTopicProperties.setName(TOPIC_NAME);
         return props;
     }
-
 }

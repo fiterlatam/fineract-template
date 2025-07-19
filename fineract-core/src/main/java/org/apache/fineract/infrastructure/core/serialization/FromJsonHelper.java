@@ -18,6 +18,11 @@
  */
 package org.apache.fineract.infrastructure.core.serialization;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -37,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
@@ -49,12 +55,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class FromJsonHelper {
 
+    @Getter
     private final Gson gsonConverter;
     private final JsonParserHelper helperDelegator;
+    private final ObjectMapper objectMapper;
 
     public FromJsonHelper() {
         this.gsonConverter = new Gson();
         this.helperDelegator = new JsonParserHelper();
+        final ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        this.objectMapper = mapper;
     }
 
     public Map<String, Boolean> extractMap(final Type typeOfMap, final String json) {
@@ -124,8 +137,6 @@ public class FromJsonHelper {
      *            The full json path to this property,the value is appended to the parameter name while generating an
      *            error message <br>
      *            Ex: property "name" in Object "person" would be named as "person.name"
-     * @param object
-     * @param supportedParams
      */
     @SuppressWarnings("AvoidHidingCauseException")
     public void checkForUnsupportedNestedParameters(final String parentPropertyName, final JsonObject object,
@@ -302,8 +313,73 @@ public class FromJsonHelper {
         return this.helperDelegator.extractJsonObjectNamed(parameterName, element);
     }
 
-    public Gson getGsonConverter() {
-        return this.gsonConverter;
+    public String toJsonString(final Object obj) {
+        try {
+            return this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
+        } catch (Exception e) {
+            log.error("Error converting object to JSON", e);
+            throw new RuntimeException("Error converting object to JSON", e);
+        }
+    }
+
+    /**
+     * Convert JSON string to specific Java object type
+     *
+     * @param jsonString
+     *            - JSON string to convert
+     * @param clazz
+     *            - Target class type
+     * @param <T>
+     *            - Generic type
+     * @return Converted object
+     * @throws JsonProcessingException
+     *             if conversion fails
+     */
+    public <T> T fromJsonToPojo(String jsonString, Class<T> clazz) throws JsonProcessingException {
+        if (jsonString == null || jsonString.trim().isEmpty()) {
+            return null;
+        }
+        return objectMapper.readValue(jsonString, clazz);
+    }
+
+    /**
+     * Convert JSON string to List of specific type
+     *
+     * @param jsonString
+     *            - JSON string to convert
+     * @param clazz
+     *            - Target class type for list elements
+     * @param <T>
+     *            - Generic type
+     * @return List of converted objects
+     * @throws JsonProcessingException
+     *             if conversion fails
+     */
+    public <T> List<T> fromJsonToPojoList(String jsonString, Class<T> clazz) throws JsonProcessingException {
+        if (jsonString == null || jsonString.trim().isEmpty()) {
+            return null;
+        }
+        return objectMapper.readValue(jsonString, objectMapper.getTypeFactory().constructCollectionType(List.class, clazz));
+    }
+
+    /**
+     * Convert JSON string using TypeReference (for complex generic types)
+     *
+     * @param jsonString
+     *            - JSON string to convert
+     * @param typeReference
+     *            - TypeReference for complex types
+     * @param <T>
+     *            - Generic type
+     * @return Converted object
+     * @throws JsonProcessingException
+     *             if conversion fails
+     */
+    public <T> T fromJsonToPojo(String jsonString, TypeReference<T> typeReference) throws JsonProcessingException {
+        if (jsonString == null || jsonString.trim().isEmpty()) {
+            return null;
+        }
+        return objectMapper.readValue(jsonString, typeReference);
     }
 
 }

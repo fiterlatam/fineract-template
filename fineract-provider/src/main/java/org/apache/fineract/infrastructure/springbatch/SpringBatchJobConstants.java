@@ -21,4 +21,6 @@ package org.apache.fineract.infrastructure.springbatch;
 public abstract class SpringBatchJobConstants {
 
     public static final String CUSTOM_JOB_PARAMETER_ID_KEY = "CUSTOM_JOB_PARAMETER_ID";
+    public static final String KAFKA_FINERACT_CONTEXT_KEY = "KAFKA_FINERACT_CONTEXT_KEY";
+    public static final String KAFKA_FINERACT_JOB_ID_KEY = "KAFKA_FINERACT_JOB_ID_KEY";
 }

@@ -27,7 +27,6 @@ import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
-import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -40,15 +39,11 @@ public class RecalculateInterestForMLRProcessorTask implements Callable<Void> {
     @Override
     public Void call() throws JobExecutionException {
         ThreadLocalContextUtil.init(context);
-        recalculateInterestForMLRProcessor.processOverdueCharges();
+        recalculateInterestForMLRProcessor.processMaximumLegalRate();
         return null;
     }
 
     public void setLoanRescheduleData(List<LoanRescheduleData> loanScheduledInstallments) {
         this.recalculateInterestForMLRProcessor.setLoanRescheduleData(loanScheduledInstallments);
-    }
-
-    public void setMaximumCreditRateConfigurationData(MaximumCreditRateConfigurationData maximumCreditRateConfigurationData) {
-        this.recalculateInterestForMLRProcessor.setMaximumCreditRateConfigurationData(maximumCreditRateConfigurationData);
     }
 }

@@ -59,7 +59,8 @@ public class DailyAccrualTasklet implements Tasklet {
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-
+        final int availableProcessors = Runtime.getRuntime().availableProcessors();
+        log.info("Devengo de Interés diario:: Available processors: {}", availableProcessors);
         final int threadPoolSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("thread-pool-size"));
         taskExecutor.setMaxPoolSize(threadPoolSize);
         taskExecutor.setCorePoolSize(threadPoolSize);

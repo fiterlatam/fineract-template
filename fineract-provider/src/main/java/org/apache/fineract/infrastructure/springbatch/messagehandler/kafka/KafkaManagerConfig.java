@@ -28,7 +28,7 @@ import org.apache.fineract.infrastructure.core.config.FineractProperties;
 import org.apache.fineract.infrastructure.springbatch.ContextualMessage;
 import org.apache.fineract.infrastructure.springbatch.OutputChannelInterceptor;
 import org.apache.fineract.infrastructure.springbatch.messagehandler.conditions.kafka.KafkaManagerCondition;
-import org.apache.kafka.common.serialization.IntegerSerializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.batch.integration.config.annotation.EnableBatchIntegration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -43,7 +43,6 @@ import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandle
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.messaging.support.GenericMessage;
 
 @Configuration
@@ -51,37 +50,40 @@ import org.springframework.messaging.support.GenericMessage;
 @Conditional(KafkaManagerCondition.class)
 public class KafkaManagerConfig {
 
+    private final DirectChannel outboundRequests;
+    private final OutputChannelInterceptor outputInterceptor;
+    private final FineractProperties fineractProperties;
+
     @Autowired
-    private DirectChannel outboundRequests;
-    @Autowired
-    private OutputChannelInterceptor outputInterceptor;
-    @Autowired
-    private FineractProperties fineractProperties;
+    public KafkaManagerConfig(DirectChannel outboundRequests, OutputChannelInterceptor outputInterceptor,
+            FineractProperties fineractProperties) {
+        this.outboundRequests = outboundRequests;
+        this.outputInterceptor = outputInterceptor;
+        this.fineractProperties = fineractProperties;
+    }
 
     @Bean
-    public ProducerFactory<Object, Object> producerFactory() {
-        Map<String, Object> props = new HashMap<>(
+    public ProducerFactory<String, String> producerFactory() {
+        final Map<String, Object> props = new HashMap<>(
                 fineractProperties.getRemoteJobMessageHandler().getKafka().getProducer().getExtraPropertiesMap());
         props.put(BOOTSTRAP_SERVERS_CONFIG, fineractProperties.getRemoteJobMessageHandler().getKafka().getBootstrapServers());
-        props.put(KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class);
-        props.put(VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        props.put(KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         return new DefaultKafkaProducerFactory<>(props);
     }
 
     @Bean
-    public KafkaTemplate<?, ?> kafkaTemplate(ProducerFactory<Object, Object> producerFactory) {
+    public KafkaTemplate<?, ?> kafkaTemplate(ProducerFactory<String, String> producerFactory) {
         return new KafkaTemplate<>(producerFactory);
     }
 
     @Bean
     public IntegrationFlow outboundFlow(KafkaTemplate<?, ?> kafkaTemplate) {
-        FineractProperties.KafkaTopicProperties topic = fineractProperties.getRemoteJobMessageHandler().getKafka().getTopic();
-
-        KafkaProducerMessageHandler<?, ?> messageHandler = new KafkaProducerMessageHandler<>(kafkaTemplate);
+        final FineractProperties.KafkaTopicProperties topic = fineractProperties.getRemoteJobMessageHandler().getKafka().getTopic();
+        final KafkaProducerMessageHandler<?, ?> messageHandler = new KafkaProducerMessageHandler<>(kafkaTemplate);
         messageHandler.setTopicExpression(new LiteralExpression(topic.getName()));
         messageHandler.setPartitionIdExpression(new FunctionExpression<GenericMessage<ContextualMessage>>(
                 message -> message.getPayload().getStepExecutionRequest().getStepExecutionId() % topic.getPartitions()));
-
         return IntegrationFlow.from(outboundRequests) //
                 .intercept(outputInterceptor) //
                 .log(LoggingHandler.Level.DEBUG) //

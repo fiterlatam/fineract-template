@@ -36,8 +36,12 @@ import org.springframework.kafka.core.KafkaAdmin;
 @Conditional(KafkaRemoteJobTopicAutoCreateCondition.class)
 public class KafkaJobTopicConfig {
 
+    private final FineractProperties fineractProperties;
+
     @Autowired
-    private FineractProperties fineractProperties;
+    public KafkaJobTopicConfig(final FineractProperties fineractProperties) {
+        this.fineractProperties = fineractProperties;
+    }
 
     @Bean
     public KafkaAdmin admin() {

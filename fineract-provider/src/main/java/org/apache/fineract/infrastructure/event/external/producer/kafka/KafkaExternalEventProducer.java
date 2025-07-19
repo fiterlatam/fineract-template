@@ -24,50 +24,64 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.config.FineractProperties;
+import org.apache.fineract.infrastructure.core.domain.FineractContext;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.event.external.exception.AcknowledgementTimeoutException;
 import org.apache.fineract.infrastructure.event.external.producer.ExternalEventProducer;
+import org.apache.fineract.infrastructure.jobs.service.JobName;
+import org.apache.fineract.infrastructure.springbatch.SpringBatchJobConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.SendResult;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
 @ConditionalOnProperty(value = "fineract.events.external.producer.kafka.enabled", havingValue = "true")
-@AllArgsConstructor
 public class KafkaExternalEventProducer implements ExternalEventProducer {
 
-    @Autowired
-    private KafkaTemplate<Long, byte[]> externalEventsKafkaTemplate;
+    private final KafkaTemplate<String, String> externalEventsKafkaTemplate;
+    private final FineractProperties fineractProperties;
+    private final FromJsonHelper fromApiJsonHelper;
 
     @Autowired
-    private FineractProperties fineractProperties;
+    public KafkaExternalEventProducer(final KafkaTemplate<String, String> externalEventsKafkaTemplate,
+            final FineractProperties fineractProperties, final FromJsonHelper fromApiJsonHelper) {
+        this.externalEventsKafkaTemplate = externalEventsKafkaTemplate;
+        this.fineractProperties = fineractProperties;
+        this.fromApiJsonHelper = fromApiJsonHelper;
+    }
 
     @Override
-    public void sendEvents(Map<Long, List<byte[]>> partitions) throws AcknowledgementTimeoutException {
-        FineractProperties.FineractExternalEventsProducerKafkaProperties kafkaProperties = fineractProperties.getEvents().getExternal()
-                .getProducer().getKafka();
-        String topicName = kafkaProperties.getTopic().getName();
-        List<CompletableFuture<SendResult<Long, byte[]>>> sendResults = new ArrayList<>();
+    public void sendEvents(final Map<String, List<String>> partitions) throws AcknowledgementTimeoutException {
+        final FineractProperties.FineractExternalEventsProducerKafkaProperties kafkaProperties = fineractProperties.getEvents()
+                .getExternal().getProducer().getKafka();
+        final String topicName = kafkaProperties.getTopic().getName();
+        final List<CompletableFuture<SendResult<String, String>>> sendResults = new ArrayList<>();
         measure(() -> {
-            Set<Long> keys = partitions.keySet();
-            for (Map.Entry<Long, List<byte[]>> entry : partitions.entrySet()) {
-                for (byte[] message : entry.getValue()) {
-                    sendResults.add(externalEventsKafkaTemplate.send(topicName, entry.getKey(), message));
+            for (final Map.Entry<String, List<String>> entry : partitions.entrySet()) {
+                for (final String message : entry.getValue()) {
+                    final Message<String> kafkaMessage = MessageBuilder.withPayload(message).setHeader(KafkaHeaders.TOPIC, topicName)
+                            .setHeader(KafkaHeaders.KEY, entry.getKey())
+                            .setHeader(JobName.class.getName(), JobName.APPLY_CHARGE_TO_OVERDUE_LOAN_INSTALLMENT.name()).build();
+                    sendResults.add(externalEventsKafkaTemplate.send(kafkaMessage));
                 }
             }
 
             try {
-                CompletableFuture<Void> allOf = CompletableFuture.allOf(sendResults.toArray(new CompletableFuture[0]));
+                final CompletableFuture<Void> allOf = CompletableFuture.allOf(sendResults.toArray(new CompletableFuture[0]));
                 allOf.get(kafkaProperties.getTimeoutInSeconds(), TimeUnit.SECONDS);
-            } catch (Exception exception) {
+            } catch (final Exception exception) {
                 throw new RuntimeException("Could not send the messages", exception);
             }
         }, timeTaken -> {
@@ -75,6 +89,36 @@ public class KafkaExternalEventProducer implements ExternalEventProducer {
                 int eventCount = partitions.values().stream().map(Collection::size).reduce(0, Integer::sum);
                 int msgPerSec = (int) (((double) eventCount / timeTaken.toMillis()) * 1000);
                 log.debug("Sent messages with {} msg/s", msgPerSec);
+            }
+        });
+    }
+
+    @Override
+    public void sendEvents(final String messageJson, final JobName jobName) throws AcknowledgementTimeoutException {
+        final FineractProperties.FineractExternalEventsProducerKafkaProperties kafkaProperties = fineractProperties.getEvents()
+                .getExternal().getProducer().getKafka();
+        final String topicName = kafkaProperties.getTopic().getName();
+        final String headerKeyValue = System.currentTimeMillis() + "-" + UUID.randomUUID();
+        final List<CompletableFuture<SendResult<String, String>>> sendResults = new ArrayList<>();
+        final FineractContext fineractContext = ThreadLocalContextUtil.getContext();
+        final String fineractContextJson = this.fromApiJsonHelper.toJsonString(fineractContext);
+        measure(() -> {
+            final Message<String> kafkaMessage = MessageBuilder.withPayload(messageJson).setHeader(KafkaHeaders.TOPIC, topicName)
+                    .setHeader(KafkaHeaders.KEY, headerKeyValue)
+                    .setHeader(SpringBatchJobConstants.KAFKA_FINERACT_JOB_ID_KEY, jobName.name())
+                    .setHeader(SpringBatchJobConstants.KAFKA_FINERACT_CONTEXT_KEY, fineractContextJson).build();
+            sendResults.add(externalEventsKafkaTemplate.send(kafkaMessage));
+            try {
+                final CompletableFuture<Void> allOf = CompletableFuture.allOf(sendResults.toArray(new CompletableFuture[0]));
+                allOf.get(kafkaProperties.getTimeoutInSeconds(), TimeUnit.SECONDS);
+            } catch (final Exception exception) {
+                throw new RuntimeException("Could not send the messages", exception);
+            }
+        }, timeTaken -> {
+            if (log.isDebugEnabled()) {
+                final double timeInSeconds = timeTaken.toMillis() / 1000.0;
+                log.debug("Sent message for job: {} with key: {}, topic: {}, time taken: {} seconds", jobName.name(), headerKeyValue,
+                        topicName, timeInSeconds);
             }
         });
     }
