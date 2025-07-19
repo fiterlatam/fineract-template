@@ -86,4 +86,13 @@ public enum JobName {
         return this.name;
     }
 
+    public static JobName fromString(final String name) {
+        for (final JobName jobName : JobName.values()) {
+            if (jobName.name().equalsIgnoreCase(name)) {
+                return jobName;
+            }
+        }
+        throw new IllegalArgumentException("No enum constant " + JobName.class.getCanonicalName() + "." + name);
+    }
+
 }

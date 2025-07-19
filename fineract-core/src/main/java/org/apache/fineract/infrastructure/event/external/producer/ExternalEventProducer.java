@@ -21,6 +21,7 @@ package org.apache.fineract.infrastructure.event.external.producer;
 import java.util.List;
 import java.util.Map;
 import org.apache.fineract.infrastructure.event.external.exception.AcknowledgementTimeoutException;
+import org.apache.fineract.infrastructure.jobs.service.JobName;
 
 public interface ExternalEventProducer {
 
@@ -32,5 +33,16 @@ public interface ExternalEventProducer {
      *            of external events belong to the same key, serialized into byte array
      * @throws AcknowledgementTimeoutException
      */
-    void sendEvents(Map<Long, List<byte[]>> partitions) throws AcknowledgementTimeoutException;
+    void sendEvents(Map<String, List<String>> partitions) throws AcknowledgementTimeoutException;
+
+    /**
+     * Sends the created ExternalEvents
+     *
+     * @param messageJson
+     *            is the JSON representation of the event to be sent
+     * @param jobName
+     *            is the name of the job that triggered this event
+     * @throws AcknowledgementTimeoutException
+     */
+    void sendEvents(String messageJson, JobName jobName) throws AcknowledgementTimeoutException;
 }

@@ -25,6 +25,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.ByteBuffer;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -82,6 +83,8 @@ class SendAsynchronousEventsTaskletTest {
     private ByteBufferConverter byteBufferConverter;
     @Mock
     private ConfigurationDomainService configurationDomainService;
+    @Mock
+    private ObjectMapper objectMapper;
     private SendAsynchronousEventsTasklet underTest;
     private RepeatStatus resultStatus;
 
@@ -94,8 +97,8 @@ class SendAsynchronousEventsTaskletTest {
         ThreadLocalContextUtil
                 .setBusinessDates(new HashMap<>(Map.of(BusinessDateType.BUSINESS_DATE, LocalDate.now(ZoneId.systemDefault()))));
         configureExternalEventsProducerReadBatchSizeProperty();
-        underTest = new SendAsynchronousEventsTasklet(fineractProperties, repository, eventProducer, messageFactory, byteBufferConverter,
-                configurationDomainService);
+        underTest = new SendAsynchronousEventsTasklet(fineractProperties, repository, eventProducer, configurationDomainService,
+                objectMapper);
     }
 
     @AfterEach
@@ -192,7 +195,7 @@ class SendAsynchronousEventsTaskletTest {
         resultStatus = underTest.execute(stepContribution, chunkContext);
         // then
         verify(messageFactory).createMessage(Mockito.any());
-        verify(eventProducer).sendEvents(Map.of(-1L, List.of(byteMsg)));
+        verify(eventProducer).sendEvents(Map.of("1", List.of(new String(byteMsg))));
         verify(repository).markEventsSent(Mockito.eq(events.stream().map(ExternalEventView::getId).toList()), Mockito.any());
         assertEquals(RepeatStatus.FINISHED, resultStatus);
     }

@@ -18,12 +18,11 @@
  */
 package org.apache.fineract.infrastructure.event.external.config;
 
-import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
-
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.fineract.infrastructure.core.config.FineractProperties;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -35,14 +34,19 @@ import org.springframework.kafka.core.KafkaAdmin;
 @Conditional(ExternalEventsKafkaTopicAutoCreateCondition.class)
 public class KafkaExternalEventTopicConfig {
 
+    private final FineractProperties fineractProperties;
+
     @Autowired
-    private FineractProperties fineractProperties;
+    public KafkaExternalEventTopicConfig(final FineractProperties fineractProperties) {
+        this.fineractProperties = fineractProperties;
+    }
 
     @Bean
     public KafkaAdmin admin() {
         Map<String, Object> props = new HashMap<>(
                 fineractProperties.getEvents().getExternal().getProducer().getKafka().getAdmin().getExtraPropertiesMap());
-        props.put(BOOTSTRAP_SERVERS_CONFIG, fineractProperties.getEvents().getExternal().getProducer().getKafka().getBootstrapServers());
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
+                fineractProperties.getEvents().getExternal().getProducer().getKafka().getBootstrapServers());
         return new KafkaAdmin(props);
     }
 

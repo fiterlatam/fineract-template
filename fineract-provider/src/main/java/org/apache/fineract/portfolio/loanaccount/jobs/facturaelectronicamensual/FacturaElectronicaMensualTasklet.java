@@ -79,6 +79,8 @@ public class FacturaElectronicaMensualTasklet implements Tasklet {
     @Override
     public RepeatStatus execute(@NotNull StepContribution contribution, @NotNull ChunkContext chunkContext) throws Exception {
         log.info("FacturaElectronicaMensualTasklet execute method called");
+        final int availableProcessors = Runtime.getRuntime().availableProcessors();
+        log.info("FacturaElectronicaMensualTasklet:: Available processors: {}", availableProcessors);
         final LocalDate businessLocalDate = DateUtils.getBusinessLocalDate();
         final YearMonth yearMonth = YearMonth.from(businessLocalDate);
         final LocalDate lastDayOfMonth = yearMonth.atEndOfMonth();

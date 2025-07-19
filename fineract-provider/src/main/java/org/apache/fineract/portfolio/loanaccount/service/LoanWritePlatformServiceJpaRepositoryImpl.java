@@ -131,7 +131,9 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.transaction
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanWrittenOffPostBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanWrittenOffPreBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
+import org.apache.fineract.infrastructure.event.external.producer.ExternalEventProducer;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
+import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.holiday.domain.Holiday;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepositoryWrapper;
@@ -318,6 +320,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final LoanCreditNoteRepository loanCreditNoteRepository;
     private final LoanAccrualPlatformService loanAccrualPlatformService;
     private final CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService;
+    private final ExternalEventProducer externalEventProducer;
 
     @PostConstruct
     public void registerForNotification() {
@@ -4161,10 +4164,20 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     @Override
-    public void recalculateInterestForMaximumLegalRate(List<LoanRescheduleData> loanLoanRescheduleDataList,
-            MaximumCreditRateConfigurationData maximumCreditRateConfigurationData) throws JobExecutionException {
+    public void recalculateInterestForMaximumLegalRate(final List<LoanRescheduleData> loanLoanRescheduleDataList) {
+        final String messageJson = this.fromApiJsonHelper.toJsonString(loanLoanRescheduleDataList);
+        final JobName jobName = JobName.RECALCULATE_LOAN_INTEREST_AFTER_MAXIMUM_LEGAL_RATE_CHANGE;
+        this.externalEventProducer.sendEvents(messageJson, jobName);
+    }
+
+    @Override
+    public void maximumLegalRateKafkaMessageHandler(String kafkaMessageJson) throws Exception {
+        final List<LoanRescheduleData> loanLoanRescheduleDataList = this.fromApiJsonHelper.fromJsonToPojoList(kafkaMessageJson,
+                LoanRescheduleData.class);
         log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Recalculating interest for maximum legal rate for {} loans",
                 loanLoanRescheduleDataList.size());
+        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
+                .retrieveMaximumCreditRateConfigurationData();
         final List<Throwable> exceptions = new ArrayList<>();
         final LocalDate appliedOnDate = maximumCreditRateConfigurationData.getAppliedOnDate();
         final BigDecimal maximumLegalAnnualNominalRateValue = maximumCreditRateConfigurationData.getAnnualNominalRate();
