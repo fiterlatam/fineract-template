@@ -3557,7 +3557,7 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             List<LoanRepaymentScheduleInstallment> processInstallmentsInstallments = new ArrayList<>();
             boolean isRevolvingLoan = loan.isRevolvingLoan();
 
-            if (!recalculationDetails.isEmpty() && !isRevolvingLoan) {
+            if (!recalculationDetails.isEmpty()) {
                 processInstallmentsInstallments = fetchRetainedInstallmentsForProgressiveLoans(loan.getRepaymentScheduleInstallments(),
                         rescheduleFrom);
             }
@@ -3601,7 +3601,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     loanApplicationTerms.setAdvancePrincipalAmountForInstallment(installment.getAdvancePrincipalAmount());
                     if (installment.recalculateEMI()) {
                         loanApplicationTerms.setFixedEmiAmount(null);
-                        updateFixedInstallmentAmount(mc, loanApplicationTerms, instalmentNumber, outstandingBalance);
+                        loanApplicationTerms.setFixedPrincipalAmount(null);
+                        updateAmortization(mc, loanApplicationTerms, periodNumber, outstandingBalance);
                         loanApplicationTerms.setRecalculateEMIForInstallment(installment.recalculateEMI());
                     } else {
                         // we need to reduce term if recalculateEMI is false

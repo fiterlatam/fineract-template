@@ -3816,9 +3816,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             }
 
-            if (isProgressiveLoan()
-                    && Boolean.FALSE.equals(this.getLoanProduct().getName().contains(LoanProductType.CREDITO_ROTATIVO.getCode()))
-                    && Boolean.FALSE.equals(this.getLoanProduct().getName().contains(LoanProductType.NANO_CREDITO.getCode()))) {
+            if (isProgressiveLoan()) {
                 reprocess = true;
             }
         }
