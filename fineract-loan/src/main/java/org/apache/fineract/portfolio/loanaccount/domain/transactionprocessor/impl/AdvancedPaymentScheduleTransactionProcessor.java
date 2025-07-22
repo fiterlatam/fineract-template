@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -69,6 +70,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
     public static final String GUARANTOR_PARAM = "guarantor";
     public static final String MANDATORY_INSURANCE_PARAM = "MandatoryInsurance";
     public static final String HONORARIOS_PARAM = "Honorarios";
+
+    // Track processing cycles for debugging
+    private static final Map<Long, Integer> transactionProcessingCycles = new ConcurrentHashMap<>();
 
     @Override
     public String getCode() {
@@ -564,25 +568,24 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             LoanTransaction loanTransaction, Money transactionAmountUnprocessed,
             LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping, Set<LoanCharge> chargesOfInstallment,
             Balances balances, LoanRepaymentScheduleInstallment.PaymentAction action) {
-        LocalDate transactionDate = loanTransaction.getTransactionDate();
-        Money zero = transactionAmountUnprocessed.zero();
-        final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
         Money portion;
-        if (loanTransaction.claimType() != null
-                && loanTransaction.claimType().equals(AdvancedPaymentScheduleTransactionProcessor.INSURANCE_PARAM)
-                && paymentAllocationType.getAllocationType().equals(AllocationType.MANDATORY_INSURANCE)) {
-            portion = transactionAmountUnprocessed.zero();
-        } else if (loanTransaction.claimType() != null
-                && loanTransaction.claimType().equals(AdvancedPaymentScheduleTransactionProcessor.GUARANTOR_PARAM)
-                && paymentAllocationType.getAllocationType().equals(AVAL)) {
-            portion = transactionAmountUnprocessed.zero();
-        } else if (loanTransaction.claimType() != null && paymentAllocationType.getAllocationType().equals(FEES)) {
+        Money zero = transactionAmountUnprocessed.zero();
+
+        if (currentInstallment == null) {
             portion = transactionAmountUnprocessed.zero();
         } else {
 
             LoanRepaymentScheduleInstallment.PaymentFunction paymentFunction = currentInstallment
                     .getPaymentFunction(paymentAllocationType.getAllocationType(), action);
-            portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction, loanTransaction);
+
+            // Safety mechanism: Log when processing penalty charges to help with debugging
+            boolean hasPenaltyCharges = chargesOfInstallment.stream().anyMatch(LoanCharge::isPenaltyCharge);
+            if (hasPenaltyCharges) {
+                log.info("Processing payment with penalty charges for loan {}. Transaction amount: {}", loanTransaction.getLoan().getId(),
+                        transactionAmountUnprocessed);
+            }
+
+            portion = paymentFunction.accept(loanTransaction.getTransactionDate(), transactionAmountUnprocessed, false, loanTransaction);
         }
 
         ChargesPaidByFunction chargesPaidByFunction = getChargesPaymentFunction(action);
@@ -986,11 +989,122 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             List<LoanTransactionToRepaymentScheduleMapping> transactionMappings, Set<LoanCharge> charges, Balances balances) {
         Money paidPortion;
         boolean exit = false;
+
+        // Enhanced safety mechanism to prevent infinite loops in advanced payment processing
+        int loopIterationCount = 0;
+        final int MAX_LOOP_ITERATIONS = 50; // Conservative limit for production
+        Money previousTransactionAmount = transactionAmountUnprocessed;
+        int consecutiveNoChangeCount = 0;
+        final int MAX_CONSECUTIVE_NO_CHANGE = 3;
+
+        // Enhanced debugging information
+        Long transactionId = loanTransaction.getId();
+        int cycleCount = 1; // Default to 1 if no tracking possible
+
+        if (transactionId != null) {
+            cycleCount = transactionProcessingCycles.getOrDefault(transactionId, 0) + 1;
+            transactionProcessingCycles.put(transactionId, cycleCount);
+        }
+
+        log.info(
+                "Starting processAllocationsHorizontally for loan {} with transaction amount: {}, installments: {}, payment types: {}, transaction ID: {}, cycle: {}",
+                loanTransaction.getLoan().getId(), transactionAmountUnprocessed, installments.size(), paymentAllocationTypes.size(),
+                transactionId, cycleCount);
+
         do {
+            loopIterationCount++;
+
+            // Enhanced safety check: Prevent infinite loops with detailed logging
+            if (loopIterationCount > MAX_LOOP_ITERATIONS) {
+                log.error(
+                        "Infinite loop detected in processAllocationsHorizontally for loan {}. "
+                                + "Loop iterations: {}, Transaction amount: {}, Exiting to prevent system hang. "
+                                + "Payment allocation types: {}, Installments count: {}, Unprocessed amount: {}",
+                        loanTransaction.getLoan().getId(), loopIterationCount, transactionAmountUnprocessed, paymentAllocationTypes,
+                        installments.size(), transactionAmountUnprocessed);
+
+                // Log detailed state information for debugging
+                log.error("Debug info - Installments state:");
+                for (int i = 0; i < Math.min(installments.size(), 5); i++) {
+                    LoanRepaymentScheduleInstallment inst = installments.get(i);
+                    log.error("  Installment {}: Outstanding={}, Paid={}, DueDate={}", inst.getInstallmentNumber(),
+                            inst.getTotalOutstanding(currency), inst.getTotalPaid(currency), inst.getDueDate());
+                }
+                break;
+            }
+
+            // Performance warning for high iteration counts
+            if (loopIterationCount > 15) {
+                log.warn(
+                        "High iteration count in processAllocationsHorizontally for loan {}. "
+                                + "Iterations: {}, Transaction amount: {}, This may indicate complex allocation rules.",
+                        loanTransaction.getLoan().getId(), loopIterationCount, transactionAmountUnprocessed);
+            }
+
+            // Enhanced safety check: Detect if no progress is being made with detailed logging
+            if (transactionAmountUnprocessed.equals(previousTransactionAmount)) {
+                consecutiveNoChangeCount++;
+                if (consecutiveNoChangeCount >= MAX_CONSECUTIVE_NO_CHANGE) {
+                    log.warn(
+                            "No progress detected in processAllocationsHorizontally for loan {}. "
+                                    + "Consecutive iterations without change: {}, Exiting to prevent infinite loop. "
+                                    + "Transaction amount: {}, Loop iteration: {}",
+                            loanTransaction.getLoan().getId(), consecutiveNoChangeCount, transactionAmountUnprocessed, loopIterationCount);
+
+                    // Enhanced debugging: Log detailed state information
+                    log.warn("Debug info - Payment allocation state:");
+                    log.warn("  Transaction amount unprocessed: {}", transactionAmountUnprocessed);
+                    log.warn("  Payment allocation types: {}", paymentAllocationTypes);
+                    log.warn("  Installments count: {}", installments.size());
+
+                    // Log installment details for debugging
+                    int overdueCount = 0;
+                    int dueCount = 0;
+                    int futureCount = 0;
+                    for (LoanRepaymentScheduleInstallment inst : installments) {
+                        if (loanTransaction.isAfter(inst.getDueDate()) && inst.isNotFullyPaidOff()) {
+                            overdueCount++;
+                        } else if (loanTransaction.isOnOrBetween(inst.getFromDate(), inst.getDueDate()) && inst.isNotFullyPaidOff()) {
+                            dueCount++;
+                        } else if (inst.isNotFullyPaidOff()) {
+                            futureCount++;
+                        }
+                    }
+                    log.warn("  Installment breakdown - Overdue: {}, Due: {}, Future: {}", overdueCount, dueCount, futureCount);
+
+                    // Log outstanding amounts for first few installments
+                    for (int i = 0; i < Math.min(installments.size(), 3); i++) {
+                        LoanRepaymentScheduleInstallment inst = installments.get(i);
+                        if (inst.isNotFullyPaidOff()) {
+                            log.warn("  Installment {}: Outstanding={}, DueDate={}, IsOverdue={}", inst.getInstallmentNumber(),
+                                    inst.getTotalOutstanding(currency), inst.getDueDate(), loanTransaction.isAfter(inst.getDueDate()));
+                        }
+                    }
+                    break;
+                }
+            } else {
+                // Check if there's minimal progress (for rounding tolerance)
+                Money difference = previousTransactionAmount.minus(transactionAmountUnprocessed);
+                if (difference.isGreaterThanZero() && difference.isLessThan(Money.of(currency, BigDecimal.valueOf(0.01)))) {
+                    log.info("Minimal progress detected in payment allocation for loan {}: {} (likely rounding)",
+                            loanTransaction.getLoan().getId(), difference);
+                }
+                consecutiveNoChangeCount = 0;
+                previousTransactionAmount = transactionAmountUnprocessed;
+            }
+
             if (transactionAmountUnprocessed.isZero()) {
                 exit = true;
                 continue;
             }
+
+            // Enhanced logging for debugging payment allocation issues
+            if (loopIterationCount % 10 == 0) {
+                log.info("Payment allocation iteration {} for loan {}: unprocessed amount = {}, installments not fully paid = {}",
+                        loopIterationCount, loanTransaction.getLoan().getId(), transactionAmountUnprocessed,
+                        installments.stream().filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff).count());
+            }
+
             LoanRepaymentScheduleInstallment oldestPastDueInstallment = installments.stream()
                     .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff).filter(e -> loanTransaction.isAfter(e.getDueDate()))
                     .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
@@ -1247,7 +1361,41 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             LoanPaymentAllocationRule paymentAllocationRule, List<LoanTransactionToRepaymentScheduleMapping> transactionMappings,
             Set<LoanCharge> charges, Balances balances) {
         int firstNormalInstallmentNumber = LoanRepaymentScheduleProcessingWrapper.fetchFirstNormalInstallmentNumber(installments);
+
+        // Safety mechanism to prevent infinite loops in vertical processing
+        int verticalLoopCount = 0;
+        final int MAX_VERTICAL_LOOP_ITERATIONS = 50;
+        Money previousTransactionAmount = transactionAmountUnprocessed;
+        int consecutiveNoChangeCount = 0;
+        final int MAX_CONSECUTIVE_NO_CHANGE = 3;
+
         for (PaymentAllocationType paymentAllocationType : paymentAllocationRule.getAllocationTypes()) {
+            verticalLoopCount++;
+
+            // Safety check: Prevent infinite loops
+            if (verticalLoopCount > MAX_VERTICAL_LOOP_ITERATIONS) {
+                log.error(
+                        "Infinite loop detected in processPeriodsVertically for loan {}. "
+                                + "Loop iterations: {}, Transaction amount: {}, Exiting to prevent system hang.",
+                        loanTransaction.getLoan().getId(), verticalLoopCount, transactionAmountUnprocessed);
+                break;
+            }
+
+            // Safety check: Detect if no progress is being made
+            if (transactionAmountUnprocessed.equals(previousTransactionAmount)) {
+                consecutiveNoChangeCount++;
+                if (consecutiveNoChangeCount >= MAX_CONSECUTIVE_NO_CHANGE) {
+                    log.warn(
+                            "No progress detected in processPeriodsVertically for loan {}. "
+                                    + "Consecutive iterations without change: {}, Exiting to prevent infinite loop.",
+                            loanTransaction.getLoan().getId(), consecutiveNoChangeCount);
+                    break;
+                }
+            } else {
+                consecutiveNoChangeCount = 0;
+                previousTransactionAmount = transactionAmountUnprocessed;
+            }
+
             if (transactionAmountUnprocessed.isZero()) {
                 break;
             }
@@ -1374,4 +1522,5 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         private Money aggregatedInterestPortion;
         private Money aggregatedPenaltyChargesPortion;
     }
+
 }
