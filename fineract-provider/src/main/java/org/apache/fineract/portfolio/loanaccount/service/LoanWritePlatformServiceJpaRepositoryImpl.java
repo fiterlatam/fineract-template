@@ -1356,7 +1356,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         BigDecimal totalExpectedRepayment = loan.getLoanSummary().getTotalExpectedRepayment();
-        final LoanStatus loanStatus = loan.getStatus();
         final boolean isBankChannel = channelData.getName().equalsIgnoreCase(LoanWritePlatformServiceJpaRepositoryImpl.BANCOS_PARAM)
                 || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
 
@@ -1372,7 +1371,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         // we also want to validate that the repayment amount is not greater than the outstanding amount
 
-        if ((loanStatus.isOverpaid() && !isBankChannel)) {
+        if (loan.getStatus().isOverpaid() && !isBankChannel) {
             final String totalOverpaid = Money.of(loan.getCurrency(), loan.getTotalOverpaid()).toString();
             handleOverPaidException(totalOverpaid);
         }
@@ -1396,6 +1395,33 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         if (loan.getStatus().isClosed()) {
             createCancellationNoveltyNews(loan, loan.getClosedOnDate());
+        }
+
+        if (loan.getStatus().isOverpaid() && !loan.isRevolvingLoan()) {
+            final PortfolioAccountData linkedSavingsAccountData = this.accountAssociationsReadPlatformService
+                    .retriveLoanLinkedAssociation(loanId);
+            final SavingsAccount fromSavingsAccount = null;
+            final boolean isRegularTransaction = true;
+            final boolean isExceptionForBalanceCheck = false;
+            final Locale locale = command.extractLocale();
+            final DateTimeFormatter fmt = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(locale);
+
+            if (linkedSavingsAccountData == null) {
+                // a linked savings account is mandatory
+                throw new GeneralPlatformDomainRuleException("error.msg.loan.channel.repayment.overpaid.linked.savings.account.not.present",
+                        "A linked savings account need to be set for non-revolving overpaid loans");
+            }
+
+            Money overPaidMoney = loan.getTotalOverpaidAsMoney();
+
+            final AccountTransferDTO accountTransferDTO = new AccountTransferDTO(transactionDate, overPaidMoney.getAmount(),
+                    PortfolioAccountType.LOAN, PortfolioAccountType.SAVINGS, loan.getId(), linkedSavingsAccountData.getId(),
+                    "From loan " + loan.getAccountNumber() + " to savings " + linkedSavingsAccountData.getAccountNo()
+                            + " Overpaid transfer ",
+                    locale, fmt, null, null, AccountTransferType.ACCOUNT_TRANSFER.getValue(), null, null,
+                    LoanTransactionType.REFUND.getValue(), null, null, ExternalId.empty(), null, null, fromSavingsAccount,
+                    isRegularTransaction, isExceptionForBalanceCheck);
+            this.accountTransfersWritePlatformService.transferFunds(accountTransferDTO);
         }
 
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()) //
