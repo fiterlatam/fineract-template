@@ -47,6 +47,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
@@ -1340,6 +1341,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         }
     }
 
+    @Slf4j
     private static final class LoanScheduleResultSetExtractor implements ResultSetExtractor<LoanScheduleData> {
 
         private static final String LOAN_REPAYMENT_SCHEDULE_QUERY = """
@@ -1372,6 +1374,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     ls.is_down_payment as isDownPayment,
                     ls.advance_principal_amount as advancePrincipalAmount,
                     life_insurance_charge_portion as lifeInsuranceChargePortion,
+                    mpl.name as loanProductName,
+                    mcv.code_value as loanProductType,
                     CASE
                         WHEN LAG(ls.obligations_met_on_date) OVER (PARTITION BY ls.loan_id ORDER BY ls.installment) IS NOT NULL
                             THEN true
@@ -1379,6 +1383,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         END as previousInstallmentPaid
                 FROM
                     m_loan_repayment_schedule ls
+                    INNER JOIN m_loan l ON l.id = ls.loan_id
+                    INNER JOIN m_product_loan mpl ON mpl.id = l.product_id
+                    LEFT JOIN m_code_value mcv ON mcv.id = mpl.product_type
                 """;
 
         private final CurrencyData currency;
@@ -1578,9 +1585,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(principalDue);
                 }
                 BigDecimal advancePrincipalAmount = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "advancePrincipalAmount");
+
                 if (this.outstandingLoanPrincipalBalance.compareTo(BigDecimal.ZERO) > 0) {
-                    this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.subtract(advancePrincipalAmount);
-                    outstandingPrincipalBalanceOfLoan = outstandingPrincipalBalanceOfLoan.subtract(advancePrincipalAmount);
+                    outstandingPrincipalBalanceOfLoan = handleAdvancePrincipalAmountForRevolvingLoan(rs, advancePrincipalAmount,
+                            outstandingPrincipalBalanceOfLoan);
                 }
                 final boolean isDownPayment = rs.getBoolean("isDownPayment");
 
@@ -1645,6 +1653,66 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         private boolean canAddDisbursementData(DisbursementData data, boolean isDueForDisbursement, boolean excludePastUnDisbursed) {
             return (!excludePastUnDisbursed || data.isDisbursed() || !DateUtils.isBeforeBusinessDate(data.disbursementDate()))
                     && isDueForDisbursement;
+        }
+
+        /**
+         * Handles advance principal amount calculation for revolving loans. For revolving loans, advance principal
+         * amount is already included in principalPaid, so we should not subtract it again from the outstanding balance
+         * to avoid double-counting.
+         *
+         * @param rs
+         *            the result set containing loan data
+         * @param advancePrincipalAmount
+         *            the advance principal amount to process
+         * @param outstandingPrincipalBalanceOfLoan
+         *            the current outstanding principal balance
+         * @return the updated outstanding principal balance
+         * @throws SQLException
+         *             if there's an error reading from the result set
+         */
+        private BigDecimal handleAdvancePrincipalAmountForRevolvingLoan(ResultSet rs, BigDecimal advancePrincipalAmount,
+                BigDecimal outstandingPrincipalBalanceOfLoan) throws SQLException {
+
+            // For revolving loans, advance principal amount is already included in principalPaid
+            // so we should not subtract it again from the outstanding balance
+            boolean isRevolvingLoan = false;
+            String loanProductName = null;
+            String loanProductType = null;
+
+            try {
+                // Get loan product information to check if it's a revolving loan
+                loanProductName = rs.getString("loanProductName");
+                loanProductType = rs.getString("loanProductType");
+
+                // Log the product information for debugging
+                log.info("Processing advance principal amount - Product Name: {}, Product Type: {}, Advance Amount: {}", loanProductName,
+                        loanProductType, advancePrincipalAmount);
+
+                // Check if it's a revolving loan based on product type (more reliable than name)
+                if (loanProductType != null && loanProductType.equalsIgnoreCase("Crédito rotativo")) {
+                    isRevolvingLoan = true;
+                    log.info("Identified as revolving loan based on product type: {}", loanProductType);
+                } else if (loanProductName != null && loanProductName.toLowerCase().contains("crédito rotativo")) {
+                    // Fallback to name check for backward compatibility
+                    isRevolvingLoan = true;
+                    log.info("Identified as revolving loan based on product name: {}", loanProductName);
+                }
+            } catch (SQLException e) {
+                log.warn("Error reading loan product information: {}", e.getMessage());
+                // If we can't determine loan type, proceed with original logic
+            }
+
+            if (!isRevolvingLoan) {
+                // For non-revolving loans, subtract advance principal amount as before
+                this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.subtract(advancePrincipalAmount);
+                log.info("Non-revolving loan - Subtracting advance principal amount: {}", advancePrincipalAmount);
+                return outstandingPrincipalBalanceOfLoan.subtract(advancePrincipalAmount);
+            }
+
+            // For revolving loans, advance principal amount is already accounted for in principalPaid
+            // so we don't subtract it again to avoid double-counting
+            log.info("Revolving loan - Skipping advance principal amount subtraction to avoid double-counting");
+            return outstandingPrincipalBalanceOfLoan;
         }
 
     }

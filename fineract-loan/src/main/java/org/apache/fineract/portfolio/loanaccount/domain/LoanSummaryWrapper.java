@@ -36,13 +36,28 @@ public final class LoanSummaryWrapper {
     public Money calculateTotalPrincipalRepaid(final List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments,
             final MonetaryCurrency currency) {
         Money total = Money.zero(currency);
+
+        // Check if this is a revolving loan by looking at the first installment's loan
+        boolean isRevolvingLoan = false;
+        if (!repaymentScheduleInstallments.isEmpty()) {
+            LoanRepaymentScheduleInstallment firstInstallment = repaymentScheduleInstallments.get(0);
+            if (firstInstallment.getLoan() != null) {
+                isRevolvingLoan = firstInstallment.getLoan().isRevolvingLoan();
+            }
+        }
+
         for (final LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
             total = total.plus(installment.getPrincipalCompleted(currency));
-            if (installment.isLastInstallment(repaymentScheduleInstallments) && installment.isOverpaidInAdvance(currency)
-                    && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
-                continue;
-            } else {
-                total = total.plus(installment.getAdvancePrincipalAmount());
+
+            // For revolving loans, advance principal amount is already included in principalCompleted
+            // so we don't add it again to avoid double-counting
+            if (!isRevolvingLoan) {
+                if (installment.isLastInstallment(repaymentScheduleInstallments) && installment.isOverpaidInAdvance(currency)
+                        && installment.getAdvancePrincipalAmount().compareTo(BigDecimal.ZERO) > 0) {
+                    continue;
+                } else {
+                    total = total.plus(installment.getAdvancePrincipalAmount());
+                }
             }
         }
         return total;

@@ -59,6 +59,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.Abs
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.MoneyHolder;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleProcessingType;
 import org.apache.fineract.portfolio.loanproduct.domain.*;
+import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -1302,6 +1303,28 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                         loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
                                                 inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
                                                         .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
+
+                                                // Fix for revolving loans: Update principal_completed_derived for
+                                                // advanced payments
+                                                if (loanTransaction.getLoan().isRevolvingLoan()) {
+                                                    // Use the dedicated method for revolving loan advanced payments
+                                                    inAdvanceInstallment.handleRevolvingLoanAdvancedPayment(currency,
+                                                            transactionAmountUnprocessed, loanTransaction.getTransactionDate(),
+                                                            loanTransaction);
+
+                                                    // Enhanced logging for different amortization types
+                                                    AmortizationMethod amortizationMethod = loanTransaction.getLoan()
+                                                            .getLoanProductRelatedDetail().getAmortizationMethod();
+                                                    log.info("Advanced payment processed for revolving loan {} (Amortization: {}). "
+                                                            + "Installment: {}, Principal completed updated by: {}, Advanced amount: {}",
+                                                            loanTransaction.getLoan().getId(),
+                                                            amortizationMethod.isEqualPrincipal() ? "Equal Principal"
+                                                                    : "Equal Installments",
+                                                            inAdvanceInstallment.getInstallmentNumber(),
+                                                            transactionAmountUnprocessed.getAmount(),
+                                                            transactionAmountUnprocessed.getAmount());
+                                                }
+
                                                 inAdvanceInstallment.setRecalculateEMI(loanTransaction.recalculateEMI());
                                                 LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
                                                         transactionMappings, loanTransaction, inAdvanceInstallment, currency);
