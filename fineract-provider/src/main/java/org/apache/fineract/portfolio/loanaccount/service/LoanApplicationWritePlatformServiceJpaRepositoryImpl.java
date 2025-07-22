@@ -2084,8 +2084,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             }
 
             // replace original payload´s charges list with the dynamic ones
-            loan.getLoanCharges().clear();
-            loan.getLoanCharges().addAll(removedMiPymeList);
+            if (loan.getLoanCharges() != null) {
+                loan.getLoanCharges().clear();
+                loan.getLoanCharges().addAll(removedMiPymeList);
+            }
 
             loan.recalculateAllCharges();
 
