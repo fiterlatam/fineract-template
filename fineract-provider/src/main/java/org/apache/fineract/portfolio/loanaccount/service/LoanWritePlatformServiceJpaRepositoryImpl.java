@@ -1309,6 +1309,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         // Validate all overpayment rules (channel-based and product-specific)
         LoanTransactionData foreclosureData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(loanId, transactionDate, false);
+
+        // Log the foreclosure data for debugging
+        log.info("Foreclosure validation - Loan ID: {}, Transaction Amount: {}, Foreclosure Amount: {}, Channel: {}", loanId,
+                transactionAmount, foreclosureData.getAmount(), channelData.getName());
+
         this.loanOverpaymentValidationService.validateOverpayment(loan, transactionAmount, foreclosureData.getAmount(), channelData);
 
         // Validate advanced payment rules (product-specific)
