@@ -534,6 +534,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "migrar_cli_nroid")
     private String cedula;
 
+    @Column(name = "block_status_id")
+    private Long blockStatusId;
+
     ///////////////
 
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
@@ -8671,4 +8674,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return this.getRepaymentScheduleInstallments().stream().anyMatch(LoanRepaymentScheduleInstallment::hasPenalties);
     }
 
+    public void updateBlockingReason(Long blockStatusId) {
+        this.blockStatusId = blockStatusId;
+    }
+
+    public Long getBlockStatusId() {
+        return blockStatusId;
+    }
 }
