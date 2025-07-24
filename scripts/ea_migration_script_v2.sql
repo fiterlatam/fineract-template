@@ -2040,15 +2040,23 @@ from tmp_loan_charges tlc
 join tmp_loanaccount tl
 on tlc.loankey = tl."ENCODEDKEY"
 join m_loan ml on tl."ID" = ml.external_id
-where mlc.charge_id = 54 and mlc.loan_id = ml.id and tlc."NAME" like '%4SMMLV%';
+where mlc.charge_id = 54 and mlc.loan_id = ml.id and (tlc."NAME" like '%4SMMLV%' or tlc."NAME" like '%MiPymeMes%');
 
 	
+--UPDATE m_loan AS l
+--SET number_of_repayments = tmpl."REPAYMENTINSTALLMENTS" 
+--FROM tmp_loanaccount tmpl, m_product_loan mpl
+--WHERE tmpl."ID" = l.account_no
+--  AND mpl.id = l.product_id
+--  AND mpl.allow_multiple_disbursals = true;
+ 
 UPDATE m_loan AS l
-SET number_of_repayments = tmpl."REPAYMENTINSTALLMENTS" 
-FROM tmp_loanaccount tmpl, m_product_loan mpl
+SET number_of_repayments = ROUND(100 / NULLIF(tpps."PERCENTAGE", 0))
+FROM tmp_loanaccount tmpl, m_product_loan mpl, tmp_principalpaymentaccountsettings tpps
 WHERE tmpl."ID" = l.account_no
   AND mpl.id = l.product_id
-  AND mpl.allow_multiple_disbursals = true;
+  AND mpl.allow_multiple_disbursals = true
+  AND tpps."ENCODEDKEY" = tmpl."PRINCIPALPAYMENTSETTINGSKEY";
  
  select * from m_loan where product_id in (12,13,14);
 
@@ -2366,6 +2374,9 @@ left join tmp_customfieldvalue tc_cuenta on tc_cuenta."ENCODEDKEY" = tl."ENCODED
 
 
 -- ----- End Custom Fields ---------------------
+
+
+select * from m_loan_charge mlc 
 
 
 
