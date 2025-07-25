@@ -414,4 +414,6 @@
     <include file="parts/20241201000000_add_reduce_term_column.xml" relativeToChangelogFile="true"/>
     <include file="parts/20241201000001_add_reduce_term_to_loan_repayment_schedule.xml" relativeToChangelogFile="true"/>
     <include file="parts/202507022000002000_add_orig_charge_name_to_loan_charge.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202507252000001000_EA_418_update_baseline_configuration.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202507252000002000_EA_418_update_baseline_holidays.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
