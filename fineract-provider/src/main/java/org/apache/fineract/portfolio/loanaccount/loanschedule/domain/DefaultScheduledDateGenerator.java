@@ -162,8 +162,11 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
                                                                                                   // week
 
         // Special case for daily loans - skip weekend check if we want exactly 30 installments
-        boolean isDailyLoanWithExactlyInstallments = loanApplicationTerms.getRepaymentPeriodFrequencyType() == PeriodFrequencyType.DAYS
-                && loanApplicationTerms.getRepaymentEvery() == 1;
+        // EA-410: Relax this validation for daily loans as EA expects holidays to be respected even for daily loans
+        // boolean isDailyLoanWithExactlyInstallments = loanApplicationTerms.getRepaymentPeriodFrequencyType() ==
+        // PeriodFrequencyType.DAYS
+        // && loanApplicationTerms.getRepaymentEvery() == 1;
+        boolean isDailyLoanWithExactlyInstallments = false;
 
         // If Workings days are not seven day week AND not our special daily loan case
         if (!isSevenDaysWeek && !isDailyLoanWithExactlyInstallments) {
