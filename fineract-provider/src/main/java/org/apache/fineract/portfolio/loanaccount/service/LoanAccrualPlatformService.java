@@ -34,4 +34,6 @@ public interface LoanAccrualPlatformService {
 
     void persistDailyInterestAccrual(Long loanId, LocalDate accrualDate);
 
+    void addTransactionAccrualsAfterLoanClosure(Long loanId, LocalDate accrualDate, final Long minimumDaysInArrearsToSuspendLoanAccount);
+
 }
