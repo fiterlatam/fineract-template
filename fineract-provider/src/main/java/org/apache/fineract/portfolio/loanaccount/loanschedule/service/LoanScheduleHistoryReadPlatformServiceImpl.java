@@ -39,6 +39,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleD
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanSchedulePeriodData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleType;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformServiceImpl;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -138,9 +139,11 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
                             + "    + COALESCE(ml.interest_amount, 0) - COALESCE(ml.interest_completed_derived, 0) - COALESCE(ml.interest_writtenoff_derived, 0) - COALESCE(ml.interest_waived_derived, 0) "
                             + "    + COALESCE(ml.fee_charges_amount, 0) - COALESCE(ml.fee_charges_completed_derived, 0) - COALESCE(ml.fee_charges_writtenoff_derived, 0) - COALESCE(ml.fee_charges_waived_derived, 0) "
                             + "    + COALESCE(ml.penalty_charges_amount, 0) - COALESCE(ml.penalty_charges_completed_derived, 0) - COALESCE(ml.penalty_charges_writtenoff_derived, 0) - COALESCE(ml.penalty_charges_waived_derived, 0) "
-                            + "    AS outstanding_balance_for_period");
-
+                            + "    AS outstanding_balance_for_period,");
+            stringBuilder.append(" mpl.name as productName ");
             stringBuilder.append(" from m_loan_repayment_schedule_history ls ");
+            stringBuilder.append(" JOIN m_loan l ON l.id = ls.loan_id ");
+            stringBuilder.append(" JOIN m_product_loan mpl ON mpl.id = l.product_id");
             stringBuilder.append(" LEFT JOIN m_loan_repayment_schedule ml ON ml.loan_id = ls.loan_id ");
             stringBuilder.append(" AND ml.fromdate = ls.fromdate AND ml.duedate = ls.duedate ");
 
@@ -190,6 +193,8 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
                 final Integer period = JdbcSupport.getInteger(rs, "period");
                 LocalDate fromDate = JdbcSupport.getLocalDate(rs, "fromDate");
                 final LocalDate dueDate = JdbcSupport.getLocalDate(rs, "dueDate");
+                final String productName = rs.getString("productName");
+                final boolean considerCutOff = productName.equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode());
                 if (disbursementData != null) {
                     BigDecimal principal = BigDecimal.ZERO;
                     for (DisbursementData data : disbursementData) {
@@ -199,7 +204,7 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
                                     data.getPrincipal(), this.totalFeeChargesDueAtDisbursement, data.isDisbursed(), null);
                             periods.add(periodData);
                             this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(data.getPrincipal());
-                        } else if (data.isDueForDisbursement(loanScheduleType, fromDate, dueDate)
+                        } else if (data.isDueForDisbursement(loanScheduleType, fromDate, dueDate, considerCutOff)
                                 && this.outstandingLoanPrincipalBalance.compareTo(BigDecimal.ZERO) > 0) {
                             principal = principal.add(data.getPrincipal());
                             final LoanSchedulePeriodData periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(),
