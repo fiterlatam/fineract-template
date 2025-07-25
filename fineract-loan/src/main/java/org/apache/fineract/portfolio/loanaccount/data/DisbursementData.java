@@ -93,9 +93,10 @@ public final class DisbursementData implements Comparable<DisbursementData> {
         return DateUtils.compare(obj.expectedDisbursementDate, this.expectedDisbursementDate);
     }
 
-    public boolean isDueForDisbursement(LoanScheduleType loanScheduleType, final LocalDate fromDate, final LocalDate toDate) {
+    public boolean isDueForDisbursement(LoanScheduleType loanScheduleType, final LocalDate fromDate, final LocalDate toDate,
+            final boolean considerCutOff) {
         // EA-359: consider the cut-off date which is 15 days to repayment (17 to cater for weekends)
-        final int daysToCutOff = 17;
+        final int daysToCutOff = considerCutOff ? 17 : 0;
         final LocalDate dueDate = disbursementDate().plusDays(daysToCutOff);
         return switch (loanScheduleType) {
             case CUMULATIVE -> occursOnDayFromAndUpToAndIncluding(fromDate, toDate, dueDate);

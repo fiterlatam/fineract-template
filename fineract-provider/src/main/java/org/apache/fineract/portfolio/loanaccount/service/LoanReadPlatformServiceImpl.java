@@ -123,6 +123,7 @@ import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
@@ -1372,13 +1373,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     ls.is_down_payment as isDownPayment,
                     ls.advance_principal_amount as advancePrincipalAmount,
                     life_insurance_charge_portion as lifeInsuranceChargePortion,
-                    CASE
-                        WHEN LAG(ls.obligations_met_on_date) OVER (PARTITION BY ls.loan_id ORDER BY ls.installment) IS NOT NULL
-                            THEN true
-                        ELSE false
-                        END as previousInstallmentPaid
+                    mpl.name as productName
                 FROM
                     m_loan_repayment_schedule ls
+                JOIN m_loan ml ON ml.id = ls.loan_id
+                JOIN m_product_loan mpl ON mpl.id = ml.product_id
                 """;
 
         private final CurrencyData currency;
@@ -1469,12 +1468,13 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                 final LocalDate dueDate = JdbcSupport.getLocalDate(rs, LoanReadPlatformServiceImpl.DUE_DATE_PARAM);
                 final LocalDate obligationsMetOnDate = JdbcSupport.getLocalDate(rs, "obligationsMetOnDate");
                 final boolean complete = rs.getBoolean("complete");
-                final boolean previousInstallmentPaid = rs.getBoolean("previousInstallmentPaid");
                 final boolean isAdditional = rs.getBoolean("isAdditional");
+                final String productName = rs.getString("productName");
+                final boolean considerCutOff = productName.equalsIgnoreCase(LoanProductType.CREDITO_ROTATIVO.getCode());
                 BigDecimal disbursedAmount = BigDecimal.ZERO;
                 if (!isAdditional) {
                     disbursedAmount = processDisbursementData(loanScheduleType, disbursementData, fromDate, dueDate, disbursementPeriodIds,
-                            disbursementChargeAmount, waivedChargeAmount, periods, previousInstallmentPaid);
+                            disbursementChargeAmount, waivedChargeAmount, periods, considerCutOff);
 
                 }
                 // Add the Charge back or Credits to the initial amount to avoid negative balance
@@ -1614,10 +1614,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         @SuppressWarnings({ "squid:S107" })
         private BigDecimal processDisbursementData(LoanScheduleType loanScheduleType, Collection<DisbursementData> disbursementData,
                 LocalDate fromDate, LocalDate dueDate, Set<Long> disbursementPeriodIds, BigDecimal disbursementChargeAmount,
-                BigDecimal waivedChargeAmount, List<LoanSchedulePeriodData> periods, boolean previousInstallmentPaid) {
+                BigDecimal waivedChargeAmount, List<LoanSchedulePeriodData> periods, boolean considerCutoff) {
             BigDecimal disbursedAmount = BigDecimal.ZERO;
             for (final DisbursementData data : disbursementData) {
-                boolean isDueForDisbursement = data.isDueForDisbursement(loanScheduleType, fromDate, dueDate);
+                boolean isDueForDisbursement = data.isDueForDisbursement(loanScheduleType, fromDate, dueDate, considerCutoff);
                 boolean isDisbursementAllowed = ((fromDate.equals(this.disbursement.disbursementDate())
                         && data.disbursementDate().equals(fromDate))
                         || (fromDate.equals(dueDate) && data.disbursementDate().equals(fromDate))
