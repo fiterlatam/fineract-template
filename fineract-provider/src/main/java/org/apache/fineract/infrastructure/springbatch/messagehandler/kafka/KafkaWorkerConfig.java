@@ -49,22 +49,22 @@ public class KafkaWorkerConfig {
     }
 
     @Bean
-    public ConsumerFactory<Integer, Object> consumerFactory() {
-        FineractRemoteJobMessageHandlerKafkaProperties kafkaProperties = fineractProperties.getRemoteJobMessageHandler().getKafka();
-        Map<String, Object> props = new HashMap<>(kafkaProperties.getConsumer().getExtraPropertiesMap());
+    public ConsumerFactory<String, String> consumerFactory() {
+        final FineractRemoteJobMessageHandlerKafkaProperties kafkaProperties = fineractProperties.getRemoteJobMessageHandler().getKafka();
+        final Map<String, Object> props = new HashMap<>(kafkaProperties.getConsumer().getExtraPropertiesMap());
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         props.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaProperties.getConsumer().getGroupId());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
         return new DefaultKafkaConsumerFactory<>(props);
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<Integer, Object> kafkaListenerContainerFactory(
-            ConsumerFactory<Integer, Object> consumerFactory) {
-        ConcurrentKafkaListenerContainerFactory<Integer, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
+            ConsumerFactory<String, String> consumerFactory) {
+        final ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
         return factory;

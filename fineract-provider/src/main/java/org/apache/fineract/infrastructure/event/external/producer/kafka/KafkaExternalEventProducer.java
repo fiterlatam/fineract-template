@@ -35,9 +35,7 @@ import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.event.external.exception.AcknowledgementTimeoutException;
 import org.apache.fineract.infrastructure.event.external.producer.ExternalEventProducer;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
-import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.springbatch.SpringBatchJobConstants;
-import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -55,16 +53,13 @@ public class KafkaExternalEventProducer implements ExternalEventProducer {
     private final KafkaTemplate<String, String> externalEventsKafkaTemplate;
     private final FineractProperties fineractProperties;
     private final FromJsonHelper fromApiJsonHelper;
-    protected final PlatformSecurityContext platformSecurityContext;
 
     @Autowired
     public KafkaExternalEventProducer(final KafkaTemplate<String, String> externalEventsKafkaTemplate,
-            final FineractProperties fineractProperties, final FromJsonHelper fromApiJsonHelper,
-            final PlatformSecurityContext platformSecurityContext) {
+            final FineractProperties fineractProperties, final FromJsonHelper fromApiJsonHelper) {
         this.externalEventsKafkaTemplate = externalEventsKafkaTemplate;
         this.fineractProperties = fineractProperties;
         this.fromApiJsonHelper = fromApiJsonHelper;
-        this.platformSecurityContext = platformSecurityContext;
     }
 
     @Override
@@ -107,8 +102,6 @@ public class KafkaExternalEventProducer implements ExternalEventProducer {
         final List<CompletableFuture<SendResult<String, String>>> sendResults = new ArrayList<>();
         final FineractContext fineractContext = ThreadLocalContextUtil.getContext();
         final String fineractContextJson = this.fromApiJsonHelper.toJsonString(fineractContext);
-        final AppUser authenticatedUser = this.platformSecurityContext.authenticatedUser();
-
         measure(() -> {
             final Message<String> kafkaMessage = MessageBuilder.withPayload(messageJson).setHeader(KafkaHeaders.TOPIC, topicName)
                     .setHeader(KafkaHeaders.KEY, headerKeyValue)

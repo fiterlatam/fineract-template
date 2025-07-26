@@ -52,8 +52,8 @@ public class KafkaExternalEventTopicConfig {
 
     @Bean
     public NewTopic externalEventsTopic() {
-        FineractProperties.KafkaTopicProperties topicProperties = fineractProperties.getEvents().getExternal().getProducer().getKafka()
-                .getTopic();
+        final FineractProperties.KafkaTopicProperties topicProperties = fineractProperties.getEvents().getExternal().getProducer()
+                .getKafka().getTopic();
         return TopicBuilder.name(topicProperties.getName()).partitions(topicProperties.getPartitions())
                 .replicas(topicProperties.getReplicas()).build();
     }

@@ -58,7 +58,7 @@ public class KafkaRemoteMessageListener {
         this.appUserRepositoryWrapper = appUserRepositoryWrapper;
     }
 
-    @KafkaListener(topics = "${fineract.remote-job-message-handler.kafka.topic.name}", groupId = "${fineract.remote-job-message-handler.kafka.consumer.group-id}")
+    @KafkaListener(topics = "fineract-scheduler-jobs", groupId = "fineract-scheduler-jobs")
     public void onMessage(final ConsumerRecord<String, String> consumerRecord, final Acknowledgment acknowledgment) throws Exception {
         final String messageJson = consumerRecord.value();
         final String key = consumerRecord.key();

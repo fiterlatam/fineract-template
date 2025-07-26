@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.apache.fineract.infrastructure.core.config.FineractProperties;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
-import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -52,9 +51,6 @@ class KafkaExternalEventProducerTest {
     private FromJsonHelper fromJsonHelper;
 
     @Mock
-    private PlatformSecurityContext platformSecurityContext;
-
-    @Mock
     private SendResult<String, String> sendResult1;
 
     @Mock
@@ -70,8 +66,7 @@ class KafkaExternalEventProducerTest {
     @Test
     public void testSendOK() {
         // given
-        KafkaExternalEventProducer underTest = new KafkaExternalEventProducer(kafkaTemplate, createProperties(), fromJsonHelper,
-                platformSecurityContext);
+        KafkaExternalEventProducer underTest = new KafkaExternalEventProducer(kafkaTemplate, createProperties(), fromJsonHelper);
         Mockito.when(kafkaTemplate.send(any(Message.class))).thenReturn(CompletableFuture.completedFuture(sendResult1));
 
         // when
@@ -86,8 +81,7 @@ class KafkaExternalEventProducerTest {
     @Test
     public void testSendOneFails() {
         // given
-        KafkaExternalEventProducer underTest = new KafkaExternalEventProducer(kafkaTemplate, createProperties(), fromJsonHelper,
-                platformSecurityContext);
+        KafkaExternalEventProducer underTest = new KafkaExternalEventProducer(kafkaTemplate, createProperties(), fromJsonHelper);
         Mockito.when(kafkaTemplate.send(any(Message.class))).thenReturn(CompletableFuture.completedFuture(sendResult1))
                 .thenReturn(CompletableFuture.completedFuture(sendResult2))
                 .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Kafka error")));
@@ -104,8 +98,7 @@ class KafkaExternalEventProducerTest {
     @Test
     public void testTimeOut() {
         // given
-        KafkaExternalEventProducer underTest = new KafkaExternalEventProducer(kafkaTemplate, createProperties(), fromJsonHelper,
-                platformSecurityContext);
+        KafkaExternalEventProducer underTest = new KafkaExternalEventProducer(kafkaTemplate, createProperties(), fromJsonHelper);
         Mockito.when(kafkaTemplate.send(any(Message.class))).thenReturn(CompletableFuture.completedFuture(sendResult1))
                 .thenReturn(CompletableFuture.completedFuture(sendResult2)).thenReturn(new CompletableFuture<>());
 
