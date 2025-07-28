@@ -5358,7 +5358,43 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             log.info("No installments required to be added");
             return null;
         }
-        int installmentsToAdd = requiredInstallments - loan.getRepaymentScheduleInstallments().size();
+
+        int installmentsToAdd = 0;
+        if (loan.isMigratedLoan() && Objects.nonNull(loan.getMambuNumberOfRepayments())
+                && !loan.isSyncedUpNumberOfRepaymentsFromMambuConfig()) {
+
+            if (loan.getMambuNumberOfRepayments()
+                    .compareTo((int) loan.getRepaymentScheduleInstallments().stream().filter(l -> !l.isObligationsMet()).count()) < 0) {
+                // Case when there are more existing installments in Mambu than defined at loan level - DO NOT SYNC UP
+                // and
+                // don´t add
+                installmentsToAdd = 0;
+
+            } else if (loan.getMambuNumberOfRepayments()
+                    .compareTo((int) loan.getRepaymentScheduleInstallments().stream().filter(l -> !l.isObligationsMet()).count()) == 0) {
+                // Case when there are same nr of existing installments in Mambu than defined at loan level - SYNC UP
+                // and don´t add
+                installmentsToAdd = 0;
+
+                loan.syncUpNumberOfRepaymentsFromMambuConfig();
+                loanRepository.save(loan);
+            } else {
+                // Case when there are less existing installments in Mambu than defined at loan level
+                installmentsToAdd = (int) loan.getRepaymentScheduleInstallments().stream().filter(l -> l.isObligationsMet()).count();
+
+                loan.syncUpNumberOfRepaymentsFromMambuConfig();
+                loanRepository.save(loan);
+            }
+
+            if (installmentsToAdd <= 0) {
+                log.info("No installments required to be added");
+                return null;
+            }
+
+        } else {
+            // Original calculation
+            installmentsToAdd = requiredInstallments - loan.getRepaymentScheduleInstallments().size();
+        }
 
         log.info("Adding {} new installments starting from date {}", installmentsToAdd, variationDate);
         return ImmutablePair.of(installmentsToAdd, variationDate);

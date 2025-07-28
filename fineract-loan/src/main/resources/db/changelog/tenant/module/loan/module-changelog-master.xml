@@ -44,4 +44,5 @@
   <include relativeToChangelogFile="true" file="parts/1019_EA_187_creditorotativo_laon_product.xml"/>
   <include relativeToChangelogFile="true" file="parts/1020_EA_222_laon_originalnrofrepayments.xml"/>
   <include relativeToChangelogFile="true" file="parts/1021_EA_246_m_product_loan_update.xml"/>
+  <include relativeToChangelogFile="true" file="parts/1022_EA_416_m_loan_mambunrofrepayments.xml"/>
 </databaseChangeLog>

@@ -102,6 +102,7 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
     @Column(name = "repayment_period_frequency_enum", nullable = false)
     private PeriodFrequencyType repaymentPeriodFrequencyType;
 
+    @Setter
     @Column(name = "number_of_repayments", nullable = false)
     private Integer numberOfRepayments;
 
