@@ -48,6 +48,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Predicate;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
@@ -268,6 +269,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Embedded
     private LoanProductRelatedDetail loanRepaymentScheduleDetail;
 
+    @Setter
     @Column(name = "term_frequency", nullable = false)
     private Integer termFrequency;
 
@@ -559,6 +561,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "original_number_of_repayments")
     private Integer originalNumberOfRepayments;
 
+    @Getter
+    @Column(name = "mambu_number_of_repayments")
+    private Integer mambuNumberOfRepayments;
+
     @SuppressWarnings({ "squid:S107" })
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
             final LoanProduct loanProduct, final Fund fund, final Staff officer, final CodeValue loanPurpose,
@@ -684,6 +690,17 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public Integer getNumberOfRepayments() {
         return this.loanRepaymentScheduleDetail.getNumberOfRepayments();
+    }
+
+    public void syncUpNumberOfRepaymentsFromMambuConfig() {
+        this.loanRepaymentScheduleDetail.setNumberOfRepayments(this.mambuNumberOfRepayments);
+        this.termFrequency = this.mambuNumberOfRepayments;
+        this.originalNumberOfRepayments = this.mambuNumberOfRepayments;
+    }
+
+    public boolean isSyncedUpNumberOfRepaymentsFromMambuConfig() {
+        return this.mambuNumberOfRepayments != null && this.originalNumberOfRepayments != null
+                && this.mambuNumberOfRepayments.equals(getNumberOfRepayments());
     }
 
     private LoanSummary updateSummaryWithTotalFeeChargesDueAtDisbursement(final BigDecimal feeChargesDueAtDisbursement) {
