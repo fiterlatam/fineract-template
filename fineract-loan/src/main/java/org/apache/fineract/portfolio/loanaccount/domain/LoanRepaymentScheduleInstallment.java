@@ -34,6 +34,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -47,6 +48,7 @@ import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDat
 @SuppressWarnings({ "squid:S7091" })
 @Entity
 @Table(name = "m_loan_repayment_schedule")
+@Slf4j
 public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDateTimeCustom
         implements Comparable<LoanRepaymentScheduleInstallment> {
 
@@ -1936,5 +1938,70 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     public void setFlatSpecificDueDateCharges(List<LoanCharge> flatSpecificDueDateCharges) {
         this.flatSpecificDueDateCharges = flatSpecificDueDateCharges;
+    }
+
+    /**
+     * Updates the principal completed amount for advanced payments. This method follows the same pattern as other
+     * payment methods in this class.
+     *
+     * @param currency
+     *            the monetary currency
+     * @param additionalAmount
+     *            the additional amount to add to principal completed
+     */
+    public void addToPrincipalCompleted(MonetaryCurrency currency, Money additionalAmount) {
+        Money currentPrincipalCompleted = getPrincipalCompleted(currency);
+        this.principalCompleted = currentPrincipalCompleted.plus(additionalAmount).getAmount();
+        this.principalCompleted = defaultToNullIfZero(this.principalCompleted);
+    }
+
+    /**
+     * Sets the principal completed amount directly. This method follows the same pattern as other setter methods in
+     * this class.
+     *
+     * @param principalCompleted
+     *            the new principal completed amount
+     */
+    public void setPrincipalCompleted(BigDecimal principalCompleted) {
+        this.principalCompleted = principalCompleted;
+    }
+
+    /**
+     * Handles advanced payment processing specifically for revolving loans. This method centralizes all revolving loan
+     * advanced payment logic and can be extended to handle additional revolving loan specific requirements.
+     *
+     * @param currency
+     *            the monetary currency
+     * @param advancedPaymentAmount
+     *            the advanced payment amount to process
+     * @param transactionDate
+     *            the transaction date
+     * @param loanTransaction
+     *            the loan transaction for context
+     */
+    public void handleRevolvingLoanAdvancedPayment(MonetaryCurrency currency, Money advancedPaymentAmount, LocalDate transactionDate,
+            LoanTransaction loanTransaction) {
+
+        // Update principal completed amount
+        addToPrincipalCompleted(currency, advancedPaymentAmount);
+
+        // Track advance and late totals (existing functionality)
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, advancedPaymentAmount);
+
+        // Set advance principal amount (existing functionality)
+        setAdvancePrincipalAmount(getAdvancePrincipalAmount().add(advancedPaymentAmount.getAmount()));
+
+        // Check if repayment period obligations are met
+        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+        // Set recalculate EMI flag if needed
+        setRecalculateEMI(loanTransaction.recalculateEMI());
+
+        // Log the advanced payment processing
+        log.info(
+                "Revolving loan advanced payment processed - Loan: {}, Installment: {}, Amount: {}, "
+                        + "Principal Completed: {}, Advance Principal: {}",
+                loanTransaction.getLoan().getId(), getInstallmentNumber(), advancedPaymentAmount.getAmount(),
+                getPrincipalCompleted(currency).getAmount(), getAdvancePrincipalAmount());
     }
 }
