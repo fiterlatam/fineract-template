@@ -1448,6 +1448,7 @@ public class LoansApiResource {
         loanAccount.setDatatables(datatableNamesList);
 
         loanAccount.setSmvl(configurationDomainServiceJpa.retrieveSMVLLimit());
+        loanAccount.setMambuNumberOfRepayments(loanBasicDetails.getMambuNumberOfRepayments());
 
         final boolean isRediferir = this.loanReadPlatformService.retrieveRediferidoNumber(loanId) > 0;
         loanAccount.setRediferir(isRediferir);

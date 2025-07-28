@@ -295,6 +295,7 @@ public class LoanAccountData {
     private String cedula;
     private boolean isMigratedLoan;
     private Long smvl;
+    private Integer mambuNumberOfRepayments;
 
     public static LoanAccountData importInstanceIndividual(EnumOptionData loanTypeEnumOption, Long clientId, Long productId,
             Long loanOfficerId, LocalDate submittedOnDate, Long fundId, BigDecimal principal, Integer numberOfRepayments,
@@ -1237,7 +1238,8 @@ public class LoanAccountData {
                 .setChannelId(acc.channelId).setChannelName(acc.channelName).setChannelDescription(acc.channelDescription)
                 .setPointOfSalesName(acc.pointOfSalesName).setPointOfSalesCode(acc.pointOfSalesCode)
                 .setLoanScheduleProcessingTypeOptions(acc.loanScheduleProcessingTypeOptions).setValorDescuento(acc.valorDescuento)
-                .setValorGiro(acc.valorGiro).setCedulaSeguroVoluntario(acc.cedulaSeguroVoluntario);
+                .setValorGiro(acc.valorGiro).setCedulaSeguroVoluntario(acc.cedulaSeguroVoluntario)
+                .setMambuNumberOfRepayments(acc.getMambuNumberOfRepayments());
     }
 
     public static final Comparator<LoanAccountData> ClientNameComparator = (loan1, loan2) -> {
