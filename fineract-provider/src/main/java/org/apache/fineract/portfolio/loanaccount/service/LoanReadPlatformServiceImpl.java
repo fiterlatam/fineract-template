@@ -849,7 +849,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                         pos.name AS point_of_sales_name,
                         pos.code AS point_of_sales_code,
                         pos.client_ally_id AS allyId,
-                        l.valor_descuento,l.valor_giro
+                        l.valor_descuento,l.valor_giro,
+                        l.mambu_number_of_repayments
                     FROM
                         m_loan l
                         JOIN m_product_loan lp ON lp.id = l.product_id
@@ -1023,6 +1024,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final BigDecimal annualInterestRate = rs.getBigDecimal("effective_interest_rate");
             final BigDecimal interestRateDifferential = rs.getBigDecimal("interestRateDifferential");
             final boolean isFloatingInterestRate = rs.getBoolean("isFloatingInterestRate");
+            final Integer mambuNumberOfRepayments = JdbcSupport.getInteger(rs, "mambu_number_of_repayments");
 
             final Integer graceOnPrincipalPayment = JdbcSupport.getIntegerDefaultToNullIfZero(rs, "graceOnPrincipalPayment");
             final Integer recurringMoratoriumOnPrincipalPeriods = JdbcSupport.getIntegerDefaultToNullIfZero(rs,
@@ -1282,8 +1284,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final Long cedulaSeguroVoluntario = JdbcSupport.getLong(rs, "cedulaSeguroVoluntario");
             basicLoanDetails.setCodigoSeguro(codigoSeguro);
             basicLoanDetails.setCedulaSeguroVoluntario(cedulaSeguroVoluntario);
-            return basicLoanDetails;
+            basicLoanDetails.setMambuNumberOfRepayments(mambuNumberOfRepayments);
 
+            return basicLoanDetails;
         }
     }
 
