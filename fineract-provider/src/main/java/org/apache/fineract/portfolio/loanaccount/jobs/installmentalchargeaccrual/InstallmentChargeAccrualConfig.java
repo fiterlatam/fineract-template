@@ -26,9 +26,9 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 @RequiredArgsConstructor
@@ -36,12 +36,10 @@ public class InstallmentChargeAccrualConfig {
 
     private final JobRepository jobRepository;
 
-    private final PlatformTransactionManager transactionManager;
-
     @Bean
     protected Step runInstallmentalLoanChargeAccrualStep(InstallmentChargeAccrualTasklet installmentChargeAccrualTasklet) {
         return new StepBuilder(JobName.INSTALLMENT_LOAN_CHARGE_ACCRUAL.name(), jobRepository)
-                .tasklet(installmentChargeAccrualTasklet, transactionManager).build();
+                .tasklet(installmentChargeAccrualTasklet, new ResourcelessTransactionManager()).build();
     }
 
     @Bean
