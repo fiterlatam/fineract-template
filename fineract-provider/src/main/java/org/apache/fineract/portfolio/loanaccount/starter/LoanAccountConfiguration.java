@@ -47,6 +47,7 @@ import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChe
 import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityRelationRepository;
 import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityToEntityMappingRepository;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
+import org.apache.fineract.infrastructure.event.external.producer.ExternalEventProducer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepository;
@@ -469,7 +470,8 @@ public class LoanAccountConfiguration {
             FacturaElectronicMensualRepository facturaElectronicMensualRepository,
             LoanProductParameterizationRepository productParameterizationRepository,
             CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository, LoanCreditNoteRepository loanCreditNoteRepository,
-            LoanAccrualPlatformService loanAccrualPlatformService, CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService) {
+            LoanAccrualPlatformService loanAccrualPlatformService, CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService,
+            ExternalEventProducer externalEventProducer) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
@@ -488,7 +490,8 @@ public class LoanAccountConfiguration {
                 channelReadWritePlatformService, platformSecurityContext, globalConfigurationRepository, loanBlockWritePlatformService,
                 loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository, loanScheduleFactory,
                 blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository, productParameterizationRepository,
-                customChargeHonorarioMapRepository, loanCreditNoteRepository, loanAccrualPlatformService, collectionHouseReadWriteService);
+                customChargeHonorarioMapRepository, loanCreditNoteRepository, loanAccrualPlatformService, collectionHouseReadWriteService,
+                externalEventProducer);
     }
 
     @Bean

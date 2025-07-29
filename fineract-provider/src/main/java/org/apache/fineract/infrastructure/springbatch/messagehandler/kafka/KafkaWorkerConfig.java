@@ -18,25 +18,18 @@
  */
 package org.apache.fineract.infrastructure.springbatch.messagehandler.kafka;
 
-import static org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_OFFSET_RESET_CONFIG;
-import static org.apache.kafka.clients.consumer.ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG;
-import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
-import static org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG;
-import static org.apache.kafka.clients.consumer.ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG;
-import static org.springframework.kafka.support.serializer.JsonDeserializer.TRUSTED_PACKAGES;
-
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.config.FineractProperties;
 import org.apache.fineract.infrastructure.core.config.FineractProperties.FineractRemoteJobMessageHandlerKafkaProperties;
 import org.apache.fineract.infrastructure.springbatch.messagehandler.conditions.kafka.KafkaWorkerCondition;
-import org.apache.kafka.common.serialization.IntegerDeserializer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.integration.channel.QueueChannel;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -48,29 +41,30 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 @Slf4j
 public class KafkaWorkerConfig {
 
-    @Autowired
-    private QueueChannel inboundRequests;
+    private final FineractProperties fineractProperties;
 
     @Autowired
-    private FineractProperties fineractProperties;
+    public KafkaWorkerConfig(final FineractProperties fineractProperties) {
+        this.fineractProperties = fineractProperties;
+    }
 
     @Bean
-    public ConsumerFactory<Integer, Object> consumerFactory() {
-        FineractRemoteJobMessageHandlerKafkaProperties kafkaProperties = fineractProperties.getRemoteJobMessageHandler().getKafka();
-        Map<String, Object> props = new HashMap<>(kafkaProperties.getConsumer().getExtraPropertiesMap());
-        props.put(BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
-        props.put(GROUP_ID_CONFIG, kafkaProperties.getConsumer().getGroupId());
-        props.put(KEY_DESERIALIZER_CLASS_CONFIG, IntegerDeserializer.class);
-        props.put(VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        props.put(TRUSTED_PACKAGES, "*");
-        props.put(AUTO_OFFSET_RESET_CONFIG, "earliest");
+    public ConsumerFactory<String, String> consumerFactory() {
+        final FineractRemoteJobMessageHandlerKafkaProperties kafkaProperties = fineractProperties.getRemoteJobMessageHandler().getKafka();
+        final Map<String, Object> props = new HashMap<>(kafkaProperties.getConsumer().getExtraPropertiesMap());
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaProperties.getConsumer().getGroupId());
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
         return new DefaultKafkaConsumerFactory<>(props);
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<Integer, Object> kafkaListenerContainerFactory(
-            ConsumerFactory<Integer, Object> consumerFactory) {
-        ConcurrentKafkaListenerContainerFactory<Integer, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
+            ConsumerFactory<String, String> consumerFactory) {
+        final ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
         return factory;

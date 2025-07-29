@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -43,6 +42,7 @@ import org.apache.fineract.infrastructure.core.messaging.jms.MessageFactory;
 import org.apache.fineract.infrastructure.core.service.HashingService;
 import org.apache.fineract.infrastructure.event.external.exception.AcknowledgementTimeoutException;
 import org.apache.fineract.infrastructure.event.external.producer.ExternalEventProducer;
+import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.task.AsyncTaskExecutor;
@@ -74,12 +74,20 @@ public class JMSMultiExternalEventProducer implements ExternalEventProducer {
     }
 
     @Override
-    public void sendEvents(Map<Long, List<byte[]>> partitions) throws AcknowledgementTimeoutException {
-        Map<Integer, List<byte[]>> indexedPartitions = mapPartitionsToProducers(partitions);
+    public void sendEvents(Map<String, List<String>> partitions) throws AcknowledgementTimeoutException {
+        Map<String, List<String>> indexedPartitions = mapPartitionsToProducers(partitions);
         measure(() -> {
             List<Pair<Session, MessageProducer>> producersWithSessions = obtainProducers();
-            List<MessageProducer> producers = producersWithSessions.stream().map(Pair::getRight).collect(Collectors.toList());
-            List<Session> sessions = producersWithSessions.stream().map(Pair::getLeft).collect(Collectors.toList());
+            List<MessageProducer> producers = new ArrayList<>();
+            for (Pair<Session, MessageProducer> producersWithSession : producersWithSessions) {
+                MessageProducer right = producersWithSession.getRight();
+                producers.add(right);
+            }
+            List<Session> sessions = new ArrayList<>();
+            for (Pair<Session, MessageProducer> producersWithSession : producersWithSessions) {
+                Session left = producersWithSession.getLeft();
+                sessions.add(left);
+            }
             List<Future<?>> tasks = sendPartitions(indexedPartitions, producers);
             waitForSendingCompletion(tasks);
             closeSessions(sessions);
@@ -90,6 +98,12 @@ public class JMSMultiExternalEventProducer implements ExternalEventProducer {
                 log.debug("Sent messages with {} msg/s", msgPerSec);
             }
         });
+    }
+
+    @Override
+    public void sendEvents(final String messageJson, final JobName jobName) throws AcknowledgementTimeoutException {
+        // This method is not used in the JMS multi producer context, as we are sending messages in batches
+        throw new UnsupportedOperationException("This method is not supported for JMSMultiExternalEventProducer");
     }
 
     private void closeSessions(List<Session> sessions) {
@@ -124,23 +138,23 @@ public class JMSMultiExternalEventProducer implements ExternalEventProducer {
         return result;
     }
 
-    private List<Future<?>> sendPartitions(Map<Integer, List<byte[]>> indexedPartitions, List<MessageProducer> producers) {
+    private List<Future<?>> sendPartitions(Map<String, List<String>> indexedPartitions, List<MessageProducer> producers) {
         List<Future<?>> tasks = new ArrayList<>();
-        for (Map.Entry<Integer, List<byte[]>> entry : indexedPartitions.entrySet()) {
-            Integer producerIndex = entry.getKey();
-            MessageProducer producer = producers.get(producerIndex);
-            List<byte[]> messages = entry.getValue();
+        for (Map.Entry<String, List<String>> entry : indexedPartitions.entrySet()) {
+            String producerIndex = entry.getKey();
+            MessageProducer producer = producers.get(Integer.parseInt(producerIndex));
+            List<String> messages = entry.getValue();
             Future<?> future = createSendingTask(producer, messages);
             tasks.add(future);
         }
         return tasks;
     }
 
-    private Future<?> createSendingTask(MessageProducer messageProducer, List<byte[]> messages) {
+    private Future<?> createSendingTask(MessageProducer messageProducer, List<String> messages) {
         return taskExecutor.submit(() -> {
-            for (byte[] message : messages) {
+            for (String message : messages) {
                 try {
-                    messageProducer.send(destination, messageFactory.createByteMessage(message));
+                    messageProducer.send(destination, messageFactory.createByteMessage(message.getBytes()));
                 } catch (JMSException e) {
                     throw new RuntimeException("Error while sending the message", e);
                 }
@@ -148,14 +162,13 @@ public class JMSMultiExternalEventProducer implements ExternalEventProducer {
         });
     }
 
-    private Map<Integer, List<byte[]>> mapPartitionsToProducers(Map<Long, List<byte[]>> partitions) {
-        Map<Integer, List<byte[]>> indexedPartitions = new HashMap<>();
-        for (Map.Entry<Long, List<byte[]>> partition : partitions.entrySet()) {
-            Long key = partition.getKey();
-            List<byte[]> messages = partition.getValue();
-
-            int producerIndex = hashingService.consistentHash(key, getProducerCount());
-            indexedPartitions.putIfAbsent(producerIndex, new ArrayList<>());
+    private Map<String, List<String>> mapPartitionsToProducers(Map<String, List<String>> partitions) {
+        final Map<String, List<String>> indexedPartitions = new HashMap<>();
+        for (final Map.Entry<String, List<String>> partition : partitions.entrySet()) {
+            final String key = partition.getKey();
+            final List<String> messages = partition.getValue();
+            int producerIndex = hashingService.consistentHash(Long.parseLong(key), getProducerCount());
+            indexedPartitions.putIfAbsent(String.valueOf(producerIndex), new ArrayList<>());
             indexedPartitions.get(producerIndex).addAll(messages);
         }
         return indexedPartitions;

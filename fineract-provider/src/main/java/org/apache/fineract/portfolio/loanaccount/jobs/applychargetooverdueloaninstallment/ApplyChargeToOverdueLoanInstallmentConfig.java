@@ -25,24 +25,22 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 public class ApplyChargeToOverdueLoanInstallmentConfig {
 
     @Autowired
     private JobRepository jobRepository;
-    @Autowired
-    private PlatformTransactionManager transactionManager;
 
     @Bean
     protected Step applyChargeToOverdueLoanInstallmentStep(
             ApplyChargeToOverdueLoanInstallmentTasklet applyChargeToOverdueLoanInstallmentTasklet) {
         return new StepBuilder(JobName.APPLY_CHARGE_TO_OVERDUE_LOAN_INSTALLMENT.name(), jobRepository)
-                .tasklet(applyChargeToOverdueLoanInstallmentTasklet, transactionManager).build();
+                .tasklet(applyChargeToOverdueLoanInstallmentTasklet, new ResourcelessTransactionManager()).build();
     }
 
     @Bean

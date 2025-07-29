@@ -148,7 +148,6 @@ public class RecalculateInterestForMaximumLegalRateTasklet implements Tasklet {
             RecalculateInterestForMLRProcessorTask recalculateInterestForMLRProcessorTask = applicationContext
                     .getBean(RecalculateInterestForMLRProcessorTask.class);
             recalculateInterestForMLRProcessorTask.setLoanRescheduleData(subList);
-            recalculateInterestForMLRProcessorTask.setMaximumCreditRateConfigurationData(maximumCreditRateConfigurationData);
             recalculateInterestForMLRProcessorTask.setContext(ThreadLocalContextUtil.getContext());
             posters.add(recalculateInterestForMLRProcessorTask);
 
@@ -218,7 +217,8 @@ public class RecalculateInterestForMaximumLegalRateTasklet implements Tasklet {
             if (!allThreadsExecuted) {
                 log.error("All threads could not execute.");
             } else {
-                log.info("Recalculate Loan Interest After Maximum Legal Rate Change Job Completed");
+                log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: {} threads executed successfully",
+                        noOfThreadsExecuted);
             }
         } catch (InterruptedException e1) {
             log.error("Interrupted while Recalculating Loan Interest After Maximum Legal Rate Change", e1);

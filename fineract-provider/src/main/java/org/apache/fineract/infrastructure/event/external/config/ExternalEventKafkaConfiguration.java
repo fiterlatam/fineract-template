@@ -18,15 +18,11 @@
  */
 package org.apache.fineract.infrastructure.event.external.config;
 
-import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
-import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
-import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
-
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.fineract.infrastructure.core.config.FineractProperties;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.apache.kafka.common.serialization.LongSerializer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -39,22 +35,26 @@ import org.springframework.kafka.core.ProducerFactory;
 @ConditionalOnProperty(value = "fineract.events.external.producer.kafka.enabled", havingValue = "true")
 public class ExternalEventKafkaConfiguration {
 
+    private final FineractProperties fineractProperties;
+
     @Autowired
-    private FineractProperties fineractProperties;
+    public ExternalEventKafkaConfiguration(FineractProperties fineractProperties) {
+        this.fineractProperties = fineractProperties;
+    }
 
     @Bean
-    public ProducerFactory<Long, byte[]> externalEventsProducerFactory() {
+    public ProducerFactory<String, String> externalEventsProducerFactory() {
         FineractProperties.FineractExternalEventsProducerKafkaProperties kafkaProp = fineractProperties.getEvents().getExternal()
                 .getProducer().getKafka();
         Map<String, Object> props = new HashMap<>(kafkaProp.getProducer().getExtraPropertiesMap());
-        props.put(BOOTSTRAP_SERVERS_CONFIG, kafkaProp.getBootstrapServers());
-        props.put(KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
-        props.put(VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProp.getBootstrapServers());
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         return new DefaultKafkaProducerFactory<>(props);
     }
 
     @Bean
-    public KafkaTemplate<Long, byte[]> externalEventsKafkaTemplate(ProducerFactory<Long, byte[]> externalEventsProducerFactory) {
+    public KafkaTemplate<String, String> externalEventsKafkaTemplate(ProducerFactory<String, String> externalEventsProducerFactory) {
         return new KafkaTemplate<>(externalEventsProducerFactory);
     }
 

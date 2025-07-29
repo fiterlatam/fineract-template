@@ -47,6 +47,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -84,6 +88,7 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
+import org.apache.fineract.infrastructure.core.domain.FineractContext;
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
@@ -131,7 +136,9 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.transaction
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanWrittenOffPostBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanWrittenOffPreBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
+import org.apache.fineract.infrastructure.event.external.producer.ExternalEventProducer;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
+import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.holiday.domain.Holiday;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepositoryWrapper;
@@ -318,6 +325,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final LoanCreditNoteRepository loanCreditNoteRepository;
     private final LoanAccrualPlatformService loanAccrualPlatformService;
     private final CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService;
+    private final ExternalEventProducer externalEventProducer;
 
     @PostConstruct
     public void registerForNotification() {
@@ -4164,10 +4172,20 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     }
 
     @Override
-    public void recalculateInterestForMaximumLegalRate(List<LoanRescheduleData> loanLoanRescheduleDataList,
-            MaximumCreditRateConfigurationData maximumCreditRateConfigurationData) throws JobExecutionException {
+    public void recalculateInterestForMaximumLegalRate(final List<LoanRescheduleData> loanLoanRescheduleDataList) {
+        final String messageJson = this.fromApiJsonHelper.toJsonString(loanLoanRescheduleDataList);
+        final JobName jobName = JobName.RECALCULATE_LOAN_INTEREST_AFTER_MAXIMUM_LEGAL_RATE_CHANGE;
+        this.externalEventProducer.sendEvents(messageJson, jobName);
+    }
+
+    @Override
+    public void maximumLegalRateKafkaMessageHandler(String kafkaMessageJson) throws Exception {
+        final List<LoanRescheduleData> loanLoanRescheduleDataList = this.fromApiJsonHelper.fromJsonToPojoList(kafkaMessageJson,
+                LoanRescheduleData.class);
         log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Recalculating interest for maximum legal rate for {} loans",
                 loanLoanRescheduleDataList.size());
+        final MaximumCreditRateConfigurationData maximumCreditRateConfigurationData = this.loanProductReadPlatformService
+                .retrieveMaximumCreditRateConfigurationData();
         final List<Throwable> exceptions = new ArrayList<>();
         final LocalDate appliedOnDate = maximumCreditRateConfigurationData.getAppliedOnDate();
         final BigDecimal maximumLegalAnnualNominalRateValue = maximumCreditRateConfigurationData.getAnnualNominalRate();
@@ -4198,6 +4216,15 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             rescheduleJsonObject.addProperty("graceOnPrincipal", "");
             rescheduleJsonObject.addProperty("extraTerms", "");
             log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Reschedule JSON Object: {}", rescheduleJsonObject);
+
+            // Create a thread pool with size based on available processors
+            int threadPoolSize = Runtime.getRuntime().availableProcessors();
+            log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Creating thread pool with size: {}", threadPoolSize);
+            ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
+
+            // List to hold futures for all submitted tasks
+            List<Future<Void>> futures = new ArrayList<>();
+            FineractContext context = ThreadLocalContextUtil.getContext();
 
             for (final LoanRescheduleData loanRescheduleData : loanLoanRescheduleDataList) {
                 log.info(
@@ -4230,75 +4257,120 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             loanId);
                     continue;
                 }
-                rescheduleJsonObject.addProperty("newInterestRate", newInterestRate);
-                final String rescheduleFromDateString = DateUtils.format(appliedOnDate, dateFormat, Locale.forLanguageTag(locale));
-                rescheduleJsonObject.addProperty("rescheduleFromDate", rescheduleFromDateString);
-                rescheduleJsonObject.addProperty("loanId", loanId);
-                final String rescheduleReasonComment = String.format(
-                        LoanRescheduleRequestWritePlatformServiceImpl.MAX_LEGAL_RATE_REASON_FOR_RESCHEDULE
-                                + ": [Nueva tasa de interés: %s, Tasa máxima legal: %s, Fecha de reprogramación: %s]",
-                        newInterestRate, maximumLegalAnnualNominalRateValue, rescheduleFromDateString);
-                rescheduleJsonObject.addProperty("rescheduleReasonComment", rescheduleReasonComment);
-                final String rescheduleRequestBodyAsJson = rescheduleJsonObject.toString();
-                CommandWrapper commandWrapper = new CommandWrapperBuilder()
-                        .createLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME).withJson(rescheduleRequestBodyAsJson).build();
-                try {
-                    log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Create Loan Reschedule Request with Loan ID: {}",
-                            loanId);
-                    final long startTime = System.currentTimeMillis();
-                    CommandProcessingResult commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
-                    final long createRescheduleRequestEndTime = System.currentTimeMillis();
-                    log.info(
-                            "Recalculate Loan Interest After Maximum Legal Rate Change:: Create Loan Reschedule Request took {} seconds for Loan ID: {}",
-                            (createRescheduleRequestEndTime - startTime) / 1000.0, loanId);
-                    if (commandProcessingResult.getResourceId() != null) {
-                        final Long loanRescheduleId = commandProcessingResult.getResourceId();
-                        final JsonObject approvalJsonObject = new JsonObject();
-                        final Boolean isJobTriggered = true;
-                        approvalJsonObject.addProperty("dateFormat", dateFormat);
-                        approvalJsonObject.addProperty("locale", locale);
-                        approvalJsonObject.addProperty("isJobTriggered", isJobTriggered);
-                        approvalJsonObject.addProperty("approvedOnDate", submittedOnDate);
-                        final String approvalRequestBodyAsJson = approvalJsonObject.toString();
-                        commandWrapper = new CommandWrapperBuilder()
-                                .approveLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, loanRescheduleId)
-                                .withJson(approvalRequestBodyAsJson).build();
-                        log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Approve Loan Rescheduling with Loan ID: {}",
-                                loanId);
-                        commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
-                        final long approveRescheduleRequestEndTime = System.currentTimeMillis();
-                        log.info(
-                                "Recalculate Loan Interest After Maximum Legal Rate Change:: Approve Loan Rescheduling took {} seconds for Loan ID: {}",
-                                (approveRescheduleRequestEndTime - createRescheduleRequestEndTime) / 1000.0, loanId);
-                        if (commandProcessingResult.getResourceId() != null) {
-                            final String successMessage = "Reprogramar la cuenta de préstamo: " + loanId
-                                    + " con la tasa de interés al máximo legal";
-                            log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: " + successMessage);
+
+                // Create a copy of the rescheduleJsonObject for each thread to avoid concurrency issues
+                final JsonObject threadRescheduleJsonObject = rescheduleJsonObject.deepCopy();
+                final BigDecimal threadNewInterestRate = newInterestRate;
+                final Long threadLoanId = loanId;
+
+                // Submit the task to the thread pool
+                Future<Void> future = executorService.submit(new Callable<Void>() {
+
+                    @Override
+                    public Void call() throws Exception {
+                        ThreadLocalContextUtil.init(context);
+                        try {
+                            rescheduleLoan(threadRescheduleJsonObject, threadNewInterestRate, appliedOnDate, threadLoanId,
+                                    maximumLegalAnnualNominalRateValue, submittedOnDate, exceptions);
+                        } catch (Exception e) {
+                            log.error("Error in thread processing loan ID: {}", threadLoanId, e);
+                            synchronized (exceptions) {
+                                exceptions.add(e);
+                            }
                         }
+                        return null;
                     }
-                } catch (final PlatformApiDataValidationException e) {
-                    final List<ApiParameterError> errors = e.getErrors();
-                    for (final ApiParameterError error : errors) {
-                        log.error(
-                                "Recalculate Loan Interest After Maximum Legal Rate Change:: Reprogramar la cuenta de préstamo {} falló con el mensaje: {}",
-                                loanId, error.getDeveloperMessage(), e);
-                    }
-                    exceptions.add(e);
-                } catch (final AbstractPlatformDomainRuleException e) {
-                    log.error(
-                            "Recalculate Loan Interest After Maximum Legal Rate Change:: Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}",
-                            loanId, e.getDefaultUserMessage(), e);
-                    exceptions.add(e);
+                });
+
+                futures.add(future);
+            }
+
+            // Wait for all tasks to complete
+            for (Future<Void> future : futures) {
+                try {
+                    future.get();
                 } catch (Exception e) {
-                    log.error(
-                            "Recalculate Loan Interest After Maximum Legal Rate Change:: Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}",
-                            loanId, e.getMessage(), e);
-                    exceptions.add(e);
+                    log.error("Error waiting for task completion", e);
+                    synchronized (exceptions) {
+                        exceptions.add(e);
+                    }
                 }
             }
+
+            // Shutdown the executor service
+            executorService.shutdown();
         }
         if (!exceptions.isEmpty()) {
             throw new JobExecutionException(exceptions);
+        }
+    }
+
+    private void rescheduleLoan(JsonObject rescheduleJsonObject, BigDecimal newInterestRate, LocalDate appliedOnDate, Long loanId,
+            BigDecimal maximumLegalAnnualNominalRateValue, String submittedOnDate, List<Throwable> exceptions) {
+        final String locale = "es";
+        final String dateFormat = "dd MMMM yyyy";
+        rescheduleJsonObject.addProperty("newInterestRate", newInterestRate);
+        final String rescheduleFromDateString = DateUtils.format(appliedOnDate, dateFormat, Locale.forLanguageTag(locale));
+        rescheduleJsonObject.addProperty("rescheduleFromDate", rescheduleFromDateString);
+        rescheduleJsonObject.addProperty("loanId", loanId);
+        final String rescheduleReasonComment = String.format(
+                LoanRescheduleRequestWritePlatformServiceImpl.MAX_LEGAL_RATE_REASON_FOR_RESCHEDULE
+                        + ": [Nueva tasa de interés: %s, Tasa máxima legal: %s, Fecha de reprogramación: %s]",
+                newInterestRate, maximumLegalAnnualNominalRateValue, rescheduleFromDateString);
+        rescheduleJsonObject.addProperty("rescheduleReasonComment", rescheduleReasonComment);
+        final String rescheduleRequestBodyAsJson = rescheduleJsonObject.toString();
+        CommandWrapper commandWrapper = new CommandWrapperBuilder().createLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME)
+                .withJson(rescheduleRequestBodyAsJson).build();
+        try {
+            log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Create Loan Reschedule Request with Loan ID: {}", loanId);
+            final long startTime = System.currentTimeMillis();
+            CommandProcessingResult commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+            final long createRescheduleRequestEndTime = System.currentTimeMillis();
+            log.info(
+                    "Recalculate Loan Interest After Maximum Legal Rate Change:: Create Loan Reschedule Request took {} seconds for Loan ID: {}",
+                    (createRescheduleRequestEndTime - startTime) / 1000.0, loanId);
+            if (commandProcessingResult.getResourceId() != null) {
+                final Long loanRescheduleId = commandProcessingResult.getResourceId();
+                final JsonObject approvalJsonObject = new JsonObject();
+                final Boolean isJobTriggered = true;
+                approvalJsonObject.addProperty("dateFormat", dateFormat);
+                approvalJsonObject.addProperty("locale", locale);
+                approvalJsonObject.addProperty("isJobTriggered", isJobTriggered);
+                approvalJsonObject.addProperty("approvedOnDate", submittedOnDate);
+                final String approvalRequestBodyAsJson = approvalJsonObject.toString();
+                commandWrapper = new CommandWrapperBuilder()
+                        .approveLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, loanRescheduleId)
+                        .withJson(approvalRequestBodyAsJson).build();
+                log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Approve Loan Rescheduling with Loan ID: {}", loanId);
+                commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                final long approveRescheduleRequestEndTime = System.currentTimeMillis();
+                log.info(
+                        "Recalculate Loan Interest After Maximum Legal Rate Change:: Approve Loan Rescheduling took {} seconds for Loan ID: {}",
+                        (approveRescheduleRequestEndTime - createRescheduleRequestEndTime) / 1000.0, loanId);
+                if (commandProcessingResult.getResourceId() != null) {
+                    final String successMessage = "Reprogramar la cuenta de préstamo: " + loanId
+                            + " con la tasa de interés al máximo legal";
+                    log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: " + successMessage);
+                }
+            }
+        } catch (final PlatformApiDataValidationException e) {
+            final List<ApiParameterError> errors = e.getErrors();
+            for (final ApiParameterError error : errors) {
+                log.error(
+                        "Recalculate Loan Interest After Maximum Legal Rate Change:: Reprogramar la cuenta de préstamo {} falló con el mensaje: {}",
+                        loanId, error.getDeveloperMessage(), e);
+            }
+            exceptions.add(e);
+        } catch (final AbstractPlatformDomainRuleException e) {
+            log.error(
+                    "Recalculate Loan Interest After Maximum Legal Rate Change:: Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}",
+                    loanId, e.getDefaultUserMessage(), e);
+            exceptions.add(e);
+        } catch (Exception e) {
+            log.error(
+                    "Recalculate Loan Interest After Maximum Legal Rate Change:: Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}",
+                    loanId, e.getMessage(), e);
+            exceptions.add(e);
         }
     }
 

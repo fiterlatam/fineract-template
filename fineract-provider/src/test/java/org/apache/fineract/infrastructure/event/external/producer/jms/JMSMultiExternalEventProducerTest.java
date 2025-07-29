@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 import org.apache.fineract.avro.MessageV1;
 import org.apache.fineract.infrastructure.core.config.FineractProperties;
 import org.apache.fineract.infrastructure.core.messaging.jms.MessageFactory;
@@ -123,7 +124,8 @@ class JMSMultiExternalEventProducerTest {
         byte[] msg1 = createMessage();
         List<byte[]> messages = new ArrayList<>();
         messages.add(msg1);
-        Map<Long, List<byte[]>> partitions = Map.of(1L, messages);
+        List<String> msg1List = messages.stream().map(String::new).toList();
+        Map<String, List<String>> partitions = Map.of("1", msg1List);
 
         BytesMessage bytesMsg1 = Mockito.mock(BytesMessage.class);
         given(messageFactory.createByteMessage(msg1)).willReturn(bytesMsg1);
@@ -158,7 +160,9 @@ class JMSMultiExternalEventProducerTest {
         given(hashingService.consistentHash(2L, PRODUCER_COUNT)).willReturn(1);
         given(hashingService.consistentHash(3L, PRODUCER_COUNT)).willReturn(2);
         // when
-        underTest.sendEvents(partitions);
+        Map<String, List<String>> partitionsList = partitions.entrySet().stream()
+                .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().stream().map(String::new).toList()));
+        underTest.sendEvents(partitionsList);
         // then
         verify(producer1).send(destination, bytesMsg1);
         verify(producer2).send(destination, bytesMsg2);

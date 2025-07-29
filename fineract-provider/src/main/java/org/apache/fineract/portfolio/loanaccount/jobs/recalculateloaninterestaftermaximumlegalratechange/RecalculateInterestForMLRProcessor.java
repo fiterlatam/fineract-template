@@ -25,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
-import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,10 +35,9 @@ public class RecalculateInterestForMLRProcessor {
 
     private List<LoanRescheduleData> loanRescheduleData;
     private final LoanWritePlatformService loanWritePlatformService;
-    private MaximumCreditRateConfigurationData maximumCreditRateConfigurationData;
 
     @Transactional(isolation = Isolation.READ_UNCOMMITTED, rollbackFor = Exception.class)
-    public void processOverdueCharges() throws JobExecutionException {
-        this.loanWritePlatformService.recalculateInterestForMaximumLegalRate(loanRescheduleData, maximumCreditRateConfigurationData);
+    public void processMaximumLegalRate() throws JobExecutionException {
+        this.loanWritePlatformService.recalculateInterestForMaximumLegalRate(loanRescheduleData);
     }
 }
