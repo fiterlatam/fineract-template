@@ -2447,8 +2447,8 @@ join tmp_disbursementdetails td on tcm."DISBURSEMENTDETAILSKEY" = td."ENCODEDKEY
 join tmp_principalpaymentaccountsettings ppas on ppas."ENCODEDKEY" = tcm."PRINCIPALPAYMENTSETTINGSKEY"
 join tmp_loanproduct_mapping tlm on tlm.ea_product_key = tcm."PRODUCTTYPEKEY"
 join m_product_loan mpl on mpl.name = tlm.mifos_product_name
-join tmp_cliente_migrar tcm2 on tcm2.encodedkey = tcm."ACCOUNTHOLDERKEY"
-join m_client mc on mc.external_id = tcm2.ID
+join tmp_cliente_migrar tcm2 on tcm2."ENCODEDKEY" = tcm."ACCOUNTHOLDERKEY"
+join m_client mc on mc.external_id = tcm2."ID" 
 join campos_cliente_persona ccp on ccp.client_id = mc.id
 where tcm."ID" not in (select external_id from m_loan)
 
