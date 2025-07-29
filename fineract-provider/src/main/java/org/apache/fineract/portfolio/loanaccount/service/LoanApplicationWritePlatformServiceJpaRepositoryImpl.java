@@ -2216,7 +2216,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                                 ChargeCalculationType.fromInt(specificCharge.getChargeCalculation()),
                                 loan.getExpectedDisbursedOnLocalDate(), ChargePaymentMode.fromInt(specificCharge.getChargePaymentMode()),
                                 null, BigDecimal.ZERO, null, false, null);
-                        if (loanCharge.getCharge().getName().toLowerCase().contains("seguro de vida nano")) {
+                        if (loanCharge.getCharge().getName().toLowerCase().contains("seguro vida")) {
                             loan.addLoanCharge(loanCharge);
                         } else {
                             if (chargeAmount == null && (accountState.equals("PENDING_APPROVAL") || accountState.equals("APPROVED"))) {

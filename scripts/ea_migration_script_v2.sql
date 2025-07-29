@@ -8,6 +8,10 @@ truncate m_document restart identity cascade;
 
 select * from m_loan_charge mlc;
 
+select * from m_loan ml 
+
+select * from m_charge mc order by "name" ;
+
 select * from m_charge mc order by id;
 
 CREATE EXTENSION IF NOT EXISTS unaccent;
@@ -475,8 +479,6 @@ join m_client mc on mc.external_id = c."ID" ::varchar
 and mc.id not in (select client_id from campos_cliente_persona);
 
 -- If this query above fails, check the code_values vs the document type -- select * from m_code_value mcv where mcv.code_id = (select id from m_code where code_name ='Customer Identifier');
-
-
 
 -- - Add installment column in source repayment table
 ALTER TABLE tmp_loan_repayment_schedule ADD installment INTEGER NULL;
@@ -1961,6 +1963,10 @@ delete from tmp_migration_response where activity = 'disburse';
 select * from m_loan;
 select * from tmp_loanaccount tl where tl."ID" = '3018738986';
 
+select * from m_loan where external_id = '3018738986';
+
+select * from m_loan ml;
+
 select * from tmp_disbursementdetails td where td."ENCODEDKEY" = '8a4446c38ba9bc52018bab0a91d50c50';
 
 -- before migrating MD Loans:
@@ -2050,8 +2056,16 @@ where mlc.charge_id = 54 and mlc.loan_id = ml.id and (tlc."NAME" like '%4SMMLV%'
 --  AND mpl.id = l.product_id
 --  AND mpl.allow_multiple_disbursals = true;
  
+-- UPDATE m_loan AS l
+-- SET number_of_repayments = ROUND(100 / NULLIF(tpps."PERCENTAGE", 0))
+-- FROM tmp_loanaccount tmpl, m_product_loan mpl, tmp_principalpaymentaccountsettings tpps
+ --WHERE tmpl."ID" = l.account_no
+ -- AND mpl.id = l.product_id
+--  AND mpl.allow_multiple_disbursals = true
+--  AND tpps."ENCODEDKEY" = tmpl."PRINCIPALPAYMENTSETTINGSKEY";
+
 UPDATE m_loan AS l
-SET number_of_repayments = ROUND(100 / NULLIF(tpps."PERCENTAGE", 0))
+SET mambu_number_of_repayments = ROUND(100 / NULLIF(tpps."PERCENTAGE", 0))
 FROM tmp_loanaccount tmpl, m_product_loan mpl, tmp_principalpaymentaccountsettings tpps
 WHERE tmpl."ID" = l.account_no
   AND mpl.id = l.product_id
@@ -2406,6 +2420,12 @@ update m_savings_account set account_no = LPAD(id::text, 9, '0') ;
 -- After migration multi disbursal loans execute below queries
 update m_loan set account_no = account_no || '-old';
 update m_loan set account_no = m_loan.external_id;
+
+-- Run this query to set the external_id for migrated clients
+update m_client as m
+set external_id = t.field_value
+from tmp_client_customfieldvalue t
+where t.clientid = m.account_no;
 
 select count(*) from m_loan ml where loan_status_id = 300;
 
