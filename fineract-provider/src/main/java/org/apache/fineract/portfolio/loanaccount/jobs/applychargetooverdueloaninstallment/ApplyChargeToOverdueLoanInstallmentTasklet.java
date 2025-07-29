@@ -140,8 +140,18 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
         final Callable<Void> fetchData = () -> {
             ThreadLocalContextUtil.init(context);
             Long maxId = maxLoanId;
-            if (!queue.isEmpty()) {
-                maxId = Math.max(maxLoanId, queue.element().get(queue.element().size() - 1).getLoanId());
+            List<OverdueLoanScheduleData> currentQueueElement = null;
+
+            // Safely get the first element if queue is not empty
+            synchronized (queue) {
+                if (!queue.isEmpty()) {
+                    currentQueueElement = queue.peek();
+                }
+            }
+
+            // Update maxId if we have data
+            if (currentQueueElement != null && !currentQueueElement.isEmpty()) {
+                maxId = Math.max(maxId, currentQueueElement.get(currentQueueElement.size() - 1).getLoanId());
             }
             while (queue.size() <= QUEUE_SIZE) {
                 log.debug("Apply penalty to overdue loans:: Fetching while threads are running!");
@@ -188,8 +198,18 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
         final List<Future<Void>> responses = new ArrayList<>();
         posters.forEach(poster -> responses.add(taskExecutor.submit(poster)));
         Long maxId = maxLoanId;
-        if (!queue.isEmpty()) {
-            maxId = Math.max(maxLoanId, queue.element().get(queue.element().size() - 1).getLoanId());
+        List<OverdueLoanScheduleData> currentQueueElement = null;
+
+        // Safely get the first element if queue is not empty
+        synchronized (queue) {
+            if (!queue.isEmpty()) {
+                currentQueueElement = queue.peek();
+            }
+        }
+
+        // Update maxId if we have data
+        if (currentQueueElement != null && !currentQueueElement.isEmpty()) {
+            maxId = Math.max(maxId, currentQueueElement.get(currentQueueElement.size() - 1).getLoanId());
         }
 
         while (queue.size() <= QUEUE_SIZE) {

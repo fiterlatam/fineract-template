@@ -362,4 +362,5 @@
     <include file="parts/2025032417528002000_SU_672_add_cleanup_script.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025052104490000000_SU_702_create_table_tmp_loan_cleanup.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025052104500000000_SU_709_add_credit_note_job.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2025072912178000000_SU_715_update_job_params_for_tasa_maxima_job_job.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

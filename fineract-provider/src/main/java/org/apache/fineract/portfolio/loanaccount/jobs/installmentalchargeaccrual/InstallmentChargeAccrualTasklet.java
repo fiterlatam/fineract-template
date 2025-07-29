@@ -116,8 +116,18 @@ public class InstallmentChargeAccrualTasklet implements Tasklet {
         Callable<Void> fetchData = () -> {
             ThreadLocalContextUtil.init(context);
             Long maxId = maxLoanIdInList;
-            if (!queue.isEmpty()) {
-                maxId = Math.max(maxLoanIdInList, queue.element().get(queue.element().size() - 1));
+            List<Long> currentQueueElement = null;
+
+            // Safely get the first element if queue is not empty
+            synchronized (queue) {
+                if (!queue.isEmpty()) {
+                    currentQueueElement = queue.peek();
+                }
+            }
+
+            // Update maxId if we have data
+            if (currentQueueElement != null && !currentQueueElement.isEmpty()) {
+                maxId = Math.max(maxId, currentQueueElement.get(currentQueueElement.size() - 1));
             }
 
             while (queue.size() <= QUEUE_SIZE) {
@@ -161,8 +171,18 @@ public class InstallmentChargeAccrualTasklet implements Tasklet {
         List<Future<Void>> responses = new ArrayList<>();
         posters.forEach(poster -> responses.add(taskExecutor.submit(poster)));
         Long maxId = maxLoanIdInList;
-        if (!queue.isEmpty()) {
-            maxId = Math.max(maxLoanIdInList, queue.element().get(queue.element().size() - 1));
+        List<Long> currentQueueElement = null;
+
+        // Safely get the first element if queue is not empty
+        synchronized (queue) {
+            if (!queue.isEmpty()) {
+                currentQueueElement = queue.peek();
+            }
+        }
+
+        // Update maxId if we have data
+        if (currentQueueElement != null && !currentQueueElement.isEmpty()) {
+            maxId = Math.max(maxId, currentQueueElement.get(currentQueueElement.size() - 1));
         }
 
         while (queue.size() <= QUEUE_SIZE) {

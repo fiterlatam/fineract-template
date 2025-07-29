@@ -87,10 +87,12 @@ public class RecalculateInterestForMaximumLegalRateTasklet implements Tasklet {
 
             if (!CollectionUtils.isEmpty(queue)) {
                 do {
-                    List<LoanRescheduleData> queueElement = queue.element();
-                    maximumLoanId = queueElement.get(queueElement.size() - 1).getId();
-                    this.recalculateInterestForMaximumLegalRate(queue.remove(), threadPoolSize, pageSize, maximumLoanId,
-                            maximumCreditRateConfigurationData);
+                    List<LoanRescheduleData> queueElement = queue.poll();
+                    if (queueElement != null) {
+                        maximumLoanId = queueElement.get(queueElement.size() - 1).getId();
+                        this.recalculateInterestForMaximumLegalRate(queueElement, threadPoolSize, pageSize, maximumLoanId,
+                                maximumCreditRateConfigurationData);
+                    }
                 } while (!CollectionUtils.isEmpty(queue));
             }
         }
@@ -121,9 +123,20 @@ public class RecalculateInterestForMaximumLegalRateTasklet implements Tasklet {
         Callable<Void> fetchData = () -> {
             ThreadLocalContextUtil.init(context);
             Long maxId = maxLoanId;
-            if (!queue.isEmpty()) {
-                maxId = Math.max(maxLoanId, queue.element().get(queue.element().size() - 1).getId());
+            List<LoanRescheduleData> currentQueueElement = null;
+
+            // Safely get the first element if queue is not empty
+            synchronized (queue) {
+                if (!queue.isEmpty()) {
+                    currentQueueElement = queue.peek();
+                }
             }
+
+            // Update maxId if we have data
+            if (currentQueueElement != null && !currentQueueElement.isEmpty()) {
+                maxId = Math.max(maxLoanId, currentQueueElement.get(currentQueueElement.size() - 1).getId());
+            }
+
             while (queue.size() <= QUEUE_SIZE) {
 
                 log.debug("Recalculate Loan Interest After Maximum Legal Rate Change:: Fetching while threads are running!");
@@ -169,8 +182,18 @@ public class RecalculateInterestForMaximumLegalRateTasklet implements Tasklet {
         List<Future<Void>> responses = new ArrayList<>();
         posters.forEach(poster -> responses.add(taskExecutor.submit(poster)));
         Long maxId = maxLoanId;
-        if (!queue.isEmpty()) {
-            maxId = Math.max(maxLoanId, queue.element().get(queue.element().size() - 1).getId());
+        List<LoanRescheduleData> currentQueueElement = null;
+
+        // Safely get the first element if queue is not empty
+        synchronized (queue) {
+            if (!queue.isEmpty()) {
+                currentQueueElement = queue.peek();
+            }
+        }
+
+        // Update maxId if we have data
+        if (currentQueueElement != null && !currentQueueElement.isEmpty()) {
+            maxId = Math.max(maxLoanId, currentQueueElement.get(currentQueueElement.size() - 1).getId());
         }
 
         while (queue.size() <= QUEUE_SIZE) {
