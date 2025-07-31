@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -477,6 +478,13 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                 LoanTransactionRelation.linkToTransaction(newLoanTransaction, loanTransaction, LoanTransactionRelationTypeEnum.REPLAYED));
         changedTransactionDetail.getNewTransactionMappings().put(loanTransaction.getId(), newLoanTransaction);
 
+        /*
+         * SU-735: Replaying of loan transaction is not supported in Fineract This is a temporary solution to avoid
+         * replaying of loan transactions. Once replaying of loan transactions is supported, this exception can be
+         * removed.
+         */
+        throw new GeneralPlatformDomainRuleException("error.msg.loan.transaction.replay.is.not.supported",
+                "Replaying of loan transaction is currently not supported in Fineract.");
     }
 
     protected void processCreditTransaction(LoanTransaction loanTransaction, MoneyHolder overpaymentHolder, MonetaryCurrency currency,
