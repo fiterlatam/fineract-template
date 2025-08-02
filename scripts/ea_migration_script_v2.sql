@@ -2412,6 +2412,75 @@ from
 m_client mc;
 
 update m_savings_account set account_no = LPAD(id::text, 9, '0') ;
+
+
+-- clients with active loans and savings accounts (not yet linked)
+SELECT 
+    l.id AS loan_id,
+    l.account_no AS loan_account_no,
+    s.id AS savings_id,
+    s.account_no AS savings_account_no
+FROM m_loan l
+JOIN m_client c ON c.id = l.client_id
+JOIN (
+    SELECT DISTINCT ON (client_id) *
+    FROM m_savings_account
+    WHERE status_enum = 300
+    ORDER BY client_id, submittedon_date
+) s ON s.client_id = c.id
+WHERE 
+    l.loan_status_id = 300
+    AND NOT EXISTS (
+        SELECT 1 
+        FROM m_portfolio_account_associations paa
+        WHERE paa.loan_account_id = l.id 
+          AND paa.linked_savings_account_id = s.id
+          AND paa.association_type_enum = 1
+    );
+
+
+select * from m_portfolio_account_associations;
+
+--  link a loan account with a savings account 
+INSERT INTO m_portfolio_account_associations (
+    loan_account_id,
+    linked_savings_account_id,
+    association_type_enum,
+	is_active
+)
+SELECT 
+    l.id AS loan_account_id,
+    s.id AS savings_account_id,
+    1 AS association_type_enum,
+	true
+FROM m_loan l
+JOIN m_client c ON c.id = l.client_id
+JOIN (
+    SELECT DISTINCT ON (client_id) *
+    FROM m_savings_account
+    WHERE status_enum = 300
+    ORDER BY client_id, submittedon_date
+) s ON s.client_id = c.id
+WHERE 
+    l.loan_status_id = 300
+    AND NOT EXISTS (
+        SELECT 1 
+        FROM m_portfolio_account_associations paa
+        WHERE paa.loan_account_id = l.id 
+          AND paa.savings_account_id = s.id
+          AND paa.association_type_enum = 1
+    );
+
+
+-- after the insert — verify links
+SELECT 
+    l.account_no AS loan_account,
+    s.account_no AS savings_account,
+    paa.association_type_enum
+FROM m_portfolio_account_associations paa
+JOIN m_loan l ON paa.loan_account_id = l.id
+JOIN m_savings_account s ON paa.linked_savings_account_id = s.id
+WHERE paa.association_type_enum = 1;
 	
 	
 -- ==== END OF NEW QUERIES TO CREATE LOANS FOR THE OUTSTANDING BALANCES =====-- 
