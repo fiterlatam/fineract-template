@@ -115,6 +115,7 @@ import org.apache.fineract.portfolio.loanaccount.jobs.installmentalchargeaccrual
 import org.apache.fineract.portfolio.loanaccount.jobs.recalculateloaninterestaftermaximumlegalratechange.RecalculateInterestForMLRProcessor;
 import org.apache.fineract.portfolio.loanaccount.jobs.recalculateloaninterestaftermaximumlegalratechange.RecalculateInterestForMLRProcessorTask;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanInstalmentChargeRepository;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleAssembler;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleCalculationPlatformService;
@@ -468,7 +469,8 @@ public class LoanAccountConfiguration {
             BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper,
             FacturaElectronicMensualRepository facturaElectronicMensualRepository,
             LoanProductParameterizationRepository productParameterizationRepository,
-            CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository, LoanCreditNoteRepository loanCreditNoteRepository,
+            CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository,
+            LoanInstalmentChargeRepository loanInstalmentChargeRepository,LoanCreditNoteRepository loanCreditNoteRepository,
             LoanAccrualPlatformService loanAccrualPlatformService, CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
@@ -488,7 +490,7 @@ public class LoanAccountConfiguration {
                 channelReadWritePlatformService, platformSecurityContext, globalConfigurationRepository, loanBlockWritePlatformService,
                 blockingReasonRepository, loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository,
                 loanScheduleFactory, blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository,
-                productParameterizationRepository, customChargeHonorarioMapRepository, loanCreditNoteRepository, loanAccrualPlatformService,
+                productParameterizationRepository, customChargeHonorarioMapRepository,loanInstalmentChargeRepository, loanCreditNoteRepository, loanAccrualPlatformService,
                 collectionHouseReadWriteService);
     }
 

@@ -633,8 +633,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         this.context.authenticatedUser();
         try {
             final LoanTransactionsMapper rm = new LoanTransactionsMapper(sqlGenerator);
-            final String sql = "select " + rm.loanPaymentsSchema() + " where l.id = ? and tr.id = ? ";
-            LoanTransactionData loanTransactionData = this.jdbcTemplate.queryForObject(sql, rm, loanId, transactionId); // NOSONAR
+            final String sql = rm.loanPaymentsSchema() + " where l.id = ? and tr.id = ? ";
+            LoanTransactionData loanTransactionData = this.jdbcTemplate.queryForObject(sql, rm, loanId,  loanId, transactionId); // NOSONAR
             loanTransactionData.setLoanTransactionRelations(this.retrieveLoanTransactionRelationsByLoanTransactionId(transactionId));
             return loanTransactionData;
         } catch (final EmptyResultDataAccessException e) {

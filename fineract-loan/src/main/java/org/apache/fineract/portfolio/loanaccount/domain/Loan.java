@@ -534,9 +534,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "migrar_cli_nroid")
     private String cedula;
 
-    @Column(name = "block_status_id")
-    private Long blockStatusId;
-
     ///////////////
 
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
@@ -1552,6 +1549,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public void updateLoanSchedule(final LoanScheduleModel modifiedLoanSchedule) {
+        for (LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
+            installment.deleteOverdueInstallmentCharges();
+        }
         this.repaymentScheduleInstallments.clear();
         // for some installements , we made them start from number 0 , we want to keep that way
         int actualPaymentNumber = 1;
@@ -6939,7 +6939,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         final Integer numberOfRepayments = this.loanRepaymentScheduleDetail.getNumberOfRepayments();
-        final Integer repaymentEvery = this.loanRepaymentScheduleDetail.getRepayEvery();
+        final Integer repayEvery = this.loanRepaymentScheduleDetail.getRepayEvery();
         final PeriodFrequencyType repaymentPeriodFrequencyType = this.loanRepaymentScheduleDetail.getRepaymentPeriodFrequencyType();
 
         final AmortizationMethod amortizationMethod = this.loanRepaymentScheduleDetail.getAmortizationMethod();
@@ -8026,6 +8026,38 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 installmentWithTransactionOnDueDate);
     }
 
+    public void reapplyInsuranceCharges() {
+        Collection<LoanCharge> loanCharges = this.getLoanCharges();
+        if (!CollectionUtils.isEmpty(loanCharges)) {
+            for (LoanCharge loanCharge : loanCharges) {
+                if (loanCharge.getCharge().isPercentageBasedMandatoryInsurance()) {
+                    // Clear all loanInstallmentCharges for this charge
+                    loanCharge.clearLoanInstallmentCharges();
+                    
+                    // Remove installment charges from all installments
+                    for (LoanRepaymentScheduleInstallment installment : this.getRepaymentScheduleInstallments()) {
+                        installment.getInstallmentCharges().removeIf(charge -> charge.getLoanCharge().equals(loanCharge));
+                    }
+                    
+                    // Regenerate installment charges for this loan charge
+                    List<LoanInstallmentCharge> newInstallmentCharges = this.generateInstallmentLoanCharges(loanCharge);
+                    
+                    // Add the new installment charges to the loan charge
+                    loanCharge.addLoanInstallmentCharges(newInstallmentCharges);
+                    
+                    // Regenerate CustomChargeHonorarioMaps for flat honorario charges
+                    // This is now handled in the service layer (LoanWritePlatformServiceJpaRepositoryImpl)
+                    // to ensure proper access to external services and repositories
+                    
+                    // Update the charge's outstanding amount
+                    loanCharge.updateAmountOutstanding();
+                }
+            }
+        }
+    }
+
+
+
     @lombok.Data
     @lombok.AllArgsConstructor
     public static class TransactionOnDueDateDetails {
@@ -8674,11 +8706,4 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return this.getRepaymentScheduleInstallments().stream().anyMatch(LoanRepaymentScheduleInstallment::hasPenalties);
     }
 
-    public void updateBlockingReason(Long blockStatusId) {
-        this.blockStatusId = blockStatusId;
-    }
-
-    public Long getBlockStatusId() {
-        return blockStatusId;
-    }
 }

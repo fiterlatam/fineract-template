@@ -152,6 +152,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     private Set<LoanInstallmentCharge> installmentCharges = new HashSet<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "installment")
+    private Set<LoanOverdueInstallmentCharge> overdueInstallmentCharges = new HashSet<>();
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "installment")
     private Set<LoanTransactionToRepaymentScheduleMapping> loanTransactionToRepaymentScheduleMappings = new HashSet<>();
 
     @Transient
@@ -637,6 +640,12 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             }
         }
         return false;
+    }
+
+    public void deleteOverdueInstallmentCharges() {
+        if (this.overdueInstallmentCharges != null && !this.overdueInstallmentCharges.isEmpty()) {
+            this.overdueInstallmentCharges.clear();
+        }
     }
 
     public interface PaymentFunction {
