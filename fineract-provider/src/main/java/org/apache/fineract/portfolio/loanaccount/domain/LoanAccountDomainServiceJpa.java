@@ -456,42 +456,42 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     }
 
     /**
-     * Regenerates all CustomChargeHonorarioMaps for a flat honorario charge.
-     * This method should be called after clearing existing maps to recreate them.
-     * 
-     * @param loanCharge The loan charge for which to regenerate the maps
+     * Regenerates all CustomChargeHonorarioMaps for a flat honorario charge. This method should be called after
+     * clearing existing maps to recreate them.
+     *
+     * @param loanCharge
+     *            The loan charge for which to regenerate the maps
      */
     public void regenerateCustomChargeHonorarioMaps(LoanCharge loanCharge) {
 
         if (!loanCharge.isFlatHono()) {
             return;
         }
-        
+
         Loan loan = loanCharge.getLoan();
         if (loan == null) {
             return;
         }
-        
+
         // Get all installments that need honorario charges
         List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallmentsIgnoringTotalGrace().stream()
                 .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber))
                 .filter(installment -> !installment.isRecalculatedInterestComponent())
-                .filter(installment -> loanCharge.getApplicableFromInstallment() == null 
+                .filter(installment -> loanCharge.getApplicableFromInstallment() == null
                         || loanCharge.getApplicableFromInstallment() <= installment.getInstallmentNumber())
                 .toList();
 
-
         // Get the next version number for batch processing
         Long version = customChargeHonorarioMapRepository.getMaxVersionByLoan(loan.getId()) + 1;
-        
+
         // For each installment, create a CustomChargeHonorarioMap
         for (LoanRepaymentScheduleInstallment installment : installments) {
             // Calculate the outstanding amount for this installment
             BigDecimal installmentOutstandingAmount = installment.getPrincipalOutstanding(loan.getCurrency()).getAmount();
-            
+
             // Calculate fee honorario for this installment
             FeeCalculationHonorario feeCalculationHonorario = this.calculateFeeHonorario(installment, installmentOutstandingAmount, null);
-            
+
             // Create new CustomChargeHonorarioMap
             CustomChargeHonorarioMap newCustomChargeHonorarioMap = new CustomChargeHonorarioMap();
             newCustomChargeHonorarioMap.setNit("120843958");
@@ -504,10 +504,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             newCustomChargeHonorarioMap.setCreatedAt(DateUtils.getLocalDateTimeOfTenant());
             newCustomChargeHonorarioMap.setLoanChargeId(loanCharge.getId());
             newCustomChargeHonorarioMap.setVersion(version);
-            
+
             // Save the map
             newCustomChargeHonorarioMap = customChargeHonorarioMapRepository.saveAndFlush(newCustomChargeHonorarioMap);
-            
+
             // Add to the loan charge's maps
             if (loanCharge.getCustomChargeHonorarioMaps() != null && !loanCharge.getCustomChargeHonorarioMaps().isEmpty()) {
                 loanCharge.getCustomChargeHonorarioMaps().add(newCustomChargeHonorarioMap);
@@ -517,10 +517,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 loanCharge.setCustomChargeHonorarioMaps(customChargeHonorarioMapSet);
             }
         }
-        
+
         // Update the loan charge amounts
         loanCharge.updateAmountOutstanding();
-        
+
         // Update the loan schedule
         loan.updateLoanScheduleAfterCustomChargeApplied();
         saveLoanWithDataIntegrityViolationChecks(loan);

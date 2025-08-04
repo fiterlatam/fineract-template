@@ -81,10 +81,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         final MonetaryCurrency currency = loanApplicationTerms.getCurrency();
 
         loanCharges.stream().forEach(charge -> {
-            //IF CHARGE IS TYPE DISB_SEGO or DISB_AVAL
-            if (charge.getCharge().isPercentageBasedMandatoryInsurance() && charge.getLoan()!=null) {
-                charge.update(charge.getPercentage(),charge.getDueDate(),
-                        charge.getLoan().getPrincipal().getAmount(),loanApplicationTerms.getActualNumberOfRepayments(),BigDecimal.ZERO);
+            // IF CHARGE IS TYPE DISB_SEGO or DISB_AVAL
+            if (charge.getCharge().isPercentageBasedMandatoryInsurance() && charge.getLoan() != null) {
+                charge.update(charge.getPercentage(), charge.getDueDate(), charge.getLoan().getPrincipal().getAmount(),
+                        loanApplicationTerms.getActualNumberOfRepayments(), BigDecimal.ZERO);
             }
         });
         // determine the total charges due at time of disbursement

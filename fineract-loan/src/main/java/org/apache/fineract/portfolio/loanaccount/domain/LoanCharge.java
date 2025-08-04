@@ -794,7 +794,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 amount = amount.plus(charge.getAmount());
             }
         }
-        if (amount.getAmount().compareTo(this.amount)>0){
+        if (amount.getAmount().compareTo(this.amount) > 0) {
             this.amount = amount.getAmount();
         }
         this.amountOutstanding = calculateOutstanding();
@@ -1236,6 +1236,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     public void clearLoanInstallmentCharges() {
         this.loanInstallmentCharge.clear();
     }
+
     public void clearCustomLoanInstallmentCharges() {
         this.customChargeHonorarioMaps.clear();
     }
