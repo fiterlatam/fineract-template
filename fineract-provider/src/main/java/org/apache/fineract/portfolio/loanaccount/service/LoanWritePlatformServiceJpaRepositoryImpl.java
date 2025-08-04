@@ -206,6 +206,7 @@ import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicaMensual;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.LoanDocumentConcept;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleDTO;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanInstalmentChargeRepository;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
@@ -1928,26 +1929,28 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         if (transactionToAdjust.isForeclosure()) {
-            loan.regenerateRepaymentSchedule(scheduleGeneratorDTO);
-            loan.reapplyInsuranceCharges();
+
             // Delete existing CustomChargeHonorarioMaps for this loan
             this.customChargeHonorarioMapRepository.deleteByLoanId(loanId);
 
             // Delete existing LoanInstallmentCharges for this loan
             this.loanInstalmentChargeRepository.deleteByLoanId(loanId);
             this.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+
+            loan.regenerateRepaymentSchedule(scheduleGeneratorDTO);
+            loan.reapplyInsuranceCharges();
             // Regenerate CustomChargeHonorarioMaps for flat honorario charges
-            Collection<LoanCharge> loanCharges = loan.getLoanCharges();
-            if (!CollectionUtils.isEmpty(loanCharges)) {
-                for (LoanCharge loanCharge : loanCharges) {
-                    if (loanCharge.isFlatHono()) {
-                        // Cast to LoanAccountDomainServiceJpa to access the regenerateCustomChargeHonorarioMaps method
-                        if (this.loanAccountDomainService instanceof LoanAccountDomainServiceJpa) {
-                            ((LoanAccountDomainServiceJpa) this.loanAccountDomainService).regenerateCustomChargeHonorarioMaps(loanCharge);
-                        }
-                    }
-                }
-            }
+//            Collection<LoanCharge> loanCharges = loan.getLoanCharges();
+//            if (!CollectionUtils.isEmpty(loanCharges)) {
+//                for (LoanCharge loanCharge : loanCharges) {
+//                    if (loanCharge.isFlatHono()) {
+//                        // Cast to LoanAccountDomainServiceJpa to access the regenerateCustomChargeHonorarioMaps method
+//                        if (this.loanAccountDomainService instanceof LoanAccountDomainServiceJpa) {
+//                            ((LoanAccountDomainServiceJpa) this.loanAccountDomainService).regenerateCustomChargeHonorarioMaps(loanCharge);
+//                        }
+//                    }
+//                }
+//            }
 
             loan.processPostDisbursementTransactions();
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
@@ -2578,7 +2581,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                         currentScheduleInstallment.getInterestCharged(currency).getAmount(), tillDays)));
                     }
                 }
-                saveAndFlushLoanWithIntegrityChecks(loan);
+                saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             }
             final boolean isCreditNote = command.booleanPrimitiveValueOfParameterNamed("isCreditNote");
             if (isCreditNote && creditNote != null) {
@@ -5661,61 +5664,65 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
     }
 
+    @Transactional
     @Override
     public JsonArray regenerateLoanSchedule(String apiRequestBodyAsJson) {
         final JsonElement element = fromApiJsonHelper.parse(apiRequestBodyAsJson);
         JsonArray loanIds = this.fromApiJsonHelper.extractJsonArrayNamed("loanIds", element);
         JsonArray failedLoans = new JsonArray();
 
-        loanIds.forEach(loansList -> {
+        for (JsonElement loansList : loanIds) {
             long loanId = loansList.getAsLong();
             try {
-                Long processedLoan = this.regenerateLoanRepaymentSchedule(loanId);
-                log.info("Successfully regenerated loan schedule for loan ID: {}", loanId);
+
+                final Loan loan = this.loanAssembler.assembleFrom(loanId);
+                if (loan == null) {
+                    throw new LoanNotFoundException(loanId);
+                }
+
+                // Delete existing CustomChargeHonorarioMaps for this loan
+                this.customChargeHonorarioMapRepository.deleteByLoanId(loanId);
+
+                // Delete existing LoanInstallmentCharges for this loan
+                this.loanInstalmentChargeRepository.deleteByLoanId(loanId);
+
+                ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, DateUtils.getBusinessLocalDate());
+
+                loan.regenerateRepaymentSchedule(scheduleGeneratorDTO);
+
+                loan.reapplyInsuranceCharges();
+
+                // Regenerate CustomChargeHonorarioMaps for flat honorario charges
+            Collection<LoanCharge> loanCharges = loan.getLoanCharges();
+            if (!CollectionUtils.isEmpty(loanCharges)) {
+                for (LoanCharge loanCharge : loanCharges) {
+                    if (loanCharge.isFlatHono()) {
+                        // Cast to LoanAccountDomainServiceJpa to access the regenerateCustomChargeHonorarioMaps method
+                        if (this.loanAccountDomainService instanceof LoanAccountDomainServiceJpa) {
+                            loanCharge.update(loan);
+                            ((LoanAccountDomainServiceJpa) this.loanAccountDomainService).regenerateCustomChargeHonorarioMaps(loanCharge);
+                        }
+                    }
+                }
+            }
+
+            loan.processPostDisbursementTransactions();
+            loan.updateLoanDerivedFields();
+
+            saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+
+            log.info("Successfully regenerated loan schedule for loan ID: {}", loanId);
             } catch (Exception e) {
                 log.error("Failed to regenerate loan schedule for loan ID: {}", loanId, e);
                 failedLoans.add(loansList);
             }
-        });
+        }
 
         return failedLoans;
     }
 
-    @Transactional
-    private Long regenerateLoanRepaymentSchedule(long loanId) {
-        final Loan loan = this.loanAssembler.assembleFrom(loanId);
-        if (loan == null) {
-            throw new LoanNotFoundException(loanId);
-        }
+    public Long regenerateLoanRepaymentSchedule(long loanId) {
 
-        // Delete existing CustomChargeHonorarioMaps for this loan
-        this.customChargeHonorarioMapRepository.deleteByLoanId(loanId);
-
-        // Delete existing LoanInstallmentCharges for this loan
-        this.loanInstalmentChargeRepository.deleteByLoanId(loanId);
-
-        this.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
-
-        ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
-
-        loan.regenerateRepaymentSchedule(scheduleGeneratorDTO);
-        loan.reapplyInsuranceCharges();
-
-        // Regenerate CustomChargeHonorarioMaps for flat honorario charges
-        Collection<LoanCharge> loanCharges = loan.getLoanCharges();
-        if (!CollectionUtils.isEmpty(loanCharges)) {
-            for (LoanCharge loanCharge : loanCharges) {
-                if (loanCharge.isFlatHono()) {
-                    // Cast to LoanAccountDomainServiceJpa to access the regenerateCustomChargeHonorarioMaps method
-                    if (this.loanAccountDomainService instanceof LoanAccountDomainServiceJpa) {
-                        ((LoanAccountDomainServiceJpa) this.loanAccountDomainService).regenerateCustomChargeHonorarioMaps(loanCharge);
-                    }
-                }
-            }
-        }
-
-        loan.processPostDisbursementTransactions();
-        saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         return loanId;
     }
 }
