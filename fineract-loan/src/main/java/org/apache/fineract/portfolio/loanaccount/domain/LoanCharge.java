@@ -1032,14 +1032,18 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                 if (unpaidInstallmentLoanCharge != null) {
                     processAmount = unpaidInstallmentLoanCharge.updatePaidAmountBy(incrementBy, feeAmount, isWriteOffTransaction);
                 } else {
-                    processAmount = incrementBy;
+                    // Handle case where installment fee has no unpaid installment charges
+                    // This can happen when the charge has null due date or other issues
+                    // In this case, we should not process the charge to prevent infinite loops
+                    return Money.zero(incrementBy.getCurrency());
                 }
             } else {
                 final LoanInstallmentCharge installmentLoanCharge = getInstallmentLoanCharge(installmentNumber);
                 if (installmentLoanCharge != null) {
                     processAmount = installmentLoanCharge.updatePaidAmountBy(incrementBy, feeAmount, isWriteOffTransaction);
                 } else {
-                    processAmount = incrementBy;
+                    // Handle case where specific installment charge is not found
+                    return Money.zero(incrementBy.getCurrency());
                 }
             }
         } else {

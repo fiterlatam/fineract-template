@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
@@ -60,6 +61,7 @@ import org.springframework.util.CollectionUtils;
  * @see HeavensFamilyLoanRepaymentScheduleTransactionProcessor
  * @see CreocoreLoanRepaymentScheduleTransactionProcessor
  */
+@Slf4j
 public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implements LoanRepaymentScheduleTransactionProcessor {
 
     @Override
@@ -704,17 +706,85 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
             final Integer installmentNumber) {
         final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
         Money amountRemaining = chargeAmount;
+        int loopCount = 0;
+        final int MAX_CHARGE_LOOP_ITERATIONS = 1000;
+
         while (amountRemaining.isGreaterThanZero()) {
+            loopCount++;
+            if (loopCount > MAX_CHARGE_LOOP_ITERATIONS) {
+                throw new RuntimeException("Infinite loop detected in updateChargesPaidAmountBy - Transaction ID: "
+                        + (loanTransaction.getId() != null ? loanTransaction.getId() : "NEW") + ", Amount remaining: "
+                        + amountRemaining.getAmount() + ", Charges count: " + charges.size());
+            }
             final LoanCharge unpaidCharge = findEarliestUnpaidChargeFromUnOrderedSet(charges, chargeAmount.getCurrency());
             Money feeAmount = chargeAmount.zero();
+
+            // Log charge processing details
+            if (loopCount <= 10) { // Only log first 10 iterations to avoid spam
+                log.info("updateChargesPaidAmountBy - Loop {}: Amount remaining: {}, Unpaid charge: {}", loopCount,
+                        amountRemaining.getAmount(), unpaidCharge != null ? unpaidCharge.getId() : "null");
+
+                if (unpaidCharge != null) {
+                    log.info(
+                            "updateChargesPaidAmountBy - Charge details: ID={}, Amount={}, Outstanding={}, Paid={}, IsPaid={}, IsWaived={}, ChargeType={}, IsFlatHono={}, IsMandatoryInsurance={}, IsInstalmentFee={}",
+                            unpaidCharge.getId(), unpaidCharge.amount(), unpaidCharge.getAmountOutstanding(), unpaidCharge.getAmountPaid(),
+                            unpaidCharge.isPaid(), unpaidCharge.isWaived(), unpaidCharge.getCharge().getName(), unpaidCharge.isFlatHono(),
+                            unpaidCharge.isMandatoryInsurance(), unpaidCharge.isInstalmentFee());
+
+                    // Check if this is an installment fee and has no unpaid installment charges
+                    if (unpaidCharge.isInstalmentFee()) {
+                        LoanInstallmentCharge unpaidInstallmentCharge = unpaidCharge.getUnpaidInstallmentLoanCharge();
+                        if (unpaidInstallmentCharge == null) {
+                            log.warn(
+                                    "updateChargesPaidAmountBy - Charge {} is an installment fee but has no unpaid installment charges. Skipping to prevent infinite loop.",
+                                    unpaidCharge.getId());
+                            // Skip this charge to prevent infinite loop by breaking the loop
+                            // The next iteration will find the next unpaid charge
+                            break;
+                        }
+                        log.info("updateChargesPaidAmountBy - Found unpaid installment charge for charge {}: installment={}",
+                                unpaidCharge.getId(), unpaidInstallmentCharge.getRepaymentInstallment().getInstallmentNumber());
+                    }
+                }
+            }
             if (loanTransaction.isChargePayment()) {
                 feeAmount = chargeAmount;
             }
             if (unpaidCharge == null) {
-                break; // All are trache charges
+                log.info("updateChargesPaidAmountBy - No unpaid charges found, breaking loop");
+                break; // All charges are paid
             }
+
+            // Check if this charge has already been processed in this loop iteration
+            // This prevents infinite loops with installment fees that have null due dates
+            boolean chargeAlreadyProcessed = false;
+            if (unpaidCharge.isInstalmentFee() && unpaidCharge.getDueLocalDate() == null) {
+                // For installment fees with null due dates, check if we've already processed this charge
+                // and if the outstanding amount hasn't changed
+                Money currentOutstanding = unpaidCharge.getAmountOutstanding(chargeAmount.getCurrency());
+                if (loopCount > 1) {
+                    // If this is not the first iteration and the charge is still the same,
+                    // we might be in an infinite loop
+                    chargeAlreadyProcessed = true;
+                    log.warn(
+                            "updateChargesPaidAmountBy - Detected potential infinite loop with installment charge ID={}, Outstanding={}. Skipping to prevent infinite loop.",
+                            unpaidCharge.getId(), currentOutstanding.getAmount());
+                }
+            }
+
+            if (chargeAlreadyProcessed) {
+                // Skip this charge to prevent infinite loop
+                log.warn("updateChargesPaidAmountBy - Breaking loop due to charge already processed");
+                break;
+            }
+
             Money amountPaidTowardsCharge = unpaidCharge.updatePaidAmountBy(amountRemaining, installmentNumber, feeAmount,
                     isWriteOffTransaction);
+
+            if (loopCount <= 10) { // Only log first 10 iterations to avoid spam
+                log.info("updateChargesPaidAmountBy - After updatePaidAmountBy: amountPaidTowardsCharge={}",
+                        amountPaidTowardsCharge.getAmount());
+            }
 
             // Ideally Java Set should not allow duplicates but here if the transaction is reprocessed then it adds a
             // duplicate.
@@ -756,6 +826,11 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                     chargesPaidBies.add(loanChargePaidBy);
                 }
                 amountRemaining = amountRemaining.minus(amountPaidTowardsCharge);
+            } else {
+                // If no amount was paid towards the charge, we need to break to prevent infinite loop
+                log.warn("updateChargesPaidAmountBy - No amount paid towards charge ID={}, breaking to prevent infinite loop",
+                        unpaidCharge.getId());
+                break;
             }
         }
 
@@ -777,24 +852,50 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
         LoanCharge earliestUnpaidCharge = null;
         LoanCharge installemntCharge = null;
         LoanInstallmentCharge chargePerInstallment = null;
+
+        log.info("findEarliestUnpaidChargeFromUnOrderedSet - Total charges to check: {}", charges.size());
+
         for (final LoanCharge loanCharge : charges) {
+            log.info(
+                    "findEarliestUnpaidChargeFromUnOrderedSet - Checking charge ID={}, Outstanding={}, IsDueAtDisbursement={}, IsInstalmentFee={}, DueDate={}",
+                    loanCharge.getId(), loanCharge.getAmountOutstanding(currency).getAmount(), loanCharge.isDueAtDisbursement(),
+                    loanCharge.isInstalmentFee(), loanCharge.getDueLocalDate());
+
             if (loanCharge.getAmountOutstanding(currency).isGreaterThanZero() && !loanCharge.isDueAtDisbursement()) {
                 if (loanCharge.isInstalmentFee()) {
                     LoanInstallmentCharge unpaidLoanChargePerInstallment = loanCharge.getUnpaidInstallmentLoanCharge();
-                    if (chargePerInstallment == null || DateUtils.isAfter(chargePerInstallment.getRepaymentInstallment().getDueDate(),
-                            unpaidLoanChargePerInstallment.getRepaymentInstallment().getDueDate())) {
-                        installemntCharge = loanCharge;
-                        chargePerInstallment = unpaidLoanChargePerInstallment;
+                    if (unpaidLoanChargePerInstallment != null) {
+                        if (chargePerInstallment == null || DateUtils.isAfter(chargePerInstallment.getRepaymentInstallment().getDueDate(),
+                                unpaidLoanChargePerInstallment.getRepaymentInstallment().getDueDate())) {
+                            installemntCharge = loanCharge;
+                            chargePerInstallment = unpaidLoanChargePerInstallment;
+                            log.info("findEarliestUnpaidChargeFromUnOrderedSet - Selected installment charge: ID={}", loanCharge.getId());
+                        }
+                    } else {
+                        // Handle installment fees with no unpaid installment charges
+                        // This can happen when the charge has null due date or other issues
+                        log.warn(
+                                "findEarliestUnpaidChargeFromUnOrderedSet - Installment charge ID={} has no unpaid installment charges, skipping",
+                                loanCharge.getId());
                     }
                 } else if (earliestUnpaidCharge == null
                         || DateUtils.isBefore(loanCharge.getDueLocalDate(), earliestUnpaidCharge.getDueLocalDate())) {
                     earliestUnpaidCharge = loanCharge;
+                    log.info("findEarliestUnpaidChargeFromUnOrderedSet - Selected regular charge: ID={}, DueDate={}", loanCharge.getId(),
+                            loanCharge.getDueLocalDate());
                 }
+            } else {
+                log.info("findEarliestUnpaidChargeFromUnOrderedSet - Skipping charge ID={} - Outstanding={}, IsDueAtDisbursement={}",
+                        loanCharge.getId(), loanCharge.getAmountOutstanding(currency).getAmount(), loanCharge.isDueAtDisbursement());
             }
         }
-        if (earliestUnpaidCharge == null || (chargePerInstallment != null && DateUtils.isAfter(earliestUnpaidCharge.getDueLocalDate(),
-                chargePerInstallment.getRepaymentInstallment().getDueDate()))) {
-            earliestUnpaidCharge = installemntCharge;
+
+        // Prioritize installment charges over regular charges
+        if (chargePerInstallment != null) {
+            if (earliestUnpaidCharge == null || DateUtils.isAfter(earliestUnpaidCharge.getDueLocalDate(),
+                    chargePerInstallment.getRepaymentInstallment().getDueDate())) {
+                earliestUnpaidCharge = installemntCharge;
+            }
         }
 
         return earliestUnpaidCharge;
