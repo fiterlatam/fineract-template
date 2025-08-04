@@ -200,7 +200,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             final boolean isRecoveryRepayment, final String chargeRefundChargeType, boolean isAccountTransfer,
             HolidayDetailDTO holidayDetailDto, Boolean isHolidayValidationDone, final boolean isLoanToLoanTransfer) {
         checkClientOrGroupActive(loan);
-
         LoanBusinessEvent repaymentEvent = getLoanRepaymentTypeBusinessEvent(repaymentTransactionType, isRecoveryRepayment, loan);
         if (repaymentEvent != null) {
             businessEventNotifierService.notifyPreBusinessEvent(repaymentEvent);
@@ -243,6 +242,17 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         }
         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom,
                 holidayDetailDto);
+
+        if (this.isLoanExpectedToBeFullyRepaid(loan, transactionDate, repaymentAmount, scheduleGeneratorDTO)) {
+            /**
+             * Add all missing accrual transactions that happened before the closure date, but not yet posted.
+             */
+            final Long minimumDaysInArrearsToSuspendLoanAccount = configurationDomainService
+                    .retriveMinimumDaysInArrearsToSuspendLoanAccount();
+            loanAccrualPlatformService.addTransactionAccrualsAfterLoanClosure(loan.getId(), transactionDate,
+                    minimumDaysInArrearsToSuspendLoanAccount);
+        }
+
         final ChangedTransactionDetail changedTransactionDetail = loan.makeRepayment(newRepaymentTransaction,
                 defaultLoanLifecycleStateMachine, existingTransactionIds, existingReversedTransactionIds, isRecoveryRepayment,
                 scheduleGeneratorDTO, isHolidayValidationDone);
@@ -318,6 +328,14 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
         setStatusToCanceledOnClosedLoan(loan, transactionDate);
         return newRepaymentTransaction;
+    }
+
+    private boolean isLoanExpectedToBeFullyRepaid(final Loan loan, final LocalDate transactionDate, final Money repaymentAmount,
+            final ScheduleGeneratorDTO scheduleGeneratorDTO) {
+        final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(transactionDate,
+                scheduleGeneratorDTO);
+        final Money totalOutstandingAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(loan.getCurrency());
+        return repaymentAmount.isGreaterThan(totalOutstandingAmount) || repaymentAmount.isEqualTo(totalOutstandingAmount);
     }
 
     @Override
@@ -1157,6 +1175,13 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
             newTransactions.add(payment);
         }
+
+        /**
+         * Add all missing accrual transactions that happened before the fore closure date, but not yet posted.
+         */
+        final Long minimumDaysInArrearsToSuspendLoanAccount = configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
+        loanAccrualPlatformService.addTransactionAccrualsAfterLoanClosure(loan.getId(), foreClosureDate,
+                minimumDaysInArrearsToSuspendLoanAccount);
 
         List<Long> transactionIds = new ArrayList<>();
         final ChangedTransactionDetail changedTransactionDetail = loan.handleForeClosureTransactions(payment,

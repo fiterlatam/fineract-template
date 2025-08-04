@@ -843,7 +843,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 // installmentDate = installmentDate.plusDays(1);
                 // }
 
-                applyInstallmentCharge(loanInstallmentCharge, installment, loanCharge, installmentDate);
+                applyInstallmentCharge(loanInstallmentCharge, installment, loanCharge, installmentDate, hasOccurredOnSuspendedAccount);
             }
             // get amount to be paid for the instalment
 
@@ -853,8 +853,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     }
 
-    private void applyInstallmentCharge(LoanInstallmentCharge loanInstallmentCharge, LoanRepaymentScheduleInstallment installment,
-            final LoanCharge loanCharge, final LocalDate suppliedTransactionDate) {
+    private void applyInstallmentCharge(final LoanInstallmentCharge loanInstallmentCharge,
+            final LoanRepaymentScheduleInstallment installment, final LoanCharge loanCharge, final LocalDate suppliedTransactionDate,
+            final boolean hasOccurredOnSuspendedAccount) {
         if (loanInstallmentCharge == null) {
             return;
         }
@@ -893,6 +894,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(this, getOffice(), chargeAmount,
                 transactionDate, feeCharges, penaltyCharges, externalId);
+        if (hasOccurredOnSuspendedAccount) {
+            applyLoanChargeTransaction.markAsOccurredOnSuspendedAccount();
+        }
 
         final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, loanCharge, chargeAmount.getAmount(),
                 installmentNumber);

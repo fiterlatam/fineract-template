@@ -634,7 +634,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         try {
             final LoanTransactionsMapper rm = new LoanTransactionsMapper(sqlGenerator);
             final String sql = rm.loanPaymentsSchema() + " where l.id = ? and tr.id = ? ";
-            LoanTransactionData loanTransactionData = this.jdbcTemplate.queryForObject(sql, rm, loanId,  loanId, transactionId); // NOSONAR
+            LoanTransactionData loanTransactionData = this.jdbcTemplate.queryForObject(sql, rm, loanId, loanId, transactionId); // NOSONAR
             loanTransactionData.setLoanTransactionRelations(this.retrieveLoanTransactionRelationsByLoanTransactionId(transactionId));
             return loanTransactionData;
         } catch (final EmptyResultDataAccessException e) {

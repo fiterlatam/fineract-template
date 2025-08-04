@@ -1228,32 +1228,35 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
                     isSuspendedAccount = true;
                 }
-                Money accrualAmount = Money.of(loan.getCurrency(), cumulativeHonoFee.add(cumulativeVatFee));
-                final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(loan, loan.getOffice(),
-                        accrualAmount, transactionDate, accrualAmount, Money.zero(loan.getCurrency()), ExternalId.empty());
-                if (isSuspendedAccount) {
-                    applyLoanChargeTransaction.markAsOccurredOnSuspendedAccount();
-                }
-                final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, honoCharge, cumulativeHonoFee,
-                        installmentNumber);
-                applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
+                final Money accrualAmount = Money.of(loan.getCurrency(), cumulativeHonoFee.add(cumulativeVatFee));
+                if (accrualAmount.isGreaterThanZero()) {
+                    final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(loan, loan.getOffice(),
+                            accrualAmount, transactionDate, accrualAmount, Money.zero(loan.getCurrency()), ExternalId.empty());
+                    if (isSuspendedAccount) {
+                        applyLoanChargeTransaction.markAsOccurredOnSuspendedAccount();
+                    }
+                    final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, honoCharge,
+                            cumulativeHonoFee, installmentNumber);
+                    applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
 
-                if (vatChargeOptional.isPresent()) {
-                    LoanCharge vat = vatChargeOptional.get();
+                    if (vatChargeOptional.isPresent()) {
+                        LoanCharge vat = vatChargeOptional.get();
 
-                    final LoanChargePaidBy vatChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, vat, cumulativeVatFee,
-                            installmentNumber);
-                    applyLoanChargeTransaction.getLoanChargesPaid().add(vatChargePaidBy);
+                        final LoanChargePaidBy vatChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, vat, cumulativeVatFee,
+                                installmentNumber);
+                        applyLoanChargeTransaction.getLoanChargesPaid().add(vatChargePaidBy);
+                    }
+                    final ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
+                            .retrieveClientAdditionalData(loan.getClientId());
+                    final String nit = ObjectUtils.defaultIfNull(clientAdditionalInformation.getNit(),
+                            clientAdditionalInformation.getCedula());
+                    final CollectionHouseConfiguration collectionHouse = this.collectionHouseReadWriteService
+                            .retrieveCollectionHouseByClientFromHistory(nit);
+                    if (collectionHouse != null) {
+                        applyLoanChargeTransaction.setCollectionHouse(collectionHouse);
+                    }
+                    loan.addLoanTransaction(applyLoanChargeTransaction);
                 }
-                final ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
-                        .retrieveClientAdditionalData(loan.getClientId());
-                final String nit = ObjectUtils.defaultIfNull(clientAdditionalInformation.getNit(), clientAdditionalInformation.getCedula());
-                final CollectionHouseConfiguration collectionHouse = this.collectionHouseReadWriteService
-                        .retrieveCollectionHouseByClientFromHistory(nit);
-                if (collectionHouse != null) {
-                    applyLoanChargeTransaction.setCollectionHouse(collectionHouse);
-                }
-                loan.addLoanTransaction(applyLoanChargeTransaction);
             }
         }
         return makeLoanRepaymentWithChargeRefundChargeType(repaymentTransactionType, loanId, command, isRecoveryRepayment,
@@ -1412,7 +1415,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final BigDecimal totalOverpaidAmount, final boolean isBankChannel, final boolean isImportedTransaction) {
         final AppUser currentUser = getAppUserIfPresent();
         if (totalOutstandingAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            if (totalOutstandingAmount.compareTo(BigDecimal.ZERO) <= 0 && totalOverpaidAmount.compareTo(BigDecimal.ZERO) > 0) {
+            if (totalOverpaidAmount.compareTo(BigDecimal.ZERO) > 0) {
                 if (!isBankChannel && !isImportedTransaction) {
                     handleOverPaidException(totalOutstandingAmount.toString());
                 }
