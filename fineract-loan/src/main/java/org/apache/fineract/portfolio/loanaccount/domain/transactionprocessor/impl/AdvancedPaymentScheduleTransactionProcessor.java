@@ -564,6 +564,10 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             LoanTransaction loanTransaction, Money transactionAmountUnprocessed,
             LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping, Set<LoanCharge> chargesOfInstallment,
             Balances balances, LoanRepaymentScheduleInstallment.PaymentAction action) {
+        log.debug("processPaymentAllocation - Transaction ID: {}, Installment: {}, Allocation Type: {}, Amount: {}",
+                loanTransaction.getId() != null ? loanTransaction.getId() : "NEW", currentInstallment.getInstallmentNumber(),
+                paymentAllocationType.getAllocationType(), transactionAmountUnprocessed.getAmount());
+
         LocalDate transactionDate = loanTransaction.getTransactionDate();
         Money zero = transactionAmountUnprocessed.zero();
         final boolean isWriteOffTransaction = loanTransaction.isWriteOff();
@@ -571,18 +575,24 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         if (loanTransaction.claimType() != null
                 && loanTransaction.claimType().equals(AdvancedPaymentScheduleTransactionProcessor.INSURANCE_PARAM)
                 && paymentAllocationType.getAllocationType().equals(AllocationType.MANDATORY_INSURANCE)) {
+            log.info("processPaymentAllocation - Returning zero for MANDATORY_INSURANCE with INSURANCE claim type");
             portion = transactionAmountUnprocessed.zero();
         } else if (loanTransaction.claimType() != null
                 && loanTransaction.claimType().equals(AdvancedPaymentScheduleTransactionProcessor.GUARANTOR_PARAM)
                 && paymentAllocationType.getAllocationType().equals(AVAL)) {
+            log.info("processPaymentAllocation - Returning zero for AVAL with GUARANTOR claim type");
             portion = transactionAmountUnprocessed.zero();
         } else if (loanTransaction.claimType() != null && paymentAllocationType.getAllocationType().equals(FEES)) {
+            log.info("processPaymentAllocation - Returning zero for FEES with claim type");
             portion = transactionAmountUnprocessed.zero();
         } else {
 
             LoanRepaymentScheduleInstallment.PaymentFunction paymentFunction = currentInstallment
                     .getPaymentFunction(paymentAllocationType.getAllocationType(), action);
             portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction, loanTransaction);
+            log.debug("Payment function result - Transaction ID: {}, Installment: {}, Allocation Type: {}, Portion: {}",
+                    loanTransaction.getId() != null ? loanTransaction.getId() : "NEW", currentInstallment.getInstallmentNumber(),
+                    paymentAllocationType.getAllocationType(), portion.getAmount());
         }
 
         ChargesPaidByFunction chargesPaidByFunction = getChargesPaymentFunction(action);
@@ -613,10 +623,14 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                 chargesPaidByFunction.accept(loanTransaction, portion, fees, currentInstallment.getInstallmentNumber());
             }
             case MANDATORY_INSURANCE -> {
+                log.info("processPaymentAllocation - Processing MANDATORY_INSURANCE case, portion: {}", portion.getAmount());
                 balances.setAggregatedFeeChargesPortion(balances.getAggregatedFeeChargesPortion().add(portion));
                 addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, zero, zero, portion, zero);
                 Set<LoanCharge> fees = chargesOfInstallment.stream().filter(LoanCharge::isMandatoryInsurance).collect(Collectors.toSet());
+                log.info("processPaymentAllocation - MANDATORY_INSURANCE charges count: {}", fees.size());
+                log.info("processPaymentAllocation - About to call chargesPaidByFunction.accept for MANDATORY_INSURANCE");
                 chargesPaidByFunction.accept(loanTransaction, portion, fees, currentInstallment.getInstallmentNumber());
+                log.info("processPaymentAllocation - chargesPaidByFunction.accept completed for MANDATORY_INSURANCE");
             }
             case VOLUNTARY_INSURANCE -> {
                 balances.setAggregatedFeeChargesPortion(balances.getAggregatedFeeChargesPortion().add(portion));
@@ -633,6 +647,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                 addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, portion, zero, zero, zero);
             }
         }
+        log.info("processPaymentAllocation completed - Transaction ID: {}, Installment: {}, Allocation Type: {}, Final Portion: {}",
+                loanTransaction.getId() != null ? loanTransaction.getId() : "NEW", currentInstallment.getInstallmentNumber(),
+                paymentAllocationType.getAllocationType(), portion.getAmount());
         return portion;
     }
 
@@ -964,20 +981,37 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             List<LoanRepaymentScheduleInstallment> installments, Money transactionAmountUnprocessed,
             LoanPaymentAllocationRule paymentAllocationRule, List<LoanTransactionToRepaymentScheduleMapping> transactionMappings,
             Set<LoanCharge> charges, Balances balances) {
+        log.info("Starting processPeriodsHorizontally - Transaction ID: {}, Amount: {}, Installments count: {}",
+                loanTransaction.getId() != null ? loanTransaction.getId() : "NEW", transactionAmountUnprocessed.getAmount(),
+                installments.size());
+
         LinkedHashMap<DueType, List<PaymentAllocationType>> paymentAllocationsMap = paymentAllocationRule.getAllocationTypes().stream()
                 .collect(Collectors.groupingBy(PaymentAllocationType::getDueType, LinkedHashMap::new,
                         mapping(Function.identity(), toList())));
 
+        log.debug("Payment allocations map: {}", paymentAllocationsMap.keySet());
+
         for (Map.Entry<DueType, List<PaymentAllocationType>> paymentAllocationsEntry : paymentAllocationsMap.entrySet()) {
+            log.debug("Processing due type: {} with {} allocation types", paymentAllocationsEntry.getKey(),
+                    paymentAllocationsEntry.getValue().size());
+
+            Money amountBeforeProcessing = transactionAmountUnprocessed;
             transactionAmountUnprocessed = processAllocationsHorizontally(loanTransaction, currency, installments,
                     transactionAmountUnprocessed, paymentAllocationsEntry.getValue(),
                     paymentAllocationRule.getFutureInstallmentAllocationRule(), transactionMappings, charges, balances);
+
+            log.debug("After processing due type {}: Amount before: {}, Amount after: {}, Difference: {}", paymentAllocationsEntry.getKey(),
+                    amountBeforeProcessing.getAmount(), transactionAmountUnprocessed.getAmount(),
+                    amountBeforeProcessing.getAmount().subtract(transactionAmountUnprocessed.getAmount()));
+
             if (transactionAmountUnprocessed.isZero()) {
+                log.info("No more funds to process, breaking out of due type loop");
                 // no more funds to process
                 break;
             }
         }
 
+        log.info("Completed processPeriodsHorizontally - Final unprocessed amount: {}", transactionAmountUnprocessed.getAmount());
         return transactionAmountUnprocessed;
     }
 
@@ -986,18 +1020,58 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             List<LoanRepaymentScheduleInstallment> installments, Money transactionAmountUnprocessed,
             List<PaymentAllocationType> paymentAllocationTypes, FutureInstallmentAllocationRule futureInstallmentAllocationRule,
             List<LoanTransactionToRepaymentScheduleMapping> transactionMappings, Set<LoanCharge> charges, Balances balances) {
+
+        log.info("Starting processAllocationsHorizontally - Transaction ID: {}, Initial amount: {}, Installments count: {}",
+                loanTransaction.getId() != null ? loanTransaction.getId() : "NEW", transactionAmountUnprocessed.getAmount(),
+                installments.size());
+
         Money paidPortion;
         boolean exit = false;
+        int loopIteration = 0;
+        final int MAX_ITERATIONS = 100; // Safety limit to prevent infinite loops
+
         do {
+            loopIteration++;
+            log.info("Loop iteration {} - Transaction ID: {}, Unprocessed amount: {}, Exit flag: {}", loopIteration,
+                    loanTransaction.getId() != null ? loanTransaction.getId() : "NEW", transactionAmountUnprocessed.getAmount(), exit);
+
+            if (loopIteration > MAX_ITERATIONS) {
+                log.error(
+                        "INFINITE LOOP DETECTED! Reached maximum iterations ({}) for transaction ID: {}. "
+                                + "Unprocessed amount: {}, Exit flag: {}",
+                        MAX_ITERATIONS, loanTransaction.getId() != null ? loanTransaction.getId() : "NEW",
+                        transactionAmountUnprocessed.getAmount(), exit);
+                log.error("Installments state:");
+                for (int i = 0; i < installments.size(); i++) {
+                    LoanRepaymentScheduleInstallment inst = installments.get(i);
+                    log.error("  Installment {}: Number={}, FullyPaid={}, Outstanding={}, DueDate={}", i, inst.getInstallmentNumber(),
+                            !inst.isNotFullyPaidOff(), inst.getTotalOutstanding(currency).getAmount(), inst.getDueDate());
+                }
+                throw new RuntimeException("Infinite loop detected in processAllocationsHorizontally for transaction ID: "
+                        + (loanTransaction.getId() != null ? loanTransaction.getId() : "NEW"));
+            }
+
             if (transactionAmountUnprocessed.isZero()) {
+                log.debug("Transaction amount is zero, setting exit flag");
                 exit = true;
                 continue;
             }
+
+            // Log installment states for debugging
+            long unpaidInstallmentsCount = installments.stream().filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff).count();
+            log.info("Unpaid installments count: {}", unpaidInstallmentsCount);
+
             LoanRepaymentScheduleInstallment oldestPastDueInstallment = installments.stream()
                     .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff).filter(e -> loanTransaction.isAfter(e.getDueDate()))
                     .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
+
+            log.info("Oldest past due installment: {}",
+                    oldestPastDueInstallment != null ? oldestPastDueInstallment.getInstallmentNumber() : "null");
+
             boolean found = false;
+            log.info("Claim type check - Transaction claim type: {}", loanTransaction.claimType());
             if (loanTransaction.claimType() != null) {
+                log.info("Processing claim type: {}", loanTransaction.claimType());
                 Money installmentOutStandingFee = Money.zero(currency);
                 if (oldestPastDueInstallment != null) {
                     if (loanTransaction.claimType().equals(AdvancedPaymentScheduleTransactionProcessor.INSURANCE_PARAM)) {
@@ -1012,8 +1086,10 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                 if (oldestPastDueInstallment != null
                         && oldestPastDueInstallment.getTotalOutstanding(currency).isGreaterThan(installmentOutStandingFee)) {
                     found = true;
+                    log.info("Found valid past due installment for claim type processing");
                 }
                 while (!found && oldestPastDueInstallment != null) {
+                    log.info("Searching for valid past due installment, current: {}", oldestPastDueInstallment.getInstallmentNumber());
                     Money outStandingFee;
                     if (loanTransaction.claimType().equals(AdvancedPaymentScheduleTransactionProcessor.INSURANCE_PARAM)) {
                         outStandingFee = oldestPastDueInstallment.getFeeChargesOutstandingByType(currency,
@@ -1026,11 +1102,15 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
 
                     if (oldestPastDueInstallment.getTotalOutstanding(currency).isEqualTo(outStandingFee)) {
                         Integer installment = oldestPastDueInstallment.getInstallmentNumber();
+                        log.info("Installment {} has only fee charges, moving to next", installment);
                         oldestPastDueInstallment = installments.stream().filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
                                 .filter(e -> loanTransaction.isAfter(e.getDueDate()) && e.getInstallmentNumber() > installment)
                                 .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
+                        log.info("Next past due installment: {}",
+                                oldestPastDueInstallment != null ? oldestPastDueInstallment.getInstallmentNumber() : "null");
                     } else {
                         found = true;
+                        log.info("Found valid past due installment: {}", oldestPastDueInstallment.getInstallmentNumber());
                     }
                 }
             }
@@ -1038,6 +1118,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                     .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
                     .filter(e -> loanTransaction.isOnOrBetween(e.getFromDate(), e.getDueDate()) || loanTransaction.isOn(e.getDueDate()))
                     .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
+
+            log.debug("Due installment: {}", dueInstallment != null ? dueInstallment.getInstallmentNumber() : "null");
 
             found = false;
             if (loanTransaction.claimType() != null) {
@@ -1054,8 +1136,10 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                 }
                 if (dueInstallment != null && dueInstallment.getTotalOutstanding(currency).isGreaterThan(installmentOutStandingFee)) {
                     found = true;
+                    log.debug("Found valid due installment for claim type processing");
                 }
                 while (!found && dueInstallment != null) {
+                    log.debug("Searching for valid due installment, current: {}", dueInstallment.getInstallmentNumber());
                     Money outStandingFee;
                     if (loanTransaction.claimType().equals(AdvancedPaymentScheduleTransactionProcessor.INSURANCE_PARAM)) {
                         outStandingFee = dueInstallment.getFeeChargesOutstandingByType(currency,
@@ -1067,15 +1151,19 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                             AdvancedPaymentScheduleTransactionProcessor.HONORARIOS_PARAM));
                     if (dueInstallment.getTotalOutstanding(currency).isEqualTo(outStandingFee)) {
                         Integer installment = dueInstallment.getInstallmentNumber();
+                        log.debug("Installment {} has only fee charges, moving to next", installment);
                         dueInstallment = installments.stream().filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
                                 .filter(e -> loanTransaction.isOnOrBetween(e.getFromDate(), e.getDueDate())
                                         && e.getInstallmentNumber() > installment)
                                 .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
+                        log.debug("Next due installment: {}", dueInstallment != null ? dueInstallment.getInstallmentNumber() : "null");
                     } else {
                         found = true;
+                        log.debug("Found valid due installment: {}", dueInstallment.getInstallmentNumber());
                     }
                 }
             }
+            log.info("Claim type processing completed - Found valid installment: {}", found);
             // For having similar logic we are populating installment list even when the future installment
             // allocation rule is NEXT_INSTALLMENT or LAST_INSTALLMENT hence the list has only one element.
             // As per SU+ requirements, advance payment goes to outstanding balance so first immediate advance
@@ -1096,12 +1184,20 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                         .max(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).stream().toList();
             }
 
+            log.info("In advance installments count: {}", inAdvanceInstallments.size());
+
             int firstNormalInstallmentNumber = LoanRepaymentScheduleProcessingWrapper.fetchFirstNormalInstallmentNumber(installments);
             boolean stopProcessingAdvanceInstallment = false;
             for (PaymentAllocationType paymentAllocationType : paymentAllocationTypes) {
+                log.info("Processing allocation type: {} for due type: {}", paymentAllocationType.getAllocationType(),
+                        paymentAllocationType.getDueType());
+
                 switch (paymentAllocationType.getDueType()) {
                     case PAST_DUE -> {
+                        log.info("Entering PAST_DUE case - Oldest past due installment: {}",
+                                oldestPastDueInstallment != null ? oldestPastDueInstallment.getInstallmentNumber() : "null");
                         if (oldestPastDueInstallment != null) {
+                            log.info("Processing PAST_DUE allocation for installment: {}", oldestPastDueInstallment.getInstallmentNumber());
                             Set<LoanCharge> oldestPastDueInstallmentCharges = getLoanChargesOfInstallment(charges, oldestPastDueInstallment,
                                     firstNormalInstallmentNumber);
                             LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
@@ -1109,13 +1205,28 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                             paidPortion = processPaymentAllocation(paymentAllocationType, oldestPastDueInstallment, loanTransaction,
                                     transactionAmountUnprocessed, loanTransactionToRepaymentScheduleMapping,
                                     oldestPastDueInstallmentCharges, balances, LoanRepaymentScheduleInstallment.PaymentAction.PAY);
+                            log.info("PAST_DUE paid portion: {}", paidPortion.getAmount());
                             transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
+                            log.info("PAST_DUE remaining amount: {}", transactionAmountUnprocessed.getAmount());
+
+                            // Log the next iteration details
+                            log.info("PAST_DUE processing completed - Will continue to next allocation type");
+
+                            // Additional safeguard: if no progress is made, force exit
+                            if (paidPortion.isZero()) {
+                                log.warn("PAST_DUE allocation returned zero amount - forcing exit to prevent infinite loop");
+                                exit = true;
+                            } else {
+                                log.info("PAST_DUE allocation made progress - continuing to next allocation type");
+                            }
                         } else {
+                            log.info("No past due installment found, setting exit flag");
                             exit = true;
                         }
                     }
                     case DUE -> {
                         if (dueInstallment != null) {
+                            log.debug("Processing DUE allocation for installment: {}", dueInstallment.getInstallmentNumber());
                             Set<LoanCharge> dueInstallmentCharges = getLoanChargesOfInstallment(charges, dueInstallment,
                                     firstNormalInstallmentNumber);
                             LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
@@ -1123,9 +1234,19 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                             paidPortion = processPaymentAllocation(paymentAllocationType, dueInstallment, loanTransaction,
                                     transactionAmountUnprocessed, loanTransactionToRepaymentScheduleMapping, dueInstallmentCharges,
                                     balances, LoanRepaymentScheduleInstallment.PaymentAction.PAY);
+                            log.debug("DUE paid portion: {}", paidPortion.getAmount());
                             transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
-                            exit = true;
+                            log.debug("DUE remaining amount: {}", transactionAmountUnprocessed.getAmount());
+
+                            // Additional safeguard: if no progress is made, force exit
+                            if (paidPortion.isZero()) {
+                                log.warn("DUE allocation returned zero amount - forcing exit to prevent infinite loop");
+                                exit = true;
+                            } else {
+                                exit = true;
+                            }
                         } else {
+                            log.debug("No due installment found, setting exit flag");
                             exit = true;
                         }
                     }
@@ -1133,19 +1254,25 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                         if (loanTransaction.doNotProcessAdvanceInstallments() || stopProcessingAdvanceInstallment) {
                             // This condition will only be true if loan processing type is VERTICAL.
                             // For vertical payments, Past Due and Due installments MUST be processed Horizontally
+                            log.debug(
+                                    "Skipping IN_ADVANCE processing - doNotProcessAdvanceInstallments: {}, stopProcessingAdvanceInstallment: {}",
+                                    loanTransaction.doNotProcessAdvanceInstallments(), stopProcessingAdvanceInstallment);
                             exit = true;
                         } else {
                             int numberOfInstallments = inAdvanceInstallments.size();
+                            log.debug("Processing IN_ADVANCE allocation for {} installments", numberOfInstallments);
                             if (numberOfInstallments > 0) {
                                 Money zero = transactionAmountUnprocessed.zero();
                                 for (LoanRepaymentScheduleInstallment inAdvanceInstallment : inAdvanceInstallments) {
                                     if (transactionAmountUnprocessed.isGreaterThanZero()) {
+                                        log.debug("Processing advance installment: {}", inAdvanceInstallment.getInstallmentNumber());
                                         String productName = inAdvanceInstallment.getLoan().getLoanProduct().getName();
                                         // if (inAdvanceInstallment.isMigratedInstallment() ||
                                         // (inAdvanceInstallment.getLoan().isMigratedLoan()
                                         // && (productName.contains(LoanProductType.CREDITO_ROTATIVO.getCode())
                                         // || productName.contains(LoanProductType.NANO_CREDITO.getCode())))) {
                                         if (inAdvanceInstallment.isMigratedInstallment()) {
+                                            log.debug("Processing migrated installment as due/past due");
                                             // Process migrated installments as due or past due installments
                                             Set<LoanCharge> inAdvanceInstallmentCharges = getLoanChargesOfInstallment(charges,
                                                     inAdvanceInstallment, firstNormalInstallmentNumber);
@@ -1155,11 +1282,22 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                     loanTransaction, transactionAmountUnprocessed,
                                                     loanTransactionToRepaymentScheduleMapping, inAdvanceInstallmentCharges, balances,
                                                     LoanRepaymentScheduleInstallment.PaymentAction.PAY);
+                                            log.debug("Migrated installment paid portion: {}", paidPortion.getAmount());
                                             transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
+                                            log.debug("Migrated installment remaining amount: {}",
+                                                    transactionAmountUnprocessed.getAmount());
+
+                                            // Additional safeguard: if no progress is made, force exit
+                                            if (paidPortion.isZero()) {
+                                                log.warn(
+                                                        "Migrated installment allocation returned zero amount - forcing exit to prevent infinite loop");
+                                                exit = true;
+                                            }
                                         } else {
                                             if (inAdvanceInstallment.isLastInstallment(installments)
                                                     && inAdvanceInstallment.isOverpaidInAdvance(currency) && transactionAmountUnprocessed
                                                             .isGreaterThanOrEqualTo(inAdvanceInstallment.getPrincipal(currency))) {
+                                                log.debug("Processing advance overpayment for last installment");
                                                 // This MUST be true only in case of advance overpayment after repayment
                                                 // schedule is regenerated
                                                 // Process principal and move the remaining amount to overpaid
@@ -1179,8 +1317,11 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                         transactionAmountUnprocessed, zero, zero, zero);
                                                 transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPrincipalComponent);
                                                 stopProcessingAdvanceInstallment = true;
+                                                log.debug("Advance overpayment processed, remaining amount: {}",
+                                                        transactionAmountUnprocessed.getAmount());
 
                                             } else {
+                                                log.debug("Processing regular advance payment");
                                                 balances.setAggregatedPrincipalPortion(
                                                         balances.getAggregatedPrincipalPortion().add(transactionAmountUnprocessed));
                                                 inAdvanceInstallment.checkIfRepaymentPeriodObligationsAreMet(
@@ -1197,12 +1338,16 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                         transactionAmountUnprocessed, zero, zero, zero);
 
                                                 transactionAmountUnprocessed = Money.zero(currency);
+                                                log.debug("Regular advance payment processed, remaining amount: {}",
+                                                        transactionAmountUnprocessed.getAmount());
                                             }
                                         }
                                     }
                                 }
                                 exit = true;
+                                log.debug("IN_ADVANCE processing completed, setting exit flag");
                             } else {
+                                log.debug("No advance installments found, setting exit flag");
                                 exit = true;
                             }
                         }
@@ -1214,6 +1359,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         // or there is no more outstanding balance of the allocation type
         while (!exit && installments.stream().anyMatch(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
                 && transactionAmountUnprocessed.isGreaterThanZero());
+
+        log.info("Completed processAllocationsHorizontally - Final unprocessed amount: {}, Exit flag: {}, Loop iterations: {}",
+                transactionAmountUnprocessed.getAmount(), exit, loopIteration);
         return transactionAmountUnprocessed;
     }
 
