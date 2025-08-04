@@ -68,7 +68,6 @@ import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMapRepository;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanInstalmentChargeRepository;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
@@ -208,6 +207,7 @@ import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectroni
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicaMensual;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.LoanDocumentConcept;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanInstalmentChargeRepository;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
@@ -1927,7 +1927,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
         }
 
-        if (transactionToAdjust.isForeclosure()){
+        if (transactionToAdjust.isForeclosure()) {
             loan.regenerateRepaymentSchedule(scheduleGeneratorDTO);
             loan.reapplyInsuranceCharges();
             // Delete existing CustomChargeHonorarioMaps for this loan
@@ -1948,7 +1948,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     }
                 }
             }
-            
+
             loan.processPostDisbursementTransactions();
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         }
@@ -5666,7 +5666,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final JsonElement element = fromApiJsonHelper.parse(apiRequestBodyAsJson);
         JsonArray loanIds = this.fromApiJsonHelper.extractJsonArrayNamed("loanIds", element);
         JsonArray failedLoans = new JsonArray();
-        
+
         loanIds.forEach(loansList -> {
             long loanId = loansList.getAsLong();
             try {
@@ -5677,7 +5677,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 failedLoans.add(loansList);
             }
         });
-        
+
         return failedLoans;
     }
 

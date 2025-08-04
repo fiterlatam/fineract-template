@@ -470,7 +470,7 @@ public class LoanAccountConfiguration {
             FacturaElectronicMensualRepository facturaElectronicMensualRepository,
             LoanProductParameterizationRepository productParameterizationRepository,
             CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository,
-            LoanInstalmentChargeRepository loanInstalmentChargeRepository,LoanCreditNoteRepository loanCreditNoteRepository,
+            LoanInstalmentChargeRepository loanInstalmentChargeRepository, LoanCreditNoteRepository loanCreditNoteRepository,
             LoanAccrualPlatformService loanAccrualPlatformService, CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
@@ -490,8 +490,8 @@ public class LoanAccountConfiguration {
                 channelReadWritePlatformService, platformSecurityContext, globalConfigurationRepository, loanBlockWritePlatformService,
                 blockingReasonRepository, loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository,
                 loanScheduleFactory, blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository,
-                productParameterizationRepository, customChargeHonorarioMapRepository,loanInstalmentChargeRepository, loanCreditNoteRepository, loanAccrualPlatformService,
-                collectionHouseReadWriteService);
+                productParameterizationRepository, customChargeHonorarioMapRepository, loanInstalmentChargeRepository,
+                loanCreditNoteRepository, loanAccrualPlatformService, collectionHouseReadWriteService);
     }
 
     @Bean

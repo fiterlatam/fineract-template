@@ -8037,30 +8037,28 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 if (loanCharge.getCharge().isPercentageBasedMandatoryInsurance()) {
                     // Clear all loanInstallmentCharges for this charge
                     loanCharge.clearLoanInstallmentCharges();
-                    
+
                     // Remove installment charges from all installments
                     for (LoanRepaymentScheduleInstallment installment : this.getRepaymentScheduleInstallments()) {
                         installment.getInstallmentCharges().removeIf(charge -> charge.getLoanCharge().equals(loanCharge));
                     }
-                    
+
                     // Regenerate installment charges for this loan charge
                     List<LoanInstallmentCharge> newInstallmentCharges = this.generateInstallmentLoanCharges(loanCharge);
-                    
+
                     // Add the new installment charges to the loan charge
                     loanCharge.addLoanInstallmentCharges(newInstallmentCharges);
-                    
+
                     // Regenerate CustomChargeHonorarioMaps for flat honorario charges
                     // This is now handled in the service layer (LoanWritePlatformServiceJpaRepositoryImpl)
                     // to ensure proper access to external services and repositories
-                    
+
                     // Update the charge's outstanding amount
                     loanCharge.updateAmountOutstanding();
                 }
             }
         }
     }
-
-
 
     @lombok.Data
     @lombok.AllArgsConstructor
