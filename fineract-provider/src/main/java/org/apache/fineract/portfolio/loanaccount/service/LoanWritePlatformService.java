@@ -22,6 +22,8 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import com.google.gson.JsonArray;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
@@ -152,4 +154,6 @@ public interface LoanWritePlatformService {
     ClasificacionConceptosData getClasificacionConceptosData(String concepto);
 
     void cleanUpLoans();
+
+    JsonArray regenerateLoanSchedule(String apiRequestBodyAsJson);
 }

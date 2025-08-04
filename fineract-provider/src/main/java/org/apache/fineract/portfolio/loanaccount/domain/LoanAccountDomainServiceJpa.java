@@ -455,6 +455,77 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
     }
 
+    /**
+     * Regenerates all CustomChargeHonorarioMaps for a flat honorario charge.
+     * This method should be called after clearing existing maps to recreate them.
+     * 
+     * @param loanCharge The loan charge for which to regenerate the maps
+     */
+    public void regenerateCustomChargeHonorarioMaps(LoanCharge loanCharge) {
+
+        if (!loanCharge.isFlatHono()) {
+            return;
+        }
+        
+        Loan loan = loanCharge.getLoan();
+        if (loan == null) {
+            return;
+        }
+        
+        // Get all installments that need honorario charges
+        List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallmentsIgnoringTotalGrace().stream()
+                .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber))
+                .filter(installment -> !installment.isRecalculatedInterestComponent())
+                .filter(installment -> loanCharge.getApplicableFromInstallment() == null 
+                        || loanCharge.getApplicableFromInstallment() <= installment.getInstallmentNumber())
+                .toList();
+
+
+        // Get the next version number for batch processing
+        Long version = customChargeHonorarioMapRepository.getMaxVersionByLoan(loan.getId()) + 1;
+        
+        // For each installment, create a CustomChargeHonorarioMap
+        for (LoanRepaymentScheduleInstallment installment : installments) {
+            // Calculate the outstanding amount for this installment
+            BigDecimal installmentOutstandingAmount = installment.getPrincipalOutstanding(loan.getCurrency()).getAmount();
+            
+            // Calculate fee honorario for this installment
+            FeeCalculationHonorario feeCalculationHonorario = this.calculateFeeHonorario(installment, installmentOutstandingAmount, null);
+            
+            // Create new CustomChargeHonorarioMap
+            CustomChargeHonorarioMap newCustomChargeHonorarioMap = new CustomChargeHonorarioMap();
+            newCustomChargeHonorarioMap.setNit("120843958");
+            newCustomChargeHonorarioMap.setLoanId(loan.getId());
+            newCustomChargeHonorarioMap.setLoanInstallmentNr(installment.getInstallmentNumber());
+            newCustomChargeHonorarioMap.setFeeBaseAmount(feeCalculationHonorario.getFeeBasis());
+            newCustomChargeHonorarioMap.setFeeTotalAmount(feeCalculationHonorario.getFeeHono());
+            newCustomChargeHonorarioMap.setFeeVatAmount(feeCalculationHonorario.getFeeVat());
+            newCustomChargeHonorarioMap.setCreatedBy(this.platformSecurityContext.authenticatedUser().getId());
+            newCustomChargeHonorarioMap.setCreatedAt(DateUtils.getLocalDateTimeOfTenant());
+            newCustomChargeHonorarioMap.setLoanChargeId(loanCharge.getId());
+            newCustomChargeHonorarioMap.setVersion(version);
+            
+            // Save the map
+            newCustomChargeHonorarioMap = customChargeHonorarioMapRepository.saveAndFlush(newCustomChargeHonorarioMap);
+            
+            // Add to the loan charge's maps
+            if (loanCharge.getCustomChargeHonorarioMaps() != null && !loanCharge.getCustomChargeHonorarioMaps().isEmpty()) {
+                loanCharge.getCustomChargeHonorarioMaps().add(newCustomChargeHonorarioMap);
+            } else {
+                Set<CustomChargeHonorarioMap> customChargeHonorarioMapSet = new HashSet<>();
+                customChargeHonorarioMapSet.add(newCustomChargeHonorarioMap);
+                loanCharge.setCustomChargeHonorarioMaps(customChargeHonorarioMapSet);
+            }
+        }
+        
+        // Update the loan charge amounts
+        loanCharge.updateAmountOutstanding();
+        
+        // Update the loan schedule
+        loan.updateLoanScheduleAfterCustomChargeApplied();
+        saveLoanWithDataIntegrityViolationChecks(loan);
+    }
+
     private void setStatusToCanceledOnClosedLoan(final Loan loan, final LocalDate transactionDate) {
         if ((loan != null) && (loan.getStatus() != null) && loan.getStatus().isClosedObligationsMet()) {
             final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
@@ -1100,6 +1171,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             if (collectionHouse != null) {
                 payment.setCollectionHouse(collectionHouse);
             }
+            payment.setForeclosure(isForCloureAction);
 
             newTransactions.add(payment);
         }
@@ -1725,6 +1797,13 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
         sql = "delete from m_loan_transaction_relation where from_loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
         this.jdbcTemplate.update(sql, loanId);
+
+        sql = "delete from m_loan_charge_paid_by where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        this.jdbcTemplate.update(sql, loanId);
+
+        sql = "delete from m_loan_transaction_repayment_schedule_mapping where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        this.jdbcTemplate.update(sql, loanId);
+
         sql = "delete from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null";
         this.jdbcTemplate.update(sql, loanId);
         this.entityManager.flush();

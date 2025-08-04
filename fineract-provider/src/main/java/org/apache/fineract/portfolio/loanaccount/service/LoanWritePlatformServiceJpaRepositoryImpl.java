@@ -68,6 +68,7 @@ import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMapRepository;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanInstalmentChargeRepository;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
@@ -318,6 +319,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final FacturaElectronicMensualRepository facturaElectronicMensualRepository;
     private final LoanProductParameterizationRepository productParameterizationRepository;
     private final CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
+    private final LoanInstalmentChargeRepository loanInstalmentChargeRepository;
     private final LoanCreditNoteRepository loanCreditNoteRepository;
     private final LoanAccrualPlatformService loanAccrualPlatformService;
     private final CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService;
@@ -1824,9 +1826,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         // UPDATE BLOCK STATUS ID
         if (loan.getLoanSummary().getTotalOutstanding().compareTo(BigDecimal.ZERO) > 0) {
-            Long blockStatusId = loan.getBlockStatusId();
-            if (blockStatusId != null) {
-                handleUnBlockingCredit(loan, blockStatusId);
+            BlockingReasonSetting blockStatus = loan.getLoanCustomizationDetail().getBlockStatus();
+            if (blockStatus != null) {
+                handleUnBlockingCredit(loan, blockStatus.getId());
                 saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             }
         }
@@ -1923,6 +1925,32 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 this.decrementInvoiceCounterOnProduct(transactionToAdjust, facturaElectronicMensuals);
                 this.facturaElectronicMensualRepository.deleteAll(facturaElectronicMensuals);
             }
+        }
+
+        if (transactionToAdjust.isForeclosure()){
+            loan.regenerateRepaymentSchedule(scheduleGeneratorDTO);
+            loan.reapplyInsuranceCharges();
+            // Delete existing CustomChargeHonorarioMaps for this loan
+            this.customChargeHonorarioMapRepository.deleteByLoanId(loanId);
+
+            // Delete existing LoanInstallmentCharges for this loan
+            this.loanInstalmentChargeRepository.deleteByLoanId(loanId);
+            this.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+            // Regenerate CustomChargeHonorarioMaps for flat honorario charges
+            Collection<LoanCharge> loanCharges = loan.getLoanCharges();
+            if (!CollectionUtils.isEmpty(loanCharges)) {
+                for (LoanCharge loanCharge : loanCharges) {
+                    if (loanCharge.isFlatHono()) {
+                        // Cast to LoanAccountDomainServiceJpa to access the regenerateCustomChargeHonorarioMaps method
+                        if (this.loanAccountDomainService instanceof LoanAccountDomainServiceJpa) {
+                            ((LoanAccountDomainServiceJpa) this.loanAccountDomainService).regenerateCustomChargeHonorarioMaps(loanCharge);
+                        }
+                    }
+                }
+            }
+            
+            loan.processPostDisbursementTransactions();
+            saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         }
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
@@ -5633,5 +5661,63 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 log.error("Loan clean up failed for Loan ID: " + loanId, ex);
             }
         }
+    }
+
+    @Override
+    public JsonArray regenerateLoanSchedule(String apiRequestBodyAsJson) {
+        final JsonElement element = fromApiJsonHelper.parse(apiRequestBodyAsJson);
+        JsonArray loanIds = this.fromApiJsonHelper.extractJsonArrayNamed("loanIds", element);
+        JsonArray failedLoans = new JsonArray();
+        
+        loanIds.forEach(loansList -> {
+            long loanId = loansList.getAsLong();
+            try {
+                Long processedLoan = this.regenerateLoanRepaymentSchedule(loanId);
+                log.info("Successfully regenerated loan schedule for loan ID: {}", loanId);
+            } catch (Exception e) {
+                log.error("Failed to regenerate loan schedule for loan ID: {}", loanId, e);
+                failedLoans.add(loansList);
+            }
+        });
+        
+        return failedLoans;
+    }
+
+    @Transactional
+    private Long regenerateLoanRepaymentSchedule(long loanId) {
+        final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        if (loan == null) {
+            throw new LoanNotFoundException(loanId);
+        }
+
+        // Delete existing CustomChargeHonorarioMaps for this loan
+        this.customChargeHonorarioMapRepository.deleteByLoanId(loanId);
+
+        // Delete existing LoanInstallmentCharges for this loan
+        this.loanInstalmentChargeRepository.deleteByLoanId(loanId);
+
+        this.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+
+        ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
+
+        loan.regenerateRepaymentSchedule(scheduleGeneratorDTO);
+        loan.reapplyInsuranceCharges();
+
+        // Regenerate CustomChargeHonorarioMaps for flat honorario charges
+        Collection<LoanCharge> loanCharges = loan.getLoanCharges();
+        if (!CollectionUtils.isEmpty(loanCharges)) {
+            for (LoanCharge loanCharge : loanCharges) {
+                if (loanCharge.isFlatHono()) {
+                    // Cast to LoanAccountDomainServiceJpa to access the regenerateCustomChargeHonorarioMaps method
+                    if (this.loanAccountDomainService instanceof LoanAccountDomainServiceJpa) {
+                        ((LoanAccountDomainServiceJpa) this.loanAccountDomainService).regenerateCustomChargeHonorarioMaps(loanCharge);
+                    }
+                }
+            }
+        }
+
+        loan.processPostDisbursementTransactions();
+        saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+        return loanId;
     }
 }
