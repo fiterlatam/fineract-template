@@ -1553,13 +1553,22 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public void updateLoanSchedule(final LoanScheduleModel modifiedLoanSchedule) {
+        // Store existing installments with their repayment data for preservation
+        Map<Integer, LoanRepaymentScheduleInstallment> existingInstallmentsByNumber = new HashMap<>();
+        for (LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
+            existingInstallmentsByNumber.put(installment.getInstallmentNumber(), installment);
+        }
+        
+        // Clear overdue charges from existing installments
         for (LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             installment.deleteOverdueInstallmentCharges();
         }
+        
         this.repaymentScheduleInstallments.clear();
-        // for some installements , we made them start from number 0 , we want to keep that way
+        
+        // for some installments, we made them start from number 0, we want to keep that way
         int actualPaymentNumber = 1;
-        // int totalPaymentInstallments = countPaymentInstallments(modifiedLoanSchedule);
+        
         for (final LoanScheduleModelPeriod scheduledLoanInstallment : modifiedLoanSchedule.getPeriods()) {
             int periodNumber;
             if (scheduledLoanInstallment.isRepaymentPeriod() || scheduledLoanInstallment.isDownPaymentPeriod()) {
@@ -1570,13 +1579,56 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     actualPaymentNumber++;
                 }
 
-                final LoanRepaymentScheduleInstallment installment = new LoanRepaymentScheduleInstallment(this, periodNumber,
+                final LoanRepaymentScheduleInstallment newInstallment = new LoanRepaymentScheduleInstallment(this, periodNumber,
                         scheduledLoanInstallment.periodFromDate(), scheduledLoanInstallment.periodDueDate(),
                         scheduledLoanInstallment.principalDue(), scheduledLoanInstallment.interestDue(),
                         scheduledLoanInstallment.feeChargesDue(), scheduledLoanInstallment.penaltyChargesDue(),
                         scheduledLoanInstallment.isRecalculatedInterestComponent(), scheduledLoanInstallment.getLoanCompoundingDetails(),
                         scheduledLoanInstallment.rescheduleInterestPortion(), scheduledLoanInstallment.isDownPaymentPeriod());
-                addLoanRepaymentScheduleInstallment(installment);
+                
+                // Preserve repayment data from existing installment if it exists
+                LoanRepaymentScheduleInstallment existingInstallment = existingInstallmentsByNumber.get(periodNumber);
+                if (existingInstallment != null) {
+                    // Preserve repayment amounts and transaction mappings
+                    newInstallment.setPrincipalCompleted(existingInstallment.getPrincipalCompleted(getCurrency()).getAmount());
+                    newInstallment.setInterestPaid(existingInstallment.getInterestPaid(getCurrency()).getAmount());
+                    newInstallment.setFeeChargesPaid(existingInstallment.getFeeChargesPaid(getCurrency()).getAmount());
+                    newInstallment.setPenaltyChargesPaid(existingInstallment.getPenaltyChargesPaid(getCurrency()).getAmount());
+                    newInstallment.setInterestWaived(existingInstallment.getInterestWaived(getCurrency()).getAmount());
+                    newInstallment.setFeeChargesWaived(existingInstallment.getFeeChargesWaived(getCurrency()).getAmount());
+                    newInstallment.setPenaltyChargesWaived(existingInstallment.getPenaltyChargesWaived(getCurrency()).getAmount());
+                    newInstallment.setInterestWrittenOff(existingInstallment.getInterestWrittenOff(getCurrency()).getAmount());
+                    newInstallment.setFeeChargesWrittenOff(existingInstallment.getFeeChargesWrittenOff(getCurrency()).getAmount());
+                    newInstallment.setPenaltyChargesWrittenOff(existingInstallment.getPenaltyChargesWrittenOff(getCurrency()).getAmount());
+                    newInstallment.setPrincipalWrittenOff(existingInstallment.getPrincipalWrittenOff(getCurrency()).getAmount());
+                    newInstallment.setTotalPaidInAdvance(existingInstallment.getTotalPaidInAdvance(getCurrency()).getAmount());
+                    newInstallment.setTotalPaidLate(existingInstallment.getTotalPaidLate(getCurrency()).getAmount());
+                    newInstallment.setObligationsMet(existingInstallment.isObligationsMet());
+                    newInstallment.setObligationsMetOnDate(existingInstallment.getObligationsMetOnDate());
+                    newInstallment.setAdvancePrincipalAmount(existingInstallment.getAdvancePrincipalAmount());
+                    
+                    // Preserve installment charges
+                    Set<LoanInstallmentCharge> existingCharges = existingInstallment.getInstallmentCharges();
+                    newInstallment.getInstallmentCharges().addAll(existingCharges);
+                    existingCharges.forEach(c -> c.setInstallment(newInstallment));
+                    
+                    // Preserve transaction mappings
+                    Set<LoanTransactionToRepaymentScheduleMapping> existingMappings = existingInstallment.getLoanTransactionToRepaymentScheduleMappings();
+                    newInstallment.getLoanTransactionToRepaymentScheduleMappings().addAll(existingMappings);
+                    existingMappings.forEach(c -> c.setInstallment(newInstallment));
+                    
+                    // Preserve post-dated checks
+                    Set<PostDatedChecks> existingChecks = existingInstallment.getPostDatedCheck();
+                    newInstallment.getPostDatedCheck().addAll(existingChecks);
+                    existingChecks.forEach(c -> c.setLoanRepaymentScheduleInstallment(newInstallment));
+                    
+                    // Preserve loan compounding details
+                    Set<LoanInterestRecalcualtionAdditionalDetails> existingCompoundingDetails = existingInstallment.getLoanCompoundingDetails();
+                    newInstallment.getLoanCompoundingDetails().addAll(existingCompoundingDetails);
+                    existingCompoundingDetails.forEach(c -> c.setLoanRepaymentScheduleInstallment(newInstallment));
+                }
+                
+                addLoanRepaymentScheduleInstallment(newInstallment);
             }
         }
     }
@@ -2115,7 +2167,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
-    private void recalculateLoanCharge(final LoanCharge loanCharge, final int penaltyWaitPeriod) {
+    public void recalculateLoanCharge(final LoanCharge loanCharge, final int penaltyWaitPeriod) {
         BigDecimal amount = BigDecimal.ZERO;
         BigDecimal chargeAmt;
         BigDecimal totalChargeAmt = BigDecimal.ZERO;
@@ -6588,7 +6640,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
-    private LoanScheduleDTO getRecalculatedSchedule(final ScheduleGeneratorDTO generatorDTO) {
+    public LoanScheduleDTO getRecalculatedSchedule(final ScheduleGeneratorDTO generatorDTO) {
         if (!this.repaymentScheduleDetail().isEnableDownPayment()
                 && (!this.repaymentScheduleDetail().isInterestRecalculationEnabled() || isNpa || isChargedOff())) {
             if (!this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)) {
