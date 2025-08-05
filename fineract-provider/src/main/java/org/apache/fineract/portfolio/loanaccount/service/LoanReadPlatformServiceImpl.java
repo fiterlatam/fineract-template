@@ -2248,7 +2248,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     public Collection<DisbursementData> retrieveLoanDisbursementDetails(final Long loanId) {
         final LoanDisbursementDetailMapper rm = new LoanDisbursementDetailMapper(sqlGenerator);
         final String sql = "select " + rm.schema()
-                + " where dd.loan_id=? and dd.is_reversed=false group by dd.id, lc.amount_waived_derived order by dd.expected_disburse_date,dd.disbursedon_date";
+                + " where dd.loan_id=? and dd.is_reversed=false group by dd.id, lc.amount_waived_derived, dd.expected_disburse_date, dd.disbursedon_date, dd.principal,"
+                + " dd.net_disbursal_amount order by dd.expected_disburse_date,dd.disbursedon_date";
         return this.jdbcTemplate.query(sql, rm, loanId); // NOSONAR
     }
 
