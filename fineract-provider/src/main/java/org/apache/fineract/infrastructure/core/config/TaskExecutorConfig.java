@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.infrastructure.core.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +29,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @Configuration
 public class TaskExecutorConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(TaskExecutorConfig.class);
 
     @Autowired
     private FineractProperties fineractProperties;
@@ -43,8 +47,34 @@ public class TaskExecutorConfig {
     @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
     public ThreadPoolTaskExecutor fineractConfigurableThreadPoolTaskExecutor() {
         ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
-        threadPoolTaskExecutor.setCorePoolSize(fineractProperties.getTaskExecutor().getDefaultTaskExecutorCorePoolSize());
-        threadPoolTaskExecutor.setMaxPoolSize(fineractProperties.getTaskExecutor().getDefaultTaskExecutorMaxPoolSize());
+
+        // Get configuration values
+        int corePoolSize = fineractProperties.getTaskExecutor().getDefaultTaskExecutorCorePoolSize();
+        int maxPoolSize = fineractProperties.getTaskExecutor().getDefaultTaskExecutorMaxPoolSize();
+
+        // Validate configuration
+        if (corePoolSize <= 0) {
+            throw new IllegalArgumentException("Default task executor core pool size must be greater than 0, but was: " + corePoolSize);
+        }
+        if (maxPoolSize <= 0) {
+            throw new IllegalArgumentException("Default task executor max pool size must be greater than 0, but was: " + maxPoolSize);
+        }
+        if (corePoolSize > maxPoolSize) {
+            throw new IllegalArgumentException(
+                    "Core pool size (" + corePoolSize + ") cannot be greater than max pool size (" + maxPoolSize + ")");
+        }
+
+        // Set initial values that allow for dynamic reconfiguration
+        threadPoolTaskExecutor.setCorePoolSize(corePoolSize);
+        threadPoolTaskExecutor.setMaxPoolSize(maxPoolSize);
+        // Enable core thread timeout to allow dynamic scaling
+        threadPoolTaskExecutor.setAllowCoreThreadTimeOut(true);
+        // Set a reasonable queue capacity
+        threadPoolTaskExecutor.setQueueCapacity(1000);
+        // Set thread name prefix for better monitoring
+        threadPoolTaskExecutor.setThreadNamePrefix("configurable-task-");
+
+        log.debug("Created configurable ThreadPoolTaskExecutor with corePoolSize={}, maxPoolSize={}", corePoolSize, maxPoolSize);
         return threadPoolTaskExecutor;
     }
 }

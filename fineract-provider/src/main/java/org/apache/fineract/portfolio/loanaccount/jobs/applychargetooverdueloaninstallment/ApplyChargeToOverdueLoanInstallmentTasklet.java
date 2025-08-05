@@ -60,10 +60,25 @@ public class ApplyChargeToOverdueLoanInstallmentTasklet implements Tasklet {
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
         final int threadPoolSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("thread-pool-size"));
+
+        // Validate thread pool size
+        if (threadPoolSize <= 0) {
+            throw new IllegalArgumentException("Thread pool size must be greater than 0, but was: " + threadPoolSize);
+        }
+
         log.info("Thread pool size for Apply Penalties to Overdue Loans job is set to {}", threadPoolSize);
 
-        taskExecutor.setCorePoolSize(threadPoolSize);
-        taskExecutor.setMaxPoolSize(threadPoolSize);
+        // Fix: Set maxPoolSize before corePoolSize to avoid IllegalArgumentException
+        try {
+            taskExecutor.setMaxPoolSize(threadPoolSize);
+            taskExecutor.setCorePoolSize(threadPoolSize);
+            log.info("Successfully configured ThreadPoolTaskExecutor with corePoolSize={} and maxPoolSize={}", threadPoolSize,
+                    threadPoolSize);
+        } catch (IllegalArgumentException e) {
+            log.error("Failed to configure ThreadPoolTaskExecutor with threadPoolSize={}. Error: {}", threadPoolSize, e.getMessage());
+            throw new RuntimeException("Failed to configure thread pool for Apply Penalties to Overdue Loans job", e);
+        }
+
         final int batchSize = Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("batch-size"));
         log.info("Batch size for Apply Penalties to Overdue Loans job is set to {}", batchSize);
 
