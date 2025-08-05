@@ -5147,6 +5147,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         firstLoanDocumentData.getProductTypeName());
                 this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
                 if (!isTriggeredByJob) {
+                    log.info("Updating invoice counter for product type: {}", loanProductParameterization.getProductType());
+                    loanProductParameterization.setInvoiceCounter(loanProductParameterization.getNextInvoiceCounter());
                     this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
                 }
             }
@@ -5175,7 +5177,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
                             loanProductParameterization.getProductType()));
         }
-        loanProductParameterization.setInvoiceCounter(currentCounter);
+        loanProductParameterization.setNextInvoiceCounter(currentCounter);
         return String.valueOf(documentNumber);
     }
 
