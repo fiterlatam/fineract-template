@@ -83,6 +83,9 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
     @Column(name = "credit_note_counter")
     private Long creditNoteCounter;
 
+    @Transient
+    private Long nextInvoiceCounter;
+
     public LoanProductParameterizationData toData() {
         return new LoanProductParameterizationData(getId(), productType, billingPrefix, billingResolutionNumber, generationDate,
                 expirationDate, rangeStartNumber, rangeEndNumber, lastInvoiceNumber, lastCreditNoteNumber, lastDebitNoteNumber,
@@ -162,7 +165,8 @@ public class LoanProductParameterization extends AbstractAuditableWithUTCDateTim
         }
 
         return new LoanProductParameterization(productType, billingPrefix, billingResolutionNumber, generationDate, expirationDate,
-                rangeStartNumber, rangeEndNumber, lastInvoiceNumber, lastCreditNoteNumber, lastDebitNoteNumber, technicalKey, note, 0L, 0L);
+                rangeStartNumber, rangeEndNumber, lastInvoiceNumber, lastCreditNoteNumber, lastDebitNoteNumber, technicalKey, note, 0L, 0L,
+                0L);
     }
 
     public boolean isInvoiceResolutionExpiring(Long daysPrior) {
