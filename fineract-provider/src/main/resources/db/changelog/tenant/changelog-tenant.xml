@@ -162,4 +162,5 @@
     <include file="parts/0136_FBR-724-OVERDUE_LOAN_CHARGE.xml" relativeToChangelogFile="true"/>
     <include file="parts/0139-FSF-95_AddConfigurationForRunningBalancesUpdate.xml" relativeToChangelogFile="true"/>
     <include file="parts/0140-ACCOUNTING_MANUAL_ENTRTIES CONFIGURATION.xml" relativeToChangelogFile="true"/>
+    <include file="parts/FS_182_FIX_RESCHEDULED_LOANS_REPORT.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
