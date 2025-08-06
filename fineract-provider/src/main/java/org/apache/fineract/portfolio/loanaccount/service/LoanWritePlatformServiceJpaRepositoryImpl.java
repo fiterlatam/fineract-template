@@ -206,7 +206,6 @@ import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicaMensual;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.LoanDocumentConcept;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleDTO;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanInstalmentChargeRepository;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
@@ -1364,7 +1363,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
 
         if (!isImportedTransaction) {
-            if ((transactionAmount.compareTo(totalExpectedRepayment) > 0 && !isBankChannel)) {
+            // Add a small tolerance to account for rounding differences and edge cases
+            // This prevents false positives when the amount is very close to the outstanding amount
+            final BigDecimal tolerance = BigDecimal.valueOf(0.01); // 1 cent tolerance
+            if ((transactionAmount.compareTo(totalExpectedRepayment.add(tolerance)) > 0 && !isBankChannel)) {
+                log.warn("Repayment validation failed for loan {}: transactionAmount={}, totalExpectedRepayment={}, difference={}",
+                        loan.getId(), transactionAmount, totalExpectedRepayment, transactionAmount.subtract(totalExpectedRepayment));
                 final String totalOverpaid = transactionAmount.subtract(totalExpectedRepayment).toString();
                 handleOverPaidException(totalOverpaid);
             }
@@ -1940,17 +1944,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             loan.regenerateRepaymentSchedule(scheduleGeneratorDTO);
             loan.reapplyInsuranceCharges();
             // Regenerate CustomChargeHonorarioMaps for flat honorario charges
-//            Collection<LoanCharge> loanCharges = loan.getLoanCharges();
-//            if (!CollectionUtils.isEmpty(loanCharges)) {
-//                for (LoanCharge loanCharge : loanCharges) {
-//                    if (loanCharge.isFlatHono()) {
-//                        // Cast to LoanAccountDomainServiceJpa to access the regenerateCustomChargeHonorarioMaps method
-//                        if (this.loanAccountDomainService instanceof LoanAccountDomainServiceJpa) {
-//                            ((LoanAccountDomainServiceJpa) this.loanAccountDomainService).regenerateCustomChargeHonorarioMaps(loanCharge);
-//                        }
-//                    }
-//                }
-//            }
+            // Collection<LoanCharge> loanCharges = loan.getLoanCharges();
+            // if (!CollectionUtils.isEmpty(loanCharges)) {
+            // for (LoanCharge loanCharge : loanCharges) {
+            // if (loanCharge.isFlatHono()) {
+            // // Cast to LoanAccountDomainServiceJpa to access the regenerateCustomChargeHonorarioMaps method
+            // if (this.loanAccountDomainService instanceof LoanAccountDomainServiceJpa) {
+            // ((LoanAccountDomainServiceJpa)
+            // this.loanAccountDomainService).regenerateCustomChargeHonorarioMaps(loanCharge);
+            // }
+            // }
+            // }
+            // }
 
             loan.processPostDisbursementTransactions();
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
@@ -5676,45 +5681,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         for (JsonElement loansList : loanIds) {
             long loanId = loansList.getAsLong();
             try {
-
-                final Loan loan = this.loanAssembler.assembleFrom(loanId);
-                if (loan == null) {
-                    throw new LoanNotFoundException(loanId);
-                }
-
                 // Delete existing CustomChargeHonorarioMaps for this loan
-                this.customChargeHonorarioMapRepository.deleteByLoanId(loanId);
-
-                // Delete existing LoanInstallmentCharges for this loan
-                this.loanInstalmentChargeRepository.deleteByLoanId(loanId);
-
-                ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, DateUtils.getBusinessLocalDate());
-
-                loan.regenerateRepaymentSchedule(scheduleGeneratorDTO);
-
-                loan.reapplyInsuranceCharges();
-
-                // Regenerate CustomChargeHonorarioMaps for flat honorario charges
-            Collection<LoanCharge> loanCharges = loan.getLoanCharges();
-            if (!CollectionUtils.isEmpty(loanCharges)) {
-                for (LoanCharge loanCharge : loanCharges) {
-                    if (loanCharge.isFlatHono()) {
-                        // Cast to LoanAccountDomainServiceJpa to access the regenerateCustomChargeHonorarioMaps method
-                        if (this.loanAccountDomainService instanceof LoanAccountDomainServiceJpa) {
-                            loanCharge.update(loan);
-                            ((LoanAccountDomainServiceJpa) this.loanAccountDomainService).regenerateCustomChargeHonorarioMaps(loanCharge);
-                        }
-                    }
-                }
-            }
-
-            loan.processPostDisbursementTransactions();
-            loan.updateLoanDerivedFields();
-
-            saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
-
-            log.info("Successfully regenerated loan schedule for loan ID: {}", loanId);
+                this.loanAccountDomainService.cleanUpLoan(loanId);
+                log.info("Successfully regenerated loan schedule for loan ID: {}", loanId);
             } catch (Exception e) {
+                e.printStackTrace();
                 log.error("Failed to regenerate loan schedule for loan ID: {}", loanId, e);
                 failedLoans.add(loansList);
             }

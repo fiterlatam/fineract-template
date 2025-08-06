@@ -1785,27 +1785,31 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private void removeNonMigratedRepayments(Long loanId) {
         String sql = "update m_loan_transaction set is_reversed = false where loan_id = ? and transaction_type_enum = 2 and installment_id is null and is_reversed = true";
         this.jdbcTemplate.update(sql, loanId);
-        sql = "delete from m_loan_transaction_repayment_schedule_mapping where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
-        this.jdbcTemplate.update(sql, loanId);
-        sql = "delete from m_loan_charge_paid_by where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+
+        sql = "delete from m_loan_transaction_repayment_schedule_mapping where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 )";
         this.jdbcTemplate.update(sql, loanId);
 
-        sql = "delete from m_payment_detail_forclousure where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
-        this.jdbcTemplate.update(sql, loanId);
-        sql = "delete from m_partial_invoiced_transaction where repayment_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        sql = "delete from m_payment_detail_forclousure where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2)";
         this.jdbcTemplate.update(sql, loanId);
 
-        sql = "delete from m_loan_transaction_relation where from_loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        sql = "delete from m_partial_invoiced_transaction where repayment_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 )";
         this.jdbcTemplate.update(sql, loanId);
 
-        sql = "delete from m_loan_charge_paid_by where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        sql = "delete from m_loan_transaction_relation where from_loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 )";
         this.jdbcTemplate.update(sql, loanId);
 
-        sql = "delete from m_loan_transaction_repayment_schedule_mapping where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        sql = "delete from m_loan_transaction_repayment_schedule_mapping where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2)";
         this.jdbcTemplate.update(sql, loanId);
 
-        sql = "delete from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null";
+        sql = "delete from m_loan_charge_paid_by where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2)";
         this.jdbcTemplate.update(sql, loanId);
+
+        sql = "update m_loan_transaction set invoiced_by_transaction_id=null, is_partially_ivoiced=false where transaction_type_enum = 10 and loan_id = ? and invoiced_by_transaction_id in(select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2) ";
+        this.jdbcTemplate.update(sql, loanId, loanId);
+
+        sql = "delete from m_loan_transaction where transaction_type_enum = 2 and loan_id = ? ";
+        this.jdbcTemplate.update(sql, loanId);
+
         this.entityManager.flush();
     }
 
