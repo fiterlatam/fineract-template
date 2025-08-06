@@ -1086,9 +1086,14 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         boolean exit = false;
         final int maxIterationCount = 50;
         int iterationCount = 0;
+        Money previousTransactionAmount = transactionAmountUnprocessed;
+        int noProgressCount = 0;
+        final int maxNoProgressCount = 3; // Allow up to 3 iterations with no progress before forcing exit
+
         do {
             iterationCount += 1;
-            log.info("processing loan id: {} - {}", loanTransaction.getLoan().getId(), iterationCount);
+            log.info("processing loan id : {} laon trans:{} - {}", loanTransaction.getId(), loanTransaction.getLoan().getId(),
+                    iterationCount);
             if (transactionAmountUnprocessed.isZero()) {
                 exit = true;
                 continue;
@@ -1098,6 +1103,21 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                 throw new PlatformInternalServerException("processing.failed.for.loan",
                         "Processing failed for loan id: " + loanTransaction.getLoan().getId());
             }
+
+            // Check if no progress is being made
+            if (transactionAmountUnprocessed.isEqualTo(previousTransactionAmount)) {
+                noProgressCount++;
+                if (noProgressCount >= maxNoProgressCount) {
+                    log.warn("No progress made for {} iterations, forcing exit for loan id: {}", noProgressCount,
+                            loanTransaction.getLoan().getId());
+                    exit = true;
+                    continue;
+                }
+            } else {
+                noProgressCount = 0; // Reset counter when progress is made
+            }
+            previousTransactionAmount = transactionAmountUnprocessed;
+
             LoanRepaymentScheduleInstallment oldestPastDueInstallment = installments.stream()
                     .filter(x -> x.isNotFullyPaidOff() && !x.isFullyGraced()).filter(e -> !loanTransaction.isBefore(e.getDueDate()))
                     .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).orElse(null);
@@ -1207,6 +1227,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
 
             int firstNormalInstallmentNumber = LoanRepaymentScheduleProcessingWrapper.fetchFirstNormalInstallmentNumber(installments);
             boolean stopProcessingAdvanceInstallment = false;
+            boolean madeProgress = false; // Track if any progress was made in this iteration
+
             for (PaymentAllocationType paymentAllocationType : paymentAllocationTypes) {
                 if (transactionAmountUnprocessed.isZero()) {
                     exit = true;
@@ -1222,6 +1244,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                             paidPortion = processPaymentAllocation(paymentAllocationType, oldestPastDueInstallment, loanTransaction,
                                     transactionAmountUnprocessed, loanTransactionToRepaymentScheduleMapping,
                                     oldestPastDueInstallmentCharges, balances, LoanRepaymentScheduleInstallment.PaymentAction.PAY);
+                            if (paidPortion.isGreaterThanZero()) {
+                                madeProgress = true;
+                            }
                             transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
                         } else {
                             exit = true;
@@ -1236,6 +1261,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                             paidPortion = processPaymentAllocation(paymentAllocationType, dueInstallment, loanTransaction,
                                     transactionAmountUnprocessed, loanTransactionToRepaymentScheduleMapping, dueInstallmentCharges,
                                     balances, LoanRepaymentScheduleInstallment.PaymentAction.PAY);
+                            if (paidPortion.isGreaterThanZero()) {
+                                madeProgress = true;
+                            }
                             transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
                             exit = true;
                         } else {
@@ -1285,6 +1313,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                     loanTransaction, transactionAmountUnprocessed,
                                                     loanTransactionToRepaymentScheduleMapping, inAdvanceInstallmentCharges, balances,
                                                     LoanRepaymentScheduleInstallment.PaymentAction.PAY);
+                                            if (paidPortion.isGreaterThanZero()) {
+                                                madeProgress = true;
+                                            }
                                             transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
                                         } else {
                                             if (inAdvanceInstallment.isLastInstallment(installments)
@@ -1314,6 +1345,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                         transactionAmountUnprocessed, zero, zero, zero);
                                                 transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPrincipalComponent);
                                                 stopProcessingAdvanceInstallment = true;
+                                                madeProgress = true;
 
                                             } else {
                                                 balances.setAggregatedPrincipalPortion(
@@ -1341,6 +1373,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                         transactionAmountUnprocessed, zero, zero, zero);
 
                                                 transactionAmountUnprocessed = Money.zero(currency);
+                                                madeProgress = true;
                                             }
                                         }
                                     }
@@ -1352,6 +1385,13 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                         }
                     }
                 }
+            }
+
+            // If no progress was made in this iteration and we have no installments to process, force exit
+            if (!madeProgress && oldestPastDueInstallment == null && dueInstallment == null && inAdvanceInstallments.isEmpty()) {
+                log.warn("No installments available for processing and no progress made, forcing exit for loan id: {}",
+                        loanTransaction.getLoan().getId());
+                exit = true;
             }
         }
         // We are allocating till there is no pending installment or there is no more unprocessed transaction amount

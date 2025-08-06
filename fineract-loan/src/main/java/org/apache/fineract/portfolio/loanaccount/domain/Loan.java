@@ -1558,17 +1558,17 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         for (LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             existingInstallmentsByNumber.put(installment.getInstallmentNumber(), installment);
         }
-        
+
         // Clear overdue charges from existing installments
         for (LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             installment.deleteOverdueInstallmentCharges();
         }
-        
+
         this.repaymentScheduleInstallments.clear();
-        
+
         // for some installments, we made them start from number 0, we want to keep that way
         int actualPaymentNumber = 1;
-        
+
         for (final LoanScheduleModelPeriod scheduledLoanInstallment : modifiedLoanSchedule.getPeriods()) {
             int periodNumber;
             if (scheduledLoanInstallment.isRepaymentPeriod() || scheduledLoanInstallment.isDownPaymentPeriod()) {
@@ -1585,7 +1585,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         scheduledLoanInstallment.feeChargesDue(), scheduledLoanInstallment.penaltyChargesDue(),
                         scheduledLoanInstallment.isRecalculatedInterestComponent(), scheduledLoanInstallment.getLoanCompoundingDetails(),
                         scheduledLoanInstallment.rescheduleInterestPortion(), scheduledLoanInstallment.isDownPaymentPeriod());
-                
+
                 // Preserve repayment data from existing installment if it exists
                 LoanRepaymentScheduleInstallment existingInstallment = existingInstallmentsByNumber.get(periodNumber);
                 if (existingInstallment != null) {
@@ -1606,28 +1606,30 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     newInstallment.setObligationsMet(existingInstallment.isObligationsMet());
                     newInstallment.setObligationsMetOnDate(existingInstallment.getObligationsMetOnDate());
                     newInstallment.setAdvancePrincipalAmount(existingInstallment.getAdvancePrincipalAmount());
-                    
+
                     // Preserve installment charges
                     Set<LoanInstallmentCharge> existingCharges = existingInstallment.getInstallmentCharges();
                     newInstallment.getInstallmentCharges().addAll(existingCharges);
                     existingCharges.forEach(c -> c.setInstallment(newInstallment));
-                    
+
                     // Preserve transaction mappings
-                    Set<LoanTransactionToRepaymentScheduleMapping> existingMappings = existingInstallment.getLoanTransactionToRepaymentScheduleMappings();
+                    Set<LoanTransactionToRepaymentScheduleMapping> existingMappings = existingInstallment
+                            .getLoanTransactionToRepaymentScheduleMappings();
                     newInstallment.getLoanTransactionToRepaymentScheduleMappings().addAll(existingMappings);
                     existingMappings.forEach(c -> c.setInstallment(newInstallment));
-                    
+
                     // Preserve post-dated checks
                     Set<PostDatedChecks> existingChecks = existingInstallment.getPostDatedCheck();
                     newInstallment.getPostDatedCheck().addAll(existingChecks);
                     existingChecks.forEach(c -> c.setLoanRepaymentScheduleInstallment(newInstallment));
-                    
+
                     // Preserve loan compounding details
-                    Set<LoanInterestRecalcualtionAdditionalDetails> existingCompoundingDetails = existingInstallment.getLoanCompoundingDetails();
+                    Set<LoanInterestRecalcualtionAdditionalDetails> existingCompoundingDetails = existingInstallment
+                            .getLoanCompoundingDetails();
                     newInstallment.getLoanCompoundingDetails().addAll(existingCompoundingDetails);
                     existingCompoundingDetails.forEach(c -> c.setLoanRepaymentScheduleInstallment(newInstallment));
                 }
-                
+
                 addLoanRepaymentScheduleInstallment(newInstallment);
             }
         }
