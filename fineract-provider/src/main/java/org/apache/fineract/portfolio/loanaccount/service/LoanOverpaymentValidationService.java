@@ -63,11 +63,8 @@ public class LoanOverpaymentValidationService {
             return;
         }
 
-        // First, apply product-specific validation rules
+        // Apply product-specific validation rules
         validateRevolvingCreditOverpayment(loan, transactionAmount, foreclosureAmount);
-
-        // Then, apply channel-based validation rules
-        validateChannelBasedOverpayment(transactionAmount, foreclosureAmount, channelData);
     }
 
     /**
