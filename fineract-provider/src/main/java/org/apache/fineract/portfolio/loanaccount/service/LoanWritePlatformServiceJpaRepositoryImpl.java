@@ -204,6 +204,7 @@ import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicaMensual;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.LoanDocumentConcept;
+import org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
@@ -307,7 +308,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final PlatformSecurityContext platformSecurityContext;
     private final GlobalConfigurationRepository globalConfigurationRepository;
     private final LoanBlockWritePlatformService loanBlockWritePlatformService;
-    private final BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepository;
+    private final BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepositoryWrapper;
+    private final LoanBlockingReasonRepository loanBlockingReasonRepository;
     private final InsuranceIncidentRepository insuranceIncidentRepository;
     private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
     private final LoanScheduleGeneratorFactory loanScheduleFactory;
@@ -1913,6 +1915,15 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 this.facturaElectronicMensualRepository.deleteAll(facturaElectronicMensuals);
             }
         }
+
+        /* Undo loan block status if loan is still outstanding */
+        if (loan.getLoanSummary().getTotalOutstanding().compareTo(BigDecimal.ZERO) > 0) {
+            final BlockingReasonSetting blockStatus = loan.getLoanCustomizationDetail().getBlockStatus();
+            if (blockStatus != null) {
+                handleUnBlockingCredit(loan, blockStatus.getId());
+                saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+            }
+        }
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(entityId) //
@@ -1922,6 +1933,31 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withGroupId(loan.getGroupId()) //
                 .withLoanId(loanId) //
                 .with(changes).build();
+    }
+
+    private void handleUnBlockingCredit(final Loan loan, final Long blockingReasonSettingId) {
+        final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+                .findOneWithNotFoundDetection(blockingReasonSettingId);
+        final Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository
+                .findExistingBlockingReason(loan.getId(), blockingReasonSetting.getId());
+        final AppUser currentUser = context.authenticatedUser();
+        if (existingBlockingReason.isPresent()) {
+            final LoanBlockingReason blockingReason = this.loanBlockingReasonRepository
+                    .findExistingBlockingReason(loan.getId(), blockingReasonSetting.getId())
+                    .orElseThrow(() -> new LoanBlockingReasonNotFoundException(loan.getId(), blockingReasonSetting.getId()));
+            blockingReason.setActive(false);
+            blockingReason.setDeactivatedBy(currentUser);
+            blockingReason.setUnblockComment(LoanArrearsAgeingUpdateHandler.UNBLOCKING_COMMENT);
+            blockingReason.setDeactivatedOn(DateUtils.getLocalDateOfTenant());
+            final BlockingReasonSetting existingBlockingReasonSetting = loan.getLoanCustomizationDetail().getBlockStatus();
+            if (existingBlockingReasonSetting != null) {
+                final Long existingBlockingSettingId = existingBlockingReasonSetting.getId();
+                if (existingBlockingSettingId != null && existingBlockingSettingId.equals(blockingReasonSetting.getId())) {
+                    loan.getLoanCustomizationDetail().setBlockStatus(null);
+                }
+            }
+            loanBlockingReasonRepository.saveAndFlush(blockingReason);
+        }
     }
 
     private void decrementInvoiceCounterOnProduct(LoanTransaction transactionToAdjust,
@@ -2791,7 +2827,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         loan.getTopupLoanDetails().setAccountTransferDetails(accountTransferDetails.getId());
         loan.getTopupLoanDetails().setTopupAmount(amount);
         if (loanToClose.claimType() == null || !loanToClose.claimType().equals("castigado")) {
-            BlockingReasonSetting setting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
+            BlockingReasonSetting setting = loanBlockingReasonRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                     BlockingReasonSettingEnum.CREDIT_RESTRUCTURE.getDatabaseString(), BlockLevel.CREDIT.toString());
             loanBlockWritePlatformService.blockLoan(loan.getId(), setting, "Reestructurada", DateUtils.getLocalDateOfTenant());
         }
@@ -4060,7 +4096,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, txnExternalId, changes, false);
-        final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
+        final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                 BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(), BlockLevel.CREDIT.toString());
         loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "CANCELADO", DateUtils.getLocalDateOfTenant());
 
