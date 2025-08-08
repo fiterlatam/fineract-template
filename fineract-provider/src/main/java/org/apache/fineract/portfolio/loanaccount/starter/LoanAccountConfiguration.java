@@ -463,7 +463,8 @@ public class LoanAccountConfiguration {
             LoanRescheduleRequestReadPlatformService loanRescheduleRequestReadPlatformService,
             ClientReadPlatformService clientReadPlatformService, ChannelReadWritePlatformService channelReadWritePlatformService,
             PlatformSecurityContext platformSecurityContext, GlobalConfigurationRepository globalConfigurationRepository,
-            LoanBlockWritePlatformService loanBlockWritePlatformService, BlockingReasonSettingsRepositoryWrapper blockingReasonRepository,
+            LoanBlockWritePlatformService loanBlockWritePlatformService,
+            BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepositoryWrapper,
             LoanBlockingReasonRepository loanBlockingReasonRepository, InsuranceIncidentRepository insuranceIncidentRepository,
             InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository, LoanScheduleGeneratorFactory loanScheduleFactory,
             BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper,
@@ -488,10 +489,10 @@ public class LoanAccountConfiguration {
                 loanAccrualTransactionBusinessEventService, errorHandler, loanDownPaymentHandlerService, loanProductReadPlatformService,
                 jdbcTemplate, commandsSourceWritePlatformService, loanRescheduleRequestReadPlatformService, clientReadPlatformService,
                 channelReadWritePlatformService, platformSecurityContext, globalConfigurationRepository, loanBlockWritePlatformService,
-                blockingReasonRepository, loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository,
-                loanScheduleFactory, blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository,
-                productParameterizationRepository, customChargeHonorarioMapRepository, loanInstalmentChargeRepository,
-                loanCreditNoteRepository, loanAccrualPlatformService, collectionHouseReadWriteService);
+                loanBlockingReasonRepositoryWrapper, loanBlockingReasonRepository, insuranceIncidentRepository,
+                insuranceIncidentNoveltyNewsRepository, loanScheduleFactory, blockingReasonSettingsRepositoryWrapper,
+                facturaElectronicMensualRepository, productParameterizationRepository, customChargeHonorarioMapRepository,
+                loanInstalmentChargeRepository, loanCreditNoteRepository, loanAccrualPlatformService, collectionHouseReadWriteService);
     }
 
     @Bean

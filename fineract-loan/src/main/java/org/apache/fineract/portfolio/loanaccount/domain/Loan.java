@@ -518,6 +518,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Transient
     private boolean foreClosing;
 
+    @Getter
+    @Setter
+    @Transient
+    private boolean cleanUp;
+
     // Columns for migrated loans
     @Column(name = "is_migrated_loan", nullable = false)
     private boolean isMigratedLoan = false;
@@ -3738,7 +3743,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             throw new InvalidLoanStateTransitionException("transaction", "cannot.be.a.future.date", errorMessage, loanTransactionDate);
         }
 
-        if (!isTransactionBeforeLastRepaymentTransaction(loanTransaction, getLoanTransactions())) {
+        if (!isTransactionNotBeforeLastRepaymentTransaction(loanTransaction, getLoanTransactions())) {
             final String errorMessage = "The transaction date cannot be before last valid transaction: " + getDisbursementDate().toString();
             throw new InvalidLoanStateTransitionException("transaction", "cannot.be.before.last.valid.transaction", errorMessage,
                     loanTransactionDate, getDisbursementDate());
@@ -4125,19 +4130,17 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return isChronologicallyLatestRepaymentOrWaiver;
     }
 
-    private boolean isTransactionBeforeLastRepaymentTransaction(final LoanTransaction loanTransaction,
+    private boolean isTransactionNotBeforeLastRepaymentTransaction(final LoanTransaction loanTransaction,
             final List<LoanTransaction> loanTransactions) {
-        boolean isTransactionNotBeforeLastRepaymentTransaction = true;
 
         final LocalDate currentTransactionDate = loanTransaction.getTransactionDate();
         for (final LoanTransaction previousTransaction : loanTransactions) {
             if (!previousTransaction.isDisbursement() && previousTransaction.isNotReversed() && !previousTransaction.isAccrual()
                     && !DateUtils.isOnOrAfter(currentTransactionDate, previousTransaction.getTransactionDate())) {
-                isTransactionNotBeforeLastRepaymentTransaction = false;
-                break;
+                return false;
             }
         }
-        return isTransactionNotBeforeLastRepaymentTransaction;
+        return true;
     }
 
     private boolean isAfterLatRepayment(final LoanTransaction loanTransaction, final List<LoanTransaction> loanTransactions) {
