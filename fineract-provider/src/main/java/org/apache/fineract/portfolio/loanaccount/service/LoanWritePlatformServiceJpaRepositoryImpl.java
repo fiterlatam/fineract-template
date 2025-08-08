@@ -18,8 +18,6 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
-import static org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler.UNBLOCKING_COMMENT;
-
 import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -206,6 +204,7 @@ import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicaMensual;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.LoanDocumentConcept;
+import org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanInstalmentChargeRepository;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
@@ -310,7 +309,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final PlatformSecurityContext platformSecurityContext;
     private final GlobalConfigurationRepository globalConfigurationRepository;
     private final LoanBlockWritePlatformService loanBlockWritePlatformService;
-    private final BlockingReasonSettingsRepositoryWrapper blockingReasonRepository;
+    private final BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepositoryWrapper;
     private final LoanBlockingReasonRepository loanBlockingReasonRepository;
     private final InsuranceIncidentRepository insuranceIncidentRepository;
     private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
@@ -1962,6 +1961,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             loan.processPostDisbursementTransactions();
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         }
+        /* Undo loan block status if loan is still outstanding */
+        if (loan.getLoanSummary().getTotalOutstanding().compareTo(BigDecimal.ZERO) > 0) {
+            final BlockingReasonSetting blockStatus = loan.getLoanCustomizationDetail().getBlockStatus();
+            if (blockStatus != null) {
+                handleUnBlockingCredit(loan, blockStatus.getId());
+                saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+            }
+        }
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(entityId) //
@@ -1973,23 +1980,22 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .with(changes).build();
     }
 
-    private void handleUnBlockingCredit(Loan loan, Long blockingReasonSettingId) {
-        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+    private void handleUnBlockingCredit(final Loan loan, final Long blockingReasonSettingId) {
+        final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
                 .findOneWithNotFoundDetection(blockingReasonSettingId);
-        Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository.findExistingBlockingReason(loan.getId(),
-                blockingReasonSetting.getId());
-
-        AppUser currentUser = context.authenticatedUser();
-
+        final Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository
+                .findExistingBlockingReason(loan.getId(), blockingReasonSetting.getId());
+        final AppUser currentUser = context.authenticatedUser();
         if (existingBlockingReason.isPresent()) {
-            LoanBlockingReason blockingReason = this.loanBlockingReasonRepository
+            final LoanBlockingReason blockingReason = this.loanBlockingReasonRepository
+
                     .findExistingBlockingReason(loan.getId(), blockingReasonSetting.getId())
                     .orElseThrow(() -> new LoanBlockingReasonNotFoundException(loan.getId(), blockingReasonSetting.getId()));
             blockingReason.setActive(false);
             blockingReason.setDeactivatedBy(currentUser);
-            blockingReason.setUnblockComment(UNBLOCKING_COMMENT);
-            blockingReason.setDeactivatedOn(DateUtils.getLocalDateOfTenant());
 
+            blockingReason.setUnblockComment(LoanArrearsAgeingUpdateHandler.UNBLOCKING_COMMENT);
+            blockingReason.setDeactivatedOn(DateUtils.getLocalDateOfTenant());
             final BlockingReasonSetting existingBlockingReasonSetting = loan.getLoanCustomizationDetail().getBlockStatus();
             if (existingBlockingReasonSetting != null) {
                 final Long existingBlockingSettingId = existingBlockingReasonSetting.getId();
@@ -2868,7 +2874,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         loan.getTopupLoanDetails().setAccountTransferDetails(accountTransferDetails.getId());
         loan.getTopupLoanDetails().setTopupAmount(amount);
         if (loanToClose.claimType() == null || !loanToClose.claimType().equals("castigado")) {
-            BlockingReasonSetting setting = blockingReasonRepository.getSingleBlockingReasonSettingByReason(
+            BlockingReasonSetting setting = loanBlockingReasonRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                     BlockingReasonSettingEnum.CREDIT_RESTRUCTURE.getDatabaseString(), BlockLevel.CREDIT.toString());
             loanBlockWritePlatformService.blockLoan(loan.getId(), setting, "Reestructurada", DateUtils.getLocalDateOfTenant());
         }
@@ -4137,7 +4143,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, txnExternalId, changes, false);
-        final BlockingReasonSetting blockingReasonSetting = blockingReasonRepository.getSingleBlockingReasonSettingByReason(
+        final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                 BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(), BlockLevel.CREDIT.toString());
         loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "CANCELADO", DateUtils.getLocalDateOfTenant());
 
