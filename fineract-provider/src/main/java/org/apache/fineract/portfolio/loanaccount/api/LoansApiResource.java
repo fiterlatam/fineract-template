@@ -552,6 +552,12 @@ public class LoansApiResource {
             return this.loanScheduleToApiJsonSerializer.serialize(settings, loanSchedule.toData(), new HashSet<>());
         }
 
+        if (CommandParameterUtil.is(commandParam, "recalculateLoanSchedule")) {
+            this.loanWritePlatformService.regenerateLoanSchedule(apiRequestBodyAsJson);
+            final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+            return this.loanScheduleToApiJsonSerializer.serialize(settings, new HashSet<>());
+        }
+
         final CommandWrapper commandRequest = new CommandWrapperBuilder().createLoanApplication().withJson(apiRequestBodyAsJson).build();
 
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);

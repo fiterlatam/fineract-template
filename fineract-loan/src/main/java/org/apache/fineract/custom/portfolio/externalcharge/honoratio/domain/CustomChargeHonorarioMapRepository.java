@@ -38,10 +38,14 @@ public interface CustomChargeHonorarioMapRepository
     Optional<CustomChargeHonorarioMap> findByNitLoanIdLoanInstallmentNr(@Param("nit") String nit, @Param("loanId") Long loanId,
             @Param("loanInstallmentNr") Integer loanInstallmentNr);
 
-    @Query("SELECT MAX(c.version) FROM CustomChargeHonorarioMap c WHERE c.loanId = :loanId")
+    @Query("SELECT coalesce(MAX(c.version), 0) FROM CustomChargeHonorarioMap c WHERE c.loanId = :loanId")
     Long getMaxVersionByLoan(@Param("loanId") Long loanId);
 
     @Modifying
     @Query("DELETE FROM CustomChargeHonorarioMap p WHERE p.loanId = :loanId and p.version = :version")
     int deleteLatestVersionMapEntryOnReversal(@Param("loanId") Long loanId, @Param("version") Long version);
+
+    @Modifying
+    @Query("DELETE FROM CustomChargeHonorarioMap p WHERE p.loanId = :loanId")
+    int deleteByLoanId(@Param("loanId") Long loanId);
 }

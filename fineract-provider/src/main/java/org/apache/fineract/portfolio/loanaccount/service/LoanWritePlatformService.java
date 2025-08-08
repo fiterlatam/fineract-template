@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
+import com.google.gson.JsonArray;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -152,4 +153,6 @@ public interface LoanWritePlatformService {
     ClasificacionConceptosData getClasificacionConceptosData(String concepto);
 
     void cleanUpLoans();
+
+    JsonArray regenerateLoanSchedule(String apiRequestBodyAsJson);
 }

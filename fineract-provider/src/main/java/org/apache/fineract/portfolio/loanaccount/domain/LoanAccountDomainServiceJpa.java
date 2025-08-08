@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
@@ -243,7 +245,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom,
                 holidayDetailDto);
 
-        if (this.isLoanExpectedToBeFullyRepaid(loan, transactionDate, repaymentAmount, scheduleGeneratorDTO)) {
+        if (this.isLoanExpectedToBeFullyRepaid(loan, transactionDate, repaymentAmount, scheduleGeneratorDTO) && !loan.isCleanUp()) {
             /**
              * Add all missing accrual transactions that happened before the closure date, but not yet posted.
              */
@@ -335,7 +337,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(transactionDate,
                 scheduleGeneratorDTO);
         final Money totalOutstandingAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(loan.getCurrency());
-        return repaymentAmount.isGreaterThan(totalOutstandingAmount) || repaymentAmount.isEqualTo(totalOutstandingAmount);
+        return !repaymentAmount.isLessThan(totalOutstandingAmount);
     }
 
     @Override
@@ -453,6 +455,77 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         }
         return feeCalculationHonorario;
 
+    }
+
+    /**
+     * Regenerates all CustomChargeHonorarioMaps for a flat honorario charge. This method should be called after
+     * clearing existing maps to recreate them.
+     *
+     * @param loanCharge
+     *            The loan charge for which to regenerate the maps
+     */
+    public void regenerateCustomChargeHonorarioMaps(LoanCharge loanCharge) {
+
+        if (!loanCharge.isFlatHono()) {
+            return;
+        }
+
+        Loan loan = loanCharge.getLoan();
+        if (loan == null) {
+            return;
+        }
+
+        // Get all installments that need honorario charges
+        List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallmentsIgnoringTotalGrace().stream()
+                .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber))
+                .filter(installment -> !installment.isRecalculatedInterestComponent())
+                .filter(installment -> loanCharge.getApplicableFromInstallment() == null
+                        || loanCharge.getApplicableFromInstallment() <= installment.getInstallmentNumber())
+                .toList();
+
+        // Get the next version number for batch processing
+        Long version = customChargeHonorarioMapRepository.getMaxVersionByLoan(loan.getId()) + 1;
+
+        // For each installment, create a CustomChargeHonorarioMap
+        for (LoanRepaymentScheduleInstallment installment : installments) {
+            // Calculate the outstanding amount for this installment
+            BigDecimal installmentOutstandingAmount = installment.getPrincipalOutstanding(loan.getCurrency()).getAmount();
+
+            // Calculate fee honorario for this installment
+            FeeCalculationHonorario feeCalculationHonorario = this.calculateFeeHonorario(installment, installmentOutstandingAmount, null);
+
+            // Create new CustomChargeHonorarioMap
+            CustomChargeHonorarioMap newCustomChargeHonorarioMap = new CustomChargeHonorarioMap();
+            newCustomChargeHonorarioMap.setNit("120843958");
+            newCustomChargeHonorarioMap.setLoanId(loan.getId());
+            newCustomChargeHonorarioMap.setLoanInstallmentNr(installment.getInstallmentNumber());
+            newCustomChargeHonorarioMap.setFeeBaseAmount(feeCalculationHonorario.getFeeBasis());
+            newCustomChargeHonorarioMap.setFeeTotalAmount(feeCalculationHonorario.getFeeHono());
+            newCustomChargeHonorarioMap.setFeeVatAmount(feeCalculationHonorario.getFeeVat());
+            newCustomChargeHonorarioMap.setCreatedBy(this.platformSecurityContext.authenticatedUser().getId());
+            newCustomChargeHonorarioMap.setCreatedAt(DateUtils.getLocalDateTimeOfTenant());
+            newCustomChargeHonorarioMap.setLoanChargeId(loanCharge.getId());
+            newCustomChargeHonorarioMap.setVersion(version);
+
+            // Save the map
+            newCustomChargeHonorarioMap = customChargeHonorarioMapRepository.saveAndFlush(newCustomChargeHonorarioMap);
+
+            // Add to the loan charge's maps
+            if (loanCharge.getCustomChargeHonorarioMaps() != null && !loanCharge.getCustomChargeHonorarioMaps().isEmpty()) {
+                loanCharge.getCustomChargeHonorarioMaps().add(newCustomChargeHonorarioMap);
+            } else {
+                Set<CustomChargeHonorarioMap> customChargeHonorarioMapSet = new HashSet<>();
+                customChargeHonorarioMapSet.add(newCustomChargeHonorarioMap);
+                loanCharge.setCustomChargeHonorarioMaps(customChargeHonorarioMapSet);
+            }
+        }
+
+        // Update the loan charge amounts
+        loanCharge.updateAmountOutstanding();
+
+        // Update the loan schedule
+        loan.updateLoanScheduleAfterCustomChargeApplied();
+        saveLoanWithDataIntegrityViolationChecks(loan);
     }
 
     private void setStatusToCanceledOnClosedLoan(final Loan loan, final LocalDate transactionDate) {
@@ -1100,6 +1173,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             if (collectionHouse != null) {
                 payment.setCollectionHouse(collectionHouse);
             }
+            payment.setForeclosure(isForCloureAction);
 
             newTransactions.add(payment);
         }
@@ -1635,34 +1709,47 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     }
 
     @SuppressWarnings("all")
-    @Transactional
     @Override
     public void cleanUpLoan(final Long loanId) {
+
         log.info("Starting cleanup for Loan ID: {}", loanId);
+        String sql = """
+                select * from m_portfolio_command_source mpcs join m_loan_transaction mlt ON mlt.id = mpcs.resource_id where mpcs.loan_id = ? and action_name in ('REPAYMENT', 'FORECLOSURE')\s
+                and (mlt.is_reversed = false or (mlt.id in (select to_loan_transaction_id from m_loan_transaction_relation a join m_loan_transaction b on a.from_loan_transaction_id = b.id and b.is_reversed = false)))
+                order by mlt.transaction_date, made_on_date_utc
+                """;
+        final List<Map<String, Object>> results = this.jdbcTemplate.queryForList(sql, loanId);
+        log.info("Found {} transactions to reprocess for Loan ID: {}", results.size(), loanId);
         log.info("Step 1: Unset loan sub status and set loan to active for Loan ID: {}", loanId);
         this.unsetLoanSubStatus(loanId);
         log.info("Step 2: Remove non-migrated repayments for Loan ID: {}", loanId);
         this.removeNonMigratedRepayments(loanId);
         log.info("Step 3: Reset repayment schedule for Loan ID: {}", loanId);
         this.resetRepaymentSchedule(loanId);
-        log.info("Step 4: Create honorarios and aval charges for recreated clinstallments for Loan ID: {}", loanId);
+        log.info("Step 4: Create honorarios and aval charges for recreated installments for Loan ID: {}", loanId);
         this.recreateInstallmentCharges(loanId);
         log.info("Step 5: Update loan balances for Loan ID: {}", loanId);
         this.updateLoanBalances(loanId);
-        log.info("Step 6: Repost transactions from the portfolio command source for Loan ID: {}", loanId);
         this.entityManager.flush();
-        String sql = "select * from m_portfolio_command_source where loan_id = ? and action_name in ('REPAYMENT', 'FORECLOSURE') order by made_on_date_utc";
-        final List<Map<String, Object>> results = this.jdbcTemplate.queryForList(sql, loanId);
+        final List<Long> auditsToDelete = new ArrayList<>();
         if (!results.isEmpty()) {
+            log.info("Step 6: Repost transactions from the portfolio command source for Loan ID: {}", loanId);
             for (final Map<String, Object> result : results) {
                 if (result.get("action_name").toString().equals("REPAYMENT")) {
-                    log.info("Reposting repayment for Loan ID: {}", loanId);
                     String payload = result.get("command_as_json").toString();
+
+                    // Parse the JSON payload, add cleanUp field, and convert back to string
+                    JsonParser jsonParser = new JsonParser();
+                    JsonObject jsonObject = jsonParser.parse(payload).getAsJsonObject();
+                    jsonObject.addProperty("cleanUp", true);
+                    payload = jsonObject.toString();
+
                     final CommandWrapper commandWrapper = new CommandWrapperBuilder().loanRepaymentTransaction(loanId).withJson(payload)
                             .build();
                     try {
                         log.info("Reposting repayment for Loan ID: {}", loanId);
                         commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                        auditsToDelete.add(Long.parseLong(result.get("id").toString()));
                     } catch (Exception ex) {
                         log.error("Failed to repost repayment for Loan ID: {}, with error: {}", loanId, ex.getMessage());
                         throw ex;
@@ -1685,6 +1772,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     try {
                         log.info("Reposting foreclosure for Loan ID: {}", loanId);
                         commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                        auditsToDelete.add(Long.parseLong(result.get("id").toString()));
                     } catch (Exception ex) {
                         log.error("Failed to repost foreclosure for Loan ID: {}, with error: {}", loanId, ex.getMessage());
                         throw ex;
@@ -1692,12 +1780,14 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 }
             }
         }
-        log.info("Step 7: Marking loan as processed for Loan ID: {}", loanId);
-        sql = "UPDATE tmp_loan_cleanup SET processed = true, date_processed = NOW() WHERE loan_id = ?";
-        this.jdbcTemplate.update(sql, loanId);
-        log.info("Step 8: Removing arrears aging for Loan ID: {}", loanId);
-        sql = "delete from m_loan_arrears_aging mlaa where loan_id = ?";
-        this.jdbcTemplate.update(sql, loanId);
+        // This next step is important to ensure any subsequent run on the same loan doesn't result in
+        // multiple repayments
+        if (!auditsToDelete.isEmpty()) {
+            log.info("Step 7: Remove reprocessed repayments from command source for Loan ID: {}", loanId);
+            String commaSeparatedIds = auditsToDelete.stream().map(String::valueOf).collect(Collectors.joining(","));
+            sql = "delete from m_portfolio_command_source where id in (" + commaSeparatedIds + ")";
+            this.jdbcTemplate.update(sql);
+        }
         this.entityManager.flush();
     }
 
@@ -1711,22 +1801,39 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     }
 
     private void removeNonMigratedRepayments(Long loanId) {
-        String sql = "update m_loan_transaction set is_reversed = false where loan_id = ? and transaction_type_enum = 2 and installment_id is null and is_reversed = true";
+        String sql = "update m_loan_transaction set is_reversed = false where loan_id = ? and transaction_type_enum = 2 and is_reversed = true";
         this.jdbcTemplate.update(sql, loanId);
+
         sql = "delete from m_loan_transaction_repayment_schedule_mapping where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
-        this.jdbcTemplate.update(sql, loanId);
-        sql = "delete from m_loan_charge_paid_by where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
         this.jdbcTemplate.update(sql, loanId);
 
         sql = "delete from m_payment_detail_forclousure where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
         this.jdbcTemplate.update(sql, loanId);
+
         sql = "delete from m_partial_invoiced_transaction where repayment_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
         this.jdbcTemplate.update(sql, loanId);
 
         sql = "delete from m_loan_transaction_relation where from_loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
         this.jdbcTemplate.update(sql, loanId);
-        sql = "delete from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null";
+
+        sql = "delete from m_loan_transaction_repayment_schedule_mapping where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
         this.jdbcTemplate.update(sql, loanId);
+
+        sql = "delete from m_loan_charge_paid_by where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        this.jdbcTemplate.update(sql, loanId);
+
+        sql = "delete from c_facturacion_electronica where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        this.jdbcTemplate.update(sql, loanId);
+
+        sql = "update m_loan_transaction set invoiced_by_transaction_id=null, is_partially_ivoiced=false where transaction_type_enum = 10 and loan_id = ? and invoiced_by_transaction_id in(select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null) ";
+        this.jdbcTemplate.update(sql, loanId, loanId);
+
+        sql = "delete from m_note where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        this.jdbcTemplate.update(sql, loanId);
+
+        sql = "delete from m_loan_transaction where transaction_type_enum = 2 and loan_id = ? and installment_id is null";
+        this.jdbcTemplate.update(sql, loanId);
+
         this.entityManager.flush();
     }
 
@@ -1770,6 +1877,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         this.jdbcTemplate.update(sql, loanId);
 
         sql = "update m_loan_repayment_schedule set migrated_installment = completed_derived where loan_id = ?";
+        this.jdbcTemplate.update(sql, loanId);
+
+        // reset installment charges
+        sql = "update m_loan_installment_charge set amount_paid_derived = null, amount_outstanding_derived = amount, is_paid_derived = false where loan_schedule_id in (select id from m_loan_repayment_schedule where loan_id = ? and migrated_installment = false)";
         this.jdbcTemplate.update(sql, loanId);
         this.entityManager.flush();
     }
