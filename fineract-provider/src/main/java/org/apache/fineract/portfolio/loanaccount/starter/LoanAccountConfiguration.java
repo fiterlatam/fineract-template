@@ -271,7 +271,8 @@ public class LoanAccountConfiguration {
             RateAssembler rateAssembler, GLIMAccountInfoWritePlatformService glimAccountInfoWritePlatformService,
             GLIMAccountInfoRepository glimRepository, LoanRepository loanRepository, GSIMReadPlatformService gsimReadPlatformService,
             LoanLifecycleStateMachine defaultLoanLifecycleStateMachine, ClientBuyProcessRepository clientBuyProcessRepository,
-            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository) {
+            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository,
+            LoanRepaymentScheduleInstallmentRepository repaymentScheduleInstallmentRepository) {
         return new LoanApplicationWritePlatformServiceJpaRepositoryImpl(context, fromJsonHelper, loanApplicationTransitionApiJsonValidator,
                 loanProductCommandFromApiJsonDeserializer, fromApiJsonDeserializer, loanRepositoryWrapper, noteRepository,
                 calculationPlatformService, loanAssembler, clientRepository, loanProductRepository, loanChargeAssembler,
@@ -282,7 +283,7 @@ public class LoanAccountConfiguration {
                 entityDatatableChecksWritePlatformService, globalConfigurationRepository, entityMappingRepository,
                 fineractEntityRelationRepository, loanProductReadPlatformService, rateAssembler, glimAccountInfoWritePlatformService,
                 glimRepository, loanRepository, gsimReadPlatformService, defaultLoanLifecycleStateMachine, clientBuyProcessRepository,
-                clientAllyPointOfSalesRepository);
+                clientAllyPointOfSalesRepository, repaymentScheduleInstallmentRepository);
     }
 
     @Bean
