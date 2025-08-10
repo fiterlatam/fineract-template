@@ -1934,33 +1934,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         if (transactionToAdjust.isForeclosure()) {
-
             // Delete existing CustomChargeHonorarioMaps for this loan
             this.customChargeHonorarioMapRepository.deleteByLoanId(loanId);
-
             // Delete existing LoanInstallmentCharges for this loan
             this.loanInstalmentChargeRepository.deleteByLoanId(loanId);
             this.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
-
             loan.regenerateRepaymentSchedule(scheduleGeneratorDTO);
             loan.reapplyInsuranceCharges();
-            // Regenerate CustomChargeHonorarioMaps for flat honorario charges
-            // Collection<LoanCharge> loanCharges = loan.getLoanCharges();
-            // if (!CollectionUtils.isEmpty(loanCharges)) {
-            // for (LoanCharge loanCharge : loanCharges) {
-            // if (loanCharge.isFlatHono()) {
-            // // Cast to LoanAccountDomainServiceJpa to access the regenerateCustomChargeHonorarioMaps method
-            // if (this.loanAccountDomainService instanceof LoanAccountDomainServiceJpa) {
-            // ((LoanAccountDomainServiceJpa)
-            // this.loanAccountDomainService).regenerateCustomChargeHonorarioMaps(loanCharge);
-            // }
-            // }
-            // }
-            // }
-
             loan.processPostDisbursementTransactions();
             saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         }
+
         /* Undo loan block status if loan is still outstanding */
         if (loan.getLoanSummary().getTotalOutstanding().compareTo(BigDecimal.ZERO) > 0) {
             final BlockingReasonSetting blockStatus = loan.getLoanCustomizationDetail().getBlockStatus();
@@ -3982,7 +3966,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         createCancellationNoveltyNews(loan, transactionDate);
 
         LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, externalId,
-                changes, true);
+                changes);
 
         final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                 BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(), BlockLevel.CREDIT.toString());
@@ -4043,7 +4027,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             loan.setAnuladoOnDisbursementDate(true);
         }
         final LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText,
-                externalId, changes, false);
+                externalId, changes);
         final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                 BlockingReasonSettingEnum.CREDIT_ANULADO.getDatabaseString(), BlockLevel.CREDIT.toString());
         blockingReasonSetting.setAffectsClientLevel(0);
@@ -4142,7 +4126,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             this.noteRepository.save(note);
         }
 
-        this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, txnExternalId, changes, false);
+        this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, txnExternalId, changes);
         final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                 BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(), BlockLevel.CREDIT.toString());
         loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "CANCELADO", DateUtils.getLocalDateOfTenant());
