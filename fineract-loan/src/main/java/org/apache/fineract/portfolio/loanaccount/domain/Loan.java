@@ -4409,6 +4409,38 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         Money totalPaidInRepayments = getTotalPaidInRepayments();
 
+        // Check if this is a foreclosure scenario
+        if (isForeclosure()) {
+            log.info("Loan ID {} is in foreclosure status, applying foreclosure-specific overpayment calculation", getId());
+
+            // Get the total outstanding balance before foreclosure
+            Money totalOutstandingBalance = getLoanSummary().getTotalOutstanding(loanCurrency());
+
+            log.info("Foreclosure calculation - totalPaidInRepayments: {}, totalOutstandingBalance: {}", totalPaidInRepayments,
+                    totalOutstandingBalance);
+
+            // If the total paid in repayments equals the outstanding balance, return zero overpayment
+            if (totalPaidInRepayments.isEqualTo(totalOutstandingBalance)) {
+                log.info("Foreclosure transaction amount ({}) equals outstanding balance ({}), returning zero overpayment for loan ID {}",
+                        totalPaidInRepayments, totalOutstandingBalance, getId());
+                return Money.zero(loanCurrency());
+            }
+
+            // If there's a small difference (likely due to rounding), also return zero overpayment
+            Money difference = totalPaidInRepayments.minus(totalOutstandingBalance);
+            Money tolerance = Money.of(loanCurrency(), new BigDecimal("0.01"));
+            if (difference.isLessThan(tolerance) || difference.isEqualTo(tolerance)) {
+                log.info(
+                        "Foreclosure transaction amount ({}) is within rounding tolerance of outstanding balance ({}), returning zero overpayment for loan ID {}",
+                        totalPaidInRepayments, totalOutstandingBalance, getId());
+                return Money.zero(loanCurrency());
+            }
+
+            log.info(
+                    "Foreclosure transaction amount ({}) differs significantly from outstanding balance ({}), applying standard calculation",
+                    totalPaidInRepayments, totalOutstandingBalance);
+        }
+
         final MonetaryCurrency currency = loanCurrency();
         Money cumulativeTotalPaidOnInstallments = Money.zero(currency);
         Money cumulativeTotalWaivedOnInstallments = Money.zero(currency);
@@ -4444,7 +4476,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 totalPaidInRepayments = totalPaidInRepayments.minus(loanTransaction.getOverPaymentPortion(currency));
             }
         }
-        return totalPaidInRepayments.minus(cumulativeTotalPaidOnInstallments);
+
+        Money overpayment = totalPaidInRepayments.minus(cumulativeTotalPaidOnInstallments);
+
+        if (isForeclosure()) {
+            log.info(
+                    "Final foreclosure overpayment calculation: totalPaidInRepayments={}, cumulativeTotalPaidOnInstallments={}, overpayment={}",
+                    totalPaidInRepayments, cumulativeTotalPaidOnInstallments, overpayment);
+        }
+
+        return overpayment;
     }
 
     public Money calculateTotalRecoveredPayments() {
@@ -8530,5 +8571,24 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             return this.loanProduct.getMaxPercentagePrincipalPaymentAllowed();
         }
         return null;
+    }
+
+    /**
+     * Debug method to check foreclosure overpayment calculation details. This method helps diagnose foreclosure
+     * overpayment issues.
+     *
+     * @return String containing foreclosure calculation details
+     */
+    public String getForeclosureOverpaymentDebugInfo() {
+        if (!isForeclosure()) {
+            return "Loan is not in foreclosure status";
+        }
+
+        Money totalPaidInRepayments = getTotalPaidInRepayments();
+        Money totalOutstandingBalance = getLoanSummary().getTotalOutstanding(loanCurrency());
+        Money calculatedOverpayment = calculateTotalOverpayment();
+
+        return String.format("Foreclosure Debug Info - Loan ID: %d, Total Paid: %s, Outstanding Balance: %s, Calculated Overpayment: %s",
+                getId(), totalPaidInRepayments, totalOutstandingBalance, calculatedOverpayment);
     }
 }
