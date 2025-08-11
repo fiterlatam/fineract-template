@@ -1269,7 +1269,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         this.loanUtilService.validateRepaymentTransactionType(repaymentTransactionType);
         this.loanEventApiJsonValidator.validateNewRepaymentTransaction(command.json());
         String channelName = command.stringValueOfParameterNamed("channelName");
-        Boolean cleanUp = command.booleanObjectValueOfParameterNamed("cleanUp");
+        final boolean cleanUp = command.booleanPrimitiveValueOfParameterNamed("cleanUp");
         if (StringUtils.isBlank(channelName)) {
             channelName = this.platformSecurityContext.getApiRequestChannel();
         }
@@ -1373,7 +1373,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 handleOverPaidException(totalOverpaid);
             }
         }
-        loan.setCleanUp(Boolean.TRUE.equals(cleanUp));
+        loan.setCleanUp(cleanUp);
         LoanTransaction loanTransaction = this.loanAccountDomainService.makeRepayment(repaymentTransactionType, loan, transactionDate,
                 transactionAmount, paymentDetail, noteText, txnExternalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer,
                 holidayDetailDto, isHolidayValidationDone);
