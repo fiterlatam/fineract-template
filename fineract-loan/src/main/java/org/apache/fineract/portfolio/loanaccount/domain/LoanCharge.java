@@ -1420,7 +1420,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
                     customAmout = customAmout.add(customCharge.getFeeBaseAmount());
                 }
             }
-        } else if (this.isCustomFlatDistributedCharge() || this.loan.isMigratedLoan()) {
+        } else if (this.isCustomFlatDistributedCharge() || (Objects.nonNull(this.loan) && this.loan.isMigratedLoan())) {
             BigDecimal amountToAdd = this.amountOrPercentage;
             if (!this.installmentCharges().isEmpty()) {
                 LoanInstallmentCharge installmentCharge = this.getInstallmentLoanCharge(installmentNumber);

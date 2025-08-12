@@ -870,7 +870,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 List<FeeDetails> feesDetails = compoundingCharges.stream().filter(loanCharge -> !loanCharge.isDisbursementCharge())
                         .map(charge -> {
                             BigDecimal amountOutstanding = charge.getAmountOutstanding();
-                            if (charge.isCustomPercentageOfOutstandingPrincipalCharge() && !charge.getLoan().isMigratedLoan()) {
+                            if (charge.isCustomPercentageOfOutstandingPrincipalCharge() && Objects.nonNull(charge.getLoan())
+                                    && !charge.getLoan().isMigratedLoan()) {
                                 amountOutstanding = finalOutstandingBalance.multiply(charge.getPercentage().divide(new BigDecimal(100)));
                             }
                             return new FeeDetails(charge.name(), amountOutstanding, charge.getAmountPaid(), amountOutstanding);
