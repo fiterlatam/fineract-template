@@ -1028,6 +1028,21 @@ select ("LOANAMOUNT" * 0.045 / "REPAYMENTINSTALLMENTS"), * from tmp_loanaccount 
 
 select * from tmp_loan_charges tlc where loankey = '8a44524382b6c9620182b8cc2af91556';
 
+-- Add MiPyme for Microcredito B loans. These are picked from the flat charges table
+UPDATE tmp_loanaccount tl
+SET mipyme_fees = tc.total_mipyme 
+from (select (SUM(tflc."FEEDUE" ) - SUM(tflc."FEEPAID" )) as total_mipyme, tflc.loan_external_id from tmp_flat_loan_charges tflc join tmp_loan_repayment_schedule tlrs on tflc.installmentkey = tlrs."ENCODEDKEY" 
+	where tlrs.totaloutstanding > 0 and tflc.fee_name like '%MiPyme%'
+	group by tflc.loan_external_id) tc
+WHERE tl."ID" = tc.loan_external_id
+and tl.mipyme_fees is null;
+
+UPDATE tmp_loanaccount tl set mipyme_fees = mipyme_fees / tl.total_outstanding where mipyme_fees is not null and tl.total_outstanding > 0;
+
+UPDATE tmp_loanaccount tl set mipyme_fees = mipyme_fees / 1.19 where mipyme_fees is not null;
+
+-- Add MiPyme for other products
+
 update tmp_loanaccount set MIPYME_FEES = ("LOANAMOUNT" * 0.045 / "REPAYMENTINSTALLMENTS") where "REPAYMENTINSTALLMENTS" > 0
 and "ENCODEDKEY" in (select loankey from tmp_loan_charges where "NAME" like '%4SMMLV%' and fee_percentage = 4.5);
 
@@ -2047,6 +2062,14 @@ join tmp_loanaccount tl
 on tlc.loankey = tl."ENCODEDKEY"
 join m_loan ml on tl."ID" = ml.external_id
 where mlc.charge_id = 54 and mlc.loan_id = ml.id and (tlc."NAME" like '%4SMMLV%' or tlc."NAME" like '%MiPymeMes%');
+
+update m_loan_charge mlc
+set orig_charge_name = tflc.fee_name 
+from tmp_flat_loan_charges tflc
+join tmp_loanaccount tl
+on tflc.loankey = tl."ENCODEDKEY"
+join m_loan ml on tl."ID" = ml.external_id
+where mlc.charge_id = 54 and mlc.loan_id = ml.id and (tflc.fee_name like '%MiPyme%');
 
 	
 --UPDATE m_loan AS l
