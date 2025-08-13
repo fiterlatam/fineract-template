@@ -92,7 +92,9 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
 
             /** Handle Write Offs, waivers and their reversals **/
             else if ((loanTransactionDTO.getTransactionType().isWriteOff()
-                    || ((loanTransactionDTO.getTransactionType().isWaiveInterest() || loanTransactionDTO.getTransactionType().isWaiveInterestLoanTopup()) && loanTransactionDTO.getPostAccountingForWaivers())
+                    || ((loanTransactionDTO.getTransactionType().isWaiveInterest()
+                            || loanTransactionDTO.getTransactionType().isWaiveInterestLoanTopup())
+                            && loanTransactionDTO.getPostAccountingForWaivers())
                     || loanTransactionDTO.getTransactionType().isWaiveCharges())) {
                 createJournalEntriesForRepaymentsAndWriteOffs(loanDTO, loanTransactionDTO, office, true, false);
             }
