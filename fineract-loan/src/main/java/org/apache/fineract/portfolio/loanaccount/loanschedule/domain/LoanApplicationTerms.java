@@ -1318,7 +1318,8 @@ public final class LoanApplicationTerms {
                 }
             }
 
-            if (this.installmentAmountInMultiplesOf != null) {
+            if (this.installmentAmountInMultiplesOf != null
+                    && !Double.isNaN(Money.roundToMultiplesOf(installmentAmount, this.installmentAmountInMultiplesOf))) {
                 installmentAmount = Money.roundToMultiplesOf(installmentAmount, this.installmentAmountInMultiplesOf);
             }
             setFixedEmiAmount(BigDecimal.valueOf(installmentAmount));
