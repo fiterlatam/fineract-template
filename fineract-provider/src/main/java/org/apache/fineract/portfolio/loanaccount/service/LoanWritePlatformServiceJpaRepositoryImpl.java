@@ -1355,26 +1355,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             loan.setReduceTerm(true);
         }
 
-        BigDecimal totalExpectedRepayment = loan.getLoanSummary().getTotalExpectedRepayment();
-        final boolean isBankChannel = channelData.getName().equalsIgnoreCase(LoanWritePlatformServiceJpaRepositoryImpl.BANCOS_PARAM)
-                || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
-
-        if ((transactionAmount.compareTo(totalExpectedRepayment) > 0 && !isBankChannel)) {
-            final String totalOverpaid = transactionAmount.subtract(totalExpectedRepayment).toString();
-            handleOverPaidException(totalOverpaid);
-        }
-
         LoanTransaction loanTransaction = this.loanAccountDomainService.makeRepayment(repaymentTransactionType, loan, transactionDate,
                 transactionAmount, paymentDetail, noteText, txnExternalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer,
                 holidayDetailDto, isHolidayValidationDone);
         loan = loanTransaction.getLoan();
-
-        // we also want to validate that the repayment amount is not greater than the outstanding amount
-
-        if (loan.getStatus().isOverpaid() && !isBankChannel) {
-            final String totalOverpaid = Money.of(loan.getCurrency(), loan.getTotalOverpaid()).toString();
-            handleOverPaidException(totalOverpaid);
-        }
 
         // Update loan transaction on repayment.
         if (AccountType.fromInt(loan.getLoanType()).isIndividualAccount()) {
