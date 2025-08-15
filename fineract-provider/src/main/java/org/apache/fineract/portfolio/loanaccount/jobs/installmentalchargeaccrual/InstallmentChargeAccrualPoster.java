@@ -47,7 +47,7 @@ public class InstallmentChargeAccrualPoster {
             for (Long loanId : loanIds) {
                 try {
                     this.loanWritePlatformService.persistInstallmentalChargeAccrual(loanId, accrualDate,
-                            minimumDaysInArrearsToSuspendLoanAccount);
+                            minimumDaysInArrearsToSuspendLoanAccount, false);
                 } catch (Exception e) {
                     log.error("Failed to run Devengo de seguro Job for loan id {}", loanId, e);
                     errors.add(e);

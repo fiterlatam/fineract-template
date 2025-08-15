@@ -204,7 +204,9 @@ import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicaMensual;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.LoanDocumentConcept;
+import org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanInstalmentChargeRepository;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
@@ -307,7 +309,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final PlatformSecurityContext platformSecurityContext;
     private final GlobalConfigurationRepository globalConfigurationRepository;
     private final LoanBlockWritePlatformService loanBlockWritePlatformService;
-    private final BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepository;
+    private final BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepositoryWrapper;
+    private final LoanBlockingReasonRepository loanBlockingReasonRepository;
     private final InsuranceIncidentRepository insuranceIncidentRepository;
     private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
     private final LoanScheduleGeneratorFactory loanScheduleFactory;
@@ -315,6 +318,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final FacturaElectronicMensualRepository facturaElectronicMensualRepository;
     private final LoanProductParameterizationRepository productParameterizationRepository;
     private final CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
+    private final LoanInstalmentChargeRepository loanInstalmentChargeRepository;
     private final LoanCreditNoteRepository loanCreditNoteRepository;
     private final LoanAccrualPlatformService loanAccrualPlatformService;
     private final CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService;
@@ -1265,6 +1269,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         this.loanUtilService.validateRepaymentTransactionType(repaymentTransactionType);
         this.loanEventApiJsonValidator.validateNewRepaymentTransaction(command.json());
         String channelName = command.stringValueOfParameterNamed("channelName");
+        final boolean cleanUp = command.booleanPrimitiveValueOfParameterNamed("cleanUp");
         if (StringUtils.isBlank(channelName)) {
             channelName = this.platformSecurityContext.getApiRequestChannel();
         }
@@ -1357,12 +1362,18 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final boolean isBankChannel = channelData.getName().equalsIgnoreCase("Bancos")
                 || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
 
-        if (!isImportedTransaction) {
-            if ((transactionAmount.compareTo(totalExpectedRepayment) > 0 && !isBankChannel)) {
+        if (!isImportedTransaction && !cleanUp) {
+            // Add a small tolerance to account for rounding differences and edge cases
+            // This prevents false positives when the amount is very close to the outstanding amount
+            final BigDecimal tolerance = BigDecimal.valueOf(0.01); // 1 cent tolerance
+            if ((transactionAmount.compareTo(totalExpectedRepayment.add(tolerance)) > 0 && !isBankChannel)) {
+                log.warn("Repayment validation failed for loan {}: transactionAmount={}, totalExpectedRepayment={}, difference={}",
+                        loan.getId(), transactionAmount, totalExpectedRepayment, transactionAmount.subtract(totalExpectedRepayment));
                 final String totalOverpaid = transactionAmount.subtract(totalExpectedRepayment).toString();
                 handleOverPaidException(totalOverpaid);
             }
         }
+        loan.setCleanUp(cleanUp);
         LoanTransaction loanTransaction = this.loanAccountDomainService.makeRepayment(repaymentTransactionType, loan, transactionDate,
                 transactionAmount, paymentDetail, noteText, txnExternalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer,
                 holidayDetailDto, isHolidayValidationDone);
@@ -1819,6 +1830,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
         }
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+        // UPDATE BLOCK STATUS ID
+        if (loan.getLoanSummary().getTotalOutstanding().compareTo(BigDecimal.ZERO) > 0) {
+            BlockingReasonSetting blockStatus = loan.getLoanCustomizationDetail().getBlockStatus();
+            if (blockStatus != null) {
+                handleUnBlockingCredit(loan, blockStatus.getId());
+                saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+            }
+        }
         if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled() || loan.isProgressiveLoan()) {
             scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
             loan.regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
@@ -1913,6 +1932,27 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 this.facturaElectronicMensualRepository.deleteAll(facturaElectronicMensuals);
             }
         }
+
+        if (transactionToAdjust.isForeclosure()) {
+            // Delete existing CustomChargeHonorarioMaps for this loan
+            this.customChargeHonorarioMapRepository.deleteByLoanId(loanId);
+            // Delete existing LoanInstallmentCharges for this loan
+            this.loanInstalmentChargeRepository.deleteByLoanId(loanId);
+            this.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+            loan.regenerateRepaymentSchedule(scheduleGeneratorDTO);
+            loan.reapplyInsuranceCharges();
+            loan.processPostDisbursementTransactions();
+            saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+        }
+
+        /* Undo loan block status if loan is still outstanding */
+        if (loan.getLoanSummary().getTotalOutstanding().compareTo(BigDecimal.ZERO) > 0) {
+            final BlockingReasonSetting blockStatus = loan.getLoanCustomizationDetail().getBlockStatus();
+            if (blockStatus != null) {
+                handleUnBlockingCredit(loan, blockStatus.getId());
+                saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+            }
+        }
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(entityId) //
@@ -1922,6 +1962,33 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .withGroupId(loan.getGroupId()) //
                 .withLoanId(loanId) //
                 .with(changes).build();
+    }
+
+    private void handleUnBlockingCredit(final Loan loan, final Long blockingReasonSettingId) {
+        final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+                .findOneWithNotFoundDetection(blockingReasonSettingId);
+        final Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository
+                .findExistingBlockingReason(loan.getId(), blockingReasonSetting.getId());
+        final AppUser currentUser = context.authenticatedUser();
+        if (existingBlockingReason.isPresent()) {
+            final LoanBlockingReason blockingReason = this.loanBlockingReasonRepository
+
+                    .findExistingBlockingReason(loan.getId(), blockingReasonSetting.getId())
+                    .orElseThrow(() -> new LoanBlockingReasonNotFoundException(loan.getId(), blockingReasonSetting.getId()));
+            blockingReason.setActive(false);
+            blockingReason.setDeactivatedBy(currentUser);
+
+            blockingReason.setUnblockComment(LoanArrearsAgeingUpdateHandler.UNBLOCKING_COMMENT);
+            blockingReason.setDeactivatedOn(DateUtils.getLocalDateOfTenant());
+            final BlockingReasonSetting existingBlockingReasonSetting = loan.getLoanCustomizationDetail().getBlockStatus();
+            if (existingBlockingReasonSetting != null) {
+                final Long existingBlockingSettingId = existingBlockingReasonSetting.getId();
+                if (existingBlockingSettingId != null && existingBlockingSettingId.equals(blockingReasonSetting.getId())) {
+                    loan.getLoanCustomizationDetail().setBlockStatus(null);
+                }
+            }
+            loanBlockingReasonRepository.saveAndFlush(blockingReason);
+        }
     }
 
     private void decrementInvoiceCounterOnProduct(LoanTransaction transactionToAdjust,
@@ -2511,7 +2578,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                         currentScheduleInstallment.getInterestCharged(currency).getAmount(), tillDays)));
                     }
                 }
-                saveAndFlushLoanWithIntegrityChecks(loan);
+                saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             }
             final boolean isCreditNote = command.booleanPrimitiveValueOfParameterNamed("isCreditNote");
             if (isCreditNote && creditNote != null) {
@@ -2791,7 +2858,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         loan.getTopupLoanDetails().setAccountTransferDetails(accountTransferDetails.getId());
         loan.getTopupLoanDetails().setTopupAmount(amount);
         if (loanToClose.claimType() == null || !loanToClose.claimType().equals("castigado")) {
-            BlockingReasonSetting setting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
+            BlockingReasonSetting setting = loanBlockingReasonRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                     BlockingReasonSettingEnum.CREDIT_RESTRUCTURE.getDatabaseString(), BlockLevel.CREDIT.toString());
             loanBlockWritePlatformService.blockLoan(loan.getId(), setting, "Reestructurada", DateUtils.getLocalDateOfTenant());
         }
@@ -3899,7 +3966,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         createCancellationNoveltyNews(loan, transactionDate);
 
         LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, externalId,
-                changes, true);
+                changes);
 
         final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                 BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(), BlockLevel.CREDIT.toString());
@@ -3960,7 +4027,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             loan.setAnuladoOnDisbursementDate(true);
         }
         final LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText,
-                externalId, changes, false);
+                externalId, changes);
         final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                 BlockingReasonSettingEnum.CREDIT_ANULADO.getDatabaseString(), BlockLevel.CREDIT.toString());
         blockingReasonSetting.setAffectsClientLevel(0);
@@ -4059,8 +4126,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             this.noteRepository.save(note);
         }
 
-        this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, txnExternalId, changes, false);
-        final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepository.getSingleBlockingReasonSettingByReason(
+        this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, txnExternalId, changes);
+        final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                 BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(), BlockLevel.CREDIT.toString());
         loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "CANCELADO", DateUtils.getLocalDateOfTenant());
 
@@ -5321,26 +5388,30 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     @Override
     @Transactional
-    public void persistInstallmentalChargeAccrual(Long loanId, LocalDate localDate, Long minimumDaysInArrearsToSuspendLoanAccount) {
+    public void persistInstallmentalChargeAccrual(Long loanId, LocalDate localDate, Long minimumDaysInArrearsToSuspendLoanAccount,
+            final boolean adjustMissingAccruals) {
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         log.debug("Persisting Installment charge accrual for loan: {}", loan.getId());
-        List<LoanCharge> charges = filterInstallmentCharges(loan.getActiveCharges());
+        final List<LoanCharge> charges = filterInstallmentCharges(loan.getActiveCharges(), adjustMissingAccruals);
 
         if (minimumDaysInArrearsToSuspendLoanAccount == null) {
             minimumDaysInArrearsToSuspendLoanAccount = 90L;
         }
-        final Long daysInArrears = this.getDaysInArrears(loanId);
+        final long daysInArrears = this.getDaysInArrears(loanId);
         final boolean hasOccurredOnSuspendedAccount = daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount;
-        loan.handleChargeAppliedTransactionPerInstallment(charges, localDate, hasOccurredOnSuspendedAccount);
+        loan.handleChargeAppliedTransactionPerInstallment(charges, localDate, hasOccurredOnSuspendedAccount, adjustMissingAccruals);
         loanRepository.saveAndFlush(loan);
         log.debug("Installment  charge accrual persisted for loan: {}", loan.getId());
     }
 
-    private List<LoanCharge> filterInstallmentCharges(Set<LoanCharge> charges) {
-        return charges.stream()
-                .filter(loanCharge -> loanCharge.getCharge().getChargeTimeType().equals(ChargeTimeType.INSTALMENT_FEE.getValue())
-                        && !loanCharge.isWaived() && !loanCharge.isFullyPaid())
-                .toList();
+    private List<LoanCharge> filterInstallmentCharges(final Set<LoanCharge> charges, final boolean adjustMissingAccruals) {
+        List<LoanCharge> requiredCharges = charges.stream()
+                .filter(loanCharge -> loanCharge.getCharge().getChargeTimeType().equals(ChargeTimeType.INSTALMENT_FEE.getValue())).toList();
+        if (!adjustMissingAccruals) {
+            requiredCharges = requiredCharges.stream().filter(loanCharge -> !loanCharge.isWaived() && !loanCharge.isFullyPaid()).toList();
+
+        }
+        return requiredCharges;
     }
 
     @Override
@@ -5595,4 +5666,55 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
         }
     }
+
+    @Transactional
+    @Override
+    public JsonArray regenerateLoanSchedule(String apiRequestBodyAsJson) {
+        final JsonElement element = fromApiJsonHelper.parse(apiRequestBodyAsJson);
+        JsonArray loanIds = this.fromApiJsonHelper.extractJsonArrayNamed("loanIds", element);
+        JsonArray failedLoans = new JsonArray();
+
+        for (JsonElement loansList : loanIds) {
+            long loanId = loansList.getAsLong();
+            try {
+                // Delete existing CustomChargeHonorarioMaps for this loan
+                this.loanAccountDomainService.cleanUpLoan(loanId);
+                log.info("Successfully regenerated loan schedule for loan ID: {}", loanId);
+            } catch (Exception e) {
+                e.printStackTrace();
+                log.error("Failed to regenerate loan schedule for loan ID: {}", loanId, e);
+                failedLoans.add(loansList);
+            }
+        }
+
+        return failedLoans;
+    }
+
+    @Transactional
+    @Override
+    public JsonObject addMissingDevengoAccrualTransactions(String apiRequestBodyAsJson) {
+        final JsonElement element = fromApiJsonHelper.parse(apiRequestBodyAsJson);
+        final JsonArray loanIds = this.fromApiJsonHelper.extractJsonArrayNamed("loanIds", element);
+        final Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
+                .retriveMinimumDaysInArrearsToSuspendLoanAccount();
+        final LocalDate accrualDate = DateUtils.getBusinessLocalDate();
+        final JsonArray failedLoans = new JsonArray();
+        for (final JsonElement loanIdJson : loanIds) {
+            long loanId = loanIdJson.getAsLong();
+            try {
+                final boolean isAdjustMissingAccruals = true;
+                this.persistInstallmentalChargeAccrual(loanId, accrualDate, minimumDaysInArrearsToSuspendLoanAccount,
+                        isAdjustMissingAccruals);
+                log.info("Successfully added missing devengo accrual transactions for loan ID: {}", loanId);
+            } catch (Exception e) {
+                log.error("Failed to add missing devengo accrual transactions for loan ID: {}", loanId, e);
+                failedLoans.add(loanIdJson);
+            }
+        }
+        final JsonObject response = new JsonObject();
+        response.add("failedLoans", failedLoans);
+        log.info("Completed processing for addMissingDevengoAccrualTransactions with failed loans: {}", failedLoans);
+        return response;
+    }
+
 }
