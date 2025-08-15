@@ -5388,26 +5388,30 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     @Override
     @Transactional
-    public void persistInstallmentalChargeAccrual(Long loanId, LocalDate localDate, Long minimumDaysInArrearsToSuspendLoanAccount) {
+    public void persistInstallmentalChargeAccrual(Long loanId, LocalDate localDate, Long minimumDaysInArrearsToSuspendLoanAccount,
+            final boolean adjustMissingAccruals) {
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         log.debug("Persisting Installment charge accrual for loan: {}", loan.getId());
-        List<LoanCharge> charges = filterInstallmentCharges(loan.getActiveCharges());
+        final List<LoanCharge> charges = filterInstallmentCharges(loan.getActiveCharges(), adjustMissingAccruals);
 
         if (minimumDaysInArrearsToSuspendLoanAccount == null) {
             minimumDaysInArrearsToSuspendLoanAccount = 90L;
         }
-        final Long daysInArrears = this.getDaysInArrears(loanId);
+        final long daysInArrears = this.getDaysInArrears(loanId);
         final boolean hasOccurredOnSuspendedAccount = daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount;
-        loan.handleChargeAppliedTransactionPerInstallment(charges, localDate, hasOccurredOnSuspendedAccount);
+        loan.handleChargeAppliedTransactionPerInstallment(charges, localDate, hasOccurredOnSuspendedAccount, adjustMissingAccruals);
         loanRepository.saveAndFlush(loan);
         log.debug("Installment  charge accrual persisted for loan: {}", loan.getId());
     }
 
-    private List<LoanCharge> filterInstallmentCharges(Set<LoanCharge> charges) {
-        return charges.stream()
-                .filter(loanCharge -> loanCharge.getCharge().getChargeTimeType().equals(ChargeTimeType.INSTALMENT_FEE.getValue())
-                        && !loanCharge.isWaived() && !loanCharge.isFullyPaid())
-                .toList();
+    private List<LoanCharge> filterInstallmentCharges(final Set<LoanCharge> charges, final boolean adjustMissingAccruals) {
+        List<LoanCharge> requiredCharges = charges.stream()
+                .filter(loanCharge -> loanCharge.getCharge().getChargeTimeType().equals(ChargeTimeType.INSTALMENT_FEE.getValue())).toList();
+        if (!adjustMissingAccruals) {
+            requiredCharges = requiredCharges.stream().filter(loanCharge -> !loanCharge.isWaived() && !loanCharge.isFullyPaid()).toList();
+
+        }
+        return requiredCharges;
     }
 
     @Override
@@ -5686,8 +5690,31 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         return failedLoans;
     }
 
-    public Long regenerateLoanRepaymentSchedule(long loanId) {
-
-        return loanId;
+    @Transactional
+    @Override
+    public JsonObject addMissingDevengoAccrualTransactions(String apiRequestBodyAsJson) {
+        final JsonElement element = fromApiJsonHelper.parse(apiRequestBodyAsJson);
+        final JsonArray loanIds = this.fromApiJsonHelper.extractJsonArrayNamed("loanIds", element);
+        final Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
+                .retriveMinimumDaysInArrearsToSuspendLoanAccount();
+        final LocalDate accrualDate = DateUtils.getBusinessLocalDate();
+        final JsonArray failedLoans = new JsonArray();
+        for (final JsonElement loanIdJson : loanIds) {
+            long loanId = loanIdJson.getAsLong();
+            try {
+                final boolean isAdjustMissingAccruals = true;
+                this.persistInstallmentalChargeAccrual(loanId, accrualDate, minimumDaysInArrearsToSuspendLoanAccount,
+                        isAdjustMissingAccruals);
+                log.info("Successfully added missing devengo accrual transactions for loan ID: {}", loanId);
+            } catch (Exception e) {
+                log.error("Failed to add missing devengo accrual transactions for loan ID: {}", loanId, e);
+                failedLoans.add(loanIdJson);
+            }
+        }
+        final JsonObject response = new JsonObject();
+        response.add("failedLoans", failedLoans);
+        log.info("Completed processing for addMissingDevengoAccrualTransactions with failed loans: {}", failedLoans);
+        return response;
     }
+
 }
