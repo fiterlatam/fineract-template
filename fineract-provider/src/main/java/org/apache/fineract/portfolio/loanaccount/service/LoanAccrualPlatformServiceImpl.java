@@ -115,7 +115,7 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
         ;
         final long daysInArrears = this.getDaysInArrears(loanId);
         final boolean hasOccurredOnSuspendedAccount = daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount;
-        loan.handleChargeAppliedTransactionPerInstallment(installmentCharges, loanClosureDate, hasOccurredOnSuspendedAccount);
+        loan.handleChargeAppliedTransactionPerInstallment(installmentCharges, loanClosureDate, hasOccurredOnSuspendedAccount, false);
         loanRepository.saveAndFlush(loan);
         log.debug("Installment charge accrual transactions persisted for loan: {}", loan.getId());
     }
