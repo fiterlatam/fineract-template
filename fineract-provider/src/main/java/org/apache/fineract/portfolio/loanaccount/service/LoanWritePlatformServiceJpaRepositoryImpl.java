@@ -1592,7 +1592,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final Money transactionAmountAsMoney = Money.of(loan.getCurrency(), transactionAmount);
         Money unrecognizedIncome = transactionAmountAsMoney.zero();
         Money interestComponent = transactionAmountAsMoney;
-        if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct() && !isAccountClosure) {
+        if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct() && !Boolean.TRUE.equals(isAccountClosure)) {
             Money receivableInterest = loan.getReceivableInterest(transactionDate);
             if (transactionAmountAsMoney.isGreaterThan(receivableInterest)) {
                 interestComponent = receivableInterest;
@@ -1600,8 +1600,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
         }
         final LoanTransaction waiveInterestTransaction = LoanTransaction.waiverNoAccounting(loan.getOffice(), loan,
-                transactionAmountAsMoney, transactionDate, interestComponent, unrecognizedIncome, isAccountClosure);
-        waiveInterestTransaction.setPostAccountingForWaivers(Boolean.TRUE.equals(postAccountingForWaivers));
+                transactionAmountAsMoney, transactionDate, interestComponent, unrecognizedIncome, Boolean.TRUE.equals(isAccountClosure));
+        waiveInterestTransaction.setPostAccountingForWaivers(postAccountingForWaivers!=null? postAccountingForWaivers : Boolean.TRUE);
         businessEventNotifierService.notifyPreBusinessEvent(new LoanWaiveInterestBusinessEvent(waiveInterestTransaction));
         LocalDate recalculateFrom = null;
         if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
