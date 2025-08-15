@@ -1293,13 +1293,12 @@ select distinct
 	-- td.disbursementdate as approved_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" = 'APPROVED' and tcm."CREATIONDATE" > tcm."APPROVEDDATE"  then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
 	end as submit_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
-		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
 	end as approved_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
@@ -1427,7 +1426,7 @@ from
 		) mipyme_charge on mipyme_charge.loankey = tcm."ENCODEDKEY"
 	where  mpl.id in (9,10) and trim(to_char(td."DISBURSEMENTDATE",'YYYY')) in ('2021','2022','2023')
 	-- and tcm."ID" in ('0035045413', '0039682591', '0045804559', '0058126572', '0059952069', '0086081271', '0172331900', '0240593101', '0880890284', '0887087494', '0444457342', '1664592132', '2949964565', '3251282390', '4140812568', '0043371811', '0053873138', '0085800405', '0149835149', '4140812568', '0043371811', '0053873138', '0085800405', '0149835149', '0134707261', '0018416660', '0027742355', '0041686649', '0043826718', '0047805841', '0605287882', '0657234704', '1184984476', '1343769051', '1688426558', '0040557573', '0160048187', '0173037027', '0552820053', '0748108975')
-	 and tcm."ID" not in (select external_id from m_loan)
+	and tcm."ID" not in (select external_id from m_loan)
 	order by tcm."ID";
 
 select * from m_product_loan mpl;
@@ -1456,13 +1455,12 @@ select distinct
 	-- td.disbursementdate as disbursement_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" = 'APPROVED' and tcm."CREATIONDATE" > tcm."APPROVEDDATE"  then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
 	end as submit_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
-		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
 	end as approved_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
@@ -1630,13 +1628,12 @@ select distinct
 	-- td.disbursementdate as disbursement_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" = 'APPROVED' and tcm."CREATIONDATE" > tcm."APPROVEDDATE"  then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
 	end as submit_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
-		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
 	end as approved_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
@@ -1808,13 +1805,12 @@ select distinct
 	-- td.disbursementdate as disbursement_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" = 'APPROVED' and tcm."CREATIONDATE" > tcm."APPROVEDDATE"  then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
 	end as submit_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
-		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
 	end as approved_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
