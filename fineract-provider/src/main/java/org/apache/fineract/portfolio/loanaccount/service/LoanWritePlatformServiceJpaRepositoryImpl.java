@@ -5370,14 +5370,15 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 loanRepository.save(loan);
             }
 
-            if (installmentsToAdd <= 0) {
-                log.info("No installments required to be added");
-                return null;
-            }
-
         } else {
-            // Original calculation
-            installmentsToAdd = requiredInstallments - loan.getRepaymentScheduleInstallments().size();
+            // Nr of new installments = original size - unpaid installments
+            installmentsToAdd = loan.getTermFrequency()
+                    - (int) loan.getRepaymentScheduleInstallments().stream().filter(l -> !l.isObligationsMet()).count();
+        }
+
+        if (installmentsToAdd <= 0) {
+            log.info("No installments required to be added");
+            return null;
         }
 
         log.info("Adding {} new installments starting from date {}", installmentsToAdd, variationDate);

@@ -2132,9 +2132,23 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             return; // No source installment found with life insurance charge portion
         }
 
-        // Update all installments that don't have a life insurance charge portion
-        getRepaymentScheduleInstallments().stream().filter(installment -> installment.getLifeInsuranceChargePortion() == null)
-                .forEach(installment -> installment.setLifeInsuranceChargePortion(sourceInstallment.getLifeInsuranceChargePortion()));
+        int originalDay = sourceInstallment.getDueDate().getDayOfMonth();
+
+        for (LoanRepaymentScheduleInstallment installment : getRepaymentScheduleInstallments()) {
+            if (installment.getLifeInsuranceChargePortion() == null) {
+                LocalDate startDate = installment.getFromDate().plusDays(1);
+                LocalDate dueDate = installment.getDueDate();
+
+                int lastDayOfMonth = dueDate.lengthOfMonth();
+                int targetDay = Math.min(originalDay, lastDayOfMonth);
+
+                LocalDate lifeInsuranceDate = LocalDate.of(dueDate.getYear(), dueDate.getMonth(), targetDay);
+
+                if (!lifeInsuranceDate.isBefore(startDate) && !lifeInsuranceDate.isAfter(dueDate)) {
+                    installment.setLifeInsuranceChargePortion(sourceInstallment.getLifeInsuranceChargePortion());
+                }
+            }
+        }
     }
 
     private void recalculateLoanCharge(final LoanCharge loanCharge) {
