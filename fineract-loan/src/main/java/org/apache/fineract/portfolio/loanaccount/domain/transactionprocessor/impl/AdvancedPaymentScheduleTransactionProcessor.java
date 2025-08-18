@@ -24,6 +24,7 @@ import static org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRe
 import static org.apache.fineract.portfolio.loanproduct.domain.AllocationType.*;
 import static org.apache.fineract.portfolio.loanproduct.domain.DueType.IN_ADVANCE;
 
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -1052,8 +1053,14 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             }
 
             if (transactionAmountUnprocessed.isZero()) {
-                log.debug("Transaction amount is zero, setting exit flag");
-                exit = true;
+                if (isForeclosureTransaction(loanTransaction)) {
+                    log.info("Foreclosure transaction amount is zero, but continuing to process remaining allocation types");
+                    // Don't set exit = true for foreclosure transactions - let them continue to process all allocation
+                    // types
+                } else {
+                    log.debug("Transaction amount is zero, setting exit flag");
+                    exit = true;
+                }
                 continue;
             }
 
@@ -1192,36 +1199,137 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                 log.info("Processing allocation type: {} for due type: {}", paymentAllocationType.getAllocationType(),
                         paymentAllocationType.getDueType());
 
+                // Check if we should exit the loop
+                if (exit) {
+                    log.info("Exit flag is true, breaking out of allocation type loop");
+                    break;
+                }
+
+                // Check if there's no more money to process
+                if (transactionAmountUnprocessed.isZero()) {
+                    log.info("No more transaction amount to process, breaking out of allocation type loop");
+                    break;
+                }
+
                 switch (paymentAllocationType.getDueType()) {
                     case PAST_DUE -> {
                         log.info("Entering PAST_DUE case - Oldest past due installment: {}",
                                 oldestPastDueInstallment != null ? oldestPastDueInstallment.getInstallmentNumber() : "null");
-                        if (oldestPastDueInstallment != null) {
-                            log.info("Processing PAST_DUE allocation for installment: {}", oldestPastDueInstallment.getInstallmentNumber());
-                            Set<LoanCharge> oldestPastDueInstallmentCharges = getLoanChargesOfInstallment(charges, oldestPastDueInstallment,
-                                    firstNormalInstallmentNumber);
-                            LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
-                                    transactionMappings, loanTransaction, oldestPastDueInstallment, currency);
-                            paidPortion = processPaymentAllocation(paymentAllocationType, oldestPastDueInstallment, loanTransaction,
-                                    transactionAmountUnprocessed, loanTransactionToRepaymentScheduleMapping,
-                                    oldestPastDueInstallmentCharges, balances, LoanRepaymentScheduleInstallment.PaymentAction.PAY);
-                            log.info("PAST_DUE paid portion: {}", paidPortion.getAmount());
-                            transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
-                            log.info("PAST_DUE remaining amount: {}", transactionAmountUnprocessed.getAmount());
 
-                            // Log the next iteration details
-                            log.info("PAST_DUE processing completed - Will continue to next allocation type");
+                        // Special handling for foreclosure transactions - process ALL past due installments
+                        if (isForeclosureTransaction(loanTransaction)) {
+                            log.info("Foreclosure transaction detected - processing ALL past due installments for allocation type: {}",
+                                    paymentAllocationType.getAllocationType());
 
-                            // Additional safeguard: if no progress is made, force exit
-                            if (paidPortion.isZero()) {
-                                log.warn("PAST_DUE allocation returned zero amount - forcing exit to prevent infinite loop");
+                            // Get all past due installments
+                            List<LoanRepaymentScheduleInstallment> allPastDueInstallments = installments.stream()
+                                    .filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
+                                    .filter(e -> loanTransaction.isAfter(e.getDueDate()))
+                                    .sorted(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
+
+                            log.info("Found {} past due installments to process for foreclosure", allPastDueInstallments.size());
+
+                            // If no past due installments found, set exit flag
+                            if (allPastDueInstallments.isEmpty()) {
+                                log.info("No past due installments found for foreclosure, setting exit flag");
                                 exit = true;
-                            } else {
-                                log.info("PAST_DUE allocation made progress - continuing to next allocation type");
+                                break;
                             }
+
+                            // Process each past due installment for this allocation type
+                            boolean madeProgress = false;
+                            for (LoanRepaymentScheduleInstallment pastDueInstallment : allPastDueInstallments) {
+                                if (transactionAmountUnprocessed.isZero()) {
+                                    log.info("No more funds to process, breaking out of past due installments loop");
+                                    break;
+                                }
+
+                                log.info("Processing foreclosure PAST_DUE allocation for installment: {}",
+                                        pastDueInstallment.getInstallmentNumber());
+                                Set<LoanCharge> pastDueInstallmentCharges = getLoanChargesOfInstallment(charges, pastDueInstallment,
+                                        firstNormalInstallmentNumber);
+                                LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
+                                        transactionMappings, loanTransaction, pastDueInstallment, currency);
+                                paidPortion = processPaymentAllocation(paymentAllocationType, pastDueInstallment, loanTransaction,
+                                        transactionAmountUnprocessed, loanTransactionToRepaymentScheduleMapping, pastDueInstallmentCharges,
+                                        balances, LoanRepaymentScheduleInstallment.PaymentAction.PAY);
+                                log.info("Foreclosure PAST_DUE paid portion for installment {}: {}",
+                                        pastDueInstallment.getInstallmentNumber(), paidPortion.getAmount());
+                                transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
+                                log.info("Foreclosure PAST_DUE remaining amount: {}", transactionAmountUnprocessed.getAmount());
+
+                                // Track if we made any progress
+                                if (paidPortion.isGreaterThanZero()) {
+                                    madeProgress = true;
+                                }
+
+                                // For foreclosure transactions, continue processing even if individual installments
+                                // return zero
+                                // This allows the payment to be allocated to INTEREST and PRINCIPAL components
+                                if (paidPortion.isZero()) {
+                                    log.info(
+                                            "Foreclosure PAST_DUE allocation returned zero amount for installment {} - continuing to next installment",
+                                            pastDueInstallment.getInstallmentNumber());
+                                    // Don't break - continue to next installment to try INTEREST and PRINCIPAL
+                                    // allocation
+                                }
+                            }
+
+                            log.info("Foreclosure PAST_DUE processing completed for allocation type: {} - Final remaining amount: {}",
+                                    paymentAllocationType.getAllocationType(), transactionAmountUnprocessed.getAmount());
+
+                            // For foreclosure transactions, we've processed all past due installments for this
+                            // allocation type
+                            // Don't set exit flag immediately - let it continue to next allocation types (INTEREST,
+                            // PRINCIPAL)
+                            if (!madeProgress) {
+                                log.warn(
+                                        "No progress made in foreclosure PAST_DUE processing for allocation type: {} - continuing to next allocation type",
+                                        paymentAllocationType.getAllocationType());
+                            } else {
+                                log.info(
+                                        "Progress made in foreclosure PAST_DUE processing for allocation type: {} - continuing to next allocation type",
+                                        paymentAllocationType.getAllocationType());
+                            }
+                            // Don't set exit = true here - let it continue to process INTEREST and PRINCIPAL allocation
+                            // types
                         } else {
-                            log.info("No past due installment found, setting exit flag");
-                            exit = true;
+                            // Regular processing for non-foreclosure transactions
+                            if (oldestPastDueInstallment != null) {
+                                log.info("Processing PAST_DUE allocation for installment: {}",
+                                        oldestPastDueInstallment.getInstallmentNumber());
+                                Set<LoanCharge> oldestPastDueInstallmentCharges = getLoanChargesOfInstallment(charges,
+                                        oldestPastDueInstallment, firstNormalInstallmentNumber);
+                                LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
+                                        transactionMappings, loanTransaction, oldestPastDueInstallment, currency);
+                                paidPortion = processPaymentAllocation(paymentAllocationType, oldestPastDueInstallment, loanTransaction,
+                                        transactionAmountUnprocessed, loanTransactionToRepaymentScheduleMapping,
+                                        oldestPastDueInstallmentCharges, balances, LoanRepaymentScheduleInstallment.PaymentAction.PAY);
+                                log.info("PAST_DUE paid portion: {}", paidPortion.getAmount());
+                                transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
+                                log.info("PAST_DUE remaining amount: {}", transactionAmountUnprocessed.getAmount());
+
+                                // Log the next iteration details
+                                log.info("PAST_DUE processing completed - Will continue to next allocation type");
+
+                                // For foreclosure transactions, don't exit immediately - continue to INTEREST and
+                                // PRINCIPAL allocation types
+                                if (paidPortion.isZero()) {
+                                    if (isForeclosureTransaction(loanTransaction)) {
+                                        log.info(
+                                                "Foreclosure PAST_DUE allocation returned zero amount - continuing to next allocation type (INTEREST/PRINCIPAL)");
+                                        // Don't set exit = true for foreclosure transactions
+                                    } else {
+                                        log.warn("PAST_DUE allocation returned zero amount - forcing exit to prevent infinite loop");
+                                        exit = true;
+                                    }
+                                } else {
+                                    log.info("PAST_DUE allocation made progress - continuing to next allocation type");
+                                }
+                            } else {
+                                log.info("No past due installment found, setting exit flag");
+                                exit = true;
+                            }
                         }
                     }
                     case DUE -> {
@@ -1512,6 +1620,28 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             case INTEREST -> p -> p.getInterestOutstanding(currency).isGreaterThanZero();
             case PRINCIPAL -> p -> p.getPrincipalOutstanding(currency).isGreaterThanZero();
         };
+    }
+
+    /**
+     * Determines if a loan transaction is a foreclosure transaction. Foreclosure transactions are identified by
+     * checking if the loan is in foreclosure status.
+     *
+     * @param loanTransaction
+     *            the loan transaction to check
+     * @return true if the transaction is a foreclosure transaction, false otherwise
+     */
+    private boolean isForeclosureTransaction(LoanTransaction loanTransaction) {
+        try {
+            // Use reflection to access the private isForeclosure() method from the Loan class
+            Method isForeclosureMethod = loanTransaction.getLoan().getClass().getDeclaredMethod("isForeclosure");
+            isForeclosureMethod.setAccessible(true);
+            return (Boolean) isForeclosureMethod.invoke(loanTransaction.getLoan());
+        } catch (Exception e) {
+            // If reflection fails, fall back to checking loan sub-status
+            log.warn("Could not determine foreclosure status via reflection, falling back to sub-status check: {}", e.getMessage());
+            return loanTransaction.getLoan().getLoanSubStatus() != null
+                    && loanTransaction.getLoan().getLoanSubStatus().equals(LoanSubStatus.FORECLOSED.getValue());
+        }
     }
 
     @AllArgsConstructor
