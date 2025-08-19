@@ -194,4 +194,5 @@ public interface LoanReadPlatformService {
 
     List<Long> retrieveLoanIdsForInsuranceAccrualsPosting(int pageSize, Long minLoanId);
 
+    Boolean hasInstallmentByScheduleFromDate(Long loanId, LocalDate rescheduleFromDate);
 }

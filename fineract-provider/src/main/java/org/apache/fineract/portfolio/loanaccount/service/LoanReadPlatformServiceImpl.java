@@ -4235,6 +4235,51 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
         return this.jdbcTemplate.queryForList(sql, Long.class, LoanStatus.ACTIVE.getValue(), minLoanId, pageSize).stream().toList();
     }
 
+    @Override
+    public Boolean hasInstallmentByScheduleFromDate(Long loanId, LocalDate rescheduleFromDate) {
+        if (rescheduleFromDate == null) {
+            return false;
+        }
+        log.info("hasInstallmentByScheduleFromDate LOAN ID: {} rescheduleFromDate {}",loanId,rescheduleFromDate);
+        try {
+            final String sql = """
+                   SELECT COUNT(1)
+                   FROM m_loan_repayment_schedule lrs
+                   WHERE lrs.loan_id = :loanId
+                   AND lrs.completed_derived = false
+                   AND (
+                       COALESCE(lrs.penalty_charges_amount, 0) - (
+                       COALESCE(lrs.penalty_charges_completed_derived, 0) +
+                       COALESCE(lrs.penalty_charges_waived_derived, 0) +
+                       COALESCE(lrs.penalty_charges_writtenoff_derived, 0)
+                       ) <= 0
+                   )
+                   AND (
+                      :rescheduleFromDate <= lrs.duedate
+                   )
+                   AND NOT EXISTS (
+                    SELECT 1
+                    FROM m_loan_charge lc
+                    INNER JOIN m_loan_overdue_installment_charge loic ON lc.id = loic.loan_charge_id
+                    WHERE lc.loan_id = lrs.loan_id
+                        AND loic.loan_schedule_id = lrs.id
+                       AND lc.is_active = true
+                       AND lc.is_paid_derived = false
+                   );
+            """;
+
+            final Map<String, Object> paramMap = new HashMap<>();
+            paramMap.put("loanId", loanId);
+            paramMap.put("rescheduleFromDate", rescheduleFromDate);
+
+            Integer count = this.namedParameterJdbcTemplate.queryForObject(sql, paramMap, Integer.class);
+            return count != null && count > 0;
+
+        } catch (final Exception e) {
+            return false;
+        }
+    };
+
     private static class LoanElectronicInvoiceMapper implements RowMapper<LoanElectronicInvoiceData> {
 
         public String schema() {

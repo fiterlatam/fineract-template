@@ -146,7 +146,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
             final Long loanId = jsonCommand.longValueOfParameterNamed(RescheduleLoansApiConstants.loanIdParamName);
 
             // use the loan id to get a Loan entity object
-            final Loan loan = this.loanAssembler.assembleFrom(loanId);
+            final Loan loan = this.loanAssembler.assembleFromForJobs(loanId);
 
             if (loan.isChargedOff()) {
                 throw new GeneralPlatformDomainRuleException("error.msg.loan.is.charged.off",

@@ -123,7 +123,7 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
     @Override
     @Transactional
     public void persistDailyInterestAccrual(final Long loanId, final LocalDate accrualDate) {
-        final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        final Loan loan = this.loanAssembler.assembleFromForJobs(loanId);
         final String claimType = loan.claimType();
         if (claimType != null && claimType.equalsIgnoreCase("guarantor")) {
             return;
@@ -136,6 +136,12 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
             log.info("Loan {} has interest rate change applicable from {} with rate {}. Accrual date: {}", loan.getId(),
                     interestRateChange.getTermVariationApplicableFrom(), interestRateChange.getDecimalValue(), accrualDate);
         }
+
+        /*
+         * DISABLED: Expensive transaction lookup removed for performance.
+         * Daily accrual runs with current_date-1, so yesterday's transactions
+         * should already be reflected in loan state. The costly refresh was
+         * unnecessary in normal processing flow.
 
         // Check if there are any special write-off or Credit Note transactions on the accrual date
         // If so, we need to make sure we're using the correct principal balance
@@ -151,6 +157,7 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
             // Force a refresh of the loan to ensure we have the most up-to-date data
             this.loanRepository.saveAndFlush(loan);
         }
+        */
 
         final Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
                 .retriveMinimumDaysInArrearsToSuspendLoanAccount();

@@ -38,7 +38,7 @@ public class RecalculateInterestForMLRProcessor {
     private final LoanWritePlatformService loanWritePlatformService;
     private MaximumCreditRateConfigurationData maximumCreditRateConfigurationData;
 
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED, rollbackFor = Exception.class)
+//    @Transactional(isolation = Isolation.READ_UNCOMMITTED, rollbackFor = Exception.class)
     public void processOverdueCharges() throws JobExecutionException {
         this.loanWritePlatformService.recalculateInterestForMaximumLegalRate(loanRescheduleData, maximumCreditRateConfigurationData);
     }
