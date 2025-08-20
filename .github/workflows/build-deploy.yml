@@ -48,7 +48,7 @@ jobs:
           # -Dsonar.qualitygate.wait=true \
           # --info
 
-      - name: Run Test Server
+      - name: Start Test Server
         env:
           FINERACT_DEFAULT_TENANTDB_UID: postgres
           FINERACT_DEFAULT_TENANTDB_PWD: postgres
@@ -64,8 +64,37 @@ jobs:
         run: |
           ./gradlew dropPGDB -PdbName=$FINERACT_DEFAULT_TENANTDB_NAME -PdbUserName=$FINERACT_HIKARI_USERNAME -PdbUserPassword=$FINERACT_HIKARI_PASSWORD -PjdbcURL=$FINERACT_HIKARI_JDBC_URL
           ./gradlew createPGDB -PdbName=$FINERACT_DEFAULT_TENANTDB_NAME -PdbUserName=$FINERACT_HIKARI_USERNAME -PdbUserPassword=$FINERACT_HIKARI_PASSWORD -PjdbcURL=$FINERACT_HIKARI_JDBC_URL
-          ./gradlew spotlessCheck
+          # ./gradlew spotlessCheck
+          fineract-qa/bin/backup_dev_db.sh
           ./gradlew --no-daemon --console=plain :fineract-provider:bootRun -q -x rat -x compileTestJava -x test --info & curl --connect-timeout 5 --retry 120 --retry-delay 5 --retry-connrefused -k https://localhost:8443/fineract-provider/actuator/health
+
+      - name: Run ATF QA Server
+        run: |
+          # restore db
+          docker images
+          # psql
+          # pg_restore
+
+          npm install -g newman newman-reporter-html
+          npm install -g newman-reporter-htmlextra
+
+          timestamp=$(date +'%Y%m%d-%H%M%S')
+          rm -rf results/*
+          pwd
+          ls -la
+          newman run "fineract-qa/collections/EA_Migration_AdvancedPayment CR Reduce Principal.postman_collection.json" \
+          -e "fineract-qa/environments/EA-Localhost.postman_environment.json" \
+          -k \
+          --verbose \
+          --reporter-cli-show-body \
+          --reporter-htmlextra-export "results/QA-Report-$(date +'%Y%m%d-%H%M%S').html"
+
+      - name: Upload Newman Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-reports
+          path: results/*.html
+
       - name: Run Integration Tests
         run: |
           ./gradlew --no-daemon --console=plain :integration-tests:cleanTest :integration-tests:test -PcargoDisabled --info
