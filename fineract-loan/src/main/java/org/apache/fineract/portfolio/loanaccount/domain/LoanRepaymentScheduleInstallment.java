@@ -562,6 +562,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         this.advancePrincipalAmount = advancePrincipalAmount;
     }
 
+    public void setTotalPaidInAdvance(BigDecimal totalPaidInAdvance) {
+        this.totalPaidInAdvance = totalPaidInAdvance;
+    }
+
     public boolean recalculateEMI() {
         return recalculateEMI;
     }
