@@ -1176,7 +1176,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                         .max(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).stream().toList();
             } else if (FutureInstallmentAllocationRule.NEXT_INSTALLMENT.equals(futureInstallmentAllocationRule)) {
                 inAdvanceInstallments = installments.stream().filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
-                        .filter(e -> loanTransaction.isBefore(e.getFromDate()))
+                        .filter(e -> !loanTransaction.isAfter(e.getFromDate()))
                         .min(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).stream().toList();
             } else if (FutureInstallmentAllocationRule.LAST_INSTALLMENT.equals(futureInstallmentAllocationRule)) {
                 inAdvanceInstallments = installments.stream().filter(LoanRepaymentScheduleInstallment::isNotFullyPaidOff)
@@ -1331,6 +1331,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                         loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
                                                 inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
                                                         .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
+                                                inAdvanceInstallment
+                                                        .setTotalPaidInAdvance(inAdvanceInstallment.getTotalPaidInAdvance(currency)
+                                                                .getAmount().add(transactionAmountUnprocessed.getAmount()));
                                                 inAdvanceInstallment.setRecalculateEMI(loanTransaction.recalculateEMI());
                                                 LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
                                                         transactionMappings, loanTransaction, inAdvanceInstallment, currency);
