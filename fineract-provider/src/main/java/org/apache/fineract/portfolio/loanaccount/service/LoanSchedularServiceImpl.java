@@ -454,19 +454,6 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                             continue;
                         }
                     }
-
-                    // Payment amount greater than outstanding
-                    if (Money.of(currency, transactionAmount).isGreaterThan(Money.of(currency, outstandingLoanBalance))) {
-                        final String failMessage = "El monto de la transacción " + transactionAmount
-                                + " excede el monto de reembolso del préstamo ID: " + loanCode;
-                        loanRepaymentImport.setStatus(LoanRepaymentImportStatus.ERROR.getId());
-                        loanRepaymentImport.setErrorId(3L);
-                        loanRepaymentImport.setOperationResult(failMessage);
-                        log.error(failMessage);
-                        exceptions.add(new PlatformServiceUnavailableException(failMessage, failMessage));
-                        this.loanRepaymentImportRepository.saveAndFlush(loanRepaymentImport);
-                        continue;
-                    }
                     final String glCode = loanRepaymentImport.getGlCode();
                     final GLAccount glAccount = this.glAccountRepository.findOneByGlCodeWithNotFoundDetection(glCode);
 
@@ -488,6 +475,19 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                         loanRepaymentImport.setStatus(LoanRepaymentImportStatus.PROCESSED.getId());
                         loanRepaymentImport.setOperationResult("Aplicado");
                         log.info("Import loan repayment successful for loan code {}", result.getLoanId());
+                        continue;
+                    }
+
+                    // Payment amount greater than outstanding
+                    if (Money.of(currency, transactionAmount).isGreaterThan(Money.of(currency, outstandingLoanBalance))) {
+                        final String failMessage = "El monto de la transacción " + transactionAmount
+                                + " excede el monto de reembolso del préstamo ID: " + loanCode;
+                        loanRepaymentImport.setStatus(LoanRepaymentImportStatus.ERROR.getId());
+                        loanRepaymentImport.setErrorId(3L);
+                        loanRepaymentImport.setOperationResult(failMessage);
+                        log.error(failMessage);
+                        exceptions.add(new PlatformServiceUnavailableException(failMessage, failMessage));
+                        this.loanRepaymentImportRepository.saveAndFlush(loanRepaymentImport);
                         continue;
                     }
 
