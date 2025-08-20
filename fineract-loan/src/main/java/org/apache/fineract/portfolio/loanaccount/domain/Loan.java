@@ -3830,16 +3830,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             reprocess = false;
         }
 
-        // Enable optimized processing for foreclosure transactions to ensure proper payment allocation
         if (isTransactionChronologicallyLatest && adjustedTransaction == null
-                && (!reprocess || !this.repaymentScheduleDetail().isInterestRecalculationEnabled()) && (!isClaim())) {
-            log.info("Processing transaction using optimized path - Loan ID: {}, Transaction Type: {}, Amount: {}, Is Foreclosure: {}",
-                    getId(), loanTransaction.getTypeOf(), loanTransaction.getAmount(loanCurrency()), isForeclosure());
-
+                && (!reprocess || !this.repaymentScheduleDetail().isInterestRecalculationEnabled()) && (!isForeclosure() && !isClaim())) {
             loanRepaymentScheduleTransactionProcessor.processLatestTransaction(loanTransaction, new TransactionCtx(getCurrency(),
                     getRepaymentScheduleInstallments(), getActiveCharges(), new MoneyHolder(getTotalOverpaidAsMoney())));
             reprocess = false;
-
             if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
                 if (currentInstallment == null || currentInstallment.isNotFullyPaidOff()) {
                     reprocess = true;
@@ -3857,17 +3852,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
         }
         if (reprocess) {
-            log.info("Using reprocess path for transaction - Loan ID: {}, Transaction Type: {}, Is Foreclosure: {}, Is Claim: {}", getId(),
-                    loanTransaction.getTypeOf(), isForeclosure(), isClaim());
-
             if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()
                     || (isProgressiveLoan() && !isForeclosure() && !isClaim() && adjustedTransaction == null)) {
                 regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
             }
 
             final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retrieveListOfTransactionsPostDisbursement();
-            log.info("Reprocessing {} transactions for loan ID: {}", allNonContraTransactionsPostDisbursement.size(), getId());
-
             changedTransactionDetail = loanRepaymentScheduleTransactionProcessor.reprocessLoanTransactions(getDisbursementDate(),
                     allNonContraTransactionsPostDisbursement, getCurrency(), getRepaymentScheduleInstallments(), getActiveCharges());
             if (isProgressiveLoan() && !isForeclosure() && !isClaim() && !loanTransaction.isReversed()
@@ -7936,24 +7926,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public ChangedTransactionDetail handleForeClosureTransactions(final LoanTransaction repaymentTransaction,
             final LoanLifecycleStateMachine loanLifecycleStateMachine, final ScheduleGeneratorDTO scheduleGeneratorDTO) {
-        log.info("Starting foreclosure transaction processing - Loan ID: {}, Transaction Amount: {}, Transaction Date: {}", getId(),
-                repaymentTransaction.getAmount(loanCurrency()), repaymentTransaction.getTransactionDate());
-
         LoanEvent event = LoanEvent.LOAN_FORECLOSURE;
         validateAccountStatus(event);
         validateForForeclosure(repaymentTransaction.getTransactionDate());
         this.loanSubStatus = LoanSubStatus.FORECLOSED.getValue();
         applyAccruals();
-
-        log.info("Foreclosure validation completed - Loan ID: {}, Sub Status: {}", getId(), this.loanSubStatus);
-
-        ChangedTransactionDetail result = handleRepaymentOrRecoveryOrWaiverTransaction(repaymentTransaction, loanLifecycleStateMachine,
-                null, scheduleGeneratorDTO);
-
-        log.info("Foreclosure transaction processing completed - Loan ID: {}, Result: {}", getId(),
-                result != null ? "ChangedTransactionDetail created" : "No changes");
-
-        return result;
+        return handleRepaymentOrRecoveryOrWaiverTransaction(repaymentTransaction, loanLifecycleStateMachine, null, scheduleGeneratorDTO);
     }
 
     public ChangedTransactionDetail handleClaimTransactions(final LoanTransaction repaymentTransaction,
@@ -8624,25 +8602,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         Money totalOutstandingBalance = getLoanSummary().getTotalOutstanding(loanCurrency());
         Money calculatedOverpayment = calculateTotalOverpayment();
 
-        StringBuilder debugInfo = new StringBuilder();
-        debugInfo.append(String.format("Foreclosure Debug Info - Loan ID: %d%n", getId()));
-        debugInfo.append(String.format("Total Paid in Repayments: %s%n", totalPaidInRepayments));
-        debugInfo.append(String.format("Total Outstanding Balance: %s%n", totalOutstandingBalance));
-        debugInfo.append(String.format("Calculated Overpayment: %s%n", calculatedOverpayment));
-        debugInfo.append(String.format("Installments Count: %d%n", getRepaymentScheduleInstallments().size()));
-        debugInfo.append(String.format("Transactions Count: %d%n", getLoanTransactions().size()));
-
-        // Add installment details
-        debugInfo.append("Installment Details:%n");
-        for (LoanRepaymentScheduleInstallment installment : getRepaymentScheduleInstallments()) {
-            debugInfo.append(String.format(
-                    "  Installment %d (Due: %s) - Principal: %s, Interest: %s, Fees: %s, Penalties: %s, Outstanding: %s, Paid: %s%n",
-                    installment.getInstallmentNumber(), installment.getDueDate(), installment.getPrincipal(loanCurrency()),
-                    installment.getInterestCharged(loanCurrency()), installment.getFeeChargesCharged(loanCurrency()),
-                    installment.getPenaltyChargesCharged(loanCurrency()), installment.getTotalOutstanding(loanCurrency()),
-                    installment.getTotalPaid(loanCurrency())));
-        }
-
-        return debugInfo.toString();
+        return String.format("Foreclosure Debug Info - Loan ID: %d, Total Paid: %s, Outstanding Balance: %s, Calculated Overpayment: %s",
+                getId(), totalPaidInRepayments, totalOutstandingBalance, calculatedOverpayment);
     }
 }
