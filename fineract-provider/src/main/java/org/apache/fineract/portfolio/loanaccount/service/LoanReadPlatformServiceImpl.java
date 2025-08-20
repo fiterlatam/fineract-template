@@ -2490,7 +2490,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                                                                                                      // last penalty
                                                                                                      // date
                         additionalPenaltiesToCollect = charge.getAmount(currency).multipliedBy(daysBetween);
-                        this.
                     }
                     break;
                 }
