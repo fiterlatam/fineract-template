@@ -2180,7 +2180,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
     private void addSpecificChargesFromLoanProduct(Loan loan) {
         LoanProduct loanProduct = loan.getLoanProduct();
-
+        if (loanProduct.getId().equals(8L)) {
+            //For Microcredito B, use the old method to add specific charges
+            this.addSpecificChargesFromLoanProduct_bk(loan);
+            return;
+        }
         // Get all charges from the loan product
         List<Charge> productCharges = loanProduct.getLoanProductCharges();
 
@@ -2260,9 +2264,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         List<Charge> productCharges = loanProduct.getLoanProductCharges();
 
         if (productCharges != null && !productCharges.isEmpty()) {
-            // Filter for charges with IDs between 54 and 55 (inclusive)
+            // Filter for charges with IDs between 28 and 33 (inclusive)
             List<Charge> specificCharges = productCharges.stream()
-                    .filter(charge -> charge.getId() >= 54L && charge.getId() <= 55L && charge.isActive()).toList();
+                    .filter(charge -> charge.getId() >= 28L && charge.getId() <= 33L && charge.isActive()).toList();
             BigDecimal principal = loan.getProposedPrincipal();
             BigDecimal smlvLimitBy4 = BigDecimal.valueOf(configurationDomainServiceJpa.retrieveSMVLLimit() * 4);
             if (!specificCharges.isEmpty()) {
@@ -2293,7 +2297,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                                 && (loanCharge.getCharge().getName().toLowerCase().contains(" < 4smlv")
                                         || loanCharge.getCharge().getName().toLowerCase().contains(" _ 4smlv"))) {
                             loan.addLoanCharge(loanCharge);
-                        } else if (loanCharge.getCharge().getName().toLowerCase().contains("seguro de vida nano")) {
+                        } else if (loanCharge.getCharge().getName().toLowerCase().contains("seguro vida")) {
                             loan.addLoanCharge(loanCharge);
                         }
                     }

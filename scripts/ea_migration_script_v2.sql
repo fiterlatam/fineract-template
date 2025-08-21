@@ -14,6 +14,8 @@ select * from m_charge mc order by "name" ;
 
 select * from m_charge mc order by id;
 
+drop table client;
+
 CREATE EXTENSION IF NOT EXISTS unaccent;
 
 -- -- MOVE DATA TO LOCAL MACHINE/MIGRATION TENANT from mambu--------------------
@@ -384,6 +386,13 @@ update tmp_cliente_migrar set city = 'CANDELARIA' where city = '';
 select "ENCODEDKEY" ,"ID", "STATE", "CREATIONDATE", "MOBILEPHONE1", exists (select 1 from tmp_loanaccount where "ACCOUNTHOLDERKEY"  = tcm."ENCODEDKEY") from tmp_cliente_migrar tcm where tcm."MOBILEPHONE1" in (select  c."MOBILEPHONE1"  from tmp_cliente_migrar c
 group by c."MOBILEPHONE1" having count(c."MOBILEPHONE1") > 1) order by "MOBILEPHONE1";
 
+select "ENCODEDKEY" ,"ID", "STATE", "CREATIONDATE", "MOBILEPHONE1", exists (select 1 from tmp_loanaccount where "ACCOUNTHOLDERKEY"  = tcm."ENCODEDKEY") 
+from tmp_cliente_migrar tcm where tcm."MOBILEPHONE1" in (select  c."MOBILEPHONE1"  from tmp_cliente_migrar c
+group by c."MOBILEPHONE1" having count(c."MOBILEPHONE1") > 1);
+--and tcm."MOBILEPHONE1" = '+573057089497' order by "MOBILEPHONE1";
+
+--+573057089497
+
 -- Verify if any of the inactive clients with loans have duplicate phone numbers
 select * from tmp_loanaccount where "ACCOUNTHOLDERKEY" in (select "ENCODEDKEY" from tmp_cliente_migrar tcm where tcm."MOBILEPHONE1" in (select  c."MOBILEPHONE1"  from tmp_cliente_migrar c
 group by c."MOBILEPHONE1" having count(c."MOBILEPHONE1") > 1) and tcm."STATE" != 'ACTIVE');
@@ -393,6 +402,8 @@ select tcm2."MOBILEPHONE1", tcm.* from tmp_loanaccount tcm join tmp_cliente_migr
 group by c."MOBILEPHONE1" having count(c."MOBILEPHONE1") > 1));
 
 select * from tmp_loanaccount tl where "ACCOUNTHOLDERKEY"  = '8a445aac8ca642e3018ca7b9fd582693';
+
+select * from tmp_cliente_migrar tcm where tcm."ENCODEDKEY" = '8a445a0990137343019013c76a384e28';
 
 -- After verifying the above, check if there are any inactive clients with loans
 select * from tmp_cliente_migrar tcm where "STATE" != 'ACTIVE' and tcm."ENCODEDKEY" in (select "ACCOUNTHOLDERKEY" from tmp_loanaccount);
@@ -999,6 +1010,15 @@ update tmp_loanaccount set new_disbursement_date = null where "ACCOUNTSTATE" in 
 update tmp_loanaccount set new_first_repayment_date = new_disbursement_date + interval '1' month
 where new_disbursement_date is not null and new_first_repayment_date is null;
 
+-- new first date for pending loans
+update tmp_loanaccount set new_first_repayment_date = "CREATIONDATE" + interval '1' month
+where "CREATIONDATE" is not null and new_first_repayment_date is null;
+
+
+-- new first date for approved loans
+update tmp_loanaccount set new_first_repayment_date = "APPROVEDDATE" + interval '1' month
+where "APPROVEDDATE" is not null and new_disbursement_date is null and new_first_repayment_date is null;
+
 -- Add a column to hold the number of outstanding installments
 alter table tmp_loanaccount add column NO_OF_OUTSTANDING_INSTALLMENTS int;
 
@@ -1029,17 +1049,17 @@ select ("LOANAMOUNT" * 0.045 / "REPAYMENTINSTALLMENTS"), * from tmp_loanaccount 
 select * from tmp_loan_charges tlc where loankey = '8a44524382b6c9620182b8cc2af91556';
 
 -- Add MiPyme for Microcredito B loans. These are picked from the flat charges table
-UPDATE tmp_loanaccount tl
-SET mipyme_fees = tc.total_mipyme 
-from (select (SUM(tflc."FEEDUE" ) - SUM(tflc."FEEPAID" )) as total_mipyme, tflc.loan_external_id from tmp_flat_loan_charges tflc join tmp_loan_repayment_schedule tlrs on tflc.installmentkey = tlrs."ENCODEDKEY" 
-	where tlrs.totaloutstanding > 0 and tflc.fee_name like '%MiPyme%'
-	group by tflc.loan_external_id) tc
-WHERE tl."ID" = tc.loan_external_id
-and tl.mipyme_fees is null;
+--UPDATE tmp_loanaccount tl
+--SET mipyme_fees = tc.total_mipyme 
+--from (select (SUM(tflc."FEEDUE" ) - SUM(tflc."FEEPAID" )) as total_mipyme, tflc.loan_external_id from tmp_flat_loan_charges tflc join tmp_loan_repayment_schedule tlrs on tflc.installmentkey = tlrs."ENCODEDKEY" 
+--	where tlrs.totaloutstanding > 0 and tflc.fee_name like '%MiPyme%'
+--	group by tflc.loan_external_id) tc
+--WHERE tl."ID" = tc.loan_external_id
+--and tl.mipyme_fees is null;
 
-UPDATE tmp_loanaccount tl set mipyme_fees = mipyme_fees / tl.total_outstanding where mipyme_fees is not null and tl.total_outstanding > 0;
+--UPDATE tmp_loanaccount tl set mipyme_fees = mipyme_fees / tl.total_outstanding where mipyme_fees is not null and tl.total_outstanding > 0;
 
-UPDATE tmp_loanaccount tl set mipyme_fees = mipyme_fees / 1.19 where mipyme_fees is not null;
+--UPDATE tmp_loanaccount tl set mipyme_fees = mipyme_fees / 1.19 where mipyme_fees is not null;
 
 -- Add MiPyme for other products
 
@@ -1106,6 +1126,7 @@ select * from tmp_loanaccount tl where tl."ID" = '0372390302';
 
 select * from tmp_loan_repayment_schedule tlrs where "PARENTACCOUNTKEY" ='8a443bca8cd4d5ef018cd56ea2533021' order by "DUEDATE" 
 
+select * from m_charge order by id;
 
 -- -new query for outstanding loan balances
 select distinct
@@ -1115,17 +1136,17 @@ select distinct
 	mc.external_id as client_external_id,
 	REpLACE(mpl.name, ' ', '_') as product_name,
 	'' loan_officer,
-	-- td.disbursementdate as submit_date,
-	-- td.disbursementdate as approved_date,
-	-- td.disbursementdate as disbursement_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" != 'PENDING_APPROVAL' and tcm."CREATIONDATE" < tcm."APPROVEDDATE" then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."APPROVEDDATE" <= tcm."CREATIONDATE" then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."CREATIONDATE" < coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE") then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
 		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as submit_date,
 	case 
-		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null
 		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."APPROVEDDATE" < coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE") then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy') 
 		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as approved_date,
 	case 
@@ -1133,9 +1154,6 @@ select distinct
 		when tcm."ACCOUNTSTATE" = 'APPROVED' then null
 		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as disbursement_date,
-	-- to_date(to_char(coalesce(tcm.new_disbursement_date, coalesce(tcm."APPROVEDDATE", tcm."CREATIONDATE")), 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
-	-- to_date(to_char(coalesce(tcm."new_disbursement_date", coalesce(td."DISBURSEMENTDATE", tcm."APPROVEDDATE")), 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
-	-- to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
 	'' payment_type,
 	'' fund,
 	tcm."LOANAMOUNT" as principal_amount,
@@ -1144,7 +1162,6 @@ select distinct
 	tcm."REPAYMENTPERIODUNIT"  repay_freq,
 	coalesce(tcm.no_of_outstanding_installments, 1) loan_term,
 	tcm."REPAYMENTPERIODUNIT" loan_term_freq,
-	-- tcm.INTERESTRATE   as nominal_interest_rate,
 	case
 		when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_DAY' then tcm."INTERESTRATE"*365
                     when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_WEEK' then  tcm."INTERESTRATE"*52
@@ -1172,13 +1189,6 @@ select distinct
 	'',
 	'',
 	tcm."ID"  as external_id
-	-- first_charge.charge_name first_charge, first_charge.iva_name first_iva,
-	-- second_charge.charge_name second_charge, second_charge.iva_name second_iva,
-	-- replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
-	-- replace(second_charge.charge_name, ' ', '_'), second_charge.fee_percentage, replace(second_charge.iva_name, ' ', '_'), second_charge.iva_percentage,
-	-- ''
-	-- nit, code, cre_numerocredito::varchar, cli_nroid, 
--- 	cre_fechafinancia
 from 
 	tmp_loanaccount tcm
 	join tmp_loanproduct_mapping tlm on tlm.ea_product_key = tcm."PRODUCTTYPEKEY"
@@ -1247,14 +1257,16 @@ from
 	select count(*) from m_loan;
 	
 	
-	select * from m_loan ml where loan_status_id = 300;
+	select * from m_loan ml where id = 1732;
 
 select * from m_loan where external_id ='4626647294';
 
+select * from m_product_loan;
 
-select * from tmp_loanaccount tl where "ID" = '5531840773';
 
-select * from tmp_loan_repayment_schedule tlrs where "PARENTACCOUNTKEY" = '8a443bca8cd4d5ef018cd56ea2533021' order by "DUEDATE";
+select * from tmp_loanaccount tl where "ID" = '4321455452';
+
+select * from tmp_loan_repayment_schedule tlrs where "PARENTACCOUNTKEY" = '8a4439198e3df41c018e3e66d3bb7fa0' order by "DUEDATE";
 
 select * from tmp_flat_loan_charges tflc where loankey = '8a443bca8cd4d5ef018cd56ea2533021';
 
@@ -1262,7 +1274,7 @@ select * from tmp_loan_charges tlc where loankey = '8a4451df8f1c428e018f1c44f310
 
 select * from tmp_loan_charges tlc where "NAME" like 'MiPymeMes%';
 
-select * from tmp_disbursementdetails td where td."ENCODEDKEY" = '8a4447229739deb501973c6217a4340d';
+select * from tmp_disbursementdetails td where td."ENCODEDKEY" = '8a4439198e3df41c018e3e66d3bb7fa1';
 
 select * from tmp_loanaccount tl where "ACCOUNTSTATE" = 'APPROVED'; -- is null;
 
@@ -1289,25 +1301,24 @@ select distinct
 	mc.external_id as client_external_id,
 	REpLACE(mpl.name, ' ', '_') as product_name,
 	'' loan_officer,
-	-- td.disbursementdate as submit_date,
-	-- td.disbursementdate as approved_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		when tcm."ACCOUNTSTATE" = 'APPROVED' and tcm."CREATIONDATE" > tcm."APPROVEDDATE"  then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" != 'PENDING_APPROVAL' and tcm."CREATIONDATE" < tcm."APPROVEDDATE" then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."APPROVEDDATE" <= tcm."CREATIONDATE" then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."CREATIONDATE" < coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE") then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as submit_date,
 	case 
-		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
-		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."APPROVEDDATE" < coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE") then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy') 
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as approved_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
 		when tcm."ACCOUNTSTATE" = 'APPROVED' then null
 		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as disbursement_date,
-	-- to_date(to_char(coalesce(tcm.new_disbursement_date, coalesce(tcm."APPROVEDDATE", tcm."CREATIONDATE")), 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
-	-- to_date(to_char(coalesce(tcm."new_disbursement_date", coalesce(td."DISBURSEMENTDATE", tcm."APPROVEDDATE")), 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
-	-- to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
 	'' payment_type,
 	'' fund,
 	tcm."LOANAMOUNT" as principal_amount,
@@ -1316,7 +1327,6 @@ select distinct
 	tcm."REPAYMENTPERIODUNIT"  repay_freq,
 	coalesce(tcm.no_of_outstanding_installments, 1) loan_term,
 	tcm."REPAYMENTPERIODUNIT" loan_term_freq,
-	-- tcm.INTERESTRATE   as nominal_interest_rate,
 	case
 		when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_DAY' then tcm."INTERESTRATE"*365
                     when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_WEEK' then  tcm."INTERESTRATE"*52
@@ -1450,26 +1460,24 @@ select distinct
 	mc.external_id as client_external_id,
 	REpLACE(mpl.name, ' ', '_') as product_name,
 	'' loan_officer,
-	-- td.disbursementdate as submit_date,
-	-- td.disbursementdate as approved_date,
-	-- td.disbursementdate as disbursement_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		when tcm."ACCOUNTSTATE" = 'APPROVED' and tcm."CREATIONDATE" > tcm."APPROVEDDATE"  then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" != 'PENDING_APPROVAL' and tcm."CREATIONDATE" < tcm."APPROVEDDATE" then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."APPROVEDDATE" <= tcm."CREATIONDATE" then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."CREATIONDATE" < coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE") then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as submit_date,
 	case 
-		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
-		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."APPROVEDDATE" < coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE") then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy') 
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as approved_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
 		when tcm."ACCOUNTSTATE" = 'APPROVED' then null
 		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as disbursement_date,
-	-- to_date(to_char(coalesce(tcm.new_disbursement_date, coalesce(tcm."APPROVEDDATE", tcm."CREATIONDATE")), 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
-	-- to_date(to_char(coalesce(tcm."new_disbursement_date", coalesce(td."DISBURSEMENTDATE", tcm."APPROVEDDATE")), 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
-	-- to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
 	'' payment_type,
 	'' fund,
 	tcm."LOANAMOUNT" as principal_amount,
@@ -1478,7 +1486,6 @@ select distinct
 	tcm."REPAYMENTPERIODUNIT"  repay_freq,
 	coalesce(tcm.no_of_outstanding_installments, 1) loan_term,
 	tcm."REPAYMENTPERIODUNIT" loan_term_freq,
-	-- tcm.INTERESTRATE   as nominal_interest_rate,
 	case
 		when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_DAY' then tcm."INTERESTRATE"*365
                     when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_WEEK' then  tcm."INTERESTRATE"*52
@@ -1506,28 +1513,6 @@ case
 	'',
 	'',
 	tcm."ID"  as external_id
-	-- first_charge.charge_name first_charge, first_charge.iva_name first_iva,
-	-- second_charge.charge_name second_charge, second_charge.iva_name second_iva,
-	-- replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
-	-- case 
-	--	when mpl.id = 8 then replace(mipyme_charge.charge_name, ' ', '_')
-	--	else replace(second_charge.charge_name, ' ', '_')
-	-- end,
-	-- case 
-	--	when mpl.id = 8 then mipyme_charge.fee_percentage
-	--	else second_charge.fee_percentage
-	-- end, '',
-	-- case 
-	--	when mpl.id = 8 then replace(mipyme_charge.iva_name, ' ', '_')
-	--	else replace(second_charge.iva_name, ' ', '_')
-	-- end,
-	-- case 
-	--	when mpl.id = 8 then mipyme_charge.iva_percentage
-	--	else second_charge.iva_percentage
-	-- end,
-	-- ''
-	-- nit, code, cre_numerocredito::varchar, cli_nroid, 
--- 	cre_fechafinancia
 from 
 	tmp_loanaccount tcm
 	join tmp_loanproduct_mapping tlm on tlm.ea_product_key = tcm."PRODUCTTYPEKEY"
@@ -1623,26 +1608,24 @@ select distinct
 	mc.external_id as client_external_id,
 	REpLACE(mpl.name, ' ', '_') as product_name,
 	'' loan_officer,
-	-- td.disbursementdate as submit_date,
-	-- td.disbursementdate as approved_date,
-	-- td.disbursementdate as disbursement_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		when tcm."ACCOUNTSTATE" = 'APPROVED' and tcm."CREATIONDATE" > tcm."APPROVEDDATE"  then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" != 'PENDING_APPROVAL' and tcm."CREATIONDATE" < tcm."APPROVEDDATE" then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."APPROVEDDATE" <= tcm."CREATIONDATE" then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."CREATIONDATE" < coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE") then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as submit_date,
 	case 
-		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
-		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."APPROVEDDATE" < coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE") then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy') 
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as approved_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
 		when tcm."ACCOUNTSTATE" = 'APPROVED' then null
 		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as disbursement_date,
-	-- to_date(to_char(coalesce(tcm.new_disbursement_date, coalesce(tcm."APPROVEDDATE", tcm."CREATIONDATE")), 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
-	-- to_date(to_char(coalesce(tcm."new_disbursement_date", coalesce(td."DISBURSEMENTDATE", tcm."APPROVEDDATE")), 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
-	-- to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
 	'' payment_type,
 	'' fund,
 	tcm."LOANAMOUNT" as principal_amount,
@@ -1651,7 +1634,6 @@ select distinct
 	tcm."REPAYMENTPERIODUNIT"  repay_freq,
 	coalesce(tcm.no_of_outstanding_installments, 1) loan_term,
 	tcm."REPAYMENTPERIODUNIT" loan_term_freq,
-	-- tcm.INTERESTRATE   as nominal_interest_rate,
 	case
 		when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_DAY' then tcm."INTERESTRATE"*365
                     when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_WEEK' then  tcm."INTERESTRATE"*52
@@ -1679,28 +1661,6 @@ case
 	'',
 	'',
 	tcm."ID"  as external_id
-	-- first_charge.charge_name first_charge, first_charge.iva_name first_iva,
-	-- second_charge.charge_name second_charge, second_charge.iva_name second_iva,
-	-- replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
-	-- case 
-	--	when mpl.id = 8 then replace(mipyme_charge.charge_name, ' ', '_')
-	--	else replace(second_charge.charge_name, ' ', '_')
-	-- end,
-	-- case 
-	--	when mpl.id = 8 then mipyme_charge.fee_percentage
-	--	else second_charge.fee_percentage
-	-- end, '',
-	-- case 
-	--	when mpl.id = 8 then replace(mipyme_charge.iva_name, ' ', '_')
-	--	else replace(second_charge.iva_name, ' ', '_')
-	-- end,
-	-- case 
-	--	when mpl.id = 8 then mipyme_charge.iva_percentage
-	--	else second_charge.iva_percentage
-	-- end,
-	-- ''
-	-- nit, code, cre_numerocredito::varchar, cli_nroid, 
--- 	cre_fechafinancia
 from 
 	tmp_loanaccount tcm
 	join tmp_loanproduct_mapping tlm on tlm.ea_product_key = tcm."PRODUCTTYPEKEY"
@@ -1800,26 +1760,24 @@ select distinct
 	mc.external_id as client_external_id,
 	REpLACE(mpl.name, ' ', '_') as product_name,
 	'' loan_officer,
-	-- td.disbursementdate as submit_date,
-	-- td.disbursementdate as approved_date,
-	-- td.disbursementdate as disbursement_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		when tcm."ACCOUNTSTATE" = 'APPROVED' and tcm."CREATIONDATE" > tcm."APPROVEDDATE"  then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
-		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" != 'PENDING_APPROVAL' and tcm."CREATIONDATE" < tcm."APPROVEDDATE" then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."APPROVEDDATE" <= tcm."CREATIONDATE" then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."CREATIONDATE" < coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE") then to_date(to_char(tcm."CREATIONDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as submit_date,
 	case 
-		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
-		else to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null
+		when tcm."ACCOUNTSTATE" = 'APPROVED' then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy')
+		when tcm."APPROVEDDATE" < coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE") then to_date(to_char(tcm."APPROVEDDATE", 'dd mm yyyy'), 'dd mm yyyy') 
+		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as approved_date,
 	case 
 		when tcm."ACCOUNTSTATE" = 'PENDING_APPROVAL' then null 
 		when tcm."ACCOUNTSTATE" = 'APPROVED' then null
 		else to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy')
 	end as disbursement_date,
-	-- to_date(to_char(coalesce(tcm.new_disbursement_date, coalesce(tcm."APPROVEDDATE", tcm."CREATIONDATE")), 'dd mm yyyy'), 'dd mm yyyy') as submit_date,
-	-- to_date(to_char(coalesce(tcm."new_disbursement_date", coalesce(td."DISBURSEMENTDATE", tcm."APPROVEDDATE")), 'dd mm yyyy'), 'dd mm yyyy') as approved_date,
-	-- to_date(to_char(coalesce(tcm."new_disbursement_date", td."DISBURSEMENTDATE"), 'dd mm yyyy'), 'dd mm yyyy') as disbursement_date,
 	'' payment_type,
 	'' fund,
 	tcm."LOANAMOUNT" as principal_amount,
@@ -1828,7 +1786,6 @@ select distinct
 	tcm."REPAYMENTPERIODUNIT"  repay_freq,
 	coalesce(tcm.no_of_outstanding_installments, 1) loan_term,
 	tcm."REPAYMENTPERIODUNIT" loan_term_freq,
-	-- tcm.INTERESTRATE   as nominal_interest_rate,
 	case
 		when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_DAY' then tcm."INTERESTRATE"*365
                     when tcm."INTERESTCHARGEFREQUENCY" = 'EVERY_WEEK' then  tcm."INTERESTRATE"*52
@@ -1856,28 +1813,6 @@ case
 	'',
 	'',
 	tcm."ID"  as external_id
-	-- first_charge.charge_name first_charge, first_charge.iva_name first_iva,
-	-- second_charge.charge_name second_charge, second_charge.iva_name second_iva,
-	-- replace(first_charge.charge_name, ' ', '_'), first_charge.fee_percentage, '', replace(first_charge.iva_name, ' ', '_'), first_charge.iva_percentage, '',
-	-- case 
-	--	when mpl.id = 8 then replace(mipyme_charge.charge_name, ' ', '_')
-	--	else replace(second_charge.charge_name, ' ', '_')
-	-- end,
-	-- case 
-	--	when mpl.id = 8 then mipyme_charge.fee_percentage
-	--	else second_charge.fee_percentage
-	-- end, '',
-	-- case 
-	--	when mpl.id = 8 then replace(mipyme_charge.iva_name, ' ', '_')
-	--	else replace(second_charge.iva_name, ' ', '_')
-	-- end,
-	-- case 
-	--	when mpl.id = 8 then mipyme_charge.iva_percentage
-	--	else second_charge.iva_percentage
-	-- end,
-	-- ''
-	-- nit, code, cre_numerocredito::varchar, cli_nroid, 
--- 	cre_fechafinancia
 from 
 	tmp_loanaccount tcm
 	join tmp_loanproduct_mapping tlm on tlm.ea_product_key = tcm."PRODUCTTYPEKEY"
