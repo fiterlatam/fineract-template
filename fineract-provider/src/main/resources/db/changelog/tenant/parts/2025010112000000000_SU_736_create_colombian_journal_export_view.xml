@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="fineract" id="1">
+        <sql>
+            <![CDATA[
+                DROP VIEW IF EXISTS v_colombian_journal_export;
+
+                CREATE OR REPLACE VIEW v_colombian_journal_export AS
+                SELECT
+                    -- Fixed value fields (always the same)
+                    0 as MOV_MOVIMIENTO,
+                    TO_CHAR(je.entry_date, 'YYYYMM') as MES_MESCONTABLE,
+                    gl.gl_code as CTA_CUENTA,
+                    'IT' as EMP_EMPRESA,
+                    '99' as EMP_EMPFL,
+                    je.amount as MOV_VALOR,
+
+                    -- Transaction type mapping (default since we can't join with loan_transaction)
+                    '40' as TPC_TIPOCOMPROB,
+
+                    -- Cost center logic
+                    CASE
+                        WHEN gl.classification_enum IN (1, 2) THEN '99'  -- ASSET, LIABILITY
+                        ELSE '5320000'  -- INCOME, EXPENSE
+                    END as CeCo,
+
+                    -- Client information
+                    c.external_id as TER_TERCERO,
+                    '' as TER_DIGVER,  -- Empty as per specification
+                    '' as TER_GRUPO,   -- Empty as per specification
+
+                    -- Currency and exchange rate (fixed for COP)
+                    '1' as MON_MONEDA,  -- Colombian Peso
+                    '' as TRM_FECHA,    -- Empty as per specification
+                    '' as MOV_VLROTRAMON, -- Empty as per specification
+                    '' as MOV_VLRTRM,     -- Empty as per specification
+
+                    -- VAT handling
+                    CASE
+                        WHEN gl.classification_enum IN (3, 4) AND je.amount > 0 THEN '3'  -- VAT for INCOME/EXPENSE
+                        ELSE ''  -- No VAT
+                    END as CPT_CPTOTRIBUTA,
+                    '' as MOV_PORCENTAJE,  -- Empty as per specification
+                    '' as MOV_VLRBASE,     -- Empty as per specification
+
+                    -- Document reference
+                    COALESCE(je.transaction_id, '') as MOV_DCMTO,
+                    '' as MOV_AFECTADCMTO,  -- Empty as per specification
+
+                    -- Dates
+                    je.entry_date as MOV_FECHADCMTO,
+                    je.entry_date as MOV_FINI,
+                    je.entry_date as MOV_FFIN,
+
+                    -- Nature (Debit/Credit)
+                    CASE je.type_enum
+                        WHEN 1 THEN 1  -- DEBIT
+                        WHEN 2 THEN 2  -- CREDIT
+                        ELSE 1         -- Default to DEBIT
+                    END as NAT,
+
+                    -- Additional fields (empty as per specification)
+                    '' as CPC_CPTOCOMP,
+                    '' as TPD_TIPODOC,
+                    '' as SCO_SUBDIVCOM,
+
+                    -- Description
+                    COALESCE(je.description, '') as MENCONCEPTO,
+                    je.entry_date as MOV_FECHA,
+
+                    -- Status and user fields
+                    'S' as MOV_ESTADO,
+                    COALESCE(gl.parent_id, 0) as MOV_CTAPADRE,
+                    '' as TER_GRANCONT,
+                    '' as TER_REGIVA,
+                    '' as MOV_BASERETIVA,
+                    '' as MOV_CAUSARETIVA,
+                    '' as TER_AUTORETENEDOR,
+                    '' as MOV_CAUSARETEFTE,
+                    '' as MOV_BASERETEFTE,
+                    '' as MOV_VLRDIFBASE,
+                    '' as MOV_VLRDIFMON,
+                    '' as MOV_MOVPADRE,
+                    '' as MOV_FECHAMOV,
+                    'O' as MOV_USUARIO,
+                    'S' as MOV_SECUENCIA,
+                    '' as OBR_OBRA,
+                    '' as OBR_SUBOBRA,
+                    0 as var_intnulo,
+                    '' as tip_docafecta,
+                    0 as var_intnulo2,
+
+                    -- Additional context fields for filtering
+                    je.office_id,
+                    je.entity_type_enum,
+                    je.entity_id,
+                    je.transaction_id,
+                    gl.classification_enum
+
+                FROM acc_gl_journal_entry je
+                JOIN acc_gl_account gl ON je.account_id = gl.id
+                LEFT JOIN m_client c ON je.entity_id = c.id AND je.entity_type_enum = 1
+                WHERE je.office_id IS NOT NULL
+                  AND je.entry_date IS NOT NULL;
+            ]]>
+        </sql>
+    </changeSet>
+</databaseChangeLog>
