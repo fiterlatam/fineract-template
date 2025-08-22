@@ -332,7 +332,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         // or penalty GL account is relevant
         CommandProcessingResult result = loanWritePlatformService.makeLoanRepaymentWithChargeRefundChargeType(
                 LoanTransactionType.CHARGE_REFUND, repaymentJsonCommand.getLoanId(), repaymentJsonCommand, isRecoveryRepayment,
-                chargeRefundChargeType);
+                chargeRefundChargeType, new HashMap<>());
 
         Long loanChargeRefundTransactionId = result.getResourceId();
         LoanTransaction newChargeRefundTxn = null;

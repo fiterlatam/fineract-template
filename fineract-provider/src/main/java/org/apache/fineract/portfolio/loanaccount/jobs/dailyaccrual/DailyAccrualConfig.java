@@ -26,9 +26,9 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 @RequiredArgsConstructor
@@ -36,11 +36,10 @@ public class DailyAccrualConfig {
 
     private final JobRepository jobRepository;
 
-    private final PlatformTransactionManager transactionManager;
-
     @Bean
     protected Step runDailyLoanAccrualStep(DailyAccrualTasklet dailyAccrualTasklet) {
-        return new StepBuilder(JobName.DAILY_LOAN_ACCRUAL.name(), jobRepository).tasklet(dailyAccrualTasklet, transactionManager).build();
+        return new StepBuilder(JobName.DAILY_LOAN_ACCRUAL.name(), jobRepository)
+                .tasklet(dailyAccrualTasklet, new ResourcelessTransactionManager()).build();
     }
 
     @Bean

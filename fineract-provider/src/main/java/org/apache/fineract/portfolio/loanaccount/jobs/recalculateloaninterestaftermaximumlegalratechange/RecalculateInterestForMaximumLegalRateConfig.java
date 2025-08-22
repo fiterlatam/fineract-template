@@ -26,22 +26,21 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 @RequiredArgsConstructor
 public class RecalculateInterestForMaximumLegalRateConfig {
 
     private final JobRepository jobRepository;
-    private final PlatformTransactionManager transactionManager;
 
     @Bean
     protected Step recalculateInterestForMaximumLegalRateStep(
             RecalculateInterestForMaximumLegalRateTasklet recalculateInterestForMaximumLegalRateTasklet) {
         return new StepBuilder(JobName.RECALCULATE_LOAN_INTEREST_AFTER_MAXIMUM_LEGAL_RATE_CHANGE.name(), jobRepository)
-                .tasklet(recalculateInterestForMaximumLegalRateTasklet, transactionManager).build();
+                .tasklet(recalculateInterestForMaximumLegalRateTasklet, new ResourcelessTransactionManager()).build();
     }
 
     @Bean

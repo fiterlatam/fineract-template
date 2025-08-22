@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -56,7 +58,7 @@ public interface LoanWritePlatformService {
 
     @Transactional
     CommandProcessingResult makeLoanRepaymentWithChargeRefundChargeType(LoanTransactionType repaymentTransactionType, Long loanId,
-            JsonCommand command, boolean isRecoveryRepayment, String chargeRefundChargeType);
+            JsonCommand command, boolean isRecoveryRepayment, String chargeRefundChargeType, Map<String, Object> parameters);
 
     Map<String, Object> makeLoanBulkRepayment(CollectionSheetBulkRepaymentCommand bulkRepaymentCommand);
 
@@ -133,7 +135,8 @@ public interface LoanWritePlatformService {
 
     void recalculateInterestRate(Loan loan);
 
-    void persistInstallmentalChargeAccrual(Long loanId, LocalDate localDate, Long minimumDaysInArrearsToSuspendLoanAccount);
+    void persistInstallmentalChargeAccrual(Long loanId, LocalDate localDate, Long minimumDaysInArrearsToSuspendLoanAccount,
+            boolean adjustMissingAccruals);
 
     void cancelDefaultInsuranceCharges(List<DefaultOrCancelInsuranceInstallmentData> defaultLoanIds);
 
@@ -152,4 +155,8 @@ public interface LoanWritePlatformService {
     ClasificacionConceptosData getClasificacionConceptosData(String concepto);
 
     void cleanUpLoans();
+
+    JsonArray regenerateLoanSchedule(String apiRequestBodyAsJson);
+
+    JsonObject addMissingDevengoAccrualTransactions(String apiRequestBodyAsJson);
 }

@@ -32,6 +32,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -44,6 +45,7 @@ import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDat
 
 @Slf4j
 @Entity
+@Setter
 @Table(name = "m_loan_repayment_schedule")
 public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDateTimeCustom
         implements Comparable<LoanRepaymentScheduleInstallment> {
@@ -150,6 +152,9 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "installment")
     private Set<LoanInstallmentCharge> installmentCharges = new HashSet<>();
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "installment")
+    private Set<LoanOverdueInstallmentCharge> overdueInstallmentCharges = new HashSet<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "installment")
     private Set<LoanTransactionToRepaymentScheduleMapping> loanTransactionToRepaymentScheduleMappings = new HashSet<>();
@@ -405,6 +410,10 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         return getFeeChargesCharged(currency).minus(feeChargesAccountedFor);
     }
 
+    public Money getFeeChargesAccountedFor(final MonetaryCurrency currency) {
+        return getFeeChargesPaid(currency).plus(getFeeChargesWaived(currency)).plus(getFeeChargesWrittenOff(currency));
+    }
+
     public Money getFeeChargesOutstanding(final MonetaryCurrency currency, final LocalDate tillDate) {
         Money feeChargesOutstanding = Money.zero(currency);
         if (!DateUtils.isBefore(tillDate, this.dueDate)) {
@@ -635,6 +644,12 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         return false;
     }
 
+    public void deleteOverdueInstallmentCharges() {
+        if (this.overdueInstallmentCharges != null && !this.overdueInstallmentCharges.isEmpty()) {
+            this.overdueInstallmentCharges.clear();
+        }
+    }
+
     public interface PaymentFunction {
 
         Money accept(LocalDate transactionDate, Money transactionAmountRemaining, boolean isWriteOffTransaction,
@@ -778,7 +793,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money feePortionOfTransaction = Money.zero(currency);
         Money loanChargePaidByPortion = Money.zero(currency);
-        if (transactionAmountRemaining.isZero()) {
+        if (transactionAmountRemaining.isZero() || !loanTransaction.getHonorariosPortion(currency).isGreaterThanZero()) {
             return feePortionOfTransaction;
         }
         for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {

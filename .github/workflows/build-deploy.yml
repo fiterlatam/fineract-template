@@ -24,6 +24,8 @@ jobs:
           cache: gradle
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: 8.5
       - name: Boot Run Test Server
         env:
           FINERACT_DEFAULT_TENANTDB_UID: postgres

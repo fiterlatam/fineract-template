@@ -36,6 +36,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import jakarta.ws.rs.core.UriInfo;
 import java.io.InputStream;
 import java.time.LocalDate;
@@ -44,12 +45,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.command.JournalEntryCommand;
 import org.apache.fineract.accounting.journalentry.data.JournalEntryAssociationParametersData;
 import org.apache.fineract.accounting.journalentry.data.JournalEntryData;
+import org.apache.fineract.accounting.journalentry.data.JournalExportRequest;
 import org.apache.fineract.accounting.journalentry.data.OfficeOpeningBalancesData;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryReadPlatformService;
+import org.apache.fineract.accounting.journalentry.service.JournalExportService;
 import org.apache.fineract.accounting.producttoaccountmapping.domain.PortfolioProductType;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
@@ -65,6 +69,7 @@ import org.apache.fineract.infrastructure.core.data.UploadRequest;
 import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamException;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -77,6 +82,7 @@ import org.springframework.stereotype.Component;
 @Tag(name = "Journal Entries", description = "A journal entry refers to the logging of transactions against general ledger accounts. A journal entry may consist of several line items, each of which is either a \"debit\" or a \"credit\". The total amount of the debits must equal the total amount of the credits or the journal entry is said to be \"unbalanced\" \n"
         + "\n" + "A journal entry directly changes the account balances on the general ledger")
 @RequiredArgsConstructor
+@Slf4j
 public class JournalEntriesApiResource {
 
     private static final Set<String> RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList("id", "officeId", "officeName", "glAccountName",
@@ -93,6 +99,8 @@ public class JournalEntriesApiResource {
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final BulkImportWorkbookService bulkImportWorkbookService;
     private final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService;
+    private final JournalExportService journalExportService;
+    private final FromJsonHelper fromJsonHelper;
 
     @GET
     @Consumes({ MediaType.APPLICATION_JSON })
@@ -291,5 +299,53 @@ public class JournalEntriesApiResource {
         final Long importDocumentId = this.bulkImportWorkbookService.importWorkbook(GlobalEntityType.GL_JOURNAL_ENTRIES.toString(),
                 uploadedInputStream, fileDetail, locale, dateFormat, new HashMap<>(0));
         return this.apiJsonSerializerService.serialize(importDocumentId);
+    }
+
+    @POST
+    @Path("export")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_OCTET_STREAM })
+    @Operation(summary = "Export Journal Entries in Colombian Format", description = "Export journal entries as a Colombian accounting-compliant TXT file with 49 columns per record.\n\n"
+            + "Mandatory Fields:\n" + "- dateFrom: Start date (supports flexible date formats)\n"
+            + "- dateTo: End date (supports flexible date formats)\n" + "- officeId: Office ID for filtering\n\n" + "Optional Fields:\n"
+            + "- dateFormat: Date format (default: 'yyyy-MM-dd')\n" + "- locale: Locale for date parsing (default: 'en')\n"
+            + "- accountingPeriod: Accounting period (YYYYMM)\n" + "- transactionTypes: Array of transaction types to filter\n"
+            + "- companyCode: Company code (default: IT)\n" + "- currency: Currency code (default: COP)\n"
+            + "- includeInactive: Include inactive entries (default: false)\n\n" + "Usage Examples:\n" + "```json\n" + "{\n"
+            + "  \"dateFrom\": \"1 July 2024\",\n" + "  \"dateTo\": \"31 July 2024\",\n" + "  \"dateFormat\": \"dd MMMM yyyy\",\n"
+            + "  \"locale\": \"en\",\n" + "  \"officeId\": 1\n" + "}\n" + "```\n" + "```json\n" + "{\n"
+            + "  \"dateFrom\": \"2024-07-01\",\n" + "  \"dateTo\": \"2024-07-31\",\n" + "  \"officeId\": 1\n" + "}\n" + "```")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK - File exported successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad Request - Invalid parameters"),
+            @ApiResponse(responseCode = "404", description = "Not Found - No journal entries found"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error") })
+    public Response exportJournalEntries(@Parameter(hidden = true) final String jsonRequestBody) {
+
+        this.context.authenticatedUser().validateHasReadPermission(RESOURCE_NAME_FOR_PERMISSION);
+
+        try {
+            // Parse the request
+            JournalExportRequest request = this.fromJsonHelper.fromJson(jsonRequestBody, JournalExportRequest.class);
+
+            // Validate required fields
+            if (StringUtils.isBlank(request.getDateFrom()) || StringUtils.isBlank(request.getDateTo()) || request.getOfficeId() == null) {
+                return Response.status(Response.Status.BAD_REQUEST).entity("Missing required fields: dateFrom, dateTo, officeId")
+                        .type(MediaType.APPLICATION_JSON).build();
+            }
+
+            // Generate filename
+            String filename = this.journalExportService.generateFilename(request);
+
+            // Create streaming response
+            return Response.ok().header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                    .type(MediaType.APPLICATION_OCTET_STREAM).entity((StreamingOutput) outputStream -> {
+                        this.journalExportService.exportJournalEntries(request, outputStream, filename);
+                    }).build();
+
+        } catch (Exception e) {
+            log.error("Error exporting journal entries: {}", e.getMessage(), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error exporting journal entries: " + e.getMessage())
+                    .type(MediaType.APPLICATION_JSON).build();
+        }
     }
 }

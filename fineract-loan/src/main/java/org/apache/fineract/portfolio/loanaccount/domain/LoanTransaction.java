@@ -96,6 +96,12 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "unrecognized_income_portion", scale = 6, precision = 19, nullable = true)
     private BigDecimal unrecognizedIncomePortion;
 
+    @Column(name = "honorarios_portion_derived", scale = 6, precision = 19, nullable = true)
+    private BigDecimal honorariosPortion;
+
+    @Column(name = "honorarios_vat_portion_derived", scale = 6, precision = 19, nullable = true)
+    private BigDecimal honorariosVatPortion;
+
     @Column(name = "is_reversed", nullable = false)
     private boolean reversed;
 
@@ -164,6 +170,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     @Column(name = "is_invoiced_generated_by_job")
     private boolean invoicedGeneratedByJob;
+
+    @Getter
+    @Setter
+    @Column(name = "is_foreclosure")
+    private boolean isForeclosure;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "accrualTransaction", orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<PartialInvoicedTransaction> partialInvoicedTransactions = new HashSet<>();
@@ -356,6 +367,8 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
                 loanTransaction.dateOf, loanTransaction.amount, loanTransaction.principalPortion, loanTransaction.interestPortion,
                 loanTransaction.feeChargesPortion, loanTransaction.penaltyChargesPortion, loanTransaction.overPaymentPortion,
                 loanTransaction.reversed, loanTransaction.specialWriteOff, loanTransaction.paymentDetail, loanTransaction.externalId);
+        newTransaction.setHonorariosPortion(loanTransaction.honorariosPortion);
+        newTransaction.setHonorariosVatPortion(loanTransaction.honorariosVatPortion);
 
         if (LoanTransactionType.CHARGE_PAYMENT.equals(loanTransaction.getTypeOf())) {
             newTransaction.getLoanChargesPaid().addAll(loanTransaction.getLoanChargesPaid());
@@ -1304,4 +1317,21 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     public boolean isInvoicedNotGeneratedByJob() {
         return Boolean.FALSE.equals(invoicedGeneratedByJob);
     }
+
+    public void setHonorariosPortion(final BigDecimal honorariosPortion) {
+        this.honorariosPortion = honorariosPortion;
+    }
+
+    public Money getHonorariosPortion(final MonetaryCurrency currency) {
+        return Money.of(currency, this.honorariosPortion);
+    }
+
+    public void setHonorariosVatPortion(final BigDecimal honorariosVatPortion) {
+        this.honorariosVatPortion = honorariosVatPortion;
+    }
+
+    public Money getHonorariosVatPortion(final MonetaryCurrency currency) {
+        return Money.of(currency, this.honorariosVatPortion);
+    }
+
 }

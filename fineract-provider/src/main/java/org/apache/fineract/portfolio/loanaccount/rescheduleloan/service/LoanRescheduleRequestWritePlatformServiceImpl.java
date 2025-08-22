@@ -582,7 +582,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
                 final BigDecimal rediferirAmount = loanRepaymentScheduleInstallment.getRediferirAmount(currency).getAmount();
                 final LoanTransaction newRepaymentTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.REPAYMENT,
                         loan, businessLocalDate, rediferirAmount, paymentDetail, null, txnExternalId, false, null, isAccountTransfer, null,
-                        false, true);
+                        false, true, null);
                 loan.recalculateAllCharges();
                 changedTransactionDetail = loan.processTransactions();
                 loanAccountDomainService.saveLoanTransactionWithDataIntegrityViolationChecks(newRepaymentTransaction);

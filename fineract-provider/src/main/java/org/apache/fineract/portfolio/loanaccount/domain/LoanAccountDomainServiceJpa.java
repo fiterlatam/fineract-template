@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
@@ -173,9 +175,11 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     public LoanTransaction makeRepayment(final LoanTransactionType repaymentTransactionType, final Loan loan,
             final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail, final String noteText,
             final ExternalId txnExternalId, final boolean isRecoveryRepayment, final String chargeRefundChargeType,
-            boolean isAccountTransfer, HolidayDetailDTO holidayDetailDto, Boolean isHolidayValidationDone) {
+            boolean isAccountTransfer, HolidayDetailDTO holidayDetailDto, Boolean isHolidayValidationDone,
+            final Map<String, Object> parameters) {
         return makeRepayment(repaymentTransactionType, loan, transactionDate, transactionAmount, paymentDetail, noteText, txnExternalId,
-                isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer, holidayDetailDto, isHolidayValidationDone, false);
+                isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer, holidayDetailDto, isHolidayValidationDone, false,
+                parameters);
     }
 
     @Transactional
@@ -198,9 +202,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     public LoanTransaction makeRepayment(final LoanTransactionType repaymentTransactionType, Loan loan, final LocalDate transactionDate,
             final BigDecimal transactionAmount, final PaymentDetail paymentDetail, final String noteText, final ExternalId txnExternalId,
             final boolean isRecoveryRepayment, final String chargeRefundChargeType, boolean isAccountTransfer,
-            HolidayDetailDTO holidayDetailDto, Boolean isHolidayValidationDone, final boolean isLoanToLoanTransfer) {
+            HolidayDetailDTO holidayDetailDto, Boolean isHolidayValidationDone, final boolean isLoanToLoanTransfer,
+            final Map<String, Object> parameters) {
         checkClientOrGroupActive(loan);
-
         LoanBusinessEvent repaymentEvent = getLoanRepaymentTypeBusinessEvent(repaymentTransactionType, isRecoveryRepayment, loan);
         if (repaymentEvent != null) {
             businessEventNotifierService.notifyPreBusinessEvent(repaymentEvent);
@@ -227,6 +231,14 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     paymentDetail, transactionDate, txnExternalId, chargeRefundChargeType, loan.getRepaymentTransactionProcessingType(),
                     loan.recalculateEMI());
         }
+        final BigDecimal honorariosPortion = parameters != null && parameters.containsKey("honorariosPortion")
+                ? (BigDecimal) parameters.get("honorariosPortion")
+                : BigDecimal.ZERO;
+        final BigDecimal honorariosVatPortion = parameters != null && parameters.containsKey("honorariosVatPortion")
+                ? (BigDecimal) parameters.get("honorariosVatPortion")
+                : BigDecimal.ZERO;
+        newRepaymentTransaction.setHonorariosPortion(honorariosPortion);
+        newRepaymentTransaction.setHonorariosVatPortion(honorariosVatPortion);
 
         ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
                 .retrieveClientAdditionalData(loan.getClientId());
@@ -243,6 +255,17 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         }
         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom,
                 holidayDetailDto);
+
+        if (this.isLoanExpectedToBeFullyRepaid(loan, transactionDate, repaymentAmount, scheduleGeneratorDTO) && !loan.isCleanUp()) {
+            /**
+             * Add all missing accrual transactions that happened before the closure date, but not yet posted.
+             */
+            final Long minimumDaysInArrearsToSuspendLoanAccount = configurationDomainService
+                    .retriveMinimumDaysInArrearsToSuspendLoanAccount();
+            loanAccrualPlatformService.addTransactionAccrualsAfterLoanClosure(loan.getId(), transactionDate,
+                    minimumDaysInArrearsToSuspendLoanAccount);
+        }
+
         final ChangedTransactionDetail changedTransactionDetail = loan.makeRepayment(newRepaymentTransaction,
                 defaultLoanLifecycleStateMachine, existingTransactionIds, existingReversedTransactionIds, isRecoveryRepayment,
                 scheduleGeneratorDTO, isHolidayValidationDone);
@@ -318,6 +341,14 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
         setStatusToCanceledOnClosedLoan(loan, transactionDate);
         return newRepaymentTransaction;
+    }
+
+    private boolean isLoanExpectedToBeFullyRepaid(final Loan loan, final LocalDate transactionDate, final Money repaymentAmount,
+            final ScheduleGeneratorDTO scheduleGeneratorDTO) {
+        final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(transactionDate,
+                scheduleGeneratorDTO);
+        final Money totalOutstandingAmount = loanRepaymentScheduleInstallment.getTotalOutstanding(loan.getCurrency());
+        return !repaymentAmount.isLessThan(totalOutstandingAmount);
     }
 
     @Override
@@ -435,6 +466,77 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         }
         return feeCalculationHonorario;
 
+    }
+
+    /**
+     * Regenerates all CustomChargeHonorarioMaps for a flat honorario charge. This method should be called after
+     * clearing existing maps to recreate them.
+     *
+     * @param loanCharge
+     *            The loan charge for which to regenerate the maps
+     */
+    public void regenerateCustomChargeHonorarioMaps(LoanCharge loanCharge) {
+
+        if (!loanCharge.isFlatHono()) {
+            return;
+        }
+
+        Loan loan = loanCharge.getLoan();
+        if (loan == null) {
+            return;
+        }
+
+        // Get all installments that need honorario charges
+        List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallmentsIgnoringTotalGrace().stream()
+                .sorted(Comparator.comparingInt(LoanRepaymentScheduleInstallment::getInstallmentNumber))
+                .filter(installment -> !installment.isRecalculatedInterestComponent())
+                .filter(installment -> loanCharge.getApplicableFromInstallment() == null
+                        || loanCharge.getApplicableFromInstallment() <= installment.getInstallmentNumber())
+                .toList();
+
+        // Get the next version number for batch processing
+        Long version = customChargeHonorarioMapRepository.getMaxVersionByLoan(loan.getId()) + 1;
+
+        // For each installment, create a CustomChargeHonorarioMap
+        for (LoanRepaymentScheduleInstallment installment : installments) {
+            // Calculate the outstanding amount for this installment
+            BigDecimal installmentOutstandingAmount = installment.getPrincipalOutstanding(loan.getCurrency()).getAmount();
+
+            // Calculate fee honorario for this installment
+            FeeCalculationHonorario feeCalculationHonorario = this.calculateFeeHonorario(installment, installmentOutstandingAmount, null);
+
+            // Create new CustomChargeHonorarioMap
+            CustomChargeHonorarioMap newCustomChargeHonorarioMap = new CustomChargeHonorarioMap();
+            newCustomChargeHonorarioMap.setNit("120843958");
+            newCustomChargeHonorarioMap.setLoanId(loan.getId());
+            newCustomChargeHonorarioMap.setLoanInstallmentNr(installment.getInstallmentNumber());
+            newCustomChargeHonorarioMap.setFeeBaseAmount(feeCalculationHonorario.getFeeBasis());
+            newCustomChargeHonorarioMap.setFeeTotalAmount(feeCalculationHonorario.getFeeHono());
+            newCustomChargeHonorarioMap.setFeeVatAmount(feeCalculationHonorario.getFeeVat());
+            newCustomChargeHonorarioMap.setCreatedBy(this.platformSecurityContext.authenticatedUser().getId());
+            newCustomChargeHonorarioMap.setCreatedAt(DateUtils.getLocalDateTimeOfTenant());
+            newCustomChargeHonorarioMap.setLoanChargeId(loanCharge.getId());
+            newCustomChargeHonorarioMap.setVersion(version);
+
+            // Save the map
+            newCustomChargeHonorarioMap = customChargeHonorarioMapRepository.saveAndFlush(newCustomChargeHonorarioMap);
+
+            // Add to the loan charge's maps
+            if (loanCharge.getCustomChargeHonorarioMaps() != null && !loanCharge.getCustomChargeHonorarioMaps().isEmpty()) {
+                loanCharge.getCustomChargeHonorarioMaps().add(newCustomChargeHonorarioMap);
+            } else {
+                Set<CustomChargeHonorarioMap> customChargeHonorarioMapSet = new HashSet<>();
+                customChargeHonorarioMapSet.add(newCustomChargeHonorarioMap);
+                loanCharge.setCustomChargeHonorarioMaps(customChargeHonorarioMapSet);
+            }
+        }
+
+        // Update the loan charge amounts
+        loanCharge.updateAmountOutstanding();
+
+        // Update the loan schedule
+        loan.updateLoanScheduleAfterCustomChargeApplied();
+        saveLoanWithDataIntegrityViolationChecks(loan);
     }
 
     private void setStatusToCanceledOnClosedLoan(final Loan loan, final LocalDate transactionDate) {
@@ -986,9 +1088,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         return newRefundTransaction;
     }
 
+    @SuppressWarnings("all")
     @Override
     public LoanTransaction foreCloseLoan(Loan loan, final LocalDate foreClosureDate, final String noteText, final ExternalId externalId,
-            Map<String, Object> changes, boolean isForCloureAction) {
+            Map<String, Object> changes) {
         if (loan.isChargedOff() && DateUtils.isBefore(foreClosureDate, loan.getChargedOffOnDate())) {
             throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
                     + loan.getId()
@@ -999,13 +1102,11 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         MonetaryCurrency currency = loan.getCurrency();
         List<LoanTransaction> newTransactions = new ArrayList<>();
 
-        final List<Long> existingTransactionIds = new ArrayList<>();
-        final List<Long> existingReversedTransactionIds = new ArrayList<>();
-        existingTransactionIds.addAll(loan.findExistingTransactionIds());
-        existingReversedTransactionIds.addAll(loan.findExistingReversedTransactionIds());
+        final List<Long> existingTransactionIds = new ArrayList<>(loan.findExistingTransactionIds());
+        final List<Long> existingReversedTransactionIds = new ArrayList<>(loan.findExistingReversedTransactionIds());
         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
         final LoanRepaymentScheduleInstallment foreCloseDetail = loan.fetchLoanForeclosureDetail(foreClosureDate, scheduleGeneratorDTO);
-        if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()
+        if (Boolean.TRUE.equals(loan.isPeriodicAccrualAccountingEnabledOnLoanProduct())
                 && (loan.getAccruedTill() == null || !DateUtils.isEqual(foreClosureDate, loan.getAccruedTill()))) {
             loan.reverseAccrualsAfter(foreClosureDate);
             Money[] accruedReceivables = loan.getReceivableIncome(foreClosureDate);
@@ -1064,16 +1165,16 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         LoanTransaction payment = null;
 
         if (payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).isGreaterThanZero()) {
-            BigDecimal honoFee = BigDecimal.ZERO;
-            if (isForCloureAction) {
-                honoFee = calculateHonoForForeclosure(loan,
-                        payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).getAmount(), foreClosureDate);
-                feePayable = feePayable.add(honoFee);
-            }
+            final BigDecimal[] cumulativeHonoFeeAndVat = calculateHonoForForeclosure(loan,
+                    payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).getAmount(), foreClosureDate);
+            final BigDecimal honoFee = cumulativeHonoFeeAndVat[2];
+            feePayable = feePayable.add(honoFee);
             final PaymentDetail paymentDetail = null;
             payment = LoanTransaction.repayment(loan.getOffice(), payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable),
                     paymentDetail, foreClosureDate, externalId);
             payment.updateLoan(loan);
+            payment.setHonorariosPortion(cumulativeHonoFeeAndVat[0]);
+            payment.setHonorariosVatPortion(cumulativeHonoFeeAndVat[1]);
 
             final ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
                     .retrieveClientAdditionalData(loan.getClientId());
@@ -1083,9 +1184,17 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             if (collectionHouse != null) {
                 payment.setCollectionHouse(collectionHouse);
             }
+            payment.setForeclosure(true);
 
             newTransactions.add(payment);
         }
+
+        /**
+         * Add all missing accrual transactions that happened before the fore closure date, but not yet posted.
+         */
+        final Long minimumDaysInArrearsToSuspendLoanAccount = configurationDomainService.retriveMinimumDaysInArrearsToSuspendLoanAccount();
+        loanAccrualPlatformService.addTransactionAccrualsAfterLoanClosure(loan.getId(), foreClosureDate,
+                minimumDaysInArrearsToSuspendLoanAccount);
 
         List<Long> transactionIds = new ArrayList<>();
         final ChangedTransactionDetail changedTransactionDetail = loan.handleForeClosureTransactions(payment,
@@ -1135,7 +1244,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         return payment;
     }
 
-    private BigDecimal calculateHonoForForeclosure(Loan loan, BigDecimal transactionAmount, LocalDate transactionDate) {
+    private BigDecimal[] calculateHonoForForeclosure(Loan loan, BigDecimal transactionAmount, LocalDate transactionDate) {
         /// SU-516 Calculate Hono Charge
         BigDecimal cumulativeHonoFee = BigDecimal.ZERO;
         BigDecimal cumulativeVatFee = BigDecimal.ZERO;
@@ -1238,7 +1347,12 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             }
             loan.addLoanTransaction(applyLoanChargeTransaction);
         }
-        return cumulativeHonoFee.add(cumulativeVatFee);
+
+        final BigDecimal[] cumulativeHonoFeeAndVat = new BigDecimal[3];
+        cumulativeHonoFeeAndVat[0] = cumulativeHonoFee;
+        cumulativeHonoFeeAndVat[1] = cumulativeVatFee;
+        cumulativeHonoFeeAndVat[2] = cumulativeHonoFee.add(cumulativeVatFee);
+        return cumulativeHonoFeeAndVat;
         //////
     }
 
@@ -1611,34 +1725,47 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     }
 
     @SuppressWarnings("all")
-    @Transactional
     @Override
     public void cleanUpLoan(final Long loanId) {
+
         log.info("Starting cleanup for Loan ID: {}", loanId);
+        String sql = """
+                select * from m_portfolio_command_source mpcs join m_loan_transaction mlt ON mlt.id = mpcs.resource_id where mpcs.loan_id = ? and action_name in ('REPAYMENT', 'FORECLOSURE')\s
+                and (mlt.is_reversed = false or (mlt.id in (select to_loan_transaction_id from m_loan_transaction_relation a join m_loan_transaction b on a.from_loan_transaction_id = b.id and b.is_reversed = false)))
+                order by mlt.transaction_date, made_on_date_utc
+                """;
+        final List<Map<String, Object>> results = this.jdbcTemplate.queryForList(sql, loanId);
+        log.info("Found {} transactions to reprocess for Loan ID: {}", results.size(), loanId);
         log.info("Step 1: Unset loan sub status and set loan to active for Loan ID: {}", loanId);
         this.unsetLoanSubStatus(loanId);
         log.info("Step 2: Remove non-migrated repayments for Loan ID: {}", loanId);
         this.removeNonMigratedRepayments(loanId);
         log.info("Step 3: Reset repayment schedule for Loan ID: {}", loanId);
         this.resetRepaymentSchedule(loanId);
-        log.info("Step 4: Create honorarios and aval charges for recreated clinstallments for Loan ID: {}", loanId);
+        log.info("Step 4: Create honorarios and aval charges for recreated installments for Loan ID: {}", loanId);
         this.recreateInstallmentCharges(loanId);
         log.info("Step 5: Update loan balances for Loan ID: {}", loanId);
         this.updateLoanBalances(loanId);
-        log.info("Step 6: Repost transactions from the portfolio command source for Loan ID: {}", loanId);
         this.entityManager.flush();
-        String sql = "select * from m_portfolio_command_source where loan_id = ? and action_name in ('REPAYMENT', 'FORECLOSURE') order by made_on_date_utc";
-        final List<Map<String, Object>> results = this.jdbcTemplate.queryForList(sql, loanId);
+        final List<Long> auditsToDelete = new ArrayList<>();
         if (!results.isEmpty()) {
+            log.info("Step 6: Repost transactions from the portfolio command source for Loan ID: {}", loanId);
             for (final Map<String, Object> result : results) {
                 if (result.get("action_name").toString().equals("REPAYMENT")) {
-                    log.info("Reposting repayment for Loan ID: {}", loanId);
                     String payload = result.get("command_as_json").toString();
+
+                    // Parse the JSON payload, add cleanUp field, and convert back to string
+                    JsonParser jsonParser = new JsonParser();
+                    JsonObject jsonObject = jsonParser.parse(payload).getAsJsonObject();
+                    jsonObject.addProperty("cleanUp", true);
+                    payload = jsonObject.toString();
+
                     final CommandWrapper commandWrapper = new CommandWrapperBuilder().loanRepaymentTransaction(loanId).withJson(payload)
                             .build();
                     try {
                         log.info("Reposting repayment for Loan ID: {}", loanId);
                         commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                        auditsToDelete.add(Long.parseLong(result.get("id").toString()));
                     } catch (Exception ex) {
                         log.error("Failed to repost repayment for Loan ID: {}, with error: {}", loanId, ex.getMessage());
                         throw ex;
@@ -1661,6 +1788,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     try {
                         log.info("Reposting foreclosure for Loan ID: {}", loanId);
                         commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                        auditsToDelete.add(Long.parseLong(result.get("id").toString()));
                     } catch (Exception ex) {
                         log.error("Failed to repost foreclosure for Loan ID: {}, with error: {}", loanId, ex.getMessage());
                         throw ex;
@@ -1668,12 +1796,14 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                 }
             }
         }
-        log.info("Step 7: Marking loan as processed for Loan ID: {}", loanId);
-        sql = "UPDATE tmp_loan_cleanup SET processed = true, date_processed = NOW() WHERE loan_id = ?";
-        this.jdbcTemplate.update(sql, loanId);
-        log.info("Step 8: Removing arrears aging for Loan ID: {}", loanId);
-        sql = "delete from m_loan_arrears_aging mlaa where loan_id = ?";
-        this.jdbcTemplate.update(sql, loanId);
+        // This next step is important to ensure any subsequent run on the same loan doesn't result in
+        // multiple repayments
+        if (!auditsToDelete.isEmpty()) {
+            log.info("Step 7: Remove reprocessed repayments from command source for Loan ID: {}", loanId);
+            String commaSeparatedIds = auditsToDelete.stream().map(String::valueOf).collect(Collectors.joining(","));
+            sql = "delete from m_portfolio_command_source where id in (" + commaSeparatedIds + ")";
+            this.jdbcTemplate.update(sql);
+        }
         this.entityManager.flush();
     }
 
@@ -1687,22 +1817,39 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     }
 
     private void removeNonMigratedRepayments(Long loanId) {
-        String sql = "update m_loan_transaction set is_reversed = false where loan_id = ? and transaction_type_enum = 2 and installment_id is null and is_reversed = true";
+        String sql = "update m_loan_transaction set is_reversed = false where loan_id = ? and transaction_type_enum = 2 and is_reversed = true";
         this.jdbcTemplate.update(sql, loanId);
+
         sql = "delete from m_loan_transaction_repayment_schedule_mapping where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
-        this.jdbcTemplate.update(sql, loanId);
-        sql = "delete from m_loan_charge_paid_by where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
         this.jdbcTemplate.update(sql, loanId);
 
         sql = "delete from m_payment_detail_forclousure where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
         this.jdbcTemplate.update(sql, loanId);
+
         sql = "delete from m_partial_invoiced_transaction where repayment_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
         this.jdbcTemplate.update(sql, loanId);
 
         sql = "delete from m_loan_transaction_relation where from_loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
         this.jdbcTemplate.update(sql, loanId);
-        sql = "delete from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null";
+
+        sql = "delete from m_loan_transaction_repayment_schedule_mapping where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
         this.jdbcTemplate.update(sql, loanId);
+
+        sql = "delete from m_loan_charge_paid_by where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        this.jdbcTemplate.update(sql, loanId);
+
+        sql = "delete from c_facturacion_electronica where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        this.jdbcTemplate.update(sql, loanId);
+
+        sql = "update m_loan_transaction set invoiced_by_transaction_id=null, is_partially_ivoiced=false where transaction_type_enum = 10 and loan_id = ? and invoiced_by_transaction_id in(select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null) ";
+        this.jdbcTemplate.update(sql, loanId, loanId);
+
+        sql = "delete from m_note where loan_transaction_id in (select id from m_loan_transaction where loan_id = ? and transaction_type_enum = 2 and installment_id is null)";
+        this.jdbcTemplate.update(sql, loanId);
+
+        sql = "delete from m_loan_transaction where transaction_type_enum = 2 and loan_id = ? and installment_id is null";
+        this.jdbcTemplate.update(sql, loanId);
+
         this.entityManager.flush();
     }
 
@@ -1746,6 +1893,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         this.jdbcTemplate.update(sql, loanId);
 
         sql = "update m_loan_repayment_schedule set migrated_installment = completed_derived where loan_id = ?";
+        this.jdbcTemplate.update(sql, loanId);
+
+        // reset installment charges
+        sql = "update m_loan_installment_charge set amount_paid_derived = null, amount_outstanding_derived = amount, is_paid_derived = false where loan_schedule_id in (select id from m_loan_repayment_schedule where loan_id = ? and migrated_installment = false)";
         this.jdbcTemplate.update(sql, loanId);
         this.entityManager.flush();
     }

@@ -18,8 +18,6 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
-import static org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler.UNBLOCKING_COMMENT;
-
 import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -206,7 +204,9 @@ import org.apache.fineract.portfolio.loanaccount.invoice.data.LoanDocumentData;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicaMensual;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.LoanDocumentConcept;
+import org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanInstalmentChargeRepository;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
@@ -309,7 +309,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final PlatformSecurityContext platformSecurityContext;
     private final GlobalConfigurationRepository globalConfigurationRepository;
     private final LoanBlockWritePlatformService loanBlockWritePlatformService;
-    private final BlockingReasonSettingsRepositoryWrapper blockingReasonRepository;
+    private final BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepositoryWrapper;
     private final LoanBlockingReasonRepository loanBlockingReasonRepository;
     private final InsuranceIncidentRepository insuranceIncidentRepository;
     private final InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository;
@@ -318,6 +318,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final FacturaElectronicMensualRepository facturaElectronicMensualRepository;
     private final LoanProductParameterizationRepository productParameterizationRepository;
     private final CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
+    private final LoanInstalmentChargeRepository loanInstalmentChargeRepository;
     private final LoanCreditNoteRepository loanCreditNoteRepository;
     private final LoanAccrualPlatformService loanAccrualPlatformService;
     private final CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService;
@@ -1226,45 +1227,53 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 if (daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount) {
                     isSuspendedAccount = true;
                 }
-                Money accrualAmount = Money.of(loan.getCurrency(), cumulativeHonoFee.add(cumulativeVatFee));
-                final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(loan, loan.getOffice(),
-                        accrualAmount, transactionDate, accrualAmount, Money.zero(loan.getCurrency()), ExternalId.empty());
-                if (isSuspendedAccount) {
-                    applyLoanChargeTransaction.markAsOccurredOnSuspendedAccount();
-                }
-                final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, honoCharge, cumulativeHonoFee,
-                        installmentNumber);
-                applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
+                final Money accrualAmount = Money.of(loan.getCurrency(), cumulativeHonoFee.add(cumulativeVatFee));
+                if (accrualAmount.isGreaterThanZero()) {
+                    final LoanTransaction applyLoanChargeTransaction = LoanTransaction.accrueInstallmentCharge(loan, loan.getOffice(),
+                            accrualAmount, transactionDate, accrualAmount, Money.zero(loan.getCurrency()), ExternalId.empty());
+                    if (isSuspendedAccount) {
+                        applyLoanChargeTransaction.markAsOccurredOnSuspendedAccount();
+                    }
+                    final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, honoCharge,
+                            cumulativeHonoFee, installmentNumber);
+                    applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
 
-                if (vatChargeOptional.isPresent()) {
-                    LoanCharge vat = vatChargeOptional.get();
+                    if (vatChargeOptional.isPresent()) {
+                        LoanCharge vat = vatChargeOptional.get();
 
-                    final LoanChargePaidBy vatChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, vat, cumulativeVatFee,
-                            installmentNumber);
-                    applyLoanChargeTransaction.getLoanChargesPaid().add(vatChargePaidBy);
+                        final LoanChargePaidBy vatChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, vat, cumulativeVatFee,
+                                installmentNumber);
+                        applyLoanChargeTransaction.getLoanChargesPaid().add(vatChargePaidBy);
+                    }
+                    final ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
+                            .retrieveClientAdditionalData(loan.getClientId());
+                    final String nit = ObjectUtils.defaultIfNull(clientAdditionalInformation.getNit(),
+                            clientAdditionalInformation.getCedula());
+                    final CollectionHouseConfiguration collectionHouse = this.collectionHouseReadWriteService
+                            .retrieveCollectionHouseByClientFromHistory(nit);
+                    if (collectionHouse != null) {
+                        applyLoanChargeTransaction.setCollectionHouse(collectionHouse);
+                    }
+                    loan.addLoanTransaction(applyLoanChargeTransaction);
                 }
-                final ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
-                        .retrieveClientAdditionalData(loan.getClientId());
-                final String nit = ObjectUtils.defaultIfNull(clientAdditionalInformation.getNit(), clientAdditionalInformation.getCedula());
-                final CollectionHouseConfiguration collectionHouse = this.collectionHouseReadWriteService
-                        .retrieveCollectionHouseByClientFromHistory(nit);
-                if (collectionHouse != null) {
-                    applyLoanChargeTransaction.setCollectionHouse(collectionHouse);
-                }
-                loan.addLoanTransaction(applyLoanChargeTransaction);
             }
         }
+        final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("honorariosVatPortion", cumulativeVatFee);
+        parameters.put("honorariosPortion", cumulativeHonoFee);
         return makeLoanRepaymentWithChargeRefundChargeType(repaymentTransactionType, loanId, command, isRecoveryRepayment,
-                chargeRefundChargeType);
+                chargeRefundChargeType, parameters);
     }
 
     @Transactional
     @Override
     public CommandProcessingResult makeLoanRepaymentWithChargeRefundChargeType(final LoanTransactionType repaymentTransactionType,
-            final Long loanId, final JsonCommand command, final boolean isRecoveryRepayment, final String chargeRefundChargeType) {
+            final Long loanId, final JsonCommand command, final boolean isRecoveryRepayment, final String chargeRefundChargeType,
+            final Map<String, Object> parameters) {
         this.loanUtilService.validateRepaymentTransactionType(repaymentTransactionType);
         this.loanEventApiJsonValidator.validateNewRepaymentTransaction(command.json());
         String channelName = command.stringValueOfParameterNamed("channelName");
+        final boolean cleanUp = command.booleanPrimitiveValueOfParameterNamed("cleanUp");
         if (StringUtils.isBlank(channelName)) {
             channelName = this.platformSecurityContext.getApiRequestChannel();
         }
@@ -1357,15 +1366,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final boolean isBankChannel = channelData.getName().equalsIgnoreCase("Bancos")
                 || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
 
-        if (!isImportedTransaction) {
-            if ((transactionAmount.compareTo(totalExpectedRepayment) > 0 && !isBankChannel)) {
+        if (!isImportedTransaction && !cleanUp) {
+            // Add a small tolerance to account for rounding differences and edge cases
+            // This prevents false positives when the amount is very close to the outstanding amount
+            final BigDecimal tolerance = BigDecimal.valueOf(0.01); // 1 cent tolerance
+            if ((transactionAmount.compareTo(totalExpectedRepayment.add(tolerance)) > 0 && !isBankChannel)) {
+                log.warn("Repayment validation failed for loan {}: transactionAmount={}, totalExpectedRepayment={}, difference={}",
+                        loan.getId(), transactionAmount, totalExpectedRepayment, transactionAmount.subtract(totalExpectedRepayment));
                 final String totalOverpaid = transactionAmount.subtract(totalExpectedRepayment).toString();
                 handleOverPaidException(totalOverpaid);
             }
         }
+        loan.setCleanUp(cleanUp);
         LoanTransaction loanTransaction = this.loanAccountDomainService.makeRepayment(repaymentTransactionType, loan, transactionDate,
                 transactionAmount, paymentDetail, noteText, txnExternalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer,
-                holidayDetailDto, isHolidayValidationDone);
+                holidayDetailDto, isHolidayValidationDone, parameters);
         loan = loanTransaction.getLoan();
 
         loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(transactionDate, scheduleGeneratorDTO);
@@ -1410,7 +1425,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final BigDecimal totalOverpaidAmount, final boolean isBankChannel, final boolean isImportedTransaction) {
         final AppUser currentUser = getAppUserIfPresent();
         if (totalOutstandingAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            if (totalOutstandingAmount.compareTo(BigDecimal.ZERO) <= 0 && totalOverpaidAmount.compareTo(BigDecimal.ZERO) > 0) {
+            if (totalOverpaidAmount.compareTo(BigDecimal.ZERO) > 0) {
                 if (!isBankChannel && !isImportedTransaction) {
                     handleOverPaidException(totalOutstandingAmount.toString());
                 }
@@ -1602,7 +1617,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 LoanTransaction loanTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.REPAYMENT, loan,
                         bulkRepaymentCommand.getTransactionDate(), singleLoanRepaymentCommand.getTransactionAmount(), paymentDetail,
                         bulkRepaymentCommand.getNote(), externalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer,
-                        holidayDetailDTO, isHolidayValidationDone);
+                        holidayDetailDTO, isHolidayValidationDone, null);
                 transactionIds.add(loanTransaction.getId());
 
                 if (loan.getStatus().isClosed()) {
@@ -1821,9 +1836,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         loan = saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         // UPDATE BLOCK STATUS ID
         if (loan.getLoanSummary().getTotalOutstanding().compareTo(BigDecimal.ZERO) > 0) {
-            Long blockStatusId = loan.getBlockStatusId();
-            if (blockStatusId != null) {
-                handleUnBlockingCredit(loan, blockStatusId);
+            BlockingReasonSetting blockStatus = loan.getLoanCustomizationDetail().getBlockStatus();
+            if (blockStatus != null) {
+                handleUnBlockingCredit(loan, blockStatus.getId());
                 saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             }
         }
@@ -1921,6 +1936,27 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 this.facturaElectronicMensualRepository.deleteAll(facturaElectronicMensuals);
             }
         }
+
+        if (transactionToAdjust.isForeclosure()) {
+            // Delete existing CustomChargeHonorarioMaps for this loan
+            this.customChargeHonorarioMapRepository.deleteByLoanId(loanId);
+            // Delete existing LoanInstallmentCharges for this loan
+            this.loanInstalmentChargeRepository.deleteByLoanId(loanId);
+            this.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+            loan.regenerateRepaymentSchedule(scheduleGeneratorDTO);
+            loan.reapplyInsuranceCharges();
+            loan.processPostDisbursementTransactions();
+            saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+        }
+
+        /* Undo loan block status if loan is still outstanding */
+        if (loan.getLoanSummary().getTotalOutstanding().compareTo(BigDecimal.ZERO) > 0) {
+            final BlockingReasonSetting blockStatus = loan.getLoanCustomizationDetail().getBlockStatus();
+            if (blockStatus != null) {
+                handleUnBlockingCredit(loan, blockStatus.getId());
+                saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+            }
+        }
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(entityId) //
@@ -1932,23 +1968,22 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .with(changes).build();
     }
 
-    private void handleUnBlockingCredit(Loan loan, Long blockingReasonSettingId) {
-        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
+    private void handleUnBlockingCredit(final Loan loan, final Long blockingReasonSettingId) {
+        final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper
                 .findOneWithNotFoundDetection(blockingReasonSettingId);
-        Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository.findExistingBlockingReason(loan.getId(),
-                blockingReasonSetting.getId());
-
-        AppUser currentUser = context.authenticatedUser();
-
+        final Optional<LoanBlockingReason> existingBlockingReason = this.loanBlockingReasonRepository
+                .findExistingBlockingReason(loan.getId(), blockingReasonSetting.getId());
+        final AppUser currentUser = context.authenticatedUser();
         if (existingBlockingReason.isPresent()) {
-            LoanBlockingReason blockingReason = this.loanBlockingReasonRepository
+            final LoanBlockingReason blockingReason = this.loanBlockingReasonRepository
+
                     .findExistingBlockingReason(loan.getId(), blockingReasonSetting.getId())
                     .orElseThrow(() -> new LoanBlockingReasonNotFoundException(loan.getId(), blockingReasonSetting.getId()));
             blockingReason.setActive(false);
             blockingReason.setDeactivatedBy(currentUser);
-            blockingReason.setUnblockComment(UNBLOCKING_COMMENT);
-            blockingReason.setDeactivatedOn(DateUtils.getLocalDateOfTenant());
 
+            blockingReason.setUnblockComment(LoanArrearsAgeingUpdateHandler.UNBLOCKING_COMMENT);
+            blockingReason.setDeactivatedOn(DateUtils.getLocalDateOfTenant());
             final BlockingReasonSetting existingBlockingReasonSetting = loan.getLoanCustomizationDetail().getBlockStatus();
             if (existingBlockingReasonSetting != null) {
                 final Long existingBlockingSettingId = existingBlockingReasonSetting.getId();
@@ -2362,7 +2397,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
             writeOffTransaction = this.loanAccountDomainService.makeRepayment(transactionType, loan, transactionDate, totalWriteOffAmount,
                     paymentDetail, noteText, externalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer, holidayDetailDto,
-                    isHolidayValidationDone);
+                    isHolidayValidationDone, new HashMap<>());
         } else {
             final MonetaryCurrency currency = loan.getCurrency();
             final LoanRepaymentScheduleInstallment specialWriteOffInstallment = loan.fetchLoanSpecialWriteOffDetail(transactionDate,
@@ -2547,7 +2582,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                         currentScheduleInstallment.getInterestCharged(currency).getAmount(), tillDays)));
                     }
                 }
-                saveAndFlushLoanWithIntegrityChecks(loan);
+                saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
             }
             final boolean isCreditNote = command.booleanPrimitiveValueOfParameterNamed("isCreditNote");
             if (isCreditNote && creditNote != null) {
@@ -2827,7 +2862,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         loan.getTopupLoanDetails().setAccountTransferDetails(accountTransferDetails.getId());
         loan.getTopupLoanDetails().setTopupAmount(amount);
         if (loanToClose.claimType() == null || !loanToClose.claimType().equals("castigado")) {
-            BlockingReasonSetting setting = blockingReasonRepository.getSingleBlockingReasonSettingByReason(
+            BlockingReasonSetting setting = loanBlockingReasonRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                     BlockingReasonSettingEnum.CREDIT_RESTRUCTURE.getDatabaseString(), BlockLevel.CREDIT.toString());
             loanBlockWritePlatformService.blockLoan(loan.getId(), setting, "Reestructurada", DateUtils.getLocalDateOfTenant());
         }
@@ -3935,7 +3970,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         createCancellationNoveltyNews(loan, transactionDate);
 
         LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, externalId,
-                changes, true);
+                changes);
 
         final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                 BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(), BlockLevel.CREDIT.toString());
@@ -3996,7 +4031,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             loan.setAnuladoOnDisbursementDate(true);
         }
         final LoanTransaction foreclosureTransaction = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText,
-                externalId, changes, false);
+                externalId, changes);
         final BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                 BlockingReasonSettingEnum.CREDIT_ANULADO.getDatabaseString(), BlockLevel.CREDIT.toString());
         blockingReasonSetting.setAffectsClientLevel(0);
@@ -4095,8 +4130,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             this.noteRepository.save(note);
         }
 
-        this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, txnExternalId, changes, false);
-        final BlockingReasonSetting blockingReasonSetting = blockingReasonRepository.getSingleBlockingReasonSettingByReason(
+        this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, noteText, txnExternalId, changes);
+        final BlockingReasonSetting blockingReasonSetting = loanBlockingReasonRepositoryWrapper.getSingleBlockingReasonSettingByReason(
                 BlockingReasonSettingEnum.CREDIT_CANCELADO.getDatabaseString(), BlockLevel.CREDIT.toString());
         loanBlockWritePlatformService.blockLoan(loan.getId(), blockingReasonSetting, "CANCELADO", DateUtils.getLocalDateOfTenant());
 
@@ -4202,9 +4237,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     @Override
     public void recalculateInterestForMaximumLegalRate(List<LoanRescheduleData> loanLoanRescheduleDataList,
             MaximumCreditRateConfigurationData maximumCreditRateConfigurationData) throws JobExecutionException {
+        log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Recalculating interest for maximum legal rate for {} loans",
+                loanLoanRescheduleDataList.size());
         final List<Throwable> exceptions = new ArrayList<>();
         final LocalDate appliedOnDate = maximumCreditRateConfigurationData.getAppliedOnDate();
         final BigDecimal maximumLegalAnnualNominalRateValue = maximumCreditRateConfigurationData.getAnnualNominalRate();
+        log.info(
+                "Recalculate Loan Interest After Maximum Legal Rate Change:: Applied on date: {}, Maximum legal annual nominal rate value: {}",
+                appliedOnDate, maximumLegalAnnualNominalRateValue);
         if (CollectionUtils.isNotEmpty(loanLoanRescheduleDataList)) {
             final String locale = "es";
             final String dateFormat = "dd MMMM yyyy";
@@ -4216,6 +4256,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 if (codeValueData.getName()
                         .equalsIgnoreCase(LoanRescheduleRequestWritePlatformServiceImpl.MAX_LEGAL_RATE_REASON_FOR_RESCHEDULE)) {
                     rescheduleReasonId = codeValueData.getId();
+                    log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Reschedule reason ID: {}", rescheduleReasonId);
                     break;
                 }
             }
@@ -4227,13 +4268,21 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             rescheduleJsonObject.addProperty("adjustedDueDate", "");
             rescheduleJsonObject.addProperty("graceOnPrincipal", "");
             rescheduleJsonObject.addProperty("extraTerms", "");
+            log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Reschedule JSON Object: {}", rescheduleJsonObject);
 
             for (final LoanRescheduleData loanRescheduleData : loanLoanRescheduleDataList) {
+                log.info(
+                        "Recalculate Loan Interest After Maximum Legal Rate Change:: Started processing loan reschedule data for loan ID: {}",
+                        loanRescheduleData.getId());
                 final Long loanId = loanRescheduleData.getId();
                 final Loan loan = this.loanRepository.findById(loanId).orElseThrow(() -> new LoanNotFoundException(loanId));
+                log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Processing loan ID: {} of product type: {}", loanId,
+                        loan.getLoanProduct().getName());
                 final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
                         .getInstallmentByScheduleFromDate(appliedOnDate);
                 if (loanRepaymentScheduleInstallment == null) {
+                    log.warn("Recalculate Loan Interest After Maximum Legal Rate Change:: No installment found for loan ID: {} on date: {}",
+                            loanId, appliedOnDate);
                     continue;
                 }
                 final BigDecimal rescheduledAnnualRate = ObjectUtils.defaultIfNull(loanRescheduleData.getRescheduledAnnualRate(),
@@ -4247,6 +4296,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         && rescheduledAnnualRate.compareTo(maximumLegalAnnualNominalRateValue) != 0) {
                     newInterestRate = maximumLegalAnnualNominalRateValue;
                 } else {
+                    log.info(
+                            "Recalculate Loan Interest After Maximum Legal Rate Change:: No reschedule needed for loan ID: {} as the interest rate is already at maximum legal rate or below",
+                            loanId);
                     continue;
                 }
                 rescheduleJsonObject.addProperty("newInterestRate", newInterestRate);
@@ -4262,8 +4314,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 CommandWrapper commandWrapper = new CommandWrapperBuilder()
                         .createLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME).withJson(rescheduleRequestBodyAsJson).build();
                 try {
-                    log.info("Create Loan Reschedule Request with Loan ID: {}", loanId);
+                    log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Create Loan Reschedule Request with Loan ID: {}",
+                            loanId);
+                    final long startTime = System.currentTimeMillis();
                     CommandProcessingResult commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                    final long createRescheduleRequestEndTime = System.currentTimeMillis();
+                    log.info(
+                            "Recalculate Loan Interest After Maximum Legal Rate Change:: Create Loan Reschedule Request took {} seconds for Loan ID: {}",
+                            (createRescheduleRequestEndTime - startTime) / 1000.0, loanId);
                     if (commandProcessingResult.getResourceId() != null) {
                         final Long loanRescheduleId = commandProcessingResult.getResourceId();
                         final JsonObject approvalJsonObject = new JsonObject();
@@ -4276,25 +4334,36 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         commandWrapper = new CommandWrapperBuilder()
                                 .approveLoanRescheduleRequest(RescheduleLoansApiConstants.ENTITY_NAME, loanRescheduleId)
                                 .withJson(approvalRequestBodyAsJson).build();
-                        log.info("Approve Loan Rescheduling with Loan ID: {}", loanId);
+                        log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Approve Loan Rescheduling with Loan ID: {}",
+                                loanId);
                         commandProcessingResult = commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+                        final long approveRescheduleRequestEndTime = System.currentTimeMillis();
+                        log.info(
+                                "Recalculate Loan Interest After Maximum Legal Rate Change:: Approve Loan Rescheduling took {} seconds for Loan ID: {}",
+                                (approveRescheduleRequestEndTime - createRescheduleRequestEndTime) / 1000.0, loanId);
                         if (commandProcessingResult.getResourceId() != null) {
                             final String successMessage = "Reprogramar la cuenta de préstamo: " + loanId
                                     + " con la tasa de interés al máximo legal";
-                            log.info(successMessage);
+                            log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: " + successMessage);
                         }
                     }
                 } catch (final PlatformApiDataValidationException e) {
                     final List<ApiParameterError> errors = e.getErrors();
                     for (final ApiParameterError error : errors) {
-                        log.error("Reprogramar la cuenta de préstamo {} falló con el mensaje: {}", loanId, error.getDeveloperMessage(), e);
+                        log.error(
+                                "Recalculate Loan Interest After Maximum Legal Rate Change:: Reprogramar la cuenta de préstamo {} falló con el mensaje: {}",
+                                loanId, error.getDeveloperMessage(), e);
                     }
                     exceptions.add(e);
                 } catch (final AbstractPlatformDomainRuleException e) {
-                    log.error("Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}", loanId, e.getDefaultUserMessage(), e);
+                    log.error(
+                            "Recalculate Loan Interest After Maximum Legal Rate Change:: Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}",
+                            loanId, e.getDefaultUserMessage(), e);
                     exceptions.add(e);
                 } catch (Exception e) {
-                    log.error("Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}", loanId, e.getMessage(), e);
+                    log.error(
+                            "Recalculate Loan Interest After Maximum Legal Rate Change:: Reprogramar la cuenta de préstamo: {} falló con el mensaje: {}",
+                            loanId, e.getMessage(), e);
                     exceptions.add(e);
                 }
             }
@@ -4614,22 +4683,24 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         final BigDecimal interestPortionAccountedFor = partialInvoicedTransactions.stream()
                                 .map(PartialInvoicedTransaction::getInterest).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                        interestPaidRemaining = interestPaidRemaining.subtract(interestPortionAccountedFor);
-                        mandatoryInsurancePaidRemaining = mandatoryInsurancePaidRemaining.subtract(mandatoryInsurancePortionAccountedFor);
-                        mandatoryInsuranceVatPaidRemaining = mandatoryInsuranceVatPaidRemaining
+                        final BigDecimal interestToBeInvoiced = interestPortion.subtract(interestPortionAccountedFor);
+                        final BigDecimal mandatoryInsuranceToBeInvoiced = mandatoryInsurancePortion
+                                .subtract(mandatoryInsurancePortionAccountedFor);
+                        final BigDecimal mandatoryInsuranceVatToBeInvoiced = mandatoryInsuranceVatPortion
                                 .subtract(mandatoryInsuranceVatPortionAccountedFor);
-                        voluntaryInsurancePaidRemaining = voluntaryInsurancePaidRemaining.subtract(voluntaryInsurancePortionAccountedFor);
-                        voluntaryInsuranceVatPaidRemaining = voluntaryInsuranceVatPaidRemaining
+                        final BigDecimal voluntaryInsuranceToBeInvoiced = voluntaryInsurancePortion
+                                .subtract(voluntaryInsurancePortionAccountedFor);
+                        final BigDecimal voluntaryInsuranceVatToBeInvoiced = voluntaryInsuranceVatPortion
                                 .subtract(voluntaryInsuranceVatPortionAccountedFor);
-                        honorariosPaidRemaining = honorariosPaidRemaining.subtract(honorariosPortionAccountedFor);
-                        honorariosVatPaidRemaining = honorariosVatPaidRemaining.subtract(honorariosVatPortionAccountedFor);
-                        penaltyChargesPaidRemaining = penaltyChargesPaidRemaining.subtract(penaltyPortionAccountedFor);
-                        penaltyChargesVatPaidRemaining = penaltyChargesVatPaidRemaining.subtract(penaltyVatPortionAccountedFor);
+                        final BigDecimal honorariosToBeInvoiced = honorariosPortion.subtract(honorariosPortionAccountedFor);
+                        final BigDecimal honorariosVatToBeInvoiced = honorariosVatPortion.subtract(honorariosVatPortionAccountedFor);
+                        final BigDecimal penaltyToBeInvoiced = penaltyPortion.subtract(penaltyPortionAccountedFor);
+                        final BigDecimal penaltyVatToBeInvoiced = penaltyVatPortion.subtract(penaltyVatPortionAccountedFor);
 
-                        if (interestPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && interestPortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (interestPaidRemaining.compareTo(interestPortion) >= 0) {
-                                partialInvoicedTransaction.setInterest(interestPortion);
-                                interestPaidRemaining = interestPaidRemaining.subtract(interestPortion);
+                        if (interestPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && interestToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (interestPaidRemaining.compareTo(interestToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setInterest(interestToBeInvoiced);
+                                interestPaidRemaining = interestPaidRemaining.subtract(interestToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setInterest(interestPaidRemaining);
                                 interestPaidRemaining = BigDecimal.ZERO;
@@ -4639,10 +4710,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             invoicedByAccrualTransactionSet.add(accrualTransaction);
                         }
 
-                        if (penaltyChargesPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && penaltyPortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (penaltyChargesPaidRemaining.compareTo(penaltyPortion) >= 0) {
-                                partialInvoicedTransaction.setPenalty(penaltyPortion);
-                                penaltyChargesPaidRemaining = penaltyChargesPaidRemaining.subtract(penaltyPortion);
+                        if (penaltyChargesPaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && penaltyToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (penaltyChargesPaidRemaining.compareTo(penaltyToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setPenalty(penaltyToBeInvoiced);
+                                penaltyChargesPaidRemaining = penaltyChargesPaidRemaining.subtract(penaltyToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setPenalty(penaltyChargesPaidRemaining);
                                 penaltyChargesPaidRemaining = BigDecimal.ZERO;
@@ -4653,10 +4725,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
 
                         if (penaltyChargesVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                                && penaltyVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (penaltyChargesVatPaidRemaining.compareTo(penaltyVatPortion) >= 0) {
-                                partialInvoicedTransaction.setPenaltyVat(penaltyVatPortion);
-                                penaltyChargesVatPaidRemaining = penaltyChargesVatPaidRemaining.subtract(penaltyVatPortion);
+                                && penaltyVatToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (penaltyChargesVatPaidRemaining.compareTo(penaltyVatToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setPenaltyVat(penaltyVatToBeInvoiced);
+                                penaltyChargesVatPaidRemaining = penaltyChargesVatPaidRemaining.subtract(penaltyVatToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setPenaltyVat(penaltyChargesVatPaidRemaining);
                                 penaltyChargesVatPaidRemaining = BigDecimal.ZERO;
@@ -4667,10 +4739,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
 
                         if (mandatoryInsurancePaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                                && mandatoryInsurancePortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (mandatoryInsurancePaidRemaining.compareTo(mandatoryInsurancePortion) >= 0) {
-                                partialInvoicedTransaction.setMandatoryInsurance(mandatoryInsurancePortion);
-                                mandatoryInsurancePaidRemaining = mandatoryInsurancePaidRemaining.subtract(mandatoryInsurancePortion);
+                                && mandatoryInsuranceToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (mandatoryInsurancePaidRemaining.compareTo(mandatoryInsuranceToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setMandatoryInsurance(mandatoryInsuranceToBeInvoiced);
+                                mandatoryInsurancePaidRemaining = mandatoryInsurancePaidRemaining.subtract(mandatoryInsuranceToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setMandatoryInsurance(mandatoryInsurancePaidRemaining);
                                 mandatoryInsurancePaidRemaining = BigDecimal.ZERO;
@@ -4681,11 +4753,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
 
                         if (mandatoryInsuranceVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                                && mandatoryInsuranceVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (mandatoryInsuranceVatPaidRemaining.compareTo(mandatoryInsuranceVatPortion) >= 0) {
-                                partialInvoicedTransaction.setMandatoryInsuranceVat(mandatoryInsuranceVatPortion);
+                                && mandatoryInsuranceVatToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (mandatoryInsuranceVatPaidRemaining.compareTo(mandatoryInsuranceVatToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setMandatoryInsuranceVat(mandatoryInsuranceVatToBeInvoiced);
                                 mandatoryInsuranceVatPaidRemaining = mandatoryInsuranceVatPaidRemaining
-                                        .subtract(mandatoryInsuranceVatPortion);
+                                        .subtract(mandatoryInsuranceVatToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setMandatoryInsuranceVat(mandatoryInsuranceVatPaidRemaining);
                                 mandatoryInsuranceVatPaidRemaining = BigDecimal.ZERO;
@@ -4696,10 +4768,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
 
                         if (voluntaryInsurancePaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                                && voluntaryInsurancePortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (voluntaryInsurancePaidRemaining.compareTo(voluntaryInsurancePortion) >= 0) {
-                                partialInvoicedTransaction.setVoluntaryInsurance(voluntaryInsurancePortion);
-                                voluntaryInsurancePaidRemaining = voluntaryInsurancePaidRemaining.subtract(voluntaryInsurancePortion);
+                                && voluntaryInsuranceToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (voluntaryInsurancePaidRemaining.compareTo(voluntaryInsuranceToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setVoluntaryInsurance(voluntaryInsuranceToBeInvoiced);
+                                voluntaryInsurancePaidRemaining = voluntaryInsurancePaidRemaining.subtract(voluntaryInsuranceToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setVoluntaryInsurance(voluntaryInsurancePaidRemaining);
                                 voluntaryInsurancePaidRemaining = BigDecimal.ZERO;
@@ -4710,11 +4782,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
 
                         if (voluntaryInsuranceVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                                && voluntaryInsuranceVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (voluntaryInsuranceVatPaidRemaining.compareTo(voluntaryInsuranceVatPortion) >= 0) {
-                                partialInvoicedTransaction.setVoluntaryInsuranceVat(voluntaryInsuranceVatPortion);
+                                && voluntaryInsuranceVatToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (voluntaryInsuranceVatPaidRemaining.compareTo(voluntaryInsuranceVatToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setVoluntaryInsuranceVat(voluntaryInsuranceVatToBeInvoiced);
                                 voluntaryInsuranceVatPaidRemaining = voluntaryInsuranceVatPaidRemaining
-                                        .subtract(voluntaryInsuranceVatPortion);
+                                        .subtract(voluntaryInsuranceVatToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setVoluntaryInsuranceVat(voluntaryInsuranceVatPaidRemaining);
                                 voluntaryInsuranceVatPaidRemaining = BigDecimal.ZERO;
@@ -4724,10 +4796,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                             invoicedByAccrualTransactionSet.add(accrualTransaction);
                         }
 
-                        if (honorariosPaidRemaining.compareTo(BigDecimal.ZERO) > 0 && honorariosPortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (honorariosPaidRemaining.compareTo(honorariosPortion) >= 0) {
-                                partialInvoicedTransaction.setHonorarios(honorariosPortion);
-                                honorariosPaidRemaining = honorariosPaidRemaining.subtract(honorariosPortion);
+                        if (honorariosPaidRemaining.compareTo(BigDecimal.ZERO) > 0
+                                && honorariosToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (honorariosPaidRemaining.compareTo(honorariosToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setHonorarios(honorariosToBeInvoiced);
+                                honorariosPaidRemaining = honorariosPaidRemaining.subtract(honorariosToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setHonorarios(honorariosPaidRemaining);
                                 honorariosPaidRemaining = BigDecimal.ZERO;
@@ -4738,10 +4811,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         }
 
                         if (honorariosVatPaidRemaining.compareTo(BigDecimal.ZERO) > 0
-                                && honorariosVatPortion.compareTo(BigDecimal.ZERO) > 0) {
-                            if (honorariosVatPaidRemaining.compareTo(honorariosVatPortion) >= 0) {
-                                partialInvoicedTransaction.setHonorariosVat(honorariosVatPortion);
-                                honorariosVatPaidRemaining = honorariosVatPaidRemaining.subtract(honorariosVatPortion);
+                                && honorariosVatToBeInvoiced.compareTo(BigDecimal.ZERO) > 0) {
+                            if (honorariosVatPaidRemaining.compareTo(honorariosVatToBeInvoiced) >= 0) {
+                                partialInvoicedTransaction.setHonorariosVat(honorariosVatToBeInvoiced);
+                                honorariosVatPaidRemaining = honorariosVatPaidRemaining.subtract(honorariosVatToBeInvoiced);
                             } else {
                                 partialInvoicedTransaction.setHonorariosVat(honorariosVatPaidRemaining);
                                 honorariosVatPaidRemaining = BigDecimal.ZERO;
@@ -5145,6 +5218,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         firstLoanDocumentData.getProductTypeName());
                 this.facturaElectronicMensualRepository.saveAllAndFlush(facturaElectronicaMensuals);
                 if (!isTriggeredByJob) {
+                    log.info("Updating invoice counter for product type: {}", loanProductParameterization.getProductType());
+                    loanProductParameterization.setInvoiceCounter(loanProductParameterization.getNextInvoiceCounter());
                     this.productParameterizationRepository.saveAndFlush(loanProductParameterization);
                 }
             }
@@ -5173,7 +5248,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     String.format("Invoice counter exceeds the range end number: %s and product type: %s", rangeEndNumber,
                             loanProductParameterization.getProductType()));
         }
-        loanProductParameterization.setInvoiceCounter(currentCounter);
+        loanProductParameterization.setNextInvoiceCounter(currentCounter);
         return String.valueOf(documentNumber);
     }
 
@@ -5317,26 +5392,30 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     @Override
     @Transactional
-    public void persistInstallmentalChargeAccrual(Long loanId, LocalDate localDate, Long minimumDaysInArrearsToSuspendLoanAccount) {
+    public void persistInstallmentalChargeAccrual(Long loanId, LocalDate localDate, Long minimumDaysInArrearsToSuspendLoanAccount,
+            final boolean adjustMissingAccruals) {
         Loan loan = this.loanAssembler.assembleFrom(loanId);
         log.debug("Persisting Installment charge accrual for loan: {}", loan.getId());
-        List<LoanCharge> charges = filterInstallmentCharges(loan.getActiveCharges());
+        final List<LoanCharge> charges = filterInstallmentCharges(loan.getActiveCharges(), adjustMissingAccruals);
 
         if (minimumDaysInArrearsToSuspendLoanAccount == null) {
             minimumDaysInArrearsToSuspendLoanAccount = 90L;
         }
-        final Long daysInArrears = this.getDaysInArrears(loanId);
+        final long daysInArrears = this.getDaysInArrears(loanId);
         final boolean hasOccurredOnSuspendedAccount = daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount;
-        loan.handleChargeAppliedTransactionPerInstallment(charges, localDate, hasOccurredOnSuspendedAccount);
+        loan.handleChargeAppliedTransactionPerInstallment(charges, localDate, hasOccurredOnSuspendedAccount, adjustMissingAccruals);
         loanRepository.saveAndFlush(loan);
         log.debug("Installment  charge accrual persisted for loan: {}", loan.getId());
     }
 
-    private List<LoanCharge> filterInstallmentCharges(Set<LoanCharge> charges) {
-        return charges.stream()
-                .filter(loanCharge -> loanCharge.getCharge().getChargeTimeType().equals(ChargeTimeType.INSTALMENT_FEE.getValue())
-                        && !loanCharge.isWaived() && !loanCharge.isFullyPaid())
-                .toList();
+    private List<LoanCharge> filterInstallmentCharges(final Set<LoanCharge> charges, final boolean adjustMissingAccruals) {
+        List<LoanCharge> requiredCharges = charges.stream()
+                .filter(loanCharge -> loanCharge.getCharge().getChargeTimeType().equals(ChargeTimeType.INSTALMENT_FEE.getValue())).toList();
+        if (!adjustMissingAccruals) {
+            requiredCharges = requiredCharges.stream().filter(loanCharge -> !loanCharge.isWaived() && !loanCharge.isFullyPaid()).toList();
+
+        }
+        return requiredCharges;
     }
 
     @Override
@@ -5591,4 +5670,55 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             }
         }
     }
+
+    @Transactional
+    @Override
+    public JsonArray regenerateLoanSchedule(String apiRequestBodyAsJson) {
+        final JsonElement element = fromApiJsonHelper.parse(apiRequestBodyAsJson);
+        JsonArray loanIds = this.fromApiJsonHelper.extractJsonArrayNamed("loanIds", element);
+        JsonArray failedLoans = new JsonArray();
+
+        for (JsonElement loansList : loanIds) {
+            long loanId = loansList.getAsLong();
+            try {
+                // Delete existing CustomChargeHonorarioMaps for this loan
+                this.loanAccountDomainService.cleanUpLoan(loanId);
+                log.info("Successfully regenerated loan schedule for loan ID: {}", loanId);
+            } catch (Exception e) {
+                e.printStackTrace();
+                log.error("Failed to regenerate loan schedule for loan ID: {}", loanId, e);
+                failedLoans.add(loansList);
+            }
+        }
+
+        return failedLoans;
+    }
+
+    @Transactional
+    @Override
+    public JsonObject addMissingDevengoAccrualTransactions(String apiRequestBodyAsJson) {
+        final JsonElement element = fromApiJsonHelper.parse(apiRequestBodyAsJson);
+        final JsonArray loanIds = this.fromApiJsonHelper.extractJsonArrayNamed("loanIds", element);
+        final Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
+                .retriveMinimumDaysInArrearsToSuspendLoanAccount();
+        final LocalDate accrualDate = DateUtils.getBusinessLocalDate();
+        final JsonArray failedLoans = new JsonArray();
+        for (final JsonElement loanIdJson : loanIds) {
+            long loanId = loanIdJson.getAsLong();
+            try {
+                final boolean isAdjustMissingAccruals = true;
+                this.persistInstallmentalChargeAccrual(loanId, accrualDate, minimumDaysInArrearsToSuspendLoanAccount,
+                        isAdjustMissingAccruals);
+                log.info("Successfully added missing devengo accrual transactions for loan ID: {}", loanId);
+            } catch (Exception e) {
+                log.error("Failed to add missing devengo accrual transactions for loan ID: {}", loanId, e);
+                failedLoans.add(loanIdJson);
+            }
+        }
+        final JsonObject response = new JsonObject();
+        response.add("failedLoans", failedLoans);
+        log.info("Completed processing for addMissingDevengoAccrualTransactions with failed loans: {}", failedLoans);
+        return response;
+    }
+
 }

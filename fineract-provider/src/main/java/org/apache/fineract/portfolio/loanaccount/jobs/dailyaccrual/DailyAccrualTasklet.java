@@ -116,8 +116,18 @@ public class DailyAccrualTasklet implements Tasklet {
         Callable<Void> fetchData = () -> {
             ThreadLocalContextUtil.init(context);
             Long maxId = maxLoanIdInList;
-            if (!queue.isEmpty()) {
-                maxId = Math.max(maxLoanIdInList, queue.element().get(queue.element().size() - 1));
+            List<Long> currentQueueElement = null;
+
+            // Safely get the first element if queue is not empty
+            synchronized (queue) {
+                if (!queue.isEmpty()) {
+                    currentQueueElement = queue.peek();
+                }
+            }
+
+            // Update maxId if we have data
+            if (currentQueueElement != null && !currentQueueElement.isEmpty()) {
+                maxId = Math.max(maxId, currentQueueElement.get(currentQueueElement.size() - 1));
             }
 
             while (queue.size() <= QUEUE_SIZE) {

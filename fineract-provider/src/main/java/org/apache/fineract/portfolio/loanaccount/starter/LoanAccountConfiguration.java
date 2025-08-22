@@ -115,6 +115,7 @@ import org.apache.fineract.portfolio.loanaccount.jobs.installmentalchargeaccrual
 import org.apache.fineract.portfolio.loanaccount.jobs.recalculateloaninterestaftermaximumlegalratechange.RecalculateInterestForMLRProcessor;
 import org.apache.fineract.portfolio.loanaccount.jobs.recalculateloaninterestaftermaximumlegalratechange.RecalculateInterestForMLRProcessorTask;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanInstalmentChargeRepository;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleAssembler;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleCalculationPlatformService;
@@ -270,7 +271,8 @@ public class LoanAccountConfiguration {
             RateAssembler rateAssembler, GLIMAccountInfoWritePlatformService glimAccountInfoWritePlatformService,
             GLIMAccountInfoRepository glimRepository, LoanRepository loanRepository, GSIMReadPlatformService gsimReadPlatformService,
             LoanLifecycleStateMachine defaultLoanLifecycleStateMachine, ClientBuyProcessRepository clientBuyProcessRepository,
-            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository) {
+            ClientAllyPointOfSalesRepository clientAllyPointOfSalesRepository,
+            LoanRepaymentScheduleInstallmentRepository repaymentScheduleInstallmentRepository) {
         return new LoanApplicationWritePlatformServiceJpaRepositoryImpl(context, fromJsonHelper, loanApplicationTransitionApiJsonValidator,
                 loanProductCommandFromApiJsonDeserializer, fromApiJsonDeserializer, loanRepositoryWrapper, noteRepository,
                 calculationPlatformService, loanAssembler, clientRepository, loanProductRepository, loanChargeAssembler,
@@ -281,7 +283,7 @@ public class LoanAccountConfiguration {
                 entityDatatableChecksWritePlatformService, globalConfigurationRepository, entityMappingRepository,
                 fineractEntityRelationRepository, loanProductReadPlatformService, rateAssembler, glimAccountInfoWritePlatformService,
                 glimRepository, loanRepository, gsimReadPlatformService, defaultLoanLifecycleStateMachine, clientBuyProcessRepository,
-                clientAllyPointOfSalesRepository);
+                clientAllyPointOfSalesRepository, repaymentScheduleInstallmentRepository);
     }
 
     @Bean
@@ -462,13 +464,15 @@ public class LoanAccountConfiguration {
             LoanRescheduleRequestReadPlatformService loanRescheduleRequestReadPlatformService,
             ClientReadPlatformService clientReadPlatformService, ChannelReadWritePlatformService channelReadWritePlatformService,
             PlatformSecurityContext platformSecurityContext, GlobalConfigurationRepository globalConfigurationRepository,
-            LoanBlockWritePlatformService loanBlockWritePlatformService, BlockingReasonSettingsRepositoryWrapper blockingReasonRepository,
+            LoanBlockWritePlatformService loanBlockWritePlatformService,
+            BlockingReasonSettingsRepositoryWrapper loanBlockingReasonRepositoryWrapper,
             LoanBlockingReasonRepository loanBlockingReasonRepository, InsuranceIncidentRepository insuranceIncidentRepository,
             InsuranceIncidentNoveltyNewsRepository insuranceIncidentNoveltyNewsRepository, LoanScheduleGeneratorFactory loanScheduleFactory,
             BlockingReasonSettingsRepositoryWrapper blockingReasonSettingsRepositoryWrapper,
             FacturaElectronicMensualRepository facturaElectronicMensualRepository,
             LoanProductParameterizationRepository productParameterizationRepository,
-            CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository, LoanCreditNoteRepository loanCreditNoteRepository,
+            CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository,
+            LoanInstalmentChargeRepository loanInstalmentChargeRepository, LoanCreditNoteRepository loanCreditNoteRepository,
             LoanAccrualPlatformService loanAccrualPlatformService, CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
@@ -486,10 +490,10 @@ public class LoanAccountConfiguration {
                 loanAccrualTransactionBusinessEventService, errorHandler, loanDownPaymentHandlerService, loanProductReadPlatformService,
                 jdbcTemplate, commandsSourceWritePlatformService, loanRescheduleRequestReadPlatformService, clientReadPlatformService,
                 channelReadWritePlatformService, platformSecurityContext, globalConfigurationRepository, loanBlockWritePlatformService,
-                blockingReasonRepository, loanBlockingReasonRepository, insuranceIncidentRepository, insuranceIncidentNoveltyNewsRepository,
-                loanScheduleFactory, blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository,
-                productParameterizationRepository, customChargeHonorarioMapRepository, loanCreditNoteRepository, loanAccrualPlatformService,
-                collectionHouseReadWriteService);
+                loanBlockingReasonRepositoryWrapper, loanBlockingReasonRepository, insuranceIncidentRepository,
+                insuranceIncidentNoveltyNewsRepository, loanScheduleFactory, blockingReasonSettingsRepositoryWrapper,
+                facturaElectronicMensualRepository, productParameterizationRepository, customChargeHonorarioMapRepository,
+                loanInstalmentChargeRepository, loanCreditNoteRepository, loanAccrualPlatformService, collectionHouseReadWriteService);
     }
 
     @Bean
