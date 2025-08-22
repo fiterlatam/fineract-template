@@ -22,11 +22,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -37,14 +33,11 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
@@ -105,6 +98,26 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
         if (!errors.isEmpty()) {
             throw new JobExecutionException(errors);
         }
+    }
+
+    @Override
+    @Transactional
+    public void addTransactionAccrualsAfterLoanClosure(final Long loanId, final LocalDate loanClosureDate,
+            final Long minimumDaysInArrearsToSuspendLoanAccount) {
+        log.info("Adding transaction accruals after loan closure for loan: {}", loanId);
+        this.persistDailyInterestAccrual(loanId, loanClosureDate);
+        final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        final Set<LoanCharge> activeLoanCharges = loan.getActiveCharges();
+        final List<LoanCharge> installmentCharges = activeLoanCharges.stream()
+                .filter(loanCharge -> loanCharge.getCharge().getChargeTimeType().equals(ChargeTimeType.INSTALMENT_FEE.getValue())
+                        && !loanCharge.isWaived() && !loanCharge.isFullyPaid())
+                .toList();
+        ;
+        final long daysInArrears = this.getDaysInArrears(loanId);
+        final boolean hasOccurredOnSuspendedAccount = daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount;
+        loan.handleChargeAppliedTransactionPerInstallment(installmentCharges, loanClosureDate, hasOccurredOnSuspendedAccount, false);
+        loanRepository.saveAndFlush(loan);
+        log.debug("Installment charge accrual transactions persisted for loan: {}", loan.getId());
     }
 
     @Override

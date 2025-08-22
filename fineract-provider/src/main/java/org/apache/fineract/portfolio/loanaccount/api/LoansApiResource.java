@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.api;
 import static org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations.interestType;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.lowagie.text.DocumentException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -550,6 +551,17 @@ public class LoansApiResource {
 
             final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
             return this.loanScheduleToApiJsonSerializer.serialize(settings, loanSchedule.toData(), new HashSet<>());
+        }
+
+        if (CommandParameterUtil.is(commandParam, "recalculateLoanSchedule")) {
+            this.loanWritePlatformService.regenerateLoanSchedule(apiRequestBodyAsJson);
+            final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+            return this.loanScheduleToApiJsonSerializer.serialize(settings, new HashSet<>());
+        }
+
+        if (CommandParameterUtil.is(commandParam, "addMissingDevengoAccrualTransactions")) {
+            final JsonObject response = this.loanWritePlatformService.addMissingDevengoAccrualTransactions(apiRequestBodyAsJson);
+            return this.toApiJsonSerializer.serialize(response);
         }
 
         final CommandWrapper commandRequest = new CommandWrapperBuilder().createLoanApplication().withJson(apiRequestBodyAsJson).build();

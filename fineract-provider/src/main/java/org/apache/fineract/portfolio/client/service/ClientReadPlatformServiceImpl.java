@@ -787,7 +787,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             builder.append("c.default_savings_product as savingsProductId, sp.name as savingsProductName, ");
             builder.append("c.blocking_reason_id as blockReasonId, ");
             builder.append("c.default_savings_account as savingsAccountId ");
-            builder.append(", COALESCE(blocking_reason.reason_count) as blockReasonCount");
+            builder.append(", COALESCE(blocking_reason.reason_count) as blockReasonCount ");
             builder.append("from m_client c ");
             builder.append("join m_office o on o.id = c.office_id ");
             builder.append("left join m_client_non_person cnp on cnp.client_id = c.id ");
@@ -804,7 +804,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             builder.append("left join m_code_value cvConstitution on cvConstitution.id = cnp.constitution_cv_id ");
             builder.append("left join m_code_value cvMainBusinessLine on cvMainBusinessLine.id = cnp.main_business_line_cv_id ");
             builder.append(
-                    "LEFT JOIN ( SELECT mcbr.client_id AS client_id,  COUNT(mcbr.id) AS reason_count FROM m_client_blocking_reason mcbr WHERE mcbr.unblock_by IS NULL GROUP BY mcbr.client_id) blocking_reason ON  blocking_reason.client_id = mc.id ");
+                    "LEFT JOIN ( SELECT mcbr.client_id AS client_id,  COUNT(mcbr.id) AS reason_count FROM m_client_blocking_reason mcbr WHERE mcbr.unblock_by IS NULL GROUP BY mcbr.client_id) blocking_reason ON  blocking_reason.client_id = c.id ");
             this.schema = builder.toString();
         }
 

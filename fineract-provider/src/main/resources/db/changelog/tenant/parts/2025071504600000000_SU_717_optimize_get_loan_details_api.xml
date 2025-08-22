@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+        <!-- Index for m_loan_charge_paid_by -->
+        <changeSet id="create-idx-loan-charge-paid-by-transaction-id" author="system">
+            <preConditions onFail="MARK_RAN">
+                <not>
+                    <indexExists indexName="idx_loan_charge_paid_by_transaction_id"/>
+                </not>
+            </preConditions>
+            <createIndex tableName="m_loan_charge_paid_by" indexName="idx_loan_charge_paid_by_transaction_id">
+                <column name="loan_transaction_id"/>
+            </createIndex>
+        </changeSet>
+
+        <!-- Index for m_loan_charge charge_calculation_enum -->
+        <changeSet id="create-idx-loan-charge-calculation-enum" author="system">
+            <preConditions onFail="MARK_RAN">
+                <not>
+                    <indexExists indexName="idx_loan_charge_calculation_enum"/>
+                </not>
+            </preConditions>
+            <createIndex tableName="m_loan_charge" indexName="idx_loan_charge_calculation_enum">
+                <column name="charge_calculation_enum"/>
+            </createIndex>
+        </changeSet>
+
+        <!-- Index for m_charge parent_charge_id and charge_calculation_enum -->
+        <changeSet id="create-idx-charge-parent-calculation" author="system">
+            <preConditions onFail="MARK_RAN">
+                <not>
+                    <indexExists indexName="idx_charge_parent_calculation"/>
+                </not>
+            </preConditions>
+            <createIndex tableName="m_charge" indexName="idx_charge_parent_calculation">
+                <column name="parent_charge_id"/>
+                <column name="charge_calculation_enum"/>
+            </createIndex>
+        </changeSet>
+
+        <!-- Index for m_loan product_id, client_id, loan_status_id -->
+        <changeSet id="create-idx-loan-product-client" author="system">
+            <preConditions onFail="MARK_RAN">
+                <not>
+                    <indexExists indexName="idx_loan_product_client"/>
+                </not>
+            </preConditions>
+            <createIndex tableName="m_loan" indexName="idx_loan_product_client">
+                <column name="product_id"/>
+                <column name="client_id"/>
+                <column name="loan_status_id"/>
+            </createIndex>
+        </changeSet>
+
+        <!-- Index for m_loan group_id, loan_officer_id -->
+        <changeSet id="create-idx-loan-group-officer" author="system">
+            <preConditions onFail="MARK_RAN">
+                <not>
+                    <indexExists indexName="idx_loan_group_officer"/>
+                </not>
+            </preConditions>
+            <createIndex tableName="m_loan" indexName="idx_loan_group_officer">
+                <column name="group_id"/>
+                <column name="loan_officer_id"/>
+            </createIndex>
+        </changeSet>
+
+        <!-- Index for m_loan_arrears_aging loan_id -->
+        <changeSet id="create-idx-loan-arrears-aging-loan-id" author="system">
+            <preConditions onFail="MARK_RAN">
+                <not>
+                    <indexExists indexName="idx_loan_arrears_aging_loan_id"/>
+                </not>
+            </preConditions>
+            <createIndex tableName="m_loan_arrears_aging" indexName="idx_loan_arrears_aging_loan_id">
+                <column name="loan_id"/>
+            </createIndex>
+        </changeSet>
+
+        <!-- Index for m_loan_recalculation_details loan_id -->
+        <changeSet id="create-idx-loan-recalculation-loan-id" author="system">
+            <preConditions onFail="MARK_RAN">
+                <not>
+                    <indexExists indexName="idx_loan_recalculation_loan_id"/>
+                </not>
+            </preConditions>
+            <createIndex tableName="m_loan_recalculation_details" indexName="idx_loan_recalculation_loan_id">
+                <column name="loan_id"/>
+            </createIndex>
+        </changeSet>
+
+        <!-- Index for m_loan_topup loan_id, closure_loan_id -->
+        <changeSet id="create-idx-loan-topup-loan-closure" author="system">
+            <preConditions onFail="MARK_RAN">
+                <not>
+                    <indexExists indexName="idx_loan_topup_loan_closure"/>
+                </not>
+            </preConditions>
+            <createIndex tableName="m_loan_topup" indexName="idx_loan_topup_loan_closure">
+                <column name="loan_id"/>
+                <column name="closure_loan_id"/>
+            </createIndex>
+        </changeSet>
+
+
+</databaseChangeLog>
