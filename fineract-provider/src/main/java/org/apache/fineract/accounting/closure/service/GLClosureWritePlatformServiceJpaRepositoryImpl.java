@@ -19,6 +19,7 @@
 package org.apache.fineract.accounting.closure.service;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,7 +64,9 @@ public class GLClosureWritePlatformServiceJpaRepositoryImpl implements GLClosure
 
             // check office is valid
             final Long officeId = command.longValueOfParameterNamed(GLClosureJsonInputParams.OFFICE_ID.getValue());
-            final Office office = this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
+            final Office parentOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
+            Collection<Office> officesInHierarchy = this.officeRepositoryWrapper.findOfficesInHierarchy(parentOffice.getHierarchy());
+
             // TODO: Get Tenant specific date
             // ensure closure date is not in the future
             final LocalDate todaysDate = DateUtils.getBusinessLocalDate();
@@ -78,8 +81,16 @@ public class GLClosureWritePlatformServiceJpaRepositoryImpl implements GLClosure
                     throw new GLClosureInvalidException(GlClosureInvalidReason.ACCOUNTING_CLOSED, latestGLClosure.getClosingDate());
                 }
             }
-            final GLClosure glClosure = GLClosure.fromJson(office, command);
 
+            // create closures for the children offices
+            officesInHierarchy.forEach(office -> {
+                if (!office.getId().equals(officeId)) {
+                    final GLClosure childClosure = GLClosure.fromJson(office, parentOffice, command);
+                    this.glClosureRepository.save(childClosure);
+                }
+            });
+            // create closure for the parent office
+            final GLClosure glClosure = GLClosure.fromJson(parentOffice, command);
             this.glClosureRepository.saveAndFlush(glClosure);
 
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withOfficeId(officeId)
@@ -101,13 +112,22 @@ public class GLClosureWritePlatformServiceJpaRepositoryImpl implements GLClosure
         final GLClosure glClosure = this.glClosureRepository.findById(glClosureId)
                 .orElseThrow(() -> new GLClosureNotFoundException(glClosureId));
 
+        Office office = glClosure.getOffice();
+
         final Map<String, Object> changesOnly = glClosure.update(command);
+
+        Collection<GLClosure> glClosuresByParentClosure = this.glClosureRepository
+                .findGLClosuresByParentClosure(glClosure.getOffice().getId());
+        glClosuresByParentClosure.forEach(closure -> {
+            closure.update(command);
+            this.glClosureRepository.save(closure);
+        });
 
         if (!changesOnly.isEmpty()) {
             this.glClosureRepository.saveAndFlush(glClosure);
         }
 
-        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withOfficeId(glClosure.getOffice().getId())
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withOfficeId(office.getId())
                 .withEntityId(glClosure.getId()).with(changesOnly).build();
     }
 
@@ -127,6 +147,11 @@ public class GLClosureWritePlatformServiceJpaRepositoryImpl implements GLClosure
                     latestGLClosure.getClosingDate());
         }
 
+        Collection<GLClosure> glClosuresByParentClosure = this.glClosureRepository
+                .findGLClosuresByParentClosure(glClosure.getOffice().getId());
+        glClosuresByParentClosure.forEach(closure -> {
+            this.glClosureRepository.delete(closure);
+        });
         this.glClosureRepository.delete(glClosure);
 
         return new CommandProcessingResultBuilder().withOfficeId(glClosure.getOffice().getId()).withEntityId(glClosure.getId()).build();

@@ -46,4 +46,26 @@ public class GLClosureData {
     private final String comments;
 
     private Collection<OfficeData> allowedOffices = new ArrayList<>();
+    private Collection<GLClosureChildData> childClosures = new ArrayList<>();
+
+    /**
+     * Simple DTO for child closures to avoid JPA entity serialization issues
+     */
+    @Data
+    public static class GLClosureChildData {
+
+        private final Long id;
+        private final Long officeId;
+        private final String officeName;
+        private final LocalDate closingDate;
+        private final String comments;
+
+        public GLClosureChildData(Long id, Long officeId, String officeName, LocalDate closingDate, String comments) {
+            this.id = id;
+            this.officeId = officeId;
+            this.officeName = officeName;
+            this.closingDate = closingDate;
+            this.comments = comments;
+        }
+    }
 }

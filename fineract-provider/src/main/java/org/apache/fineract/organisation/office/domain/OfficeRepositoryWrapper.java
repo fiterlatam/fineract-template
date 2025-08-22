@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.organisation.office.domain;
 
+import java.util.Collection;
 import org.apache.fineract.organisation.office.exception.OfficeNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,10 @@ public class OfficeRepositoryWrapper {
 
     public Office findOneWithNotFoundDetection(final Long id) {
         return this.repository.findById(id).orElseThrow(() -> new OfficeNotFoundException(id));
+    }
+
+    public Collection<Office> findOfficesInHierarchy(final String hierarchy) {
+        return this.repository.findAllByHierarchyStartingWith(hierarchy);
     }
 
     public Office findByName(final String officeName) {
