@@ -793,7 +793,7 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money feePortionOfTransaction = Money.zero(currency);
         Money loanChargePaidByPortion = Money.zero(currency);
-        if (transactionAmountRemaining.isZero()) {
+        if (transactionAmountRemaining.isZero() || !loanTransaction.getHonorariosPortion(currency).isGreaterThanZero()) {
             return feePortionOfTransaction;
         }
         for (LoanInstallmentCharge installmentCharge : getInstallmentCharges()) {

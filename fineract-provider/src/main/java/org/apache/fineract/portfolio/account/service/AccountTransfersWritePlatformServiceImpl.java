@@ -163,7 +163,7 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
             ExternalId externalId = externalIdFactory.create();
             final LoanTransaction loanRepaymentTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.REPAYMENT,
                     toLoanAccount, transactionDate, transactionAmount, paymentDetail, null, externalId, isRecoveryRepayment,
-                    chargeRefundChargeType, isAccountTransfer, holidayDetailDto, isHolidayValidationDone);
+                    chargeRefundChargeType, isAccountTransfer, holidayDetailDto, isHolidayValidationDone, null);
             toLoanAccount = loanRepaymentTransaction.getLoan();
             final AccountTransferDetails accountTransferDetails = this.accountTransferAssembler.assembleSavingsToLoanTransfer(command,
                     fromSavingsAccount, toLoanAccount, withdrawal, loanRepaymentTransaction);
@@ -334,7 +334,7 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
                 loanTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.DOWN_PAYMENT, toLoanAccount,
                         accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(),
                         accountTransferDTO.getPaymentDetail(), null, externalId, isRecoveryRepayment, chargeRefundChargeType,
-                        isAccountTransfer, holidayDetailDto, isHolidayValidationDone);
+                        isAccountTransfer, holidayDetailDto, isHolidayValidationDone, null);
                 toLoanAccount = loanTransaction.getLoan();
             } else {
                 final boolean isRecoveryRepayment = false;
@@ -344,7 +344,7 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
                 loanTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.REPAYMENT, toLoanAccount,
                         accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(),
                         accountTransferDTO.getPaymentDetail(), null, externalId, isRecoveryRepayment, chargeRefundChargeType,
-                        isAccountTransfer, holidayDetailDto, isHolidayValidationDone);
+                        isAccountTransfer, holidayDetailDto, isHolidayValidationDone, null);
                 toLoanAccount = loanTransaction.getLoan();
             }
 
@@ -503,7 +503,7 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
             repayTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.REPAYMENT, toLoanAccount,
                     accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(),
                     accountTransferDTO.getPaymentDetail(), null, externalIdForRepayment, false, chargeRefundChargeType, isAccountTransfer,
-                    null, false, true);
+                    null, false, true, null);
         }
         AccountTransferDetails accountTransferDetails = this.accountTransferAssembler.assembleLoanToLoanTransfer(accountTransferDTO,
                 fromLoanAccount, toLoanAccount, disburseTransaction, repayTransaction);
