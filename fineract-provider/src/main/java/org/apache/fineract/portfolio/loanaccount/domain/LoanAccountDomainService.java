@@ -35,7 +35,7 @@ public interface LoanAccountDomainService {
     LoanTransaction makeRepayment(LoanTransactionType repaymentTransactionType, Loan loan, LocalDate transactionDate,
             BigDecimal transactionAmount, PaymentDetail paymentDetail, String noteText, ExternalId txnExternalId,
             boolean isRecoveryRepayment, String chargeRefundChargeType, boolean isAccountTransfer, HolidayDetailDTO holidayDetailDto,
-            Boolean isHolidayValidationDone);
+            Boolean isHolidayValidationDone, Map<String, Object> parameters);
 
     LoanTransaction makeRefund(Long accountId, CommandProcessingResultBuilder builderResult, LocalDate transactionDate,
             BigDecimal transactionAmount, PaymentDetail paymentDetail, String noteText, ExternalId txnExternalId);
@@ -80,7 +80,7 @@ public interface LoanAccountDomainService {
     LoanTransaction makeRepayment(LoanTransactionType repaymentTransactionType, Loan loan, LocalDate transactionDate,
             BigDecimal transactionAmount, PaymentDetail paymentDetail, String noteText, ExternalId txnExternalId,
             boolean isRecoveryRepayment, String chargeRefundChargeType, boolean isAccountTransfer, HolidayDetailDTO holidayDetailDto,
-            Boolean isHolidayValidationDone, boolean isLoanToLoanTransfer);
+            Boolean isHolidayValidationDone, boolean isLoanToLoanTransfer, final Map<String, Object> parameters);
 
     LoanTransaction saveLoanTransactionWithDataIntegrityViolationChecks(LoanTransaction newRepaymentTransaction);
 

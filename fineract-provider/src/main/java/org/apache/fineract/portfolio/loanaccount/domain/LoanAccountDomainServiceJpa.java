@@ -175,9 +175,11 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     public LoanTransaction makeRepayment(final LoanTransactionType repaymentTransactionType, final Loan loan,
             final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail, final String noteText,
             final ExternalId txnExternalId, final boolean isRecoveryRepayment, final String chargeRefundChargeType,
-            boolean isAccountTransfer, HolidayDetailDTO holidayDetailDto, Boolean isHolidayValidationDone) {
+            boolean isAccountTransfer, HolidayDetailDTO holidayDetailDto, Boolean isHolidayValidationDone,
+            final Map<String, Object> parameters) {
         return makeRepayment(repaymentTransactionType, loan, transactionDate, transactionAmount, paymentDetail, noteText, txnExternalId,
-                isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer, holidayDetailDto, isHolidayValidationDone, false);
+                isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer, holidayDetailDto, isHolidayValidationDone, false,
+                parameters);
     }
 
     @Transactional
@@ -200,7 +202,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     public LoanTransaction makeRepayment(final LoanTransactionType repaymentTransactionType, Loan loan, final LocalDate transactionDate,
             final BigDecimal transactionAmount, final PaymentDetail paymentDetail, final String noteText, final ExternalId txnExternalId,
             final boolean isRecoveryRepayment, final String chargeRefundChargeType, boolean isAccountTransfer,
-            HolidayDetailDTO holidayDetailDto, Boolean isHolidayValidationDone, final boolean isLoanToLoanTransfer) {
+            HolidayDetailDTO holidayDetailDto, Boolean isHolidayValidationDone, final boolean isLoanToLoanTransfer,
+            final Map<String, Object> parameters) {
         checkClientOrGroupActive(loan);
         LoanBusinessEvent repaymentEvent = getLoanRepaymentTypeBusinessEvent(repaymentTransactionType, isRecoveryRepayment, loan);
         if (repaymentEvent != null) {
@@ -228,6 +231,14 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     paymentDetail, transactionDate, txnExternalId, chargeRefundChargeType, loan.getRepaymentTransactionProcessingType(),
                     loan.recalculateEMI());
         }
+        final BigDecimal honorariosPortion = parameters != null && parameters.containsKey("honorariosPortion")
+                ? (BigDecimal) parameters.get("honorariosPortion")
+                : BigDecimal.ZERO;
+        final BigDecimal honorariosVatPortion = parameters != null && parameters.containsKey("honorariosVatPortion")
+                ? (BigDecimal) parameters.get("honorariosVatPortion")
+                : BigDecimal.ZERO;
+        newRepaymentTransaction.setHonorariosPortion(honorariosPortion);
+        newRepaymentTransaction.setHonorariosVatPortion(honorariosVatPortion);
 
         ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
                 .retrieveClientAdditionalData(loan.getClientId());
@@ -1154,14 +1165,16 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         LoanTransaction payment = null;
 
         if (payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).isGreaterThanZero()) {
-            BigDecimal honoFee;
-            honoFee = calculateHonoForForeclosure(loan,
+            final BigDecimal[] cumulativeHonoFeeAndVat = calculateHonoForForeclosure(loan,
                     payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).getAmount(), foreClosureDate);
+            final BigDecimal honoFee = cumulativeHonoFeeAndVat[2];
             feePayable = feePayable.add(honoFee);
             final PaymentDetail paymentDetail = null;
             payment = LoanTransaction.repayment(loan.getOffice(), payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable),
                     paymentDetail, foreClosureDate, externalId);
             payment.updateLoan(loan);
+            payment.setHonorariosPortion(cumulativeHonoFeeAndVat[0]);
+            payment.setHonorariosVatPortion(cumulativeHonoFeeAndVat[1]);
 
             final ClientAdditionalFieldsData clientAdditionalInformation = this.clientReadPlatformService
                     .retrieveClientAdditionalData(loan.getClientId());
@@ -1231,7 +1244,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         return payment;
     }
 
-    private BigDecimal calculateHonoForForeclosure(Loan loan, BigDecimal transactionAmount, LocalDate transactionDate) {
+    private BigDecimal[] calculateHonoForForeclosure(Loan loan, BigDecimal transactionAmount, LocalDate transactionDate) {
         /// SU-516 Calculate Hono Charge
         BigDecimal cumulativeHonoFee = BigDecimal.ZERO;
         BigDecimal cumulativeVatFee = BigDecimal.ZERO;
@@ -1334,7 +1347,12 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             }
             loan.addLoanTransaction(applyLoanChargeTransaction);
         }
-        return cumulativeHonoFee.add(cumulativeVatFee);
+
+        final BigDecimal[] cumulativeHonoFeeAndVat = new BigDecimal[3];
+        cumulativeHonoFeeAndVat[0] = cumulativeHonoFee;
+        cumulativeHonoFeeAndVat[1] = cumulativeVatFee;
+        cumulativeHonoFeeAndVat[2] = cumulativeHonoFee.add(cumulativeVatFee);
+        return cumulativeHonoFeeAndVat;
         //////
     }
 
