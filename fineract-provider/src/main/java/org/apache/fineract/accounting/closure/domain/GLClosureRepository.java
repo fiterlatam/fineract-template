@@ -33,4 +33,8 @@ public interface GLClosureRepository extends JpaRepository<GLClosure, Long>, Jpa
     @Query("select closure from GLClosure closure where closure.office.id in :officeIds")
     List<GLClosure> findGLClosuresByOfficeIds(@Param("officeIds") List<Long> officeIds);
 
+    // RETRIEVE A LIST OF GL CLOSURES FOR A PARENT OFFICE ID
+    @Query("select closure from GLClosure closure where closure.parentClosure.id = :parent")
+    List<GLClosure> findGLClosuresByParentClosure(@Param("parent") Long parent);
+
 }
