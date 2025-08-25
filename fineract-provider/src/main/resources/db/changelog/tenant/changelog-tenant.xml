@@ -364,4 +364,6 @@
     <include file="parts/2025052104500000000_SU_709_add_credit_note_job.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025072912178000000_SU_715_update_job_params_for_tasa_maxima_job_job.xml" relativeToChangelogFile="true" />
     <include file="parts/2025080512178000000_SU_732_create_index_for_loan_id_on_m_loan_charge.xml" relativeToChangelogFile="true" />
+    <include file="parts/2025080512178000000_SU_742_fix_replayed_transactions.xml" relativeToChangelogFile="true" />
+    <include file="parts/2025082512178000000_SU_715_add_index_on_loan_transaction_created_on_utc.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

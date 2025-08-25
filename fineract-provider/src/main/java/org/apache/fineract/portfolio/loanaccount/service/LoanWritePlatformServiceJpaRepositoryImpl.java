@@ -5390,8 +5390,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     @Transactional
     public void persistInstallmentalChargeAccrual(Long loanId, LocalDate localDate, Long minimumDaysInArrearsToSuspendLoanAccount,
             final boolean adjustMissingAccruals) {
-        Loan loan = this.loanAssembler.assembleFrom(loanId);
-        log.debug("Persisting Installment charge accrual for loan: {}", loan.getId());
+        Loan loan = this.loanAssembler.assembleFromForJobs(loanId);
+        long startTime = System.currentTimeMillis();
+        log.info("Persisting Installment charge accrual for loan: {}", loan.getId());
         final List<LoanCharge> charges = filterInstallmentCharges(loan.getActiveCharges(), adjustMissingAccruals);
 
         if (minimumDaysInArrearsToSuspendLoanAccount == null) {
@@ -5401,7 +5402,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final boolean hasOccurredOnSuspendedAccount = daysInArrears >= minimumDaysInArrearsToSuspendLoanAccount;
         loan.handleChargeAppliedTransactionPerInstallment(charges, localDate, hasOccurredOnSuspendedAccount, adjustMissingAccruals);
         loanRepository.saveAndFlush(loan);
-        log.debug("Installment  charge accrual persisted for loan: {}", loan.getId());
+        log.info("Installment  charge accrual persisted for loan: {} after {}ms", loan.getId(), (System.currentTimeMillis() - startTime));
     }
 
     private List<LoanCharge> filterInstallmentCharges(final Set<LoanCharge> charges, final boolean adjustMissingAccruals) {

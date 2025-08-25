@@ -26,8 +26,6 @@ import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.portfolio.loanaccount.data.LoanRescheduleData;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.apache.fineract.portfolio.loanproduct.data.MaximumCreditRateConfigurationData;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -38,7 +36,6 @@ public class RecalculateInterestForMLRProcessor {
     private final LoanWritePlatformService loanWritePlatformService;
     private MaximumCreditRateConfigurationData maximumCreditRateConfigurationData;
 
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED, rollbackFor = Exception.class)
     public void processOverdueCharges() throws JobExecutionException {
         this.loanWritePlatformService.recalculateInterestForMaximumLegalRate(loanRescheduleData, maximumCreditRateConfigurationData);
     }
