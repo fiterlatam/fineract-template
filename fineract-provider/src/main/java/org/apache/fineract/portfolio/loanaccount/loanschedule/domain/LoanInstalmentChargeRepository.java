@@ -12,8 +12,4 @@ public interface LoanInstalmentChargeRepository
     @Modifying
     @Query(value = "DELETE FROM m_loan_installment_charge WHERE loan_schedule_id = ?", nativeQuery = true)
     void deleteByLoanScheduleId(Long id);
-
-    @Modifying
-    @Query(value = "DELETE FROM m_loan_installment_charge WHERE loan_charge_id IN (SELECT id FROM m_loan_charge WHERE loan_id = ?)", nativeQuery = true)
-    void deleteByLoanId(Long loanId);
 }
