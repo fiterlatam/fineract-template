@@ -345,7 +345,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "loan", orphanRemoval = true, fetch = FetchType.LAZY)
     private List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments = new ArrayList<>();
 
-    @OrderBy(value = "dateOf, createdDate, id")
+    @OrderBy(value = "dateOf, id")
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "loan", orphanRemoval = true, fetch = FetchType.LAZY)
     private List<LoanTransaction> loanTransactions = new ArrayList<>();
 
@@ -5842,10 +5842,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private LocalDate getLastInsuranceAccrualTransaction() {
-        return this.loanTransactions.stream()
-                .filter(txn -> txn.isAccrual() && txn.isInstallmentAccrual() && !txn.isReversed()
-                        && txn.getAmount().compareTo(BigDecimal.ZERO) > 0)
-                .map(LoanTransaction::getTransactionDate).max(LocalDate::compareTo).orElseGet(this::getDisbursementDate);
+        // Since loanTransactions are already in chronological order,
+        // we can iterate in reverse order and return the first valid transaction
+        for (int i = this.loanTransactions.size() - 1; i >= 0; i--) {
+            LoanTransaction txn = this.loanTransactions.get(i);
+            if (txn.isAccrual() && txn.isInstallmentAccrual() && !txn.isReversed() && txn.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+                return txn.getTransactionDate();
+            }
+        }
+        return getDisbursementDate();
     }
 
     public Set<LoanCharge> getActiveCharges() {
