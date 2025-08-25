@@ -206,7 +206,6 @@ import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectroni
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.LoanDocumentConcept;
 import org.apache.fineract.portfolio.loanaccount.jobs.updateloanarrearsageing.LoanArrearsAgeingUpdateHandler;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanInstalmentChargeRepository;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGeneratorFactory;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
@@ -318,7 +317,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final FacturaElectronicMensualRepository facturaElectronicMensualRepository;
     private final LoanProductParameterizationRepository productParameterizationRepository;
     private final CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository;
-    private final LoanInstalmentChargeRepository loanInstalmentChargeRepository;
     private final LoanCreditNoteRepository loanCreditNoteRepository;
     private final LoanAccrualPlatformService loanAccrualPlatformService;
     private final CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService;
@@ -1273,7 +1271,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         this.loanUtilService.validateRepaymentTransactionType(repaymentTransactionType);
         this.loanEventApiJsonValidator.validateNewRepaymentTransaction(command.json());
         String channelName = command.stringValueOfParameterNamed("channelName");
-        final boolean cleanUp = command.booleanPrimitiveValueOfParameterNamed("cleanUp");
         if (StringUtils.isBlank(channelName)) {
             channelName = this.platformSecurityContext.getApiRequestChannel();
         }
@@ -1366,7 +1363,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final boolean isBankChannel = channelData.getName().equalsIgnoreCase("Bancos")
                 || channelData.getHash().equalsIgnoreCase("1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3");
 
-        if (!isImportedTransaction && !cleanUp) {
+        if (!isImportedTransaction) {
             // Add a small tolerance to account for rounding differences and edge cases
             // This prevents false positives when the amount is very close to the outstanding amount
             final BigDecimal tolerance = BigDecimal.valueOf(0.01); // 1 cent tolerance
@@ -1377,7 +1374,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 handleOverPaidException(totalOverpaid);
             }
         }
-        loan.setCleanUp(cleanUp);
         LoanTransaction loanTransaction = this.loanAccountDomainService.makeRepayment(repaymentTransactionType, loan, transactionDate,
                 transactionAmount, paymentDetail, noteText, txnExternalId, isRecoveryRepayment, chargeRefundChargeType, isAccountTransfer,
                 holidayDetailDto, isHolidayValidationDone, parameters);
@@ -1935,18 +1931,6 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 this.decrementInvoiceCounterOnProduct(transactionToAdjust, facturaElectronicMensuals);
                 this.facturaElectronicMensualRepository.deleteAll(facturaElectronicMensuals);
             }
-        }
-
-        if (transactionToAdjust.isForeclosure()) {
-            // Delete existing CustomChargeHonorarioMaps for this loan
-            this.customChargeHonorarioMapRepository.deleteByLoanId(loanId);
-            // Delete existing LoanInstallmentCharges for this loan
-            this.loanInstalmentChargeRepository.deleteByLoanId(loanId);
-            this.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
-            loan.regenerateRepaymentSchedule(scheduleGeneratorDTO);
-            loan.reapplyInsuranceCharges();
-            loan.processPostDisbursementTransactions();
-            saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
         }
 
         /* Undo loan block status if loan is still outstanding */
