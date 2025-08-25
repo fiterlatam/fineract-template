@@ -814,13 +814,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 : suppliedTransactionDate;
 
         // get only installments between the transaction date and current date
-        LocalDate currentDate = DateUtils.getLocalDateOfTenant();
-        List<LoanRepaymentScheduleInstallment> applicableInstallments = getRepaymentScheduleInstallments().stream()
+        final LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+        final List<LoanRepaymentScheduleInstallment> applicableInstallments = getRepaymentScheduleInstallments().stream()
                 .filter(installment -> installment.getInstallmentNumber() > 0 && // Exclude the graced installment
                         ( // The installment overlaps with the date range
                         (!installment.getDueDate().isBefore(effectiveTransactionDate) && !installment.getFromDate().isAfter(currentDate)) ||
                         // Or the installment starts on the current date
                                 installment.getFromDate().equals(currentDate)))
+                .filter(installment -> installment.getObligationsMetOnDate() == null
+                        || !installment.getFromDate().isAfter(installment.getObligationsMetOnDate()))
                 .sorted(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
 
         for (final LoanRepaymentScheduleInstallment installment : applicableInstallments) {
