@@ -518,11 +518,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Transient
     private boolean foreClosing;
 
-    @Getter
-    @Setter
-    @Transient
-    private boolean cleanUp;
-
     // Columns for migrated loans
     @Column(name = "is_migrated_loan", nullable = false)
     private boolean isMigratedLoan = false;
@@ -1566,22 +1561,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public void updateLoanSchedule(final LoanScheduleModel modifiedLoanSchedule) {
-        // Store existing installments with their repayment data for preservation
-        Map<Integer, LoanRepaymentScheduleInstallment> existingInstallmentsByNumber = new HashMap<>();
-        for (LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
-            existingInstallmentsByNumber.put(installment.getInstallmentNumber(), installment);
-        }
-
-        // Clear overdue charges from existing installments
-        for (LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
-            installment.deleteOverdueInstallmentCharges();
-        }
-
         this.repaymentScheduleInstallments.clear();
-
-        // for some installments, we made them start from number 0, we want to keep that way
+        // for some installements , we made them start from number 0 , we want to keep that way
         int actualPaymentNumber = 1;
-
+        // int totalPaymentInstallments = countPaymentInstallments(modifiedLoanSchedule);
         for (final LoanScheduleModelPeriod scheduledLoanInstallment : modifiedLoanSchedule.getPeriods()) {
             int periodNumber;
             if (scheduledLoanInstallment.isRepaymentPeriod() || scheduledLoanInstallment.isDownPaymentPeriod()) {
@@ -1592,58 +1575,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     actualPaymentNumber++;
                 }
 
-                final LoanRepaymentScheduleInstallment newInstallment = new LoanRepaymentScheduleInstallment(this, periodNumber,
+                final LoanRepaymentScheduleInstallment installment = new LoanRepaymentScheduleInstallment(this, periodNumber,
                         scheduledLoanInstallment.periodFromDate(), scheduledLoanInstallment.periodDueDate(),
                         scheduledLoanInstallment.principalDue(), scheduledLoanInstallment.interestDue(),
                         scheduledLoanInstallment.feeChargesDue(), scheduledLoanInstallment.penaltyChargesDue(),
                         scheduledLoanInstallment.isRecalculatedInterestComponent(), scheduledLoanInstallment.getLoanCompoundingDetails(),
                         scheduledLoanInstallment.rescheduleInterestPortion(), scheduledLoanInstallment.isDownPaymentPeriod());
-
-                // Preserve repayment data from existing installment if it exists
-                LoanRepaymentScheduleInstallment existingInstallment = existingInstallmentsByNumber.get(periodNumber);
-                if (existingInstallment != null) {
-                    // Preserve repayment amounts and transaction mappings
-                    newInstallment.setPrincipalCompleted(existingInstallment.getPrincipalCompleted(getCurrency()).getAmount());
-                    newInstallment.setInterestPaid(existingInstallment.getInterestPaid(getCurrency()).getAmount());
-                    newInstallment.setFeeChargesPaid(existingInstallment.getFeeChargesPaid(getCurrency()).getAmount());
-                    newInstallment.setPenaltyChargesPaid(existingInstallment.getPenaltyChargesPaid(getCurrency()).getAmount());
-                    newInstallment.setInterestWaived(existingInstallment.getInterestWaived(getCurrency()).getAmount());
-                    newInstallment.setFeeChargesWaived(existingInstallment.getFeeChargesWaived(getCurrency()).getAmount());
-                    newInstallment.setPenaltyChargesWaived(existingInstallment.getPenaltyChargesWaived(getCurrency()).getAmount());
-                    newInstallment.setInterestWrittenOff(existingInstallment.getInterestWrittenOff(getCurrency()).getAmount());
-                    newInstallment.setFeeChargesWrittenOff(existingInstallment.getFeeChargesWrittenOff(getCurrency()).getAmount());
-                    newInstallment.setPenaltyChargesWrittenOff(existingInstallment.getPenaltyChargesWrittenOff(getCurrency()).getAmount());
-                    newInstallment.setPrincipalWrittenOff(existingInstallment.getPrincipalWrittenOff(getCurrency()).getAmount());
-                    newInstallment.setTotalPaidInAdvance(existingInstallment.getTotalPaidInAdvance(getCurrency()).getAmount());
-                    newInstallment.setTotalPaidLate(existingInstallment.getTotalPaidLate(getCurrency()).getAmount());
-                    newInstallment.setObligationsMet(existingInstallment.isObligationsMet());
-                    newInstallment.setObligationsMetOnDate(existingInstallment.getObligationsMetOnDate());
-                    newInstallment.setAdvancePrincipalAmount(existingInstallment.getAdvancePrincipalAmount());
-
-                    // Preserve installment charges
-                    Set<LoanInstallmentCharge> existingCharges = existingInstallment.getInstallmentCharges();
-                    newInstallment.getInstallmentCharges().addAll(existingCharges);
-                    existingCharges.forEach(c -> c.setInstallment(newInstallment));
-
-                    // Preserve transaction mappings
-                    Set<LoanTransactionToRepaymentScheduleMapping> existingMappings = existingInstallment
-                            .getLoanTransactionToRepaymentScheduleMappings();
-                    newInstallment.getLoanTransactionToRepaymentScheduleMappings().addAll(existingMappings);
-                    existingMappings.forEach(c -> c.setInstallment(newInstallment));
-
-                    // Preserve post-dated checks
-                    Set<PostDatedChecks> existingChecks = existingInstallment.getPostDatedCheck();
-                    newInstallment.getPostDatedCheck().addAll(existingChecks);
-                    existingChecks.forEach(c -> c.setLoanRepaymentScheduleInstallment(newInstallment));
-
-                    // Preserve loan compounding details
-                    Set<LoanInterestRecalcualtionAdditionalDetails> existingCompoundingDetails = existingInstallment
-                            .getLoanCompoundingDetails();
-                    newInstallment.getLoanCompoundingDetails().addAll(existingCompoundingDetails);
-                    existingCompoundingDetails.forEach(c -> c.setLoanRepaymentScheduleInstallment(newInstallment));
-                }
-
-                addLoanRepaymentScheduleInstallment(newInstallment);
+                addLoanRepaymentScheduleInstallment(installment);
             }
         }
     }
@@ -2182,7 +2120,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
-    public void recalculateLoanCharge(final LoanCharge loanCharge, final int penaltyWaitPeriod) {
+    private void recalculateLoanCharge(final LoanCharge loanCharge, final int penaltyWaitPeriod) {
         BigDecimal amount = BigDecimal.ZERO;
         BigDecimal chargeAmt;
         BigDecimal totalChargeAmt = BigDecimal.ZERO;
@@ -3753,7 +3691,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             throw new InvalidLoanStateTransitionException("transaction", "cannot.be.a.future.date", errorMessage, loanTransactionDate);
         }
 
-        if (!isTransactionNotBeforeLastRepaymentTransaction(loanTransaction, getLoanTransactions())) {
+        if (!isTransactionBeforeLastRepaymentTransaction(loanTransaction, getLoanTransactions())) {
             final String errorMessage = "The transaction date cannot be before last valid transaction: " + getDisbursementDate().toString();
             throw new InvalidLoanStateTransitionException("transaction", "cannot.be.before.last.valid.transaction", errorMessage,
                     loanTransactionDate, getDisbursementDate());
@@ -4140,17 +4078,19 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return isChronologicallyLatestRepaymentOrWaiver;
     }
 
-    private boolean isTransactionNotBeforeLastRepaymentTransaction(final LoanTransaction loanTransaction,
+    private boolean isTransactionBeforeLastRepaymentTransaction(final LoanTransaction loanTransaction,
             final List<LoanTransaction> loanTransactions) {
+        boolean isTransactionNotBeforeLastRepaymentTransaction = true;
 
         final LocalDate currentTransactionDate = loanTransaction.getTransactionDate();
         for (final LoanTransaction previousTransaction : loanTransactions) {
             if (!previousTransaction.isDisbursement() && previousTransaction.isNotReversed() && !previousTransaction.isAccrual()
                     && !DateUtils.isOnOrAfter(currentTransactionDate, previousTransaction.getTransactionDate())) {
-                return false;
+                isTransactionNotBeforeLastRepaymentTransaction = false;
+                break;
             }
         }
-        return true;
+        return isTransactionNotBeforeLastRepaymentTransaction;
     }
 
     private boolean isAfterLatRepayment(final LoanTransaction loanTransaction, final List<LoanTransaction> loanTransactions) {
@@ -6655,7 +6595,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
-    public LoanScheduleDTO getRecalculatedSchedule(final ScheduleGeneratorDTO generatorDTO) {
+    private LoanScheduleDTO getRecalculatedSchedule(final ScheduleGeneratorDTO generatorDTO) {
         if (!this.repaymentScheduleDetail().isEnableDownPayment()
                 && (!this.repaymentScheduleDetail().isInterestRecalculationEnabled() || isNpa || isChargedOff())) {
             if (!this.getLoanProductRelatedDetail().getLoanScheduleType().equals(LoanScheduleType.PROGRESSIVE)) {
@@ -7010,7 +6950,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
 
         final Integer numberOfRepayments = this.loanRepaymentScheduleDetail.getNumberOfRepayments();
-        final Integer repayEvery = this.loanRepaymentScheduleDetail.getRepayEvery();
+        final Integer repaymentEvery = this.loanRepaymentScheduleDetail.getRepayEvery();
         final PeriodFrequencyType repaymentPeriodFrequencyType = this.loanRepaymentScheduleDetail.getRepaymentPeriodFrequencyType();
 
         final AmortizationMethod amortizationMethod = this.loanRepaymentScheduleDetail.getAmortizationMethod();
@@ -8095,36 +8035,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
         return new TransactionOnDueDateDetails(transactionOccurredOnDueDate, installmentsExistAfterTransactionOnDueDate,
                 installmentWithTransactionOnDueDate);
-    }
-
-    public void reapplyInsuranceCharges() {
-        Collection<LoanCharge> loanCharges = this.getLoanCharges();
-        if (!CollectionUtils.isEmpty(loanCharges)) {
-            for (LoanCharge loanCharge : loanCharges) {
-                if (loanCharge.getCharge().isPercentageBasedMandatoryInsurance()) {
-                    // Clear all loanInstallmentCharges for this charge
-                    loanCharge.clearLoanInstallmentCharges();
-
-                    // Remove installment charges from all installments
-                    for (LoanRepaymentScheduleInstallment installment : this.getRepaymentScheduleInstallments()) {
-                        installment.getInstallmentCharges().removeIf(charge -> charge.getLoanCharge().equals(loanCharge));
-                    }
-
-                    // Regenerate installment charges for this loan charge
-                    List<LoanInstallmentCharge> newInstallmentCharges = this.generateInstallmentLoanCharges(loanCharge);
-
-                    // Add the new installment charges to the loan charge
-                    loanCharge.addLoanInstallmentCharges(newInstallmentCharges);
-
-                    // Regenerate CustomChargeHonorarioMaps for flat honorario charges
-                    // This is now handled in the service layer (LoanWritePlatformServiceJpaRepositoryImpl)
-                    // to ensure proper access to external services and repositories
-
-                    // Update the charge's outstanding amount
-                    loanCharge.updateAmountOutstanding();
-                }
-            }
-        }
     }
 
     @lombok.Data

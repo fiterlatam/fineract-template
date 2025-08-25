@@ -171,11 +171,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "is_invoiced_generated_by_job")
     private boolean invoicedGeneratedByJob;
 
-    @Getter
-    @Setter
-    @Column(name = "is_foreclosure")
-    private boolean isForeclosure;
-
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "accrualTransaction", orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<PartialInvoicedTransaction> partialInvoicedTransactions = new HashSet<>();
 

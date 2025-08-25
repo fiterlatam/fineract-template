@@ -256,7 +256,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom,
                 holidayDetailDto);
 
-        if (this.isLoanExpectedToBeFullyRepaid(loan, transactionDate, repaymentAmount, scheduleGeneratorDTO) && !loan.isCleanUp()) {
+        if (this.isLoanExpectedToBeFullyRepaid(loan, transactionDate, repaymentAmount, scheduleGeneratorDTO)) {
             /**
              * Add all missing accrual transactions that happened before the closure date, but not yet posted.
              */
@@ -1184,8 +1184,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             if (collectionHouse != null) {
                 payment.setCollectionHouse(collectionHouse);
             }
-            payment.setForeclosure(true);
-
             newTransactions.add(payment);
         }
 
