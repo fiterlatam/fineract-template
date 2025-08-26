@@ -4258,9 +4258,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 final Loan loan = this.loanRepository.findById(loanId).orElseThrow(() -> new LoanNotFoundException(loanId));
                 log.info("Recalculate Loan Interest After Maximum Legal Rate Change:: Processing loan ID: {} of product type: {}", loanId,
                         loan.getLoanProduct().getName());
-                final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan
-                        .getInstallmentByScheduleFromDate(appliedOnDate);
-                if (loanRepaymentScheduleInstallment == null) {
+                final Boolean existsInstallment = this.loanReadPlatformService.hasInstallmentByScheduleFromDate(loanId, appliedOnDate);
+                if (existsInstallment == null) {
                     log.warn("Recalculate Loan Interest After Maximum Legal Rate Change:: No installment found for loan ID: {} on date: {}",
                             loanId, appliedOnDate);
                     continue;
