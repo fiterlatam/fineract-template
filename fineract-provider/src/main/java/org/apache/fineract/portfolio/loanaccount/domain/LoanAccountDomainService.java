@@ -88,8 +88,8 @@ public interface LoanAccountDomainService {
 
     Loan saveLoanWithDataIntegrityViolationChecks(Loan loan);
 
-    LoanTransaction foreCloseLoan(Loan loan, LocalDate foreClourseDate, String noteText, ExternalId externalId, Map<String, Object> changes,
-            boolean isForCloureAction);
+    LoanTransaction foreCloseLoan(Loan loan, LocalDate foreClourseDate, String noteText, ExternalId externalId,
+            Map<String, Object> changes);
 
     LoanTransaction claimLoan(Loan loan, LocalDate claimDate, ExternalId externalId, Map<String, Object> changes);
 

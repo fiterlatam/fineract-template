@@ -24,6 +24,8 @@ jobs:
           cache: gradle
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: 8.5
       - name: Boot Run Test Server
         env:
           FINERACT_DEFAULT_TENANTDB_UID: postgres
@@ -50,7 +52,7 @@ jobs:
           ./gradlew --no-daemon --console=plain :integration-tests:cleanTest :integration-tests:test -PcargoDisabled --info
           ./gradlew --stop
   continuous-integration:
-    if: github.ref == 'refs/heads/fiter/sumas/dev' || github.ref == 'refs/heads/fiter/sumas/v1.0.0'
+    if: github.ref == 'refs/heads/fiter/sumas/dev'
     needs: [integration-tests]
     runs-on: ubuntu-latest
     steps:

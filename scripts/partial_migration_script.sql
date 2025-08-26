@@ -45,15 +45,15 @@ update job set is_active = false where id in (2, 12, 48, 50);
 -- Client Mobile Number Duplication
 
 select * from tmp_clientes2_migrar where mobile_number in (
-	select mobile_number from tmp_clientes2_migrar c group by mobile_number having count(mobile_number)  > 1)
-	order by mobile_number;
+    select mobile_number from tmp_clientes2_migrar c group by mobile_number having count(mobile_number)  > 1)
+    order by mobile_number;
 
 select * from tmp_clientes2_migrar where mobile_number in (
-	select mobile_number from tmp_clientes_migrar c group by mobile_number having count(mobile_number)  > 1)
-	order by mobile_number;
+    select mobile_number from tmp_clientes_migrar c group by mobile_number having count(mobile_number)  > 1)
+    order by mobile_number;
 
 select * from tmp_clientes2_migrar tcm where tcm.mobile_number in (
-	select mobile_no from m_client mc
+    select mobile_no from m_client mc
 );
 
 
@@ -77,7 +77,7 @@ select * from tmp_clientes2_migrar where referencia is null;
 
 with cte as (select
 nit , code , cre_numerocredito , cli_nroid , min(cuo_nrocuota) min_inst, cre_producto_id
-from 
+from
 tmp_creditos2_migrar tcm
 group by nit, code, cre_numerocredito, cli_nroid, cre_producto_id
 )
@@ -95,7 +95,7 @@ select * from tmp_creditos2_migrar tcm where tcm.cre_fechafinancia > current_dat
 -- Check that installments are not completed before any previous installments
 select tcm1.* from tmp_creditos2_migrar tcm1 join tmp_creditos2_migrar tcm2
 on tcm1.external_id = tcm2.external_id
-where tcm1.cuo_nrocuota < tcm2.cuo_nrocuota 
+where tcm1.cuo_nrocuota < tcm2.cuo_nrocuota
 and tcm1.cpc_fecha_pago_cuota is null and tcm2.cpc_fecha_pago_cuota is not null;
 
 ---------------------------------------------------------------------------------------------
@@ -109,36 +109,36 @@ update tmp_clientes2_migrar set middle_name = null where  length(trim(middle_nam
 
 
 insert into m_client (account_no, external_id, status_enum, submittedon_date, activation_date, office_joining_date, office_id, firstname, middlename, lastname, second_lastname, display_name,
-						mobile_no, gender_cv_id, date_of_birth, legal_form_enum, email_address, created_on_utc, last_modified_on_utc,  activatedon_userid, created_by, last_modified_by )
-select 
-	c.external_id as account_no,
-	c.external_id as external_id, 
-	300 as status_enum,
-	current_date as submittedon_date,
-	current_date as activation_date,
-	current_date as office_joining_date,
-	1 as office_id,
-	trim(c.first_name) as firstname,
-	coalesce(c.middle_name, null) as middlename,
-	c.last_name as lastname,
-	c.last_name_two as second_lastname,
-	c.first_name || case when c.middle_name is null then ' ' else ' '  || c.middle_name || ' ' end || c.last_name as display_name,
-	c.mobile_number as mobile_no,
-	CASE 
-		when trim(c.gender) = 'F' then (select id from m_code_value where code_value='Mujer' and code_id = (select id from m_code where code_name='Gender'))
-		when trim(c.gender) = 'M' then (select id from m_code_value where code_value='Hombre' and code_id = (select id from m_code where code_name='Gender'))
-		ELSE null
-	END as gender_cv_id,
-	c.date_of_birth as date_of_birth,
-	1 as legal_form_enum,
-	c.emailaddress as email_address,
-	current_date as created_on_utc,
-	current_date as last_modified_on_utc,
-	1 as activatedon_userid, 
-	1 as created_by, 
-	1 as last_modified_by
-	from
-	tmp_clientes2_migrar c
+                        mobile_no, gender_cv_id, date_of_birth, legal_form_enum, email_address, created_on_utc, last_modified_on_utc,  activatedon_userid, created_by, last_modified_by )
+select
+    c.external_id as account_no,
+    c.external_id as external_id,
+    300 as status_enum,
+    current_date as submittedon_date,
+    current_date as activation_date,
+    current_date as office_joining_date,
+    1 as office_id,
+    trim(c.first_name) as firstname,
+    coalesce(c.middle_name, null) as middlename,
+    c.last_name as lastname,
+    c.last_name_two as second_lastname,
+    c.first_name || case when c.middle_name is null then ' ' else ' '  || c.middle_name || ' ' end || c.last_name as display_name,
+    c.mobile_number as mobile_no,
+    CASE
+        when trim(c.gender) = 'F' then (select id from m_code_value where code_value='Mujer' and code_id = (select id from m_code where code_name='Gender'))
+        when trim(c.gender) = 'M' then (select id from m_code_value where code_value='Hombre' and code_id = (select id from m_code where code_name='Gender'))
+        ELSE null
+    END as gender_cv_id,
+    c.date_of_birth as date_of_birth,
+    1 as legal_form_enum,
+    c.emailaddress as email_address,
+    current_date as created_on_utc,
+    current_date as last_modified_on_utc,
+    1 as activatedon_userid,
+    1 as created_by,
+    1 as last_modified_by
+    from
+    tmp_clientes2_migrar c
 where c.mobile_number not in (select mobile_no from m_client);
 
 
@@ -146,42 +146,42 @@ where c.mobile_number not in (select mobile_no from m_client);
 -- Individual Client campos data Insert
 
 INSERT INTO campos_cliente_persona
-(client_id, "Cedula", "Estado Civil_cd_Estado civil", "Edad", "Estrato", "Ciudad_cd_Ciudad", "Tiene vehiculo propio", "Tipo Vehiculo_cd_Tipo de vehiculo", "Nivel Academico_cd_Nivel academico", 
-"Actividad Laboral_cd_Actividad laboral", "Tiempo de actividad laboral", "Media de ingresos", "Nombre empresa", "Direccion", "Telefono", "Cupo solicitado", "Cupo aprobado", "Cupo score", 
+(client_id, "Cedula", "Estado Civil_cd_Estado civil", "Edad", "Estrato", "Ciudad_cd_Ciudad", "Tiene vehiculo propio", "Tipo Vehiculo_cd_Tipo de vehiculo", "Nivel Academico_cd_Nivel academico",
+"Actividad Laboral_cd_Actividad laboral", "Tiempo de actividad laboral", "Media de ingresos", "Nombre empresa", "Direccion", "Telefono", "Cupo solicitado", "Cupo aprobado", "Cupo score",
 "Valor score", "Modelo score", "Referencia", "Celular Referencia", "Parentesco_cd_Parentesco", created_at, updated_at, "Cupo otros prestamos")
-select 
-	mc.id as client_id,
-	c.id as "Cedula",
-	marital_status.id as "Estado Civil_cd_Estado civil",
-	c.age as "Edad",
-	c.estrato as "Estrato",
-	city_value.id as "Ciudad_cd_Ciudad",
-	case 
-		when c.has_own_vehicle = 'N' then false
-		else true
-	end	as "Tiene vehiculo propio",
-	vehicle_value.id as "Tipo Vehiculo_cd_Tipo de vehiculo",
-	academic_value.id as "Nivel Academico_cd_Nivel academico",
-	workActivity_value.id as "Actividad Laboral_cd_Actividad laboral",
-	c.work_time as "Tiempo de actividad laboral",
-	c.average_income as "Media de ingresos",
-	c.company_name as "Nombre empresa",
-	c.address as "Direccion",
-	c.phone as "Telefono",
-	c.cupo_requested as "Cupo solicitado",
-	c.cupo_approved as "Cupo aprobado",
-	c.cupo_score as "Cupo score",
-	c.score_value as "Valor score",
-	c.modelo_score as "Modelo score",
-	c.referencia as "Referencia",
-	c.celular_referencia as "Celular Referencia",
-	relationship_value.id as "Parentesco_cd_Parentesco",
-	current_date as "created_at",
-	current_date as "updated_at",
-	c.cupo_otros_prestamos
-from 
+select
+    mc.id as client_id,
+    c.id as "Cedula",
+    marital_status.id as "Estado Civil_cd_Estado civil",
+    c.age as "Edad",
+    c.estrato as "Estrato",
+    city_value.id as "Ciudad_cd_Ciudad",
+    case
+        when c.has_own_vehicle = 'N' then false
+        else true
+    end	as "Tiene vehiculo propio",
+    vehicle_value.id as "Tipo Vehiculo_cd_Tipo de vehiculo",
+    academic_value.id as "Nivel Academico_cd_Nivel academico",
+    workActivity_value.id as "Actividad Laboral_cd_Actividad laboral",
+    c.work_time as "Tiempo de actividad laboral",
+    c.average_income as "Media de ingresos",
+    c.company_name as "Nombre empresa",
+    c.address as "Direccion",
+    c.phone as "Telefono",
+    c.cupo_requested as "Cupo solicitado",
+    c.cupo_approved as "Cupo aprobado",
+    c.cupo_score as "Cupo score",
+    c.score_value as "Valor score",
+    c.modelo_score as "Modelo score",
+    c.referencia as "Referencia",
+    c.celular_referencia as "Celular Referencia",
+    relationship_value.id as "Parentesco_cd_Parentesco",
+    current_date as "created_at",
+    current_date as "updated_at",
+    c.cupo_otros_prestamos
+from
 tmp_clientes2_migrar c
-join m_client mc on mc.external_id = c.external_id::varchar 
+join m_client mc on mc.external_id = c.external_id::varchar
  join m_code_value marital_status on marital_status.code_score = c.marital_status::varchar
  join m_code marital_code on marital_code.id = marital_status.code_id and marital_code.code_name ='Estado Civil'
  join m_code_value city_value on city_value.code_score = c.city
@@ -235,75 +235,75 @@ select * from m_role mr;
 -- All clients of an office are included in the template file, so if the number of clients is big you can split them to different offices.
 
 select distinct
-	(select REPLACE(mo.name,' ', '_') from m_office mo where id = 2) as office_name,
-	'Individual' as loan_type,
-	concat(trim(mc.display_name), '(', mc.id , ')') as client_name,
-	mc.external_id as client_external_id,
-	REpLACE(mpl.name, ' ', '_') as product_name,
-	'' loan_officer,
-	cre_fechafinancia as submit_date,
-	cre_fechafinancia as approved_date,
-	cre_fechafinancia as disbursement_date,
-	'' payment_type,
-	'' fund,
-	cre_valorcredito as principal_amount,
-	cre_nrocuotas as no_of_repayments,
-	1 repaid_every,
-	'Months' repay_freq,
-	cre_nrocuotas loan_term,
-	'Months' loan_term_freq,
-	cuo_porinteres as nominal_interest_rate,
-	'Per Year' as interest_rate_per_month,
-	'Equal installments' as ammortization,
-	'Declining Balance' as interest_method,
-	'Same as repayment period' interest_calculation_period,
-	'0' arrears_tolerance,
-	'advanced-payment-allocation-strategy' repayment_strategy,
-	mpl.grace_on_principal_periods grace_on_principal_pmt,
-	mpl.grace_on_interest_periods grace_on_interest_pmt,
-	mpl.grace_on_charges_periods interest_free_period,
-	'' interest_charged_from, 
-	'' first_repayment_on,
-	'' amount_repaid,
-	'' date_last_repayment,
-	'' repayment_type,
-	'',
-	'',
-	'',
-	tcm.external_id as external_id,
-	case
-		when cpc_monto_aval > 0 then 'Aval_Migrar'
-		else null
-	end charge_name,
-	case
-		when cpc_monto_aval > 0 then round(cpc_monto_aval/(1+(cpc_porcentaje_iva/100)))
-		else
-		null
-	end charge_amount,
-	'',
-	case
-		when cpc_monto_aval > 0 then 'iva_aval_migrar'
-		else
-		null
-	end vat_charge_name,
-	case
-		when cpc_monto_aval > 0 then 19
-		else
-		null
-	end vat_charge_amount,
-	'',
-	nit, code, cre_numerocredito::varchar, cli_nroid, 
-	cre_fechafinancia
-from 
-	tmp_creditos2_migrar tcm
-	join campos_cliente_persona ccp on ccp."Cedula" = tcm.cli_nroid
-	join m_client mc on mc.id = ccp.client_id 
- 	join m_product_loan mpl on mpl.id = tcm.cre_producto_id
- 	where
- 	mc.office_id = 2
- 	-- and tcm.nit = '800069933' and code = '2655' and cre_numerocredito = 208 and cli_nroid = '92541184'
-	order by tcm.cli_nroid, tcm.cre_fechafinancia
-	limit 2 -- first 5k loans for first sheet
+    (select REPLACE(mo.name,' ', '_') from m_office mo where id = 2) as office_name,
+    'Individual' as loan_type,
+    concat(trim(mc.display_name), '(', mc.id , ')') as client_name,
+    mc.external_id as client_external_id,
+    REpLACE(mpl.name, ' ', '_') as product_name,
+    '' loan_officer,
+    cre_fechafinancia as submit_date,
+    cre_fechafinancia as approved_date,
+    cre_fechafinancia as disbursement_date,
+    '' payment_type,
+    '' fund,
+    cre_valorcredito as principal_amount,
+    cre_nrocuotas as no_of_repayments,
+    1 repaid_every,
+    'Months' repay_freq,
+    cre_nrocuotas loan_term,
+    'Months' loan_term_freq,
+    cuo_porinteres as nominal_interest_rate,
+    'Per Year' as interest_rate_per_month,
+    'Equal installments' as ammortization,
+    'Declining Balance' as interest_method,
+    'Same as repayment period' interest_calculation_period,
+    '0' arrears_tolerance,
+    'advanced-payment-allocation-strategy' repayment_strategy,
+    mpl.grace_on_principal_periods grace_on_principal_pmt,
+    mpl.grace_on_interest_periods grace_on_interest_pmt,
+    mpl.grace_on_charges_periods interest_free_period,
+    '' interest_charged_from,
+    '' first_repayment_on,
+    '' amount_repaid,
+    '' date_last_repayment,
+    '' repayment_type,
+    '',
+    '',
+    '',
+    tcm.external_id as external_id,
+    case
+        when cpc_monto_aval > 0 then 'Aval_Migrar'
+        else null
+    end charge_name,
+    case
+        when cpc_monto_aval > 0 then round(cpc_monto_aval/(1+(cpc_porcentaje_iva/100)))
+        else
+        null
+    end charge_amount,
+    '',
+    case
+        when cpc_monto_aval > 0 then 'iva_aval_migrar'
+        else
+        null
+    end vat_charge_name,
+    case
+        when cpc_monto_aval > 0 then 19
+        else
+        null
+    end vat_charge_amount,
+    '',
+    nit, code, cre_numerocredito::varchar, cli_nroid,
+    cre_fechafinancia
+from
+    tmp_creditos2_migrar tcm
+    join campos_cliente_persona ccp on ccp."Cedula" = tcm.cli_nroid
+    join m_client mc on mc.id = ccp.client_id
+     join m_product_loan mpl on mpl.id = tcm.cre_producto_id
+     where
+     mc.office_id = 2
+     -- and tcm.nit = '800069933' and code = '2655' and cre_numerocredito = 208 and cli_nroid = '92541184'
+    order by tcm.cli_nroid, tcm.cre_fechafinancia
+    limit 2 -- first 5k loans for first sheet
  --	 limit 5000 offset 5000 -- next5k loans for second sheet
  --	 limit 5000 offset 10000 -- next 5k loans for third sheet
  --	 limit 5000 offset 15000 -- next 5k loans for forth sheet
@@ -342,12 +342,12 @@ update m_product_loan set is_advance = true where id in (3,9);
 -- Update repayment schedule paid installments
 update m_loan_repayment_schedule mlrs
 set principal_completed_derived = mlrs.principal_amount,
-	interest_completed_derived = mlrs.interest_amount,
-	fee_charges_completed_derived = mlrs.fee_charges_amount,
-	penalty_charges_completed_derived = mlrs.penalty_charges_amount,
-	migrated_installment = true,
-	completed_derived = true,
-	obligations_met_on_date = tcm.cpc_fecha_pago_cuota
+    interest_completed_derived = mlrs.interest_amount,
+    fee_charges_completed_derived = mlrs.fee_charges_amount,
+    penalty_charges_completed_derived = mlrs.penalty_charges_amount,
+    migrated_installment = true,
+    completed_derived = true,
+    obligations_met_on_date = tcm.cpc_fecha_pago_cuota
 from m_loan ml
 inner join tmp_creditos2_migrar tcm on ml.external_id = tcm.external_id
 where ml.id = mlrs.loan_id
@@ -367,7 +367,7 @@ order by mlrs.installment;
 
 -- Insert transactions for completed installments
 INSERT INTO m_loan_transaction(
-	loan_id, office_id, payment_detail_id, is_reversed, external_id, installment_id, transaction_type_enum, transaction_date, amount, principal_portion_derived, interest_portion_derived, fee_charges_portion_derived, penalty_charges_portion_derived, outstanding_loan_balance_derived, submitted_on_date, created_by, last_modified_by, created_on_utc, last_modified_on_utc)
+    loan_id, office_id, payment_detail_id, is_reversed, external_id, installment_id, transaction_type_enum, transaction_date, amount, principal_portion_derived, interest_portion_derived, fee_charges_portion_derived, penalty_charges_portion_derived, outstanding_loan_balance_derived, submitted_on_date, created_by, last_modified_by, created_on_utc, last_modified_on_utc)
 select ml.id, mc.office_id, null, false, null, mlrs.id, 2, mlrs.obligations_met_on_date, coalesce(mlrs.principal_amount, 0) + coalesce(mlrs.interest_amount,0) + coalesce(mlrs.fee_charges_amount, 0) + coalesce(mlrs.penalty_charges_amount, 0),
 mlrs.principal_amount, mlrs.interest_amount, mlrs.fee_charges_amount, mlrs.penalty_charges_amount, null, mlrs.obligations_met_on_date, 1, 1, mlrs.obligations_met_on_date, mlrs.obligations_met_on_date
 from m_loan_repayment_schedule mlrs join m_loan ml on mlrs.loan_id = ml.id
@@ -381,10 +381,10 @@ select * from tmp_creditos2_migrar tcm where tcm.external_id in (select external
 
 -- Insert transaction to schedule mapping
 INSERT INTO m_loan_transaction_repayment_schedule_mapping(
-	loan_transaction_id, loan_repayment_schedule_id, amount, principal_portion_derived, interest_portion_derived, fee_charges_portion_derived, penalty_charges_portion_derived)
+    loan_transaction_id, loan_repayment_schedule_id, amount, principal_portion_derived, interest_portion_derived, fee_charges_portion_derived, penalty_charges_portion_derived)
 select mlt.id, mlrs.id, mlt.amount, mlt.principal_portion_derived, mlt.interest_portion_derived, mlt.fee_charges_portion_derived, mlt.penalty_charges_portion_derived
 from m_loan_repayment_schedule mlrs join m_loan_transaction mlt on mlrs.id = mlt.installment_id
-join m_loan ml on mlrs.loan_id = ml.id 
+join m_loan ml on mlrs.loan_id = ml.id
 join tmp_creditos2_migrar tcm on ml.external_id = tcm.external_id and tcm.cuo_nrocuota = 1
 where mlrs.completed_derived = true and mlrs.installment > 0
 
@@ -394,7 +394,7 @@ UPDATE m_loan_transaction lt
 SET outstanding_loan_balance_derived = (
     SELECT ml.principal_disbursed_derived - COALESCE(SUM(lt2.principal_portion_derived), 0)
     FROM m_loan ml
-    join tmp_creditos2_migrar tcm on ml.external_id = tcm.external_id and tcm.cuo_nrocuota = 1 
+    join tmp_creditos2_migrar tcm on ml.external_id = tcm.external_id and tcm.cuo_nrocuota = 1
     LEFT JOIN m_loan_transaction lt2 ON lt2.loan_id = ml.id
     where ml.id = lt.loan_id and lt2.transaction_date <= lt.transaction_date
     and lt2.transaction_type_enum = 2
@@ -414,58 +414,58 @@ and lt.outstanding_loan_balance_derived IS DISTINCT FROM (
 
 -- update loan summary
 update
-	m_loan ml
+    m_loan ml
 set
-	principal_repaid_derived = (
-	select
-		coalesce(SUM(mlrs.principal_completed_derived),
-		0)
-	from
-		m_loan_repayment_schedule mlrs
-	where
-		mlrs.principal_completed_derived is not null
-		and mlrs.loan_id = ml.id
+    principal_repaid_derived = (
+    select
+        coalesce(SUM(mlrs.principal_completed_derived),
+        0)
+    from
+        m_loan_repayment_schedule mlrs
+    where
+        mlrs.principal_completed_derived is not null
+        and mlrs.loan_id = ml.id
 ),
-	interest_repaid_derived = (
-	select
-		coalesce(SUM(mlrs.interest_completed_derived),
-		0)
-	from
-		m_loan_repayment_schedule mlrs
-	where
-		mlrs.interest_completed_derived is not null
-		and mlrs.loan_id = ml.id
+    interest_repaid_derived = (
+    select
+        coalesce(SUM(mlrs.interest_completed_derived),
+        0)
+    from
+        m_loan_repayment_schedule mlrs
+    where
+        mlrs.interest_completed_derived is not null
+        and mlrs.loan_id = ml.id
 ),
-	fee_charges_repaid_derived = (
-	select
-		coalesce(SUM(mlrs.fee_charges_completed_derived),
-		0)
-	from
-		m_loan_repayment_schedule mlrs
-	where
-		mlrs.fee_charges_completed_derived is not null
-		and mlrs.loan_id = ml.id
+    fee_charges_repaid_derived = (
+    select
+        coalesce(SUM(mlrs.fee_charges_completed_derived),
+        0)
+    from
+        m_loan_repayment_schedule mlrs
+    where
+        mlrs.fee_charges_completed_derived is not null
+        and mlrs.loan_id = ml.id
 ),
-	penalty_charges_repaid_derived = (
-	select
-		coalesce(SUM(mlrs.penalty_charges_completed_derived),
-		0)
-	from
-		m_loan_repayment_schedule mlrs
-	where
-		mlrs.penalty_charges_completed_derived is not null
-		and mlrs.loan_id = ml.id
+    penalty_charges_repaid_derived = (
+    select
+        coalesce(SUM(mlrs.penalty_charges_completed_derived),
+        0)
+    from
+        m_loan_repayment_schedule mlrs
+    where
+        mlrs.penalty_charges_completed_derived is not null
+        and mlrs.loan_id = ml.id
 )
 where id in (select l.id from m_loan l join tmp_creditos2_migrar tcm on l.external_id = tcm.external_id and tcm.cuo_nrocuota = 1);
 
 -- Run this query twice
 update m_loan
 set principal_outstanding_derived = principal_disbursed_derived - principal_repaid_derived,
-	interest_outstanding_derived = interest_charged_derived - interest_repaid_derived,
-	fee_charges_outstanding_derived = fee_charges_charged_derived - fee_charges_repaid_derived,
-	penalty_charges_outstanding_derived = penalty_charges_charged_derived - penalty_charges_repaid_derived,
-	total_repayment_derived = principal_repaid_derived + interest_repaid_derived + fee_charges_repaid_derived + penalty_charges_repaid_derived,
-	total_outstanding_derived = principal_outstanding_derived + interest_outstanding_derived + fee_charges_outstanding_derived + penalty_charges_outstanding_derived
+    interest_outstanding_derived = interest_charged_derived - interest_repaid_derived,
+    fee_charges_outstanding_derived = fee_charges_charged_derived - fee_charges_repaid_derived,
+    penalty_charges_outstanding_derived = penalty_charges_charged_derived - penalty_charges_repaid_derived,
+    total_repayment_derived = principal_repaid_derived + interest_repaid_derived + fee_charges_repaid_derived + penalty_charges_repaid_derived,
+    total_outstanding_derived = principal_outstanding_derived + interest_outstanding_derived + fee_charges_outstanding_derived + penalty_charges_outstanding_derived
 where id in (select l.id from m_loan l join tmp_creditos2_migrar tcm on l.external_id = tcm.external_id and tcm.cuo_nrocuota = 1);
 
 -- Check if any loans are fully paid but are still in active status
@@ -485,9 +485,9 @@ and (select count(1) from m_loan_charge_paid_by where loan_transaction_id = mlt.
 -- update m_loan_installment_charge with paid amount/status and outstanding
 update m_loan_installment_charge
 set amount_paid_derived = amount,
-	amount_outstanding_derived = 0,
-	is_paid_derived = true
-where loan_schedule_id in 
+    amount_outstanding_derived = 0,
+    is_paid_derived = true
+where loan_schedule_id in
 (select mlrs.id from m_loan_repayment_schedule mlrs join m_loan ml on mlrs.loan_id = ml.id join tmp_creditos2_migrar tcm on ml.external_id = tcm.external_id and tcm.cuo_nrocuota = 1 where mlrs.completed_derived = true)
 
 -- update m_loan_charge with paid and outstanding
@@ -502,9 +502,9 @@ where mlc.amount_paid_derived is not null and mlc.loan_id in (select l.id from m
 -- insert honorarios
 INSERT INTO public.m_loan_charge
 (loan_id, charge_id, is_penalty, charge_time_enum, due_for_collection_as_of_date, charge_calculation_enum, charge_payment_mode_enum, calculation_percentage, calculation_on_amount, charge_amount_or_percentage, amount, amount_outstanding_derived, is_paid_derived, is_active, submitted_on_date, applicable_from_installment, created_on_utc, last_modified_on_utc, created_by, last_modified_by)
-select ml.id loan_id, mc.id charge_id, mc.is_penalty, mc.charge_time_enum, null::date due_for_collection_as_of_date, mc.charge_calculation_enum, mc.charge_payment_mode_enum, NULL::numeric calculation_percentage, NULL::numeric calculation_on_amount, 0 charge_amount_or_percentage, 0 amount, 0 amount_outstanding_derived, true is_paid_derived, true is_active, ml.disbursedon_date submitted_on_date, 1 applicable_from_installment, ml.disbursedon_date created_on_utc, ml.disbursedon_date last_modified_on_utc, 1 created_by, 1 last_modified_by 
+select ml.id loan_id, mc.id charge_id, mc.is_penalty, mc.charge_time_enum, null::date due_for_collection_as_of_date, mc.charge_calculation_enum, mc.charge_payment_mode_enum, NULL::numeric calculation_percentage, NULL::numeric calculation_on_amount, 0 charge_amount_or_percentage, 0 amount, 0 amount_outstanding_derived, true is_paid_derived, true is_active, ml.disbursedon_date submitted_on_date, 1 applicable_from_installment, ml.disbursedon_date created_on_utc, ml.disbursedon_date last_modified_on_utc, 1 created_by, 1 last_modified_by
 from m_loan ml
-join tmp_creditos2_migrar tcm on ml.external_id = tcm.external_id and tcm.cuo_nrocuota = 1 
+join tmp_creditos2_migrar tcm on ml.external_id = tcm.external_id and tcm.cuo_nrocuota = 1
 join m_charge mc on mc.charge_calculation_enum = 1009
 where ml.id not in (select mlc.loan_id from m_loan_charge mlc join m_charge mc on mlc.charge_id = mc.id where mc.charge_calculation_enum = 1009)
 and ml.loan_status_id = 300
@@ -512,9 +512,9 @@ and ml.loan_status_id = 300
 -- insert iva honorarios (assumption here is that there's only one Honorarios charge)
 INSERT INTO public.m_loan_charge
 (loan_id, charge_id, is_penalty, charge_time_enum, due_for_collection_as_of_date, charge_calculation_enum, charge_payment_mode_enum, calculation_percentage, calculation_on_amount, charge_amount_or_percentage, amount, amount_outstanding_derived, is_paid_derived, is_active, submitted_on_date, applicable_from_installment, created_on_utc, last_modified_on_utc, created_by, last_modified_by)
-select ml.id loan_id, mc.id charge_id, mc.is_penalty, mc.charge_time_enum, null::date due_for_collection_as_of_date, mc.charge_calculation_enum, mc.charge_payment_mode_enum, mc.amount calculation_percentage, ml.principal_amount calculation_on_amount, mc.amount charge_amount_or_percentage, 0 amount, 0 amount_outstanding_derived, false is_paid_derived, true is_active, ml.disbursedon_date submitted_on_date, 1 applicable_from_installment, ml.disbursedon_date created_on_utc, ml.disbursedon_date last_modified_on_utc, 1 created_by, 1 last_modified_by 
+select ml.id loan_id, mc.id charge_id, mc.is_penalty, mc.charge_time_enum, null::date due_for_collection_as_of_date, mc.charge_calculation_enum, mc.charge_payment_mode_enum, mc.amount calculation_percentage, ml.principal_amount calculation_on_amount, mc.amount charge_amount_or_percentage, 0 amount, 0 amount_outstanding_derived, false is_paid_derived, true is_active, ml.disbursedon_date submitted_on_date, 1 applicable_from_installment, ml.disbursedon_date created_on_utc, ml.disbursedon_date last_modified_on_utc, 1 created_by, 1 last_modified_by
 from m_loan ml
-join tmp_creditos2_migrar tcm on ml.external_id = tcm.external_id and tcm.cuo_nrocuota = 1 
+join tmp_creditos2_migrar tcm on ml.external_id = tcm.external_id and tcm.cuo_nrocuota = 1
 join m_charge mc on mc.parent_charge_id = (select id from m_charge where charge_calculation_enum = 1009)
 where ml.id not in (select mlc.loan_id from m_loan_charge mlc join m_charge mc on mlc.charge_id = mc.id where mc.parent_charge_id = (select id from m_charge where charge_calculation_enum = 1009))
 and ml.loan_status_id = 300
@@ -522,8 +522,8 @@ and ml.loan_status_id = 300
 -- insert m_loan_installment_charge for honorarios charges
 INSERT INTO m_loan_installment_charge
 (loan_charge_id, loan_schedule_id, due_date, amount)
-select mlc.id loan_charge_id, mlrs.id loan_schedule_id, null::date due_date, 0 amount 
-from m_loan ml 
+select mlc.id loan_charge_id, mlrs.id loan_schedule_id, null::date due_date, 0 amount
+from m_loan ml
 join tmp_creditos2_migrar tcm on ml.external_id = tcm.external_id and tcm.cuo_nrocuota = 1
 join m_loan_charge mlc on ml.id = mlc.loan_id
 join m_loan_repayment_schedule mlrs on ml.id = mlrs.loan_id
@@ -535,10 +535,10 @@ order by mlc.id, mlrs.installment;
 -- populate c_client_buy_process
 insert into custom.c_client_buy_process (channel_id, client_id, point_if_sales_id, product_id, credit_id, requested_date, amount, term, created_at, created_by, ip_details, status, error_message, loan_id, interest_rate_points, codigo_seguro, cedula_seguro_voluntario)
 SELECT (select id from custom.c_channel cc where cc.name = 'Tienda física'), ml.client_id, ccapos.id, ml.product_id, ml.id credit_id, ml.disbursedon_date requested_date, ml.principal_amount amount, ml.term_frequency term, CURRENT_DATE created_at, created_by, null::text ip_details, 200 status, null::text error_message, ml.id loan_id, 0 interest_rate_points, 0 codigo_seguro, 0 cedula_seguro_voluntario
-from public.m_loan ml 
+from public.m_loan ml
 join tmp_creditos2_migrar tcm on ml.external_id = tcm.external_id and tcm.cuo_nrocuota = 1
 left join custom.c_client_ally_point_of_sales ccapos
-on ml.migrar_code = ccapos.code 
+on ml.migrar_code = ccapos.code
 where ml.loan_status_id = 300
 and ml.is_migrated_loan = true
 and ml.id not in (select loan_id from custom.c_client_buy_process)
@@ -552,13 +552,13 @@ select * from m_blocking_reason_setting mbrs where level = 'CLIENT';
 -- Afterwards run these queries with the appropriate values for each status
 update m_client mc1
 set blocking_reason_id = case
- 	--when tcm.estadocli = 'BLOQUEO POR INCONSISTENCIA EN INFORMACIÓN' then 24
+     --when tcm.estadocli = 'BLOQUEO POR INCONSISTENCIA EN INFORMACIÓN' then 24
     --when tcm.estadocli = 'MORA' then 6
-	--when tc
-	when tcm.estadocli = 'BLOQUEO POR INCONSISTENCIA EN INFORMACIÓN' then 11
-	when tcm.estadocli = 'MORA' then 7
-	when tcm.estadocli = 'BLOQUEO RIESGO DE CRÉDITO' then 9
-	else null
+    --when tc
+    when tcm.estadocli = 'BLOQUEO POR INCONSISTENCIA EN INFORMACIÓN' then 11
+    when tcm.estadocli = 'MORA' then 7
+    when tcm.estadocli = 'BLOQUEO RIESGO DE CRÉDITO' then 9
+    else null
 end
 from m_client mc2
 inner join tmp_clientes2_migrar tcm on mc2.external_id = cast(tcm.external_id as text)
@@ -575,12 +575,12 @@ update m_loan ml
 set interest_accrued_till = inst.last_accrual_date
 from
 (
-	select MAX(mlrs.duedate) last_accrual_date, mlrs.loan_id 
-	from m_loan_repayment_schedule mlrs
-	join m_loan ml2 on mlrs.loan_id = ml2.id
-	join tmp_creditos2_migrar tcm on ml2.external_id = tcm.external_id and tcm.cuo_nrocuota = 1
-	where mlrs.completed_derived = true and mlrs.obligations_met_on_date is not null
-	group by mlrs.loan_id
+    select MAX(mlrs.duedate) last_accrual_date, mlrs.loan_id
+    from m_loan_repayment_schedule mlrs
+    join m_loan ml2 on mlrs.loan_id = ml2.id
+    join tmp_creditos2_migrar tcm on ml2.external_id = tcm.external_id and tcm.cuo_nrocuota = 1
+    where mlrs.completed_derived = true and mlrs.obligations_met_on_date is not null
+    group by mlrs.loan_id
 ) inst
 where ml.id = inst.loan_id
 
