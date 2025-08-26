@@ -345,7 +345,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "loan", orphanRemoval = true, fetch = FetchType.LAZY)
     private List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments = new ArrayList<>();
 
-    @OrderBy(value = "dateOf, createdDate, id")
+    @OrderBy(value = "dateOf, id")
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "loan", orphanRemoval = true, fetch = FetchType.LAZY)
     private List<LoanTransaction> loanTransactions = new ArrayList<>();
 
@@ -798,10 +798,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     // just like handleChargeAppliedTransaction , create a new method to handle charges per installment using local
     // charge installment
     public void handleChargeAppliedTransactionPerInstallment(final List<LoanCharge> charges, final LocalDate suppliedTransactionDate,
-            final boolean hasOccurredOnSuspendedAccount) {
-        for (LoanCharge loanCharge : charges) {
-            validateLoanIsNotClosed(loanCharge);
-            validateLoanChargeIsNotWaived(loanCharge);
+            final boolean hasOccurredOnSuspendedAccount, final boolean adjustMissingAccruals) {
+        for (final LoanCharge loanCharge : charges) {
+            if (!adjustMissingAccruals) {
+                validateLoanIsNotClosed(loanCharge);
+                validateLoanChargeIsNotWaived(loanCharge);
+            }
         }
 
         // FIX for previous installments where the insurance accrual was not generated
@@ -812,18 +814,21 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 : suppliedTransactionDate;
 
         // get only installments between the transaction date and current date
-        LocalDate currentDate = DateUtils.getLocalDateOfTenant();
-        List<LoanRepaymentScheduleInstallment> applicableInstallments = getRepaymentScheduleInstallments().stream()
+        final LocalDate currentDate = DateUtils.getLocalDateOfTenant();
+        final List<LoanRepaymentScheduleInstallment> applicableInstallments = getRepaymentScheduleInstallments().stream()
                 .filter(installment -> installment.getInstallmentNumber() > 0 && // Exclude the graced installment
                         ( // The installment overlaps with the date range
                         (!installment.getDueDate().isBefore(effectiveTransactionDate) && !installment.getFromDate().isAfter(currentDate)) ||
                         // Or the installment starts on the current date
                                 installment.getFromDate().equals(currentDate)))
+                .filter(installment -> installment.getObligationsMetOnDate() == null
+                        || !installment.getFromDate().isAfter(installment.getObligationsMetOnDate()))
                 .sorted(Comparator.comparing(LoanRepaymentScheduleInstallment::getInstallmentNumber)).toList();
 
-        for (LoanRepaymentScheduleInstallment installment : applicableInstallments) {
+        for (final LoanRepaymentScheduleInstallment installment : applicableInstallments) {
+            boolean isInstallmentAccrualApplied = false;
             int installmentNumber = installment.getInstallmentNumber();
-            Integer lastProcessedInstallmentNumber = getLastInstallmentChargeCalculatedOn();
+            Integer lastProcessedInstallmentNumber = this.getLatestInstallmentAccruedByInsurance(adjustMissingAccruals);
             if (lastProcessedInstallmentNumber == null) {
                 lastProcessedInstallmentNumber = 0;
             }
@@ -831,7 +836,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 continue;
             }
 
-            for (LoanCharge loanCharge : charges) {
+            for (final LoanCharge loanCharge : charges) {
                 LoanInstallmentCharge loanInstallmentCharge = loanCharge.getInstallmentLoanCharge(installmentNumber);
 
                 LocalDate installmentDate = installment.getFromDate();
@@ -843,25 +848,30 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 // installmentDate = installmentDate.plusDays(1);
                 // }
 
-                applyInstallmentCharge(loanInstallmentCharge, installment, loanCharge, installmentDate, hasOccurredOnSuspendedAccount);
+                final boolean applicationResult = applyInstallmentCharge(loanInstallmentCharge, installment, loanCharge, installmentDate,
+                        hasOccurredOnSuspendedAccount);
+                if (applicationResult) {
+                    isInstallmentAccrualApplied = true;
+                }
             }
             // get amount to be paid for the instalment
-
-            this.setLastInstallmentChargeCalculatedOn(installmentNumber);
+            if (isInstallmentAccrualApplied) {
+                this.setLastInstallmentChargeCalculatedOn(installmentNumber);
+            }
 
         }
 
     }
 
-    private void applyInstallmentCharge(final LoanInstallmentCharge loanInstallmentCharge,
+    private boolean applyInstallmentCharge(final LoanInstallmentCharge loanInstallmentCharge,
             final LoanRepaymentScheduleInstallment installment, final LoanCharge loanCharge, final LocalDate suppliedTransactionDate,
             final boolean hasOccurredOnSuspendedAccount) {
         if (loanInstallmentCharge == null) {
-            return;
+            return false;
         }
         final Money chargeAmount = loanInstallmentCharge.getAmount(getCurrency());
         if (chargeAmount.isZero()) {
-            return;
+            return false;
         }
         final Integer installmentNumber = installment.getInstallmentNumber();
         Money feeCharges = chargeAmount;
@@ -901,7 +911,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(applyLoanChargeTransaction, loanCharge, chargeAmount.getAmount(),
                 installmentNumber);
         applyLoanChargeTransaction.getLoanChargesPaid().add(loanChargePaidBy);
-        addLoanTransaction(applyLoanChargeTransaction);
+        return addLoanTransaction(applyLoanChargeTransaction);
     }
 
     /**
@@ -3305,7 +3315,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         // SU-444 generate charges from disbursement day
         if (!installmentalCharges.isEmpty()) {
             final boolean hasOccurredOnSuspendedAccount = false;
-            handleChargeAppliedTransactionPerInstallment(installmentalCharges, disbursedOn, hasOccurredOnSuspendedAccount);
+            final boolean adjustMissingAccruals = false;
+            handleChargeAppliedTransactionPerInstallment(installmentalCharges, disbursedOn, hasOccurredOnSuspendedAccount,
+                    adjustMissingAccruals);
         }
 
         if (disbursentMoney.isGreaterThanZero()) {
@@ -5636,8 +5648,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return this.loanTransactions.stream().filter(LoanTransaction::isPaymentTransaction).collect(Collectors.toList());
     }
 
-    public void addLoanTransaction(final LoanTransaction loanTransaction) {
-        this.loanTransactions.add(loanTransaction);
+    public boolean addLoanTransaction(final LoanTransaction loanTransaction) {
+        return this.loanTransactions.add(loanTransaction);
     }
 
     public void removeLoanTransaction(final LoanTransaction loanTransaction) {
@@ -5832,10 +5844,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     private LocalDate getLastInsuranceAccrualTransaction() {
-        return this.loanTransactions.stream()
-                .filter(txn -> txn.isAccrual() && txn.isInstallmentAccrual() && !txn.isReversed()
-                        && txn.getAmount().compareTo(BigDecimal.ZERO) > 0)
-                .map(LoanTransaction::getTransactionDate).max(LocalDate::compareTo).orElseGet(this::getDisbursementDate);
+        // Since loanTransactions are already in chronological order,
+        // we can iterate in reverse order and return the first valid transaction
+        for (int i = this.loanTransactions.size() - 1; i >= 0; i--) {
+            LoanTransaction txn = this.loanTransactions.get(i);
+            if (txn.isAccrual() && txn.isInstallmentAccrual() && !txn.isReversed() && txn.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+                return txn.getTransactionDate();
+            }
+        }
+        return getDisbursementDate();
     }
 
     public Set<LoanCharge> getActiveCharges() {
@@ -8586,6 +8603,27 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     public Integer getLastInstallmentChargeCalculatedOn() {
         return lastInstallmentChargeCalculatedOn;
+    }
+
+    public Integer getLatestInstallmentAccruedByInsurance(final boolean adjustMissingAccruals) {
+        if (!adjustMissingAccruals) {
+            return this.lastInstallmentChargeCalculatedOn;
+        }
+        final LoanTransaction insuranceAccrualTransaction = this.loanTransactions.stream().filter(LoanTransaction::isAccrual)
+                .filter(loanTx -> {
+                    final Set<LoanChargePaidBy> loanChargePaidBIES = loanTx.getLoanChargesPaid();
+                    return loanChargePaidBIES.stream().anyMatch(loanChargePaidBy -> loanChargePaidBy.getLoanCharge().isMandatoryInsurance()
+                            || loanChargePaidBy.getLoanCharge().isVoluntaryInsurance());
+                }).max(Comparator.comparing(LoanTransaction::getTransactionDate)).orElse(null);
+
+        if (insuranceAccrualTransaction != null) {
+            for (final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment : this.repaymentScheduleInstallments) {
+                if (DateUtils.isEqual(loanRepaymentScheduleInstallment.getFromDate(), insuranceAccrualTransaction.getTransactionDate())) {
+                    return loanRepaymentScheduleInstallment.getInstallmentNumber();
+                }
+            }
+        }
+        return null;
     }
 
     public void setLastInstallmentChargeCalculatedOn(Integer lastInstallmentChargeCalculatedOn) {

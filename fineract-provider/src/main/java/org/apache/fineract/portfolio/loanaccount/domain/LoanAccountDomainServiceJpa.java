@@ -1007,7 +1007,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     @SuppressWarnings("all")
     @Override
     public LoanTransaction foreCloseLoan(Loan loan, final LocalDate foreClosureDate, final String noteText, final ExternalId externalId,
-            Map<String, Object> changes, boolean isForCloureAction) {
+            Map<String, Object> changes) {
         if (loan.isChargedOff() && DateUtils.isBefore(foreClosureDate, loan.getChargedOffOnDate())) {
             throw new GeneralPlatformDomainRuleException("error.msg.transaction.date.cannot.be.earlier.than.charge.off.date", "Loan: "
                     + loan.getId()
@@ -1082,11 +1082,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
         if (payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).isGreaterThanZero()) {
             BigDecimal honoFee;
-            if (isForCloureAction) {
-                honoFee = calculateHonoForForeclosure(loan,
-                        payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).getAmount(), foreClosureDate);
-                feePayable = feePayable.add(honoFee);
-            }
+            honoFee = calculateHonoForForeclosure(loan,
+                    payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).getAmount(), foreClosureDate);
+            feePayable = feePayable.add(honoFee);
             final PaymentDetail paymentDetail = null;
             payment = LoanTransaction.repayment(loan.getOffice(), payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable),
                     paymentDetail, foreClosureDate, externalId);
