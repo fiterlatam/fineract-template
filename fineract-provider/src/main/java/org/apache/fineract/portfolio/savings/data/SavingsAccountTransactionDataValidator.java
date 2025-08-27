@@ -24,6 +24,7 @@ import static org.apache.fineract.portfolio.savings.SavingsApiConstants.bankNumb
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.checkNumberParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.closedOnDateParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.lienAllowedParamName;
+import static org.apache.fineract.portfolio.savings.SavingsApiConstants.lienParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.paymentTypeIdParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.receiptNumberParamName;
 import static org.apache.fineract.portfolio.savings.SavingsApiConstants.routingCodeParamName;
@@ -70,7 +71,7 @@ public class SavingsAccountTransactionDataValidator {
     private final FromJsonHelper fromApiJsonHelper;
     private static final Set<String> SAVINGS_ACCOUNT_HOLD_AMOUNT_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(transactionDateParamName, SavingsApiConstants.dateFormatParamName, SavingsApiConstants.localeParamName,
-                    transactionAmountParamName, lienAllowedParamName, SavingsApiConstants.reasonForBlockParamName));
+                    transactionAmountParamName, lienAllowedParamName, lienParamName, SavingsApiConstants.reasonForBlockParamName));
     private final ConfigurationDomainService configurationDomainService;
     private final SavingsAccountAssembler savingAccountAssembler;
 
@@ -255,8 +256,8 @@ public class SavingsAccountTransactionDataValidator {
         Boolean isOverdraftEnabled = account.isAllowOverdraft();
 
         Boolean lienAllowed = false;
-        if (BooleanUtils.isTrue(fromApiJsonHelper.extractBooleanNamed(lienAllowedParamName, element))) {
-            lienAllowed = this.fromApiJsonHelper.extractBooleanNamed(lienAllowedParamName, element);
+        if (BooleanUtils.isTrue(fromApiJsonHelper.extractBooleanNamed(lienParamName, element))) {
+            lienAllowed = this.fromApiJsonHelper.extractBooleanNamed(lienParamName, element);
             if (isAccountLienEnabled) {
                 if (isOverdraftEnabled) {
                     if (account.getOverdraftLimit().compareTo(account.getMaxAllowedLienLimit()) > 0) {
