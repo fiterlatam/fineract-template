@@ -534,6 +534,14 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "migrar_cli_nroid")
     private String cedula;
 
+    @Setter
+    @Column(name = "cloned_to_loan_id")
+    private Long clonedToLoanId;
+
+    @Setter
+    @Column(name = "cloned_from_loan_id")
+    private Long clonedFromLoanId;
+
     ///////////////
 
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
@@ -8712,5 +8720,4 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public boolean hasPenaltiesInRepaymentSchedules() {
         return this.getRepaymentScheduleInstallments().stream().anyMatch(LoanRepaymentScheduleInstallment::hasPenalties);
     }
-
 }

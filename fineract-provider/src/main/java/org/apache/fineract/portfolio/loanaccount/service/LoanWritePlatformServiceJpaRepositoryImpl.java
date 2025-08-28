@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.loanaccount.service;
 
 import com.google.common.collect.Lists;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -33,26 +34,15 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.cob.exceptions.LoanAccountLockCannotBeOverruledException;
 import org.apache.fineract.cob.service.LoanAccountLockService;
@@ -64,8 +54,14 @@ import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
+import org.apache.fineract.custom.infrastructure.core.service.CustomDateUtils;
+import org.apache.fineract.custom.portfolio.ally.data.ClientAllyPointOfSalesData;
+import org.apache.fineract.custom.portfolio.ally.service.ClientAllyPointOfSalesReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcess;
+import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcessRepository;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMapRepository;
+import org.apache.fineract.infrastructure.bulkimport.importhandler.helper.DateSerializer;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
@@ -90,6 +86,7 @@ import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRu
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
@@ -168,6 +165,7 @@ import org.apache.fineract.portfolio.calendar.domain.CalendarInstanceRepository;
 import org.apache.fineract.portfolio.calendar.domain.CalendarRepository;
 import org.apache.fineract.portfolio.calendar.domain.CalendarType;
 import org.apache.fineract.portfolio.calendar.exception.CalendarParameterUpdateNotSupportedException;
+import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeNotFoundException;
 import org.apache.fineract.portfolio.client.data.ClientAdditionalFieldsData;
@@ -320,6 +318,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final LoanCreditNoteRepository loanCreditNoteRepository;
     private final LoanAccrualPlatformService loanAccrualPlatformService;
     private final CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService;
+    private final LoanCloneAuditTrailRepository loanCloneAuditTrailRepository;
+    private final ClientBuyProcessRepository clientBuyProcessRepository;
+    private final ClientAllyPointOfSalesReadWritePlatformService clientAllyPointOfSalesReadWritePlatformService;
 
     @PostConstruct
     public void registerForNotification() {
@@ -5704,6 +5705,198 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         response.add("failedLoans", failedLoans);
         log.info("Completed processing for addMissingDevengoAccrualTransactions with failed loans: {}", failedLoans);
         return response;
+    }
+
+    @Transactional
+    @Override
+    public JsonObject cloneLoanAccounts(final String apiRequestBodyAsJson) {
+        final JsonElement element = fromApiJsonHelper.parse(apiRequestBodyAsJson);
+        final JsonArray loanIds = this.fromApiJsonHelper.extractJsonArrayNamed("loanIds", element);
+        final JsonArray failedLoans = new JsonArray();
+        for (final JsonElement loanIdJson : loanIds) {
+            final Long fromLoanId = loanIdJson.getAsLong();
+            final LoanCloneAuditTrail loanCloneAuditTrail = new LoanCloneAuditTrail();
+            try {
+                this.cloneLoan(fromLoanId, loanCloneAuditTrail);
+            } catch (Exception ex) {
+                log.error("Failed to clone loan account for loan ID: {}", fromLoanId, ex);
+                final String exceptionMessage = ExceptionUtils.getMessage(ex);
+                loanCloneAuditTrail.setErrorLog(exceptionMessage);
+                loanCloneAuditTrail.setApplied(false);
+                failedLoans.add(fromLoanId);
+            }
+            this.loanCloneAuditTrailRepository.saveAndFlush(loanCloneAuditTrail);
+        }
+        final JsonObject response = new JsonObject();
+        response.add("failedLoans", failedLoans);
+        log.info("Completed processing for cloneLoanAccounts with failed loans: {}", failedLoans);
+        return response;
+    }
+
+    private void cloneLoan(final Long fromLoanId, final LoanCloneAuditTrail loanCloneAuditTrail) {
+        loanCloneAuditTrail.setFromLoanId(fromLoanId);
+        loanCloneAuditTrail.setApplied(false);
+        loanCloneAuditTrail.setErrorLog("");
+        log.info("Starting to clone loan account for loan ID: {}", fromLoanId);
+        Loan fromLoan = this.loanAssembler.assembleFrom(fromLoanId);
+        if (!fromLoan.getStatus().isActive()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.clone.only.active.loans",
+                    "Only active loans can be cloned. Loan ID: " + fromLoanId + " is not active.");
+        }
+        final String toLoanExternalId = fromLoan.getId() + "-CLONE-" + RandomStringUtils.randomNumeric(10);
+        final Long toLoanId = submitLoanApplication(fromLoan, toLoanExternalId);
+        Loan toLoan = this.loanAssembler.assembleFrom(toLoanId);
+        approveLoanApplication(fromLoan, toLoan);
+        disburseLoanApplication(fromLoan, toLoan);
+        applyTransactionsToClonedLoan(fromLoan, toLoan);
+        loanCloneAuditTrail.setToLoanId(toLoanId);
+        loanCloneAuditTrail.setApplied(true);
+
+        fromLoan = this.loanAssembler.assembleFrom(fromLoanId);
+        toLoan = this.loanAssembler.assembleFrom(toLoanId);
+        fromLoan.updateLoanStatus(LoanStatus.REJECTED);
+        fromLoan.setClonedToLoanId(toLoanId);
+        toLoan.setClonedFromLoanId(fromLoanId);
+        saveAndFlushLoanWithIntegrityChecks(fromLoan);
+        saveAndFlushLoanWithIntegrityChecks(toLoan);
+        log.info("Successfully cloned loan account for loan ID: {}", fromLoanId);
+    }
+
+    private Long submitLoanApplication(final Loan loan, final String toLoanExternalId) {
+        final Long loanProductId = loan.getLoanProduct().getId();
+        final Long interestRatePoints = loan.getLoanProductRelatedDetail().getInterestRatePoints();
+        final LocalDate submittedOnDate = loan.getSubmittedOnDate();
+        final LocalDate expectedDisbursementDate = loan.getExpectedDisbursedOnLocalDate();
+        final Integer loanTermFrequency = loan.getNumberOfRepayments();
+        final Integer numberOfRepayments = loan.getNumberOfRepayments();
+        final Integer loanTermFrequencyType = loan.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue();
+        final Integer repaymentEvery = loan.getLoanProductRelatedDetail().getRepayEvery();
+        final Integer repaymentFrequencyType = loan.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue();
+        final BigDecimal interestRatePerPeriod = loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate();
+        final Integer interestType = loan.getLoanProductRelatedDetail().getInterestMethod().getValue();
+        final Integer amortizationType = loan.getLoanProductRelatedDetail().getAmortizationMethod().getValue();
+        final Integer interestCalculationPeriodType = loan.getLoanProductRelatedDetail().getInterestCalculationPeriodMethod().getValue();
+        final String transactionProcessingStrategyCode = loan.getLoanProduct().getTransactionProcessingStrategyCode();
+
+        final List<LoanChargeData> loanCharges = new ArrayList<>();
+        for (final LoanCharge loanCharge : loan.getCharges()) {
+            final Charge charge = loanCharge.getCharge();
+            if (loanCharges.stream().noneMatch(lc -> lc.getChargeId().equals(charge.getId()))) {
+                final LoanChargeData loanChargeData = LoanChargeData.builder().chargeId(charge.getId()).amount(charge.getAmount()).build();
+                loanCharges.add(loanChargeData);
+            }
+        }
+
+        final Long clientId = loan.getClientId();
+        final String loanType = loan.getClientId() != null ? "individual" : "group";
+        final BigDecimal approvedPrincipal = loan.getApprovedPrincipal();
+        final Integer graceOnPrincipalPayment = loan.getLoanProductRelatedDetail().getGraceOnPrincipalPayment();
+        final Integer graceOnInterestPayment = loan.getLoanProductRelatedDetail().getGraceOnInterestPayment();
+        final Integer graceOnInterestCharged = loan.getLoanProductRelatedDetail().graceOnInterestCharged();
+
+        final ClientData clientData = this.clientReadPlatformService.retrieveOne(clientId);
+        final String clientIdNumber = clientData.getIdNumber();
+        String pointOfSaleCode = null;
+        Long clientAllyId = null;
+        final Optional<ClientBuyProcess> existingClientByProcessOptional = this.clientBuyProcessRepository
+                .findClienByProsesLoanByLoanId(loan.getId());
+        if (existingClientByProcessOptional.isPresent()) {
+            final Long pointOfSalesId = existingClientByProcessOptional.get().getPointOfSalesId();
+            final ClientAllyPointOfSalesData clientAllyPointOfSales = this.clientAllyPointOfSalesReadWritePlatformService
+                    .findById(pointOfSalesId);
+            if (clientAllyPointOfSales != null) {
+                pointOfSaleCode = clientAllyPointOfSales.getCode();
+                clientAllyId = clientAllyPointOfSales.getClientAllyId();
+            }
+        }
+        final BigDecimal valorDescuento = loan.getValorDescuento();
+        final BigDecimal valorGiro = loan.getValorGiro();
+        final boolean isEqualAmortization = loan.getLoanProductRelatedDetail().isEqualAmortization();
+
+        final LoanApplicationData loanApplicationData = LoanApplicationData.builder().productId(loanProductId)
+                .interestRatePoints(interestRatePoints)
+                .submittedOnDate(DateUtils.format(submittedOnDate, CustomDateUtils.ENGLISH_DATE_FORMAT))
+                .expectedDisbursementDate(DateUtils.format(expectedDisbursementDate, CustomDateUtils.ENGLISH_DATE_FORMAT))
+                .loanTermFrequency(loanTermFrequency).loanTermFrequencyType(loanTermFrequencyType).numberOfRepayments(numberOfRepayments)
+                .repaymentEvery(repaymentEvery).repaymentFrequencyType(repaymentFrequencyType).interestRatePerPeriod(interestRatePerPeriod)
+                .interestType(interestType).amortizationType(amortizationType).interestCalculationPeriodType(interestCalculationPeriodType)
+                .transactionProcessingStrategyCode(transactionProcessingStrategyCode).charges(loanCharges)
+                .collateral(Collections.emptyList()).dateFormat(CustomDateUtils.ENGLISH_DATE_FORMAT).locale("en").clientId(clientId)
+                .loanType(loanType).principal(approvedPrincipal).graceOnPrincipalPayment(graceOnPrincipalPayment)
+                .graceOnInterestPayment(graceOnInterestPayment).graceOnInterestCharged(graceOnInterestCharged)
+                .clientIdNumber(clientIdNumber).pointOfSaleCode(pointOfSaleCode).allyId(clientAllyId).externalId(toLoanExternalId)
+                .valorDescuento(valorDescuento).valorGiro(valorGiro).isEqualAmortization(isEqualAmortization).isCloneLoan(true).build();
+        final GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
+        gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.ENGLISH_DATE_FORMAT));
+        final String loanApplicationJson = gsonBuilder.create().toJson(loanApplicationData);
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().createLoanApplication().withJson(loanApplicationJson).build();
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        return result.getLoanId();
+    }
+
+    private void approveLoanApplication(final Loan fromLoan, final Loan toLoan) {
+        final LocalDate approvalDate = fromLoan.getApprovedOnDate();
+        final LocalDate expectedDisbursementDate = fromLoan.getExpectedDisbursedOnLocalDate();
+        final BigDecimal approvedLoanAmount = fromLoan.getApprovedPrincipal();
+        final String note = "Aprobación automática de la cuenta de préstamo clonada";
+        final String locale = "en";
+        final String dateFormat = CustomDateUtils.ENGLISH_DATE_FORMAT;
+        final LoanApplicationData loanApplicationData = LoanApplicationData.builder().locale(locale).dateFormat(dateFormat)
+                .approvedOnDate(DateUtils.format(approvalDate, dateFormat)).approvedLoanAmount(approvedLoanAmount)
+                .expectedDisbursementDate(DateUtils.format(expectedDisbursementDate, dateFormat)).note(note).build();
+        final GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
+        gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.ENGLISH_DATE_FORMAT));
+        final String loanApprovalJson = gsonBuilder.create().toJson(loanApplicationData);
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().approveLoanApplication(toLoan.getId()).withJson(loanApprovalJson)
+                .build();
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        log.info("Cloned Loan with ID: {} approved successfully", result.getLoanId());
+    }
+
+    private void disburseLoanApplication(final Loan fromLoan, final Loan toLoan) {
+        final LocalDate actualDisbursementDate = fromLoan.getDisbursementDate();
+        final BigDecimal transactionAmount = fromLoan.getApprovedPrincipal();
+        final String channelName = "Mifos";
+        final String externalId = "";
+        final String paymentTypeId = "";
+        final String note = "Desembolso automático de la cuenta de préstamo clonada";
+        final String locale = "en";
+        final String dateFormat = CustomDateUtils.ENGLISH_DATE_FORMAT;
+        final LoanApplicationData loanApplicationData = LoanApplicationData.builder().locale(locale).dateFormat(dateFormat)
+                .actualDisbursementDate(DateUtils.format(actualDisbursementDate, dateFormat)).transactionAmount(transactionAmount)
+                .channelName(channelName).paymentTypeId(paymentTypeId).externalId(externalId).note(note).build();
+        final GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
+        gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.ENGLISH_DATE_FORMAT));
+        final String loanApprovalJson = gsonBuilder.create().toJson(loanApplicationData);
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().disburseLoanApplication(toLoan.getId()).withJson(loanApprovalJson)
+                .build();
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        log.info("Cloned Loan with ID: {} disbursed successfully", result.getLoanId());
+    }
+
+    private void applyTransactionsToClonedLoan(final Loan fromLoan, final Loan toLoan) {
+        final List<LoanTransaction> sortedRepaymentTransactions = fromLoan.retrieveListOfTransactionsByType(LoanTransactionType.REPAYMENT);
+        for (LoanTransaction transaction : sortedRepaymentTransactions) {
+            final LocalDate transactionDate = transaction.getTransactionDate();
+            final BigDecimal transactionAmount = transaction.getAmount();
+            final String externalId = "";
+            final String note = "Pago automático en la cuenta de préstamo clonada por la transacción de pago en la cuenta de préstamo original con ID: "
+                    + fromLoan.getId();
+            final String locale = "en";
+            final String dateFormat = CustomDateUtils.ENGLISH_DATE_FORMAT;
+            final LoanApplicationData loanApplicationData = LoanApplicationData.builder().locale(locale).dateFormat(dateFormat)
+                    .transactionDate(DateUtils.format(transactionDate, dateFormat)).transactionAmount(transactionAmount)
+                    .externalId(externalId).note(note).build();
+            final GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
+            gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.ENGLISH_DATE_FORMAT));
+            final String loanTransactionJson = gsonBuilder.create().toJson(loanApplicationData);
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().loanRepaymentTransaction(toLoan.getId())
+                    .withJson(loanTransactionJson).build();
+            final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+            log.info("Payment of amount: {} applied to cloned Loan with ID: {} and repayment transaction ID {} successfully",
+                    transactionAmount, result.getLoanId(), result.getResourceId());
+        }
+
     }
 
 }

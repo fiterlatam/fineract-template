@@ -176,10 +176,14 @@ public class LoanChargeAssembler {
                         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
 
                         Boolean isMigratedLoan = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, element);
+                        Boolean isCloneLoan = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.IS_CLONE_LOAN, element);
                         if (isMigratedLoan == null) {
                             isMigratedLoan = Boolean.FALSE;
                         }
-                        if (!isMigratedLoan && chargeDefinition.isAvalChargeFlatForMigration()) {
+                        if (isCloneLoan == null) {
+                            isCloneLoan = Boolean.FALSE;
+                        }
+                        if (!isMigratedLoan && !isCloneLoan && chargeDefinition.isAvalChargeFlatForMigration()) {
                             final String defaultUserMessage = "Selected Aval Charge is to be used only for migrated loans.";
                             throw new LoanChargeCannotBeAddedException("loanCharge", "aval.charge", defaultUserMessage, null,
                                     chargeDefinition.getName());

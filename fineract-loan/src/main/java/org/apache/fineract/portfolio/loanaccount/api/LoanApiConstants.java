@@ -201,4 +201,5 @@ public interface LoanApiConstants {
     String MIGRAR_NUMERO_CREDITO = "numeroCredito";
     String MIGRAR_CEDULA = "cedula";
     String IS_MIGRAR_LOAN = "isMigratedLoan";
+    String IS_CLONE_LOAN = "isCloneLoan";
 }

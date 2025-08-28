@@ -159,4 +159,6 @@ public interface LoanWritePlatformService {
     JsonArray regenerateLoanSchedule(String apiRequestBodyAsJson);
 
     JsonObject addMissingDevengoAccrualTransactions(String apiRequestBodyAsJson);
+
+    JsonObject cloneLoanAccounts(String apiRequestBodyAsJson);
 }
