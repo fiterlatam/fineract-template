@@ -1963,8 +1963,27 @@ WHERE tcm."ID" = sub."ID";
 -- Set missing first repayment dates to be 30 days after new disbursement date
 update tmp_loanaccount set new_disbursement_date = "APPROVEDDATE" 
 where "ACCOUNTSTATE" = 'APPROVED' and "LOANNAME" = 'Credito Rotativo' and new_disbursement_date is null;
+
 update tmp_loanaccount set new_first_repayment_date = new_disbursement_date + interval '1' month
 where new_disbursement_date is not null and new_first_repayment_date is null;
+
+-- Set first repayment date to duedate of first unpaid installment
+update tmp_loanaccount tcm set new_first_repayment_date = sub.new_date
+FROM (
+  SELECT
+    tl."ID",
+    (SELECT MIN(s1."DUEDATE")::date
+        FROM tmp_loan_repayment_schedule s1
+        WHERE s1."PARENTACCOUNTKEY" = tl."ENCODEDKEY"
+          AND s1."STATE" not IN ('PAID', 'GRACED')
+          group by tl."ID"
+      )AS new_date
+  FROM tmp_loanaccount tl
+  GROUP BY tl."ID", tl."ENCODEDKEY"
+) sub
+WHERE tcm."ID" = sub."ID"
+--and tcm."ID" = '0201514186'
+and new_disbursement_date is null and new_first_repayment_date is not null; -- look out for 0201514186
 
 -- truncate table tmp_migration_response 
 
