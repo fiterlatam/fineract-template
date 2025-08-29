@@ -16,29 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.accounting.journalentry.data;
+package org.apache.fineract.portfolio.loanaccount.domain;
 
-import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-/**
- * Request DTO for Colombian journal entries export
- */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class JournalExportRequest {
-
-    private String dateFrom;
-    private String dateTo;
-    private String accountingPeriod;
-    private List<String> transactionTypes;
-    private String companyCode = "IT";
-    private String currency = "COP";
-    private Boolean includeInactive = false;
-    private Long officeId;
-    private String dateFormat;
-    private String locale;
-}
+public interface LoanCloneAuditTrailRepository
+        extends JpaRepository<LoanCloneAuditTrail, Long>, JpaSpecificationExecutor<LoanCloneAuditTrail> {}

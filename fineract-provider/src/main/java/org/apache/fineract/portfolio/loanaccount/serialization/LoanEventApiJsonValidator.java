@@ -291,7 +291,7 @@ public final class LoanEventApiJsonValidator {
                 "locale", "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber",
                 "loanId", "channelHash", "channelName", "pointOfSalesCode", "isImportedTransaction", "repaymentChannelId",
                 "repaymentBankId", "transactionProcessingStrategy", "clientIdNumber", "reduceInstallmentAmount", "honorariosAmount",
-                "occurredOnSuspendedAccount", "partiallyInvoiced", "cleanUp"));
+                "occurredOnSuspendedAccount", "partiallyInvoiced", "isCloneLoan"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);

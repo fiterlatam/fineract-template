@@ -123,7 +123,10 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
     @Override
     @Transactional
     public void persistDailyInterestAccrual(final Long loanId, final LocalDate accrualDate) {
-        final Loan loan = this.loanAssembler.assembleFrom(loanId);
+        log.info("Fetching loan {} for accrual date {}", loanId, accrualDate);
+        long millsecondsBefore = System.currentTimeMillis();
+        final Loan loan = this.loanAssembler.assembleFromForJobs(loanId);
+        log.info("Loan {} fetch after {}ms", loan.getId(), System.currentTimeMillis() - millsecondsBefore);
         final String claimType = loan.claimType();
         if (claimType != null && claimType.equalsIgnoreCase("guarantor")) {
             return;
@@ -137,21 +140,6 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
                     interestRateChange.getTermVariationApplicableFrom(), interestRateChange.getDecimalValue(), accrualDate);
         }
 
-        // Check if there are any special write-off or Credit Note transactions on the accrual date
-        // If so, we need to make sure we're using the correct principal balance
-        boolean hasSpecialWriteOffOrCreditNoteOnAccrualDate = loan.getLoanTransactions().stream().anyMatch(
-                transaction -> (transaction.isSpecialWriteOff() || transaction.getTypeOf().equals(LoanTransactionType.CREDIT_NOTE))
-                        && !transaction.isReversed() && transaction.getTransactionDate().isEqual(accrualDate));
-
-        // If there are special write-off or Credit Note transactions on the accrual date,
-        // we need to refresh the loan to ensure we have the most up-to-date principal balance
-        if (hasSpecialWriteOffOrCreditNoteOnAccrualDate) {
-            log.info("Loan {} has special write-off or Credit Note transactions on accrual date {}. Refreshing loan data.", loan.getId(),
-                    accrualDate);
-            // Force a refresh of the loan to ensure we have the most up-to-date data
-            this.loanRepository.saveAndFlush(loan);
-        }
-
         final Long minimumDaysInArrearsToSuspendLoanAccount = this.configurationDomainService
                 .retriveMinimumDaysInArrearsToSuspendLoanAccount();
         LocalDate lastInterestAccrualDate = loan.getInterestAccruedTill();
@@ -161,12 +149,13 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
         }
         // Loop through the days between the last accrual date and accrual date and process interest accrual for each
         // day
+        long currentMillis = System.currentTimeMillis();
         log.info("Persisting daily accrual for loan: {}", loan.getId());
         while (lastInterestAccrualDate.isBefore(accrualDate)) {
             lastInterestAccrualDate = lastInterestAccrualDate.plusDays(1);
             this.processInterestAccrualForDate(lastInterestAccrualDate, loan, minimumDaysInArrearsToSuspendLoanAccount);
         }
-        log.info("Daily accrual persisted for loan: {}", loan.getId());
+        log.info("Daily accrual persisted for loan: {} after {}ms", loan.getId(), System.currentTimeMillis() - currentMillis);
     }
 
     @SuppressWarnings("all")

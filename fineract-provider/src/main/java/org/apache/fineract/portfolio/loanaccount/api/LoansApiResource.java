@@ -564,6 +564,11 @@ public class LoansApiResource {
             return this.toApiJsonSerializer.serialize(response);
         }
 
+        if (CommandParameterUtil.is(commandParam, "cloneLoanAccounts")) {
+            final JsonObject response = this.loanWritePlatformService.cloneLoanAccounts(apiRequestBodyAsJson);
+            return this.toApiJsonSerializer.serialize(response);
+        }
+
         final CommandWrapper commandRequest = new CommandWrapperBuilder().createLoanApplication().withJson(apiRequestBodyAsJson).build();
 
         final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);

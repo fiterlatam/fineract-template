@@ -78,20 +78,13 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             loanEndDate = lastDueDateVariation.getDateValue();
         }
         loanApplicationTerms.updateLoanEndDate(loanEndDate);
-        final MonetaryCurrency currency = loanApplicationTerms.getCurrency();
 
-        loanCharges.stream().forEach(charge -> {
-            // IF CHARGE IS TYPE DISB_SEGO or DISB_AVAL
-            if (charge.getCharge().isPercentageBasedMandatoryInsurance() && charge.getLoan() != null) {
-                charge.update(charge.getPercentage(), charge.getDueDate(), charge.getLoan().getPrincipal().getAmount(),
-                        loanApplicationTerms.getActualNumberOfRepayments(), BigDecimal.ZERO);
-            }
-        });
         // determine the total charges due at time of disbursement
         final BigDecimal chargesDueAtTimeOfDisbursement = deriveTotalChargesDueAtTimeOfDisbursement(loanCharges);
 
         // setup variables for tracking important facts required for loan
         // schedule generation.
+        final MonetaryCurrency currency = loanApplicationTerms.getCurrency();
         LoanScheduleParams scheduleParams;
         LocalDate periodStartDate = RepaymentStartDateType.DISBURSEMENT_DATE.equals(loanApplicationTerms.getRepaymentStartDateType())
                 ? loanApplicationTerms.getExpectedDisbursementDate()

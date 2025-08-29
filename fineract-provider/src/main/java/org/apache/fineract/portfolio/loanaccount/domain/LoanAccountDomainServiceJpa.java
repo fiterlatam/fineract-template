@@ -256,7 +256,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom,
                 holidayDetailDto);
 
-        if (this.isLoanExpectedToBeFullyRepaid(loan, transactionDate, repaymentAmount, scheduleGeneratorDTO) && !loan.isCleanUp()) {
+        if (this.isLoanExpectedToBeFullyRepaid(loan, transactionDate, repaymentAmount, scheduleGeneratorDTO)) {
             /**
              * Add all missing accrual transactions that happened before the closure date, but not yet posted.
              */
@@ -298,12 +298,16 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         recalculateAccruals(loan);
 
         setLoanDelinquencyTag(loan, transactionDate);
+        final boolean isCloneLoanTransaction = parameters != null && parameters.containsKey("isCloneLoan")
+                && (boolean) parameters.get("isCloneLoan");
         if (!repaymentTransactionType.isChargeRefund()) {
             final LoanTransactionBusinessEvent transactionRepaymentEvent = getTransactionRepaymentTypeBusinessEvent(
                     repaymentTransactionType, isRecoveryRepayment, newRepaymentTransaction);
             businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
             businessEventNotifierService.notifyPostBusinessEvent(transactionRepaymentEvent);
-            businessEventNotifierService.notifyPostBusinessEvent(new LoanInvoiceGenerationPostBusinessEvent(newRepaymentTransaction));
+            if (!isCloneLoanTransaction) {
+                businessEventNotifierService.notifyPostBusinessEvent(new LoanInvoiceGenerationPostBusinessEvent(newRepaymentTransaction));
+            }
         }
 
         // disable all active standing orders linked to this loan if status
@@ -1184,8 +1188,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             if (collectionHouse != null) {
                 payment.setCollectionHouse(collectionHouse);
             }
-            payment.setForeclosure(true);
-
             newTransactions.add(payment);
         }
 
