@@ -298,12 +298,16 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         recalculateAccruals(loan);
 
         setLoanDelinquencyTag(loan, transactionDate);
+        final boolean isCloneLoanTransaction = parameters != null && parameters.containsKey("isCloneLoan")
+                && (boolean) parameters.get("isCloneLoan");
         if (!repaymentTransactionType.isChargeRefund()) {
             final LoanTransactionBusinessEvent transactionRepaymentEvent = getTransactionRepaymentTypeBusinessEvent(
                     repaymentTransactionType, isRecoveryRepayment, newRepaymentTransaction);
             businessEventNotifierService.notifyPostBusinessEvent(new LoanBalanceChangedBusinessEvent(loan));
             businessEventNotifierService.notifyPostBusinessEvent(transactionRepaymentEvent);
-            businessEventNotifierService.notifyPostBusinessEvent(new LoanInvoiceGenerationPostBusinessEvent(newRepaymentTransaction));
+            if (!isCloneLoanTransaction) {
+                businessEventNotifierService.notifyPostBusinessEvent(new LoanInvoiceGenerationPostBusinessEvent(newRepaymentTransaction));
+            }
         }
 
         // disable all active standing orders linked to this loan if status

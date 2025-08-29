@@ -1257,9 +1257,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
             }
         }
+        final boolean isCloneLoan = command.booleanPrimitiveValueOfParameterNamed("isCloneLoan");
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("honorariosVatPortion", cumulativeVatFee);
         parameters.put("honorariosPortion", cumulativeHonoFee);
+        parameters.put("isCloneLoan", isCloneLoan);
         return makeLoanRepaymentWithChargeRefundChargeType(repaymentTransactionType, loanId, command, isRecoveryRepayment,
                 chargeRefundChargeType, parameters);
     }
@@ -5885,7 +5887,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final String locale = "en";
             final String dateFormat = CustomDateUtils.ENGLISH_DATE_FORMAT;
             final LoanApplicationData loanApplicationData = LoanApplicationData.builder().locale(locale).dateFormat(dateFormat)
-                    .transactionDate(DateUtils.format(transactionDate, dateFormat)).transactionAmount(transactionAmount)
+                    .transactionDate(DateUtils.format(transactionDate, dateFormat)).transactionAmount(transactionAmount).isCloneLoan(true)
                     .externalId(externalId).note(note).build();
             final GsonBuilder gsonBuilder = GoogleGsonSerializerHelper.createGsonBuilder();
             gsonBuilder.registerTypeAdapter(LocalDate.class, new DateSerializer(CustomDateUtils.ENGLISH_DATE_FORMAT));
