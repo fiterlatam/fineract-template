@@ -1086,11 +1086,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         boolean exit = false;
         final int maxIterationCount = 50;
         int iterationCount = 0;
-
         do {
             iterationCount += 1;
-            log.info("processing loan id : {} loan trans:{} - {}", loanTransaction.getId(), loanTransaction.getLoan().getId(),
-                    iterationCount);
+            log.info("processing loan id: {} - {}", loanTransaction.getLoan().getId(), iterationCount);
             if (transactionAmountUnprocessed.isZero()) {
                 exit = true;
                 continue;
@@ -1209,8 +1207,6 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
 
             int firstNormalInstallmentNumber = LoanRepaymentScheduleProcessingWrapper.fetchFirstNormalInstallmentNumber(installments);
             boolean stopProcessingAdvanceInstallment = false;
-            boolean madeProgress = false; // Track if any progress was made in this iteration
-
             for (PaymentAllocationType paymentAllocationType : paymentAllocationTypes) {
                 if (transactionAmountUnprocessed.isZero()) {
                     exit = true;
@@ -1226,9 +1222,6 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                             paidPortion = processPaymentAllocation(paymentAllocationType, oldestPastDueInstallment, loanTransaction,
                                     transactionAmountUnprocessed, loanTransactionToRepaymentScheduleMapping,
                                     oldestPastDueInstallmentCharges, balances, LoanRepaymentScheduleInstallment.PaymentAction.PAY);
-                            if (paidPortion.isGreaterThanZero()) {
-                                madeProgress = true;
-                            }
                             transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
                         } else {
                             exit = true;
@@ -1243,9 +1236,6 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                             paidPortion = processPaymentAllocation(paymentAllocationType, dueInstallment, loanTransaction,
                                     transactionAmountUnprocessed, loanTransactionToRepaymentScheduleMapping, dueInstallmentCharges,
                                     balances, LoanRepaymentScheduleInstallment.PaymentAction.PAY);
-                            if (paidPortion.isGreaterThanZero()) {
-                                madeProgress = true;
-                            }
                             transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
                             exit = true;
                         } else {
@@ -1295,9 +1285,6 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                     loanTransaction, transactionAmountUnprocessed,
                                                     loanTransactionToRepaymentScheduleMapping, inAdvanceInstallmentCharges, balances,
                                                     LoanRepaymentScheduleInstallment.PaymentAction.PAY);
-                                            if (paidPortion.isGreaterThanZero()) {
-                                                madeProgress = true;
-                                            }
                                             transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPortion);
                                         } else {
                                             if (inAdvanceInstallment.isLastInstallment(installments)
@@ -1327,7 +1314,6 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                         transactionAmountUnprocessed, zero, zero, zero);
                                                 transactionAmountUnprocessed = transactionAmountUnprocessed.minus(paidPrincipalComponent);
                                                 stopProcessingAdvanceInstallment = true;
-                                                madeProgress = true;
 
                                             } else {
                                                 balances.setAggregatedPrincipalPortion(
@@ -1355,7 +1341,6 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                         transactionAmountUnprocessed, zero, zero, zero);
 
                                                 transactionAmountUnprocessed = Money.zero(currency);
-                                                madeProgress = true;
                                             }
                                         }
                                     }

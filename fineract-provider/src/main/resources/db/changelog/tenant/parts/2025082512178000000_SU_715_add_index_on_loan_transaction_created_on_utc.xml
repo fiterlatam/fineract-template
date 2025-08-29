@@ -21,21 +21,15 @@
 -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
-
-    <changeSet author="fineract" id="01">
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+    <changeSet author="fineract" id="1" runInTransaction="false">
         <preConditions onFail="MARK_RAN">
             <not>
-                <columnExists tableName="m_loan_transaction" columnName="is_foreclosure"></columnExists>
+                <indexExists tableName="m_loan_transaction" columnNames="created_on_utc"/>
             </not>
         </preConditions>
-
-        <addColumn tableName="m_loan_transaction">
-            <column name="is_foreclosure" type="boolean" defaultValue="false">
-                <constraints nullable="false"/>
-            </column>
-        </addColumn>
-
+        <createIndex indexName="IDX_M_LOAN_TRANSACTION_CREATED_ON_UTC" tableName="m_loan_transaction">
+            <column name="created_on_utc"/>
+        </createIndex>
     </changeSet>
-
 </databaseChangeLog>
