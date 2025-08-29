@@ -25,6 +25,7 @@ import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWrit
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformationRepository;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
+import org.apache.fineract.custom.portfolio.ally.service.ClientAllyPointOfSalesReadWritePlatformService;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcessRepository;
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeEntityReadWritePlatformService;
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeMapReadWritePlatformService;
@@ -85,21 +86,7 @@ import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
 import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentNoveltyNewsRepository;
 import org.apache.fineract.portfolio.insurance.domain.InsuranceIncidentRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.GLIMAccountInfoRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainService;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanAccountDomainServiceJpa;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanArchiveHistoryRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanBlockingReasonRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanChargeRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCreditNoteRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanLifecycleStateMachine;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallmentRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanSummaryWrapper;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.*;
 import org.apache.fineract.portfolio.loanaccount.guarantor.service.GuarantorDomainService;
 import org.apache.fineract.portfolio.loanaccount.invoice.domain.FacturaElectronicMensualRepository;
 import org.apache.fineract.portfolio.loanaccount.jobs.applychargetooverdueloaninstallment.ApplyChargeToOverdueLoanInstallmentProcessor;
@@ -471,7 +458,9 @@ public class LoanAccountConfiguration {
             FacturaElectronicMensualRepository facturaElectronicMensualRepository,
             LoanProductParameterizationRepository productParameterizationRepository,
             CustomChargeHonorarioMapRepository customChargeHonorarioMapRepository, LoanCreditNoteRepository loanCreditNoteRepository,
-            LoanAccrualPlatformService loanAccrualPlatformService, CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService) {
+            LoanAccrualPlatformService loanAccrualPlatformService, CollectionHouseReadWriteServiceImpl collectionHouseReadWriteService,
+            LoanCloneAuditTrailRepository loanCloneAuditTrailRepository, ClientBuyProcessRepository clientBuyProcessRepository,
+            ClientAllyPointOfSalesReadWritePlatformService clientAllyPointOfSalesReadWritePlatformService) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
@@ -491,7 +480,8 @@ public class LoanAccountConfiguration {
                 loanBlockingReasonRepositoryWrapper, loanBlockingReasonRepository, insuranceIncidentRepository,
                 insuranceIncidentNoveltyNewsRepository, loanScheduleFactory, blockingReasonSettingsRepositoryWrapper,
                 facturaElectronicMensualRepository, productParameterizationRepository, customChargeHonorarioMapRepository,
-                loanCreditNoteRepository, loanAccrualPlatformService, collectionHouseReadWriteService);
+                loanCreditNoteRepository, loanAccrualPlatformService, collectionHouseReadWriteService, loanCloneAuditTrailRepository,
+                clientBuyProcessRepository, clientAllyPointOfSalesReadWritePlatformService);
     }
 
     @Bean

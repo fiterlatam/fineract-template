@@ -234,10 +234,14 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             }
             if (!isTopUp && !isAjuste) {
                 Boolean isMigratedLoan = this.fromJsonHelper.extractBooleanNamed(LoanApiConstants.IS_MIGRAR_LOAN, command.parsedJson());
+                Boolean isCloneLoan = this.fromJsonHelper.extractBooleanNamed(LoanApiConstants.IS_CLONE_LOAN, command.parsedJson());
                 if (isMigratedLoan == null) {
                     isMigratedLoan = Boolean.FALSE;
                 }
-                if (!isMigratedLoan) {
+                if (isCloneLoan == null) {
+                    isCloneLoan = Boolean.FALSE;
+                }
+                if (!isMigratedLoan && !isCloneLoan) {
                     this.fromApiJsonDeserializer.validateClientBlockingList(entityId);
                 }
             }
