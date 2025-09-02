@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:14.0
+        image: postgres:17.4
         env:
           POSTGRES_DB: fineract_tenants
           POSTGRES_PASSWORD: postgres
@@ -28,7 +28,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.5'
-      - name: Sonar
+      - name: Build jars, run SpotlessCheck and Sonar Scan
         env:
           ENTRE_AMIGOS_SONAR_HOST_URL: ${{ secrets.ENTRE_AMIGOS_SONAR_HOST_URL }}
           ENTRE_AMIGOS_SONAR_TOKEN: ${{ secrets.ENTRE_AMIGOS_SONAR_TOKEN }}
@@ -40,6 +40,7 @@ jobs:
           ./gradlew wrapper --gradle-version=8.5
           ./gradlew wrapper --version
           ./gradlew build -x spotlessGroovyGradle -x checkstyleMain -x spotbugsMain -x compileTestJava -x test -x cucumber -x checkstyleTest -x asciidoctorPdf -x asciidoctor -x buildAsciidoc -x spotbugsTest
+          # ./gradlew spotlessCheck
           # ./gradlew sonar \
           # -Dsonar.host.url=$ENTRE_AMIGOS_SONAR_HOST_URL \
           # -Dsonar.token=$ENTRE_AMIGOS_SONAR_TOKEN \
@@ -48,7 +49,7 @@ jobs:
           # -Dsonar.qualitygate.wait=true \
           # --info
 
-      - name: Run Test Server
+      - name: Prepare Test Server
         env:
           FINERACT_DEFAULT_TENANTDB_UID: postgres
           FINERACT_DEFAULT_TENANTDB_PWD: postgres
@@ -61,15 +62,89 @@ jobs:
           FINERACT_HIKARI_PASSWORD: postgres
           FINERACT_SERVER_PORT: 8443
           FINERACT_DEFAULT_TENANTDB_NAME: fineract_default
+          # PGPASSWORD: postgres
         run: |
           ./gradlew dropPGDB -PdbName=$FINERACT_DEFAULT_TENANTDB_NAME -PdbUserName=$FINERACT_HIKARI_USERNAME -PdbUserPassword=$FINERACT_HIKARI_PASSWORD -PjdbcURL=$FINERACT_HIKARI_JDBC_URL
           ./gradlew createPGDB -PdbName=$FINERACT_DEFAULT_TENANTDB_NAME -PdbUserName=$FINERACT_HIKARI_USERNAME -PdbUserPassword=$FINERACT_HIKARI_PASSWORD -PjdbcURL=$FINERACT_HIKARI_JDBC_URL
-          ./gradlew spotlessCheck
+          ./fineract-qa/pipetools/restore_dev_db.sh
+
           ./gradlew --no-daemon --console=plain :fineract-provider:bootRun -q -x rat -x compileTestJava -x test --info & curl --connect-timeout 5 --retry 120 --retry-delay 5 --retry-connrefused -k https://localhost:8443/fineract-provider/actuator/health
+
+      - name: Run ATF QA Collections
+        run: |
+          npm install -g newman newman-reporter-html
+          npm install -g newman-reporter-htmlextra
+
+          timestamp=$(date +'%Y%m%d-%H%M%S')
+          export NEWMAN_REPORT_PATH="fineract-qa/results/report-$timestamp.txt"
+
+          mkdir fineract-qa/results
+          rm -rf fineract-qa/results/*
+          set +e
+          TEST_FAIL=false
+
+          echo "###############################################################################################"
+          echo "#"
+          echo "# ⏳ Will run the collections now... Hold your breath and fingers crossed!"
+          echo "#"
+          for collection in fineract-qa/collections/*.postman_collection.json; do
+            collection_name=$(basename "$collection" .postman_collection.json)
+            export COLLECTION_REPORT_PATH="fineract-qa/results/${collection_name}.txt"
+
+            printf "#    🔹 $collection_name -> "
+
+            newman run "$collection" \
+              -e "fineract-qa/environments/EA-Localhost.postman_environment.json" \
+              -k \
+              --verbose \
+              --reporter-cli-show-body \
+              --reporter-htmlextra-export "$NEWMAN_REPORT_PATH" >> "$COLLECTION_REPORT_PATH"
+
+            RESULT=$?
+            if [ $RESULT -ne 0 ]; then
+              printf "❌ failed\r"
+              TEST_FAIL=true
+            else
+              printf "✅ OK\r"
+            fi
+
+          done
+          echo "#"
+          echo "# ✨ End of Executing collections"
+
+          if [ "$TEST_FAIL" = "true" ]; then
+            echo "#"
+            echo "# ⚠️ One collection (or more) failed."
+          fi
+
+          echo "#"
+          echo "###############################################################################################"
+
+          if [ "$TEST_FAIL" = "true" ]; then
+            exit 1
+          fi
+
+      - name: Upload QA Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atf-reports-${{ github.run_id }}
+          path: fineract-qa/results/*.*
+
+      - name: ATF QA collections error checker
+        if: failure()
+        run: |
+          echo "⚠️ One collection (or more) failed. Check all details at Upload QA Reports."
+          exit 1
+
       - name: Run Integration Tests
         run: |
           ./gradlew --no-daemon --console=plain :integration-tests:cleanTest :integration-tests:test -PcargoDisabled --info
+
+      - name: Stop Test Server
+        run: |
           ./gradlew --stop
+
   continuous-integration:
     if: github.ref == 'refs/heads/fiter/entreamigos/dev'
     needs: [integration-tests]
