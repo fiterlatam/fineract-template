@@ -416,4 +416,5 @@
     <include file="parts/202507022000002000_add_orig_charge_name_to_loan_charge.xml" relativeToChangelogFile="true"/>
     <include file="parts/202507252000001000_EA_418_update_baseline_configuration.xml" relativeToChangelogFile="true"/>
     <include file="parts/202507252000002000_EA_418_update_baseline_holidays.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202501270000000001_EA_Add_baseline_blocking_reasons.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
