@@ -46,19 +46,15 @@
                 -- 4. Castigo - Fraude (Punishment - Fraud) - Priority 4
                 -- 5. Castigo (Punishment) - Priority 5
                 
-                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level", is_enabled) 
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level", is_enabled)
                 VALUES(1, 'Fallecimiento', 'Fallecimiento', 'CREDIT', 1);
-                
-                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level", is_enabled) 
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level", is_enabled)
                 VALUES(2, 'Acelerado - Cobro Juridico', 'Acelerado - Cobro Juridico', 'CREDIT', 1);
-                
-                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level", is_enabled) 
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level", is_enabled)
                 VALUES(3, 'Acelerado', 'Acelerado', 'CREDIT', 1);
-                
-                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level", is_enabled) 
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level", is_enabled)
                 VALUES(4, 'Castigo - Fraude', 'Castigo - Fraude', 'CREDIT', 1);
-                
-                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level", is_enabled) 
+                INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level", is_enabled)
                 VALUES(5, 'Castigo', 'Castigo', 'CREDIT', 1);
             ]]>
         </sql>
