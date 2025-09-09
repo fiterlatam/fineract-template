@@ -21,9 +21,14 @@ package org.apache.fineract.portfolio.loanaccount.service;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAccountBlockComponentEnum;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAccountBlockData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanBlockingReasonData;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -112,5 +117,55 @@ public class LoanBlockReadPlatformServiceImpl implements LoanBlockReadPlatformSe
         LoanBlockingReasonMapper mapper = new LoanBlockingReasonMapper();
         final String query = "SELECT " + mapper.schema() + " where client.id = ? and mbrs.id = ? and mcbr.is_active = true";
         return jdbcTemplate.query(query, mapper, blockingReasonId);
+    }
+
+    @Override
+    public LoanAccountBlockData checkBlockAccountComponents(Long loanId, LocalDate givenDate) {
+        List<LoanAccountBlockComponentEnum> blockedComponents = new ArrayList<>();
+
+        blockedComponents.add(LoanAccountBlockComponentEnum.BLOCK_DISBURSAL);
+        blockedComponents.add(LoanAccountBlockComponentEnum.ACCELERATE);
+        blockedComponents.add(LoanAccountBlockComponentEnum.FREEZE_INTEREST);
+        blockedComponents.add(LoanAccountBlockComponentEnum.FREEZE_MORA);
+        blockedComponents.add(LoanAccountBlockComponentEnum.FREEZE_LIFE_INSURANCE);
+        blockedComponents.add(LoanAccountBlockComponentEnum.FREEZE_MIPYME);
+
+        return LoanAccountBlockData.builder().loanId(loanId).blockReasonId(9999L).blockReasonName("Castigo").providedDate(givenDate)
+                .loanAccountBlockComponentEnumList(blockedComponents).build();
+    }
+
+    @Override
+    public boolean containsBlockAccountDisbursal(Long loanId, LocalDate givenDate) {
+        return containsBlockAccount(loanId, givenDate, LoanAccountBlockComponentEnum.BLOCK_DISBURSAL);
+    }
+
+    @Override
+    public boolean containsBlockAccountAccelerate(Long loanId, LocalDate givenDate) {
+        return containsBlockAccount(loanId, givenDate, LoanAccountBlockComponentEnum.ACCELERATE);
+    }
+
+    @Override
+    public boolean containsBlockAccountFreezeInterest(Long loanId, LocalDate givenDate) {
+        return containsBlockAccount(loanId, givenDate, LoanAccountBlockComponentEnum.FREEZE_INTEREST);
+    }
+
+    @Override
+    public boolean containsBlockAccountFreezeMora(Long loanId, LocalDate givenDate) {
+        return containsBlockAccount(loanId, givenDate, LoanAccountBlockComponentEnum.FREEZE_MORA);
+    }
+
+    @Override
+    public boolean containsBlockAccountFreezeLifeInsurance(Long loanId, LocalDate givenDate) {
+        return containsBlockAccount(loanId, givenDate, LoanAccountBlockComponentEnum.FREEZE_LIFE_INSURANCE);
+    }
+
+    @Override
+    public boolean containsBlockAccountFreezeMipyme(Long loanId, LocalDate givenDate) {
+        return containsBlockAccount(loanId, givenDate, LoanAccountBlockComponentEnum.FREEZE_MIPYME);
+    }
+
+    private boolean containsBlockAccount(Long loanId, LocalDate givenDate, LoanAccountBlockComponentEnum blockComponentEnum) {
+        return checkBlockAccountComponents(loanId, givenDate).getLoanAccountBlockComponentEnumList().stream()
+                .anyMatch(disb -> disb.equals(blockComponentEnum));
     }
 }

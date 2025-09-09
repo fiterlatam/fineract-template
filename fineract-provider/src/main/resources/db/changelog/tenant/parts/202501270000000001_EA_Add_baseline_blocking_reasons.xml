@@ -45,7 +45,7 @@
                 -- 3. Acelerado (Accelerated) - Priority 3
                 -- 4. Castigo - Fraude (Punishment - Fraud) - Priority 4
                 -- 5. Castigo (Punishment) - Priority 5
-                
+
                 INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level", is_enabled)
                 VALUES(1, 'Fallecimiento', 'Fallecimiento', 'CREDIT', 1);
                 INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level", is_enabled)
@@ -56,6 +56,22 @@
                 VALUES(4, 'Castigo - Fraude', 'Castigo - Fraude', 'CREDIT', 1);
                 INSERT INTO m_blocking_reason_setting (priority, description, name_of_reason, "level", is_enabled)
                 VALUES(5, 'Castigo', 'Castigo', 'CREDIT', 1);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="3" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_blocking_reason_setting
+                (priority, description, name_of_reason, "level", createdby_id, created_date, lastmodifiedby_id, lastmodified_date, is_enabled, disabled_on_date, enabled_on_date, disabled_by, enabled_by, affects_client_level, affects_credit_level)
+                VALUES(6, 'MORA', 'MORA', 'CREDIT', NULL, '2025-02-28 15:12:54.206', NULL, '2025-02-28 15:12:54.206', 1, NULL, '2025-02-28 00:00:00.000', NULL, 1, NULL, NULL);
+                INSERT INTO m_blocking_reason_setting
+                (priority, description, name_of_reason, "level", createdby_id, created_date, lastmodifiedby_id, lastmodified_date, is_enabled, disabled_on_date, enabled_on_date, disabled_by, enabled_by, affects_client_level, affects_credit_level)
+                VALUES(7, 'MORA', 'MORA', 'CLIENT', NULL, '2025-01-09 12:08:01.602', NULL, '2025-01-09 12:08:01.602', 1, '2025-02-28 00:00:00.000', '2025-04-22 00:00:00.000', 1, 1, NULL, NULL);
+                INSERT INTO m_blocking_reason_setting
+                (priority, description, name_of_reason, "level", createdby_id, created_date, lastmodifiedby_id, lastmodified_date, is_enabled, disabled_on_date, enabled_on_date, disabled_by, enabled_by, affects_client_level, affects_credit_level)
+                VALUES(8, 'CANCELADO', 'CANCELADO', 'CREDIT', NULL, '2025-01-23 14:14:26.262', NULL, '2025-01-23 14:14:26.262', 1, '2025-02-28 00:00:00.000', '2025-04-22 00:00:00.000', 1, 12, NULL, NULL);
             ]]>
         </sql>
     </changeSet>

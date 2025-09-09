@@ -28,7 +28,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.5'
-      - name: Build jars, run SpotlessCheck and Sonar Scan
+      - name: Run SpotlessCheck, Build jars and run Sonar Scan
         env:
           ENTRE_AMIGOS_SONAR_HOST_URL: ${{ secrets.ENTRE_AMIGOS_SONAR_HOST_URL }}
           ENTRE_AMIGOS_SONAR_TOKEN: ${{ secrets.ENTRE_AMIGOS_SONAR_TOKEN }}
@@ -39,8 +39,8 @@ jobs:
           gradle wrapper
           ./gradlew wrapper --gradle-version=8.5
           ./gradlew wrapper --version
-          ./gradlew build -x spotlessGroovyGradle -x checkstyleMain -x spotbugsMain -x compileTestJava -x test -x cucumber -x checkstyleTest -x asciidoctorPdf -x asciidoctor -x buildAsciidoc -x spotbugsTest
           # ./gradlew spotlessCheck
+          ./gradlew build -x spotlessGroovyGradle -x checkstyleMain -x spotbugsMain -x compileTestJava -x test -x cucumber -x checkstyleTest -x asciidoctorPdf -x asciidoctor -x buildAsciidoc -x spotbugsTest
           # ./gradlew sonar \
           # -Dsonar.host.url=$ENTRE_AMIGOS_SONAR_HOST_URL \
           # -Dsonar.token=$ENTRE_AMIGOS_SONAR_TOKEN \
@@ -62,7 +62,9 @@ jobs:
           FINERACT_HIKARI_PASSWORD: postgres
           FINERACT_SERVER_PORT: 8443
           FINERACT_DEFAULT_TENANTDB_NAME: fineract_default
-          # PGPASSWORD: postgres
+          PGPASSWORD: postgres
+          RUN_ATF_PROCESS: true
+
         run: |
           ./gradlew dropPGDB -PdbName=$FINERACT_DEFAULT_TENANTDB_NAME -PdbUserName=$FINERACT_HIKARI_USERNAME -PdbUserPassword=$FINERACT_HIKARI_PASSWORD -PjdbcURL=$FINERACT_HIKARI_JDBC_URL
           ./gradlew createPGDB -PdbName=$FINERACT_DEFAULT_TENANTDB_NAME -PdbUserName=$FINERACT_HIKARI_USERNAME -PdbUserPassword=$FINERACT_HIKARI_PASSWORD -PjdbcURL=$FINERACT_HIKARI_JDBC_URL
@@ -72,6 +74,11 @@ jobs:
 
       - name: Run ATF QA Collections
         run: |
+          if([ "$RUN_ATF_PROCESS" != "true" ]); then
+            echo "Skipping ATF QA Collections as RUN_ATF_PROCESS is not set to true"
+            # exit 0
+          fi
+
           npm install -g newman newman-reporter-html
           npm install -g newman-reporter-htmlextra
 
@@ -90,6 +97,7 @@ jobs:
           for collection in fineract-qa/collections/*.postman_collection.json; do
             collection_name=$(basename "$collection" .postman_collection.json)
             export COLLECTION_REPORT_PATH="fineract-qa/results/${collection_name}.txt"
+            export COLLECTION_REPORT_PATH_JSON="fineract-qa/results/${collection_name}.json"
 
             printf "#    🔹 $collection_name -> "
 
@@ -98,7 +106,8 @@ jobs:
               -k \
               --verbose \
               --reporter-cli-show-body \
-              --reporter-htmlextra-export "$NEWMAN_REPORT_PATH" >> "$COLLECTION_REPORT_PATH"
+              --reporter-json-export "$COLLECTION_REPORT_PATH_JSON" \
+              --reporter-htmlextra-export "$COLLECTION_REPORT_PATH" >> "$COLLECTION_REPORT_PATH"
 
             RESULT=$?
             if [ $RESULT -ne 0 ]; then

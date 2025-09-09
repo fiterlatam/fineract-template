@@ -15,11 +15,14 @@
 # limitations under the License.
 #
 
+echo "Starting restore_dev_db.sh"
+
 PGPASSWORD=postgres pg_restore \
   -h localhost \
   -p 5432 \
   -U postgres \
   -d fineract_default \
+  --verbose \
   --no-owner \
   --no-comments \
   --no-privileges \
@@ -28,7 +31,12 @@ PGPASSWORD=postgres pg_restore \
   --clean \
   fineract-qa/dbdump/db_backup.dump
 
-# PGPASSWORD=postgres psql -h localhost -U postgres -d fineract_default -f fineract-qa/pipetools/sync_up_tables.sql
+echo "Restore finished"
+echo "Executing custom SQL to sync up dev db with latest changes"
+
+PGPASSWORD=postgres psql -h localhost -U postgres -d fineract_default -f fineract-qa/pipetools/sync_up_tables.sql
+
+echo "Custom SQL execution finished"
 
 rm -rf db_backup.dump
 

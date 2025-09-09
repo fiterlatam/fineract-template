@@ -19,8 +19,10 @@
 
 package org.apache.fineract.portfolio.loanaccount.service;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAccountBlockData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanBlockingReasonData;
 
 public interface LoanBlockReadPlatformService {
@@ -33,4 +35,17 @@ public interface LoanBlockReadPlatformService {
 
     Collection<LoanBlockingReasonData> retrieveAllLoanWithClientAndBlockingReason(Long clientId, Long blockingReasonId);
 
+    LoanAccountBlockData checkBlockAccountComponents(Long loanId, LocalDate givenDate);
+
+    boolean containsBlockAccountDisbursal(Long loanId, LocalDate givenDate);
+
+    boolean containsBlockAccountAccelerate(Long loanId, LocalDate givenDate);
+
+    boolean containsBlockAccountFreezeInterest(Long loanId, LocalDate givenDate);
+
+    boolean containsBlockAccountFreezeMora(Long loanId, LocalDate givenDate);
+
+    boolean containsBlockAccountFreezeLifeInsurance(Long loanId, LocalDate givenDate);
+
+    boolean containsBlockAccountFreezeMipyme(Long loanId, LocalDate givenDate);
 }
