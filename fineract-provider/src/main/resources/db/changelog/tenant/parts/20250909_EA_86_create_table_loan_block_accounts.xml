@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="1" author="fineract">
+        <createTable schemaName= "custom" tableName="c_loan_account_block">
+
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_on_utc" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified_by" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified_on_utc" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="loan_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_block_loan"
+                             references="m_loan(id)"/>
+            </column>
+
+            <column name="blocking_reason_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_block_reason"
+                             references="m_blocking_reason_setting(id)"/>
+            </column>
+
+            <column name="application_date" type="DATE"/>
+            <column name="accelerate" type="BOOLEAN"/>
+            <column name="freeze_current_interest" type="BOOLEAN"/>
+            <column name="freeze_interest_arrears" type="BOOLEAN"/>
+            <column name="freeze_life_insurance" type="BOOLEAN"/>
+            <column name="freeze_mypime" type="BOOLEAN"/>
+            <column name="active" type="BOOLEAN"/>
+
+        </createTable>
+    </changeSet>
+
+
+    <changeSet author="fineract" id="2">
+        <addForeignKeyConstraint baseColumnNames="loan_id" baseTableName="c_loan_account_block"
+                                 baseTableSchemaName="custom"
+                                 constraintName="FK_loan_account_block_loan_id" deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE" onUpdate="CASCADE" referencedColumnNames="id"
+                                 referencedTableName="m_loan" validate="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="3">
+        <createIndex indexName="IDX_loan_account_block_loan_id" tableName="c_loan_account_block" schemaName="custom">
+            <column name="loan_id"/>
+        </createIndex>
+    </changeSet>
+
+
+    <changeSet author="fineract" id="4">
+        <addForeignKeyConstraint baseColumnNames="blocking_reason_id" baseTableName="c_loan_account_block"
+                                 baseTableSchemaName="custom"
+                                 constraintName="FK_loan_account_block_reason_id" deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="RESTRICT" onUpdate="CASCADE"
+                                 referencedColumnNames="id"
+                                 referencedTableName="m_blocking_reason_setting" validate="true"/>
+    </changeSet>
+
+    <changeSet author="fineract" id="5">
+        <createIndex indexName="IDX_loan_account_block_reason_id" tableName="c_loan_account_block" schemaName="custom">
+            <column name="blocking_reason_id"/>
+        </createIndex>
+    </changeSet>
+
+
+    <!-- Restricción: solo un registro activo por loan -->
+    <changeSet id="6" author="fineract" dbms="postgresql">
+        <createIndex indexName="uq_loan_active_block" tableName="c_loan_account_block" unique="true" schemaName="custom">
+            <column name="loan_id"/>
+        </createIndex>
+        <modifySql>
+            <append value=" WHERE active = true"/>
+        </modifySql>
+    </changeSet>
+
+</databaseChangeLog>

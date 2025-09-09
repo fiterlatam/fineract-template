@@ -1,0 +1,149 @@
+package org.apache.fineract.custom.portfolio.blockaccounts.service.impl;
+
+import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
+import io.micrometer.common.util.StringUtils;
+import jakarta.transaction.Transactional;
+import java.lang.reflect.Type;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.custom.portfolio.blockaccounts.api.LoanAccountBlockConstants;
+import org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBlock;
+import org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBlockRepository;
+import org.apache.fineract.custom.portfolio.blockaccounts.service.LoanAccountBlockWritePlatformService;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepository;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.ApiParameterError;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
+import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
+import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanSubStatus;
+import org.springframework.stereotype.Service;
+
+@Slf4j
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBlockWritePlatformService {
+
+    private final FromJsonHelper fromApiJsonHelper;
+    private final LoanRepository loanRepository;
+    private final LoanAccountBlockRepository loanAccountBlockRepository;
+    private final BlockingReasonSettingsRepository blockingReasonSettingsRepository;
+
+    @Override
+    public CommandProcessingResult crateLoanAccountBlock(JsonCommand command) {
+
+        validateForCreate(command.json());
+
+        LoanAccountBlock loanAccountBlock = null;
+
+        final Long loanId = command.getLoanId();
+        final Long blockingReasonId = command.longValueOfParameterNamed(LoanAccountBlockConstants.blockingReasonIdParamName);
+        ;
+        final LocalDate applicationDate = command.dateValueOfParameterNamed(LoanAccountBlockConstants.applicationDateParamName);
+        final Boolean accelerate = command.booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.accelerateParamName);
+        final Boolean freezeCurrentInterest = command
+                .booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.freezeCurrentInterestParamName);
+        final Boolean freezeInterestArrears = command
+                .booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.freezeInterestArrearsParamName);
+        final Boolean freezeLifeInsurance = command
+                .booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.freezeLifeInsuranceParamName);
+        final Boolean freezeMypime = command.booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.freezeMypimeParamName);
+        final Boolean active = command.booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.activeParamName);
+        final LocalDate businessDate = DateUtils.getBusinessLocalDate();
+
+        Loan loan = loanRepository.getReferenceById(loanId);
+
+        validateCreation(loanId, applicationDate, loan, businessDate);
+
+        loan.setLoanSubStatus(LoanSubStatus.BLOCKED.getValue());
+        loan = loanRepository.saveAndFlush(loan);
+        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepository.getReferenceById(blockingReasonId);
+
+        loanAccountBlock = new LoanAccountBlock().createLoanAccountBlock(loan, blockingReasonSetting, applicationDate, accelerate,
+                freezeCurrentInterest, freezeInterestArrears, freezeLifeInsurance, freezeMypime, active);
+
+        loanAccountBlock = loanAccountBlockRepository.saveAndFlush(loanAccountBlock);
+
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withResourceIdAsString(loanAccountBlock.getId().toString()) //
+                .build();
+    }
+
+    @Override
+    public CommandProcessingResult updateLoanAccountBlock(JsonCommand command) {
+        return null;
+    }
+
+    private void validateCreation(final Long loanId, LocalDate applicationDate, Loan loan, LocalDate businessDate) {
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>(1);
+        Optional<LoanAccountBlock> existingBlock = loanAccountBlockRepository.retrieveByLoanIdAndStatusActive(loanId);
+
+        if (existingBlock.isPresent()) {
+            ApiParameterError apiParameterError = ApiParameterError.parameterError("already.blocked", "The account is already blocked",
+                    "loanId", loanId);
+            dataValidationErrors.add(apiParameterError);
+            throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "The account is already blocked",
+                    dataValidationErrors);
+        }
+
+        if (businessDate.isAfter(applicationDate)) {
+            boolean isNotApproved = loan.getLoanTransactions().stream()
+                    .anyMatch(item -> item.getTypeOf().isDisbursement() && item.getTransactionDate().isAfter(applicationDate));
+            if (isNotApproved) {
+                ApiParameterError apiParameterError = ApiParameterError.parameterError("disbursement.after.selected.date",
+                        "The block could not be applied because there are disbursements after the selected application date.",
+                        "applicationDate", applicationDate);
+                dataValidationErrors.add(apiParameterError);
+                throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist",
+                        "There are disbursements after selected application date.", dataValidationErrors);
+            }
+        }
+
+    }
+
+    private void validateForCreate(final String json) {
+
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, LoanAccountBlockConstants.REQUEST_DATA_PARAMETERS);
+
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource(LoanAccountBlockConstants.loanIdParamName);
+
+        final JsonElement jsonElement = fromApiJsonHelper.parse(json);
+        final Locale locale = this.fromApiJsonHelper.extractLocaleParameter(jsonElement.getAsJsonObject());
+
+        final LocalDate date = this.fromApiJsonHelper.extractLocalDateNamed(LoanAccountBlockConstants.applicationDateParamName,
+                jsonElement);
+        baseDataValidator.reset().parameter(LoanAccountBlockConstants.applicationDateParamName).value(date).notBlank().notNull();
+
+        final Long blockingReason = this.fromApiJsonHelper.extractLongNamed(LoanAccountBlockConstants.blockingReasonIdParamName,
+                jsonElement);
+        baseDataValidator.reset().parameter(LoanAccountBlockConstants.blockingReasonIdParamName).value(blockingReason).notBlank().notNull();
+
+        if (!dataValidationErrors.isEmpty()) {
+            throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
+                    dataValidationErrors);
+        }
+    }
+}

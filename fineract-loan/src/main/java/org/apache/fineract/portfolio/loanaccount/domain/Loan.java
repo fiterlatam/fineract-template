@@ -450,6 +450,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @JoinColumn(name = "writeoff_reason_cv_id", nullable = true)
     private CodeValue writeOffReason;
 
+    @Setter
     @Column(name = "loan_sub_status_id", nullable = true)
     private Integer loanSubStatus;
 
@@ -8605,4 +8606,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return String.format("Foreclosure Debug Info - Loan ID: %d, Total Paid: %s, Outstanding Balance: %s, Calculated Overpayment: %s",
                 getId(), totalPaidInRepayments, totalOutstandingBalance, calculatedOverpayment);
     }
+
+    public Long getId() {
+        return super.getId();
+    }
+
 }

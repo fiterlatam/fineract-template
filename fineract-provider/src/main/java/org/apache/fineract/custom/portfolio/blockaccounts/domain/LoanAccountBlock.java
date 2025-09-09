@@ -1,0 +1,72 @@
+package org.apache.fineract.custom.portfolio.blockaccounts.domain;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import java.time.LocalDate;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
+import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+
+@Slf4j
+@Entity
+@Getter
+@Table(name = "c_loan_account_block", schema = "custom")
+public class LoanAccountBlock extends AbstractAuditableWithUTCDateTimeCustom {
+
+    @ManyToOne
+    @JoinColumn(name = "loan_id", nullable = false, referencedColumnName = "id")
+    private Loan loan;
+
+    @Getter
+    @ManyToOne
+    @JoinColumn(name = "blocking_reason_id", nullable = false, referencedColumnName = "id")
+    private BlockingReasonSetting blockingReasonSetting;
+
+    @Column(name = "application_date")
+    private LocalDate applicationDate;
+
+    @Column(name = "accelerate")
+    private Boolean accelerate;
+
+    @Column(name = "freeze_current_interest")
+    private Boolean freezeCurrentInterest;
+
+    @Column(name = "freeze_interest_arrears")
+    private Boolean freezeInterestArrears;
+
+    @Column(name = "freeze_life_insurance")
+    private Boolean freezeLifeInsurance;
+
+    @Column(name = "freeze_mypime")
+    private Boolean freezeMypime;
+
+    @Column(name = "active")
+    private Boolean active;
+
+    public LoanAccountBlock createLoanAccountBlock(Loan loan, BlockingReasonSetting blockingReasonSetting, LocalDate applicationDate,
+            Boolean accelerate, Boolean freezeCurrentInterest, Boolean freezeInterestArrears, Boolean freezeLifeInsurance,
+            Boolean freezeMypime, Boolean active) {
+
+        LoanAccountBlock loanAccountBlock = new LoanAccountBlock();
+        loanAccountBlock.loan = loan;
+        loanAccountBlock.blockingReasonSetting = blockingReasonSetting;
+        loanAccountBlock.applicationDate = applicationDate;
+        loanAccountBlock.accelerate = accelerate;
+        loanAccountBlock.freezeCurrentInterest = freezeCurrentInterest;
+        loanAccountBlock.freezeInterestArrears = freezeInterestArrears;
+        loanAccountBlock.freezeLifeInsurance = freezeLifeInsurance;
+        loanAccountBlock.freezeMypime = freezeMypime;
+        loanAccountBlock.active = active;
+
+        return loanAccountBlock;
+    }
+
+    public LoanAccountBlock() {
+
+    }
+}

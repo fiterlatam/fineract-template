@@ -23,7 +23,8 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 public enum LoanSubStatus {
 
     INVALID(0, "loanSubStatusType.invalid"), //
-    FORECLOSED(100, "loanSubStatusType.foreclosed");
+    FORECLOSED(100, "loanSubStatusType.foreclosed"), //
+    BLOCKED(200, "loanSubStatusType.blocked");
 
     private final Integer value;
     private final String code;
@@ -34,6 +35,9 @@ public enum LoanSubStatus {
         switch (statusValue) {
             case 100:
                 enumeration = LoanSubStatus.FORECLOSED;
+            break;
+            case 200:
+                enumeration = LoanSubStatus.BLOCKED;
             break;
         }
         return enumeration;
@@ -71,6 +75,10 @@ public enum LoanSubStatus {
             case FORECLOSED:
                 optionData = new EnumOptionData(LoanSubStatus.FORECLOSED.getValue().longValue(),
                         codePrefix + LoanSubStatus.FORECLOSED.getCode(), "Foreclosed");
+            break;
+            case BLOCKED:
+                optionData = new EnumOptionData(LoanSubStatus.BLOCKED.getValue().longValue(), codePrefix + LoanSubStatus.BLOCKED.getCode(),
+                        "Blocked");
             break;
             default:
                 optionData = new EnumOptionData(LoanSubStatus.INVALID.getValue().longValue(), LoanSubStatus.INVALID.getCode(), "Invalid");
