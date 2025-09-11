@@ -87,6 +87,7 @@ import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSeria
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.CommandParameterUtil;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
@@ -164,6 +165,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanSchedu
 import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanScheduleHistoryReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.GLIMAccountInfoReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanBlockReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanBlockReadPlatformServiceImpl;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanDebtProjectionService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
@@ -362,6 +364,7 @@ public class LoansApiResource {
     private final LoanWritePlatformService loanWritePlatformService;
     private static final String DISBURSE_ACTION = "disburse";
     private final LoanRepository loanRepository;
+    private final LoanBlockReadPlatformServiceImpl loanBlockReadPlatformServiceImpl;
 
     @GET
     @Path("{loanId}/template")
@@ -1446,9 +1449,15 @@ public class LoansApiResource {
         });
 
         loanAccount.setDatatables(datatableNamesList);
-
         loanAccount.setSmvl(configurationDomainServiceJpa.retrieveSMVLLimit());
         loanAccount.setMambuNumberOfRepayments(loanBasicDetails.getMambuNumberOfRepayments());
+
+        // Account block - Accelerate issued?
+        if (loanBlockReadPlatformServiceImpl.containsBlockAccountAccelerate(resolvedLoanId, DateUtils.getLocalDateOfTenant())) {
+            LoanTransactionData foreclosureData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(loanId,
+                    DateUtils.getLocalDateOfTenant(), false);
+            loanAccount.setForeClosureAmount(foreclosureData.getAmount());
+        }
 
         final boolean isRediferir = this.loanReadPlatformService.retrieveRediferidoNumber(loanId) > 0;
         loanAccount.setRediferir(isRediferir);

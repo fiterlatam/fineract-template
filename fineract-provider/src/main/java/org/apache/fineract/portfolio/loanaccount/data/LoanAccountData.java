@@ -297,6 +297,8 @@ public class LoanAccountData {
     private Long smvl;
     private Integer mambuNumberOfRepayments;
 
+    private BigDecimal foreClosureAmount;
+
     public static LoanAccountData importInstanceIndividual(EnumOptionData loanTypeEnumOption, Long clientId, Long productId,
             Long loanOfficerId, LocalDate submittedOnDate, Long fundId, BigDecimal principal, Integer numberOfRepayments,
             Integer repaymentEvery, EnumOptionData repaidEveryFrequencyEnums, Integer loanTermFrequency,
