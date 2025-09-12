@@ -65,6 +65,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.custom.portfolio.blockaccounts.service.impl.LoanAccountBlockReadPlatformServiceImpl;
 import org.apache.fineract.infrastructure.bulkimport.data.GlobalEntityType;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookPopulatorService;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookService;
@@ -365,6 +366,7 @@ public class LoansApiResource {
     private static final String DISBURSE_ACTION = "disburse";
     private final LoanRepository loanRepository;
     private final LoanBlockReadPlatformServiceImpl loanBlockReadPlatformServiceImpl;
+    private final LoanAccountBlockReadPlatformServiceImpl loanAccountBlockReadPlatformService;
 
     @GET
     @Path("{loanId}/template")
@@ -1453,7 +1455,7 @@ public class LoansApiResource {
         loanAccount.setMambuNumberOfRepayments(loanBasicDetails.getMambuNumberOfRepayments());
 
         // Account block - Accelerate issued?
-        if (loanBlockReadPlatformServiceImpl.containsBlockAccountAccelerate(resolvedLoanId, DateUtils.getLocalDateOfTenant())) {
+        if (loanAccountBlockReadPlatformService.containsBlockAccountAccelerate(resolvedLoanId, DateUtils.getLocalDateOfTenant())) {
             LoanTransactionData foreclosureData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(loanId,
                     DateUtils.getLocalDateOfTenant(), false);
             loanAccount.setForeClosureAmount(foreclosureData.getAmount());

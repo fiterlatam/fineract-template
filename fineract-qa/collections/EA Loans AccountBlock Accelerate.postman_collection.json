@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "ebfa089c-0c42-4276-a3ab-5ca7ba87e385",
+        "_postman_id": "5ac4e876-5e6f-435b-8464-7e753b5df11a",
         "name": "EA Loans AccountBlock Accelerate",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
@@ -406,6 +406,231 @@
         },
         {
             "name": "Test Contains Foreclosure Amount",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.response.to.have.status(200);\r",
+                            "pm.expect(pm.response.text()).to.not.equals( null );\r",
+                            "var jsonData = JSON.parse(pm.response.text());\r",
+                            "\r",
+                            "pm.test(\"Contains foreclosure amount as accelerate\", function () {\r",
+                            "    pm.expect(jsonData.repaymentSchedule).to.be.an('object');\r",
+                            "    \r",
+                            "    pm.expect(jsonData).not.to.have.property('foreClosureAmount');\r",
+                            "});\r",
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                },
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                }
+            ],
+            "protocolProfileBehavior": {
+                "disableBodyPruning": true
+            },
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n    \"transactionDate\": \"18/07/2025\",\r\n    \"transactionAmount\": 200000,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}?associations=all&exclude=guarantors,futureSchedule",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "loans",
+                        "{{loanId}}"
+                    ],
+                    "query": [
+                        {
+                            "key": "associations",
+                            "value": "all"
+                        },
+                        {
+                            "key": "exclude",
+                            "value": "guarantors,futureSchedule"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Blocking Reason Castigo",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.response.to.have.status(200);\r",
+                            "pm.expect(pm.response.text()).to.not.equals( null );\r",
+                            "var jsonData = JSON.parse(pm.response.text());\r",
+                            "\r",
+                            "// Encontra o objeto com o \"nameOfReason\" igual a \"CASTIGO\"\r",
+                            "const castigoRecord = jsonData.find(record => record.nameOfReason === \"CASTIGO\");\r",
+                            "\r",
+                            "// Se o registro for encontrado, salva o 'id' em uma variável de ambiente\r",
+                            "if (castigoRecord) {\r",
+                            "    pm.environment.set(\"castigoId\", castigoRecord.id);\r",
+                            "    console.log(\"ID do 'CASTIGO' salvo na variável 'id_castigo': \" + castigoRecord.id);\r",
+                            "} else {\r",
+                            "    console.log(\"Registro 'CASTIGO' não encontrado na resposta.\");\r",
+                            "}"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                },
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                }
+            ],
+            "protocolProfileBehavior": {
+                "disableBodyPruning": true
+            },
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n    \"transactionDate\": \"18/07/2025\",\r\n    \"transactionAmount\": 200000,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/blockSettings/retrieveAllBlockingReasons",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "blockSettings",
+                        "retrieveAllBlockingReasons"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Block Account - Accelerate",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {\r",
+                            "    pm.expect(pm.response.code).to.equal(200);\r",
+                            "});\r",
+                            "\r",
+                            "pm.test(\"Response contains resourceId greater than 0 \", function () {\r",
+                            "    const responseJson = pm.response.json();\r",
+                            "    pm.expect(responseJson.resourceIdentifier).to.exist;\r",
+                            "});\r",
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n  \"applicationDate\": \"11/07/2025\",\r\n  \"blockingReasonId\": {{castigoId}},\r\n  \"accelerate\": true,\r\n  \"freezeCurrentInterest\": false,\r\n  \"freezeInterestArrears\": false,\r\n  \"freezeLifeInsurance\": false,\r\n  \"freezeMypime\": false,\r\n  \"active\": true,\r\n  \"locale\": \"es\",\r\n  \"dateFormat\": \"dd/MM/yyyy\"\r\n}\r\n",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/blockaccount/{{loanId}}",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "blockaccount",
+                        "{{loanId}}"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Test Contains Foreclosure Amount Copy",
             "event": [
                 {
                     "listen": "test",
