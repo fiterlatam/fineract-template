@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.loanaccount.data;
+package org.apache.fineract.custom.portfolio.blockaccounts.data;
 
 import java.time.LocalDate;
 import java.util.List;

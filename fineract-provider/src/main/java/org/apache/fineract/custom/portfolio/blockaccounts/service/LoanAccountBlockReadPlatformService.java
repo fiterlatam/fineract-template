@@ -18,9 +18,25 @@
  */
 package org.apache.fineract.custom.portfolio.blockaccounts.service;
 
+import java.time.LocalDate;
 import org.apache.fineract.custom.portfolio.blockaccounts.data.LoanAccountBlockDTO;
+import org.apache.fineract.custom.portfolio.blockaccounts.data.LoanAccountBlockData;
 
 public interface LoanAccountBlockReadPlatformService {
 
     LoanAccountBlockDTO retrieveByLoanId(final Long loanId);
+
+    LoanAccountBlockData checkBlockAccountComponents(Long loanId, LocalDate givenDate);
+
+    boolean containsBlockAccountDisbursal(Long loanId, LocalDate givenDate);
+
+    boolean containsBlockAccountAccelerate(Long loanId, LocalDate givenDate);
+
+    boolean containsBlockAccountFreezeInterest(Long loanId, LocalDate givenDate);
+
+    boolean containsBlockAccountFreezeMora(Long loanId, LocalDate givenDate);
+
+    boolean containsBlockAccountFreezeLifeInsurance(Long loanId, LocalDate givenDate);
+
+    boolean containsBlockAccountFreezeMipyme(Long loanId, LocalDate givenDate);
 }
