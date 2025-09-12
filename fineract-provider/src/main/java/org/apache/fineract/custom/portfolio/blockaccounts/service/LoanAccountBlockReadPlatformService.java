@@ -26,6 +26,8 @@ public interface LoanAccountBlockReadPlatformService {
 
     LoanAccountBlockDTO retrieveByLoanId(final Long loanId);
 
+    LoanAccountBlockDTO retrieveByLoanIdWithoutException(final Long loanId);
+
     LoanAccountBlockData checkBlockAccountComponents(Long loanId, LocalDate givenDate);
 
     boolean containsBlockAccountDisbursal(Long loanId, LocalDate givenDate);

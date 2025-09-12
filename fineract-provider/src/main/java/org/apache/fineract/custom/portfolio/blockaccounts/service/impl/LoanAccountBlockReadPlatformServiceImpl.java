@@ -56,6 +56,13 @@ public class LoanAccountBlockReadPlatformServiceImpl implements LoanAccountBlock
     }
 
     @Override
+    public LoanAccountBlockDTO retrieveByLoanIdWithoutException(Long loanId) {
+        Optional<LoanAccountBlock> loanAccountBlock = loanAccountBlockRepository.retrieveByLoanIdAndStatusActive(loanId);
+        return loanAccountBlock.map(loanAccountBlockMapper::toDto).orElse(null);
+
+    }
+
+    @Override
     public LoanAccountBlockData checkBlockAccountComponents(Long loanId, LocalDate givenDate) {
         List<LoanAccountBlockComponentEnum> blockedComponents = new ArrayList<>();
 

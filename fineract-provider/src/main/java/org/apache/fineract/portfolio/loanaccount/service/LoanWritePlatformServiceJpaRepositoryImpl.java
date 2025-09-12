@@ -66,6 +66,8 @@ import org.apache.fineract.custom.infrastructure.channel.data.ChannelData;
 import org.apache.fineract.custom.infrastructure.channel.domain.Channel;
 import org.apache.fineract.custom.infrastructure.channel.domain.ChannelType;
 import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWritePlatformService;
+import org.apache.fineract.custom.portfolio.blockaccounts.data.LoanAccountBlockDTO;
+import org.apache.fineract.custom.portfolio.blockaccounts.service.LoanAccountBlockReadPlatformService;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMapRepository;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockLevel;
@@ -381,6 +383,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     private final FirstPaymentDateAdjustmentService firstPaymentDateAdjustmentService;
     private final LoanOverpaymentValidationService loanOverpaymentValidationService;
     private final LoanAdvancedPaymentValidationService loanAdvancedPaymentValidationService;
+    private final LoanAccountBlockReadPlatformService loanAccountBlockReadPlatformService;
 
     @PostConstruct
     public void registerForNotification() {
@@ -447,6 +450,22 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 .extractLocalDateNamed(LoanEventApiJsonValidator.ACTUAL_DISBURSEMENT_DATE_PARAM, command.parsedJson().getAsJsonObject());
 
         this.loanEventApiJsonValidator.validateDisbursement(command.json(), isAccountTransfer);
+        LoanAccountBlockDTO accountBlockDTO = accountBlockDTO = this.loanAccountBlockReadPlatformService
+                .retrieveByLoanIdWithoutException(loanId);
+
+        if (accountBlockDTO != null) {
+
+            boolean canDisbursement = actualDisbursementDate.isBefore(accountBlockDTO.getApplicationDate());
+
+            if (!canDisbursement) {
+                final String message = String.format(" Cannot be disbursed, loan account is blocked by %s",
+                        accountBlockDTO.getBlockingReasonName());
+                throw new GeneralPlatformDomainRuleException(message, "Loan account is blocked.");
+            }
+            log.info("DisburseLoan: Account blocked but the effective date has not yet come into effect. {}",
+                    accountBlockDTO.getApplicationDate());
+        }
+
         Boolean isWriteoffPunish = command.booleanObjectValueOfParameterNamed("isWriteoffPunish");
 
         if (isWriteoffPunish == null) {
