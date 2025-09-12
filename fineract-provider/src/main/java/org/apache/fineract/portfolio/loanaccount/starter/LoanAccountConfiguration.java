@@ -25,6 +25,7 @@ import org.apache.fineract.custom.infrastructure.channel.service.ChannelReadWrit
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.ClientAdditionalInformationRepository;
 import org.apache.fineract.custom.infrastructure.dataqueries.domain.IndividualAdditionalInformationRepository;
 import org.apache.fineract.custom.portfolio.ally.domain.ClientAllyPointOfSalesRepository;
+import org.apache.fineract.custom.portfolio.blockaccounts.service.LoanAccountBlockReadPlatformService;
 import org.apache.fineract.custom.portfolio.buyprocess.domain.ClientBuyProcessRepository;
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeEntityReadWritePlatformService;
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeMapReadWritePlatformService;
@@ -436,7 +437,8 @@ public class LoanAccountConfiguration {
             CodeValueReadPlatformService codeValueReadPlatformService, LoanRescheduleRequestRepository loanRescheduleRequestRepository,
             FirstPaymentDateAdjustmentService firstPaymentDateAdjustmentService,
             LoanOverpaymentValidationService loanOverpaymentValidationService,
-            LoanAdvancedPaymentValidationService loanAdvancedPaymentValidationService) {
+            LoanAdvancedPaymentValidationService loanAdvancedPaymentValidationService,
+            LoanAccountBlockReadPlatformService loanAccountBlockReadPlatformService) {
 
         return new LoanWritePlatformServiceJpaRepositoryImpl(context, loanEventApiJsonValidator, loanUpdateCommandFromApiJsonDeserializer,
                 loanRepositoryWrapper, loanAccountDomainService, noteRepository, loanTransactionRepository,
@@ -457,7 +459,8 @@ public class LoanAccountConfiguration {
                 blockingReasonSettingsRepositoryWrapper, facturaElectronicMensualRepository, productParameterizationRepository,
                 customChargeHonorarioMapRepository, delinquencyReadPlatformService, loanDisbursementDetailsRepository,
                 loanRescheduleRequestWritePlatformService, codeValueReadPlatformService, loanRescheduleRequestRepository,
-                firstPaymentDateAdjustmentService, loanOverpaymentValidationService, loanAdvancedPaymentValidationService);
+                firstPaymentDateAdjustmentService, loanOverpaymentValidationService, loanAdvancedPaymentValidationService,
+                loanAccountBlockReadPlatformService);
     }
 
     @Bean
