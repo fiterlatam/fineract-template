@@ -21,6 +21,7 @@ package org.apache.fineract.custom.portfolio.blockaccounts.api;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -36,9 +37,11 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformUserRightsContext;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
 
 @Path("/v1/blockaccount")
 @Component
+@Controller
 @Tag(name = "blockaccount", description = "blockaccount")
 @RequiredArgsConstructor
 public class LoanAccountBlockApiResource {
@@ -67,6 +70,9 @@ public class LoanAccountBlockApiResource {
     public String getBlockAccounts(@PathParam("loanId") Long loanId) {
         platformUserRightsContext.isAuthenticated();
         LoanAccountBlockDTO loanAccountBlockDTO = loanAccountBlockReadPlatformService.retrieveByLoanId(loanId);
+        if (loanAccountBlockDTO == null) {
+            throw new NotFoundException(String.valueOf(loanId));
+        }
         return apiJsonSerializerService.serialize(loanAccountBlockDTO);
     }
 }
