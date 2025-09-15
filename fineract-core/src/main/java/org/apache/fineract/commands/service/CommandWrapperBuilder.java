@@ -4170,4 +4170,12 @@ public class CommandWrapperBuilder {
         this.href = "/v1/blockaccount/";
         return this;
     }
+
+    public CommandWrapperBuilder unblockLoanBlockAccount(Long loanId) {
+        this.actionName = "UNBLOCK";
+        this.entityName = "LOAN_ACCOUNT_BLOCK";
+        this.entityId = null;
+        this.href = "/v1/blockaccount" + loanId + "/unblock";
+        return this;
+    }
 }
