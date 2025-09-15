@@ -76,4 +76,15 @@
         </sql>
     </changeSet>
 
+    <changeSet id="4" author="fineract">
+        <sql>
+            <![CDATA[
+                DELETE FROM m_blocking_reason_setting
+                WHERE id IN (
+                    SELECT id FROM m_blocking_reason_setting WHERE name_of_reason = 'CASTIGO' AND level = 'CREDIT' AND priority = 9
+                )
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

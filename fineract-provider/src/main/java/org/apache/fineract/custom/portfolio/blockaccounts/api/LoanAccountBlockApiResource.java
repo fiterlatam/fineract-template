@@ -36,9 +36,11 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformUserRightsContext;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
 
 @Path("/v1/blockaccount")
 @Component
+@Controller
 @Tag(name = "blockaccount", description = "blockaccount")
 @RequiredArgsConstructor
 public class LoanAccountBlockApiResource {
