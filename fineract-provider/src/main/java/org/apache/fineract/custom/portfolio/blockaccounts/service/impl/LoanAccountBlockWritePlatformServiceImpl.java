@@ -22,6 +22,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import io.micrometer.common.util.StringUtils;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.NotFoundException;
 import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.custom.portfolio.blockaccounts.api.LoanAccountBlockConstants;
 import org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBlock;
+import org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBlockAction;
 import org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBlockRepository;
 import org.apache.fineract.custom.portfolio.blockaccounts.service.LoanAccountBlockWritePlatformService;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
@@ -63,7 +65,7 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
     private final BlockingReasonSettingsRepository blockingReasonSettingsRepository;
 
     @Override
-    public CommandProcessingResult crateLoanAccountBlock(JsonCommand command) {
+    public CommandProcessingResult createLoanAccountBlock(JsonCommand command) {
 
         validateForCreate(command.json());
 
@@ -71,7 +73,6 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
 
         final Long loanId = command.getLoanId();
         final Long blockingReasonId = command.longValueOfParameterNamed(LoanAccountBlockConstants.blockingReasonIdParamName);
-        ;
         final LocalDate applicationDate = command.dateValueOfParameterNamed(LoanAccountBlockConstants.applicationDateParamName);
         final Boolean accelerate = command.booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.accelerateParamName);
         final Boolean freezeCurrentInterest = command
@@ -93,7 +94,8 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
         BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepository.getReferenceById(blockingReasonId);
 
         loanAccountBlock = new LoanAccountBlock().createLoanAccountBlock(loan, blockingReasonSetting, applicationDate, accelerate,
-                freezeCurrentInterest, freezeInterestArrears, freezeLifeInsurance, freezeMypime, active);
+                freezeCurrentInterest, freezeInterestArrears, freezeLifeInsurance, freezeMypime, active, LoanAccountBlockAction.BLOCK,
+                null);
 
         loanAccountBlock = loanAccountBlockRepository.saveAndFlush(loanAccountBlock);
 
@@ -106,6 +108,34 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
     @Override
     public CommandProcessingResult updateLoanAccountBlock(JsonCommand command) {
         return null;
+    }
+
+    @Override
+    public CommandProcessingResult unblockLoanAccount(JsonCommand command) {
+        validateForUnblock(command.json());
+        Optional<LoanAccountBlock> optLoanAccountBlock = loanAccountBlockRepository.retrieveByLoanIdAndStatusActive(command.getLoanId());
+        if (optLoanAccountBlock.isEmpty()) {
+            throw new NotFoundException(String.valueOf(command.getLoanId()));
+        }
+
+        LoanAccountBlock loanAccountBlock = optLoanAccountBlock.get();
+        loanAccountBlock.setActive(false);
+        loanAccountBlockRepository.save(loanAccountBlock);
+
+        final String note = command.stringValueOfParameterNamed(LoanAccountBlockConstants.noteParamName);
+        final LocalDate applicationDate = command.dateValueOfParameterNamed(LoanAccountBlockConstants.applicationDateParamName);
+
+        LoanAccountBlock loanAccountUnblock = new LoanAccountBlock().createLoanAccountBlock(loanAccountBlock.getLoan(),
+                loanAccountBlock.getBlockingReasonSetting(), applicationDate, loanAccountBlock.getAccelerate(),
+                loanAccountBlock.getFreezeCurrentInterest(), loanAccountBlock.getFreezeInterestArrears(),
+                loanAccountBlock.getFreezeLifeInsurance(), loanAccountBlock.getFreezeMypime(), false, LoanAccountBlockAction.UNBLOCK, note);
+
+        loanAccountUnblock = loanAccountBlockRepository.saveAndFlush(loanAccountUnblock);
+
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withResourceIdAsString(loanAccountUnblock.getId().toString()) //
+                .build();
     }
 
     private void validateCreation(final Long loanId, LocalDate applicationDate, Loan loan, LocalDate businessDate) {
@@ -133,6 +163,31 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
             }
         }
 
+    }
+
+    private void validateForUnblock(final String json) {
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, LoanAccountBlockConstants.REQUEST_DATA_PARAMETERS);
+
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+                .resource(LoanAccountBlockConstants.loanIdParamName);
+
+        final JsonElement jsonElement = fromApiJsonHelper.parse(json);
+        final Long loanId = this.fromApiJsonHelper.extractLongNamed(LoanAccountBlockConstants.loanIdParamName, jsonElement);
+        baseDataValidator.reset().parameter(LoanAccountBlockConstants.blockingReasonIdParamName).value(loanId).notBlank().notNull();
+
+        final LocalDate date = this.fromApiJsonHelper.extractLocalDateNamed(LoanAccountBlockConstants.applicationDateParamName,
+                jsonElement);
+        baseDataValidator.reset().parameter(LoanAccountBlockConstants.applicationDateParamName).value(date).notBlank().notNull();
+
+        if (!dataValidationErrors.isEmpty()) {
+            throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
+                    dataValidationErrors);
+        }
     }
 
     private void validateForCreate(final String json) {

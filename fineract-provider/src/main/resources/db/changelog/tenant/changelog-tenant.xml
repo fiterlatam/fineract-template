@@ -418,4 +418,5 @@
     <include file="parts/202507252000002000_EA_418_update_baseline_holidays.xml" relativeToChangelogFile="true"/>
     <include file="parts/202501270000000001_EA_Add_baseline_blocking_reasons.xml" relativeToChangelogFile="true"/>
     <include relativeToChangelogFile="true" file="parts/20250909_EA_86_create_table_loan_block_accounts.xml"/>
+    <include file="parts/20250913_EA_130_add_columns_for_unblock_accounts.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

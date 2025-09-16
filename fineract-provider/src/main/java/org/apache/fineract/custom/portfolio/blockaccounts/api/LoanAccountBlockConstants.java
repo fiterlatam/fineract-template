@@ -37,9 +37,10 @@ public class LoanAccountBlockConstants {
     public static final String activeParamName = "active";
     public static final String dateFormatParamName = "dateFormat";
     public static final String localeParamName = "locale";
+    public static final String noteParamName = "note";
 
     public static final Set<String> REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(loanIdParamName, applicationDateParamName,
             blockingReasonIdParamName, accelerateParamName, freezeCurrentInterestParamName, freezeInterestArrearsParamName,
-            freezeLifeInsuranceParamName, freezeMypimeParamName, activeParamName, localeParamName, dateFormatParamName));
+            freezeLifeInsuranceParamName, freezeMypimeParamName, activeParamName, localeParamName, dateFormatParamName, noteParamName));
 
 }
