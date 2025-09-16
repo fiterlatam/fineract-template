@@ -23,7 +23,9 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
 public interface LoanAccountBlockWritePlatformService {
 
-    CommandProcessingResult crateLoanAccountBlock(JsonCommand command);
+    CommandProcessingResult createLoanAccountBlock(JsonCommand command);
 
     CommandProcessingResult updateLoanAccountBlock(JsonCommand command);
+
+    CommandProcessingResult unblockLoanAccount(JsonCommand command);
 }

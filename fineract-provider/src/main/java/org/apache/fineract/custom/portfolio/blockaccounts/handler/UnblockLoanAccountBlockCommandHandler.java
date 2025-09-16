@@ -28,13 +28,13 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-@CommandType(entity = "LOAN_ACCOUNT_BLOCK", action = "CREATE")
-public class AddLoanAccountBlockCommandHandler implements NewCommandSourceHandler {
+@CommandType(entity = "LOAN_ACCOUNT_BLOCK", action = "UNBLOCK")
+public class UnblockLoanAccountBlockCommandHandler implements NewCommandSourceHandler {
 
     private final LoanAccountBlockWritePlatformService loanAccountBlockWritePlatformService;
 
     @Override
     public CommandProcessingResult processCommand(JsonCommand command) {
-        return loanAccountBlockWritePlatformService.createLoanAccountBlock(command);
+        return loanAccountBlockWritePlatformService.unblockLoanAccount(command);
     }
 }
