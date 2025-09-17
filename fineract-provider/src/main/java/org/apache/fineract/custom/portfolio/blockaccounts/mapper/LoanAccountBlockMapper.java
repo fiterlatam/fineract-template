@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.custom.portfolio.blockaccounts.mapper;
 
+import java.util.List;
 import org.apache.fineract.custom.portfolio.blockaccounts.data.LoanAccountBlockDTO;
 import org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBlock;
 import org.mapstruct.Mapper;
@@ -33,6 +34,11 @@ public interface LoanAccountBlockMapper {
     @Mapping(source = "blockingReasonSetting.id", target = "blockingReasonId")
     @Mapping(source = "blockingReasonSetting.nameOfReason", target = "blockingReasonName")
     LoanAccountBlockDTO toDto(LoanAccountBlock entity);
+
+    @Mapping(expression = "java(entity.getLoan() != null ? entity.getLoan().getId() : null)", target = "loanId")
+    @Mapping(source = "blockingReasonSetting.id", target = "blockingReasonId")
+    @Mapping(source = "blockingReasonSetting.nameOfReason", target = "blockingReasonName")
+    List<LoanAccountBlockDTO> toDto(List<LoanAccountBlock> entities);
 
     LoanAccountBlock toEntity(LoanAccountBlockDTO dto);
 }
