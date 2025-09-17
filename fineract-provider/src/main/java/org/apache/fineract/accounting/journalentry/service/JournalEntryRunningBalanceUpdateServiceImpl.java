@@ -231,11 +231,6 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
                 });
     }
 
-    private void processBatch(List<JournalEntryData> batch, JdbcTemplate jdbcTemplate,
-            Map<Long, Map<Long, BigDecimal>> officesRunningBalance, Map<Long, BigDecimal> runningBalanceMap) {
-        processOptimizedBatch(batch, runningBalanceMap, officesRunningBalance);
-    }
-
     private void updateRunningBalance(Long officeId, LocalDate entityDate) {
         log.info("Starting office running balance update for office: {} and date: {}", officeId, entityDate);
 
