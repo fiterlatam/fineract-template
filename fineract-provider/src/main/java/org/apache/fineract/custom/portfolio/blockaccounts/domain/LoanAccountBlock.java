@@ -37,6 +37,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 @Slf4j
 @Entity
 @Getter
+@Setter
 @Table(name = "c_loan_account_block", schema = "custom")
 public class LoanAccountBlock extends AbstractAuditableWithUTCDateTimeCustom {
 
@@ -67,7 +68,6 @@ public class LoanAccountBlock extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "freeze_mypime")
     private Boolean freezeMypime;
 
-    @Setter
     @Column(name = "active")
     private Boolean active;
 

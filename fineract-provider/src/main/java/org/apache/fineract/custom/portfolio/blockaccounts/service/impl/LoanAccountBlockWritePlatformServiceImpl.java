@@ -19,6 +19,7 @@
 package org.apache.fineract.custom.portfolio.blockaccounts.service.impl;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import io.micrometer.common.util.StringUtils;
 import jakarta.transaction.Transactional;
@@ -106,8 +107,79 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
     }
 
     @Override
-    public CommandProcessingResult updateLoanAccountBlock(JsonCommand command) {
-        return null;
+    public CommandProcessingResult updateLoanAccountBlock(final Long loanAccountBlockId, JsonCommand command) {
+        final JsonElement json = fromApiJsonHelper.parse(command.json());
+        final JsonObject topLevelJsonElement = json.getAsJsonObject();
+        validateForCreate(command.json());
+        final Locale locale = fromApiJsonHelper.extractLocaleParameter(topLevelJsonElement);
+
+        final Optional<LoanAccountBlock> optLoanAccountBlock = loanAccountBlockRepository.findById(loanAccountBlockId);
+
+        if (!optLoanAccountBlock.isPresent()) {
+            throw new NotFoundException(String.valueOf(command.getLoanId()));
+        }
+
+        LoanAccountBlock accountBlock = optLoanAccountBlock.get();
+        accountBlock.setActive(false);
+        loanAccountBlockRepository.save(accountBlock);
+
+        LoanAccountBlock loanAccountBlock = new LoanAccountBlock();
+        loanAccountBlock.setLoan(accountBlock.getLoan());
+
+        final Long blockingReasonId = command.longValueOfParameterNamed(LoanAccountBlockConstants.blockingReasonIdParamName);
+        BlockingReasonSetting blockingReasonSetting = blockingReasonSettingsRepository.getReferenceById(blockingReasonId);
+
+        loanAccountBlock.setBlockingReasonSetting(
+                accountBlock.getBlockingReasonSetting() != null && !accountBlock.getBlockingReasonSetting().equals(blockingReasonSetting)
+                        ? blockingReasonSetting
+                        : accountBlock.getBlockingReasonSetting());
+
+        final LocalDate applicationDate = command.dateValueOfParameterNamed(LoanAccountBlockConstants.applicationDateParamName);
+
+        loanAccountBlock.setApplicationDate(
+                accountBlock.getApplicationDate() != null && !accountBlock.getApplicationDate().equals(applicationDate) ? applicationDate
+                        : accountBlock.getApplicationDate());
+
+        final Boolean accelerate = command.booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.accelerateParamName);
+
+        loanAccountBlock.setAccelerate(
+                accountBlock.getAccelerate() != null && !accountBlock.getAccelerate() && !accountBlock.getAccelerate().equals(accelerate)
+                        ? accelerate
+                        : accountBlock.getAccelerate());
+
+        final Boolean freezeCurrentInterest = command
+                .booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.freezeCurrentInterestParamName);
+
+        loanAccountBlock
+                .setFreezeCurrentInterest(accountBlock.getFreezeCurrentInterest() != null && !accountBlock.getFreezeCurrentInterest()
+                        && !accountBlock.getFreezeCurrentInterest().equals(freezeCurrentInterest) ? freezeCurrentInterest
+                                : accountBlock.getFreezeCurrentInterest());
+
+        final Boolean freezeInterestArrears = command
+                .booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.freezeInterestArrearsParamName);
+
+        loanAccountBlock
+                .setFreezeInterestArrears(accountBlock.getFreezeInterestArrears() != null && !accountBlock.getFreezeInterestArrears()
+                        && !accountBlock.getFreezeInterestArrears().equals(freezeInterestArrears) ? freezeInterestArrears
+                                : accountBlock.getFreezeInterestArrears());
+
+        final Boolean freezeLifeInsurance = command
+                .booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.freezeLifeInsuranceParamName);
+
+        loanAccountBlock.setFreezeLifeInsurance(accountBlock.getFreezeLifeInsurance() != null && !accountBlock.getFreezeLifeInsurance()
+                && !accountBlock.getFreezeLifeInsurance().equals(freezeLifeInsurance) ? freezeLifeInsurance
+                        : accountBlock.getFreezeLifeInsurance());
+
+        final Boolean freezeMypime = command.booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.freezeMypimeParamName);
+
+        loanAccountBlock.setFreezeMypime(accountBlock.getFreezeMypime() != null && !accountBlock.getFreezeMypime()
+                && !accountBlock.getFreezeMypime().equals(freezeMypime) ? freezeMypime : accountBlock.getFreezeMypime());
+
+        loanAccountBlock.setAction(accountBlock.getAction());
+        loanAccountBlock.setActive(true);
+        loanAccountBlockRepository.save(loanAccountBlock);
+
+        return new CommandProcessingResultBuilder().withEntityId(loanAccountBlockId).build();
     }
 
     @Override

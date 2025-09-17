@@ -25,7 +25,7 @@ public interface LoanAccountBlockWritePlatformService {
 
     CommandProcessingResult createLoanAccountBlock(JsonCommand command);
 
-    CommandProcessingResult updateLoanAccountBlock(JsonCommand command);
+    CommandProcessingResult updateLoanAccountBlock(final Long loanAccountBlockId, JsonCommand command);
 
     CommandProcessingResult unblockLoanAccount(JsonCommand command);
 }
