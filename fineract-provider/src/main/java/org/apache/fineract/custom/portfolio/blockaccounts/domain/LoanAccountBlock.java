@@ -26,6 +26,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -76,6 +77,18 @@ public class LoanAccountBlock extends AbstractAuditableWithUTCDateTimeCustom {
     @Enumerated(EnumType.ORDINAL)
     @Column(name = "action_enum", nullable = false)
     private LoanAccountBlockAction action;
+
+    public String getName() {
+        return blockingReasonSetting != null ? blockingReasonSetting.getNameOfReason() : null;
+    }
+
+    public String getActionName() {
+        return this.action != null ? this.action.name() : null;
+    }
+
+    public String getFormattedLastModifiedDate() {
+        return getLastModifiedDate().map(date -> date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).orElse(null);
+    }
 
     public LoanAccountBlock createLoanAccountBlock(Loan loan, BlockingReasonSetting blockingReasonSetting, LocalDate applicationDate,
             Boolean accelerate, Boolean freezeCurrentInterest, Boolean freezeInterestArrears, Boolean freezeLifeInsurance,

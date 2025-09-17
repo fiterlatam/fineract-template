@@ -19,12 +19,15 @@
 package org.apache.fineract.custom.portfolio.blockaccounts.service;
 
 import java.time.LocalDate;
+import java.util.List;
 import org.apache.fineract.custom.portfolio.blockaccounts.data.LoanAccountBlockDTO;
 import org.apache.fineract.custom.portfolio.blockaccounts.data.LoanAccountBlockData;
 
 public interface LoanAccountBlockReadPlatformService {
 
     LoanAccountBlockDTO retrieveByLoanId(final Long loanId);
+
+    List<LoanAccountBlockDTO> retrieveHistoryByLoanId(final Long loanId);
 
     LoanAccountBlockDTO retrieveByLoanIdWithoutException(final Long loanId);
 

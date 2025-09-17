@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.custom.portfolio.blockaccounts.domain;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -29,4 +30,7 @@ public interface LoanAccountBlockRepository extends JpaRepository<LoanAccountBlo
 
     @Query(value = "SELECT ab FROM LoanAccountBlock ab WHERE ab.loan.id = :loanId AND ab.active = true")
     Optional<LoanAccountBlock> retrieveByLoanIdAndStatusActive(@Param(value = "loanId") Long loanId);
+
+    @Query(value = "SELECT ab FROM LoanAccountBlock ab WHERE ab.loan.id = :loanId AND ab.action = org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBlockAction.BLOCK ORDER BY ab.id DESC")
+    List<LoanAccountBlock> retrieveHistoryByLoanId(@Param(value = "loanId") Long loanId);
 }
