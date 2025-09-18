@@ -87,4 +87,56 @@
         </sql>
     </changeSet>
 
+    <changeSet id="5" author="fineract">
+        <sql>
+            <![CDATA[
+                /*
+                UPDATE custom.c_loan_account_block SET blocking_reason_id = (
+                    SELECT id FROM m_blocking_reason_setting
+                    WHERE name_of_reason = 'Castigo' AND level = 'CREDIT' AND priority = 5
+                )
+                WHERE blocking_reason_id IS NOT NULL AND blocking_reason_id = (
+                    SELECT id FROM m_blocking_reason_setting
+                    WHERE name_of_reason = 'CASTIGO' AND level = 'CREDIT' AND priority = 9
+                );
+                */
+                DELETE FROM m_blocking_reason_setting
+                WHERE id IN (
+                    SELECT id FROM m_blocking_reason_setting WHERE name_of_reason = 'CASTIGO' AND level = 'CREDIT' AND priority = 9
+                );
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="6" author="fineract">
+        <sql>
+            <![CDATA[
+                /*
+                UPDATE custom.c_loan_account_block SET blocking_reason_id = (
+                    SELECT id FROM m_blocking_reason_setting
+                    WHERE name_of_reason = 'MORA' AND level = 'CLIENT' AND priority = 1
+                )
+                WHERE blocking_reason_id IS NOT NULL AND blocking_reason_id = (
+                    SELECT id FROM m_blocking_reason_setting
+                    WHERE name_of_reason = 'MORA' AND level = 'CLIENT' AND priority = 7
+                );
+                */
+                DELETE FROM m_blocking_reason_setting
+                WHERE id IN (
+                    SELECT id FROM m_blocking_reason_setting WHERE name_of_reason = 'MORA' AND level = 'CLIENT' AND priority = 7
+                )
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="7" author="fineract">
+        <sql>
+            <![CDATA[
+                UPDATE m_blocking_reason_setting
+                SET priority = 7
+                WHERE description='CANCELADO';
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

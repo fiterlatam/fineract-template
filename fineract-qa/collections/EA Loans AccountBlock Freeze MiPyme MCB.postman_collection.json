@@ -1,13 +1,13 @@
 {
     "info": {
-        "_postman_id": "803e6ec7-a278-40bc-8cc6-ed7e82dae54f",
-        "name": "EA Loans AccountBlock View",
+        "_postman_id": "860bf2a7-3656-446d-8d8e-e75a8fe5e3c3",
+        "name": "EA Loans AccountBlock Freeze MiPyme MCB",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
     },
     "item": [
         {
-            "name": "Add Client Persona Copy 2",
+            "name": "Add Client Persona",
             "event": [
                 {
                     "listen": "test",
@@ -112,7 +112,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"officeId\": 1,\r\n    \"legalFormId\": 1,\r\n    \"isStaff\": false,\r\n    \"active\": true,\r\n    \"dateOfBirth\": \"11/01/2020\",\r\n    \"submittedOnDate\": \"11/01/2020\",\r\n    \"genderId\": 1261,\r\n    \"firstname\": \"Bot++\",\r\n    \"externalId\": \"{{executionId}}\", \r\n    \"lastname\": \"CRRedPri {{executionId}}\",\r\n    \"activationDate\": \"11/01/2020\",\r\n    \"familyMembers\": [],\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"datatables\": [\r\n        {\r\n            \"registeredTableName\": \"campos_cliente_persona\",\r\n            \"data\": {\r\n                \"Cedula\": \"{{executionId}}\",\r\n                \"Estado Civil_cd_Estado civil\": 2404,\r\n                \"Edad\": \"\",\r\n                \"Estrato\": \"\",\r\n                \"Ciudad_cd_Ciudad\": 830,\r\n                \"Tiene vehiculo propio\": \"\",\r\n                \"Tipo Vehiculo_cd_Tipo de vehiculo\": \"\",\r\n                \"Nivel Academico_cd_Nivel academico\": \"\",\r\n                \"Actividad Laboral_cd_Actividad laboral\": \"\",\r\n                \"Tiempo de actividad laboral\": \"\",\r\n                \"Media de ingresos\": \"\",\r\n                \"Nombre empresa\": \"\",\r\n                \"Direccion\": \"Calle Uno, 57\",\r\n                \"Telefono\": \"2222-3355\",\r\n                \"Cupo solicitado\": 999999999,\r\n                \"Cupo aprobado\": 999999999,\r\n                \"Cupo otros prestamos\": \"999999999\",\r\n                \"Cupo score\": \"\",\r\n                \"Valor score\": \"\",\r\n                \"Modelo score\": \"\",\r\n                \"Customer Identifier_cd_Tipo identificacion\": 2469,\r\n                \"Telefono domicilio\": \"\",\r\n                \"Numero Celular Secundario\": \"\"\r\n            }\r\n        }\r\n    ]\r\n}",
+                    "raw": "{\r\n    \"officeId\": 1,\r\n    \"legalFormId\": 1,\r\n    \"isStaff\": false,\r\n    \"active\": true,\r\n    \"dateOfBirth\": \"11/01/2020\",\r\n    \"submittedOnDate\": \"11/01/2020\",\r\n    \"genderId\": 1261,\r\n    \"firstname\": \"Bot++\",\r\n    \"externalId\": \"{{executionId}}\", \r\n    \"lastname\": \"AccountBlock Freeze MiPyme MCB {{executionId}}\",\r\n    \"activationDate\": \"11/01/2020\",\r\n    \"familyMembers\": [],\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"datatables\": [\r\n        {\r\n            \"registeredTableName\": \"campos_cliente_persona\",\r\n            \"data\": {\r\n                \"Cedula\": \"{{executionId}}\",\r\n                \"Estado Civil_cd_Estado civil\": 2404,\r\n                \"Edad\": \"\",\r\n                \"Estrato\": \"\",\r\n                \"Ciudad_cd_Ciudad\": 830,\r\n                \"Tiene vehiculo propio\": \"\",\r\n                \"Tipo Vehiculo_cd_Tipo de vehiculo\": \"\",\r\n                \"Nivel Academico_cd_Nivel academico\": \"\",\r\n                \"Actividad Laboral_cd_Actividad laboral\": \"\",\r\n                \"Tiempo de actividad laboral\": \"\",\r\n                \"Media de ingresos\": \"\",\r\n                \"Nombre empresa\": \"\",\r\n                \"Direccion\": \"Calle Uno, 57\",\r\n                \"Telefono\": \"2222-3355\",\r\n                \"Cupo solicitado\": 999999999,\r\n                \"Cupo aprobado\": 999999999,\r\n                \"Cupo otros prestamos\": \"999999999\",\r\n                \"Cupo score\": \"\",\r\n                \"Valor score\": \"\",\r\n                \"Modelo score\": \"\",\r\n                \"Customer Identifier_cd_Tipo identificacion\": 2469,\r\n                \"Telefono domicilio\": \"\",\r\n                \"Numero Celular Secundario\": \"\"\r\n            }\r\n        }\r\n    ]\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -135,7 +135,7 @@
             "response": []
         },
         {
-            "name": "Add Credito Rotativo Loan Copy 2",
+            "name": "Add Microcredito B",
             "event": [
                 {
                     "listen": "test",
@@ -245,7 +245,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"productId\": 13,\r\n    \"loanOfficerId\": \"\",\r\n    \"loanPurposeId\": \"\",\r\n    \"loanAssignorId\": \"\",\r\n    \"fundId\": \"\",\r\n    \"submittedOnDate\": \"10/07/2025\",\r\n    \"expectedDisbursementDate\": \"10/07/2025\",\r\n    \"externalId\": \"\",\r\n    \"linkAccountId\": \"\",\r\n    \"createStandingInstructionAtDisbursement\": \"\",\r\n    \"allyId\": null,\r\n    \"pointOfSaleCode\": null,\r\n    \"loanTermFrequency\": 12,\r\n    \"loanTermFrequencyType\": 2,\r\n    \"numberOfRepayments\": 12,\r\n    \"repaymentEvery\": 1,\r\n    \"repaymentFrequencyType\": 2,\r\n    \"repaymentFrequencyNthDayType\": \"\",\r\n    \"repaymentFrequencyDayOfWeekType\": \"\",\r\n    \"repaymentsStartingFromDate\": \"10/08/2025\",\r\n    \"interestChargedFromDate\": null,\r\n    \"interestRatePoints\": \"\",\r\n    \"interestType\": 0,\r\n    \"isEqualAmortization\": false,\r\n    \"amortizationType\": 0,\r\n    \"interestCalculationPeriodType\": 0,\r\n    \"allowPartialPeriodInterestCalcualtion\": false,\r\n    \"loanIdToClose\": \"\",\r\n    \"isTopup\": \"\",\r\n    \"maxOutstandingLoanBalance\": 100000000,\r\n    \"transactionProcessingStrategyCode\": \"advanced-payment-allocation-strategy\",\r\n    \"valorDescuento\": \"\",\r\n    \"valorGiro\": \"\",\r\n    \"interestRatePerPeriod\": 46.23,\r\n    \"charges\": [\r\n        {\r\n            \"chargeId\": 33,\r\n            \"amount\": 0.033,\r\n            \"expdate\": null,\r\n            \"isEndorsed\": false,\r\n            \"insuranceName\": \"\",\r\n            \"insuranceId\": \"\"\r\n        }\r\n    ],\r\n    \"collateral\": [],\r\n    \"disbursementData\": [],\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"clientId\": {{clientId}},\r\n    \"loanType\": \"individual\",\r\n    \"principal\": 600000,\r\n    \"clientIdNumber\": \"20250718-114457\"\r\n}",
+                    "raw": "{\r\n    \"productId\": 8,\r\n    \"loanOfficerId\": \"\",\r\n    \"loanPurposeId\": \"\",\r\n    \"loanAssignorId\": \"\",\r\n    \"fundId\": \"\",\r\n    \"submittedOnDate\": \"15-09-25\",\r\n    \"expectedDisbursementDate\": \"15-09-25\",\r\n    \"externalId\": \"\",\r\n    \"linkAccountId\": \"\",\r\n    \"createStandingInstructionAtDisbursement\": \"\",\r\n    \"allyId\": null,\r\n    \"pointOfSaleCode\": null,\r\n    \"loanTermFrequency\": 3,\r\n    \"loanTermFrequencyType\": 2,\r\n    \"numberOfRepayments\": 3,\r\n    \"repaymentEvery\": 1,\r\n    \"repaymentFrequencyType\": 2,\r\n    \"repaymentFrequencyNthDayType\": \"\",\r\n    \"repaymentFrequencyDayOfWeekType\": \"\",\r\n    \"repaymentsStartingFromDate\": null,\r\n    \"interestChargedFromDate\": null,\r\n    \"interestRatePoints\": \"\",\r\n    \"interestType\": 0,\r\n    \"isEqualAmortization\": false,\r\n    \"amortizationType\": 1,\r\n    \"interestCalculationPeriodType\": 0,\r\n    \"allowPartialPeriodInterestCalcualtion\": false,\r\n    \"inArrearsTolerance\": 30000,\r\n    \"loanIdToClose\": \"\",\r\n    \"isTopup\": \"\",\r\n    \"transactionProcessingStrategyCode\": \"advanced-payment-allocation-strategy\",\r\n    \"valorDescuento\": 0,\r\n    \"valorGiro\": 600000,\r\n    \"interestRatePerPeriod\": 23.35,\r\n    \"charges\": [\r\n        {\r\n            \"chargeId\": 32,\r\n            \"amount\": 0.6044919,\r\n            \"isEndorsed\": false,\r\n            \"insuranceName\": \"\",\r\n            \"insuranceId\": 123\r\n        },\r\n        {\r\n            \"chargeId\": 31,\r\n            \"amount\": 19,\r\n            \"isEndorsed\": false,\r\n            \"insuranceName\": \"\",\r\n            \"insuranceId\": \"\"\r\n        }\r\n    ],\r\n    \"collateral\": [],\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\",\r\n    \"clientId\": {{clientId}},\r\n    \"loanType\": \"individual\",\r\n    \"principal\": 600000,\r\n    \"clientIdNumber\": \"20250917-162359\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -268,7 +268,7 @@
             "response": []
         },
         {
-            "name": "Approve  Loan - Unknown Copy 3",
+            "name": "Approve  Loan",
             "request": {
                 "method": "POST",
                 "header": [
@@ -285,7 +285,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"approvedOnDate\": \"10/07/2025\",\r\n    \"expectedDisbursementDate\": \"10/07/2025\",\r\n    \"approvedLoanAmount\": 600000,\r\n    \"note\": \"\",\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "raw": "{\r\n    \"approvedOnDate\": \"15/09/2025\",\r\n    \"expectedDisbursementDate\": \"15/09/2025\",\r\n    \"approvedLoanAmount\": 600000,\r\n    \"note\": \"\",\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -315,19 +315,7 @@
             "response": []
         },
         {
-            "name": "Disburse Money - First time success",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            ""
-                        ],
-                        "type": "text/javascript",
-                        "packages": {}
-                    }
-                }
-            ],
+            "name": "Disburse Money",
             "request": {
                 "method": "POST",
                 "header": [
@@ -344,7 +332,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"actualDisbursementDate\":  \"10/07/2025\",\r\n    \"transactionAmount\": 500000,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": \"\",\r\n    \"note\": \"\",\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\",\r\n    \"channelName\": \"Mifos\"\r\n}",
+                    "raw": "{\r\n    \"actualDisbursementDate\":  \"15/09/2025\",\r\n    \"transactionAmount\": 600000,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": \"\",\r\n    \"note\": \"\",\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\",\r\n    \"channelName\": \"Mifos\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -374,7 +362,176 @@
             "response": []
         },
         {
-            "name": "Block Account Copy",
+            "name": "Test Original Charge Amount",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.response.to.have.status(200);\r",
+                            "pm.expect(pm.response.text()).to.not.equals( null );\r",
+                            "var jsonData = JSON.parse(pm.response.text());\r",
+                            "\r",
+                            "\r",
+                            "pm.test(\"Verify Mi Pyme charge of installments\", function () {\r",
+                            "\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[1].feeChargesDue).to.be.equal(4316.07);\r",
+                            "\r",
+                            "    \r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[2].feeChargesDue).to.be.equal(2905.02);\r",
+                            "\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[3].feeChargesDue).to.be.equal(1472.16);    \r",
+                            "\r",
+                            "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                },
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                }
+            ],
+            "protocolProfileBehavior": {
+                "disableBodyPruning": true
+            },
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n    \"transactionDate\": \"18/07/2025\",\r\n    \"transactionAmount\": 200000,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}?associations=all&exclude=guarantors,futureSchedule",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "loans",
+                        "{{loanId}}"
+                    ],
+                    "query": [
+                        {
+                            "key": "associations",
+                            "value": "all"
+                        },
+                        {
+                            "key": "exclude",
+                            "value": "guarantors,futureSchedule"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Blocking Reason Castigo",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.response.to.have.status(200);\r",
+                            "pm.expect(pm.response.text()).to.not.equals( null );\r",
+                            "var jsonData = JSON.parse(pm.response.text());\r",
+                            "\r",
+                            "// Encontra o objeto com o \"nameOfReason\" igual a \"CASTIGO\"\r",
+                            "const castigoRecord = jsonData.find(record => record.nameOfReason === \"Castigo\");\r",
+                            "\r",
+                            "// Se o registro for encontrado, salva o 'id' em uma variável de ambiente\r",
+                            "if (castigoRecord) {\r",
+                            "    pm.environment.set(\"castigoId\", castigoRecord.id);\r",
+                            "    console.log(\"ID do 'CASTIGO' salvo na variável 'id_castigo': \" + castigoRecord.id);\r",
+                            "} else {\r",
+                            "    console.log(\"Registro 'CASTIGO' não encontrado na resposta.\");\r",
+                            "}"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                },
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                }
+            ],
+            "protocolProfileBehavior": {
+                "disableBodyPruning": true
+            },
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n    \"transactionDate\": \"18/07/2025\",\r\n    \"transactionAmount\": 200000,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/blockSettings/retrieveAllBlockingReasons",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "blockSettings",
+                        "retrieveAllBlockingReasons"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Freeze Life Mi Pyme",
             "event": [
                 {
                     "listen": "test",
@@ -411,7 +568,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n  \"applicationDate\": \"15/07/2025\",\r\n  \"blockingReasonId\": 24,\r\n  \"accelerate\": false,\r\n  \"freezeCurrentInterest\": true,\r\n  \"freezeInterestArrears\": true,\r\n  \"freezeLifeInsurance\": false,\r\n  \"freezeMypime\": false,\r\n  \"active\": true,\r\n  \"locale\": \"es\",\r\n  \"dateFormat\": \"dd/MM/yyyy\"\r\n}\r\n",
+                    "raw": "{\r\n  \"applicationDate\": \"16/10/2025\",\r\n  \"blockingReasonId\": {{castigoId}},\r\n  \"accelerate\": false,\r\n  \"freezeCurrentInterest\": false,\r\n  \"freezeInterestArrears\": false,\r\n  \"freezeLifeInsurance\": false,\r\n  \"freezeMypime\": true,\r\n  \"active\": true,\r\n  \"locale\": \"es\",\r\n  \"dateFormat\": \"dd/MM/yyyy\"\r\n}\r\n",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -435,37 +592,36 @@
             "response": []
         },
         {
-            "name": "Get Accounts",
+            "name": "Test Frozen Charge Amounts",
             "event": [
                 {
                     "listen": "test",
                     "script": {
                         "exec": [
-                            "const response = pm.response.json();\r",
-                            "\r",
-                            "// Test for status code\r",
-                            "pm.test(\"Status code is 200\", function () {\r",
-                            "    pm.expect(pm.response.code).to.equal(200);\r",
-                            "});\r",
+                            "pm.response.to.have.status(200);\r",
+                            "pm.expect(pm.response.text()).to.not.equals( null );\r",
+                            "var jsonData = JSON.parse(pm.response.text());\r",
                             "\r",
                             "\r",
-                            "// Check if loanAccounts exist\r",
-                            "pm.test(\"Loan accounts exist\", function () {\r",
-                            "    pm.expect(response.loanAccounts).to.exist;\r",
-                            "    pm.expect(response.loanAccounts).to.be.an('array');\r",
-                            "});\r",
+                            "pm.test(\"Verify Life Insuramce charge of installments\", function () {\r",
                             "\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[1].feeChargesDue).to.be.equal(4316.07);\r",
                             "\r",
-                            "// Filter loan account by loanId from environment\r",
-                            "const loanId = Number(pm.environment.get(\"loanId\"));\r",
-                            "const filteredLoanAccounts = response.loanAccounts.filter(account => account.id === loanId);\r",
+                            "    \r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[2].feeChargesDue).to.be.equal(0);\r",
                             "\r",
-                            "// Test if the filtered loan account has a block property\r",
-                            "pm.test(`El loanAccount con id=${loanId} contiene la propiedad \"block\"`, function () {\r",
-                            "    pm.expect(filteredLoanAccounts[0]).to.have.property('block');\r",
-                            "});\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[3].feeChargesDue).to.be.equal(0);    \r",
                             "\r",
-                            "\r",
+                            "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                },
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
                             ""
                         ],
                         "type": "text/javascript",
@@ -473,6 +629,9 @@
                     }
                 }
             ],
+            "protocolProfileBehavior": {
+                "disableBodyPruning": true
+            },
             "request": {
                 "method": "GET",
                 "header": [
@@ -487,8 +646,17 @@
                         "type": "text"
                     }
                 ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n    \"transactionDate\": \"18/07/2025\",\r\n    \"transactionAmount\": 200000,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
                 "url": {
-                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/clients/{{clientId}}/accounts",
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}?associations=all&exclude=guarantors,futureSchedule",
                     "host": [
                         "{{fineract-backend-server}}"
                     ],
@@ -496,9 +664,183 @@
                         "fineract-provider",
                         "api",
                         "v1",
-                        "clients",
-                        "{{clientId}}",
-                        "accounts"
+                        "loans",
+                        "{{loanId}}"
+                    ],
+                    "query": [
+                        {
+                            "key": "associations",
+                            "value": "all"
+                        },
+                        {
+                            "key": "exclude",
+                            "value": "guarantors,futureSchedule"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Repay 1st",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "    pm.response.to.have.status(200);\r",
+                            "    pm.expect(responseBody).to.not.equals( null );\r",
+                            "    var jsonData = JSON.parse(pm.response.text());\r",
+                            "\r",
+                            "    pm.environment.set(\"transactionId\", jsonData.resourceId);\r",
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                },
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n    \"transactionDate\": \"16/09/2025\",\r\n    \"transactionAmount\": 212996,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}/transactions?command=repayment",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "loans",
+                        "{{loanId}}",
+                        "transactions"
+                    ],
+                    "query": [
+                        {
+                            "key": "command",
+                            "value": "repayment"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Test Frozen Charge Amounts After repayment",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.response.to.have.status(200);\r",
+                            "pm.expect(pm.response.text()).to.not.equals( null );\r",
+                            "var jsonData = JSON.parse(pm.response.text());\r",
+                            "\r",
+                            "\r",
+                            "pm.test(\"Verify Life Insuramce charge of installments\", function () {\r",
+                            "\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[1].feeChargesDue).to.be.equal(4316.07);\r",
+                            "\r",
+                            "    \r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[2].feeChargesDue).to.be.equal(0);\r",
+                            "\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[3].feeChargesDue).to.be.equal(0);   \r",
+                            "\r",
+                            "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                },
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                }
+            ],
+            "protocolProfileBehavior": {
+                "disableBodyPruning": true
+            },
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n    \"transactionDate\": \"18/07/2025\",\r\n    \"transactionAmount\": 200000,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}?associations=all&exclude=guarantors,futureSchedule",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "loans",
+                        "{{loanId}}"
+                    ],
+                    "query": [
+                        {
+                            "key": "associations",
+                            "value": "all"
+                        },
+                        {
+                            "key": "exclude",
+                            "value": "guarantors,futureSchedule"
+                        }
                     ]
                 }
             },

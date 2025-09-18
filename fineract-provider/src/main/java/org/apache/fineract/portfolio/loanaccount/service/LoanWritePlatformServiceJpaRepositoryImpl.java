@@ -940,7 +940,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
     }
 
-    private Loan saveAndFlushLoanWithDataIntegrityViolationChecks(final Loan loan) {
+    @Override
+    public Loan saveAndFlushLoanWithDataIntegrityViolationChecks(final Loan loan) {
         try {
             loanRepaymentScheduleInstallmentRepository.saveAll(loan.getRepaymentScheduleInstallments());
             return this.loanRepositoryWrapper.saveAndFlush(loan);

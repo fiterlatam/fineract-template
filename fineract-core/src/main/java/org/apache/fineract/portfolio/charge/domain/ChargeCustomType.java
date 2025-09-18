@@ -27,6 +27,7 @@ public enum ChargeCustomType {
 
     CAPITAL_PENDIENTE_MI_PYME("Capital Pendiente Mi Pyme"), //
     COMISION_MI_PYME("Comision Mi Pyme"), //
+    LIFE_INSURANCE("Seguro de vida"), //
     ;
 
     private final String rootName;

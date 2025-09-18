@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "6f37a77e-94e0-497f-9c00-f29c1fe67f91",
+        "_postman_id": "f8dc514c-ae35-4885-be87-e0afb34a2258",
         "name": "EA Loans CR AdvancedPayment Reduce Principal",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
@@ -760,6 +760,147 @@
                         {
                             "key": "exclude",
                             "value": "guarantors,futureSchedule"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Close as Rescheduled",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test( \"Create Loan\", function(){\r",
+                            "    pm.response.to.have.status(200);\r",
+                            "    pm.expect(pm.response.text()).to.not.equals( null );\r",
+                            "    var jsonData = JSON.parse(pm.response.text());\r",
+                            "\r",
+                            "    postman.setEnvironmentVariable(\"loanId\", jsonData.resourceId);\r",
+                            "\r",
+                            "} );"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                },
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            "var moment = require(\"moment\");\r",
+                            "pm.environment.set(\"executionId\", moment().format((\"YYYYMMDD-HHmmss\")));\r",
+                            "pm.environment.set(\"bitacorasAmountTypeColIdx\", 6);\r",
+                            "\r",
+                            "pm.environment.set(\"mmss\", moment().format((\"mmss\")));\r",
+                            "\r",
+                            "\r",
+                            "generateNIT();\r",
+                            "\r",
+                            "generateDPI();\t\r",
+                            "\t\r",
+                            "function generateDPI() {\r",
+                            "    var moment = require(\"moment\");\r",
+                            "    var formatedMoment = moment().format((\"HHmmssSSS\"));\r",
+                            "    formatedMoment = formatedMoment.substring(1);\r",
+                            "    var generatedDPI = formatedMoment + parseModuleNumber(formatedMoment) + \"0111\";\r",
+                            "\r",
+                            "    console.log(generatedDPI);\r",
+                            "\r",
+                            "    pm.environment.set(\"generatedDPI\", generatedDPI);\r",
+                            "}\r",
+                            "\r",
+                            "function parseModuleNumber(cleanDPINumber) {\r",
+                            "    var total = 0;\r",
+                            "    for (var i = 0; i < cleanDPINumber.length; i++) {\r",
+                            "        total += parseInt(cleanDPINumber.substring(i, i + 1)) * (i + 2);\r",
+                            "    }\r",
+                            "    var ret = parseInt(total % 11);\r",
+                            "    return (ret >= 10 ? 0 : ret);\r",
+                            "}\t\r",
+                            "\t\r",
+                            "function generateNIT() {\r",
+                            "    var moment = require(\"moment\");\r",
+                            "    var formatedMoment = moment().format((\"MMDDHHmmss\"));\r",
+                            "    var digitWeight = formatedMoment.length + 1;\r",
+                            "\r",
+                            "    var totalValue = 0;\r",
+                            "\r",
+                            "    for (var i = 0; i < formatedMoment.length; i++) {\r",
+                            "        if(digitWeight == 1) {\r",
+                            "            break\r",
+                            "        }\r",
+                            "        totalValue += parseInt(formatedMoment.charAt(i)) * digitWeight;\r",
+                            "        digitWeight--;\r",
+                            "    }\r",
+                            "\r",
+                            "    var generatedNIT = formatedMoment + '-'+ calculateNITDigit(totalValue);\r",
+                            "\r",
+                            "    if(generatedNIT.endsWith(\"0\")) {\r",
+                            "        setTimeout(function() { generateNIT(); }, 321);\r",
+                            "    }\r",
+                            "\r",
+                            "    console.log(generatedNIT);\r",
+                            "\r",
+                            "    pm.environment.set(\"generatedNIT\", generatedNIT);\r",
+                            "}\r",
+                            "\r",
+                            "function calculateNITDigit(totalValue) {\r",
+                            "    var digit = (11 - parseInt(totalValue % 11));\r",
+                            "    if(digit  >= 10) {\r",
+                            "        digit = 0;\r",
+                            "    }\r",
+                            "    return digit;\r",
+                            "}\r",
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n    \"transactionDate\": \"17-09-25\",\r\n    \"note\": null,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\"\r\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}/transactions?command=close-rescheduled",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "loans",
+                        "{{loanId}}",
+                        "transactions"
+                    ],
+                    "query": [
+                        {
+                            "key": "command",
+                            "value": "close-rescheduled"
                         }
                     ]
                 }
