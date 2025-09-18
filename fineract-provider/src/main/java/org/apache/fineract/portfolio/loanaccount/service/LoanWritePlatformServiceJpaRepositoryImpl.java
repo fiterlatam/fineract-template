@@ -453,12 +453,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         LoanAccountBlockDTO accountBlockDTO = this.loanAccountBlockReadPlatformService.retrieveByLoanIdWithoutException(loanId);
 
         if (accountBlockDTO != null) {
-            if (loanAccountBlockReadPlatformService.containsBlockAccountDisbursal(loanId, actualDisbursementDate)) {
+            boolean canDisbursement = actualDisbursementDate.isBefore(accountBlockDTO.getApplicationDate());
+            if (!canDisbursement) {
                 final String message = String.format(" Cannot be disbursed, loan account is blocked by %s",
                         accountBlockDTO.getBlockingReasonName());
                 throw new GeneralPlatformDomainRuleException(message, "Loan account is blocked.");
             }
-
             log.info("DisburseLoan: Account blocked but the effective date has not yet come into effect. {}",
                     accountBlockDTO.getApplicationDate());
         }
