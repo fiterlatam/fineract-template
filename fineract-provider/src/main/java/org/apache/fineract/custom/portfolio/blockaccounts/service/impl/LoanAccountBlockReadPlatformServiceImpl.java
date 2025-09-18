@@ -19,7 +19,6 @@ package org.apache.fineract.custom.portfolio.blockaccounts.service.impl;
  * under the License.
  */
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.NotFoundException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,10 +51,7 @@ public class LoanAccountBlockReadPlatformServiceImpl implements LoanAccountBlock
     @Override
     public LoanAccountBlockDTO retrieveByLoanId(Long loanId) {
         Optional<LoanAccountBlock> loanAccountBlock = loanAccountBlockRepository.retrieveByLoanIdAndStatusActive(loanId);
-        if (loanAccountBlock.isEmpty()) {
-            throw new NotFoundException(String.valueOf(loanId));
-        }
-        return loanAccountBlockMapper.toDto(loanAccountBlock.get());
+        return loanAccountBlock.map(loanAccountBlockMapper::toDto).orElse(null);
     }
 
     @Override

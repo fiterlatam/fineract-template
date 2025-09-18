@@ -40,6 +40,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
+import org.apache.fineract.custom.portfolio.blockaccounts.data.LoanAccountBlockDTO;
+import org.apache.fineract.custom.portfolio.blockaccounts.service.LoanAccountBlockReadPlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -159,6 +161,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
     private final NoteRepository noteRepository;
     private final LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService;
     private final JdbcTemplate jdbcTemplate;
+    private final LoanAccountBlockReadPlatformService loanAccountBlockReadPlatformService;
 
     private static boolean isPartOfThisInstallment(LoanCharge loanCharge, LoanRepaymentScheduleInstallment e) {
         return DateUtils.isAfter(loanCharge.getDueDate(), e.getFromDate()) && !DateUtils.isAfter(loanCharge.getDueDate(), e.getDueDate());
@@ -764,110 +767,120 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                 .sorted(Comparator.comparing(OverdueLoanScheduleData::getPeriodNumber)).toList();
 
         Loan loan = this.loanAssembler.assembleFrom(loanId);
-        log.info("Apply penalty to overdue loans:: Applying overdue charges for Loan: {} with number of overdue installments: {}", loanId,
-                overdueLoanScheduleDataList.size());
-        // add check duplication instalment number or invalid data
-        Boolean duplicateNumberInstalment = loan
-                .getRepaymentScheduleInstallments().stream().filter(e -> e.getInstallmentNumber() > 0).collect(Collectors
-                        .groupingBy(schedule -> schedule.getLoan().getId() + "-" + schedule.getInstallmentNumber(), Collectors.counting()))
-                .values().stream().anyMatch(count -> count > 1);
 
-        if (Boolean.FALSE.equals(duplicateNumberInstalment)) {
-            if (loan.isChargedOff()) {
-                log.warn("Apply penalty to overdue loans:: Adding charge to Loan: {} is not allowed. Loan Account is Charged-off", loanId);
-                return;
-            }
-            final List<Long> existingTransactionIds = loan.findExistingTransactionIds();
-            final List<Long> existingReversedTransactionIds = loan.findExistingReversedTransactionIds();
-            boolean runInterestRecalculation = false;
-            LocalDate recalculateFrom = DateUtils.getBusinessLocalDate();
-            LocalDate lastChargeDate = null;
+        LoanAccountBlockDTO loanAccountBlock = loanAccountBlockReadPlatformService.retrieveByLoanId(loanId);
 
-            for (final OverdueLoanScheduleData overdueInstallment : overdueLoanScheduleDataList) {
+        if (loanAccountBlock == null || !loanAccountBlock.getFreezeInterestArrears()) {
+            log.info("Apply penalty to overdue loans:: Applying overdue charges for Loan: {} with number of overdue installments: {}",
+                    loanId, overdueLoanScheduleDataList.size());
+            // add check duplication instalment number or invalid data
+            Boolean duplicateNumberInstalment = loan.getRepaymentScheduleInstallments().stream().filter(e -> e.getInstallmentNumber() > 0)
+                    .collect(Collectors.groupingBy(schedule -> schedule.getLoan().getId() + "-" + schedule.getInstallmentNumber(),
+                            Collectors.counting()))
+                    .values().stream().anyMatch(count -> count > 1);
 
-                if (overdueInstallment.getPeriodNumber() < 1) {
-                    log.warn("Graced periods(0) cannot be charged for penalty for loan with id: {}", loan.getId());
-                    continue;
+            if (Boolean.FALSE.equals(duplicateNumberInstalment)) {
+                if (loan.isChargedOff()) {
+                    log.warn("Apply penalty to overdue loans:: Adding charge to Loan: {} is not allowed. Loan Account is Charged-off",
+                            loanId);
+                    return;
                 }
+                final List<Long> existingTransactionIds = loan.findExistingTransactionIds();
+                final List<Long> existingReversedTransactionIds = loan.findExistingReversedTransactionIds();
+                boolean runInterestRecalculation = false;
+                LocalDate recalculateFrom = DateUtils.getBusinessLocalDate();
+                LocalDate lastChargeDate = null;
 
-                // If installment is overdue but within charge´s grace period, don´t apply charge
-                final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(overdueInstallment.getChargeId());
-                if (chargeDefinition.hasCustomGracePeriodDefined()) {
-                    final LocalDate today = DateUtils.getBusinessLocalDate();
-                    final LocalDate dueDate = DateUtils.parseLocalDate(overdueInstallment.getDueDate());
-                    final LocalDate applyChargeFromDate = dueDate.plusDays(chargeDefinition.getGraceOnChargePeriodAmount());
-                    if (today.isBefore(applyChargeFromDate)) {
+                for (final OverdueLoanScheduleData overdueInstallment : overdueLoanScheduleDataList) {
+
+                    if (overdueInstallment.getPeriodNumber() < 1) {
+                        log.warn("Graced periods(0) cannot be charged for penalty for loan with id: {}", loan.getId());
                         continue;
                     }
-                }
 
-                final JsonElement parsedCommand = this.fromApiJsonHelper.parse(overdueInstallment.toString());
-                final JsonCommand command = JsonCommand.from(overdueInstallment.toString(), parsedCommand, this.fromApiJsonHelper, null,
-                        null, null, null, null, loanId, null, null, null, null, null, null, null);
-
-                final long startTime = System.currentTimeMillis();
-                log.info("Apply penalty to overdue loans:: Applying overdue charge for Loan: {} for period number: {} with charge id: {}",
-                        loanId, overdueInstallment.getPeriodNumber(), overdueInstallment.getChargeId());
-                LoanOverdueDTO overdueDTO = applyChargeToOverdueLoanInstallment(loan, overdueInstallment.getChargeId(),
-                        overdueInstallment.getPeriodNumber(), command);
-                log.info("Apply penalty to overdue loans:: Overdue charge applied for Loan: {} for period number: {} with charge id: {}",
-                        loanId, overdueInstallment.getPeriodNumber(), overdueInstallment.getChargeId());
-                final long endTime = System.currentTimeMillis();
-                log.info("Time taken to apply overdue charge for Loan: {} for period number: {} with charge name: {} is {} ms", loanId,
-                        overdueInstallment.getPeriodNumber(), chargeDefinition.getName(), (endTime - startTime));
-
-                loan = overdueDTO.getLoan();
-                runInterestRecalculation = runInterestRecalculation || overdueDTO.isRunInterestRecalculation();
-                if (DateUtils.isAfter(recalculateFrom, overdueDTO.getRecalculateFrom())) {
-                    recalculateFrom = overdueDTO.getRecalculateFrom();
-                }
-                if (lastChargeDate == null || DateUtils.isAfter(overdueDTO.getLastChargeAppliedDate(), lastChargeDate)) {
-                    lastChargeDate = overdueDTO.getLastChargeAppliedDate();
-                }
-            }
-            if (loan != null) {
-                boolean reprocessRequired = true;
-                LocalDate recalculatedTill = loan.fetchInterestRecalculateFromDate();
-                if (DateUtils.isAfter(recalculateFrom, recalculatedTill)) {
-                    recalculateFrom = recalculatedTill;
-                }
-
-                if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
-                    if (runInterestRecalculation && loan.isFeeCompoundingEnabledForInterestRecalculation()) {
-                        loan = runScheduleRecalculation(loan, recalculateFrom);
-                        reprocessRequired = false;
+                    // If installment is overdue but within charge´s grace period, don´t apply charge
+                    final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(overdueInstallment.getChargeId());
+                    if (chargeDefinition.hasCustomGracePeriodDefined()) {
+                        final LocalDate today = DateUtils.getBusinessLocalDate();
+                        final LocalDate dueDate = DateUtils.parseLocalDate(overdueInstallment.getDueDate());
+                        final LocalDate applyChargeFromDate = dueDate.plusDays(chargeDefinition.getGraceOnChargePeriodAmount());
+                        if (today.isBefore(applyChargeFromDate)) {
+                            continue;
+                        }
                     }
-                    this.loanWritePlatformService.updateOriginalSchedule(loan);
+
+                    final JsonElement parsedCommand = this.fromApiJsonHelper.parse(overdueInstallment.toString());
+                    final JsonCommand command = JsonCommand.from(overdueInstallment.toString(), parsedCommand, this.fromApiJsonHelper, null,
+                            null, null, null, null, loanId, null, null, null, null, null, null, null);
+
+                    final long startTime = System.currentTimeMillis();
+                    log.info(
+                            "Apply penalty to overdue loans:: Applying overdue charge for Loan: {} for period number: {} with charge id: {}",
+                            loanId, overdueInstallment.getPeriodNumber(), overdueInstallment.getChargeId());
+                    LoanOverdueDTO overdueDTO = applyChargeToOverdueLoanInstallment(loan, overdueInstallment.getChargeId(),
+                            overdueInstallment.getPeriodNumber(), command);
+                    log.info(
+                            "Apply penalty to overdue loans:: Overdue charge applied for Loan: {} for period number: {} with charge id: {}",
+                            loanId, overdueInstallment.getPeriodNumber(), overdueInstallment.getChargeId());
+                    final long endTime = System.currentTimeMillis();
+                    log.info("Time taken to apply overdue charge for Loan: {} for period number: {} with charge name: {} is {} ms", loanId,
+                            overdueInstallment.getPeriodNumber(), chargeDefinition.getName(), (endTime - startTime));
+
+                    loan = overdueDTO.getLoan();
+                    runInterestRecalculation = runInterestRecalculation || overdueDTO.isRunInterestRecalculation();
+                    if (DateUtils.isAfter(recalculateFrom, overdueDTO.getRecalculateFrom())) {
+                        recalculateFrom = overdueDTO.getRecalculateFrom();
+                    }
+                    if (lastChargeDate == null || DateUtils.isAfter(overdueDTO.getLastChargeAppliedDate(), lastChargeDate)) {
+                        lastChargeDate = overdueDTO.getLastChargeAppliedDate();
+                    }
                 }
+                if (loan != null) {
+                    boolean reprocessRequired = true;
+                    LocalDate recalculatedTill = loan.fetchInterestRecalculateFromDate();
+                    if (DateUtils.isAfter(recalculateFrom, recalculatedTill)) {
+                        recalculateFrom = recalculatedTill;
+                    }
 
-                if (reprocessRequired) {
-                    // No need to add new penalty installment. This has been handled in
-                    // SingleLoanChargeRepaymentScheduleProcessingWrapper.reprocess
-                    // addInstallmentIfPenaltyAppliedAfterLastDueDate(loan, lastChargeDate);
+                    if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
+                        if (runInterestRecalculation && loan.isFeeCompoundingEnabledForInterestRecalculation()) {
+                            loan = runScheduleRecalculation(loan, recalculateFrom);
+                            reprocessRequired = false;
+                        }
+                        this.loanWritePlatformService.updateOriginalSchedule(loan);
+                    }
 
-                    // SU-613 Do not reprocess transactions when penalty charge is added
-                    /*
-                     * ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions(); if
-                     * (changedTransactionDetail != null) { for (final Map.Entry<Long, LoanTransaction> mapEntry :
-                     * changedTransactionDetail.getNewTransactionMappings() .entrySet()) {
-                     * loanAccountDomainService.saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.getValue())
-                     * ; accountTransfersWritePlatformService.updateLoanTransaction(mapEntry.getKey(),
-                     * mapEntry.getValue()); } // Trigger transaction replayed event
-                     * replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(changedTransactionDetail);
-                     * }
-                     */
-                    loan = loanAccountDomainService.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+                    if (reprocessRequired) {
+                        // No need to add new penalty installment. This has been handled in
+                        // SingleLoanChargeRepaymentScheduleProcessingWrapper.reprocess
+                        // addInstallmentIfPenaltyAppliedAfterLastDueDate(loan, lastChargeDate);
+
+                        // SU-613 Do not reprocess transactions when penalty charge is added
+                        /*
+                         * ChangedTransactionDetail changedTransactionDetail = loan.reprocessTransactions(); if
+                         * (changedTransactionDetail != null) { for (final Map.Entry<Long, LoanTransaction> mapEntry :
+                         * changedTransactionDetail.getNewTransactionMappings() .entrySet()) {
+                         * loanAccountDomainService.saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.
+                         * getValue()) ; accountTransfersWritePlatformService.updateLoanTransaction(mapEntry.getKey(),
+                         * mapEntry.getValue()); } // Trigger transaction replayed event
+                         * replayedTransactionBusinessEventService.raiseTransactionReplayedEvents(
+                         * changedTransactionDetail); }
+                         */
+                        loan = loanAccountDomainService.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+                    }
+
+                    postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
+
+                    if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled() && runInterestRecalculation
+                            && loan.isFeeCompoundingEnabledForInterestRecalculation()) {
+                        log.info("Apply penalty to overdue loans:: Recalculating accruals for Loan: {} after applying overdue charges",
+                                loanId);
+                        this.loanAccountDomainService.recalculateAccruals(loan);
+                        log.info("Apply penalty to overdue loans:: Accruals recalculated for Loan: {} after applying overdue charges",
+                                loanId);
+                    }
+                    this.loanAccountDomainService.setLoanDelinquencyTag(loan, DateUtils.getBusinessLocalDate());
                 }
-
-                postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds);
-
-                if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled() && runInterestRecalculation
-                        && loan.isFeeCompoundingEnabledForInterestRecalculation()) {
-                    log.info("Apply penalty to overdue loans:: Recalculating accruals for Loan: {} after applying overdue charges", loanId);
-                    this.loanAccountDomainService.recalculateAccruals(loan);
-                    log.info("Apply penalty to overdue loans:: Accruals recalculated for Loan: {} after applying overdue charges", loanId);
-                }
-                this.loanAccountDomainService.setLoanDelinquencyTag(loan, DateUtils.getBusinessLocalDate());
             }
         }
 

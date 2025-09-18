@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -84,6 +85,9 @@ public class LoanAccountBlockApiResource {
     public String getBlockAccounts(@PathParam("loanId") Long loanId) {
         platformUserRightsContext.isAuthenticated();
         LoanAccountBlockDTO loanAccountBlockDTO = loanAccountBlockReadPlatformService.retrieveByLoanId(loanId);
+        if (loanAccountBlockDTO == null) {
+            throw new NotFoundException(String.valueOf(loanId));
+        }
         return apiJsonSerializerService.serialize(loanAccountBlockDTO);
     }
 
