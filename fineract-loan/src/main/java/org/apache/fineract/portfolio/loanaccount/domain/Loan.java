@@ -18,6 +18,9 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
+import static org.apache.fineract.portfolio.charge.domain.ChargeCustomType.CAPITAL_PENDIENTE_MI_PYME;
+import static org.apache.fineract.portfolio.charge.domain.ChargeCustomType.LIFE_INSURANCE;
+
 import com.google.common.base.Splitter;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -51,6 +54,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.custom.portfolio.blockaccounts.data.LoanAccountBlockComponentEnum;
+import org.apache.fineract.custom.portfolio.blockaccounts.data.LoanAccountBlockData;
+import org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBlock;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMap;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.configuration.service.TemporaryConfigurationServiceContainer;
@@ -212,6 +218,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public static final String ERROR_MESSAGE_LABEL_CANNOT_BE_UNDONE_BEFORE_CLIENT_TRANSFER_DATE = "cannot.be.undone.before.client.transfer.date";
     public static final String ERROR_MESSAGE_LABEL_CANNOT_BE_MADE_BEFORE_CLIENT_TRANSFER_DATE = "cannot.be.made.before.client.transfer.date";
     public static final String ERROR_MESSAGE_LABEL_CANNOT_BE_MADE_BEFORE_LAST_TRANSACTION_DATE = "cannot.be.made.before.last.transaction.date";
+    public static final String STR_CASTIGO = "CASTIGO";
 
     /** Disable optimistic locking till batch jobs failures can be fixed **/
     @Version
@@ -565,6 +572,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     @Getter
     @Column(name = "mambu_number_of_repayments")
     private Integer mambuNumberOfRepayments;
+
+    @Getter
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "loan", orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<LoanAccountBlock> loanAccountBlocks;
 
     @SuppressWarnings({ "squid:S107" })
     public static Loan newIndividualLoanApplication(final String accountNo, final Client client, final Integer loanType,
@@ -1291,6 +1302,18 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final LoanRepaymentScheduleInstallment installment, Long parentChargeId, LoanCharge loanCharge) {
         Money amount = Money.zero(getCurrency());
         Money percentOf = Money.zero(getCurrency());
+
+        if (loanCharge.getCharge().getName().contains(LIFE_INSURANCE.getRootName())
+                && this.containsBlockAccountFreezeLifeInsurance(installment.getDueDate())) {
+            installment.setLifeInsuranceChargePortion(amount.getAmount());
+            return amount;
+        } else if ((loanCharge.getCharge().getName().contains(ChargeCustomType.CAPITAL_PENDIENTE_MI_PYME.getRootName())
+                || loanCharge.getCharge().getName().contains(ChargeCustomType.COMISION_MI_PYME.getRootName()))
+                && Objects.nonNull(loanCharge.getLoan())
+                && loanCharge.getLoan().containsBlockAccountFreezeMipyme(installment.getDueDate())) {
+            return amount;
+        }
+
         switch (calculationType) {
             case PERCENT_OF_AMOUNT:
                 percentOf = installment.getPrincipal(getCurrency());
@@ -1335,17 +1358,20 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             this.outstandingBalance = this.outstandingBalance.minus(installment.getPrincipal(this.getCurrency()));
 
             // If charge is Capital Pendiente, do not divide by nr of installments
-            if (loanCharge != null && loanCharge.getCharge().getName().contains(ChargeCustomType.CAPITAL_PENDIENTE_MI_PYME.getRootName())) {
+            if (loanCharge != null && loanCharge.getCharge().getName().contains(CAPITAL_PENDIENTE_MI_PYME.getRootName())) {
                 numberOfInstallments = BigDecimal.ONE;
             }
 
             BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 2, RoundingMode.HALF_UP);
             amount = amount.plus(finalAmount);
-        } else if (calculationType.isPercentageOfLifeInsurance() && Objects.nonNull(installment.getLifeInsuranceChargePortion())
-                && installment.getLifeInsuranceChargePortion().compareTo(BigDecimal.ZERO) > 0) {
+        } else if (calculationType.isPercentageOfLifeInsurance()) {
+            // TODO technical debt: review condition above, it may affect "Seguro de Vida" repayments (see Git history)
             Money amountAux = amount.plus(loanCharge.getAmountPercentageAppliedTo().multiply(percentage).divide(BigDecimal.valueOf(100), 2,
                     RoundingMode.HALF_UP));
             amount = amount.plus(amountAux);
+
+            // TODO technical debt: Not the best place to set the amoun, but clock is ticking.
+            installment.setLifeInsuranceChargePortion(amountAux.getAmount());
         }
         return amount;
     }
@@ -2136,10 +2162,9 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         int originalDay = sourceInstallment.getDueDate().getDayOfMonth();
 
         for (LoanRepaymentScheduleInstallment installment : getRepaymentScheduleInstallments()) {
+            LocalDate startDate = installment.getFromDate().plusDays(1);
             if (installment.getLifeInsuranceChargePortion() == null) {
-                LocalDate startDate = installment.getFromDate().plusDays(1);
                 LocalDate dueDate = installment.getDueDate();
-
                 int lastDayOfMonth = dueDate.lengthOfMonth();
                 int targetDay = Math.min(originalDay, lastDayOfMonth);
 
@@ -5980,6 +6005,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     amount = loanCharge.amount();
                 }
 
+                if (loanCharge.getCharge().getName().contains(LIFE_INSURANCE.getRootName())
+                        && containsBlockAccountFreezeLifeInsurance(installment.getDueDate())) {
+                    amount = BigDecimal.ZERO;
+                }
+
                 if (amount.compareTo(BigDecimal.ZERO) > 0) {
                     final LoanInstallmentCharge loanInstallmentCharge = new LoanInstallmentCharge(amount, loanCharge, installment);
                     installment.getInstallmentCharges().add(loanInstallmentCharge);
@@ -8611,4 +8641,68 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return super.getId();
     }
 
+    public LoanAccountBlockData checkBlockAccountComponents(LocalDate givenDate) {
+        List<LoanAccountBlockComponentEnum> blockedComponents = new ArrayList<>();
+
+        if (Objects.nonNull(this.loanAccountBlocks)) {
+            Optional<LoanAccountBlock> loanAccountBlockOpt = this.loanAccountBlocks.stream()
+                    .filter(cast -> STR_CASTIGO.equalsIgnoreCase(cast.getBlockingReasonSetting().getNameOfReason()))
+                    .filter(LoanAccountBlock::getActive).filter(dt -> !givenDate.isBefore(dt.getApplicationDate())).findFirst();
+
+            if (loanAccountBlockOpt.isPresent()) {
+                LoanAccountBlock loanAccountBlock = loanAccountBlockOpt.get();
+
+                if (Objects.nonNull(loanAccountBlock.getAccelerate()) && loanAccountBlock.getAccelerate()) {
+                    blockedComponents.add(LoanAccountBlockComponentEnum.ACCELERATE);
+                }
+                if (Objects.nonNull(loanAccountBlock.getFreezeCurrentInterest()) && loanAccountBlock.getFreezeCurrentInterest()) {
+                    blockedComponents.add(LoanAccountBlockComponentEnum.FREEZE_INTEREST);
+                }
+                if (Objects.nonNull(loanAccountBlock.getFreezeInterestArrears()) && loanAccountBlock.getFreezeInterestArrears()) {
+                    blockedComponents.add(LoanAccountBlockComponentEnum.FREEZE_MORA);
+                }
+                if (Objects.nonNull(loanAccountBlock.getFreezeLifeInsurance()) && loanAccountBlock.getFreezeLifeInsurance()) {
+                    blockedComponents.add(LoanAccountBlockComponentEnum.FREEZE_LIFE_INSURANCE);
+                }
+                if (Objects.nonNull(loanAccountBlock.getFreezeMypime()) && loanAccountBlock.getFreezeMypime()) {
+                    blockedComponents.add(LoanAccountBlockComponentEnum.FREEZE_MIPYME);
+                }
+
+                if (blockedComponents.isEmpty()) {
+                    blockedComponents.add(LoanAccountBlockComponentEnum.BLOCK_DISBURSAL);
+                }
+            }
+        }
+        return LoanAccountBlockData.builder().loanId(this.getId()).providedDate(givenDate)
+                .loanAccountBlockComponentEnumList(blockedComponents).build();
+    }
+
+    public boolean containsBlockAccountDisbursal(LocalDate givenDate) {
+        return containsBlockAccount(givenDate, LoanAccountBlockComponentEnum.BLOCK_DISBURSAL);
+    }
+
+    public boolean containsBlockAccountAccelerate(LocalDate givenDate) {
+        return containsBlockAccount(givenDate, LoanAccountBlockComponentEnum.ACCELERATE);
+    }
+
+    public boolean containsBlockAccountFreezeInterest(LocalDate givenDate) {
+        return containsBlockAccount(givenDate, LoanAccountBlockComponentEnum.FREEZE_INTEREST);
+    }
+
+    public boolean containsBlockAccountFreezeMora(LocalDate givenDate) {
+        return containsBlockAccount(givenDate, LoanAccountBlockComponentEnum.FREEZE_MORA);
+    }
+
+    public boolean containsBlockAccountFreezeLifeInsurance(LocalDate givenDate) {
+        return containsBlockAccount(givenDate, LoanAccountBlockComponentEnum.FREEZE_LIFE_INSURANCE);
+    }
+
+    public boolean containsBlockAccountFreezeMipyme(LocalDate givenDate) {
+        return containsBlockAccount(givenDate, LoanAccountBlockComponentEnum.FREEZE_MIPYME);
+    }
+
+    private boolean containsBlockAccount(LocalDate givenDate, LoanAccountBlockComponentEnum blockComponentEnum) {
+        return checkBlockAccountComponents(givenDate).getLoanAccountBlockComponentEnumList().stream()
+                .anyMatch(disb -> disb.equals(blockComponentEnum));
+    }
 }

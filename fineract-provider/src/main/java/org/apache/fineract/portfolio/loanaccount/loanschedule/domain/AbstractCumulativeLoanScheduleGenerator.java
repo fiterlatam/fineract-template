@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.portfolio.loanaccount.loanschedule.domain;
 
+import static org.apache.fineract.portfolio.charge.domain.ChargeCustomType.LIFE_INSURANCE;
+
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -2864,9 +2866,14 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             LoanCharge loanCharge, final MathContext mc, Integer installmentNumber, Money principalDisbursed, Integer numberOfRepayments,
             Money outstandingBalance, Set<LoanCharge> loanCharges) {
         BigDecimal calculatedAmount;
+        LocalDate periodDueDate = (LocalDate) principalInterestForThisPeriod.getAuxiliaryData("periodDueDate");
         if (loanCharge.getChargeCalculation().isPercentageBased()) {
             BigDecimal amount = BigDecimal.ZERO;
-            if (loanCharge.getChargeCalculation().isPercentageOfInstallmentPrincipalAndInterest()) {
+
+            if (loanCharge.getCharge().getName().contains(LIFE_INSURANCE.getRootName()) && Objects.nonNull(loanCharge.getLoan())
+                    && loanCharge.getLoan().containsBlockAccountFreezeLifeInsurance(periodDueDate)) {
+                amount = BigDecimal.ZERO;
+            } else if (loanCharge.getChargeCalculation().isPercentageOfInstallmentPrincipalAndInterest()) {
                 amount = amount.add(principalInterestForThisPeriod.principal().getAmount())
                         .add(principalInterestForThisPeriod.interest().getAmount());
             } else if (loanCharge.getChargeCalculation().isPercentageOfInstallmentInterest()) {
@@ -2877,21 +2884,36 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 amount = amount.add(loanCharge.calculateParentChargeAmountForInstallment(loanCharges, installmentNumber, principalDisbursed,
                         numberOfRepayments, outstandingBalance));
             } else if (loanCharge.getChargeCalculation().isCustomPercentageOfOutstandingPrincipalCharge()) {
-                if (loanCharge.getCharge().getName().contains(ChargeCustomType.CAPITAL_PENDIENTE_MI_PYME.getRootName())) {
+                // If mipyme charge was blocked, zero the amount
+                if ((loanCharge.getCharge().getName().contains(ChargeCustomType.CAPITAL_PENDIENTE_MI_PYME.getRootName())
+                        || loanCharge.getCharge().getName().contains(ChargeCustomType.COMISION_MI_PYME.getRootName()))
+                        && Objects.nonNull(loanCharge.getLoan()) && loanCharge.getLoan().containsBlockAccountFreezeMipyme(periodDueDate)) {
+                    amount = BigDecimal.ZERO;
+                } else if (loanCharge.getCharge().getName().contains(ChargeCustomType.CAPITAL_PENDIENTE_MI_PYME.getRootName())) {
                     amount = amount.add(outstandingBalance.getAmount());
                 } else {
                     amount = amount.add(loanCharge.getInstallmentLoanCharge(installmentNumber).getAmount());
                 }
             } else if (loanCharge.getChargeCalculation().isLifeInsurance()) {
-                amount = processLifeInsuranceCharge(principalInterestForThisPeriod, amount, installmentNumber);
+                // If life insurance charge was blocked, zero the amount
+                if (Objects.nonNull(loanCharge.getLoan()) && loanCharge.getLoan().containsBlockAccountFreezeLifeInsurance(periodDueDate)) {
+                    amount = BigDecimal.ZERO;
+                } else {
+                    amount = processLifeInsuranceCharge(principalInterestForThisPeriod, amount, installmentNumber);
+                }
             } else if (Boolean.FALSE.equals(loanCharge.getChargeCalculation().isPercentageOfOutstandingPrincipal())) {
                 amount = amount.add(principalInterestForThisPeriod.principal().getAmount());
             }
 
             BigDecimal loanChargeAmt;
             if (loanCharge.isCustomPercentageBasedDistributedCharge()) {
-                loanChargeAmt = loanCharge.calculateCustomFeeChargeToInstallment(installmentNumber, principalDisbursed, numberOfRepayments,
-                        outstandingBalance);
+                if (loanCharge.getCharge().getName().contains(LIFE_INSURANCE.getRootName()) && Objects.nonNull(loanCharge.getLoan())
+                        && loanCharge.getLoan().containsBlockAccountFreezeLifeInsurance(periodDueDate)) {
+                    loanChargeAmt = BigDecimal.ZERO;
+                } else {
+                    loanChargeAmt = loanCharge.calculateCustomFeeChargeToInstallment(installmentNumber, principalDisbursed,
+                            numberOfRepayments, outstandingBalance);
+                }
             } else {
                 if (loanCharge.getPercentage() == null) {
                     loanChargeAmt = BigDecimal.ZERO;

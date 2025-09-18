@@ -49,9 +49,13 @@ import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanSubStatus;
+import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
+import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformServiceJpaRepositoryImpl;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -64,6 +68,9 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
     private final LoanRepository loanRepository;
     private final LoanAccountBlockRepository loanAccountBlockRepository;
     private final BlockingReasonSettingsRepository blockingReasonSettingsRepository;
+    private final LoanUtilService loanUtilService;
+    private final LoanWritePlatformServiceJpaRepositoryImpl loanWritePlatformService;
+    private final LoanAssembler loanAssembler;
 
     @Override
     public CommandProcessingResult createLoanAccountBlock(JsonCommand command) {
@@ -86,7 +93,7 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
         final Boolean active = command.booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.activeParamName);
         final LocalDate businessDate = DateUtils.getBusinessLocalDate();
 
-        Loan loan = loanRepository.getReferenceById(loanId);
+        Loan loan = this.loanAssembler.assembleFrom(loanId);
 
         validateCreation(loanId, applicationDate, loan, businessDate);
 
@@ -99,6 +106,16 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
                 null);
 
         loanAccountBlock = loanAccountBlockRepository.saveAndFlush(loanAccountBlock);
+
+        // Regenerates schedule in case of blocking with freeze interest, life insurance or any MiPyme charge
+        if (freezeCurrentInterest || freezeLifeInsurance || freezeMypime) {
+            loan.getLoanAccountBlocks().add(loanAccountBlock);
+
+            ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, applicationDate);
+            loan.regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
+
+            loanWritePlatformService.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+        }
 
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
@@ -179,7 +196,28 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
         loanAccountBlock.setActive(true);
         loanAccountBlockRepository.save(loanAccountBlock);
 
+        regenerateScheduleIfNecessary(freezeCurrentInterest, freezeLifeInsurance, freezeMypime, loanAccountBlock, applicationDate);
+
         return new CommandProcessingResultBuilder().withEntityId(loanAccountBlockId).build();
+    }
+
+    private void regenerateScheduleIfNecessary(Boolean freezeCurrentInterest, Boolean freezeLifeInsurance, Boolean freezeMypime,
+            LoanAccountBlock loanAccountBlock, LocalDate applicationDate) {
+        // Regenerates schedule in case of blocking with freeze interest, life insurance or any MiPyme charge
+        if (freezeCurrentInterest || freezeLifeInsurance || freezeMypime) {
+            regenerateSchedule(loanAccountBlock, applicationDate);
+        }
+    }
+
+    private void regenerateSchedule(LoanAccountBlock loanAccountBlock, LocalDate applicationDate) {
+        Loan loan = this.loanAssembler.assembleFrom(loanAccountBlock.getLoan().getId());
+
+        loan.getLoanAccountBlocks().add(loanAccountBlock);
+
+        ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, applicationDate);
+        loan.regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
+
+        loanWritePlatformService.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
     }
 
     @Override
@@ -203,6 +241,8 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
                 loanAccountBlock.getFreezeLifeInsurance(), loanAccountBlock.getFreezeMypime(), false, LoanAccountBlockAction.UNBLOCK, note);
 
         loanAccountUnblock = loanAccountBlockRepository.saveAndFlush(loanAccountUnblock);
+
+        regenerateSchedule(loanAccountBlock, applicationDate);
 
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //

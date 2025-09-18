@@ -14,6 +14,11 @@ REM See the License for the specific language governing permissions and
 REM limitations under the License.
 REM =========================================================================
 
+REM D:\infra\postgresql-17.5-3-windows-x64-binaries\pgsql\bin\initdb -D "D:\infra\postgresql-17.5-3-windows-x64-binaries\pgsql\data"
+rem pg_ctl -D "D:/infra/postgresql-17.5-3-windows-x64-binaries/pgsql/data" -l logfile start
+rem pg_ctl -D "D:/infra/postgresql-17.5-3-windows-x64-binaries/pgsql/data" status
+
+
 cd ../../
 
 REM ========================================================================

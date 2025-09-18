@@ -1,10 +1,9 @@
 {
     "info": {
-        "_postman_id": "b023b867-51da-460d-ba06-7c545b73a99d",
+        "_postman_id": "627f934d-441c-499c-bffc-604e1bdbf7a2",
         "name": "EA Loans AccountBlock GET History",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-        "_exporter_id": "30171449",
-        "_collection_link": "https://lunar-flare-588941.postman.co/workspace/WOMPI-WORKSPACE~0b4cdcd0-c9f3-43e0-9041-9fc2afd7f40b/collection/30171449-b023b867-51da-460d-ba06-7c545b73a99d?action=share&source=collection_link&creator=30171449"
+        "_exporter_id": "26949565"
     },
     "item": [
         {
@@ -113,7 +112,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"officeId\": 1,\r\n    \"legalFormId\": 1,\r\n    \"isStaff\": false,\r\n    \"active\": true,\r\n    \"dateOfBirth\": \"11/01/2020\",\r\n    \"submittedOnDate\": \"11/01/2020\",\r\n    \"genderId\": 1261,\r\n    \"firstname\": \"Bot++\",\r\n    \"externalId\": \"{{executionId}}\", \r\n    \"lastname\": \"CRRedPri {{executionId}}\",\r\n    \"activationDate\": \"11/01/2020\",\r\n    \"familyMembers\": [],\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"datatables\": [\r\n        {\r\n            \"registeredTableName\": \"campos_cliente_persona\",\r\n            \"data\": {\r\n                \"Cedula\": \"{{executionId}}\",\r\n                \"Estado Civil_cd_Estado civil\": 2404,\r\n                \"Edad\": \"\",\r\n                \"Estrato\": \"\",\r\n                \"Ciudad_cd_Ciudad\": 830,\r\n                \"Tiene vehiculo propio\": \"\",\r\n                \"Tipo Vehiculo_cd_Tipo de vehiculo\": \"\",\r\n                \"Nivel Academico_cd_Nivel academico\": \"\",\r\n                \"Actividad Laboral_cd_Actividad laboral\": \"\",\r\n                \"Tiempo de actividad laboral\": \"\",\r\n                \"Media de ingresos\": \"\",\r\n                \"Nombre empresa\": \"\",\r\n                \"Direccion\": \"Calle Uno, 57\",\r\n                \"Telefono\": \"2222-3355\",\r\n                \"Cupo solicitado\": 999999999,\r\n                \"Cupo aprobado\": 999999999,\r\n                \"Cupo otros prestamos\": \"999999999\",\r\n                \"Cupo score\": \"\",\r\n                \"Valor score\": \"\",\r\n                \"Modelo score\": \"\",\r\n                \"Customer Identifier_cd_Tipo identificacion\": 2469,\r\n                \"Telefono domicilio\": \"\",\r\n                \"Numero Celular Secundario\": \"\"\r\n            }\r\n        }\r\n    ]\r\n}",
+                    "raw": "{\r\n    \"officeId\": 1,\r\n    \"legalFormId\": 1,\r\n    \"isStaff\": false,\r\n    \"active\": true,\r\n    \"dateOfBirth\": \"11/01/2020\",\r\n    \"submittedOnDate\": \"11/01/2020\",\r\n    \"genderId\": 1261,\r\n    \"firstname\": \"Bot++\",\r\n    \"externalId\": \"{{executionId}}\", \r\n    \"lastname\": \"Loans AccountBlock GET History {{executionId}}\",\r\n    \"activationDate\": \"11/01/2020\",\r\n    \"familyMembers\": [],\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"datatables\": [\r\n        {\r\n            \"registeredTableName\": \"campos_cliente_persona\",\r\n            \"data\": {\r\n                \"Cedula\": \"{{executionId}}\",\r\n                \"Estado Civil_cd_Estado civil\": 2404,\r\n                \"Edad\": \"\",\r\n                \"Estrato\": \"\",\r\n                \"Ciudad_cd_Ciudad\": 830,\r\n                \"Tiene vehiculo propio\": \"\",\r\n                \"Tipo Vehiculo_cd_Tipo de vehiculo\": \"\",\r\n                \"Nivel Academico_cd_Nivel academico\": \"\",\r\n                \"Actividad Laboral_cd_Actividad laboral\": \"\",\r\n                \"Tiempo de actividad laboral\": \"\",\r\n                \"Media de ingresos\": \"\",\r\n                \"Nombre empresa\": \"\",\r\n                \"Direccion\": \"Calle Uno, 57\",\r\n                \"Telefono\": \"2222-3355\",\r\n                \"Cupo solicitado\": 999999999,\r\n                \"Cupo aprobado\": 999999999,\r\n                \"Cupo otros prestamos\": \"999999999\",\r\n                \"Cupo score\": \"\",\r\n                \"Valor score\": \"\",\r\n                \"Modelo score\": \"\",\r\n                \"Customer Identifier_cd_Tipo identificacion\": 2469,\r\n                \"Telefono domicilio\": \"\",\r\n                \"Numero Celular Secundario\": \"\"\r\n            }\r\n        }\r\n    ]\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -386,7 +385,7 @@
                             "var jsonData = JSON.parse(pm.response.text());\r",
                             "\r",
                             "// Encontra o objeto com o \"nameOfReason\" igual a \"CASTIGO\"\r",
-                            "const castigoRecord = jsonData.find(record => record.nameOfReason === \"CASTIGO\");\r",
+                            "const castigoRecord = jsonData.find(record => record.nameOfReason === \"Castigo\");\r",
                             "\r",
                             "// Se o registro for encontrado, salva o 'id' em uma variável de ambiente\r",
                             "if (castigoRecord) {\r",
