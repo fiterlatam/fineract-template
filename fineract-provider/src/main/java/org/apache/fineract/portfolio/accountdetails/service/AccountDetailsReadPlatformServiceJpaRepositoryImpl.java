@@ -26,6 +26,8 @@ import java.util.Collection;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.custom.portfolio.blockaccounts.data.LoanAccountBlockDTO;
+import org.apache.fineract.custom.portfolio.blockaccounts.service.LoanAccountBlockReadPlatformService;
 import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
@@ -60,6 +62,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
     private final ClientReadPlatformService clientReadPlatformService;
     private final GroupReadPlatformService groupReadPlatformService;
     private final ColumnValidator columnValidator;
+    private final LoanAccountBlockReadPlatformService loanAccountBlockReadPlatformService;
 
     @Override
     public AccountSummaryCollectionData retrieveClientAccountDetails(final Long clientId) {
@@ -76,7 +79,8 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
         final String guarantorWhereClause = " where g.entity_id = ? and g.is_active = true order by l.account_no ASC";
 
         final List<LoanAccountSummaryData> glimAccounts = retrieveLoanAccountDetails(glimLoanClause, new Object[] { clientId });
-        final List<LoanAccountSummaryData> loanAccounts = retrieveLoanAccountDetails(loanwhereClause, new Object[] { clientId });
+        final List<LoanAccountSummaryData> loanAccounts = addBlockAccount(
+                retrieveLoanAccountDetails(loanwhereClause, new Object[] { clientId }));
         final List<SavingsAccountSummaryData> savingsAccounts = retrieveAccountDetails(savingswhereClause, new Object[] { clientId });
         final List<ShareAccountSummaryData> shareAccounts = retrieveShareAccountDetails(clientId);
         final List<GuarantorAccountSummaryData> guarantorloanAccounts = retrieveGuarantorLoanAccountDetails(guarantorWhereClause,
@@ -194,6 +198,15 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
                 + maxReestructurar + " day' >= CURRENT_DATE and COALESCE(la.overdue_since_date_derived,l.maturedon_date) + interval '"
                 + maxRediferir + " day' <= CURRENT_DATE)";
         return this.jdbcTemplate.query(sql, rm, new Object[] { clientId });
+    }
+
+    public List<LoanAccountSummaryData> addBlockAccount(List<LoanAccountSummaryData> list) {
+        for (LoanAccountSummaryData item : list) {
+            LoanAccountBlockDTO dto = this.loanAccountBlockReadPlatformService.retrieveByLoanIdWithoutException(item.getId());
+
+            item.setBlock(dto);
+        }
+        return list;
     }
 
     /**

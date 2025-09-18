@@ -18,15 +18,18 @@
  */
 package org.apache.fineract.custom.portfolio.blockaccounts.api;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
@@ -63,6 +66,18 @@ public class LoanAccountBlockApiResource {
         return apiJsonSerializerService.serialize(result);
     }
 
+    @POST
+    @Path("{loanId}/unblock")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String unblockBlockAccount(@PathParam("loanId") final Long loanId, final String apiRequestBodyAsJson) {
+        platformUserRightsContext.isAuthenticated();
+        final CommandWrapper commandWrapper = new CommandWrapperBuilder().withLoanId(loanId).withJson(apiRequestBodyAsJson)
+                .unblockLoanBlockAccount(loanId).build();
+        CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+        return apiJsonSerializerService.serialize(result);
+    }
+
     @GET
     @Path("{loanId}")
     @Consumes({ MediaType.APPLICATION_JSON })
@@ -74,5 +89,28 @@ public class LoanAccountBlockApiResource {
             throw new NotFoundException(String.valueOf(loanId));
         }
         return apiJsonSerializerService.serialize(loanAccountBlockDTO);
+    }
+
+    @GET
+    @Path("{loanId}/history")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String getBlockAccountsHistory(@PathParam("loanId") Long loanId) {
+        platformUserRightsContext.isAuthenticated();
+        List<LoanAccountBlockDTO> loanAccountBlockDTO = loanAccountBlockReadPlatformService.retrieveHistoryByLoanId(loanId);
+        return apiJsonSerializerService.serialize(loanAccountBlockDTO);
+    }
+
+    @PUT
+    @Path("{loanAccountBlockId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String updateBlockAccount(@PathParam("loanAccountBlockId") final Long loanAccountBlockId,
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        platformUserRightsContext.isAuthenticated();
+        final CommandWrapper commandWrapper = new CommandWrapperBuilder().withJson(apiRequestBodyAsJson)
+                .updateLoanBlockAccount(loanAccountBlockId).build();
+        CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandWrapper);
+        return apiJsonSerializerService.serialize(result);
     }
 }

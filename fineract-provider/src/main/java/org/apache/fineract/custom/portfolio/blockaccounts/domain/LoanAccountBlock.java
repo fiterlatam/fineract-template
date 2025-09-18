@@ -20,11 +20,15 @@ package org.apache.fineract.custom.portfolio.blockaccounts.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
@@ -33,6 +37,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 @Slf4j
 @Entity
 @Getter
+@Setter
 @Table(name = "c_loan_account_block", schema = "custom")
 public class LoanAccountBlock extends AbstractAuditableWithUTCDateTimeCustom {
 
@@ -66,9 +71,28 @@ public class LoanAccountBlock extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "active")
     private Boolean active;
 
+    @Column(name = "note")
+    private String note;
+
+    @Enumerated(EnumType.ORDINAL)
+    @Column(name = "action_enum", nullable = false)
+    private LoanAccountBlockAction action;
+
+    public String getName() {
+        return blockingReasonSetting != null ? blockingReasonSetting.getNameOfReason() : null;
+    }
+
+    public String getActionName() {
+        return this.action != null ? this.action.name() : null;
+    }
+
+    public String getFormattedLastModifiedDate() {
+        return getLastModifiedDate().map(date -> date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).orElse(null);
+    }
+
     public LoanAccountBlock createLoanAccountBlock(Loan loan, BlockingReasonSetting blockingReasonSetting, LocalDate applicationDate,
             Boolean accelerate, Boolean freezeCurrentInterest, Boolean freezeInterestArrears, Boolean freezeLifeInsurance,
-            Boolean freezeMypime, Boolean active) {
+            Boolean freezeMypime, Boolean active, LoanAccountBlockAction action, String note) {
 
         LoanAccountBlock loanAccountBlock = new LoanAccountBlock();
         loanAccountBlock.loan = loan;
@@ -80,6 +104,8 @@ public class LoanAccountBlock extends AbstractAuditableWithUTCDateTimeCustom {
         loanAccountBlock.freezeLifeInsurance = freezeLifeInsurance;
         loanAccountBlock.freezeMypime = freezeMypime;
         loanAccountBlock.active = active;
+        loanAccountBlock.note = note;
+        loanAccountBlock.action = action;
 
         return loanAccountBlock;
     }

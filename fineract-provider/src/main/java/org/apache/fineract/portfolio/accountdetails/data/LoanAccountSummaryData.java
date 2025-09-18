@@ -21,6 +21,8 @@ package org.apache.fineract.portfolio.accountdetails.data;
 import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import org.apache.fineract.custom.portfolio.blockaccounts.data.LoanAccountBlockDTO;
 import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApplicationTimelineData;
@@ -50,6 +52,9 @@ public class LoanAccountSummaryData {
     private final BigDecimal amountPaid;
     private final BlockingReasonsData blockStatus;
     private final String puntoDeVenta;
+
+    @Setter
+    private LoanAccountBlockDTO block;
 
     public LoanAccountSummaryData(final Long id, final String accountNo, final String externalId, final Long productId,
             final String loanProductName, final String shortLoanProductName, final LoanStatusEnumData loanStatus,

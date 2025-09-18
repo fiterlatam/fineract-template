@@ -34,6 +34,7 @@ import org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBloc
 import org.apache.fineract.custom.portfolio.blockaccounts.mapper.LoanAccountBlockMapper;
 import org.apache.fineract.custom.portfolio.blockaccounts.service.LoanAccountBlockReadPlatformService;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -45,11 +46,29 @@ public class LoanAccountBlockReadPlatformServiceImpl implements LoanAccountBlock
     public static final String STR_CASTIGO = "CASTIGO";
     private final LoanAccountBlockRepository loanAccountBlockRepository;
     private final LoanAccountBlockMapper loanAccountBlockMapper;
+    private final AppUserReadPlatformService appUserReadPlatformService;
 
     @Override
     public LoanAccountBlockDTO retrieveByLoanId(Long loanId) {
         Optional<LoanAccountBlock> loanAccountBlock = loanAccountBlockRepository.retrieveByLoanIdAndStatusActive(loanId);
         return loanAccountBlock.map(loanAccountBlockMapper::toDto).orElse(null);
+    }
+
+    @Override
+    public List<LoanAccountBlockDTO> retrieveHistoryByLoanId(Long loanId) {
+        final List<LoanAccountBlock> loanAccountBlocks = loanAccountBlockRepository.retrieveHistoryByLoanId(loanId);
+        List<LoanAccountBlockDTO> dtoList = loanAccountBlockMapper.toDto(loanAccountBlocks);
+
+        for (int i = 0; i < loanAccountBlocks.size(); i++) {
+            LoanAccountBlock entity = loanAccountBlocks.get(i);
+            LoanAccountBlockDTO dto = dtoList.get(i);
+
+            entity.getCreatedBy().ifPresent(userId -> {
+                var appUser = appUserReadPlatformService.retrieveUser(userId);
+                dto.setCreatedByName(appUser.getUsername());
+            });
+        }
+        return dtoList;
     }
 
     @Override

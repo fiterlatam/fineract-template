@@ -41,4 +41,7 @@ public class LoanAccountBlockDTO {
     private Boolean freezeLifeInsurance;
     private Boolean freezeMypime;
     private Boolean active;
+    private String formattedLastModifiedDate;
+    private String createdByName;
+    private String actionName;
 }

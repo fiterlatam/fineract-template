@@ -35,6 +35,6 @@ public class AddLoanAccountBlockCommandHandler implements NewCommandSourceHandle
 
     @Override
     public CommandProcessingResult processCommand(JsonCommand command) {
-        return loanAccountBlockWritePlatformService.crateLoanAccountBlock(command);
+        return loanAccountBlockWritePlatformService.createLoanAccountBlock(command);
     }
 }

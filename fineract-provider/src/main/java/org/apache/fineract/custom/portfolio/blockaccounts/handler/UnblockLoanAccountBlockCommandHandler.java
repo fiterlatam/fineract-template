@@ -16,16 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.blockaccounts.service;
+package org.apache.fineract.custom.portfolio.blockaccounts.handler;
 
+import lombok.RequiredArgsConstructor;
+import org.apache.fineract.commands.annotation.CommandType;
+import org.apache.fineract.commands.handler.NewCommandSourceHandler;
+import org.apache.fineract.custom.portfolio.blockaccounts.service.LoanAccountBlockWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.springframework.stereotype.Service;
 
-public interface LoanAccountBlockWritePlatformService {
+@Service
+@RequiredArgsConstructor
+@CommandType(entity = "LOAN_ACCOUNT_BLOCK", action = "UNBLOCK")
+public class UnblockLoanAccountBlockCommandHandler implements NewCommandSourceHandler {
 
-    CommandProcessingResult createLoanAccountBlock(JsonCommand command);
+    private final LoanAccountBlockWritePlatformService loanAccountBlockWritePlatformService;
 
-    CommandProcessingResult updateLoanAccountBlock(final Long loanAccountBlockId, JsonCommand command);
-
-    CommandProcessingResult unblockLoanAccount(JsonCommand command);
+    @Override
+    public CommandProcessingResult processCommand(JsonCommand command) {
+        return loanAccountBlockWritePlatformService.unblockLoanAccount(command);
+    }
 }

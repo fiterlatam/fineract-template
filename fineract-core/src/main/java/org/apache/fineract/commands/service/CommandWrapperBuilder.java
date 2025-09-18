@@ -4163,11 +4163,19 @@ public class CommandWrapperBuilder {
         return this;
     }
 
-    public CommandWrapperBuilder updateLoanBlockAccount() {
+    public CommandWrapperBuilder updateLoanBlockAccount(final Long loanBlockAccountId) {
         this.actionName = "UPDATE";
         this.entityName = "LOAN_ACCOUNT_BLOCK";
+        this.entityId = loanBlockAccountId;
+        this.href = "/v1/blockaccount/ + loanBlockAccountId";
+        return this;
+    }
+
+    public CommandWrapperBuilder unblockLoanBlockAccount(Long loanId) {
+        this.actionName = "UNBLOCK";
+        this.entityName = "LOAN_ACCOUNT_BLOCK";
         this.entityId = null;
-        this.href = "/v1/blockaccount/";
+        this.href = "/v1/blockaccount/" + loanId + "/unblock";
         return this;
     }
 }
