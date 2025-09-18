@@ -35,6 +35,6 @@ public class UpdateLoanAccountBlockCommandHandler implements NewCommandSourceHan
 
     @Override
     public CommandProcessingResult processCommand(JsonCommand command) {
-        return loanAccountBlockWritePlatformService.updateLoanAccountBlock(command);
+        return loanAccountBlockWritePlatformService.updateLoanAccountBlock(command.entityId(), command);
     }
 }
