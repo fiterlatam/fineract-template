@@ -1,10 +1,10 @@
 {
     "info": {
         "_postman_id": "eec3547c-9cba-46a6-a868-e74c84fb8790",
-        "name": "EA Loans Account MoraBlock InterestArrears",
+        "name": "EA Loans AccountBlock Mora",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "30171449",
-        "_collection_link": "https://lunar-flare-588941.postman.co/workspace/0b4cdcd0-c9f3-43e0-9041-9fc2afd7f40b/collection/30171449-eec3547c-9cba-46a6-a868-e74c84fb8790?action=share&source=collection_link&creator=30171449"
+        "_collection_link": "https://lunar-flare-588941.postman.co/workspace/WOMPI-WORKSPACE~0b4cdcd0-c9f3-43e0-9041-9fc2afd7f40b/collection/30171449-eec3547c-9cba-46a6-a868-e74c84fb8790?action=share&source=collection_link&creator=30171449"
     },
     "item": [
         {
@@ -630,15 +630,9 @@
                     "listen": "test",
                     "script": {
                         "exec": [
-                            "pm.test(\"Status code is 200\", function () {\r",
-                            "    pm.expect(pm.response.code).to.equal(200);\r",
-                            "});\r",
-                            "\r",
-                            "pm.test(\"Response contains resourceId greater than 0 \", function () {\r",
-                            "    const responseJson = pm.response.json();\r",
-                            "    pm.expect(responseJson.resourceIdentifier).to.exist;\r",
-                            "});\r",
-                            ""
+                            "pm.test(\"Status code is 202 (Accepted)\", function () {\r",
+                            "    pm.expect(pm.response.code).to.equal(202);\r",
+                            "});"
                         ],
                         "type": "text/javascript",
                         "packages": {}
@@ -684,6 +678,194 @@
                         {
                             "key": "command",
                             "value": "executeJob"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Job Finished",
+            "event": [
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            ""
+                        ],
+                        "type": "text/javascript"
+                    }
+                },
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "    pm.test( \"Valid?\", function(){\r",
+                            "        pm.response.to.have.status(200);\r",
+                            "        pm.expect(responseBody).to.not.equals( null );\r",
+                            "\r",
+                            "        var jsonData = JSON.parse(responseBody);\r",
+                            "        var currentlyRunning = false;\r",
+                            "\r",
+                            "        jsonData.forEach(function(cam) {\r",
+                            "            if(!currentlyRunning && cam.currentlyRunning) {\r",
+                            "                currentlyRunning = true;\r",
+                            "            }\r",
+                            "        });\r",
+                            "\r",
+                            "        if(currentlyRunning) {\r",
+                            "            setTimeout(function() { postman.setNextRequest(request.name); }, 10000);\r",
+                            "        }\r",
+                            "    } );"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "protocolProfileBehavior": {
+                "disableBodyPruning": true
+            },
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/jobs",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "jobs"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Loan",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {\r",
+                            "    pm.response.to.have.status(200);\r",
+                            "});\r",
+                            "\r",
+                            "pm.test(\"No penalty charges in repayment schedule (except first period)\", function () {\r",
+                            "    const responseJson = pm.response.json();\r",
+                            "    \r",
+                            "    // Verificar que existe el repaymentSchedule\r",
+                            "    pm.expect(responseJson.repaymentSchedule).to.exist;\r",
+                            "    pm.expect(responseJson.repaymentSchedule.periods).to.be.an('array');\r",
+                            "    \r",
+                            "    const periods = responseJson.repaymentSchedule.periods.slice(1);\r",
+                            "    \r",
+                            "    // Verificar que cada período (excepto el primero) tenga penaltyChargesDue = 0\r",
+                            "    periods.forEach((period, index) => {\r",
+                            "        pm.expect(period.penaltyChargesDue, `Period ${index + 2} should have penaltyChargesDue = 0`).to.equal(0);\r",
+                            "        pm.expect(period.penaltyChargesOutstanding, `Period ${index + 2} should have penaltyChargesOutstanding = 0`).to.equal(0);\r",
+                            "    });\r",
+                            "});\r",
+                            "\r",
+                            "pm.test(\"Total penalty charges should be zero\", function () {\r",
+                            "    const responseJson = pm.response.json();\r",
+                            "    \r",
+                            "    // Verificar que el total de penalty charges es 0\r",
+                            "    if (responseJson.summary) {\r",
+                            "        pm.expect(responseJson.summary.penaltyChargesCharged).to.equal(0);\r",
+                            "        pm.expect(responseJson.summary.penaltyChargesOutstanding).to.equal(0);\r",
+                            "        pm.expect(responseJson.summary.penaltyChargesOverdue).to.equal(0);\r",
+                            "    }\r",
+                            "    \r",
+                            "    if (responseJson.repaymentSchedule) {\r",
+                            "        pm.expect(responseJson.repaymentSchedule.totalPenaltyChargesCharged).to.equal(0);\r",
+                            "    }\r",
+                            "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                },
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                }
+            ],
+            "protocolProfileBehavior": {
+                "disableBodyPruning": true
+            },
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}?associations=all&exclude=guarantors,futureSchedule",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "loans",
+                        "{{loanId}}"
+                    ],
+                    "query": [
+                        {
+                            "key": "associations",
+                            "value": "all"
+                        },
+                        {
+                            "key": "exclude",
+                            "value": "guarantors,futureSchedule"
                         }
                     ]
                 }
