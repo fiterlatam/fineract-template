@@ -1,14 +1,14 @@
 {
     "info": {
-        "_postman_id": "5507c103-16b1-4dc0-a486-d026b7930e6a",
-        "name": "EA ATF List Configurations",
+        "_postman_id": "9e5815b0-0299-4b3b-ba38-ee78f9fc35d6",
+        "name": "EA Loans AccountBlock Accrual Interest",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "34930034",
-        "_collection_link": "https://jacobo-vargas.postman.co/workspace/WORK~69da17f8-6926-42b5-8ba0-23bc6d424a86/collection/34930034-5507c103-16b1-4dc0-a486-d026b7930e6a?action=share&source=collection_link&creator=34930034"
+        "_collection_link": "https://jacobo-vargas.postman.co/workspace/WORK~69da17f8-6926-42b5-8ba0-23bc6d424a86/collection/34930034-9e5815b0-0299-4b3b-ba38-ee78f9fc35d6?action=share&source=collection_link&creator=34930034"
     },
     "item": [
         {
-            "name": "List Loan Products",
+            "name": "Add Client Persona Copy 3",
             "event": [
                 {
                     "listen": "test",
@@ -97,11 +97,8 @@
                     }
                 }
             ],
-            "protocolProfileBehavior": {
-                "disableBodyPruning": true
-            },
             "request": {
-                "method": "GET",
+                "method": "POST",
                 "header": [
                     {
                         "key": "Authorization",
@@ -124,7 +121,7 @@
                     }
                 },
                 "url": {
-                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loanproducts",
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/clients",
                     "host": [
                         "{{fineract-backend-server}}"
                     ],
@@ -132,14 +129,14 @@
                         "fineract-provider",
                         "api",
                         "v1",
-                        "loanproducts"
+                        "clients"
                     ]
                 }
             },
             "response": []
         },
         {
-            "name": "List Charges",
+            "name": "Add Credito Rotativo Loan Copy 3",
             "event": [
                 {
                     "listen": "test",
@@ -233,11 +230,8 @@
                     }
                 }
             ],
-            "protocolProfileBehavior": {
-                "disableBodyPruning": true
-            },
             "request": {
-                "method": "GET",
+                "method": "POST",
                 "header": [
                     {
                         "key": "Authorization",
@@ -252,7 +246,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "",
+                    "raw": "{\r\n    \"productId\": 13,\r\n    \"loanOfficerId\": \"\",\r\n    \"loanPurposeId\": \"\",\r\n    \"loanAssignorId\": \"\",\r\n    \"fundId\": \"\",\r\n    \"submittedOnDate\": \"10/07/2025\",\r\n    \"expectedDisbursementDate\": \"10/07/2025\",\r\n    \"externalId\": \"\",\r\n    \"linkAccountId\": \"\",\r\n    \"createStandingInstructionAtDisbursement\": \"\",\r\n    \"allyId\": null,\r\n    \"pointOfSaleCode\": null,\r\n    \"loanTermFrequency\": 12,\r\n    \"loanTermFrequencyType\": 2,\r\n    \"numberOfRepayments\": 12,\r\n    \"repaymentEvery\": 1,\r\n    \"repaymentFrequencyType\": 2,\r\n    \"repaymentFrequencyNthDayType\": \"\",\r\n    \"repaymentFrequencyDayOfWeekType\": \"\",\r\n    \"repaymentsStartingFromDate\": \"10/08/2025\",\r\n    \"interestChargedFromDate\": null,\r\n    \"interestRatePoints\": \"\",\r\n    \"interestType\": 0,\r\n    \"isEqualAmortization\": false,\r\n    \"amortizationType\": 0,\r\n    \"interestCalculationPeriodType\": 0,\r\n    \"allowPartialPeriodInterestCalcualtion\": false,\r\n    \"loanIdToClose\": \"\",\r\n    \"isTopup\": \"\",\r\n    \"maxOutstandingLoanBalance\": 100000000,\r\n    \"transactionProcessingStrategyCode\": \"advanced-payment-allocation-strategy\",\r\n    \"valorDescuento\": \"\",\r\n    \"valorGiro\": \"\",\r\n    \"interestRatePerPeriod\": 46.23,\r\n    \"charges\": [\r\n        {\r\n            \"chargeId\": 33,\r\n            \"amount\": 0.033,\r\n            \"expdate\": null,\r\n            \"isEndorsed\": false,\r\n            \"insuranceName\": \"\",\r\n            \"insuranceId\": \"\"\r\n        }\r\n    ],\r\n    \"collateral\": [],\r\n    \"disbursementData\": [],\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"clientId\": {{clientId}},\r\n    \"loanType\": \"individual\",\r\n    \"principal\": 600000,\r\n    \"clientIdNumber\": \"20250718-114457\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -260,7 +254,7 @@
                     }
                 },
                 "url": {
-                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/charges",
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans",
                     "host": [
                         "{{fineract-backend-server}}"
                     ],
@@ -268,19 +262,16 @@
                         "fineract-provider",
                         "api",
                         "v1",
-                        "charges"
+                        "loans"
                     ]
                 }
             },
             "response": []
         },
         {
-            "name": "List Codes",
-            "protocolProfileBehavior": {
-                "disableBodyPruning": true
-            },
+            "name": "Approve  Loan - Unknown Copy 4",
             "request": {
-                "method": "GET",
+                "method": "POST",
                 "header": [
                     {
                         "key": "Authorization",
@@ -295,7 +286,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "",
+                    "raw": "{\r\n    \"approvedOnDate\": \"10/07/2025\",\r\n    \"expectedDisbursementDate\": \"10/07/2025\",\r\n    \"approvedLoanAmount\": 600000,\r\n    \"note\": \"\",\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -303,7 +294,7 @@
                     }
                 },
                 "url": {
-                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/codes",
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}?command=approve",
                     "host": [
                         "{{fineract-backend-server}}"
                     ],
@@ -311,29 +302,154 @@
                         "fineract-provider",
                         "api",
                         "v1",
-                        "codes"
+                        "loans",
+                        "{{loanId}}"
+                    ],
+                    "query": [
+                        {
+                            "key": "command",
+                            "value": "approve"
+                        }
                     ]
                 }
             },
             "response": []
         },
         {
-            "name": "getConfiguration",
+            "name": "Disburse Money - First time success Copy",
             "event": [
                 {
                     "listen": "test",
                     "script": {
                         "exec": [
-                            "const response = pm.response.json();\r",
-                            "\r",
-                            "// Check if the response status code is 200\r",
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n    \"actualDisbursementDate\":  \"10/07/2025\",\r\n    \"transactionAmount\": 500000,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": \"\",\r\n    \"note\": \"\",\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\",\r\n    \"channelName\": \"Mifos\"\r\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}?command=disburse",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "loans",
+                        "{{loanId}}"
+                    ],
+                    "query": [
+                        {
+                            "key": "command",
+                            "value": "disburse"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Block Account Copy 2",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
                             "pm.test(\"Status code is 200\", function () {\r",
                             "    pm.expect(pm.response.code).to.equal(200);\r",
                             "});\r",
                             "\r",
-                            "// Assign the 'id' from the response to the environment variable 'configurationTests'\r",
-                            "pm.environment.set(\"configurationTests\", response.id);\r",
+                            "pm.test(\"Response contains resourceId greater than 0 \", function () {\r",
+                            "    const responseJson = pm.response.json();\r",
+                            "    pm.expect(responseJson.resourceIdentifier).to.exist;\r",
+                            "});\r",
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n  \"applicationDate\": \"15/07/2025\",\r\n  \"blockingReasonId\": 24,\r\n  \"accelerate\": false,\r\n  \"freezeCurrentInterest\": true,\r\n  \"freezeInterestArrears\": true,\r\n  \"freezeLifeInsurance\": false,\r\n  \"freezeMypime\": false,\r\n  \"active\": true,\r\n  \"locale\": \"es\",\r\n  \"dateFormat\": \"dd/MM/yyyy\"\r\n}\r\n",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/blockaccount/{{loanId}}",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "blockaccount",
+                        "{{loanId}}"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get transactions",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {\r",
+                            "    pm.expect(pm.response.code).to.equal(200);\r",
+                            "});\r",
                             "\r",
+                            "pm.test(\"Number of transactions is 1\", function () {\r",
+                            "    const responseJson = pm.response.json();\r",
+                            "    pm.expect(responseJson.transactions).to.have.lengthOf(1);\r",
+                            "});\r",
                             ""
                         ],
                         "type": "text/javascript",
@@ -353,25 +469,10 @@
                         "key": "Fineract-Platform-TenantId",
                         "value": "default",
                         "type": "text"
-                    },
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json",
-                        "type": "text"
-                    },
-                    {
-                        "key": "Fineract-Platform-TenantId",
-                        "value": "default",
-                        "type": "text"
-                    },
-                    {
-                        "key": "Authorization",
-                        "value": "Basic bWlmb3M6cGFzc3dvcmQ=",
-                        "type": "text"
                     }
                 ],
                 "url": {
-                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/configurations/name/loan-blockaccount-save-backdated-component",
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}?associations=all&exclude=guarantors,futureSchedule",
                     "host": [
                         "{{fineract-backend-server}}"
                     ],
@@ -379,65 +480,18 @@
                         "fineract-provider",
                         "api",
                         "v1",
-                        "configurations",
-                        "name",
-                        "loan-blockaccount-save-backdated-component"
-                    ]
-                }
-            },
-            "response": []
-        },
-        {
-            "name": "Edit configuration Test",
-            "request": {
-                "method": "PUT",
-                "header": [
-                    {
-                        "key": "Authorization",
-                        "value": "{{authorization_token}}",
-                        "type": "text"
-                    },
-                    {
-                        "key": "Fineract-Platform-TenantId",
-                        "value": "default",
-                        "type": "text"
-                    },
-                    {
-                        "key": "Content-Type",
-                        "value": "application/json",
-                        "type": "text"
-                    },
-                    {
-                        "key": "Fineract-Platform-TenantId",
-                        "value": "default",
-                        "type": "text"
-                    },
-                    {
-                        "key": "Authorization",
-                        "value": "Basic bWlmb3M6cGFzc3dvcmQ=",
-                        "type": "text"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\r\n    \"enabled\": true,\r\n    \"value\": 1\r\n}",
-                    "options": {
-                        "raw": {
-                            "language": "json"
+                        "loans",
+                        "{{loanId}}"
+                    ],
+                    "query": [
+                        {
+                            "key": "associations",
+                            "value": "all"
+                        },
+                        {
+                            "key": "exclude",
+                            "value": "guarantors,futureSchedule"
                         }
-                    }
-                },
-                "url": {
-                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/configurations/{{configurationTests}}",
-                    "host": [
-                        "{{fineract-backend-server}}"
-                    ],
-                    "path": [
-                        "fineract-provider",
-                        "api",
-                        "v1",
-                        "configurations",
-                        "{{configurationTests}}"
                     ]
                 }
             },

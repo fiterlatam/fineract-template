@@ -40,6 +40,7 @@ import org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBloc
 import org.apache.fineract.custom.portfolio.blockaccounts.service.LoanAccountBlockWritePlatformService;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSetting;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepository;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -71,6 +72,7 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
     private final LoanUtilService loanUtilService;
     private final LoanWritePlatformServiceJpaRepositoryImpl loanWritePlatformService;
     private final LoanAssembler loanAssembler;
+    private final ConfigurationDomainService configurationService;
 
     @Override
     public CommandProcessingResult createLoanAccountBlock(JsonCommand command) {
@@ -104,6 +106,14 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
         loanAccountBlock = new LoanAccountBlock().createLoanAccountBlock(loan, blockingReasonSetting, applicationDate, accelerate,
                 freezeCurrentInterest, freezeInterestArrears, freezeLifeInsurance, freezeMypime, active, LoanAccountBlockAction.BLOCK,
                 null);
+
+        if (businessDate.isAfter(applicationDate) && !configurationService.getLoanBlockTestEnabled()) {
+            loanAccountBlock.setAccelerate(false);
+            loanAccountBlock.setFreezeCurrentInterest(false);
+            loanAccountBlock.setFreezeInterestArrears(false);
+            loanAccountBlock.setFreezeLifeInsurance(false);
+            loanAccountBlock.setFreezeMypime(false);
+        }
 
         loanAccountBlock = loanAccountBlockRepository.saveAndFlush(loanAccountBlock);
 

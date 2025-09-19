@@ -169,4 +169,6 @@ public interface ConfigurationDomainService {
     Long retrieveSMVLLimit();
 
     Long retrieveClientCreationDefaultCupoValue();
+
+    Boolean getLoanBlockTestEnabled();
 }

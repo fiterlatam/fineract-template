@@ -60,6 +60,7 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     public static final String INVOICE_NOTIFICATION_EMAILS = "Correo/s para enviar alerta por factura electrónica por vencer o agotarse";
 
     private static final String CLIENT_CRAETION_CUPO_DEFAULT_VALUE = "client-creation-cupo-default-value";
+    private static final String LOAN_BLOCK_TEST = "loan-blockaccount-save-backdated-component";
 
     private final PermissionRepository permissionRepository;
     private final GlobalConfigurationRepositoryWrapper globalConfigurationRepository;
@@ -635,6 +636,12 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     public Long retrieveClientCreationDefaultCupoValue() {
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(CLIENT_CRAETION_CUPO_DEFAULT_VALUE);
         return property.getValue();
+    }
+
+    @Override
+    public Boolean getLoanBlockTestEnabled() {
+        GlobalConfigurationPropertyData propertyData = getGlobalConfigurationPropertyData(LOAN_BLOCK_TEST);
+        return propertyData != null && propertyData.isEnabled() && propertyData.getValue().equals(1L);
     }
 
 }

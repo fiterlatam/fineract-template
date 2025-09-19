@@ -4113,12 +4113,18 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
     @Override
     public List<Long> findLoanIdsForAccrualPosting(LocalDate tillDate, int pageSize, Long minLoanId) {
         final String sql = """
-                select loan.id from m_loan loan
-                where loan.loan_status_id = ?
-                and (loan.interest_accrued_till < ? or loan.interest_accrued_till is null)
-                and loan.maturedon_date >= ?
-                and loan.id > ?
-                order by loan.id limit ?;
+                    SELECT loan.id
+                    FROM m_loan loan
+                    LEFT JOIN custom.c_loan_account_block block
+                      ON loan.id = block.loan_id
+                      AND block.active = true
+                    WHERE loan.loan_status_id = ?
+                      AND (block.id IS NULL OR block.freeze_current_interest = false)
+                      AND (loan.interest_accrued_till < ? OR loan.interest_accrued_till IS NULL)
+                      AND loan.maturedon_date >= ?
+                      AND loan.id > ?
+                    ORDER BY loan.id
+                    LIMIT ?;
                 """;
         return this.jdbcTemplate.queryForList(sql, Long.class, LoanStatus.ACTIVE.getValue(), tillDate, tillDate, minLoanId, pageSize)
                 .stream().toList();
