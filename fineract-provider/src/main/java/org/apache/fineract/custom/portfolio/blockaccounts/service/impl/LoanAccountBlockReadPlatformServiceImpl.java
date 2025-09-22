@@ -22,7 +22,6 @@ import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +32,6 @@ import org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBloc
 import org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBlockRepository;
 import org.apache.fineract.custom.portfolio.blockaccounts.mapper.LoanAccountBlockMapper;
 import org.apache.fineract.custom.portfolio.blockaccounts.service.LoanAccountBlockReadPlatformService;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.stereotype.Service;
 
@@ -86,30 +84,7 @@ public class LoanAccountBlockReadPlatformServiceImpl implements LoanAccountBlock
 
         if (loanAccountBlockOpt.isPresent()) {
             LoanAccountBlock loanAccountBlock = loanAccountBlockOpt.get();
-
-            if (STR_CASTIGO.equalsIgnoreCase(loanAccountBlock.getBlockingReasonSetting().getNameOfReason())
-                    && !DateUtils.getLocalDateOfTenant().isBefore(loanAccountBlock.getApplicationDate())) {
-
-                if (Objects.nonNull(loanAccountBlock.getAccelerate()) && loanAccountBlock.getAccelerate()) {
-                    blockedComponents.add(LoanAccountBlockComponentEnum.ACCELERATE);
-                }
-                if (Objects.nonNull(loanAccountBlock.getFreezeCurrentInterest()) && loanAccountBlock.getFreezeCurrentInterest()) {
-                    blockedComponents.add(LoanAccountBlockComponentEnum.FREEZE_INTEREST);
-                }
-                if (Objects.nonNull(loanAccountBlock.getFreezeInterestArrears()) && loanAccountBlock.getFreezeInterestArrears()) {
-                    blockedComponents.add(LoanAccountBlockComponentEnum.FREEZE_MORA);
-                }
-                if (Objects.nonNull(loanAccountBlock.getFreezeLifeInsurance()) && loanAccountBlock.getFreezeLifeInsurance()) {
-                    blockedComponents.add(LoanAccountBlockComponentEnum.FREEZE_LIFE_INSURANCE);
-                }
-                if (Objects.nonNull(loanAccountBlock.getFreezeMypime()) && loanAccountBlock.getFreezeMypime()) {
-                    blockedComponents.add(LoanAccountBlockComponentEnum.FREEZE_MIPYME);
-                }
-
-                if (blockedComponents.isEmpty()) {
-                    blockedComponents.add(LoanAccountBlockComponentEnum.BLOCK_DISBURSAL);
-                }
-            }
+            return loanAccountBlock.getLoan().checkBlockAccountComponents(givenDate);
         }
 
         return LoanAccountBlockData.builder().loanId(loanId).providedDate(givenDate).loanAccountBlockComponentEnumList(blockedComponents)

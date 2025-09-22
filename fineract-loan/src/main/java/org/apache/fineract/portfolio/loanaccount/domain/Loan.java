@@ -218,7 +218,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public static final String ERROR_MESSAGE_LABEL_CANNOT_BE_UNDONE_BEFORE_CLIENT_TRANSFER_DATE = "cannot.be.undone.before.client.transfer.date";
     public static final String ERROR_MESSAGE_LABEL_CANNOT_BE_MADE_BEFORE_CLIENT_TRANSFER_DATE = "cannot.be.made.before.client.transfer.date";
     public static final String ERROR_MESSAGE_LABEL_CANNOT_BE_MADE_BEFORE_LAST_TRANSACTION_DATE = "cannot.be.made.before.last.transaction.date";
-    public static final String STR_CASTIGO = "CASTIGO";
 
     /** Disable optimistic locking till batch jobs failures can be fixed **/
     @Version
@@ -6686,7 +6685,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         final MathContext mc = MoneyHelper.getMathContext();
 
-        final LoanApplicationTerms loanApplicationTerms = constructLoanApplicationTerms(generatorDTO);
+        LoanApplicationTerms loanApplicationTerms = constructLoanApplicationTerms(generatorDTO);
+        loanApplicationTerms.setLoan(Optional.of(this));
 
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
                 .determineProcessor(this.transactionProcessingStrategyCode);
@@ -8641,13 +8641,26 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return super.getId();
     }
 
+    public Optional<LocalDate> getActiveBlockAccountDate() {
+        Optional<LocalDate> ret = null;
+
+        if (Objects.nonNull(this.loanAccountBlocks)) {
+            Optional<LoanAccountBlock> loanAccountBlockOpt = this.loanAccountBlocks.stream().filter(LoanAccountBlock::getActive)
+                    .findFirst();
+
+            if (loanAccountBlockOpt.isPresent()) {
+                ret = Optional.ofNullable(loanAccountBlockOpt.get().getApplicationDate());
+            }
+        }
+        return ret;
+    }
+
     public LoanAccountBlockData checkBlockAccountComponents(LocalDate givenDate) {
         List<LoanAccountBlockComponentEnum> blockedComponents = new ArrayList<>();
 
         if (Objects.nonNull(this.loanAccountBlocks)) {
-            Optional<LoanAccountBlock> loanAccountBlockOpt = this.loanAccountBlocks.stream()
-                    .filter(cast -> STR_CASTIGO.equalsIgnoreCase(cast.getBlockingReasonSetting().getNameOfReason()))
-                    .filter(LoanAccountBlock::getActive).filter(dt -> !givenDate.isBefore(dt.getApplicationDate())).findFirst();
+            Optional<LoanAccountBlock> loanAccountBlockOpt = this.loanAccountBlocks.stream().filter(LoanAccountBlock::getActive)
+                    .filter(dt -> !givenDate.isBefore(dt.getApplicationDate())).findFirst();
 
             if (loanAccountBlockOpt.isPresent()) {
                 LoanAccountBlock loanAccountBlock = loanAccountBlockOpt.get();
