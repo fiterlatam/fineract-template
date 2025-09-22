@@ -169,7 +169,7 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
                 accountBlock.getApplicationDate() != null && !accountBlock.getApplicationDate().equals(applicationDate) ? applicationDate
                         : accountBlock.getApplicationDate());
 
-        final Boolean accelerate = command.booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.accelerateParamName);
+        final Boolean accelerate = command.booleanPrimitiveValueOfParameterNamed(LoanAccountBlockConstants.accelerateParamName);
 
         loanAccountBlock.setAccelerate(
                 accountBlock.getAccelerate() != null && !accountBlock.getAccelerate() && !accountBlock.getAccelerate().equals(accelerate)
@@ -177,7 +177,7 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
                         : accountBlock.getAccelerate());
 
         final Boolean freezeCurrentInterest = command
-                .booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.freezeCurrentInterestParamName);
+                .booleanPrimitiveValueOfParameterNamed(LoanAccountBlockConstants.freezeCurrentInterestParamName);
 
         loanAccountBlock
                 .setFreezeCurrentInterest(accountBlock.getFreezeCurrentInterest() != null && !accountBlock.getFreezeCurrentInterest()
@@ -185,7 +185,7 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
                                 : accountBlock.getFreezeCurrentInterest());
 
         final Boolean freezeInterestArrears = command
-                .booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.freezeInterestArrearsParamName);
+                .booleanPrimitiveValueOfParameterNamed(LoanAccountBlockConstants.freezeInterestArrearsParamName);
 
         loanAccountBlock
                 .setFreezeInterestArrears(accountBlock.getFreezeInterestArrears() != null && !accountBlock.getFreezeInterestArrears()
@@ -193,13 +193,13 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
                                 : accountBlock.getFreezeInterestArrears());
 
         final Boolean freezeLifeInsurance = command
-                .booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.freezeLifeInsuranceParamName);
+                .booleanPrimitiveValueOfParameterNamed(LoanAccountBlockConstants.freezeLifeInsuranceParamName);
 
         loanAccountBlock.setFreezeLifeInsurance(accountBlock.getFreezeLifeInsurance() != null && !accountBlock.getFreezeLifeInsurance()
                 && !accountBlock.getFreezeLifeInsurance().equals(freezeLifeInsurance) ? freezeLifeInsurance
                         : accountBlock.getFreezeLifeInsurance());
 
-        final Boolean freezeMypime = command.booleanObjectValueOfParameterNamed(LoanAccountBlockConstants.freezeMypimeParamName);
+        final Boolean freezeMypime = command.booleanPrimitiveValueOfParameterNamed(LoanAccountBlockConstants.freezeMypimeParamName);
 
         loanAccountBlock.setFreezeMypime(accountBlock.getFreezeMypime() != null && !accountBlock.getFreezeMypime()
                 && !accountBlock.getFreezeMypime().equals(freezeMypime) ? freezeMypime : accountBlock.getFreezeMypime());
