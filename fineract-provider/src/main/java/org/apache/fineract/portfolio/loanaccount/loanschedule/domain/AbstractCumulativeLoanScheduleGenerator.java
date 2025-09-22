@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -506,7 +507,8 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
              */
 
             // update cumulative fields for principal & interest
-            currentPeriodParams.setInterestForThisPeriod(principalInterestForThisPeriod.interest());
+            updateInterestconsideringAccountBlockFreezeInterest(loanApplicationTerms, scheduledDueDate, scheduleParams, currentPeriodParams,
+                    principalInterestForThisPeriod);
             Money lastTotalOutstandingInterestPaymentDueToGrace = scheduleParams.getTotalOutstandingInterestPaymentDueToGrace();
             scheduleParams.setTotalOutstandingInterestPaymentDueToGrace(principalInterestForThisPeriod.interestPaymentDueToGrace());
             currentPeriodParams.setPrincipalForThisPeriod(principalInterestForThisPeriod.principal());
@@ -636,6 +638,42 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 totalPrincipalPaid, scheduleParams.getTotalCumulativeInterest().getAmount(),
                 scheduleParams.getTotalFeeChargesCharged().getAmount(), scheduleParams.getTotalPenaltyChargesCharged().getAmount(),
                 scheduleParams.getTotalRepaymentExpected().getAmount(), totalOutstanding);
+    }
+
+    private static void updateInterestconsideringAccountBlockFreezeInterest(LoanApplicationTerms loanApplicationTerms,
+            LocalDate scheduledDueDate, LoanScheduleParams scheduleParams, ScheduleCurrentPeriodParams currentPeriodParams,
+            PrincipalInterest principalInterestForThisPeriod) {
+        if (Objects.nonNull(loanApplicationTerms.getLoan()) && loanApplicationTerms.getLoan().isPresent()
+                && loanApplicationTerms.getLoan().get().containsBlockAccountFreezeInterest(scheduledDueDate)) {
+            // If block was withing installment range, calculate proportional interest
+
+            Loan loan = loanApplicationTerms.getLoan().get();
+            Optional<LocalDate> blockStartDateOpt = loanApplicationTerms.getLoan().get().getActiveBlockAccountDate();
+
+            if (blockStartDateOpt.isPresent()) {
+                int totalInstallmentDays = Math.toIntExact(ChronoUnit.DAYS.between(scheduleParams.getPeriodStartDate(), scheduledDueDate));
+                int daysWithoutBlock = Math
+                        .toIntExact(ChronoUnit.DAYS.between(scheduleParams.getPeriodStartDate(), blockStartDateOpt.get())) + 1;
+
+                if (daysWithoutBlock <= 0) {
+                    // Leave future installments´ interest zeroed
+                    currentPeriodParams.setInterestForThisPeriod(Money.zero(principalInterestForThisPeriod.interest().getCurrency()));
+
+                } else {
+                    // calculate daily interest using total installment interest
+                    BigDecimal dailyInterest = principalInterestForThisPeriod.interest().getAmount()
+                            .divide(BigDecimal.valueOf(totalInstallmentDays), 19, RoundingMode.HALF_UP);
+
+                    // Calculate interest for days without block
+                    Money interestForThisPeriod = Money.of(principalInterestForThisPeriod.interest().getCurrency(),
+                            dailyInterest.multiply(BigDecimal.valueOf(daysWithoutBlock)));
+
+                    currentPeriodParams.setInterestForThisPeriod(interestForThisPeriod);
+                }
+            }
+        } else {
+            currentPeriodParams.setInterestForThisPeriod(principalInterestForThisPeriod.interest());
+        }
     }
 
     public BigDecimal adjustInterestRate(BigDecimal currentInterest, BigDecimal interestPeriod, BigDecimal annualInterest) {
