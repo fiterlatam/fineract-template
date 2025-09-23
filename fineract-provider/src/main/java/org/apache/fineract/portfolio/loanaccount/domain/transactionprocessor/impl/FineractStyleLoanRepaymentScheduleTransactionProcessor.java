@@ -130,6 +130,13 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
                 loanTransaction.setIncomeInterestPortion(incomePortion.getAmount());
                 loanTransaction.setReceivableInterestPortion(loanTransaction.getReceivableInterestPortion(currency)
                         .add(currentInstallment.getInterestAccrued(currency)).getAmount());
+            } else {
+                // when transaction date is after due date or foreclosure, all interest portion is income
+                Money currentIncomePortion = loanTransaction.getIncomeInterestPortion(currency);
+                Money newIncomePortion = interestPortion;
+                Money incomePortion = currentIncomePortion.add(newIncomePortion);
+
+                loanTransaction.setIncomeInterestPortion(incomePortion.getAmount());
             }
             transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
 
