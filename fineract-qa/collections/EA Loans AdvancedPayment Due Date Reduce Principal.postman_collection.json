@@ -1,7 +1,7 @@
 {
     "info": {
-        "_postman_id": "f8dc514c-ae35-4885-be87-e0afb34a2258",
-        "name": "EA Loans AdvancedPayment Reduce Principal CR",
+        "_postman_id": "69fcf314-822d-4622-a9ad-c4c4c9287d1d",
+        "name": "EA Loans AdvancedPayment Due Date Reduce Principal",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
     },
@@ -22,7 +22,8 @@
                             "} );"
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 },
                 {
@@ -92,7 +93,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
@@ -112,7 +114,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"officeId\": 1,\r\n    \"legalFormId\": 1,\r\n    \"isStaff\": false,\r\n    \"active\": true,\r\n    \"dateOfBirth\": \"11/01/2020\",\r\n    \"submittedOnDate\": \"11/01/2020\",\r\n    \"genderId\": 1261,\r\n    \"firstname\": \"Bot++\",\r\n    \"externalId\": \"{{executionId}}\", \r\n    \"lastname\": \"Loans AdvancedPayment Reduce Principal CR {{executionId}}\",\r\n    \"activationDate\": \"11/01/2020\",\r\n    \"familyMembers\": [],\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"datatables\": [\r\n        {\r\n            \"registeredTableName\": \"campos_cliente_persona\",\r\n            \"data\": {\r\n                \"Cedula\": \"{{executionId}}\",\r\n                \"Estado Civil_cd_Estado civil\": 2404,\r\n                \"Edad\": \"\",\r\n                \"Estrato\": \"\",\r\n                \"Ciudad_cd_Ciudad\": 830,\r\n                \"Tiene vehiculo propio\": \"\",\r\n                \"Tipo Vehiculo_cd_Tipo de vehiculo\": \"\",\r\n                \"Nivel Academico_cd_Nivel academico\": \"\",\r\n                \"Actividad Laboral_cd_Actividad laboral\": \"\",\r\n                \"Tiempo de actividad laboral\": \"\",\r\n                \"Media de ingresos\": \"\",\r\n                \"Nombre empresa\": \"\",\r\n                \"Direccion\": \"Calle Uno, 57\",\r\n                \"Telefono\": \"2222-3355\",\r\n                \"Cupo solicitado\": 999999999,\r\n                \"Cupo aprobado\": 999999999,\r\n                \"Cupo otros prestamos\": \"999999999\",\r\n                \"Cupo score\": \"\",\r\n                \"Valor score\": \"\",\r\n                \"Modelo score\": \"\",\r\n                \"Customer Identifier_cd_Tipo identificacion\": 2469,\r\n                \"Telefono domicilio\": \"\",\r\n                \"Numero Celular Secundario\": \"\"\r\n            }\r\n        }\r\n    ]\r\n}",
+                    "raw": "{\r\n    \"officeId\": 1,\r\n    \"legalFormId\": 1,\r\n    \"isStaff\": false,\r\n    \"active\": true,\r\n    \"dateOfBirth\": \"11/01/2020\",\r\n    \"submittedOnDate\": \"11/01/2020\",\r\n    \"genderId\": 1261,\r\n    \"firstname\": \"Bot++\",\r\n    \"externalId\": \"{{executionId}}\", \r\n    \"lastname\": \"Loans AdvancedPayment DueDt Reduce Principal {{executionId}}\",\r\n    \"activationDate\": \"11/01/2020\",\r\n    \"familyMembers\": [],\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"datatables\": [\r\n        {\r\n            \"registeredTableName\": \"campos_cliente_persona\",\r\n            \"data\": {\r\n                \"Cedula\": \"{{executionId}}\",\r\n                \"Estado Civil_cd_Estado civil\": 2404,\r\n                \"Edad\": \"\",\r\n                \"Estrato\": \"\",\r\n                \"Ciudad_cd_Ciudad\": 830,\r\n                \"Tiene vehiculo propio\": \"\",\r\n                \"Tipo Vehiculo_cd_Tipo de vehiculo\": \"\",\r\n                \"Nivel Academico_cd_Nivel academico\": \"\",\r\n                \"Actividad Laboral_cd_Actividad laboral\": \"\",\r\n                \"Tiempo de actividad laboral\": \"\",\r\n                \"Media de ingresos\": \"\",\r\n                \"Nombre empresa\": \"\",\r\n                \"Direccion\": \"Calle Uno, 57\",\r\n                \"Telefono\": \"2222-3355\",\r\n                \"Cupo solicitado\": 999999999,\r\n                \"Cupo aprobado\": 999999999,\r\n                \"Cupo otros prestamos\": \"999999999\",\r\n                \"Cupo score\": \"\",\r\n                \"Valor score\": \"\",\r\n                \"Modelo score\": \"\",\r\n                \"Customer Identifier_cd_Tipo identificacion\": 2469,\r\n                \"Telefono domicilio\": \"\",\r\n                \"Numero Celular Secundario\": \"\"\r\n            }\r\n        }\r\n    ]\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -469,7 +471,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 },
                 {
@@ -479,7 +482,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
@@ -499,7 +503,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"transactionDate\": \"18/07/2025\",\r\n    \"transactionAmount\": 200000,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "raw": "{\r\n    \"transactionDate\": \"11/08/2025\",\r\n    \"transactionAmount\": 200000,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -548,13 +552,13 @@
                             "pm.test(\"Verify principal of 1st and last installments\", function () {\r",
                             "    pm.expect(jsonData.repaymentSchedule.periods[1].principalDue).to.be.equal(41666.67);\r",
                             "\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[2].principalDue).to.be.equal(27751.30);\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[2].principalDue).to.be.equal(29133.02);\r",
                             "    \r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[12].principalDue).to.be.equal(27751.30);\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[12].principalDue).to.be.equal(29133.01);\r",
                             "});\r",
                             "\r",
                             "pm.test(\"Verify Payment In Advance Amount\", function () {\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[2].totalPaidInAdvanceForPeriod).to.be.equal(153069.03);\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[2].totalPaidInAdvanceForPeriod).to.be.equal(137870.12);\r",
                             "});"
                         ],
                         "type": "text/javascript",

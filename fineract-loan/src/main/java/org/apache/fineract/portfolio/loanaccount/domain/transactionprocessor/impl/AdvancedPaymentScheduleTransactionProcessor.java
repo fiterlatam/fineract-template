@@ -1331,9 +1331,14 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                                         loanTransaction.getTransactionDate(), currency, transactionAmountUnprocessed);
                                                 inAdvanceInstallment.setAdvancePrincipalAmount(inAdvanceInstallment
                                                         .getAdvancePrincipalAmount().add(transactionAmountUnprocessed.getAmount()));
-                                                inAdvanceInstallment
-                                                        .setTotalPaidInAdvance(inAdvanceInstallment.getTotalPaidInAdvance(currency)
-                                                                .getAmount().add(transactionAmountUnprocessed.getAmount()));
+
+                                                // Handle on date repayments - it was not filling in advance column
+                                                if (inAdvanceInstallment.getFromDate().isEqual(loanTransaction.getTransactionDate())) {
+                                                    inAdvanceInstallment
+                                                            .setTotalPaidInAdvance(inAdvanceInstallment.getTotalPaidInAdvance(currency)
+                                                                    .getAmount().add(transactionAmountUnprocessed.getAmount()));
+                                                }
+
                                                 inAdvanceInstallment.setRecalculateEMI(loanTransaction.recalculateEMI());
                                                 LoanTransactionToRepaymentScheduleMapping loanTransactionToRepaymentScheduleMapping = getTransactionMapping(
                                                         transactionMappings, loanTransaction, inAdvanceInstallment, currency);
