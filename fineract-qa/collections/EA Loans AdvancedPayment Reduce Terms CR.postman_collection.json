@@ -587,11 +587,12 @@
                             "});\r",
                             "\r",
                             "pm.test(\"Verify Payment In Advance Amount\", function () {\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[2].totalPaidInAdvanceForPeriod).to.be.equal(306138.06);\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[2].totalPaidInAdvanceForPeriod).to.be.equal(153069.03);\r",
                             "});"
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 },
                 {
@@ -601,7 +602,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],

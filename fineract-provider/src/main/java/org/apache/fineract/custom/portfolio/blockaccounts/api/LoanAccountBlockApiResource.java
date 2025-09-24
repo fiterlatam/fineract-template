@@ -50,7 +50,11 @@ import org.springframework.stereotype.Controller;
 @Path("/v1/blockaccount")
 @Component
 @Controller
-@Tag(name = "blockaccount", description = "blockaccount")
+@Tag(name = "blockaccount", description = """
+        Las cuentas de préstamo pueden tener algunos componentes bloqueados por diferentes motivos. Estas interfaces
+        interactúan con acciones como bloquear, editar y desbloquear una cuenta de préstamo.
+        Puede bloquear componentes como Desembolso, Intereses, Mora, Seguro de Vida, Seguro de Vida Nano, MiPyme y GAC.
+        """)
 @RequiredArgsConstructor
 public class LoanAccountBlockApiResource {
 
