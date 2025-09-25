@@ -420,4 +420,6 @@
     <include relativeToChangelogFile="true" file="parts/20250909_EA_86_create_table_loan_block_accounts.xml"/>
     <include file="parts/20250913_EA_130_add_columns_for_unblock_accounts.xml" relativeToChangelogFile="true"/>
     <include file="parts/20251909_EA_add_configuration_loan_account_block.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202509242000001000_EA_117_add_gac_table.xml" relativeToChangelogFile="true"/>
+    <include file="parts/2025092420000010000_EA_128_add_gac_initial_configuration.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
