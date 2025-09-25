@@ -1218,6 +1218,15 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                 exit = true;
                             } else {
                                 log.info("PAST_DUE allocation made progress - continuing to next allocation type");
+
+                                // Continue repaying overdue installments before moving on to DUE and IN_ADVANCE types
+                                if (exit && transactionAmountUnprocessed.isGreaterThanZero()
+                                        && installments.stream().anyMatch(obj -> !obj.isObligationsMet()
+                                                && !obj.getDueDate().isAfter(loanTransaction.getTransactionDate()))) {
+                                    log.info(
+                                            "There is still unprocessed amount and there are overdue installments pending, continuing processing");
+                                    exit = false;
+                                }
                             }
                         } else {
                             log.info("No past due installment found, setting exit flag");
@@ -1361,6 +1370,14 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                         }
                     }
                 }
+            }
+
+            // Continue repaying overdue installments before moving on to DUE and IN_ADVANCE types (contains any PAST_X)
+            if (paymentAllocationTypes.contains(PaymentAllocationType.PAST_DUE_PRINCIPAL)
+                    && transactionAmountUnprocessed.isGreaterThanZero() && installments.stream()
+                            .anyMatch(obj -> !obj.isObligationsMet() && obj.getDueDate().isBefore(loanTransaction.getTransactionDate()))) {
+                log.info("There is still unprocessed amount and there are overdue installments pending, continuing processing");
+                exit = false;
             }
         }
         // We are allocating till there is no pending installment or there is no more unprocessed transaction amount

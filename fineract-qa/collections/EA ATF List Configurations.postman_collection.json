@@ -1,10 +1,9 @@
 {
     "info": {
-        "_postman_id": "5507c103-16b1-4dc0-a486-d026b7930e6a",
+        "_postman_id": "66c9dda6-f865-418f-8961-1a156e7c9727",
         "name": "EA ATF List Configurations",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-        "_exporter_id": "34930034",
-        "_collection_link": "https://jacobo-vargas.postman.co/workspace/WORK~69da17f8-6926-42b5-8ba0-23bc6d424a86/collection/34930034-5507c103-16b1-4dc0-a486-d026b7930e6a?action=share&source=collection_link&creator=34930034"
+        "_exporter_id": "26949565"
     },
     "item": [
         {
@@ -318,7 +317,7 @@
             "response": []
         },
         {
-            "name": "getConfiguration",
+            "name": "Get  Backdated BlockAccount components Id",
             "event": [
                 {
                     "listen": "test",
@@ -388,7 +387,7 @@
             "response": []
         },
         {
-            "name": "Edit configuration Test",
+            "name": "Enable Backdated BlockAccount components",
             "request": {
                 "method": "PUT",
                 "header": [
