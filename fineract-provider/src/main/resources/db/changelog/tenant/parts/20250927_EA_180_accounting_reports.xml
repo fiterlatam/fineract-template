@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <!-- Insert parameters for Loans -->
+    <changeSet id="add-transactionType-parameter-loans" author="jacobo">
+        <insert tableName="stretchy_parameter">
+            <column name="parameter_name" value="transactionTypeLoan"/>
+            <column name="parameter_variable" value="transactionTypeLoan"/>
+            <column name="parameter_label" value="Tipo transacción"/>
+            <column name="parameter_displayType" value="select"/>
+            <column name="parameter_FormatType" value="text"/>
+            <column name="parameter_default" value=""/>
+            <column name="selectAll" value="Y"/>
+            <column name="parameter_sql" value="select enum_value as id, enum_value as name from r_enum_value where enum_name = 'loan_transaction_type_enum'"/>
+        </insert>
+    </changeSet>
+
+    <!-- Insert parameters for Savings -->
+    <changeSet id="add-transactionType-parameter-savings" author="jacobo">
+        <insert tableName="stretchy_parameter">
+            <column name="parameter_name" value="transactionTypeSavings"/>
+            <column name="parameter_variable" value="transactionTypeSavings"/>
+            <column name="parameter_label" value="Tipo transacción"/>
+            <column name="parameter_displayType" value="select"/>
+            <column name="parameter_FormatType" value="text"/>
+            <column name="parameter_default" value=""/>
+            <column name="selectAll" value="Y"/>
+            <column name="parameter_sql" value="select enum_value as id, enum_value as name from r_enum_value where enum_name = 'savings_transaction_type_enum'"/>
+        </insert>
+    </changeSet>
+
+    <!-- Insert report for Loans -->
+    <changeSet id="add-journal-entries-for-loan-report" author="jacobo">
+        <insert tableName="stretchy_report">
+            <column name="report_name" value="Journal Entries For Loan"/>
+            <column name="report_type" value="Table"/>
+            <column name="report_category" value="Accounting"/>
+            <column name="report_sql">
+                <![CDATA[
+                    SELECT
+                        to_char(lt.transaction_date::date, 'YYYY-mm-dd') AS "VALUE DATE",
+                        to_char(je.created_on_utc::date, 'YYYY-mm-dd') AS "CREATION DATE",
+                        je.transaction_id AS "TRANSACTION ID",
+                        je.entry_date AS "BOOKING DATE",
+                        ga.gl_code AS "GL ACCOUNT ID",
+                        ga.name AS "GL ACCOUNT NAME",
+                        l.account_no AS "LOAN ACCOUNT ID",
+                        rv.enum_value as "COMPROBANTE",
+                        CASE WHEN je.type_enum = 1 THEN 0 ELSE round(je.amount, 2) END AS "DEBIT AMOUNT",
+                        CASE WHEN je.type_enum = 2 THEN 0 ELSE round(je.amount, 2) END AS "CREDIT AMOUNT",
+                        u.username AS "USUARIO",
+                        ch.description AS "CHANNEL",
+                        coalesce(nt.note) AS "NOTA",
+                        pl.name AS "PRODUCT NAME"
+                    FROM acc_gl_journal_entry je
+                        left join acc_gl_account ga on ga.id = je.account_id
+                        left join m_loan_transaction lt on lt.id = je.loan_transaction_id
+                        left join m_payment_detail pd on pd.id = lt.payment_detail_id
+                        left join custom.c_channel ch on ch.hash = pd.channel_hash
+                        left join m_loan l on l.id = lt.loan_id
+                        left join m_product_loan pl on pl.id = l.product_id
+                        left join r_enum_value rv on rv.enum_id = lt.transaction_type_enum and rv.enum_name = 'loan_transaction_type_enum'
+                        left join m_appuser u on u.id = lt.created_by
+                        left join m_note nt on nt.loan_transaction_id = je.loan_transaction_id
+                    WHERE
+                        je.created_on_utc::date >= '${startDate}'
+                        AND je.created_on_utc::date <= '${endDate}'
+                        AND je.loan_transaction_id IS NOT NULL
+                        AND rv.enum_value = ANY(string_to_array('${transactionTypeLoan}', ','))
+                ]]>
+            </column>
+            <column name="core_report" value="false"/>
+            <column name="use_report" value="true"/>
+            <column name="self_service_user_report" value="false"/>
+        </insert>
+    </changeSet>
+
+    <!-- Insert report for Savings -->
+    <changeSet id="add-journal-entries-for-savings-report" author="jacobo">
+        <insert tableName="stretchy_report">
+            <column name="report_name" value="Journal Entries For Savings"/>
+            <column name="report_type" value="Table"/>
+            <column name="report_category" value="Accounting"/>
+            <column name="report_sql">
+                <![CDATA[
+                    SELECT
+                        to_char(st.transaction_date::date, 'YYYY-mm-dd') AS "VALUE DATE",
+                        to_char(je.created_on_utc::date, 'YYYY-mm-dd') AS "CREATION DATE",
+                        je.transaction_id AS "TRANSACTION ID",
+                        je.entry_date AS "BOOKING DATE",
+                        ga.gl_code AS "GL ACCOUNT ID",
+                        ga.name AS "GL ACCOUNT NAME",
+                        sa.account_no AS "LOAN ACCOUNT ID",
+                        rv.enum_value as "COMPROBANTE",
+                        CASE WHEN je.type_enum = 1 THEN 0 ELSE round(je.amount, 2) END AS "DEBIT AMOUNT",
+                        CASE WHEN je.type_enum = 2 THEN 0 ELSE round(je.amount, 2) END AS "CREDIT AMOUNT",
+                        u.username AS "USUARIO",
+                        ch.description AS "CHANNEL",
+                        coalesce(nt.note) AS "NOTA",
+                        sp.name AS "PRODUCT NAME"
+                    FROM acc_gl_journal_entry je
+                        left join acc_gl_account ga on ga.id = je.account_id
+                        left join m_savings_account_transaction st on st.id = je.savings_transaction_id
+                        left join m_payment_detail pd on pd.id = st.payment_detail_id
+                        left join custom.c_channel ch on ch.hash = pd.channel_hash
+                        left join m_savings_account sa on sa.id = st.savings_account_id
+                        left join m_savings_product sp on sp.id = sa.product_id
+                        left join r_enum_value rv on rv.enum_id = st.transaction_type_enum and rv.enum_name = 'savings_transaction_type_enum'
+                        left join m_appuser u on u.id = st.created_by
+                        left join m_note nt on nt.savings_account_transaction_id = je.savings_transaction_id
+                    WHERE
+                        je.created_on_utc::date >= '${startDate}'
+                        AND je.created_on_utc::date <= '${endDate}'
+                        AND je.savings_transaction_id IS NOT NULL
+                        AND rv.enum_value = ANY(string_to_array('${transactionTypeSavings}', ','))
+                ]]>
+            </column>
+            <column name="core_report" value="false"/>
+            <column name="use_report" value="true"/>
+            <column name="self_service_user_report" value="false"/>
+        </insert>
+    </changeSet>
+
+    <!-- Relation Params using INSERT ... SELECT to avoid NULL errors -->
+    <changeSet id="20250927-02-fixed" author="jacobo">
+        <comment>Insert report parameters safely using INSERT ... SELECT</comment>
+
+        <sql>
+            INSERT INTO stretchy_report_parameter(report_id, parameter_id, report_parameter_name, mandatory_parameter)
+            SELECT r.id, p.id, 'transactionTypeSavings', TRUE
+            FROM stretchy_report r
+                     JOIN stretchy_parameter p ON p.parameter_name = 'transactionTypeSavings'
+            WHERE r.report_name = 'Journal Entries For Savings';
+
+            INSERT INTO stretchy_report_parameter(report_id, parameter_id, report_parameter_name, mandatory_parameter)
+            SELECT r.id, p.id, 'startDate', TRUE
+            FROM stretchy_report r
+                     JOIN stretchy_parameter p ON p.parameter_name = 'startDateSelect'
+            WHERE r.report_name = 'Journal Entries For Savings';
+
+            INSERT INTO stretchy_report_parameter(report_id, parameter_id, report_parameter_name, mandatory_parameter)
+            SELECT r.id, p.id, 'endDate', TRUE
+            FROM stretchy_report r
+                     JOIN stretchy_parameter p ON p.parameter_name = 'endDateSelect'
+            WHERE r.report_name = 'Journal Entries For Savings';
+
+            INSERT INTO stretchy_report_parameter(report_id, parameter_id, report_parameter_name, mandatory_parameter)
+            SELECT r.id, p.id, 'transactionTypeLoan', TRUE
+            FROM stretchy_report r
+                     JOIN stretchy_parameter p ON p.parameter_name = 'transactionTypeLoan'
+            WHERE r.report_name = 'Journal Entries For Loan';
+
+            INSERT INTO stretchy_report_parameter(report_id, parameter_id, report_parameter_name, mandatory_parameter)
+            SELECT r.id, p.id, 'startDate', TRUE
+            FROM stretchy_report r
+                     JOIN stretchy_parameter p ON p.parameter_name = 'startDateSelect'
+            WHERE r.report_name = 'Journal Entries For Loan';
+
+            INSERT INTO stretchy_report_parameter(report_id, parameter_id, report_parameter_name, mandatory_parameter)
+            SELECT r.id, p.id, 'endDate', TRUE
+            FROM stretchy_report r
+                     JOIN stretchy_parameter p ON p.parameter_name = 'endDateSelect'
+            WHERE r.report_name = 'Journal Entries For Loan';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
