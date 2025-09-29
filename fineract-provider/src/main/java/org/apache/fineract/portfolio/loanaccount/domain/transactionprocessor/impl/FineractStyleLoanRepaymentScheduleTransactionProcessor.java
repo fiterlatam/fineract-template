@@ -124,12 +124,12 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
                     && !Boolean.TRUE.equals(loanTransaction.getIsForeclosureTransaction())) {
 
                 Money currentIncomePortion = loanTransaction.getIncomeInterestPortion(currency);
-                Money newIncomePortion = interestPortion.minus(currentInstallment.getInterestAccrued(currency));
+                Money newIncomePortion = currentInstallment.getInterestAccrued(currency);
 
                 Money incomePortion = currentIncomePortion.add(newIncomePortion);
                 loanTransaction.setIncomeInterestPortion(incomePortion.getAmount());
                 loanTransaction.setReceivableInterestPortion(loanTransaction.getReceivableInterestPortion(currency)
-                        .add(currentInstallment.getInterestAccrued(currency)).getAmount());
+                        .add(interestPortion.minus(currentInstallment.getInterestAccrued(currency))).getAmount());
             } else {
                 // when transaction date is after due date or foreclosure, all interest portion is income
                 Money currentIncomePortion = loanTransaction.getIncomeInterestPortion(currency);
