@@ -57,4 +57,12 @@ public class Gac extends AbstractAuditableWithUTCDateTimeCustom {
     @Version
     private Long version;
 
+    public String getBlockingReasonName() {
+        return this.getBlockingReasonSetting() != null ? this.getBlockingReasonSetting().getNameOfReason() : null;
+    }
+
+    public Long getBlockingReasonId() {
+        return this.getBlockingReasonSetting() != null ? this.getBlockingReasonSetting().getId() : null;
+    }
+
 }

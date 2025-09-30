@@ -18,4 +18,17 @@
  */
 package org.apache.fineract.custom.portfolio.gac.api;
 
-public class GacConstants {}
+public class GacConstants {
+
+    private GacConstants() {
+
+    }
+
+    public static final String CLASSIFICATION_PARAM_NAME = "classification";
+    public static final String MINIMUMAGEDAYS_PARAM_NAME = "minimumAgeDays";
+    public static final String MAXIMUMAGEDAYS_PARAM_NAME = "maximumAgeDays";
+    public static final String PERCENTAGE_PARAM_NAME = "percentageValue";
+    public static final String BLOCKING_REASON_ID_PARAM_NAME = "blockingReasonId";
+    public static final String LOCALE_PARAM_NAME = "locale";
+
+}

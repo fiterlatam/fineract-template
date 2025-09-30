@@ -28,13 +28,13 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-@CommandType(entity = "GAC", action = "UPDATE")
-public class UpdateGacCommandHandler implements NewCommandSourceHandler {
+@CommandType(entity = "GAC", action = "DELETE")
+public class DeleteGacCommandHandler implements NewCommandSourceHandler {
 
     private final GacWriteServiceImpl gacWriteService;
 
     @Override
     public CommandProcessingResult processCommand(JsonCommand command) {
-        return gacWriteService.updateGac(command.entityId(), command);
+        return gacWriteService.deleteGac(command.entityId(), command);
     }
 }
