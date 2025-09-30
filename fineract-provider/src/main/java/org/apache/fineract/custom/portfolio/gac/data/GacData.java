@@ -18,10 +18,12 @@
  */
 package org.apache.fineract.custom.portfolio.gac.data;
 
+import java.util.Collection;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
 
 @Data
 @Builder
@@ -36,4 +38,6 @@ public class GacData {
     private Integer percentageValue;
     private Long blockingReasonId;
     private String blockingReasonName;
+    private Collection<BlockingReasonsData> blockingReasons;
+    private String createdByName;
 }

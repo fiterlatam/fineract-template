@@ -4178,4 +4178,28 @@ public class CommandWrapperBuilder {
         this.href = "/v1/blockaccount/" + loanId + "/unblock";
         return this;
     }
+
+    public CommandWrapperBuilder createGac() {
+        this.actionName = "CREATE";
+        this.entityName = "GAC";
+        this.entityId = null;
+        this.href = "v1/gac";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateGac(final Long gacId) {
+        this.actionName = "UPDATE";
+        this.entityName = "GAC";
+        this.entityId = gacId;
+        this.href = "v1/gac/" + gacId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteGac(final Long gacId) {
+        this.actionName = "DELETE";
+        this.entityName = "GAC";
+        this.entityId = gacId;
+        this.href = "v1/gac/" + gacId;
+        return this;
+    }
 }

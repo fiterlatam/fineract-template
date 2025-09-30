@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.fineract.custom.portfolio.gac.data.GacData;
 import org.apache.fineract.custom.portfolio.gac.domain.Gac;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
 @Mapper(componentModel = "spring")
@@ -29,6 +30,7 @@ public interface GacMapper {
 
     GacMapper INSTANCE = Mappers.getMapper(GacMapper.class);
 
+    @Mapping(target = "blockingReasons", ignore = true)
     GacData map(Gac source);
 
     List<GacData> map(List<Gac> sources);

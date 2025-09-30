@@ -26,4 +26,6 @@ public interface GacReadPlatformService {
     List<GacData> retrieveAll();
 
     GacData retrieveOne(Long gacId);
+
+    GacData retrieveTemplate();
 }

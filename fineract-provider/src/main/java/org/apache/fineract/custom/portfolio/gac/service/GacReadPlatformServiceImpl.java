@@ -19,6 +19,7 @@
 package org.apache.fineract.custom.portfolio.gac.service;
 
 import jakarta.ws.rs.NotFoundException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,9 @@ import org.apache.fineract.custom.portfolio.gac.data.GacData;
 import org.apache.fineract.custom.portfolio.gac.domain.Gac;
 import org.apache.fineract.custom.portfolio.gac.domain.GacRepository;
 import org.apache.fineract.custom.portfolio.gac.mapper.GacMapper;
+import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
+import org.apache.fineract.infrastructure.clientblockingreasons.service.ManageBlockingReasonsReadPlatformService;
+import org.apache.fineract.useradministration.service.AppUserReadPlatformService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +40,8 @@ public class GacReadPlatformServiceImpl implements GacReadPlatformService {
 
     private final GacMapper gacMapper;
     private final GacRepository gacRepository;
+    private final ManageBlockingReasonsReadPlatformService manageBlockingReasonsReadPlatformService;
+    private final AppUserReadPlatformService appUserReadPlatformService;
 
     @Override
     public List<GacData> retrieveAll() {
@@ -49,6 +55,18 @@ public class GacReadPlatformServiceImpl implements GacReadPlatformService {
         if (!optGac.isPresent()) {
             throw new NotFoundException(String.valueOf(gacId));
         }
-        return gacMapper.map(optGac.get());
+        Gac gac = optGac.get();
+        GacData gacData = gacMapper.map(gac);
+        if (gac.getCreatedBy().isPresent()) {
+            var appUser = appUserReadPlatformService.retrieveUser(optGac.get().getCreatedBy().get());
+            gacData.setCreatedByName(appUser.getUsername());
+        }
+        return gacData;
+    }
+
+    @Override
+    public GacData retrieveTemplate() {
+        Collection<BlockingReasonsData> blockingReasonSettings = manageBlockingReasonsReadPlatformService.retrieveAllBlockingReasons(null);
+        return new GacData(null, null, null, null, null, null, null, blockingReasonSettings, null);
     }
 }
