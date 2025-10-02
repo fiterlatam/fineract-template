@@ -1079,10 +1079,12 @@ public class AccountingProcessorHelper {
 
         // first get charge details and check if charge has specific account defined on it. If true then return specific
         // gl
-        Charge chargeData = this.chargeRepositoryWrapper.findOneWithNotFoundDetection(chargeId);
+        if (chargeId != null) {
+            Charge chargeData = this.chargeRepositoryWrapper.findOneWithNotFoundDetection(chargeId);
 
-        if (chargeData.getAccount() != null) {
-            return chargeData.getAccount();
+            if (chargeData.getAccount() != null) {
+                return chargeData.getAccount();
+            }
         }
 
         // Vishwas TODO: remove this condition as it should always be true
