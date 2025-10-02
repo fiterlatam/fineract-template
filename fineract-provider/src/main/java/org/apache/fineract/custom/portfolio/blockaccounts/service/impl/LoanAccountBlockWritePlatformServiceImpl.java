@@ -245,7 +245,7 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
         loanAccountBlockRepository.save(loanAccountBlock);
 
         final String note = command.stringValueOfParameterNamed(LoanAccountBlockConstants.noteParamName);
-        final LocalDate applicationDate = command.dateValueOfParameterNamed(LoanAccountBlockConstants.applicationDateParamName);
+        final LocalDate applicationDate = DateUtils.getBusinessLocalDate();
 
         LoanAccountBlock loanAccountUnblock = new LoanAccountBlock().createLoanAccountBlock(loanAccountBlock.getLoan(),
                 loanAccountBlock.getBlockingReasonSetting(), applicationDate, loanAccountBlock.getAccelerate(),
@@ -317,10 +317,6 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
         final JsonElement jsonElement = fromApiJsonHelper.parse(json);
         final Long loanId = this.fromApiJsonHelper.extractLongNamed(LoanAccountBlockConstants.loanIdParamName, jsonElement);
         baseDataValidator.reset().parameter(LoanAccountBlockConstants.blockingReasonIdParamName).value(loanId).notBlank().notNull();
-
-        final LocalDate date = this.fromApiJsonHelper.extractLocalDateNamed(LoanAccountBlockConstants.applicationDateParamName,
-                jsonElement);
-        baseDataValidator.reset().parameter(LoanAccountBlockConstants.applicationDateParamName).value(date).notBlank().notNull();
 
         if (!dataValidationErrors.isEmpty()) {
             throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",

@@ -31,6 +31,6 @@ public interface LoanAccountBlockRepository extends JpaRepository<LoanAccountBlo
     @Query(value = "SELECT ab FROM LoanAccountBlock ab WHERE ab.loan.id = :loanId AND ab.active = true")
     Optional<LoanAccountBlock> retrieveByLoanIdAndStatusActive(@Param(value = "loanId") Long loanId);
 
-    @Query(value = "SELECT ab FROM LoanAccountBlock ab WHERE ab.loan.id = :loanId AND ab.action = org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBlockAction.BLOCK ORDER BY ab.id DESC")
+    @Query(value = "SELECT ab FROM LoanAccountBlock ab WHERE ab.loan.id = :loanId ORDER BY ab.id DESC")
     List<LoanAccountBlock> retrieveHistoryByLoanId(@Param(value = "loanId") Long loanId);
 }
