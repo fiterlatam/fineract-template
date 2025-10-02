@@ -120,23 +120,23 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
             transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
 
             interestPortion = currentInstallment.payInterestComponent(transactionDate, transactionAmountRemaining);
-            if (!currentInstallment.getDueDate().isBefore(transactionDate)
-                    && !Boolean.TRUE.equals(loanTransaction.getIsForeclosureTransaction())) {
+            if (!Boolean.TRUE.equals(loanTransaction.getIsForeclosureTransaction())) {
+                if (!currentInstallment.getDueDate().isBefore(transactionDate)) {
+                    Money currentIncomePortion = loanTransaction.getIncomeInterestPortion(currency);
+                    Money newIncomePortion = currentInstallment.getInterestAccrued(currency);
 
-                Money currentIncomePortion = loanTransaction.getIncomeInterestPortion(currency);
-                Money newIncomePortion = currentInstallment.getInterestAccrued(currency);
+                    Money incomePortion = currentIncomePortion.add(newIncomePortion);
+                    loanTransaction.setIncomeInterestPortion(incomePortion.getAmount());
+                    loanTransaction.setReceivableInterestPortion(loanTransaction.getReceivableInterestPortion(currency)
+                            .add(interestPortion.minus(currentInstallment.getInterestAccrued(currency))).getAmount());
+                } else {
+                    // when transaction date is after due date or foreclosure, all interest portion is income
+                    Money currentIncomePortion = loanTransaction.getIncomeInterestPortion(currency);
+                    Money newIncomePortion = interestPortion;
+                    Money incomePortion = currentIncomePortion.add(newIncomePortion);
 
-                Money incomePortion = currentIncomePortion.add(newIncomePortion);
-                loanTransaction.setIncomeInterestPortion(incomePortion.getAmount());
-                loanTransaction.setReceivableInterestPortion(loanTransaction.getReceivableInterestPortion(currency)
-                        .add(interestPortion.minus(currentInstallment.getInterestAccrued(currency))).getAmount());
-            } else {
-                // when transaction date is after due date or foreclosure, all interest portion is income
-                Money currentIncomePortion = loanTransaction.getIncomeInterestPortion(currency);
-                Money newIncomePortion = interestPortion;
-                Money incomePortion = currentIncomePortion.add(newIncomePortion);
-
-                loanTransaction.setIncomeInterestPortion(incomePortion.getAmount());
+                    loanTransaction.setIncomeInterestPortion(incomePortion.getAmount());
+                }
             }
             transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
 
