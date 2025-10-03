@@ -21,11 +21,14 @@ package org.apache.fineract.portfolio.loanaccount.service;
 import java.util.Collection;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanScheduleData;
 
 public interface LoanChargeWritePlatformService {
 
     CommandProcessingResult addLoanCharge(Long loanId, JsonCommand command);
+
+    CommandProcessingResult addLoanCharge(Loan loan, JsonCommand command);
 
     CommandProcessingResult loanChargeRefund(Long loanId, JsonCommand command);
 

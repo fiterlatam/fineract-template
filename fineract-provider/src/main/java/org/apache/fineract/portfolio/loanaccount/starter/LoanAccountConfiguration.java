@@ -31,6 +31,7 @@ import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeEnt
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeMapReadWritePlatformService;
 import org.apache.fineract.custom.portfolio.customcharge.service.CustomChargeTypeReadWritePlatformService;
 import org.apache.fineract.custom.portfolio.externalcharge.honoratio.domain.CustomChargeHonorarioMapRepository;
+import org.apache.fineract.custom.portfolio.gac.service.GacReadPlatformServiceImpl;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.clientblockingreasons.domain.BlockingReasonSettingsRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
@@ -329,7 +330,8 @@ public class LoanAccountConfiguration {
             LoanChargeAssembler loanChargeAssembler, ReplayedTransactionBusinessEventService replayedTransactionBusinessEventService,
             PaymentDetailWritePlatformService paymentDetailWritePlatformService, NoteRepository noteRepository,
             LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService, JdbcTemplate jdbcTemplate,
-            LoanAccountBlockReadPlatformService loanAccountBlockReadPlatformService
+            LoanAccountBlockReadPlatformService loanAccountBlockReadPlatformService, GacReadPlatformServiceImpl gacReadPlatformService,
+            ChargeRepository chargeRepositoryWrapper, ConfigurationDomainService configurationService
 
     ) {
         return new LoanChargeWritePlatformServiceImpl(loanChargeApiJsonValidator, loanAssembler, chargeRepository,
@@ -339,7 +341,7 @@ public class LoanAccountConfiguration {
                 configurationDomainService, loanRepaymentScheduleTransactionProcessorFactory, externalIdFactory,
                 accountTransferDetailRepository, loanChargeAssembler, replayedTransactionBusinessEventService,
                 paymentDetailWritePlatformService, noteRepository, loanAccrualTransactionBusinessEventService, jdbcTemplate,
-                loanAccountBlockReadPlatformService);
+                loanAccountBlockReadPlatformService, gacReadPlatformService, chargeRepositoryWrapper, configurationService);
     }
 
     @Bean

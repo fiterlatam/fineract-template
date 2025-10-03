@@ -44,4 +44,6 @@ public interface LoanAccountBlockReadPlatformService {
     boolean containsBlockAccountFreezeLifeInsurance(Long loanId, LocalDate givenDate);
 
     boolean containsBlockAccountFreezeMipyme(Long loanId, LocalDate givenDate);
+
+    boolean containsBlockAccountFreezeGAC(Long loanId, LocalDate givenDate);
 }

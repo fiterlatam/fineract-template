@@ -1,10 +1,9 @@
 {
     "info": {
-        "_postman_id": "48c3bb00-cd5e-4b74-9263-b1dbbc21bc9b",
+        "_postman_id": "e417e1b8-e8db-4f99-8c70-c79c778d858c",
         "name": "EA Gac Crud",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-        "_exporter_id": "30171449",
-        "_collection_link": "https://lunar-flare-588941.postman.co/workspace/WOMPI-WORKSPACE~0b4cdcd0-c9f3-43e0-9041-9fc2afd7f40b/collection/30171449-48c3bb00-cd5e-4b74-9263-b1dbbc21bc9b?action=share&source=collection_link&creator=30171449"
+        "_exporter_id": "26949565"
     },
     "item": [
         {
@@ -140,6 +139,85 @@
                         "v1",
                         "gac",
                         "template"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Blocking Reason Castigo",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.response.to.have.status(200);\r",
+                            "pm.expect(pm.response.text()).to.not.equals( null );\r",
+                            "var jsonData = JSON.parse(pm.response.text());\r",
+                            "\r",
+                            "// Encontra o objeto com o \"nameOfReason\" igual a \"CASTIGO\"\r",
+                            "const castigoRecord = jsonData.find(record => record.nameOfReason === \"Castigo\");\r",
+                            "\r",
+                            "// Se o registro for encontrado, salva o 'id' em uma variável de ambiente\r",
+                            "if (castigoRecord) {\r",
+                            "    pm.environment.set(\"castigoId\", castigoRecord.id);\r",
+                            "    console.log(\"ID do 'CASTIGO' salvo na variável 'id_castigo': \" + castigoRecord.id);\r",
+                            "} else {\r",
+                            "    console.log(\"Registro 'CASTIGO' não encontrado na resposta.\");\r",
+                            "}"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                },
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                    }
+                }
+            ],
+            "protocolProfileBehavior": {
+                "disableBodyPruning": true
+            },
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n    \"transactionDate\": \"18/07/2025\",\r\n    \"transactionAmount\": 200000,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/blockSettings/retrieveAllBlockingReasons",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "blockSettings",
+                        "retrieveAllBlockingReasons"
                     ]
                 }
             },

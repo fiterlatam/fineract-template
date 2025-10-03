@@ -21,8 +21,11 @@ package org.apache.fineract.custom.portfolio.gac.service;
 import jakarta.ws.rs.NotFoundException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBlock;
+import org.apache.fineract.custom.portfolio.blockaccounts.exception.GACRangeNotFoundException;
 import org.apache.fineract.custom.portfolio.gac.data.GacData;
 import org.apache.fineract.custom.portfolio.gac.domain.Gac;
 import org.apache.fineract.custom.portfolio.gac.domain.GacRepository;
@@ -68,5 +71,31 @@ public class GacReadPlatformServiceImpl implements GacReadPlatformService {
     public GacData retrieveTemplate() {
         Collection<BlockingReasonsData> blockingReasonSettings = manageBlockingReasonsReadPlatformService.retrieveAllBlockingReasons(null);
         return new GacData(null, null, null, null, null, null, null, blockingReasonSettings, null);
+    }
+
+    @Override
+    public GacData retrieveGacRangeDetails(Long nrDaysInArrears, List<LoanAccountBlock> loanAccountBlockList) {
+        Optional<Gac> optGac = gacRepository.findByMinimumAgeDaysLessThanEqualAndMaximumAgeDaysGreaterThanEqualAndBlockingReasonSettingId(
+                nrDaysInArrears, nrDaysInArrears, null);
+
+        if (Objects.nonNull(loanAccountBlockList) && !loanAccountBlockList.isEmpty()) {
+            Optional<LoanAccountBlock> currBlockOpt = loanAccountBlockList.stream().filter(LoanAccountBlock::getActive).findFirst();
+
+            if (currBlockOpt.isPresent()) {
+                Optional<Gac> blockGacOpt = gacRepository
+                        .findByMinimumAgeDaysLessThanEqualAndMaximumAgeDaysGreaterThanEqualAndBlockingReasonSettingId(nrDaysInArrears,
+                                nrDaysInArrears, currBlockOpt.get().getBlockingReasonSetting().getId());
+
+                if (blockGacOpt.isPresent()) {
+                    optGac = blockGacOpt;
+                }
+            }
+        }
+
+        if (optGac.isEmpty()) {
+            throw new GACRangeNotFoundException(nrDaysInArrears);
+        }
+
+        return gacMapper.map(optGac.get());
     }
 }

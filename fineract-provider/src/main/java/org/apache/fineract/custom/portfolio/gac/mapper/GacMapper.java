@@ -33,5 +33,7 @@ public interface GacMapper {
     @Mapping(target = "blockingReasons", ignore = true)
     GacData map(Gac source);
 
+    Gac map(GacData source);
+
     List<GacData> map(List<Gac> sources);
 }

@@ -19,6 +19,7 @@
 package org.apache.fineract.custom.portfolio.gac.service;
 
 import java.util.List;
+import org.apache.fineract.custom.portfolio.blockaccounts.domain.LoanAccountBlock;
 import org.apache.fineract.custom.portfolio.gac.data.GacData;
 
 public interface GacReadPlatformService {
@@ -28,4 +29,6 @@ public interface GacReadPlatformService {
     GacData retrieveOne(Long gacId);
 
     GacData retrieveTemplate();
+
+    GacData retrieveGacRangeDetails(Long nrDaysInArrears, List<LoanAccountBlock> loanAccountBlockList);
 }
