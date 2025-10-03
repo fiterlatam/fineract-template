@@ -18,7 +18,22 @@
  */
 package org.apache.fineract.custom.portfolio.gac.domain;
 
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface GacRepository extends JpaRepository<Gac, Long>, JpaSpecificationExecutor<Gac> {}
+public interface GacRepository extends JpaRepository<Gac, Long>, JpaSpecificationExecutor<Gac> {
+
+    /**
+     * Busca uma Gac (faixa etária) onde: 1. O 'days' passado esteja entre minimumAgeDays (inclusive) e maximumAgeDays
+     * (inclusive, se não nulo). 2. O blockingReasonSetting.id seja igual ao 'blockingReasonId' passado.
+     *
+     * @param days
+     *            Número de dias (idade) para verificar a faixa.
+     * @param blockingReasonId
+     *            ID da BlockingReasonSetting.
+     * @return Um Optional contendo a entidade Gac, se encontrada.
+     */
+    Optional<Gac> findByMinimumAgeDaysLessThanEqualAndMaximumAgeDaysGreaterThanEqualAndBlockingReasonSettingId(Long days, Long daysAgain,
+            Long blockingReasonId);
+}

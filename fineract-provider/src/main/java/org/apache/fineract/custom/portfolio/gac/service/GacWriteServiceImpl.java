@@ -24,6 +24,7 @@ import com.google.gson.JsonObject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -88,7 +89,7 @@ public class GacWriteServiceImpl {
             gac.setBlockingReasonSetting(blockingReasonSetting);
         }
 
-        final Integer percentageValue = fromApiJsonHelper.extractIntegerNamed(GacConstants.PERCENTAGE_PARAM_NAME, json, locale);
+        final BigDecimal percentageValue = fromApiJsonHelper.extractBigDecimalNamed(GacConstants.PERCENTAGE_PARAM_NAME, json, locale);
         gac.setPercentageValue(percentageValue);
 
         return gac;
@@ -242,7 +243,7 @@ public class GacWriteServiceImpl {
         if (!gac.getMaximumAgeDays().equals(maximumAge)) {
             gac.setMaximumAgeDays(maximumAge);
         }
-        final Integer percentageValue = fromApiJsonHelper.extractIntegerNamed(GacConstants.PERCENTAGE_PARAM_NAME, json, locale);
+        final BigDecimal percentageValue = fromApiJsonHelper.extractBigDecimalNamed(GacConstants.PERCENTAGE_PARAM_NAME, json, locale);
         if (!gac.getPercentageValue().equals(percentageValue)) {
             gac.setPercentageValue(percentageValue);
         }

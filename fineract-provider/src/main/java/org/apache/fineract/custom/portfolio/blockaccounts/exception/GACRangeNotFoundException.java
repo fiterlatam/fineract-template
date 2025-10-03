@@ -16,31 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.custom.portfolio.gac.data;
+package org.apache.fineract.custom.portfolio.blockaccounts.exception;
 
-import java.math.BigDecimal;
-import java.util.Collection;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.apache.fineract.infrastructure.clientblockingreasons.data.BlockingReasonsData;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@Getter
-public class GacData {
+public class GACRangeNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-    private Long id;
-    private String classification;
-    private Integer minimumAgeDays;
-    private Integer maximumAgeDays;
-    private BigDecimal percentageValue;
-    private Long blockingReasonId;
-    private String blockingReasonName;
-    private Collection<BlockingReasonsData> blockingReasons;
-    private String createdByName;
+    public GACRangeNotFoundException(Long interval) {
+        super("error.msg.loan.charge.gac.range.not.found", "GAC range with interval " + interval + " does not exist");
+    }
+
 }

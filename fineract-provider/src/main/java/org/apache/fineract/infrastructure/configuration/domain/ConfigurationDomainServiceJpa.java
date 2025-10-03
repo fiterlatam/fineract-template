@@ -61,6 +61,7 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
 
     private static final String CLIENT_CRAETION_CUPO_DEFAULT_VALUE = "client-creation-cupo-default-value";
     private static final String LOAN_BLOCK_TEST = "loan-blockaccount-save-backdated-component";
+    private static final String LOAN_CHARGE_GAC_DIFFERENTIAL = "loan-charge-gac-differential";
 
     private final PermissionRepository permissionRepository;
     private final GlobalConfigurationRepositoryWrapper globalConfigurationRepository;
@@ -644,4 +645,9 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         return propertyData != null && propertyData.isEnabled() && propertyData.getValue().equals(1L);
     }
 
+    @Override
+    public Boolean getLoanChargeGACDifferentialEnabled() {
+        GlobalConfigurationPropertyData propertyData = getGlobalConfigurationPropertyData(LOAN_CHARGE_GAC_DIFFERENTIAL);
+        return propertyData != null && propertyData.isEnabled() && propertyData.getValue().equals(1L);
+    }
 }

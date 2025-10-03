@@ -1,3 +1,6 @@
+@echo off
+setlocal enabledelayedexpansion
+
 REM =========================================================================
 REM Copyright 2015 the original author or authors.
 REM
@@ -14,20 +17,21 @@ REM See the License for the specific language governing permissions and
 REM limitations under the License.
 REM =========================================================================
 
-@echo off
 cls
 
 REM ========================================================================
-REM 4) Aguardar o servidor ficar saudável
+REM 1) Aguardar o servidor ficar saudável
 REM ========================================================================
 echo.
-echo === Step 4: Waiting for Fineract to become healthy ===
+echo === Step 1: Waiting for Fineract to become healthy ===
 
 set RETRIES=120
 set DELAY=5
 set COUNT=0
 
 :WAIT_HEALTH
+REM curl -k https://localhost:8443/fineract-provider/actuator/health >nul 2>&1
+REM REM Usando localhost no lugar da variavel de ambiente do newman, para fins de health check
 curl -k https://localhost:8443/fineract-provider/actuator/health >nul 2>&1
 if %ERRORLEVEL%==0 (
     echo ✅ Fineract is UP!
@@ -48,11 +52,11 @@ echo.
 
 cls
 REM ========================================================================
-REM 5) Instalar Newman e Reporters
+REM 2) Instalar Newman e Reporters
 REM ========================================================================
 
 echo.
-echo === Step 4: Installing Newman and reporters ===
+echo === Step 2: Installing Newman and reporters ===
 where newman --version > nul 2>&1
 if %errorlevel% neq 0 (
     echo Newman not found. Installing now...
@@ -60,48 +64,142 @@ if %errorlevel% neq 0 (
 ) else (
     echo Newman is already installed.
 )
-
-REM ========================================================================
-REM 6) Executar Collections Postman
-REM ========================================================================
+echo.
 
 cls
-cd ../../
+REM ========================================================================
+REM 3) Setup do ambiente e resultados
+REM ========================================================================
 
 echo.
-echo === Step 5: Running ATF collections ===
+echo === Step 3: Setting up environment and cleaning results ===
+cd ../../
 
+:: Configura caminhos
+set "BASE_PATH=fineract-qa\collections\"
+set "ENV_FILE=%CD%\fineract-qa\environments\EA-Localhost.postman_environment.json"
+set "RESULTS_DIR=%CD%\fineract-qa\results\"
+set "ATF_RESULTS_DIR=%CD%\..\atf\fineract-qa\results\"
+
+:: Cria pastas e limpa resultados antigos
+if not exist "%ATF_RESULTS_DIR%" mkdir "%ATF_RESULTS_DIR%"
+del /q "%ATF_RESULTS_DIR%\*" 2>nul
+del /q "%RESULTS_DIR%\*" 2>nul
+
+:: timestamp para fins de log, caso necessário
 for /f "tokens=1-4 delims=/ " %%i in ('date /t') do set DATE=%%l%%k%%j
 for /f "tokens=1-2 delims=: " %%i in ('time /t') do set TIME=%%i%%j
 set TIMESTAMP=%DATE%-%TIME%
 set TIMESTAMP=%TIMESTAMP::=%
 
-if not exist ..\atf\fineract-qa\results mkdir ..\atf\fineract-qa\results
-del /q ..\atf\fineract-qa\results\*
 
-set TEST_FAIL=false
+REM ========================================================================
+REM 4) Selecionar e Executar Collections Postman
+REM ========================================================================
 
+:INPUT_LOOP_MAIN
+cls
+echo.
+echo === Step 4: Running ATF collections ===
+echo #################################################################################
+echo #
+echo # Select one option to execute ATF:
+echo #
+
+set "i=0"
+set "TEST_FAIL=0"
+
+:: Mapeia e lista as coleções disponíveis
+for %%f in ("%BASE_PATH%*.postman_collection.json") do (
+    set /a i+=1
+    set "COLLECTION_PATH[!i!]=%%~dpfnf"
+    echo # [!i!] - %%~nf
+)
+
+:: Verifica se encontrou coleções
+if !i! equ 0 (
+    echo # No collection found at this folder "%BASE_PATH%"
+    echo #################################################################################
+    goto :eof
+)
+
+echo #
+echo # [A] - Execute All collections
+echo # [Q] - Quit
+echo #
+
+:INPUT_LOOP
+set /p "CHOICE=#  Type the Collection Id, 'A' for All, or 'Q' to quit: "
+
+:: 2. Valida a entrada do usuário
+if /i "%CHOICE%"=="Q" (
+    echo # Saindo...
+    goto :eof
+) else if /i "%CHOICE%"=="A" (
+    set "START_INDEX=1"
+    set "END_INDEX=!i!"
+    goto :EXECUTE
+) else if /i "%CHOICE%"=="" (
+    set "START_INDEX=1"
+    set "END_INDEX=!i!"
+    goto :EXECUTE
+)
+
+:: Verifica se é um número e se está no range [1, !i!]
+set "VALID_CHOICE="
+for /l %%N in (1, 1, !i!) do (
+    if "%CHOICE%"=="%%N" (
+        set "VALID_CHOICE=1"
+        set "START_INDEX=%%N"
+        set "END_INDEX=%%N"
+        goto :EXECUTE
+    )
+)
+
+:: Se chegou aqui, a escolha foi inválida
+if not defined VALID_CHOICE (
+    echo # Invalid option. Please try again.
+    goto :INPUT_LOOP
+)
+
+:: 3. Executa a(s) colecao(oes)
+:EXECUTE
+set "TEST_FAIL=0"
+
+echo #
 echo #################################################################################
 echo #
 
-for %%f in (fineract-qa\collections\*.postman_collection.json) do (
-    REM Caminho absoluto da collection
-    set "COLLECTION_FILE=%%~dpfnf"
-    set "COLLECTION_NAME=%%~nf"
+if "%START_INDEX%"=="1" if "%END_INDEX%"=="!i!" (
+    echo # Executing All collections...
+) else (
+    echo # Executing selected Collection: !START_INDEX!
+)
 
-    call newman run "%%~dpfnf" ^
-        -e "%CD%\fineract-qa\environments\EA-Localhost.postman_environment.json" ^
+:: Usamos START_INDEX e END_INDEX no loop numérico (for /l)
+for /l %%k in (!START_INDEX!, 1, !END_INDEX!) do (
+
+    :: RECUPERA O CAMINHO DA COLEÇÃO USANDO O ÍNDICE %%k
+    set "COLLECTION_PATH=!COLLECTION_PATH[%%k]!"
+
+    :: Extrai o nome do arquivo da variável COLLECTION_PATH
+    for %%c in ("!COLLECTION_PATH!") do (
+        set "FILE_NAME=%%~nc"
+    )
+
+    call newman run "!COLLECTION_PATH!" ^
+        -e "%ENV_FILE%" ^
         -k ^
         --verbose ^
         --reporter-cli-show-body ^
-        --reporter-json-export "%CD%\fineract-qa\results\%%~nf.json" ^
-        --reporter-htmlextra-export "%CD%\fineract-qa\results\%%~nf.html" > "%CD%\..\atf\fineract-qa\results\%%~nf.txt"
+        --reporter-json-export "%RESULTS_DIR%!FILE_NAME!.json" ^
+        --reporter-htmlextra-export "%CD%\fineract-qa\results\!FILE_NAME!.html" > "%CD%\..\atf\fineract-qa\results\!FILE_NAME!.txt"
 
     if errorlevel 1 (
-        echo # - %%~nf ---  X failed
+        echo # - !FILE_NAME! --- X failed
         set TEST_FAIL=1
     ) else (
-        echo # - %%~nf --- OK
+        echo # - !FILE_NAME! --- OK
     )
 )
 
@@ -113,11 +211,14 @@ if "%TEST_FAIL%"=="1" (
     echo #
     echo #################################################################################
     pause
-    exit /b 1
+    GOTO :INPUT_LOOP_MAIN
 )
 
-echo.
+echo #
+echo #
 echo # - All collections executed successfully! ;-)
 echo #
 echo #################################################################################
+
 pause
+GOTO :INPUT_LOOP_MAIN

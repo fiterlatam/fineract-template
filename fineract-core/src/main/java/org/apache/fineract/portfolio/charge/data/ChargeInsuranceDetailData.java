@@ -21,11 +21,13 @@ package org.apache.fineract.portfolio.charge.data;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 @Getter
 @AllArgsConstructor
+@Builder
 public class ChargeInsuranceDetailData {
 
     private final String insuranceType;

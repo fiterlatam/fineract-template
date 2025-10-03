@@ -21,6 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.service;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +44,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.custom.portfolio.blockaccounts.data.LoanAccountBlockDTO;
 import org.apache.fineract.custom.portfolio.blockaccounts.service.LoanAccountBlockReadPlatformService;
+import org.apache.fineract.custom.portfolio.gac.data.GacData;
+import org.apache.fineract.custom.portfolio.gac.service.GacReadPlatformServiceImpl;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -78,6 +82,8 @@ import org.apache.fineract.portfolio.account.service.AccountAssociationsReadPlat
 import org.apache.fineract.portfolio.account.service.AccountTransfersWritePlatformService;
 import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.charge.domain.Charge;
+import org.apache.fineract.portfolio.charge.domain.ChargeCustomType;
+import org.apache.fineract.portfolio.charge.domain.ChargeRepository;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeAppliedToException;
 import org.apache.fineract.portfolio.charge.exception.ChargeCannotBeUpdatedException;
@@ -162,22 +168,32 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
     private final LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService;
     private final JdbcTemplate jdbcTemplate;
     private final LoanAccountBlockReadPlatformService loanAccountBlockReadPlatformService;
+    private final GacReadPlatformServiceImpl gacReadPlatformService;
+    private final ChargeRepository chargeRepositoryWrapper;
+    private final ConfigurationDomainService configurationService;
 
     private static boolean isPartOfThisInstallment(LoanCharge loanCharge, LoanRepaymentScheduleInstallment e) {
         return DateUtils.isAfter(loanCharge.getDueDate(), e.getFromDate()) && !DateUtils.isAfter(loanCharge.getDueDate(), e.getDueDate());
     }
 
-    @SuppressWarnings({ "squid:S3776" })
     @Transactional
     @Override
     public CommandProcessingResult addLoanCharge(final Long loanId, final JsonCommand command) {
+        Loan loan = this.loanAssembler.assembleFrom(loanId);
+        return addLoanCharge(loan, command);
+    }
+
+    @SuppressWarnings({ "squid:S3776" })
+    @Transactional
+    @Override
+    public CommandProcessingResult addLoanCharge(Loan loan, final JsonCommand command) {
         this.loanChargeApiJsonValidator.validateAddLoanCharge(command.json());
 
-        Loan loan = this.loanAssembler.assembleFrom(loanId);
         checkClientOrGroupActive(loan);
+
         if (loan.isChargedOff()) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.is.charged.off",
-                    "Adding charge to Loan: " + loanId + " is not allowed. Loan Account is Charged-off", loanId);
+                    "Adding charge to Loan: " + loan.getId() + " is not allowed. Loan Account is Charged-off", loan.getId());
         }
         List<LoanDisbursementDetails> loanDisburseDetails = loan.getDisbursementDetails();
         final Long chargeDefinitionId = command.longValueOfParameterNamed("chargeId");
@@ -308,7 +324,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                 .withOfficeId(loan.getOfficeId()) //
                 .withClientId(loan.getClientId()) //
                 .withGroupId(loan.getGroupId()) //
-                .withLoanId(loanId) //
+                .withLoanId(loan.getId()) //
                 .build();
     }
 
@@ -759,8 +775,8 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
     @Transactional
     @Override
     public void applyOverdueChargesForLoan(final Long loanId, Collection<OverdueLoanScheduleData> overdueUnsortedLoanScheduleDataList) {
-
-        final long start = System.currentTimeMillis();
+        // TODO dstanca charge job processor method is here
+        long start = System.currentTimeMillis();
 
         // order the overdueLoanScheduleDataList by period number
         final Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList = overdueUnsortedLoanScheduleDataList.stream()
@@ -884,10 +900,141 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
             }
         }
 
-        final long finish = System.currentTimeMillis();
+        long finish = System.currentTimeMillis();
         log.info(
                 "Apply penalty to overdue loans:: Overdue charges applied for Loan: {} in {} seconds with number of overdue installments: {}",
                 loanId, (finish - start) / 1000.0, overdueLoanScheduleDataList.size());
+
+        // Apply GAC charge for overdue loans that also comprises the charges calculated above
+        start = System.currentTimeMillis();
+        applyGACChargeForOverdueLoan(loan, overdueLoanScheduleDataList);
+        finish = System.currentTimeMillis();
+        log.info("Apply GAC to overdue loans:: GAC charges applied for Loan: {} in {} seconds with number of overdue installments: {}",
+                loanId, (finish - start) / 1000.0, overdueLoanScheduleDataList.size());
+    }
+
+    private void applyGACChargeForOverdueLoan(Loan loan, Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList) {
+        Collection<OverdueLoanScheduleData> overdueLoanScheduleDataListSubSet = overdueLoanScheduleDataList.stream()
+                .filter(ovd -> ovd.getLoanId().compareTo(loan.getId()) == 0).toList();
+
+        // Calculate max days in arrears from the overdue installments
+        Long maxDaysInArrears = 0L;
+
+        // This flag is to generate GAC as a single charge (aiming performance) or differential ones
+        boolean singleEntryGACChargeConfig = !configurationService.getLoanChargeGACDifferentialEnabled();
+
+        Charge gacCharge = this.chargeRepositoryWrapper.findByName(ChargeCustomType.GAC.getRootName())
+                .orElseThrow(LoanChargeNotFoundException::new);
+
+        // days between 1st installment due date and today
+        LocalDate firstInstallmentDueDate = null;
+
+        if (!loan.getRepaymentScheduleInstallments().isEmpty()) {
+            firstInstallmentDueDate = loan.getRepaymentScheduleInstallments().get(0).getDueDate();
+            maxDaysInArrears = ChronoUnit.DAYS.between(firstInstallmentDueDate, DateUtils.getBusinessLocalDate());
+        }
+
+        // Which is the current range for GAC charges
+        GacData gd = gacReadPlatformService.retrieveGacRangeDetails(maxDaysInArrears, loan.getLoanAccountBlocks());
+
+        // If pct = ZERO, no GAC charges to be applied
+        if (BigDecimal.ZERO.compareTo(gd.getPercentageValue()) != 0) {
+
+            for (OverdueLoanScheduleData overdueInstallment : overdueLoanScheduleDataListSubSet) {
+                Optional<LoanRepaymentScheduleInstallment> installmentOpt = loan.getRepaymentScheduleInstallments().stream()
+                        .filter(inst -> inst.getInstallmentNumber().intValue() == overdueInstallment.getPeriodNumber().intValue())
+                        .findFirst();
+
+                if (installmentOpt.isPresent()) {
+                    LoanRepaymentScheduleInstallment installment = installmentOpt.get();
+
+                    // Check if this installment and next contains Block restrictions for GAC
+                    if (loan.containsBlockAccountFreezeGAC(installment.getDueDate())) {
+                        continue;
+                    }
+
+                    calculateGACChargeAmouuntPerInstallment(loan, overdueInstallment, installment, singleEntryGACChargeConfig, gd,
+                            gacCharge);
+                }
+            }
+
+            loanAccountDomainService.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+        }
+    }
+
+    private void calculateGACChargeAmouuntPerInstallment(Loan loan, OverdueLoanScheduleData overdueInstallment,
+            LoanRepaymentScheduleInstallment installment, boolean singleEntryGACChargeConfig, GacData gd, Charge gacCharge) {
+        List<LoanCharge> existentGACChargesList = loan.getActiveCharges().stream()
+                .filter(gac -> gac.getCharge().getName().equalsIgnoreCase(ChargeCustomType.GAC.getRootName()))
+                .filter(dueDate -> dueDate.getDueDate().isEqual(installment.getDueDate()))
+                .filter(paid -> !paid.isPaidOrPartiallyPaid(loan.getCurrency())).toList();
+
+        if (!singleEntryGACChargeConfig) {
+            existentGACChargesList = existentGACChargesList.stream()
+                    .filter(cd -> cd.getSubmittedOnDate().isEqual(DateUtils.getLocalDateOfTenant())).toList();
+        }
+
+        if (!existentGACChargesList.isEmpty() && singleEntryGACChargeConfig) {
+            for (LoanCharge lc : existentGACChargesList) {
+                log.info("Apply GAC to overdue loans:: Deleting existent GAC charge for Loan: {} with charge amount: {}", loan.getId(),
+                        lc.getAmount(loan.getCurrency()));
+
+                loan.removeLoanCharge(lc);
+            }
+        }
+
+        // recalculate charge for this installment, rounded to 2 decimals
+        BigDecimal calculatedChargeAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount()
+                .multiply(gd.getPercentageValue()).divide(BigDecimal.valueOf(100));
+
+        // calculate sum of already generated charges per period, rounded to 2 decimals
+        BigDecimal sumOfCurrentCharges = loan.getActiveCharges().stream()
+                .filter(gac -> gac.getCharge().getName().equalsIgnoreCase(ChargeCustomType.GAC.getRootName()))
+                .filter(dt -> dt.getDueDate().isEqual(installment.getDueDate())).map(LoanCharge::getAmountOutstanding)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal deltaGACAmount = calculatedChargeAmount.subtract(sumOfCurrentCharges).setScale(2, RoundingMode.HALF_UP);
+
+        if (sumOfCurrentCharges.compareTo(calculatedChargeAmount) < 0) {
+            // If charge was already created, check if the charge amount matches
+            createGACChargeForLoan(loan, gacCharge, deltaGACAmount, installment.getDueDate());
+
+        } else if (sumOfCurrentCharges.compareTo(calculatedChargeAmount) > 0) {
+            log.info(
+                    "Apply GAC to overdue loans:: Skipping GAC charge for Loan: {} for period number: {} with charge amount: {} - reason: sumOfCurrentCharges.compareTo(calculatedChargeAmount) > 0 ",
+                    loan.getId(), overdueInstallment.getPeriodNumber(), deltaGACAmount);
+
+        } else {
+            // If matches, skip
+            log.info(
+                    "Apply GAC to overdue loans:: Skipping GAC charge for Loan: {} for period number: {} with charge amount: {} - reason: sumOfCurrentCharges.compareTo(calculatedChargeAmount) == 0 ",
+                    loan.getId(), overdueInstallment.getPeriodNumber(), calculatedChargeAmount);
+        }
+    }
+
+    private void createGACChargeForLoan(Loan loan, Charge gacCharge, BigDecimal chargeAmount, LocalDate dueDate) {
+        if (chargeAmount.compareTo(BigDecimal.ZERO) > 0) {
+            log.info("Apply GAC to overdue loans:: Creating GAC charge for Loan: {} with charge amount: {}", loan.getId(), chargeAmount);
+
+            final JsonObject commandJson = new JsonObject();
+            commandJson.addProperty("chargeId", gacCharge.getId());
+            commandJson.addProperty("amount", chargeAmount);
+            commandJson.addProperty("dueDate", dueDate.toString());
+            commandJson.addProperty("locale", "en");
+            commandJson.addProperty("dateFormat", "yyyy-MM-dd");
+
+            final JsonCommand command = JsonCommand.from(commandJson.toString(), commandJson, this.fromApiJsonHelper, null, null, null,
+                    null, null, loan.getId(), null, null, null, null, null, null, null);
+
+            try {
+                this.addLoanCharge(loan, command);
+                log.info("Apply GAC to overdue loans:: GAC charge created for Loan: {} with charge amount: {}", loan.getId(), chargeAmount);
+
+            } catch (Exception e) {
+                log.error("Apply GAC to overdue loans:: Failed to create GAC charge for Loan: {} with charge amount: {}", loan.getId(),
+                        chargeAmount);
+            }
+        }
     }
 
     private LoanTransaction applyChargeAdjustment(final Loan loan, final LoanCharge loanCharge, final BigDecimal transactionAmount,
@@ -916,9 +1063,11 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
         loanAccountDomainService.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
-        final Map<String, Object> accountingBridgeData = loan.deriveAccountingBridgeData(loan.getCurrency().getCode(),
-                existingTransactionIds, existingReversedTransactionIds, false);
-        this.journalEntryWritePlatformService.createJournalEntriesForLoan(accountingBridgeData);
+        // TODO Change code to use the config to disable this charge.
+        // final Map<String, Object> accountingBridgeData =
+        // loan.deriveAccountingBridgeData(loan.getCurrency().getCode(),
+        // existingTransactionIds, existingReversedTransactionIds, false);
+        // this.journalEntryWritePlatformService.createJournalEntriesForLoan(accountingBridgeData);
         loanAccrualTransactionBusinessEventService.raiseBusinessEventForAccrualTransactions(loan, existingTransactionIds);
         loanAccountDomainService.setLoanDelinquencyTag(loan, transactionDate);
 

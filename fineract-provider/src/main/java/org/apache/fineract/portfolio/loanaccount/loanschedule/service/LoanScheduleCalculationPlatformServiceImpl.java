@@ -287,13 +287,15 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
 
             // Calculate individual charge amounts
             final Collection<LoanCharge> mandatoryInsuranceCharges = loan.getLoanCharges().stream().filter(LoanCharge::isMandatoryInsurance)
-                    .toList();
+                    .filter(LoanCharge::isActive).toList();
             final Collection<LoanCharge> voluntaryInsuranceCharges = loan.getLoanCharges().stream().filter(LoanCharge::isVoluntaryInsurance)
-                    .toList();
-            final Collection<LoanCharge> avalCharges = loan.getLoanCharges().stream().filter(LoanCharge::isAvalCharge).toList();
-            final Collection<LoanCharge> honorariosCharges = loan.getLoanCharges().stream().filter(LoanCharge::isFlatHono).toList();
+                    .filter(LoanCharge::isActive).toList();
+            final Collection<LoanCharge> avalCharges = loan.getLoanCharges().stream().filter(LoanCharge::isAvalCharge)
+                    .filter(LoanCharge::isActive).toList();
+            final Collection<LoanCharge> honorariosCharges = loan.getLoanCharges().stream().filter(LoanCharge::isFlatHono)
+                    .filter(LoanCharge::isActive).toList();
             final Collection<LoanCharge> ivaCharges = loan.getLoanCharges().stream()
-                    .filter(LoanCharge::isCustomPercentageBasedOfAnotherCharge).toList();
+                    .filter(LoanCharge::isCustomPercentageBasedOfAnotherCharge).filter(LoanCharge::isActive).toList();
 
             final Collection<LoanCharge> lifeInsuranceCharges = loan.getLoanCharges().stream().filter(LoanCharge::isLifeInsurance).toList();
 
@@ -341,7 +343,7 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
                     lc -> Objects.equals(repaymentScheduleInstallment.getInstallmentNumber(), lc.getInstallment().getInstallmentNumber()))
                     .map(LoanInstallmentCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
             // ADD THIS NEW CODE: Calculate flat charges with specific due dates for this installment
-            BigDecimal flatSpecificDueDateAmount = loan.getLoanCharges().stream()
+            BigDecimal flatSpecificDueDateAmount = loan.getLoanCharges().stream().filter(act -> act.isActive())
                     .filter(loanCharge -> loanCharge.isSpecificDueDateChargeForInstallment(repaymentScheduleInstallment))
                     .map(LoanCharge::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
 

@@ -32,6 +32,7 @@ public enum LoanAccountBlockComponentEnum {
     FREEZE_MORA(3, "Freeze Mora"), //
     FREEZE_LIFE_INSURANCE(4, "Freeze Life Insurance"), //
     FREEZE_MIPYME(5, "Freeze MiPyme"), //
+    FREEZE_GAC(6, "Freeze GAC"), //
     UNDEFINED(-1, "Undefined"), //
     ;
 

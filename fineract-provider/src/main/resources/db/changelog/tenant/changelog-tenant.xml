@@ -423,4 +423,6 @@
     <include file="parts/202509242000001000_EA_117_add_gac_table.xml" relativeToChangelogFile="true"/>
     <include file="parts/2025092420000010000_EA_128_add_gac_initial_configuration.xml" relativeToChangelogFile="true"/>
     <include file="parts/20250927_EA_180_accounting_reports.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20251002_EA_119_charge_add_gac.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20251002_EA_119_configuration_gac_diferential.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

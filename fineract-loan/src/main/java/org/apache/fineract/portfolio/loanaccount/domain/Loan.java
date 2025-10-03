@@ -8714,6 +8714,10 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return containsBlockAccount(givenDate, LoanAccountBlockComponentEnum.FREEZE_MIPYME);
     }
 
+    public boolean containsBlockAccountFreezeGAC(LocalDate givenDate) {
+        return containsBlockAccount(givenDate, LoanAccountBlockComponentEnum.FREEZE_GAC);
+    }
+
     private boolean containsBlockAccount(LocalDate givenDate, LoanAccountBlockComponentEnum blockComponentEnum) {
         return checkBlockAccountComponents(givenDate).getLoanAccountBlockComponentEnumList().stream()
                 .anyMatch(disb -> disb.equals(blockComponentEnum));

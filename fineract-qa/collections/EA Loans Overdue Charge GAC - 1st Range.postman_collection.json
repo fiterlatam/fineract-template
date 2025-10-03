@@ -1,7 +1,7 @@
 {
     "info": {
-        "_postman_id": "e1d77161-d809-4405-b427-a548c4d72b48",
-        "name": "EA Loans Repayment Exceeding Pays All PAST_DUE",
+        "_postman_id": "bb225ff8-840d-4a10-bbf8-b83a9544c0b4",
+        "name": "EA Loans Overdue Charge GAC - 1st Range",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
     },
@@ -36,7 +36,7 @@
                             "var moment = require(\"moment\");\r",
                             "var todayDate = moment().format((\"DD-MM-YY\"));\r",
                             "\r",
-                            "var twoMOld = moment().add(-3, 'months').add(-3, 'days').format((\"DD-MM-YY\"));\r",
+                            "var twoMOld = moment().add(-1, 'months').add(-10, 'days').format((\"DD-MM-YY\"));\r",
                             "\r",
                             "postman.setEnvironmentVariable(\"todayDate\", todayDate);\r",
                             "postman.setEnvironmentVariable(\"creationAndDisbusmentDate\", twoMOld);\r",
@@ -64,7 +64,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"officeId\": 1,\r\n    \"legalFormId\": 1,\r\n    \"isStaff\": false,\r\n    \"active\": true,\r\n    \"dateOfBirth\": \"11/01/2020\",\r\n    \"submittedOnDate\": \"11/01/2020\",\r\n    \"genderId\": 1261,\r\n    \"firstname\": \"Bot++\",\r\n    \"externalId\": \"{{executionId}}\", \r\n    \"lastname\": \"Loans Repayment Exceeding Pays All PAST_DUE {{executionId}}\",\r\n    \"activationDate\": \"11/01/2020\",\r\n    \"familyMembers\": [],\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"datatables\": [\r\n        {\r\n            \"registeredTableName\": \"campos_cliente_persona\",\r\n            \"data\": {\r\n                \"Cedula\": \"{{executionId}}\",\r\n                \"Estado Civil_cd_Estado civil\": 2404,\r\n                \"Edad\": \"\",\r\n                \"Estrato\": \"\",\r\n                \"Ciudad_cd_Ciudad\": 830,\r\n                \"Tiene vehiculo propio\": \"\",\r\n                \"Tipo Vehiculo_cd_Tipo de vehiculo\": \"\",\r\n                \"Nivel Academico_cd_Nivel academico\": \"\",\r\n                \"Actividad Laboral_cd_Actividad laboral\": \"\",\r\n                \"Tiempo de actividad laboral\": \"\",\r\n                \"Media de ingresos\": \"\",\r\n                \"Nombre empresa\": \"\",\r\n                \"Direccion\": \"Calle Uno, 57\",\r\n                \"Telefono\": \"2222-3355\",\r\n                \"Cupo solicitado\": 999999999,\r\n                \"Cupo aprobado\": 999999999,\r\n                \"Cupo otros prestamos\": \"999999999\",\r\n                \"Cupo score\": \"\",\r\n                \"Valor score\": \"\",\r\n                \"Modelo score\": \"\",\r\n                \"Customer Identifier_cd_Tipo identificacion\": 2469,\r\n                \"Telefono domicilio\": \"\",\r\n                \"Numero Celular Secundario\": \"\"\r\n            }\r\n        }\r\n    ]\r\n}",
+                    "raw": "{\r\n    \"officeId\": 1,\r\n    \"legalFormId\": 1,\r\n    \"isStaff\": false,\r\n    \"active\": true,\r\n    \"dateOfBirth\": \"11/01/2020\",\r\n    \"submittedOnDate\": \"11/01/2020\",\r\n    \"genderId\": 1261,\r\n    \"firstname\": \"Bot++\",\r\n    \"externalId\": \"{{executionId}}\", \r\n    \"lastname\": \"Loans Overdue Charge GAC - 1st Range {{executionId}}\",\r\n    \"activationDate\": \"11/01/2020\",\r\n    \"familyMembers\": [],\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"datatables\": [\r\n        {\r\n            \"registeredTableName\": \"campos_cliente_persona\",\r\n            \"data\": {\r\n                \"Cedula\": \"{{executionId}}\",\r\n                \"Estado Civil_cd_Estado civil\": 2404,\r\n                \"Edad\": \"\",\r\n                \"Estrato\": \"\",\r\n                \"Ciudad_cd_Ciudad\": 830,\r\n                \"Tiene vehiculo propio\": \"\",\r\n                \"Tipo Vehiculo_cd_Tipo de vehiculo\": \"\",\r\n                \"Nivel Academico_cd_Nivel academico\": \"\",\r\n                \"Actividad Laboral_cd_Actividad laboral\": \"\",\r\n                \"Tiempo de actividad laboral\": \"\",\r\n                \"Media de ingresos\": \"\",\r\n                \"Nombre empresa\": \"\",\r\n                \"Direccion\": \"Calle Uno, 57\",\r\n                \"Telefono\": \"2222-3355\",\r\n                \"Cupo solicitado\": 999999999,\r\n                \"Cupo aprobado\": 999999999,\r\n                \"Cupo otros prestamos\": \"999999999\",\r\n                \"Cupo score\": \"\",\r\n                \"Valor score\": \"\",\r\n                \"Modelo score\": \"\",\r\n                \"Customer Identifier_cd_Tipo identificacion\": 2469,\r\n                \"Telefono domicilio\": \"\",\r\n                \"Numero Celular Secundario\": \"\"\r\n            }\r\n        }\r\n    ]\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -534,7 +534,7 @@
             "response": []
         },
         {
-            "name": "Test Original Amounts",
+            "name": "Test Mora and GAC Amounts",
             "event": [
                 {
                     "listen": "test",
@@ -550,14 +550,16 @@
                             "});\r",
                             "\r",
                             "\r",
-                            "pm.test(\"Verify Charges installments\", function () {\r",
-                            "\r",
+                            "pm.test(\"Verify Mora for first 2 installments\", function () {\r",
                             "    pm.expect(jsonData.repaymentSchedule.periods[1].penaltyChargesDue).to.be.greaterThan(0);\r",
-                            "    \r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[2].penaltyChargesDue).to.be.greaterThan(0);\r",
                             "\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[3].penaltyChargesDue).to.be.greaterThan(0);\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[2].penaltyChargesDue).to.be.equal(0);    \r",
+                            "});\r",
                             "\r",
+                            "pm.test(\"Verify Zeroed GAC for ALL installments\", function () {\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[1].avalDue).to.be.equal(0);\r",
+                            "\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[2].avalDue).to.be.equal(0);    \r",
                             "});"
                         ],
                         "type": "text/javascript",
@@ -676,7 +678,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"transactionDate\": \"{{todayDate}}\",\r\n    \"transactionAmount\": 1000000,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "raw": "{\r\n    \"transactionDate\": \"{{todayDate}}\",\r\n    \"transactionAmount\": 600000,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"es\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -707,7 +709,7 @@
             "response": []
         },
         {
-            "name": "Test Penalties Paid",
+            "name": "Test Installments Paid",
             "event": [
                 {
                     "listen": "test",
@@ -727,11 +729,10 @@
                             "\r",
                             "    pm.expect(jsonData.repaymentSchedule.periods[2].complete).to.be.equal(true);\r",
                             "\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[3].complete).to.be.equal(true);\r",
                             "});\r",
                             "\r",
-                            "pm.test(\"Verify Residual Payment In 3rd Installment\", function () {\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[4].totalPaidForPeriod).to.be.greaterThan(0);\r",
+                            "pm.test(\"Verify Advanced Payment In 3rd Installment\", function () {\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[3].totalPaidInAdvanceForPeriod).to.be.greaterThan(0);\r",
                             "});"
                         ],
                         "type": "text/javascript",
@@ -821,7 +822,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"transactionDate\": \"10/07/2025\",\r\n    \"transactionAmount\": 0,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"paymentTypeId\": 1,\r\n    \"channelName\": \"03 - Oficina BCS\"\r\n}",
+                    "raw": "{\r\n    \"transactionDate\": \"{{todayDate}}\",\r\n    \"transactionAmount\": 0,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\",\r\n    \"paymentTypeId\": 1,\r\n    \"channelName\": \"03 - Oficina BCS\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"

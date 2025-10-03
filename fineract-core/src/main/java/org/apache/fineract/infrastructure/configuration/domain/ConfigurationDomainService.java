@@ -171,4 +171,6 @@ public interface ConfigurationDomainService {
     Long retrieveClientCreationDefaultCupoValue();
 
     Boolean getLoanBlockTestEnabled();
+
+    Boolean getLoanChargeGACDifferentialEnabled();
 }

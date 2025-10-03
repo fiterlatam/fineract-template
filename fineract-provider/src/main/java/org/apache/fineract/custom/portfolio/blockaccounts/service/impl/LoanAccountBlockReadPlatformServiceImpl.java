@@ -121,6 +121,11 @@ public class LoanAccountBlockReadPlatformServiceImpl implements LoanAccountBlock
         return containsBlockAccount(loanId, givenDate, LoanAccountBlockComponentEnum.FREEZE_MIPYME);
     }
 
+    @Override
+    public boolean containsBlockAccountFreezeGAC(Long loanId, LocalDate givenDate) {
+        return containsBlockAccount(loanId, givenDate, LoanAccountBlockComponentEnum.FREEZE_GAC);
+    }
+
     private boolean containsBlockAccount(Long loanId, LocalDate givenDate, LoanAccountBlockComponentEnum blockComponentEnum) {
         return checkBlockAccountComponents(loanId, givenDate).getLoanAccountBlockComponentEnumList().stream()
                 .anyMatch(disb -> disb.equals(blockComponentEnum));

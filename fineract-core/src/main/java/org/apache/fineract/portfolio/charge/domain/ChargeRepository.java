@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.charge.domain;
 
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
@@ -26,4 +27,7 @@ public interface ChargeRepository extends JpaRepository<Charge, Long>, JpaSpecif
     // no added behaviour
 
     List<Charge> findByChargeAppliesToAndActive(Integer chargeAppliesTo, boolean active);
+
+    Optional<Charge> findByName(String name);
+
 }
