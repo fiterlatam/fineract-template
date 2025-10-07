@@ -1,9 +1,10 @@
 {
     "info": {
-        "_postman_id": "e1d77161-d809-4405-b427-a548c4d72b48",
+        "_postman_id": "9c40c765-3626-4b87-82a7-d8c1f3cdc0ca",
         "name": "EA Loans Repayment Exceeding Pays All PAST_DUE",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-        "_exporter_id": "26949565"
+        "_exporter_id": "34930034",
+        "_collection_link": "https://jacobo-vargas.postman.co/workspace/WORK~69da17f8-6926-42b5-8ba0-23bc6d424a86/collection/34930034-9c40c765-3626-4b87-82a7-d8c1f3cdc0ca?action=share&source=collection_link&creator=34930034"
     },
     "item": [
         {
@@ -36,7 +37,7 @@
                             "var moment = require(\"moment\");\r",
                             "var todayDate = moment().format((\"DD-MM-YY\"));\r",
                             "\r",
-                            "var twoMOld = moment().add(-3, 'months').add(-3, 'days').format((\"DD-MM-YY\"));\r",
+                            "var twoMOld = moment().add(-4, 'months').add(-4, 'days').format((\"DD-MM-YY\"));\r",
                             "\r",
                             "postman.setEnvironmentVariable(\"todayDate\", todayDate);\r",
                             "postman.setEnvironmentVariable(\"creationAndDisbusmentDate\", twoMOld);\r",
