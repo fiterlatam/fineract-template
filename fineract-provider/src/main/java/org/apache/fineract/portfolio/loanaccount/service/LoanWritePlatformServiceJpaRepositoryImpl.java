@@ -2059,6 +2059,43 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         return isAppliedOnBackDate;
     }
 
+    private boolean addCharge(final Loan loan, final Charge chargeDefinition, final LoanCharge loanCharge,
+            final LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue, Integer lastUnpaidInstallment) {
+
+        AppUser currentUser = getAppUserIfPresent();
+        if (!loan.hasCurrencyCodeOf(chargeDefinition.getCurrencyCode())) {
+            final String errorMessage = "Charge and Loan must have the same currency.";
+            throw new InvalidCurrencyException("loanCharge", "attach.to.loan", errorMessage);
+        }
+
+        if (loanCharge.getChargePaymentMode().isPaymentModeAccountTransfer()) {
+            final PortfolioAccountData portfolioAccountData = this.accountAssociationsReadPlatformService
+                    .retriveLoanLinkedAssociation(loan.getId());
+            if (portfolioAccountData == null) {
+                final String errorMessage = loanCharge.name() + "Charge  requires linked savings account for payment";
+                throw new LinkedAccountRequiredException("loanCharge.add", errorMessage, loanCharge.name());
+            }
+        }
+
+        loan.addLoanCharge(loanCharge, installment, penaltyWaitPeriodValue, lastUnpaidInstallment);
+
+        this.loanChargeRepository.saveAndFlush(loanCharge);
+
+        /**
+         * we want to apply charge transactions only for those loans charges that are applied when a loan is active and
+         * the loan product uses Upfront Accruals
+         **/
+        if (loan.status().isActive() && loan.isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
+            final LoanTransaction applyLoanChargeTransaction = loan.handleChargeAppliedTransaction(loanCharge, null);
+            this.loanTransactionRepository.saveAndFlush(applyLoanChargeTransaction);
+        }
+        boolean isAppliedOnBackDate = false;
+        if (loanCharge.getDueLocalDate() == null || DateUtils.getBusinessLocalDate().isAfter(loanCharge.getDueLocalDate())) {
+            isAppliedOnBackDate = true;
+        }
+        return isAppliedOnBackDate;
+    }
+
     @Transactional
     @Override
     public CommandProcessingResult updateLoanCharge(final Long loanId, final Long loanChargeId, final JsonCommand command) {
@@ -3244,7 +3281,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                         entry.getKey());
                 loanCharge.updateOverdueInstallmentCharge(overdueInstallmentCharge);
 
-                boolean isAppliedOnBackDate = addCharge(loan, chargeDefinition, loanCharge);
+                boolean isAppliedOnBackDate = addCharge(loan, chargeDefinition, loanCharge, installment, penaltyWaitPeriodValue,
+                        lastUnpaidInstallment);
                 runInterestRecalculation = runInterestRecalculation || isAppliedOnBackDate;
                 if (entry.getValue().isBefore(recalculateFrom)) {
                     recalculateFrom = entry.getValue();

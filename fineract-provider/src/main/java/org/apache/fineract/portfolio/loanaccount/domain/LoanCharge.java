@@ -408,6 +408,13 @@ public class LoanCharge extends AbstractPersistableCustom {
                     amountPercentageAppliedTo = loan.getTotalInterest();
                 }
             break;
+            case PERCENT_OF_OUTSTANDING_BALANCE:
+                if (installment != null) {
+                    amountPercentageAppliedTo = installment.getPrincipalOutstanding(loan.getCurrency()).getAmount();
+                } else {
+                    amountPercentageAppliedTo = loan.getSummary().getTotalOutstanding();
+                }
+            break;
             default:
             break;
         }
@@ -670,6 +677,89 @@ public class LoanCharge extends AbstractPersistableCustom {
                         this.percentage = amount;
                         if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
                             loanCharge = percentageOf(this.amountPercentageAppliedTo);
+                        }
+                    }
+                    this.amount = minimumAndMaximumCap(loanCharge);
+                break;
+            }
+            this.amountOrPercentage = updatedAmount;
+            this.amountOutstanding = calculateOutstanding();
+            if (this.loan != null && isInstalmentFee()) {
+                updateInstallmentCharges();
+            }
+        }
+    }
+
+    public void update(final BigDecimal amount, final LocalDate dueDate, final BigDecimal loanPrincipal, Integer numberOfRepayments,
+            BigDecimal loanCharge, LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue,
+            Integer lastUnpaidInstallment) {
+        if (dueDate != null) {
+            this.dueDate = dueDate;
+        }
+
+        BigDecimal updatedAmount = amount;
+        if (updatedAmount != null) {
+            switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
+                case INVALID:
+                break;
+                case FLAT:
+                    if (isInstalmentFee()) {
+                        if (numberOfRepayments == null) {
+                            numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
+                        }
+                        this.amount = updatedAmount.multiply(BigDecimal.valueOf(numberOfRepayments));
+                    } else {
+                        this.amount = updatedAmount;
+                    }
+                break;
+                case PERCENT_OF_AMOUNT:
+                case PERCENT_OF_AMOUNT_AND_INTEREST:
+                case PERCENT_OF_INTEREST:
+                case PERCENT_OF_DISBURSEMENT_AMOUNT:
+                    this.amountPercentageAppliedTo = loanPrincipal;
+                    if (this.loan != null && isDisbursementCharge() && this.isAddOnDisbursementType()) {
+                        LocalDate disbursementDate = this.loan.getDisbursementDate();
+                        LocalDate firstRepaymentDate = this.loan.fetchRepaymentScheduleInstallment(1).getDueDate();
+                        Pair<Integer, BigDecimal> addOnDaysAndRate = this.charge.getAddOnDisbursementChargeRate(disbursementDate,
+                                firstRepaymentDate);
+                        BigDecimal feeRate = addOnDaysAndRate.getRight();
+                        this.percentage = feeRate;
+                        updatedAmount = feeRate;
+                        loanCharge = percentageOf(this.amountPercentageAppliedTo);
+                    } else {
+                        this.percentage = amount;
+                        if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
+                            loanCharge = percentageOf(this.amountPercentageAppliedTo);
+                        }
+                    }
+                    this.amount = minimumAndMaximumCap(loanCharge);
+                break;
+                case PERCENT_OF_OUTSTANDING_BALANCE:
+                    this.amountPercentageAppliedTo = loanPrincipal;
+                    if (this.loan != null && isDisbursementCharge() && this.isAddOnDisbursementType()) {
+                        LocalDate disbursementDate = this.loan.getDisbursementDate();
+                        LocalDate firstRepaymentDate = this.loan.fetchRepaymentScheduleInstallment(1).getDueDate();
+                        Pair<Integer, BigDecimal> addOnDaysAndRate = this.charge.getAddOnDisbursementChargeRate(disbursementDate,
+                                firstRepaymentDate);
+                        BigDecimal feeRate = addOnDaysAndRate.getRight();
+                        this.percentage = feeRate;
+                        updatedAmount = feeRate;
+                        loanCharge = percentageOf(this.amountPercentageAppliedTo);
+                    } else {
+                        this.percentage = amount;
+                        if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
+                            loanCharge = percentageOf(this.amountPercentageAppliedTo);
+
+                            if (PeriodFrequencyType.fromInt(charge.feeFrequency()).equals(PeriodFrequencyType.MONTHS_APPLIED_DAILY)) {
+                                loanCharge = loanCharge.divide(BigDecimal.valueOf(30), MathContext.DECIMAL64);
+
+                                // If penalty wait period is set, then we need to add the penalty wait period charges
+                                if (installment.getDueDate().plusDays(penaltyWaitPeriodValue + 1).equals(dueDate)
+                                        && installment.getInstallmentNumber().equals(lastUnpaidInstallment)) {
+                                    BigDecimal penaltyWaitPeriodCharges = loanCharge.multiply(BigDecimal.valueOf(penaltyWaitPeriodValue));
+                                    loanCharge = loanCharge.add(penaltyWaitPeriodCharges);
+                                }
+                            }
                         }
                     }
                     this.amount = minimumAndMaximumCap(loanCharge);
