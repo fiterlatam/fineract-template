@@ -2282,7 +2282,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             actualChanges.put("status", LoanEnumerations.status(this.loanStatus));
 
             // only do below if status has changed in the 'approval' case
-            LocalDate approvedOn = command.dateValueOfParameterNamed("approvedOnDate");
+            LocalDate approvedOn = this.expectedDisbursementDate;
             String approvedOnDateChange = this.expectedDisbursementDate.format(DateTimeFormatter.ofPattern(command.dateFormat()));
             if (approvedOn == null) {
                 approvedOn = command.localDateValueOfParameterNamed("eventDate");
