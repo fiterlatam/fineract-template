@@ -675,6 +675,66 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
     }
 
+    public void addLoanCharge(final LoanCharge loanCharge, LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue,
+            Integer lastUnpaidInstallment) {
+
+        validateLoanIsNotClosed(loanCharge);
+
+        if (isChargesAdditionAllowed() && loanCharge.isDueAtDisbursement()) {
+            // Note: added this constraint to restrict adding disbursement
+            // charges to a loan
+            // after it is disbursed
+            // if the loan charge payment type is 'Disbursement'.
+            // To undo this constraint would mean resolving how charges due are
+            // disbursement are handled at present.
+            // When a loan is disbursed and has charges due at disbursement, a
+            // transaction is created to auto record
+            // payment of the charges (user has no choice in saying they were or
+            // werent paid) - so its assumed they were paid.
+
+            final String defaultUserMessage = "This charge which is due at disbursement cannot be added as the loan is already disbursed.";
+            throw new LoanChargeCannotBeAddedException("loanCharge", "due.at.disbursement.and.loan.is.disbursed", defaultUserMessage,
+                    getId(), loanCharge.name());
+        }
+
+        validateChargeHasValidSpecifiedDateIfApplicable(loanCharge, getDisbursementDate(), getLastRepaymentPeriodDueDate(false));
+
+        loanCharge.update(this);
+
+        final BigDecimal amount = calculateAmountPercentageAppliedTo(loanCharge);
+        BigDecimal chargeAmt = BigDecimal.ZERO;
+        BigDecimal totalChargeAmt = BigDecimal.ZERO;
+        if (loanCharge.getChargeCalculation().isPercentageBased()) {
+            chargeAmt = loanCharge.getPercentage();
+            if (loanCharge.isInstalmentFee()) {
+                totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
+            } else if (loanCharge.isOverdueInstallmentCharge()) {
+                totalChargeAmt = loanCharge.amountOutstanding();
+            }
+        } else {
+            chargeAmt = loanCharge.amountOrPercentage();
+        }
+        loanCharge.update(chargeAmt, loanCharge.getDueLocalDate(), amount, fetchNumberOfInstallmensAfterExceptions(), totalChargeAmt,
+                installment, penaltyWaitPeriodValue, lastUnpaidInstallment);
+
+        // NOTE: must add new loan charge to set of loan charges before
+        // reporcessing the repayment schedule.
+        if (this.charges == null) {
+            this.charges = new HashSet<>();
+        }
+
+        this.charges.add(loanCharge);
+
+        this.summary = updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
+
+        // store Id's of existing loan transactions and existing reversed loan
+        // transactions
+        final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
+        wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges());
+        updateLoanSummaryDerivedFields();
+
+    }
+
     public ChangedTransactionDetail reprocessTransactions() {
         ChangedTransactionDetail changedTransactionDetail = null;
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
