@@ -3118,6 +3118,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     @Transactional
     public void applyOverdueChargesForLoan(final Long loanId, Collection<OverdueLoanScheduleData> overdueLoanScheduleDatas) {
 
+        log.info("Starting: Applying overdue charges for loan id {}", loanId);
         Loan loan = null;
         final List<Long> existingTransactionIds = new ArrayList<>();
         final List<Long> existingReversedTransactionIds = new ArrayList<>();
@@ -3273,7 +3274,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
                 final LoanCharge loanCharge = LoanCharge.createNewFromJson(loan, chargeDefinition, command, entry.getValue(), installment,
                         penaltyWaitPeriodValue, lastUnpaidInstallment);
-
+                log.info("Applying overdue charge for loan id {} installment number {} charge id {} on {} amnt {} ", loanId,
+                        installment.getInstallmentNumber(), loanChargeId, entry.getValue(), loanCharge.chargeAmount());
                 if (BigDecimal.ZERO.compareTo(loanCharge.amount()) == 0) {
                     continue;
                 }
