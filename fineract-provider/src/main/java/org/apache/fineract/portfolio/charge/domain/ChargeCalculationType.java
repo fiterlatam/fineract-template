@@ -126,7 +126,7 @@ public enum ChargeCalculationType {
 
     public boolean isPercentageBased() {
         return isPercentageOfAmount() || isPercentageOfAmountAndInterest() || isPercentageOfInterest()
-                || isPercentageOfDisbursementAmount();
+                || isPercentageOfDisbursementAmount()|| isPercentageOfOutstandingBalance();
     }
 
     public boolean isPercentageOfDisbursementAmount() {
