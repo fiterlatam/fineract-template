@@ -425,4 +425,8 @@
     <include file="parts/20250927_EA_180_accounting_reports.xml" relativeToChangelogFile="true"/>
     <include file="parts/20251002_EA_119_charge_add_gac.xml" relativeToChangelogFile="true"/>
     <include file="parts/20251002_EA_119_configuration_gac_diferential.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20251010200100_EA_196_job_processed_entity.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20251010200200_EA_196_m_configuration_skipprocessedoverdueloans.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20251010200300_EA_196_m_loan_payment_allocation_rule_insert_gac.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20251010200400_EA_196_m_loan_product_payment_allocation_rule_gac.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

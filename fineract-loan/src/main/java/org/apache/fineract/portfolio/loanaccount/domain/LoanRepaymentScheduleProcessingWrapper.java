@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -253,7 +254,8 @@ public class LoanRepaymentScheduleProcessingWrapper {
                 return amount;
             } else {
                 amount = getBaseAmount(currency, period, loanCharge, amount);
-                return amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100));
+                return amount.multiply(Objects.isNull(loanCharge.getPercentage()) ? BigDecimal.valueOf(100L) : loanCharge.getPercentage())
+                        .divide(BigDecimal.valueOf(100));
             }
         } else {
             if (loanCharge.defaultFromInstallment() != null && period.getInstallmentNumber() >= loanCharge.defaultFromInstallment()) {

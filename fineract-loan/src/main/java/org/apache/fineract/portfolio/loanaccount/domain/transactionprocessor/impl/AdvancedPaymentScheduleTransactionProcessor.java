@@ -25,6 +25,7 @@ import static org.apache.fineract.portfolio.loanproduct.domain.AllocationType.*;
 import static org.apache.fineract.portfolio.loanproduct.domain.DueType.IN_ADVANCE;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -589,7 +590,29 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
 
             LoanRepaymentScheduleInstallment.PaymentFunction paymentFunction = currentInstallment
                     .getPaymentFunction(paymentAllocationType.getAllocationType(), action);
-            portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction, loanTransaction);
+
+            // If repaying less than Installment´s Outstanding Amount, then calculate GAC amount "portion"
+            if (paymentAllocationType.getAllocationType().equals(GAC) && !transactionAmountUnprocessed
+                    .isGreaterThan(currentInstallment.getTotalOutstanding(loanTransaction.getLoan().getCurrency()))) {
+
+                BigDecimal gacAmtSum = chargesOfInstallment.stream().filter(LoanCharge::isGACCharge).filter(LoanCharge::isNotFullyPaid)
+                        .filter(bet -> bet.getDueLocalDate().isEqual(currentInstallment.getDueDate()))
+                        .map(obj -> obj.getAmount(loanTransaction.getLoan().getCurrency()).getAmount())
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                BigDecimal baseAmount = currentInstallment.getTotalOutstanding(loanTransaction.getLoan().getCurrency()).getAmount()
+                        .subtract(gacAmtSum);
+
+                BigDecimal rangePct = gacAmtSum.divide(baseAmount, 5, RoundingMode.HALF_UP);
+
+                Money partialGACAmt = transactionAmountUnprocessed.multipliedBy(rangePct);
+
+                portion = paymentFunction.accept(transactionDate, partialGACAmt, isWriteOffTransaction, loanTransaction);
+
+            } else {
+                portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction, loanTransaction);
+            }
+
             log.debug("Payment function result - Transaction ID: {}, Installment: {}, Allocation Type: {}, Portion: {}",
                     loanTransaction.getId() != null ? loanTransaction.getId() : "NEW", currentInstallment.getInstallmentNumber(),
                     paymentAllocationType.getAllocationType(), portion.getAmount());
@@ -598,6 +621,12 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
         ChargesPaidByFunction chargesPaidByFunction = getChargesPaymentFunction(action);
 
         switch (paymentAllocationType.getAllocationType()) {
+            case GAC -> {
+                balances.setAggregatedFeeChargesPortion(balances.getAggregatedFeeChargesPortion().add(portion));
+                addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, zero, zero, portion, zero);
+                Set<LoanCharge> gacs = chargesOfInstallment.stream().filter(LoanCharge::isGACCharge).collect(Collectors.toSet());
+                chargesPaidByFunction.accept(loanTransaction, portion, gacs, currentInstallment.getInstallmentNumber());
+            }
             case PENALTY -> {
                 balances.setAggregatedPenaltyChargesPortion(balances.getAggregatedPenaltyChargesPortion().add(portion));
                 addToTransactionMapping(loanTransactionToRepaymentScheduleMapping, zero, zero, zero, portion);
@@ -1525,6 +1554,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
     private Predicate<LoanRepaymentScheduleInstallment> getFilterPredicate(PaymentAllocationType paymentAllocationType,
             MonetaryCurrency currency, LoanTransaction loanTransaction) {
         return switch (paymentAllocationType.getAllocationType()) {
+            case GAC -> p -> p.getPenaltyChargesOutstanding(currency).isGreaterThanZero();
             case PENALTY -> p -> p.getPenaltyChargesOutstanding(currency).isGreaterThanZero();
             case FEE -> p -> p.getFeeChargesOutstanding(currency).isGreaterThanZero();
             case FEES -> p -> p.getFeeChargesOutstandingByType(currency, AdvancedPaymentScheduleTransactionProcessor.HONORARIOS_PARAM)

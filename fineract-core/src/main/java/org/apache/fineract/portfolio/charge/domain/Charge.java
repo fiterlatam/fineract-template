@@ -443,6 +443,10 @@ public class Charge extends AbstractPersistableCustom {
         return ChargeCalculationType.fromInt(this.chargeCalculation).isPercentageOfAval();
     }
 
+    public boolean isGACCharge() {
+        return this.getName().equalsIgnoreCase(ChargeCustomType.GAC.getRootName());
+    }
+
     public boolean isAvalChargeFlatForMigration() {
         // Charge is distributed among the installments
         return ChargeCalculationType.fromInt(this.chargeCalculation).isFlatAvalForMigration();

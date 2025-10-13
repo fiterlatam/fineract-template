@@ -49,6 +49,8 @@ import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChe
 import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityRelationRepository;
 import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityToEntityMappingRepository;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
+import org.apache.fineract.infrastructure.jobs.domain.JobProcessedEntityRepository;
+import org.apache.fineract.infrastructure.jobs.service.JobLoggerService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepository;
@@ -331,7 +333,8 @@ public class LoanAccountConfiguration {
             PaymentDetailWritePlatformService paymentDetailWritePlatformService, NoteRepository noteRepository,
             LoanAccrualTransactionBusinessEventService loanAccrualTransactionBusinessEventService, JdbcTemplate jdbcTemplate,
             LoanAccountBlockReadPlatformService loanAccountBlockReadPlatformService, GacReadPlatformServiceImpl gacReadPlatformService,
-            ChargeRepository chargeRepositoryWrapper, ConfigurationDomainService configurationService
+            ChargeRepository chargeRepositoryWrapper, ConfigurationDomainService configurationService,
+            JobProcessedEntityRepository jobProcessedEntityRepository, JobLoggerService jobLoggerService
 
     ) {
         return new LoanChargeWritePlatformServiceImpl(loanChargeApiJsonValidator, loanAssembler, chargeRepository,
@@ -341,7 +344,8 @@ public class LoanAccountConfiguration {
                 configurationDomainService, loanRepaymentScheduleTransactionProcessorFactory, externalIdFactory,
                 accountTransferDetailRepository, loanChargeAssembler, replayedTransactionBusinessEventService,
                 paymentDetailWritePlatformService, noteRepository, loanAccrualTransactionBusinessEventService, jdbcTemplate,
-                loanAccountBlockReadPlatformService, gacReadPlatformService, chargeRepositoryWrapper, configurationService);
+                loanAccountBlockReadPlatformService, gacReadPlatformService, chargeRepositoryWrapper, configurationService,
+                jobProcessedEntityRepository, jobLoggerService);
     }
 
     @Bean
@@ -521,8 +525,10 @@ public class LoanAccountConfiguration {
     @Scope("prototype")
     @ConditionalOnMissingBean(ApplyChargeToOverdueLoanInstallmentProcessor.class)
     public ApplyChargeToOverdueLoanInstallmentProcessor applyChargeToOverdueLoanInstallmentProcessor(
-            LoanChargeWritePlatformService loanChargeWritePlatformService, ChargeRepositoryWrapper chargeRepository) {
-        return new ApplyChargeToOverdueLoanInstallmentProcessor(loanChargeWritePlatformService, chargeRepository);
+            LoanChargeWritePlatformService loanChargeWritePlatformService, ChargeRepositoryWrapper chargeRepository,
+            JobProcessedEntityRepository jobProcessedEntityRepository, ConfigurationDomainService configurationService) {
+        return new ApplyChargeToOverdueLoanInstallmentProcessor(loanChargeWritePlatformService, chargeRepository,
+                jobProcessedEntityRepository, configurationService);
     }
 
     @Bean

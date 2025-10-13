@@ -173,4 +173,6 @@ public interface ConfigurationDomainService {
     Boolean getLoanBlockTestEnabled();
 
     Boolean getLoanChargeGACDifferentialEnabled();
+
+    Boolean getJobApplyPenaltyToOverdueLoansSkipWhenReprocessed();
 }

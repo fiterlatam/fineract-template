@@ -643,6 +643,13 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     public PaymentFunction getPaymentFunction(AllocationType allocationType, PaymentAction action) {
         PaymentFunction paymentFunction = null;
         switch (allocationType) {
+            case GAC -> {
+                if (PaymentAction.PAY.equals(action)) {
+                    paymentFunction = this::payGACChargesComponent;
+                } else if (PaymentAction.UNPAY.equals(action)) {
+                    paymentFunction = this::unpayGACChargesComponent;
+                }
+            }
             case PENALTY -> {
                 if (PaymentAction.PAY.equals(action)) {
                     paymentFunction = this::payPenaltyChargesComponent;
@@ -701,6 +708,43 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
             }
         }
         return paymentFunction;
+    }
+
+    public Money payGACChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
+            final boolean isWriteOffTransaction, LoanTransaction loanTransaction) {
+
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money feePortionOfTransaction = Money.zero(currency);
+        if (transactionAmountRemaining.isZero()) {
+            return feePortionOfTransaction;
+        }
+
+        Money feeChargesDue = Money.of(currency, this.getFlatSpecificDueDateCharges().stream().filter(LoanCharge::isGACCharge)
+                .map(LoanCharge::getAmountOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add));
+
+        if (transactionAmountRemaining.isGreaterThanOrEqualTo(feeChargesDue)) {
+            if (isWriteOffTransaction) {
+                this.feeChargesWrittenOff = getFeeChargesWrittenOff(currency).plus(feeChargesDue).getAmount();
+            } else {
+                this.feeChargesPaid = getFeeChargesPaid(currency).plus(feeChargesDue).getAmount();
+            }
+            feePortionOfTransaction = feePortionOfTransaction.plus(feeChargesDue);
+        } else {
+            if (isWriteOffTransaction) {
+                this.feeChargesWrittenOff = getFeeChargesWrittenOff(currency).plus(transactionAmountRemaining).getAmount();
+            } else {
+                this.feeChargesPaid = getFeeChargesPaid(currency).plus(transactionAmountRemaining).getAmount();
+            }
+            feePortionOfTransaction = feePortionOfTransaction.plus(transactionAmountRemaining);
+        }
+
+        this.feeChargesPaid = defaultToNullIfZero(this.feeChargesPaid);
+
+        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, feePortionOfTransaction);
+
+        return feePortionOfTransaction;
     }
 
     public Money payPenaltyChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
@@ -892,6 +936,11 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
         if (transactionAmountRemaining.isZero()) {
             return transactionAmountRemaining;
         }
+
+        if (loanCharge.isGACCharge()) { // There is a specific place to process GAC charge
+            return transactionAmountRemaining.zero();
+        }
+
         final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
         Money feeChargePaid = Money.zero(currency);
         Money feePortionOfTransaction = Money.zero(currency);
@@ -1580,6 +1629,43 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     /********** UNPAY COMPONENTS ****/
+
+    public Money unpayGACChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
+            final boolean isWriteOffTransaction) {
+        return unpayFeeChargesComponent(transactionDate, transactionAmountRemaining, isWriteOffTransaction, null);
+    }
+
+    public Money unpayGACChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
+            final boolean isWriteOffTransaction, LoanTransaction transaction) {
+
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money feePortionOfTransactionDeducted;
+
+        Money feeChargesCompleted = Money.of(currency, this.getFlatSpecificDueDateCharges().stream().filter(LoanCharge::isGACCharge)
+                .filter(LoanCharge::isPaid).map(LoanCharge::getAmountPaid).reduce(BigDecimal.ZERO, BigDecimal::add));
+
+        if (transactionAmountRemaining.isGreaterThanOrEqualTo(feeChargesCompleted)) {
+            if (isWriteOffTransaction) {
+                this.feeChargesWrittenOff = Money.zero(currency).getAmount();
+            } else {
+                this.feeChargesPaid = Money.zero(currency).getAmount();
+            }
+            feePortionOfTransactionDeducted = feeChargesCompleted;
+        } else {
+            if (isWriteOffTransaction) {
+                this.feeChargesWrittenOff = feeChargesCompleted.minus(transactionAmountRemaining).getAmount();
+            } else {
+                this.feeChargesPaid = feeChargesCompleted.minus(transactionAmountRemaining).getAmount();
+            }
+            feePortionOfTransactionDeducted = transactionAmountRemaining;
+        }
+
+        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+        reduceAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, feePortionOfTransactionDeducted);
+
+        return feePortionOfTransactionDeducted;
+    }
 
     public Money unpayPenaltyChargesComponent(final LocalDate transactionDate, final Money transactionAmountRemaining,
             final boolean isWriteOffTransaction) {
