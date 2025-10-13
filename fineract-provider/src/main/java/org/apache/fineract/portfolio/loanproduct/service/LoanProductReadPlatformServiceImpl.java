@@ -832,7 +832,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
         private List<PaymentAllocationOrder> convert(String allocationOrders, final LoanScheduleType loanScheduleType,
                 final LoanScheduleProcessingType loanScheduleProcessingType) {
             String[] allocationRule = allocationOrders.split(",");
-            String[] convertedAllocationRule = new String[7];
+            String[] convertedAllocationRule = new String[8];
             int index = 0;
             /*
              * if (loanScheduleType.equals(LoanScheduleType.PROGRESSIVE) &&
@@ -848,7 +848,7 @@ public class LoanProductReadPlatformServiceImpl implements LoanProductReadPlatfo
              */
 
             if (loanScheduleType.equals(LoanScheduleType.PROGRESSIVE)) {
-                for (int i = 0; i < 7; i++) {
+                for (int i = 0; i < 8; i++) {
                     String rule = allocationRule[i];
                     // PAST_DUE will always be the one captured here. Strip PAST_DUE from the string to get the
                     // Allocation Type

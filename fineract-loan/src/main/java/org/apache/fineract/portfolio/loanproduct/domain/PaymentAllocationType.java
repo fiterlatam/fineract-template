@@ -32,6 +32,7 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 @RequiredArgsConstructor
 public enum PaymentAllocationType {
 
+    PAST_DUE_GAC(PAST_DUE, GAC, "Past due GAC"), //
     PAST_DUE_PENALTY(PAST_DUE, PENALTY, "Past due penalty"), //
     PAST_DUE_FEE(PAST_DUE, FEE, "Past due fee"), //
     PAST_DUE_FEES(PAST_DUE, FEES, "Past due fees"), // Honorarios
@@ -40,6 +41,7 @@ public enum PaymentAllocationType {
     PAST_DUE_AVAL(PAST_DUE, AVAL, "Past due aval"), //
     PAST_DUE_MANDATORY_INSURANCE(PAST_DUE, MANDATORY_INSURANCE, "Past due mandatory insurance"), //
     PAST_DUE_VOLUNTARY_INSURANCE(PAST_DUE, VOLUNTARY_INSURANCE, "Past due mandatory insurance"), //
+    DUE_GAC(DUE, GAC, "Due GAC"), //
     DUE_PENALTY(DUE, PENALTY, "Due penalty"), //
     DUE_FEE(DUE, FEE, "Due fee"), //
     DUE_FEES(DUE, FEES, "Due fees"), // Honorarios
@@ -48,6 +50,7 @@ public enum PaymentAllocationType {
     DUE_AVAL(DUE, AVAL, "Due aval"), //
     DUE_MANDATORY_INSURANCE(DUE, MANDATORY_INSURANCE, "Due mandatory insurance"), //
     DUE_VOLUNTARY_INSURANCE(DUE, VOLUNTARY_INSURANCE, "Due mandatory insurance"), //
+    IN_ADVANCE_GAC(IN_ADVANCE, GAC, "In advance GAC"), //
     IN_ADVANCE_PENALTY(IN_ADVANCE, PENALTY, "In advance penalty"), //
     IN_ADVANCE_FEE(IN_ADVANCE, FEE, "In advance fee"), //
     IN_ADVANCE_FEES(IN_ADVANCE, FEES, "In advance fees"), // Honorarios

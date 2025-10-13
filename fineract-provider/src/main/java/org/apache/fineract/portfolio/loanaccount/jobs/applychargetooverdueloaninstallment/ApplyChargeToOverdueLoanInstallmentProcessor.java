@@ -26,9 +26,12 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.jobs.domain.JobProcessedEntityRepository;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
@@ -45,12 +48,23 @@ public class ApplyChargeToOverdueLoanInstallmentProcessor {
     private List<OverdueLoanScheduleData> overdueLoanScheduledInstallments;
     private final LoanChargeWritePlatformService loanChargeWritePlatformService;
     private final ChargeRepositoryWrapper chargeRepository;
+    private final JobProcessedEntityRepository jobProcessedEntityRepository;
+    private final ConfigurationDomainService configurationService;
 
     @SuppressWarnings({ "squid:S3776" })
     @Transactional(isolation = Isolation.READ_UNCOMMITTED, rollbackFor = Exception.class)
     public void processOverdueCharges() throws JobExecutionException {
         List<Throwable> exceptions = new ArrayList<>();
         log.info("Applying Charges due for overdue loans for {} installments", this.overdueLoanScheduledInstallments.size());
+
+        // Delete historical Job execution
+        jobProcessedEntityRepository.deleteByJobIdAndExecutionDateBefore(12L, DateUtils.getLocalDateOfTenant().minusDays(5));
+
+        // Check if we need to reprocess this job
+        if (!configurationService.getJobApplyPenaltyToOverdueLoansSkipWhenReprocessed()) {
+            jobProcessedEntityRepository.deleteByJobId(12L);
+        }
+
         if (!overdueLoanScheduledInstallments.isEmpty()) {
             final Map<Long, Collection<OverdueLoanScheduleData>> overdueScheduleData = new HashMap<>();
             for (final OverdueLoanScheduleData overdueInstallment : overdueLoanScheduledInstallments) {

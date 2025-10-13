@@ -63,6 +63,8 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     private static final String LOAN_BLOCK_TEST = "loan-blockaccount-save-backdated-component";
     private static final String LOAN_CHARGE_GAC_DIFFERENTIAL = "loan-charge-gac-differential";
 
+    private static final String JOB_APPLY_PENALTY_TO_OVERDUE_LOANS_SKIP_WHEN_REPROCESSED = "job-apply-penalty-to-overdue-loans-skip-when-reprocessed";
+
     private final PermissionRepository permissionRepository;
     private final GlobalConfigurationRepositoryWrapper globalConfigurationRepository;
     private final PlatformCacheRepository cacheTypeRepository;
@@ -648,6 +650,13 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     @Override
     public Boolean getLoanChargeGACDifferentialEnabled() {
         GlobalConfigurationPropertyData propertyData = getGlobalConfigurationPropertyData(LOAN_CHARGE_GAC_DIFFERENTIAL);
+        return propertyData != null && propertyData.isEnabled() && propertyData.getValue().equals(1L);
+    }
+
+    @Override
+    public Boolean getJobApplyPenaltyToOverdueLoansSkipWhenReprocessed() {
+        GlobalConfigurationPropertyData propertyData = getGlobalConfigurationPropertyData(
+                JOB_APPLY_PENALTY_TO_OVERDUE_LOANS_SKIP_WHEN_REPROCESSED);
         return propertyData != null && propertyData.isEnabled() && propertyData.getValue().equals(1L);
     }
 }

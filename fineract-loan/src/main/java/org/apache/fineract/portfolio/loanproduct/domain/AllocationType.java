@@ -29,14 +29,16 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 @Getter
 public enum AllocationType {
 
+    GAC("GAC", "labels.allocations.types.gac"), //
     PENALTY("Penalty", "labels.allocations.types.penalty"), //
     FEE("Fee", "labels.allocations.types.fee"), //
     PRINCIPAL("Principal", "labels.allocations.types.principal"), //
     INTEREST("Interest", "labels.allocations.types.interest"), //
     FEES("Honorarios", "labels.allocations.types.fees"), //
     AVAL("Aval", "labels.allocations.types.aval"), //
-    MANDATORY_INSURANCE("Mandatory Insurance", "labels.allocations.types.mandatory.insurance"), VOLUNTARY_INSURANCE("Voluntary Insurance",
-            "labels.allocations.types.voluntary.insurance");
+    MANDATORY_INSURANCE("Mandatory Insurance", "labels.allocations.types.mandatory.insurance"), //
+    VOLUNTARY_INSURANCE("Voluntary Insurance", "labels.allocations.types.voluntary.insurance") //
+    ;
 
     private final String humanReadableName;
     private final String code;

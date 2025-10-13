@@ -23,6 +23,7 @@ import com.google.gson.JsonObject;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -68,6 +69,9 @@ import org.apache.fineract.infrastructure.event.business.domain.loan.transaction
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanChargeAdjustmentPreBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.transaction.LoanChargeRefundBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
+import org.apache.fineract.infrastructure.jobs.domain.JobProcessedEntity;
+import org.apache.fineract.infrastructure.jobs.domain.JobProcessedEntityRepository;
+import org.apache.fineract.infrastructure.jobs.service.JobLoggerService;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.organisation.monetary.exception.InvalidCurrencyException;
@@ -171,6 +175,8 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
     private final GacReadPlatformServiceImpl gacReadPlatformService;
     private final ChargeRepository chargeRepositoryWrapper;
     private final ConfigurationDomainService configurationService;
+    private final JobProcessedEntityRepository jobProcessedEntityRepository;
+    private final JobLoggerService jobLoggerService;
 
     private static boolean isPartOfThisInstallment(LoanCharge loanCharge, LoanRepaymentScheduleInstallment e) {
         return DateUtils.isAfter(loanCharge.getDueDate(), e.getFromDate()) && !DateUtils.isAfter(loanCharge.getDueDate(), e.getDueDate());
@@ -775,8 +781,10 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
     @Transactional
     @Override
     public void applyOverdueChargesForLoan(final Long loanId, Collection<OverdueLoanScheduleData> overdueUnsortedLoanScheduleDataList) {
-        // TODO dstanca charge job processor method is here
         long start = System.currentTimeMillis();
+        LocalDateTime startInstallmentProcessing = DateUtils.getLocalDateTimeOfTenant();
+        String errorMsg = null;
+        String errorLog = null;
 
         // order the overdueLoanScheduleDataList by period number
         final Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList = overdueUnsortedLoanScheduleDataList.stream()
@@ -809,46 +817,73 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
                 for (final OverdueLoanScheduleData overdueInstallment : overdueLoanScheduleDataList) {
 
-                    if (overdueInstallment.getPeriodNumber() < 1) {
-                        log.warn("Graced periods(0) cannot be charged for penalty for loan with id: {}", loan.getId());
-                        continue;
-                    }
-
-                    // If installment is overdue but within charge´s grace period, don´t apply charge
-                    final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(overdueInstallment.getChargeId());
-                    if (chargeDefinition.hasCustomGracePeriodDefined()) {
-                        final LocalDate today = DateUtils.getBusinessLocalDate();
-                        final LocalDate dueDate = DateUtils.parseLocalDate(overdueInstallment.getDueDate());
-                        final LocalDate applyChargeFromDate = dueDate.plusDays(chargeDefinition.getGraceOnChargePeriodAmount());
-                        if (today.isBefore(applyChargeFromDate)) {
+                    try {
+                        // Check if it was processed today and skip if no errors
+                        if (jobProcessedEntityRepository
+                                .existsByJobIdAndExecutionDateAndExecutionProcessAndEntityTypeAndEntityIdAndInstallmentNrAndErrorMessageIsNullAndErrorLogIsNull(
+                                        12L, DateUtils.getLocalDateOfTenant(), "M", "L", loanId, overdueInstallment.getPeriodNumber())) {
+                            log.info("Skipping Penalty already processed for loan with id: {} and installment_nr: {}", loan.getId(),
+                                    overdueInstallment.getPeriodNumber());
                             continue;
                         }
-                    }
 
-                    final JsonElement parsedCommand = this.fromApiJsonHelper.parse(overdueInstallment.toString());
-                    final JsonCommand command = JsonCommand.from(overdueInstallment.toString(), parsedCommand, this.fromApiJsonHelper, null,
-                            null, null, null, null, loanId, null, null, null, null, null, null, null);
+                        startInstallmentProcessing = DateUtils.getLocalDateTimeOfTenant();
 
-                    final long startTime = System.currentTimeMillis();
-                    log.info(
-                            "Apply penalty to overdue loans:: Applying overdue charge for Loan: {} for period number: {} with charge id: {}",
-                            loanId, overdueInstallment.getPeriodNumber(), overdueInstallment.getChargeId());
-                    LoanOverdueDTO overdueDTO = applyChargeToOverdueLoanInstallment(loan, overdueInstallment.getChargeId(),
-                            overdueInstallment.getPeriodNumber(), command);
-                    log.info(
-                            "Apply penalty to overdue loans:: Overdue charge applied for Loan: {} for period number: {} with charge id: {}",
-                            loanId, overdueInstallment.getPeriodNumber(), overdueInstallment.getChargeId());
-                    final long endTime = System.currentTimeMillis();
-                    log.info("Time taken to apply overdue charge for Loan: {} for period number: {} with charge name: {} is {} ms", loanId,
-                            overdueInstallment.getPeriodNumber(), chargeDefinition.getName(), (endTime - startTime));
+                        if (overdueInstallment.getPeriodNumber() < 1) {
+                            log.warn("Graced periods(0) cannot be charged for penalty for loan with id: {}", loan.getId());
+                            continue;
+                        }
 
-                    loan = overdueDTO.getLoan();
-                    runInterestRecalculation = runInterestRecalculation || overdueDTO.isRunInterestRecalculation();
-                    if (DateUtils.isAfter(recalculateFrom, overdueDTO.getRecalculateFrom())) {
-                        recalculateFrom = overdueDTO.getRecalculateFrom();
-                    }
-                    if (lastChargeDate == null || DateUtils.isAfter(overdueDTO.getLastChargeAppliedDate(), lastChargeDate)) {
-                        lastChargeDate = overdueDTO.getLastChargeAppliedDate();
+                        // If installment is overdue but within charge´s grace period, don´t apply charge
+                        final Charge chargeDefinition = this.chargeRepository
+                                .findOneWithNotFoundDetection(overdueInstallment.getChargeId());
+                        if (chargeDefinition.hasCustomGracePeriodDefined()) {
+                            final LocalDate today = DateUtils.getBusinessLocalDate();
+                            final LocalDate dueDate = DateUtils.parseLocalDate(overdueInstallment.getDueDate());
+                            final LocalDate applyChargeFromDate = dueDate.plusDays(chargeDefinition.getGraceOnChargePeriodAmount());
+                            if (today.isBefore(applyChargeFromDate)) {
+                                continue;
+                            }
+                        }
+
+                        final JsonElement parsedCommand = this.fromApiJsonHelper.parse(overdueInstallment.toString());
+                        final JsonCommand command = JsonCommand.from(overdueInstallment.toString(), parsedCommand, this.fromApiJsonHelper,
+                                null, null, null, null, null, loanId, null, null, null, null, null, null, null);
+
+                        final long startTime = System.currentTimeMillis();
+                        log.info(
+                                "Apply penalty to overdue loans:: Applying overdue charge for Loan: {} for period number: {} with charge id: {}",
+                                loanId, overdueInstallment.getPeriodNumber(), overdueInstallment.getChargeId());
+                        LoanOverdueDTO overdueDTO = applyChargeToOverdueLoanInstallment(loan, overdueInstallment.getChargeId(),
+                                overdueInstallment.getPeriodNumber(), command);
+                        log.info(
+                                "Apply penalty to overdue loans:: Overdue charge applied for Loan: {} for period number: {} with charge id: {}",
+                                loanId, overdueInstallment.getPeriodNumber(), overdueInstallment.getChargeId());
+                        final long endTime = System.currentTimeMillis();
+                        log.info("Time taken to apply overdue charge for Loan: {} for period number: {} with charge name: {} is {} ms",
+                                loanId, overdueInstallment.getPeriodNumber(), chargeDefinition.getName(), (endTime - startTime));
+
+                        loan = overdueDTO.getLoan();
+                        runInterestRecalculation = runInterestRecalculation || overdueDTO.isRunInterestRecalculation();
+                        if (DateUtils.isAfter(recalculateFrom, overdueDTO.getRecalculateFrom())) {
+                            recalculateFrom = overdueDTO.getRecalculateFrom();
+                        }
+                        if (lastChargeDate == null || DateUtils.isAfter(overdueDTO.getLastChargeAppliedDate(), lastChargeDate)) {
+                            lastChargeDate = overdueDTO.getLastChargeAppliedDate();
+                        }
+                    } catch (Exception e) {
+                        errorMsg = e.getMessage();
+                        errorLog = e.getLocalizedMessage();
+
+                        throw e;
+                    } finally {
+                        JobProcessedEntity dbLogger = JobProcessedEntity.builder().jobId(12L) // Overdue charge job id
+                                .executionDate(DateUtils.getLocalDateOfTenant()).executionProcess("M").entityId(loanId).entityType("L")
+                                .entityId(loan.getId()).installmentNr(overdueInstallment.getPeriodNumber())
+                                .startTime(startInstallmentProcessing).endTime(DateUtils.getLocalDateTimeOfTenant())
+                                .status(Objects.isNull(errorMsg) ? "1" : "0").errorMessage(errorMsg).errorLog(errorLog).build();
+
+                        jobLoggerService.logProcessedEntity(dbLogger);
                     }
                 }
                 if (loan != null) {
@@ -914,58 +949,108 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
     }
 
     private void applyGACChargeForOverdueLoan(Loan loan, Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList) {
+        // This is to persist errors if any for later analysis
+        String errorMsg = null;
+        String errorLog = null;
+        LocalDateTime startInstallmentProcessing = DateUtils.getLocalDateTimeOfTenant();
+
         Collection<OverdueLoanScheduleData> overdueLoanScheduleDataListSubSet = overdueLoanScheduleDataList.stream()
                 .filter(ovd -> ovd.getLoanId().compareTo(loan.getId()) == 0).toList();
 
         // Calculate max days in arrears from the overdue installments
         Long maxDaysInArrears = 0L;
+        LocalDate firstInstallmentDueDate = null;
+        Integer oldestInstallmentNumber = null;
 
         // This flag is to generate GAC as a single charge (aiming performance) or differential ones
         boolean singleEntryGACChargeConfig = !configurationService.getLoanChargeGACDifferentialEnabled();
+        try {
+            Charge gacCharge = this.chargeRepositoryWrapper.findByName(ChargeCustomType.GAC.getRootName())
+                    .orElseThrow(LoanChargeNotFoundException::new);
 
-        Charge gacCharge = this.chargeRepositoryWrapper.findByName(ChargeCustomType.GAC.getRootName())
-                .orElseThrow(LoanChargeNotFoundException::new);
-
-        // days between 1st installment due date and today
-        LocalDate firstInstallmentDueDate = null;
-
-        if (!loan.getRepaymentScheduleInstallments().isEmpty()) {
-            firstInstallmentDueDate = loan.getRepaymentScheduleInstallments().get(0).getDueDate();
-            maxDaysInArrears = ChronoUnit.DAYS.between(firstInstallmentDueDate, DateUtils.getBusinessLocalDate());
-        }
-
-        // Which is the current range for GAC charges
-        GacData gd = gacReadPlatformService.retrieveGacRangeDetails(maxDaysInArrears, loan.getLoanAccountBlocks());
-
-        // If pct = ZERO, no GAC charges to be applied
-        if (BigDecimal.ZERO.compareTo(gd.getPercentageValue()) != 0) {
-
-            for (OverdueLoanScheduleData overdueInstallment : overdueLoanScheduleDataListSubSet) {
-                Optional<LoanRepaymentScheduleInstallment> installmentOpt = loan.getRepaymentScheduleInstallments().stream()
-                        .filter(inst -> inst.getInstallmentNumber().intValue() == overdueInstallment.getPeriodNumber().intValue())
-                        .findFirst();
-
-                if (installmentOpt.isPresent()) {
-                    LoanRepaymentScheduleInstallment installment = installmentOpt.get();
-
-                    // Check if this installment and next contains Block restrictions for GAC
-                    if (loan.containsBlockAccountFreezeGAC(installment.getDueDate())) {
-                        continue;
-                    }
-
-                    calculateGACChargeAmouuntPerInstallment(loan, overdueInstallment, installment, singleEntryGACChargeConfig, gd,
-                            gacCharge);
-                }
+            // days between 1st installment due date and today
+            if (!loan.getRepaymentScheduleInstallments().isEmpty()) {
+                firstInstallmentDueDate = loan.getRepaymentScheduleInstallments().get(0).getDueDate();
+                oldestInstallmentNumber = loan.getRepaymentScheduleInstallments().get(0).getInstallmentNumber();
+                maxDaysInArrears = ChronoUnit.DAYS.between(firstInstallmentDueDate, DateUtils.getBusinessLocalDate());
             }
 
-            loanAccountDomainService.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+            // Which is the current range for GAC charges
+            GacData gd = gacReadPlatformService.retrieveGacRangeDetails(maxDaysInArrears, loan.getLoanAccountBlocks());
+
+            // If pct = ZERO, no GAC charges to be applied
+            if (BigDecimal.ZERO.compareTo(gd.getPercentageValue()) != 0) {
+
+                for (OverdueLoanScheduleData overdueInstallment : overdueLoanScheduleDataListSubSet) {
+                    try {
+                        // Check if it was processed today and skip if no errors
+                        if (jobProcessedEntityRepository
+                                .existsByJobIdAndExecutionDateAndExecutionProcessAndEntityTypeAndEntityIdAndInstallmentNrAndErrorMessageIsNullAndErrorLogIsNull(
+                                        12L, DateUtils.getLocalDateOfTenant(), "GAC", "L", loan.getId(),
+                                        overdueInstallment.getPeriodNumber())) {
+                            log.info("Skipping GAC already processed for loan with id: {} and installment_nr: {}", loan.getId(),
+                                    overdueInstallment.getPeriodNumber());
+                            continue;
+                        }
+
+                        gd = gacReadPlatformService.retrieveGacRangeDetails(maxDaysInArrears, loan.getLoanAccountBlocks());
+
+                        startInstallmentProcessing = DateUtils.getLocalDateTimeOfTenant();
+
+                        Optional<LoanRepaymentScheduleInstallment> installmentOpt = loan.getRepaymentScheduleInstallments().stream()
+                                .filter(inst -> inst.getInstallmentNumber().intValue() == overdueInstallment.getPeriodNumber().intValue())
+                                .findFirst();
+
+                        if (installmentOpt.isPresent()) {
+                            LoanRepaymentScheduleInstallment installment = installmentOpt.get();
+
+                            // Check if this installment and next contains Block restrictions for GAC
+                            if (loan.containsBlockAccountFreezeGAC(installment.getDueDate())) {
+                                continue;
+                            }
+
+                            calculateGACChargeAmouuntPerInstallment(loan, overdueInstallment, installment, singleEntryGACChargeConfig, gd,
+                                    gacCharge);
+                        }
+                    } catch (Exception e) {
+                        errorMsg = e.getMessage();
+                        errorLog = e.getLocalizedMessage();
+
+                        throw e;
+                    } finally {
+                        JobProcessedEntity dbLogger = JobProcessedEntity.builder().jobId(12L) // Overdue charge job id
+                                .executionDate(DateUtils.getLocalDateOfTenant()).executionProcess("GAC").entityId(loan.getId())
+                                .entityType("L").entityId(loan.getId()).installmentNr(overdueInstallment.getPeriodNumber())
+                                .startTime(startInstallmentProcessing).endTime(DateUtils.getLocalDateTimeOfTenant())
+                                .status(Objects.isNull(errorMsg) ? "1" : "0").errorMessage(errorMsg).errorLog(errorLog).build();
+
+                        jobLoggerService.logProcessedEntity(dbLogger);
+                    }
+                }
+
+                loanAccountDomainService.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+            }
+
+        } catch (Exception e) {
+            errorMsg = e.getMessage();
+            errorLog = e.getLocalizedMessage();
+
+            throw e;
+        } finally {
+            JobProcessedEntity dbLogger = JobProcessedEntity.builder().jobId(12L) // Overdue charge job id
+                    .executionDate(DateUtils.getLocalDateOfTenant()).executionProcess("GAC").entityId(loan.getId()).entityType("L")
+                    .entityId(loan.getId()).installmentNr(oldestInstallmentNumber).startTime(startInstallmentProcessing)
+                    .endTime(DateUtils.getLocalDateTimeOfTenant()).status(Objects.isNull(errorMsg) ? "1" : "0").errorMessage(errorMsg)
+                    .errorLog(errorLog).build();
+
+            jobLoggerService.logProcessedEntity(dbLogger);
         }
+
     }
 
     private void calculateGACChargeAmouuntPerInstallment(Loan loan, OverdueLoanScheduleData overdueInstallment,
             LoanRepaymentScheduleInstallment installment, boolean singleEntryGACChargeConfig, GacData gd, Charge gacCharge) {
-        List<LoanCharge> existentGACChargesList = loan.getActiveCharges().stream()
-                .filter(gac -> gac.getCharge().getName().equalsIgnoreCase(ChargeCustomType.GAC.getRootName()))
+        List<LoanCharge> existentGACChargesList = loan.getActiveCharges().stream().filter(gac -> gac.getCharge().isGACCharge())
                 .filter(dueDate -> dueDate.getDueDate().isEqual(installment.getDueDate()))
                 .filter(paid -> !paid.isPaidOrPartiallyPaid(loan.getCurrency())).toList();
 

@@ -926,7 +926,7 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean isFeeCharge() {
-        return !this.penaltyCharge;
+        return !this.penaltyCharge && !this.isGACCharge();
     }
 
     public boolean isPenaltyCharge() {
@@ -1658,5 +1658,9 @@ public class LoanCharge extends AbstractAuditableWithUTCDateTimeCustom {
 
         }
         return customAmout;
+    }
+
+    public boolean isGACCharge() {
+        return this.getCharge().isGACCharge();
     }
 }
