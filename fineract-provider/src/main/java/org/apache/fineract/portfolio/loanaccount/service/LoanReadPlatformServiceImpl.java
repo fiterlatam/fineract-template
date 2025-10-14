@@ -2109,7 +2109,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
 
         List<OverdueLoanScheduleData> installments;
         if (Boolean.TRUE.equals(backdatePenalties)) {
-            sqlBuilder.append(" order by ml.id");
+            sqlBuilder.append(" order by ml.id DESC");
             sqlBuilder.append(" limit ").append(pageSize);
             installments = this.jdbcTemplate.query(sqlBuilder.toString(), rm, penaltyWaitPeriod, minLoanId);
         } else {
