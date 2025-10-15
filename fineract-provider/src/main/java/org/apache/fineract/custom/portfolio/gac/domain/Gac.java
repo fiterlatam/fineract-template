@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.custom.portfolio.gac.domain;
 
+import jakarta.persistence.Cacheable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -35,6 +36,7 @@ import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDa
 @Setter
 @Entity
 @NoArgsConstructor
+@Cacheable
 @Table(name = "c_gac", schema = "custom")
 public class Gac extends AbstractAuditableWithUTCDateTimeCustom {
 

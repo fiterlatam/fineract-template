@@ -1059,7 +1059,13 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                     .filter(cd -> cd.getSubmittedOnDate().isEqual(DateUtils.getLocalDateOfTenant())).toList();
         }
 
-        if (!existentGACChargesList.isEmpty() && singleEntryGACChargeConfig) {
+        // recalculate charge for this installment rounded to 2 decimals to compare against persisted one, if any
+        BigDecimal calculatedChargeAmount = installment.getTotalOutstandingWithoutGAC(loan.getCurrency()).getAmount() //
+                .multiply(gd.getPercentageValue()).divide(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
+
+        // Compare existent installment GAC charge with calculated one and remove if different to insert the new one
+        if (!existentGACChargesList.isEmpty() && singleEntryGACChargeConfig
+                && calculatedChargeAmount.compareTo(existentGACChargesList.get(0).chargeAmount()) != 0) {
             for (LoanCharge lc : existentGACChargesList) {
                 log.info("Apply GAC to overdue loans:: Deleting existent GAC charge for Loan: {} with charge amount: {}", loan.getId(),
                         lc.getAmount(loan.getCurrency()));
@@ -1068,11 +1074,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
             }
         }
 
-        // recalculate charge for this installment, rounded to 2 decimals
-        BigDecimal calculatedChargeAmount = installment.getTotalOutstanding(loan.getCurrency()).getAmount()
-                .multiply(gd.getPercentageValue()).divide(BigDecimal.valueOf(100));
-
-        // calculate sum of already generated charges per period, rounded to 2 decimals
+        // Sum up already generated charges per period
         BigDecimal sumOfCurrentCharges = loan.getActiveCharges().stream()
                 .filter(gac -> gac.getCharge().getName().equalsIgnoreCase(ChargeCustomType.GAC.getRootName()))
                 .filter(dt -> dt.getDueDate().isEqual(installment.getDueDate())).map(LoanCharge::getAmountOutstanding)

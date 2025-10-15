@@ -31,12 +31,9 @@ public class JobLoggerServiceImpl implements JobLoggerService {
     @Autowired
     private JobProcessedEntityRepository jobProcessedEntityRepository;
 
-    // Esta é a chave: O Spring inicia uma NOVA transação.
-    // Se a transação chamadora falhar, esta aqui já terá commitado.
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Override
     public void logProcessedEntity(JobProcessedEntity dbLogger) {
-        jobProcessedEntityRepository.save(dbLogger);
-        // O commit da nova transação ocorre imediatamente após este método retornar
+        jobProcessedEntityRepository.saveAndFlush(dbLogger);
     }
 }
