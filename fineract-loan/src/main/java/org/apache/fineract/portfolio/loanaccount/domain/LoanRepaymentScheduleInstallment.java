@@ -520,6 +520,14 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
                 .plus(getPenaltyChargesOutstanding(currency));
     }
 
+    public Money getTotalOutstandingWithoutGAC(final MonetaryCurrency currency) {
+        return getPrincipalOutstanding(currency) //
+                .plus(getInterestOutstanding(currency)) //
+                .plus(getInstallmentCharges().stream().filter(np -> !np.isPaid()).map(LoanInstallmentCharge::getAmountOutstanding) //
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)) //
+                .plus(getPenaltyChargesOutstanding(currency));
+    }
+
     public Money getRediferirAmount(final MonetaryCurrency currency) {
         return getInterestOutstanding(currency).plus(getFeeChargesOutstanding(currency)).plus(getPenaltyChargesOutstanding(currency));
     }
