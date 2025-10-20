@@ -16,21 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.useradministration.service;
+package org.apache.fineract.useradministration.domain;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.useradministration.domain.AppUser;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
 
-public interface AppUserWritePlatformService {
+public interface AppUserDevicesRepository extends JpaRepository<AppUserDevices, Long> {
 
-    CommandProcessingResult createUser(JsonCommand command);
+    @Query("Select appUser from AppUserDevices appUser where appUser.user = :userid")
+    AppUserDevices findAppUserId(@Param("userid") Long userid);
 
-    CommandProcessingResult updateUser(Long userId, JsonCommand command);
-
-    CommandProcessingResult deleteUser(Long userId);
-
-    void logUserAuthenticationDetails(AppUser appUser, HttpServletRequest servletRequest, String action, String result, String username);
+    Collection<AppUserDevices> findByUser(AppUser user);
 }

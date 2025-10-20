@@ -38,6 +38,9 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -116,11 +119,18 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
     @Column(name = "is_self_service_user", nullable = false)
     private boolean isSelfServiceUser;
 
+    @Column(name = "incorrect_access_count", nullable = false)
+    @Getter @Setter
+    private int incorrectAccessCount;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER, mappedBy = "appUser")
     private Set<AppUserClientMapping> appUserClientMappings = new HashSet<>();
 
     @Column(name = "cannot_change_password", nullable = true)
     private Boolean cannotChangePassword;
+
+    @Column(name = "reset_password", nullable = true)
+    private Boolean resetPassword;
 
     public static AppUser fromJson(final Office userOffice, final Staff linkedStaff, final Set<Role> allRoles,
             final Collection<Client> clients, final JsonCommand command) {
@@ -732,5 +742,17 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
     @Override
     public String toString() {
         return "AppUser [username=" + this.username + ", getId()=" + this.getId() + "]";
+    }
+
+    public boolean resetPassword() {
+        return resetPassword;
+    }
+
+    public void updateResetPassword(boolean resetPassword) {
+        this.resetPassword= resetPassword;
+    }
+
+    public void resetIncorrectAccessCount() {
+        this.incorrectAccessCount=0;
     }
 }

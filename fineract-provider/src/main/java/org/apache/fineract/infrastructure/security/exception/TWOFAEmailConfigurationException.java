@@ -16,21 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.useradministration.service;
+package org.apache.fineract.infrastructure.security.exception;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 
-import javax.servlet.http.HttpServletRequest;
+public class TWOFAEmailConfigurationException extends AbstractPlatformDomainRuleException {
 
-public interface AppUserWritePlatformService {
-
-    CommandProcessingResult createUser(JsonCommand command);
-
-    CommandProcessingResult updateUser(Long userId, JsonCommand command);
-
-    CommandProcessingResult deleteUser(Long userId);
-
-    void logUserAuthenticationDetails(AppUser appUser, HttpServletRequest servletRequest, String action, String result, String username);
+    public TWOFAEmailConfigurationException(String username) {
+        super("error.msg.email.not.configured", "The email for user " + username + " is not setup.", username);
+    }
 }

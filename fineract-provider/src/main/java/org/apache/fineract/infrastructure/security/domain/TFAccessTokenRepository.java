@@ -23,9 +23,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import java.util.List;
+
 @ConditionalOnProperty("fineract.security.2fa.enabled")
 public interface TFAccessTokenRepository extends JpaRepository<TFAccessToken, Long>, JpaSpecificationExecutor<TFAccessToken> {
 
     TFAccessToken findByUserAndToken(AppUser user, String token);
+
+    List<TFAccessToken> findByUser(AppUser user);
 
 }
