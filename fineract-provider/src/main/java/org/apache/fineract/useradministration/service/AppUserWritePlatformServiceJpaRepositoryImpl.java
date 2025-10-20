@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.useradministration.service;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import java.util.Collection;
@@ -26,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.persistence.PersistenceException;
+import javax.servlet.http.HttpServletRequest;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -61,6 +65,7 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.stereotype.Service;
@@ -82,6 +87,7 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
     private final AppUserPreviousPasswordRepository appUserPreviewPasswordRepository;
     private final StaffRepositoryWrapper staffRepositoryWrapper;
     private final ClientRepositoryWrapper clientRepositoryWrapper;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
@@ -280,6 +286,30 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
         this.appUserRepository.save(user);
 
         return new CommandProcessingResultBuilder().withEntityId(userId).withOfficeId(user.getOffice().getId()).build();
+    }
+
+    @Override
+    public void logUserAuthenticationDetails(AppUser appUser, HttpServletRequest servletRequest, String action, String result, String username) {
+        if (appUser==null){
+            appUser = this.appUserRepository.findAppUserByName(username);
+        }
+        String clientIp = "Unknown IP Address";
+        if (servletRequest != null) {
+            clientIp = servletRequest.getHeader("X-Forwarded-For");
+            if (clientIp == null || clientIp.isEmpty()) {
+                clientIp = servletRequest.getRemoteAddr();
+            } else {
+                // The X-Forwarded-For header can contain multiple IP addresses, in case of proxies.
+                // The first IP in the list is the original client.
+                clientIp = Iterables.get(Splitter.on(',').split(clientIp), 0);
+                ;
+            }
+        }
+        Long userId = appUser.getId();
+        this.jdbcTemplate.update("insert into m_portfolio_command_source "
+                        + "(action_name,entity_name,office_id,api_get_url,command_as_json,resource_id,maker_id,made_on_date,processing_result_enum) "
+                        + "values(?, ?,?,?,?,?,?,current_timestamp ,1) ", action, "AUTHENTICATION", appUser.getOffice().getId(),
+                "/authenticate", "{ipAddress:\"" + clientIp + "\", result: \""+result+"\"}", userId, userId);
     }
 
     /*

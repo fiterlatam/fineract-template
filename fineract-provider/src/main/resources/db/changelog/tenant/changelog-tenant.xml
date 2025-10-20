@@ -171,4 +171,5 @@
     <include file="parts/0145-FBR-1.2.1_MAINTAIN_LOAN_TOPUP_DATAILS_ON_TRANSACTIONS.xml" relativeToChangelogFile="true"/>
     <include file="parts/0146-FBR-1.2.1_MAINTAIN_RESCTURE_REQUEST_ID_LOAN.xml" relativeToChangelogFile="true"/>
     <include file="parts/0147-FBR-1.2.1_ACCOUNTING_CLOSURE_OFFICE_HIERARCHY.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0148-FBR_ADD_2FA_CONFIGURATIONS.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

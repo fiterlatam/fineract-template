@@ -16,21 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.useradministration.service;
+package org.apache.fineract.useradministration.exception;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-import javax.servlet.http.HttpServletRequest;
+/**
+ * A {@link RuntimeException} thrown when user resources are not found.
+ */
+public class UserAccountErrorException extends AbstractPlatformResourceNotFoundException {
 
-public interface AppUserWritePlatformService {
-
-    CommandProcessingResult createUser(JsonCommand command);
-
-    CommandProcessingResult updateUser(Long userId, JsonCommand command);
-
-    CommandProcessingResult deleteUser(Long userId);
-
-    void logUserAuthenticationDetails(AppUser appUser, HttpServletRequest servletRequest, String action, String result, String username);
+    public UserAccountErrorException(final String action, final String username) {
+        super("error.msg.user."+action, "User " + username + " is "+action, username);
+    }
 }

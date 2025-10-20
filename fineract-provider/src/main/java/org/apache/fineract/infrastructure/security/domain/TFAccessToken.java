@@ -118,7 +118,8 @@ public class TFAccessToken extends AbstractPersistableCustom {
     }
 
     private boolean isDateInTheFuture(LocalDateTime dateTime) {
-        return dateTime.isAfter(DateUtils.getLocalDateTimeOfTenant());
+        LocalDateTime localDateTimeOfTenant = DateUtils.getLocalDateTimeOfTenant();
+        return dateTime.isAfter(localDateTimeOfTenant);
     }
 
     private boolean isDateInThePast(LocalDateTime dateTime) {

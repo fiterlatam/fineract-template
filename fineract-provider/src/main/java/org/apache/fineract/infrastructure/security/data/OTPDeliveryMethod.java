@@ -22,10 +22,12 @@ public class OTPDeliveryMethod {
 
     private final String name;
     private final String target;
+    private final String trustPeriod;
 
-    public OTPDeliveryMethod(String name, String target) {
+    public OTPDeliveryMethod(String name, String target, String trustPeriod) {
         this.name = name;
         this.target = target;
+        this.trustPeriod = trustPeriod;
     }
 
     public String getName() {
