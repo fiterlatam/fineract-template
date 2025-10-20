@@ -53,5 +53,7 @@ public interface TwoFactorConfigurationService {
 
     Integer getAccessTokenExtendedLiveTime();
 
+    Integer getMaximumUserDevices();
+
     Map<String, Object> update(JsonCommand command);
 }

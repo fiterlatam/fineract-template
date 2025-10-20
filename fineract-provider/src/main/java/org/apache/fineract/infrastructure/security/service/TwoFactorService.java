@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.security.service;
 
 import java.util.List;
+
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.security.data.OTPDeliveryMethod;
 import org.apache.fineract.infrastructure.security.data.OTPRequest;
@@ -39,4 +40,11 @@ public interface TwoFactorService {
 
     TFAccessToken invalidateAccessToken(AppUser user, JsonCommand command);
 
+    void updateRegisteredDevices(AppUser user, String fingerprint);
+
+    AppUser requestPasswordReset(String username);
+
+    AppUser completePasswordReset(String username, String otp, Boolean logoutDevices, PlatformPasswordEncoder platformPasswordEncoder);
+
+    AppUser selfResetUserPassword(Long userId, String requestData, PlatformPasswordEncoder platformPasswordEncoder);
 }

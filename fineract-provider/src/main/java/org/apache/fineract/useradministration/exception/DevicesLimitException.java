@@ -16,21 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.useradministration.service;
+package org.apache.fineract.useradministration.exception;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-import javax.servlet.http.HttpServletRequest;
+/**
+ * A {@link RuntimeException} thrown when user resources are not found.
+ */
+public class DevicesLimitException extends AbstractPlatformResourceNotFoundException {
 
-public interface AppUserWritePlatformService {
+    public DevicesLimitException(final Long id, final long limit) {
+        super("error.msg.user.devices.limit.exceeded", "User with ID " + id + " has exceeded the set devices limit", id, limit);
+    }
 
-    CommandProcessingResult createUser(JsonCommand command);
-
-    CommandProcessingResult updateUser(Long userId, JsonCommand command);
-
-    CommandProcessingResult deleteUser(Long userId);
-
-    void logUserAuthenticationDetails(AppUser appUser, HttpServletRequest servletRequest, String action, String result, String username);
+    public DevicesLimitException(final String userName, final long limit) {
+        super("error.msg.user.devices.limit.exceeded", "User with name '" + userName + "' Has exceeded the set devices limit", userName, limit);
+    }
 }
