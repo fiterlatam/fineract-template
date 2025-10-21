@@ -429,4 +429,5 @@
     <include file="parts/20251010200200_EA_196_m_configuration_skipprocessedoverdueloans.xml" relativeToChangelogFile="true"/>
     <include file="parts/20251010200300_EA_196_m_loan_payment_allocation_rule_insert_gac.xml" relativeToChangelogFile="true"/>
     <include file="parts/20251010200400_EA_196_m_loan_product_payment_allocation_rule_gac.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20251020000100_EA_287_m_loan_product_microcreditob2.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
