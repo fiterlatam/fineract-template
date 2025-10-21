@@ -16,25 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.security.data;
+package org.apache.fineract.infrastructure.security.exception;
 
-public class OTPDeliveryMethod {
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 
-    private final String name;
-    private final String target;
-    private final String trustPeriod;
+public class TWOFAEmailConfigurationException extends AbstractPlatformDomainRuleException {
 
-    public OTPDeliveryMethod(String name, String target, String trustPeriod) {
-        this.name = name;
-        this.target = target;
-        this.trustPeriod = trustPeriod;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getTarget() {
-        return target;
+    public TWOFAEmailConfigurationException(String username) {
+        super("error.msg.email.not.configured", "The email for user " + username + " is not setup.", username);
     }
 }

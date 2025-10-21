@@ -219,6 +219,17 @@ public class TwoFactorConfigurationServiceImpl implements TwoFactorConfiguration
         return value;
     }
 
+    @Override
+    public Integer getMaximumUserDevices() {
+        Integer defaultValue = 10;
+        Integer value = getIntegerConfig("token-device-limit-configuration", defaultValue);
+        if (value < 1) {
+            return defaultValue;
+        }
+        return value;
+
+    }
+
     private boolean getBooleanConfig(final String name, final boolean defaultValue) {
         final TwoFactorConfiguration configuration = configurationRepository.findByName(name);
         Boolean value = configuration.getBooleanValue();

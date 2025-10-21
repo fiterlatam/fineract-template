@@ -18,8 +18,10 @@
  */
 package org.apache.fineract.useradministration.service;
 
+import javax.servlet.http.HttpServletRequest;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.useradministration.domain.AppUser;
 
 public interface AppUserWritePlatformService {
 
@@ -28,4 +30,6 @@ public interface AppUserWritePlatformService {
     CommandProcessingResult updateUser(Long userId, JsonCommand command);
 
     CommandProcessingResult deleteUser(Long userId);
+
+    void logUserAuthenticationDetails(AppUser appUser, HttpServletRequest servletRequest, String action, String result, String username);
 }

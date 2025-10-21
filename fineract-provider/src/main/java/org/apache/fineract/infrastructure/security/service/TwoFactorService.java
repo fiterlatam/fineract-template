@@ -39,4 +39,11 @@ public interface TwoFactorService {
 
     TFAccessToken invalidateAccessToken(AppUser user, JsonCommand command);
 
+    void updateRegisteredDevices(AppUser user, String fingerprint);
+
+    AppUser requestPasswordReset(String username);
+
+    AppUser completePasswordReset(String username, String otp, Boolean logoutDevices, PlatformPasswordEncoder platformPasswordEncoder);
+
+    AppUser selfResetUserPassword(Long userId, String requestData, PlatformPasswordEncoder platformPasswordEncoder);
 }

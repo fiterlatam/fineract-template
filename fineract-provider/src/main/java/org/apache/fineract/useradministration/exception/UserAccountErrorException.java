@@ -16,25 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.security.data;
+package org.apache.fineract.useradministration.exception;
 
-public class OTPDeliveryMethod {
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-    private final String name;
-    private final String target;
-    private final String trustPeriod;
+/**
+ * A {@link RuntimeException} thrown when user resources are not found.
+ */
+public class UserAccountErrorException extends AbstractPlatformResourceNotFoundException {
 
-    public OTPDeliveryMethod(String name, String target, String trustPeriod) {
-        this.name = name;
-        this.target = target;
-        this.trustPeriod = trustPeriod;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getTarget() {
-        return target;
+    public UserAccountErrorException(final String action, final String username) {
+        super("error.msg.user." + action, "User " + username + " is " + action, username);
     }
 }

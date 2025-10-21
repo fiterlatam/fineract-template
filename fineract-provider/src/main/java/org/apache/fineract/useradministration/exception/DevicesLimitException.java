@@ -16,25 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.security.data;
+package org.apache.fineract.useradministration.exception;
 
-public class OTPDeliveryMethod {
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-    private final String name;
-    private final String target;
-    private final String trustPeriod;
+/**
+ * A {@link RuntimeException} thrown when user resources are not found.
+ */
+public class DevicesLimitException extends AbstractPlatformResourceNotFoundException {
 
-    public OTPDeliveryMethod(String name, String target, String trustPeriod) {
-        this.name = name;
-        this.target = target;
-        this.trustPeriod = trustPeriod;
+    public DevicesLimitException(final Long id, final long limit) {
+        super("error.msg.user.devices.limit.exceeded", "User with ID " + id + " has exceeded the set devices limit", id, limit);
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getTarget() {
-        return target;
+    public DevicesLimitException(final String userName, final long limit) {
+        super("error.msg.user.devices.limit.exceeded", "User with name '" + userName + "' Has exceeded the set devices limit", userName,
+                limit);
     }
 }

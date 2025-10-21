@@ -16,25 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.security.data;
+package org.apache.fineract.useradministration.domain;
 
-public class OTPDeliveryMethod {
+import java.util.Collection;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-    private final String name;
-    private final String target;
-    private final String trustPeriod;
+public interface AppUserDevicesRepository extends JpaRepository<AppUserDevices, Long> {
 
-    public OTPDeliveryMethod(String name, String target, String trustPeriod) {
-        this.name = name;
-        this.target = target;
-        this.trustPeriod = trustPeriod;
-    }
+    @Query("Select appUser from AppUserDevices appUser where appUser.user = :userid")
+    AppUserDevices findAppUserId(@Param("userid") Long userid);
 
-    public String getName() {
-        return name;
-    }
-
-    public String getTarget() {
-        return target;
-    }
+    Collection<AppUserDevices> findByUser(AppUser user);
 }
