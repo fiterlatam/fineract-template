@@ -26,6 +26,6 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourc
 public class UserAccountErrorException extends AbstractPlatformResourceNotFoundException {
 
     public UserAccountErrorException(final String action, final String username) {
-        super("error.msg.user."+action, "User " + username + " is "+action, username);
+        super("error.msg.user." + action, "User " + username + " is " + action, username);
     }
 }

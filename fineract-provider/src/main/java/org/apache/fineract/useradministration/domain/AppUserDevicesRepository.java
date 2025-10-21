@@ -18,11 +18,10 @@
  */
 package org.apache.fineract.useradministration.domain;
 
+import java.util.Collection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import java.util.Collection;
 
 public interface AppUserDevicesRepository extends JpaRepository<AppUserDevices, Long> {
 

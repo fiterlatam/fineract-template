@@ -44,7 +44,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -108,12 +107,11 @@ public class AuthenticationApiResource {
             @Qualifier("customAuthenticationProvider") final DaoAuthenticationProvider customAuthenticationProvider,
             final ToApiJsonSerializer<AuthenticatedUserData> apiJsonSerializerService,
             final SpringSecurityPlatformSecurityContext springSecurityPlatformSecurityContext,
-            ClientReadPlatformService aClientReadPlatformService,TwoFactorService twoFactorService,
+            ClientReadPlatformService aClientReadPlatformService, TwoFactorService twoFactorService,
             DefaultToApiJsonSerializer<Map<String, Object>> toApiJsonSerializer,
             PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-            final PlatformPasswordEncoder platformPasswordEncoder,final JdbcTemplate jdbcTemplate,
-            final AppUserWritePlatformService appUserWritePlatformService
-    ) {
+            final PlatformPasswordEncoder platformPasswordEncoder, final JdbcTemplate jdbcTemplate,
+            final AppUserWritePlatformService appUserWritePlatformService) {
         this.customAuthenticationProvider = customAuthenticationProvider;
         this.apiJsonSerializerService = apiJsonSerializerService;
         this.springSecurityPlatformSecurityContext = springSecurityPlatformSecurityContext;
@@ -135,7 +133,7 @@ public class AuthenticationApiResource {
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = AuthenticationApiResourceSwagger.PostAuthenticationResponse.class))),
             @ApiResponse(responseCode = "400", description = "Unauthenticated. Please login") })
     public String authenticate(@Parameter(hidden = true) final String apiRequestBodyAsJson,
-            @QueryParam("returnClientList") @DefaultValue("false") boolean returnClientList,@Context HttpServletRequest servletRequest) {
+            @QueryParam("returnClientList") @DefaultValue("false") boolean returnClientList, @Context HttpServletRequest servletRequest) {
         // TODO FINERACT-819: sort out Jersey so JSON conversion does not have
         // to be done explicitly via GSON here, but implicit by arg
         AuthenticateRequest request = new Gson().fromJson(apiRequestBodyAsJson, AuthenticateRequest.class);
@@ -153,28 +151,26 @@ public class AuthenticationApiResource {
         try {
             authenticationCheck = this.customAuthenticationProvider.authenticate(authentication);
         } catch (Exception e) {
-            //log the failed login attempt
+            // log the failed login attempt
             if (e instanceof BadCredentialsException) {
                 this.jdbcTemplate.update("""
-                                UPDATE m_appuser
-                                SET 
-                                    incorrect_access_count = COALESCE(incorrect_access_count, 0) + 1, 
-                                    nonlocked = CASE 
-                                        WHEN COALESCE(incorrect_access_count, 0) + 1 >= 4 THEN FALSE 
-                                        ELSE nonlocked 
-                                    END 
-                                WHERE username = ?; 
-                                """,
-                        request.username);
-                throw new BadCredentialsException("Authentication failed for user: " + request.username+": "+e.getMessage());
+                        UPDATE m_appuser
+                        SET
+                            incorrect_access_count = COALESCE(incorrect_access_count, 0) + 1,
+                            nonlocked = CASE
+                                WHEN COALESCE(incorrect_access_count, 0) + 1 >= 4 THEN FALSE
+                                ELSE nonlocked
+                            END
+                        WHERE username = ?;
+                        """, request.username);
+                throw new BadCredentialsException("Authentication failed for user: " + request.username + ": " + e.getMessage());
             }
-               //log the failed login attempt
+            // log the failed login attempt
             if (e instanceof LockedException) {
-                throw new UserAccountErrorException("locked",request.username);
+                throw new UserAccountErrorException("locked", request.username);
             }
             throw e;
         }
-
 
         final Collection<String> permissions = new ArrayList<>();
         AuthenticatedUserData authenticatedUserData = new AuthenticatedUserData(request.username, permissions);
@@ -220,7 +216,8 @@ public class AuthenticationApiResource {
                         new String(base64EncodedAuthenticationKey, StandardCharsets.UTF_8), isTwoFactorRequired,
                         returnClientList ? clientReadPlatformService.retrieveUserClients(userId) : null);
             }
-            this.appUserWritePlatformService.logUserAuthenticationDetails(principal, servletRequest,"LOGIN", "Successful Login", principal.getUsername());
+            this.appUserWritePlatformService.logUserAuthenticationDetails(principal, servletRequest, "LOGIN", "Successful Login",
+                    principal.getUsername());
         }
 
         return this.apiJsonSerializerService.serialize(authenticatedUserData);
@@ -229,29 +226,29 @@ public class AuthenticationApiResource {
     @Path("resetaccount")
     @POST
     @Produces({ MediaType.APPLICATION_JSON })
-    public String resetUserAccount(@QueryParam("command") final String command,@QueryParam("logoutDevices") @DefaultValue(value = "false") final Boolean logoutDevices,
-                               @QueryParam("username") String username, @QueryParam("otp") String otp) {
+    public String resetUserAccount(@QueryParam("command") final String command,
+            @QueryParam("logoutDevices") @DefaultValue(value = "false") final Boolean logoutDevices,
+            @QueryParam("username") String username, @QueryParam("otp") String otp) {
         if (command.equalsIgnoreCase("requestPasswordReset")) {
             this.twoFactorService.requestPasswordReset(username);
         } else if (command.equalsIgnoreCase("resetPassword")) {
-            this.twoFactorService.completePasswordReset(username, otp,logoutDevices,platformPasswordEncoder);
+            this.twoFactorService.completePasswordReset(username, otp, logoutDevices, platformPasswordEncoder);
         } else {
             throw new IllegalArgumentException("The command " + command + " is not supported.");
 
         }
 
-        return this.toApiJsonSerializer.serialize(new AuthenticatedUserData(username,null));
+        return this.toApiJsonSerializer.serialize(new AuthenticatedUserData(username, null));
     }
-
 
     @PUT
     @Path("{userId}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String update(@PathParam("userId") @Parameter(description = "userId") final Long userId,
-                         @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
         AppUser appUser = this.twoFactorService.selfResetUserPassword(userId, apiRequestBodyAsJson, platformPasswordEncoder);
-        AuthenticatedUserData authenticatedUserData = new AuthenticatedUserData(appUser.getUsername(),null);
+        AuthenticatedUserData authenticatedUserData = new AuthenticatedUserData(appUser.getUsername(), null);
         return this.toApiJsonSerializer.serialize(authenticatedUserData);
     }
 
@@ -259,8 +256,9 @@ public class AuthenticationApiResource {
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public String processLogout(final String apiRequestBodyAsJson,@QueryParam("username") String username, @Context HttpServletRequest servletRequest) {
-        this.appUserWritePlatformService.logUserAuthenticationDetails(null,servletRequest,"LOGOUT","Successful Logout", username);
+    public String processLogout(final String apiRequestBodyAsJson, @QueryParam("username") String username,
+            @Context HttpServletRequest servletRequest) {
+        this.appUserWritePlatformService.logUserAuthenticationDetails(null, servletRequest, "LOGOUT", "Successful Logout", username);
         return this.apiJsonSerializerService.serialize("");
     }
 }
