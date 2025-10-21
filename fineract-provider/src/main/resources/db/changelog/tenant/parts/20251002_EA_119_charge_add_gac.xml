@@ -36,7 +36,7 @@
 
                 INSERT INTO m_charge
                 ("name", currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, is_free_withdrawal, free_withdrawal_charge_frequency, restart_frequency, restart_frequency_enum, is_payment_type, payment_type_id, income_or_liability_account_id, tax_group_id, grace_on_charge_period_enum, grace_on_charge_period_amount, parent_charge_id, interest_rate_id, insurance_name, insurance_charged_as, insurance_company, insurer_name, insurance_code, insurance_plan, base_value, vat_value, total_value, deadline, is_get_percentage_from_table, days_in_arrears, tmp_name)
-                VALUES('GAC', 'COP', 1, 2, 1030, 0, 1.00000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, false, 0, 0, 0, false, NULL, 5, NULL, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, 'GAC');
+                VALUES('GAC', 'COP', 1, 2, 1030, 0, 1.00000000, NULL, NULL, NULL, false, true, false, NULL, NULL, NULL, false, 0, 0, 0, false, NULL, NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, 'GAC');
             ]]>
         </sql>
     </changeSet>
