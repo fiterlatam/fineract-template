@@ -30,6 +30,7 @@ public class DevicesLimitException extends AbstractPlatformResourceNotFoundExcep
     }
 
     public DevicesLimitException(final String userName, final long limit) {
-        super("error.msg.user.devices.limit.exceeded", "User with name '" + userName + "' Has exceeded the set devices limit", userName, limit);
+        super("error.msg.user.devices.limit.exceeded", "User with name '" + userName + "' Has exceeded the set devices limit", userName,
+                limit);
     }
 }

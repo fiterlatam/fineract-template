@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.persistence.PersistenceException;
 import javax.servlet.http.HttpServletRequest;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -289,8 +288,9 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
     }
 
     @Override
-    public void logUserAuthenticationDetails(AppUser appUser, HttpServletRequest servletRequest, String action, String result, String username) {
-        if (appUser==null){
+    public void logUserAuthenticationDetails(AppUser appUser, HttpServletRequest servletRequest, String action, String result,
+            String username) {
+        if (appUser == null) {
             appUser = this.appUserRepository.findAppUserByName(username);
         }
         String clientIp = "Unknown IP Address";
@@ -307,9 +307,9 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
         }
         Long userId = appUser.getId();
         this.jdbcTemplate.update("insert into m_portfolio_command_source "
-                        + "(action_name,entity_name,office_id,api_get_url,command_as_json,resource_id,maker_id,made_on_date,processing_result_enum) "
-                        + "values(?, ?,?,?,?,?,?,current_timestamp ,1) ", action, "AUTHENTICATION", appUser.getOffice().getId(),
-                "/authenticate", "{ipAddress:\"" + clientIp + "\", result: \""+result+"\"}", userId, userId);
+                + "(action_name,entity_name,office_id,api_get_url,command_as_json,resource_id,maker_id,made_on_date,processing_result_enum) "
+                + "values(?, ?,?,?,?,?,?,current_timestamp ,1) ", action, "AUTHENTICATION", appUser.getOffice().getId(), "/authenticate",
+                "{ipAddress:\"" + clientIp + "\", result: \"" + result + "\"}", userId, userId);
     }
 
     /*

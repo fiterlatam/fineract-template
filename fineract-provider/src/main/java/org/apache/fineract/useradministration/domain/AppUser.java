@@ -38,7 +38,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -120,7 +119,8 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
     private boolean isSelfServiceUser;
 
     @Column(name = "incorrect_access_count", nullable = false)
-    @Getter @Setter
+    @Getter
+    @Setter
     private int incorrectAccessCount;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER, mappedBy = "appUser")
@@ -749,10 +749,10 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
     }
 
     public void updateResetPassword(boolean resetPassword) {
-        this.resetPassword= resetPassword;
+        this.resetPassword = resetPassword;
     }
 
     public void resetIncorrectAccessCount() {
-        this.incorrectAccessCount=0;
+        this.incorrectAccessCount = 0;
     }
 }

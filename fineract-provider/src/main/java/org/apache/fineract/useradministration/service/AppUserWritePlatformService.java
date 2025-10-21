@@ -18,11 +18,10 @@
  */
 package org.apache.fineract.useradministration.service;
 
+import javax.servlet.http.HttpServletRequest;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.useradministration.domain.AppUser;
-
-import javax.servlet.http.HttpServletRequest;
 
 public interface AppUserWritePlatformService {
 

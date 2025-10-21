@@ -18,14 +18,13 @@
  */
 package org.apache.fineract.infrastructure.security.service;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.EmailDetail;
@@ -80,9 +79,8 @@ public class TwoFactorServiceImpl implements TwoFactorService {
     public TwoFactorServiceImpl(AccessTokenGenerationService accessTokenGenerationService, PlatformEmailService emailService,
             SmsMessageScheduledJobService smsMessageScheduledJobService, OTPRequestRepository otpRequestRepository,
             TFAccessTokenRepository tfAccessTokenRepository, SmsMessageRepository smsMessageRepository,
-            TwoFactorConfigurationService configurationService,final AppUserDevicesRepository appUserDevicesRepository,
-            AppUserRepository appUserRepository,FromJsonHelper fromApiJsonHelper,
-            JdbcTemplate jdbcTemplate) {
+            TwoFactorConfigurationService configurationService, final AppUserDevicesRepository appUserDevicesRepository,
+            AppUserRepository appUserRepository, FromJsonHelper fromApiJsonHelper, JdbcTemplate jdbcTemplate) {
         this.accessTokenGenerationService = accessTokenGenerationService;
         this.emailService = emailService;
         this.smsMessageScheduledJobService = smsMessageScheduledJobService;
@@ -203,8 +201,7 @@ public class TwoFactorServiceImpl implements TwoFactorService {
         }
 
         Collection<AppUserDevices> existingDevices = appUserDevicesRepository.findByUser(user);
-        boolean deviceExists = existingDevices.stream().anyMatch(device ->
-                fingerprint.equals(device.getDeviceId()));
+        boolean deviceExists = existingDevices.stream().anyMatch(device -> fingerprint.equals(device.getDeviceId()));
         if (existingDevices.size() >= 5 && !deviceExists) {
             throw new DevicesLimitException(user.getUsername(), configurationService.getMaximumUserDevices());
         }
@@ -226,7 +223,8 @@ public class TwoFactorServiceImpl implements TwoFactorService {
     }
 
     @Override
-    public AppUser completePasswordReset(String username, String otp, Boolean logoutDevices, PlatformPasswordEncoder platformPasswordEncoder) {
+    public AppUser completePasswordReset(String username, String otp, Boolean logoutDevices,
+            PlatformPasswordEncoder platformPasswordEncoder) {
         AppUser appUser = this.appUserRepository.findAppUserByName(username);
         if (appUser == null) {
             throw new UsernameNotFoundException(username);
@@ -241,22 +239,22 @@ public class TwoFactorServiceImpl implements TwoFactorService {
         final PlatformUser dummyPlatformUser = new BasicPasswordEncodablePlatformUser(appUser.getId(), "", newPassword);
         String encodedPass = platformPasswordEncoder.encode(dummyPlatformUser);
 
-        this.jdbcTemplate.update("UPDATE m_appuser SET reset_password = ?, password=?, nonlocked=true WHERE id = ?",
-                true, encodedPass, appUser.getId());
+        this.jdbcTemplate.update("UPDATE m_appuser SET reset_password = ?, password=?, nonlocked=true WHERE id = ?", true, encodedPass,
+                appUser.getId());
 
         final String emailSubject = "Password Reset Successful";
         final String emailBody = "Your password has been reset. Your new password is: " + newPassword;
-        final EmailDetail emailData = new EmailDetail(emailSubject, emailBody,
-                appUser.getEmail(), appUser.getFirstname() + " " + appUser.getLastname());
+        final EmailDetail emailData = new EmailDetail(emailSubject, emailBody, appUser.getEmail(),
+                appUser.getFirstname() + " " + appUser.getLastname());
         emailService.sendDefinedEmail(emailData);
 
-        if (logoutDevices){
+        if (logoutDevices) {
             this.appUserDevicesRepository.findByUser(appUser).forEach(device -> {
                 this.appUserDevicesRepository.delete(device);
             });
         }
         List<TFAccessToken> tfAccessTokens = this.tfAccessTokenRepository.findByUser(appUser);
-        tfAccessTokens.forEach(token-> {
+        tfAccessTokens.forEach(token -> {
             this.tfAccessTokenRepository.delete(token);
         });
 
@@ -274,10 +272,9 @@ public class TwoFactorServiceImpl implements TwoFactorService {
             String password = this.fromApiJsonHelper.extractStringNamed("password", jsonElement);
             String passwordRepeat = this.fromApiJsonHelper.extractStringNamed("repeatPassword", jsonElement);
             final String jsonCommand = asJsonObject.toString();
-            final JsonCommand command = JsonCommand.from(jsonCommand, asJsonObject, this.fromApiJsonHelper, null, userId, null,
-                    null, null, null, null, null, null, null, null, null);
-            final String passwordEncodedValue = command.passwordValueOfParameterNamed("password",platformPasswordEncoder ,
-                    appUser.getId());
+            final JsonCommand command = JsonCommand.from(jsonCommand, asJsonObject, this.fromApiJsonHelper, null, userId, null, null, null,
+                    null, null, null, null, null, null, null);
+            final String passwordEncodedValue = command.passwordValueOfParameterNamed("password", platformPasswordEncoder, appUser.getId());
             appUser.updatePassword(passwordEncodedValue);
             appUser.updateResetPassword(false);
             this.appUserRepository.save(appUser);
@@ -309,7 +306,7 @@ public class TwoFactorServiceImpl implements TwoFactorService {
             return null;
         }
 
-        int accessTokenExtendedLiveTime = (this.configurationService.getAccessTokenExtendedLiveTime()/86400);
+        int accessTokenExtendedLiveTime = (this.configurationService.getAccessTokenExtendedLiveTime() / 86400);
         return new OTPDeliveryMethod(TwoFactorConstants.SMS_DELIVERY_METHOD_NAME, mobileNo, Integer.toString(accessTokenExtendedLiveTime));
     }
 
@@ -317,8 +314,9 @@ public class TwoFactorServiceImpl implements TwoFactorService {
         if (!configurationService.isEmailEnabled()) {
             return null;
         }
-        int accessTokenExtendedLiveTime = (this.configurationService.getAccessTokenExtendedLiveTime()/86400);
-        return new OTPDeliveryMethod(TwoFactorConstants.EMAIL_DELIVERY_METHOD_NAME, user.getEmail(), Integer.toString(accessTokenExtendedLiveTime));
+        int accessTokenExtendedLiveTime = (this.configurationService.getAccessTokenExtendedLiveTime() / 86400);
+        return new OTPDeliveryMethod(TwoFactorConstants.EMAIL_DELIVERY_METHOD_NAME, user.getEmail(),
+                Integer.toString(accessTokenExtendedLiveTime));
     }
 
     private OTPRequest generateNewToken(final OTPDeliveryMethod deliveryMethod, final boolean extendedAccessToken) {
