@@ -64,7 +64,7 @@
 
                 INSERT INTO m_charge
                 ("name", currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, is_free_withdrawal, free_withdrawal_charge_frequency, restart_frequency, restart_frequency_enum, is_payment_type, payment_type_id, income_or_liability_account_id, tax_group_id, grace_on_charge_period_enum, grace_on_charge_period_amount, parent_charge_id, interest_rate_id, insurance_name, insurance_charged_as, insurance_company, insurer_name, insurance_code, insurance_plan, base_value, vat_value, total_value, deadline, is_get_percentage_from_table, days_in_arrears, tmp_name)
-                VALUES('Mora diaria crédito rotativo productivo', 'COP', 1, 9, 829, 0, 0.00100000, NULL, 1, NULL, true, true, false, NULL, NULL, 0, false, NULL, NULL, NULL, false, NULL, 3, NULL, 1, 0, 0, (select id from m_interest_rate where "name" = 'Mora Crédito rotativo productivo'), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, 'Mora diaria crédito rotativo productivo');
+                VALUES('Mora diaria crédito rotativo productivo', 'COP', 1, 9, 829, 0, 0.00100000, NULL, 1, NULL, true, true, false, NULL, NULL, 0, false, NULL, NULL, NULL, false, NULL, (select id from acc_gl_account where gl_code = '1690952003'), NULL, 1, 0, 0, (select id from m_interest_rate where "name" = 'Mora Crédito rotativo productivo'), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, 'Mora diaria crédito rotativo productivo');
 
                 -- Grant permission to channels
                 INSERT INTO m_loan_product_channel (loan_product_id, channel_id)
@@ -287,6 +287,20 @@
                 SELECT g.id, p.id, 1, NULL, NULL, 11
                 FROM acc_gl_account g, m_product_loan p
                 WHERE g.id = 9 AND p.short_name = 'ROTP';
+            ]]>
+        </sql>
+    </changeSet>
+
+
+    <changeSet id="20" author="fiter">
+        <sql>
+            <![CDATA[
+                -- Update min days between disbursement and first repaymenent
+                update m_product_loan set
+                    min_days_between_disbursal_and_first_repayment = 45
+                where
+                 short_name = 'ROTP';
+
             ]]>
         </sql>
     </changeSet>
