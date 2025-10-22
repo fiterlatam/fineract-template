@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="10" author="fiter">
+        <sql>
+            <![CDATA[
+                -- Remove older references if any
+                update m_loan set
+                product_id = (select id from m_product_loan mpl where short_name = 'ROTA')
+                , loan_status_id = 600
+                where
+                product_id = (select id from m_product_loan mpl where short_name = 'ROTP');
+
+                delete from acc_product_mapping where product_id = (select id from m_product_loan mpl where short_name = 'ROTP');
+                delete from m_product_loan_configurable_attributes where loan_product_id = (select id from m_product_loan mpl where short_name = 'ROTP');
+                delete from m_product_loan_charge where product_loan_id = (select id from m_product_loan mpl where short_name = 'ROTP');
+                delete from m_loan_product_payment_allocation_rule where loan_product_id = (select id from m_product_loan mpl where short_name = 'ROTP');
+                delete from m_loan_product_channel where loan_product_id = (select id from m_product_loan mpl where short_name = 'ROTP');
+                delete from m_product_loan where id = (select id from m_product_loan mpl where short_name = 'ROTP');
+                delete from m_interest_rate where "name" = 'IC Credito Rotativo Productivo';
+                delete from m_interest_rate where "name" = 'Mora Crédito rotativo productivo';
+                delete from m_charge where "name" = 'Mora diaria crédito rotativo productivo';
+
+
+                -- Insert loan product
+                INSERT INTO m_product_loan
+                (short_name, currency_code, currency_digits, currency_multiplesof, principal_amount, min_principal_amount, max_principal_amount, arrearstolerance_amount, "name", description, fund_id, is_linked_to_floating_interest_rates, allow_variabe_installments, nominal_interest_rate_per_period, min_nominal_interest_rate_per_period, max_nominal_interest_rate_per_period, interest_period_frequency_enum, annual_nominal_interest_rate, interest_method_enum, interest_calculated_in_period_enum, allow_partial_period_interest_calcualtion, repay_every, repayment_period_frequency_enum, number_of_repayments, min_number_of_repayments, max_number_of_repayments, grace_on_principal_periods, recurring_moratorium_principal_periods, grace_on_interest_periods, grace_interest_free_periods, amortization_method_enum, accounting_type, loan_transaction_strategy_id, external_id, include_in_borrower_cycle, use_borrower_cycle, start_date, close_date, allow_multiple_disbursals, max_disbursals, max_outstanding_loan_balance, grace_on_arrears_ageing, overdue_days_for_npa, days_in_month_enum, days_in_year_enum, interest_recalculation_enabled, min_days_between_disbursal_and_first_repayment, hold_guarantee_funds, principal_threshold_for_last_installment, account_moves_out_of_npa_only_on_arrears_completion, can_define_fixed_emi_amount, instalment_amount_in_multiples_of, can_use_for_topup, sync_expected_with_disbursement_date, is_equal_amortization, fixed_principal_percentage_per_installment, disallow_expected_disbursements, allow_approved_disbursed_amounts_over_applied, over_applied_calculation_type, over_applied_number, delinquency_bucket_id, loan_transaction_strategy_code, loan_transaction_strategy_name, due_days_for_repayment_event, overdue_days_for_repayment_event, enable_down_payment, disbursed_amount_percentage_for_down_payment, enable_installment_level_delinquency, repayment_rescheduling_enum, max_client_inactivity_period, overdue_amount_for_arrears, extend_term_monthly_repayments, product_type, use_other_loans_cupo, is_advance, custom_allow_create_or_disburse, custom_allow_collections, custom_allow_debit_note, custom_allow_credit_note, custom_allow_forgiveness, custom_allow_reversal_cancellation, custom_allow_refinance, custom_allow_restructure, custom_allow_referido, custom_allow_create_or_disburse_sms, custom_allow_collections_sms, custom_allow_debit_note_sms, custom_allow_credit_note_sms, custom_allow_forgiveness_sms, custom_allow_reversal_cancellation_sms, custom_allow_refinance_sms, custom_allow_restructure_sms, custom_allow_referido_sms, require_points, interest_rate_id, interest_rate_points, grace_on_charges_periods, is_purchase_charge, voluntary_insurance_id, is_interest_starts_after_grace_period, enable_auto_repayment_for_down_payment, repayment_start_date_type_enum, loan_schedule_type, loan_schedule_processing_type, is_advanced_payments_enabled, max_percentage_principal_payment_allowed)
+                VALUES('ROTP', 'COP', 2, 0, 500000.000000, NULL, 500000000.000000, NULL, 'Crédito rotativo productivo', 'Credito_Rotativo_Productivo', NULL, false, false, 43.200000, 43.200000, 43.200000, 3, 43.200000, 0, 0, false, 1, 2, 1, 1, 1, 0, NULL, 0, 0, 0, 3, NULL, NULL, false, false, '2021-01-01', NULL, true, 10000, 100000000.000000, 0, 2000, 30, 360, false, 1, false, 0.00, true, false, NULL, false, false, false, NULL, false, false, NULL, NULL, NULL, 'advanced-payment-allocation-strategy', 'Advanced payment allocation strategy', 1, 1, false, NULL, false, 1, 60, 0, false, 2480, false, false, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false, false, false, null, NULL, 0, false, NULL, true, false, 1, 'PROGRESSIVE', 'HORIZONTAL', true, 95.00);
+
+                INSERT INTO m_interest_rate
+                ("name", current_rate, appliedon_date, is_active, created_on_utc, created_by, last_modified_by, last_modified_on_utc, interest_rate_type_id, min_rate, max_rate)
+                VALUES('IC Credito Rotativo Productivo', 25.34000000, '2020-01-01', true, '2025-01-04 16:10:22.541', 1, 1, '2025-03-25 20:29:36.110', 1, 25.34000000, 25.34000000);
+
+                update m_product_loan mpl set
+                    interest_rate_id = (select id from m_interest_rate mir where name = 'IC Credito Rotativo Productivo')
+                where short_name = 'ROTP';
+
+                INSERT INTO m_interest_rate
+                ("name", current_rate, appliedon_date, is_active, created_on_utc, created_by, last_modified_by, last_modified_on_utc, interest_rate_type_id, min_rate, max_rate)
+                VALUES('Mora Crédito rotativo productivo', 43.2, '2020-01-01', true, '2025-01-04 16:11:05.536', 1, 1, '2025-03-25 11:55:57.083', 2, 43.2, 43.2);
+
+                INSERT INTO m_charge
+                ("name", currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, is_free_withdrawal, free_withdrawal_charge_frequency, restart_frequency, restart_frequency_enum, is_payment_type, payment_type_id, income_or_liability_account_id, tax_group_id, grace_on_charge_period_enum, grace_on_charge_period_amount, parent_charge_id, interest_rate_id, insurance_name, insurance_charged_as, insurance_company, insurer_name, insurance_code, insurance_plan, base_value, vat_value, total_value, deadline, is_get_percentage_from_table, days_in_arrears, tmp_name)
+                VALUES('Mora diaria crédito rotativo productivo', 'COP', 1, 9, 829, 0, 0.00100000, NULL, 1, NULL, true, true, false, NULL, NULL, 0, false, NULL, NULL, NULL, false, NULL, 3, NULL, 1, 0, 0, (select id from m_interest_rate where "name" = 'Mora Crédito rotativo productivo'), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, 'Mora diaria crédito rotativo productivo');
+
+                -- Grant permission to channels
+                INSERT INTO m_loan_product_channel (loan_product_id, channel_id)
+                SELECT
+                    (SELECT id FROM m_product_loan WHERE short_name = 'ROTP'),
+                    c.id
+                FROM custom.c_channel c
+                WHERE c.hash = '03';
+
+                INSERT INTO m_loan_product_channel (loan_product_id, channel_id)
+                SELECT
+                    (SELECT id FROM m_product_loan WHERE short_name = 'ROTP'),
+                    c.id
+                FROM custom.c_channel c
+                WHERE c.hash = '13';
+
+                INSERT INTO m_loan_product_channel (loan_product_id, channel_id)
+                SELECT
+                    (SELECT id FROM m_product_loan WHERE short_name = 'ROTP'),
+                    c.id
+                FROM custom.c_channel c
+                WHERE c.hash = '15';
+
+                INSERT INTO m_loan_product_channel (loan_product_id, channel_id)
+                SELECT
+                    (SELECT id FROM m_product_loan WHERE short_name = 'ROTP'),
+                    c.id
+                FROM custom.c_channel c
+                WHERE c.hash = '99';
+
+                INSERT INTO m_loan_product_channel (loan_product_id, channel_id)
+                SELECT
+                    (SELECT id FROM m_product_loan WHERE short_name = 'ROTP'),
+                    c.id
+                FROM custom.c_channel c
+                WHERE c.hash = '100';
+
+                INSERT INTO m_loan_product_channel (loan_product_id, channel_id)
+                SELECT
+                    (SELECT id FROM m_product_loan WHERE short_name = 'ROTP'),
+                    c.id
+                FROM custom.c_channel c
+                WHERE c.hash = 'Recaudo';
+
+                INSERT INTO m_loan_product_channel (loan_product_id, channel_id)
+                SELECT
+                    (SELECT id FROM m_product_loan WHERE short_name = 'ROTP'),
+                    c.id
+                FROM custom.c_channel c
+                WHERE c.hash = '97';
+
+                INSERT INTO m_loan_product_channel (loan_product_id, channel_id)
+                SELECT
+                    (SELECT id FROM m_product_loan WHERE short_name = 'ROTP'),
+                    c.id
+                FROM custom.c_channel c
+                WHERE c.hash = '98';
+
+                INSERT INTO m_loan_product_channel (loan_product_id, channel_id)
+                SELECT
+                    (SELECT id FROM m_product_loan WHERE short_name = 'ROTP'),
+                    c.id
+                FROM custom.c_channel c
+                WHERE c.hash = '101';
+
+                INSERT INTO m_loan_product_channel (loan_product_id, channel_id)
+                SELECT
+                    (SELECT id FROM m_product_loan WHERE short_name = 'ROTP'),
+                    c.id
+                FROM custom.c_channel c
+                WHERE c.hash = '102';
+
+                INSERT INTO m_loan_product_channel (loan_product_id, channel_id)
+                SELECT
+                    (SELECT id FROM m_product_loan WHERE short_name = 'ROTP'),
+                    c.id
+                FROM custom.c_channel c
+                WHERE c.hash = '103';
+
+                INSERT INTO m_loan_product_channel (loan_product_id, channel_id)
+                SELECT
+                    (SELECT id FROM m_product_loan WHERE short_name = 'ROTP'),
+                    c.id
+                FROM custom.c_channel c
+                WHERE c.name = 'Mifos'
+                  AND c.hash = '1ae8d4db830eed577c6023998337d0hags546f1a3ba08e5df1ef0d1673431a3';
+
+                INSERT INTO m_loan_product_channel (loan_product_id, channel_id)
+                SELECT
+                    (SELECT id FROM m_product_loan WHERE short_name = 'ROTP'),
+                    c.id
+                FROM custom.c_channel c
+                WHERE c.name = 'Bancos';
+
+                -- Insert Payment Allocation Rule
+                INSERT INTO m_loan_product_payment_allocation_rule
+                (loan_product_id, transaction_type, allocation_types, future_installment_allocation_rule, created_by, last_modified_by, created_on_utc, last_modified_on_utc)
+                VALUES((SELECT id from m_product_loan where short_name = 'ROTP'), 'DEFAULT', 'PAST_DUE_GAC,PAST_DUE_PENALTY,PAST_DUE_MANDATORY_INSURANCE,PAST_DUE_FEES,PAST_DUE_AVAL,PAST_DUE_VOLUNTARY_INSURANCE,PAST_DUE_INTEREST,PAST_DUE_PRINCIPAL,DUE_GAC,DUE_PENALTY,DUE_MANDATORY_INSURANCE,DUE_FEES,DUE_AVAL,DUE_VOLUNTARY_INSURANCE,DUE_INTEREST,DUE_PRINCIPAL,IN_ADVANCE_GAC,IN_ADVANCE_PENALTY,IN_ADVANCE_MANDATORY_INSURANCE,IN_ADVANCE_FEES,IN_ADVANCE_AVAL,IN_ADVANCE_VOLUNTARY_INSURANCE,IN_ADVANCE_INTEREST,IN_ADVANCE_PRINCIPAL', 'NEXT_INSTALLMENT', 1, 1, '2025-03-20 06:33:23.944', '2025-04-06 19:32:48.468');
+
+                -- Insert Loan Charges
+                INSERT INTO m_product_loan_charge (product_loan_id, charge_id)
+                SELECT
+                    (SELECT id FROM m_product_loan WHERE short_name = 'ROTP'),
+                    c.id
+                FROM m_charge c
+                WHERE c.name IN (
+                    'Mora diaria crédito rotativo productivo',
+                    'Seguro de vida Nano',
+                    'Fondo Nacional de Garantías',
+                    ' Fondo Nacional de Garantías IVA'
+                );
+
+                -- Add Configurable Attributes
+                INSERT INTO m_product_loan_configurable_attributes
+                (loan_product_id, amortization_method_enum, interest_method_enum, loan_transaction_strategy_code, interest_calculated_in_period_enum, arrearstolerance_amount, repay_every, moratorium, grace_on_arrears_ageing)
+                VALUES((SELECT id from m_product_loan where short_name = 'ROTP'), true, true, true, true, true, true, true, true);
+
+                -- Insert GL Account Mappings for product ROTP
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 1
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 7 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 2
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 1 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 10
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 21 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 7
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 2 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 8
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 1690952007 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 9
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 3 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 3
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 13 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 4
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 15 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 5
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 14 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 12
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 16 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 15
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 16 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 14
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 16 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 18
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 16 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 19
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 16 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 20
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 16 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 21
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 16 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 6
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 19 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 13
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 19 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 16
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 19 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 17
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 19 AND p.short_name = 'ROTP';
+
+                INSERT INTO acc_product_mapping (gl_account_id, product_id, product_type, payment_type, charge_id, financial_account_type)
+                SELECT g.id, p.id, 1, NULL, NULL, 11
+                FROM acc_gl_account g, m_product_loan p
+                WHERE g.id = 9 AND p.short_name = 'ROTP';
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
