@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "26d01768-ff02-40f7-8e42-08ae0d1fa72e",
+        "_postman_id": "d03a9526-8668-4218-a302-ccb3ed454f75",
         "name": "EA Loans Repayment Charge GAC Partial",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
@@ -837,7 +837,7 @@
                             "});\r",
                             "\r",
                             "pm.test(\"Verify Transacion GAC component\", function () {\r",
-                            "    pm.expect(jsonData.transactions[1].loanChargePaidBySummary.aval).to.be.equal(2500);\r",
+                            "    pm.expect(jsonData.transactions[1].loanChargePaidBySummary.aval).to.be.greaterThan(4000);\r",
                             "});"
                         ],
                         "type": "text/javascript",

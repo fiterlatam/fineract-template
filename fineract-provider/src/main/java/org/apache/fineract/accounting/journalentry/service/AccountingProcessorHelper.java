@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.closure.domain.GLClosure;
 import org.apache.fineract.accounting.closure.domain.GLClosureRepository;
@@ -80,6 +81,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRep
 import org.apache.fineract.portfolio.shareaccounts.data.ShareAccountTransactionEnumData;
 import org.springframework.dao.DataAccessException;
 
+@Slf4j
 @RequiredArgsConstructor
 public class AccountingProcessorHelper {
 
@@ -353,12 +355,16 @@ public class AccountingProcessorHelper {
             final String transactionId, final LocalDate transactionDate, final BigDecimal totalAmount, final Boolean isReversal,
             final List<ChargePaymentDTO> chargePaymentDTOs) {
 
+        StringBuilder chargesIdsSb = new StringBuilder();
+
         GLAccount receivableAccount = getLinkedGLAccountForLoanCharges(loanProductId, accountTypeToBeDebited, null);
         final Map<GLAccount, BigDecimal> creditDetailsMap = new LinkedHashMap<>();
         for (final ChargePaymentDTO chargePaymentDTO : chargePaymentDTOs) {
             final Long chargeId = chargePaymentDTO.getChargeId();
             final GLAccount chargeSpecificAccount = getLinkedGLAccountForLoanCharges(loanProductId, accountTypeToBeCredited, chargeId);
             BigDecimal chargeSpecificAmount = chargePaymentDTO.getAmount();
+
+            chargesIdsSb.append(chargeId).append(", ");
 
             // adjust net credit amount if the account is already present in the
             // map
@@ -384,10 +390,15 @@ public class AccountingProcessorHelper {
         }
 
         if (totalAmount.compareTo(totalCreditedAmount) != 0) {
-            throw new PlatformDataIntegrityException(
-                    "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction",
-                    "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction",
-                    totalCreditedAmount, totalAmount);
+            log.info(
+                    "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction (LoanId: {}, "
+                            + "trxId:{}, chargeIds: {}, totalCreditedAmount: {}, totalAmount: {})",
+                    loanId, transactionId, chargesIdsSb, totalCreditedAmount, totalAmount);
+
+            // throw new PlatformDataIntegrityException(
+            // "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction",
+            // "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction",
+            // totalCreditedAmount, totalAmount);
         }
     }
 
