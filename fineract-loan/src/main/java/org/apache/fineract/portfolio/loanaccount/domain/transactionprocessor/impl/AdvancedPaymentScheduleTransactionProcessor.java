@@ -25,7 +25,6 @@ import static org.apache.fineract.portfolio.loanproduct.domain.AllocationType.*;
 import static org.apache.fineract.portfolio.loanproduct.domain.DueType.IN_ADVANCE;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -591,27 +590,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             LoanRepaymentScheduleInstallment.PaymentFunction paymentFunction = currentInstallment
                     .getPaymentFunction(paymentAllocationType.getAllocationType(), action);
 
-            // If repaying less than Installment´s Outstanding Amount, then calculate GAC amount "portion"
-            if (paymentAllocationType.getAllocationType().equals(GAC) && !transactionAmountUnprocessed
-                    .isGreaterThan(currentInstallment.getTotalOutstanding(loanTransaction.getLoan().getCurrency()))) {
-
-                BigDecimal gacAmtSum = chargesOfInstallment.stream().filter(LoanCharge::isGACCharge).filter(LoanCharge::isNotFullyPaid)
-                        .filter(bet -> bet.getDueLocalDate().isEqual(currentInstallment.getDueDate()))
-                        .map(obj -> obj.getAmount(loanTransaction.getLoan().getCurrency()).getAmount())
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                BigDecimal baseAmount = currentInstallment.getTotalOutstanding(loanTransaction.getLoan().getCurrency()).getAmount()
-                        .subtract(gacAmtSum);
-
-                BigDecimal rangePct = gacAmtSum.divide(baseAmount, 5, RoundingMode.HALF_UP);
-
-                Money partialGACAmt = transactionAmountUnprocessed.multipliedBy(rangePct);
-
-                portion = paymentFunction.accept(transactionDate, partialGACAmt, isWriteOffTransaction, loanTransaction);
-
-            } else {
-                portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction, loanTransaction);
-            }
+            portion = paymentFunction.accept(transactionDate, transactionAmountUnprocessed, isWriteOffTransaction, loanTransaction);
 
             log.debug("Payment function result - Transaction ID: {}, Installment: {}, Allocation Type: {}, Portion: {}",
                     loanTransaction.getId() != null ? loanTransaction.getId() : "NEW", currentInstallment.getInstallmentNumber(),
