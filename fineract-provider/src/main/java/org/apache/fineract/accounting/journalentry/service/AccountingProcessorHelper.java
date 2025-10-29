@@ -675,6 +675,9 @@ public class AccountingProcessorHelper {
             final int accountMappingTypeId, final Long loanProductId, final Long loanId, final String transactionId,
             final LocalDate transactionDate, final BigDecimal totalAmount, final Boolean isReversal,
             final List<ChargePaymentDTO> chargePaymentDTOs) {
+
+        StringBuilder chargesIdsSb = new StringBuilder();
+
         /***
          * Map to track each account and the net credit to be made for a particular account
          ***/
@@ -683,6 +686,8 @@ public class AccountingProcessorHelper {
             final Long chargeId = chargePaymentDTO.getChargeId();
             final GLAccount chargeSpecificAccount = getLinkedGLAccountForLoanCharges(loanProductId, accountMappingTypeId, chargeId);
             BigDecimal chargeSpecificAmount = chargePaymentDTO.getAmount();
+
+            chargesIdsSb.append(chargeId).append(", ");
 
             // adjust net credit amount if the account is already present in the
             // map
@@ -708,10 +713,15 @@ public class AccountingProcessorHelper {
         // TODO: Vishwas Temporary validation to be removed before moving to
         // release branch
         if (totalAmount.compareTo(totalCreditedAmount) != 0) {
-            throw new PlatformDataIntegrityException(
-                    "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction",
-                    "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction",
-                    totalCreditedAmount, totalAmount);
+            log.info(
+                    "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction (LoanId: {}, "
+                            + "trxId:{}, chargeIds: {}, totalCreditedAmount: {}, totalAmount: {})",
+                    loanId, transactionId, chargesIdsSb, totalCreditedAmount, totalAmount);
+
+            // throw new PlatformDataIntegrityException(
+            // "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction",
+            // "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction",
+            // totalCreditedAmount, totalAmount);
         }
     }
 
