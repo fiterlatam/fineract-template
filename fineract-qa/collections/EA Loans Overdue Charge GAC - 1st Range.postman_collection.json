@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "bb225ff8-840d-4a10-bbf8-b83a9544c0b4",
+        "_postman_id": "4576b1c5-3f41-464e-a081-d0bf379c3403",
         "name": "EA Loans Overdue Charge GAC - 1st Range",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
@@ -870,7 +870,8 @@
                             "} );"
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 },
                 {
@@ -944,7 +945,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
@@ -964,7 +966,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"transactionDate\": \"17-09-25\",\r\n    \"note\": null,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\"\r\n}",
+                    "raw": "{\r\n    \"transactionDate\": \"{{creationAndDisbusmentDate}}\",\r\n    \"note\": null,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
