@@ -18,11 +18,6 @@
  */
 package org.apache.fineract.organisation.prequalification.data;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
 import lombok.Data;
 import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -30,6 +25,12 @@ import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.useradministration.data.AppUserData;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Immutable data object represent client identity data.
@@ -61,7 +62,7 @@ public class GroupPrequalificationData {
 
     private final String facilitatorName;
     private final Long facilitatorId;
-    private final String comments;
+    private String comments;
     private final Long groupId;
     private final LocalDateTime createdAt;
     private final Collection<AgencyData> agencies;
@@ -82,6 +83,8 @@ public class GroupPrequalificationData {
     private String assignedUserName;
     private String latestComments;
     private Long linkedGroupId;
+
+    private String exceptionComment;
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
             final String portforlioName, final String centerName, final String groupName, final String addedBy,

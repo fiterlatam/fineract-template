@@ -60,6 +60,14 @@ public class MemberPrequalificationData {
     private String agencyBureauStatus;
     private Long documentCount;
 
+    // data additional
+    private BigDecimal quotaAmount;
+    private BigDecimal interestRatePerPeriod;
+    private Integer period;
+    private String collateral;
+    private String destination;
+
+
     public MemberPrequalificationData(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente,
             final BigDecimal requestedAmount, final EnumOptionData status, Long blacklistCount, BigDecimal totalLoanAmount,
             BigDecimal totalLoanBalance, BigDecimal totalGuaranteedLoanBalance, Long noOfCycles, Long additionalCreditsCount,
