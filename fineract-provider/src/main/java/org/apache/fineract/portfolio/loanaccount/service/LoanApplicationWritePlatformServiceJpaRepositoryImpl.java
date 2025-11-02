@@ -2924,7 +2924,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 .build();
     }
 
-    private Loan retrieveLoanBy(final Long loanId) {
+    @Override
+    public Loan retrieveLoanBy(final Long loanId) {
         final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(loanId, true);
         loan.setHelpers(defaultLoanLifecycleStateMachine(), this.loanSummaryWrapper, this.loanRepaymentScheduleTransactionProcessorFactory);
         return loan;
