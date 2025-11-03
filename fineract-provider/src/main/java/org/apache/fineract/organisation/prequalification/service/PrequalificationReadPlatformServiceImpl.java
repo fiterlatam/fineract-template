@@ -25,7 +25,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -42,17 +45,25 @@ import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecific
 import org.apache.fineract.infrastructure.dataqueries.service.GenericDataService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
+import org.apache.fineract.organisation.committee.data.CommitteeApprovalsData;
+import org.apache.fineract.organisation.committee.mappers.RequiredCommitteeApprovalsMapper;
 import org.apache.fineract.organisation.prequalification.data.BuroData;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
+import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
 import org.apache.fineract.organisation.prequalification.domain.BuroCheckClassification;
+import org.apache.fineract.organisation.prequalification.domain.PreQualificationStatusLogRepository;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusLog;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationTimeline;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.domain.SubStatusEnumerations;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +77,7 @@ import org.springframework.stereotype.Service;
 public class PrequalificationReadPlatformServiceImpl implements PrequalificationReadPlatformService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ClientChargeWritePlatformServiceJpaRepositoryImpl.class);
-
+    private final PreQualificationStatusLogRepository preQualificationLogRepository;
     private final PlatformSecurityContext context;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final JdbcTemplate jdbcTemplate;
@@ -76,14 +87,17 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     private final PrequalificationsGroupMappingsMapper mappingsMapper = new PrequalificationsGroupMappingsMapper();
     private final PrequalificationIndividualMappingsMapper prequalificationIndividualMappingsMapper = new PrequalificationIndividualMappingsMapper();
     private final PrequalificationsMemberMapper prequalificationsMemberMapper = new PrequalificationsMemberMapper();
+    private final RequiredCommitteeApprovalsMapper committeeApprovalsMapper = new RequiredCommitteeApprovalsMapper();
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final GenericDataService genericDataService;
+    private final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService;
 
     @Autowired
     public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
             final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
             final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
-            GenericDataService genericDataService) {
+            GenericDataService genericDataService,final PreQualificationStatusLogRepository preQualificationLogRepository,
+            PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService) {
         this.context = context;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.jdbcTemplate = jdbcTemplate;
@@ -91,6 +105,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         this.sqlGenerator = sqlGenerator;
         this.columnValidator = columnValidator;
         this.genericDataService = genericDataService;
+        this.preQualificationLogRepository = preQualificationLogRepository;
+        this.prequalificationChecklistReadPlatformService = prequalificationChecklistReadPlatformService;
     }
 
     @Override
@@ -151,13 +167,26 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         final String sql = "select " + this.prequalificationsGroupMapper.schema() + " WHERE g.id = ? ";
         final GroupPrequalificationData clientData = this.jdbcTemplate.queryForObject(sql, this.prequalificationsGroupMapper,
-                new Object[] { groupId });
+                new Object[]{groupId});
 
+        List<PrequalificationStatusLog> statusLogList = this.preQualificationLogRepository.groupStatusLogs(groupId);
+        PrequalificationGroup prequalificationGroup = null;
+        if (!statusLogList.isEmpty()) {
+            prequalificationGroup = statusLogList.get(0).getPrequalificationGroup();
+        }
+        LoanProduct loanProduct = prequalificationGroup.getLoanProduct();
+        List<PrequalificationTimeline> prequalificationTimelines = resolveCurrentStatusTimeline(prequalificationGroup, statusLogList);
+        clientData.updateCurrentStatusTimeline(prequalificationTimelines);
+        List<EnumOptionData> expectedTimeline = resolveFutureStatusTimeline();
+        if (loanProduct.getRequireCommitteeApproval()){
+            expectedTimeline =  resolveCommitteeApprovalsTimeline(clientData, prequalificationGroup, expectedTimeline);
+        }
+        clientData.updateExpectedStatusTimeline(expectedTimeline);
         if (clientData != null) {
             final String membersql = "select " + this.prequalificationsMemberMapper.schema() + " WHERE m.group_id = ? ";
 
             List<MemberPrequalificationData> members = this.jdbcTemplate.query(membersql, this.prequalificationsMemberMapper,
-                    new Object[] { groupId, groupId });
+                    new Object[]{groupId, groupId});
 
             for (MemberPrequalificationData memberPrequalificationData : members) {
                 Integer status = PrequalificationMemberIndication.NONE.getValue();
@@ -178,6 +207,66 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             clientData.updateMembers(members);
         }
         return clientData;
+    }
+
+    private List<EnumOptionData> resolveCommitteeApprovalsTimeline(GroupPrequalificationData clientData, PrequalificationGroup prequalificationGroup, List<EnumOptionData> expectedTimeline) {
+        BigDecimal totalApprovedAmount = clientData.getTotalApprovedAmount();
+        if (prequalificationGroup.getStatus()>=PrequalificationStatus.HARD_POLICY_CHECKED.getValue() &&
+                !prequalificationGroup.getStatus().equals(PrequalificationStatus.TIME_EXPIRED.getValue())){
+            PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
+                    .retrieveHardPolicyValidationResults(prequalificationGroup.getId());
+            List<List<String>> rows = prequalificationChecklistData.getMembers().getRows();
+            AtomicReference<Integer> redCountRef = new AtomicReference<>(0);
+            for (List<String> innerList : rows) {
+                innerList.forEach(item -> {
+                    if ("RED".equalsIgnoreCase(item) || "ORANGE".equalsIgnoreCase(item) || "YELLOW".equalsIgnoreCase(item)) {
+                        redCountRef.getAndSet(redCountRef.get() + 1);
+                    }
+                });
+            }
+            Integer errorWarningsCount = redCountRef.get();
+            final String membersql = "select " + this.committeeApprovalsMapper.schema() + " " +
+                    "WHERE ? BETWEEN c.from_amount AND c.to_amount " +
+                    "AND ( " +
+                    "    (? > c.limit AND c.condition = 'GREATER_THAN') " +
+                    "    OR (? <= c.limit AND c.condition = 'LESS_THAN') );";
+
+            List<CommitteeApprovalsData> members = this.jdbcTemplate.query(membersql, this.committeeApprovalsMapper,
+                    new Object[]{totalApprovedAmount, errorWarningsCount, errorWarningsCount});
+            if (!members.isEmpty()){
+                members.forEach(committeeApprovalsData -> {
+                    expectedTimeline.add(committeeApprovalsData.getApprovalData());
+                });
+            }
+        }
+        return expectedTimeline;
+    }
+
+    private List<EnumOptionData> resolveFutureStatusTimeline(){
+        List<EnumOptionData> statusTimeline = new ArrayList<>();
+        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.PENDING));
+        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.BLACKLIST_CHECKED));
+        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.CONSENT_ADDED));
+        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.BURO_CHECKED));
+        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.HARD_POLICY_CHECKED));
+        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL));
+        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL));
+        return statusTimeline;
+    }
+
+    private List<PrequalificationTimeline> resolveCurrentStatusTimeline(PrequalificationGroup prequalificationGroup, List<PrequalificationStatusLog> statusLogList){
+        List<PrequalificationTimeline> statusTimeline = new ArrayList<>();
+        statusTimeline.add(new PrequalificationTimeline(PreQualificationsEnumerations.status(PrequalificationStatus.PENDING),
+                prequalificationGroup.getAddedBy().getDisplayName(),
+                prequalificationGroup.getCreatedAt().toString(),
+                "Prequalification created"));
+        Collections.sort(statusLogList);
+        for (PrequalificationStatusLog status: statusLogList){
+            EnumOptionData statusData = PreQualificationsEnumerations.status(status.getToStatus());
+            PrequalificationTimeline prequalificationTimeline = new PrequalificationTimeline(statusData, status.getAddedBy().getDisplayName(), status.getDateCreated().toString(), status.getComments());
+            statusTimeline.add(prequalificationTimeline);
+        }
+        return statusTimeline;
     }
 
     @Override

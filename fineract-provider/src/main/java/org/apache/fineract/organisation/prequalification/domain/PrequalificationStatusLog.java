@@ -32,7 +32,7 @@ import org.apache.fineract.useradministration.domain.AppUser;
 @Entity
 @Table(name = "m_prequalification_status_log")
 @Getter
-public class PrequalificationStatusLog extends AbstractPersistableCustom {
+public class PrequalificationStatusLog extends AbstractPersistableCustom implements Comparable<PrequalificationStatusLog>{
 
     @ManyToOne
     @JoinColumn(name = "prequalification_id")
@@ -87,4 +87,10 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom {
     public void updateSubStatus(final Integer subStatus) {
         this.subStatus = subStatus;
     }
+
+    @Override
+    public int compareTo(PrequalificationStatusLog entry) {
+        return this.getId().compareTo(entry.getId());
+    }
+
 }

@@ -33,7 +33,13 @@ public final class CommitteeConstants {
 
     public enum CommitteeSupportedParameters {
 
-        CODE_VALUE_ID("id"), NAME("name"), USERS("users");
+        CODE_VALUE_ID("id"),
+        NAME("name"),
+        USERS("users"),
+        ABOVE_EXCEPTION_LIMIT("aboveExceptionLimits"),
+        BELOW_EXCEPTION_LIMIT("belowExceptionLimits"),
+        CONDITION("condition"),
+        LIMIT("limit");
 
         private final String value;
 
