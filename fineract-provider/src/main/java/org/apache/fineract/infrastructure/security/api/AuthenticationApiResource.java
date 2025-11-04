@@ -105,8 +105,7 @@ public class AuthenticationApiResource {
             @Qualifier("customAuthenticationProvider") final DaoAuthenticationProvider customAuthenticationProvider,
             final ToApiJsonSerializer<AuthenticatedUserData> apiJsonSerializerService,
             final SpringSecurityPlatformSecurityContext springSecurityPlatformSecurityContext,
-            ClientReadPlatformService aClientReadPlatformService,
-            DefaultToApiJsonSerializer<Map<String, Object>> toApiJsonSerializer,
+            ClientReadPlatformService aClientReadPlatformService, DefaultToApiJsonSerializer<Map<String, Object>> toApiJsonSerializer,
             PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             final PlatformPasswordEncoder platformPasswordEncoder, final JdbcTemplate jdbcTemplate,
             final AppUserWritePlatformService appUserWritePlatformService) {

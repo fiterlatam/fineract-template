@@ -22,6 +22,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -31,8 +32,6 @@ import java.util.Optional;
 import java.util.Set;
 import javax.persistence.PersistenceException;
 import javax.servlet.http.HttpServletRequest;
-
-import com.google.gson.JsonObject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -370,7 +369,7 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
 
     @Override
     public AppUser completePasswordReset(String username, String otp, Boolean logoutDevices,
-                                         PlatformPasswordEncoder platformPasswordEncoder) {
+            PlatformPasswordEncoder platformPasswordEncoder) {
         AppUser appUser = this.appUserRepository.findAppUserByName(username);
         if (appUser == null) {
             throw new UsernameNotFoundException(username);
@@ -486,7 +485,6 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
         String token = new RandomOTPGenerator(otpLength).generate();
         return OTPRequest.create(token, tokenLiveTime, extendedAccessToken, deliveryMethod);
     }
-
 
     /*
      * Return an exception to throw, no matter what the data integrity issue is.
