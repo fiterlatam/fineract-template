@@ -22,26 +22,49 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.persistence.PersistenceException;
 import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.domain.EmailDetail;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.PlatformEmailSendException;
+import org.apache.fineract.infrastructure.core.service.PlatformEmailService;
+import org.apache.fineract.infrastructure.security.constants.TwoFactorConstants;
+import org.apache.fineract.infrastructure.security.data.OTPDeliveryMethod;
+import org.apache.fineract.infrastructure.security.data.OTPRequest;
+import org.apache.fineract.infrastructure.security.domain.BasicPasswordEncodablePlatformUser;
+import org.apache.fineract.infrastructure.security.domain.OTPRequestRepository;
+import org.apache.fineract.infrastructure.security.domain.PlatformUser;
+import org.apache.fineract.infrastructure.security.domain.TFAccessToken;
+import org.apache.fineract.infrastructure.security.domain.TFAccessTokenRepository;
+import org.apache.fineract.infrastructure.security.exception.OTPDeliveryMethodInvalidException;
+import org.apache.fineract.infrastructure.security.exception.OTPTokenInvalidException;
+import org.apache.fineract.infrastructure.security.service.AccessTokenGenerationService;
 import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncoder;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.infrastructure.security.service.RandomOTPGenerator;
+import org.apache.fineract.infrastructure.security.service.TwoFactorConfigurationService;
+import org.apache.fineract.infrastructure.sms.domain.SmsMessage;
+import org.apache.fineract.infrastructure.sms.domain.SmsMessageRepository;
+import org.apache.fineract.infrastructure.sms.scheduler.SmsMessageScheduledJobService;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.office.domain.OfficeRepositoryWrapper;
 import org.apache.fineract.organisation.staff.domain.Staff;
@@ -50,6 +73,7 @@ import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.useradministration.api.AppUserApiConstant;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.useradministration.domain.AppUserDevicesRepository;
 import org.apache.fineract.useradministration.domain.AppUserPreviousPassword;
 import org.apache.fineract.useradministration.domain.AppUserPreviousPasswordRepository;
 import org.apache.fineract.useradministration.domain.AppUserRepository;
@@ -67,6 +91,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
@@ -87,6 +112,15 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
     private final StaffRepositoryWrapper staffRepositoryWrapper;
     private final ClientRepositoryWrapper clientRepositoryWrapper;
     private final JdbcTemplate jdbcTemplate;
+    private final FromJsonHelper fromApiJsonHelper;
+    private final OTPRequestRepository otpRequestRepository;
+    private final AccessTokenGenerationService accessTokenGenerationService;
+    private final PlatformEmailService emailService;
+    private final AppUserDevicesRepository appUserDevicesRepository;
+    private final TFAccessTokenRepository tfAccessTokenRepository;
+    private final TwoFactorConfigurationService configurationService;
+    private final SmsMessageRepository smsMessageRepository;
+    private final SmsMessageScheduledJobService smsMessageScheduledJobService;
 
     @Override
     @Transactional
@@ -310,6 +344,146 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                 + "(action_name,entity_name,office_id,api_get_url,command_as_json,resource_id,maker_id,made_on_date,processing_result_enum) "
                 + "values(?, ?,?,?,?,?,?,current_timestamp ,1) ", action, "AUTHENTICATION", appUser.getOffice().getId(), "/authenticate",
                 "{ipAddress:\"" + clientIp + "\", result: \"" + result + "\"}", userId, userId);
+    }
+
+    @Override
+    public AppUser selfResetUserPassword(Long userId, String requestData, PlatformPasswordEncoder platformPasswordEncoder) {
+        Optional<AppUser> appUserOptional = this.appUserRepository.findById(userId);
+        if (appUserOptional.isEmpty()) throw new UserNotFoundException(userId);
+        AppUser appUser = appUserOptional.get();
+        JsonElement jsonElement = this.fromApiJsonHelper.parse(requestData);
+        JsonObject asJsonObject = jsonElement.getAsJsonObject();
+        if (jsonElement.isJsonObject()) {
+            String password = this.fromApiJsonHelper.extractStringNamed("password", jsonElement);
+            String passwordRepeat = this.fromApiJsonHelper.extractStringNamed("repeatPassword", jsonElement);
+            final String jsonCommand = asJsonObject.toString();
+            final JsonCommand command = JsonCommand.from(jsonCommand, asJsonObject, this.fromApiJsonHelper, null, userId, null, null, null,
+                    null, null, null, null, null, null, null);
+            final String passwordEncodedValue = command.passwordValueOfParameterNamed("password", platformPasswordEncoder, appUser.getId());
+            appUser.updatePassword(passwordEncodedValue);
+            appUser.updateResetPassword(false);
+            this.appUserRepository.save(appUser);
+        }
+        return appUser;
+    }
+
+    @Override
+    public AppUser completePasswordReset(String username, String otp, Boolean logoutDevices,
+            PlatformPasswordEncoder platformPasswordEncoder) {
+        AppUser appUser = this.appUserRepository.findAppUserByName(username);
+        if (appUser == null) {
+            throw new UsernameNotFoundException(username);
+        }
+        OTPRequest otpRequest = otpRequestRepository.getOTPRequestForUser(appUser);
+        if (otpRequest == null || !otpRequest.isValid() || !otpRequest.getToken().equalsIgnoreCase(otp)) {
+            throw new OTPTokenInvalidException();
+        }
+        otpRequestRepository.deleteOTPRequestForUser(appUser);
+        String newPassword = this.accessTokenGenerationService.generateRandomToken().substring(0, 8);
+
+        final PlatformUser dummyPlatformUser = new BasicPasswordEncodablePlatformUser(appUser.getId(), "", newPassword);
+        String encodedPass = platformPasswordEncoder.encode(dummyPlatformUser);
+
+        this.jdbcTemplate.update("UPDATE m_appuser SET reset_password = ?, password=?, nonlocked=true WHERE id = ?", true, encodedPass,
+                appUser.getId());
+
+        final String emailSubject = "Password Reset Successful";
+        final String emailBody = "Your password has been reset. Your new password is: " + newPassword;
+        final EmailDetail emailData = new EmailDetail(emailSubject, emailBody, appUser.getEmail(),
+                appUser.getFirstname() + " " + appUser.getLastname());
+        emailService.sendDefinedEmail(emailData);
+
+        if (logoutDevices) {
+            this.appUserDevicesRepository.findByUser(appUser).forEach(device -> {
+                this.appUserDevicesRepository.delete(device);
+            });
+        }
+        List<TFAccessToken> tfAccessTokens = this.tfAccessTokenRepository.findByUser(appUser);
+        tfAccessTokens.forEach(token -> {
+            this.tfAccessTokenRepository.delete(token);
+        });
+
+        return appUser;
+    }
+
+    @Override
+    public AppUser requestPasswordReset(String username) {
+        AppUser appUserByName = this.appUserRepository.findAppUserByName(username);
+        if (appUserByName == null) {
+            throw new UsernameNotFoundException(username);
+        }
+        OTPRequest request = createNewOTPToken(appUserByName, TwoFactorConstants.EMAIL_DELIVERY_METHOD_NAME, false);
+
+        return appUserByName;
+    }
+
+    public OTPRequest createNewOTPToken(final AppUser user, final String deliveryMethodName, final boolean extendedAccessToken) {
+        if (TwoFactorConstants.SMS_DELIVERY_METHOD_NAME.equalsIgnoreCase(deliveryMethodName)) {
+            OTPDeliveryMethod smsDelivery = getSMSDeliveryMethodForUser(user);
+            if (smsDelivery == null) {
+                throw new OTPDeliveryMethodInvalidException();
+            }
+            final OTPRequest request = generateNewToken(smsDelivery, extendedAccessToken);
+            final String smsText = configurationService.getFormattedSmsTextFor(user, request);
+            SmsMessage smsMessage = SmsMessage.pendingSms(null, null, null, user.getStaff(), smsText, user.getStaff().mobileNo(), null,
+                    false);
+            this.smsMessageRepository.save(smsMessage);
+            smsMessageScheduledJobService.sendTriggeredMessage(Collections.singleton(smsMessage), configurationService.getSMSProviderId());
+            otpRequestRepository.addOTPRequest(user, request);
+            return request;
+        } else if (TwoFactorConstants.EMAIL_DELIVERY_METHOD_NAME.equalsIgnoreCase(deliveryMethodName)) {
+            OTPDeliveryMethod emailDelivery = getEmailDeliveryMethodForUser(user);
+            if (emailDelivery == null) {
+                throw new OTPDeliveryMethodInvalidException();
+            }
+            final OTPRequest request = generateNewToken(emailDelivery, extendedAccessToken);
+            final String emailSubject = configurationService.getFormattedEmailSubjectFor(user, request);
+            final String emailBody = configurationService.getFormattedEmailBodyFor(user, request);
+            final EmailDetail emailData = new EmailDetail(emailSubject, emailBody, user.getEmail(),
+                    user.getFirstname() + " " + user.getLastname());
+            emailService.sendDefinedEmail(emailData);
+            otpRequestRepository.addOTPRequest(user, request);
+            return request;
+        }
+
+        throw new OTPDeliveryMethodInvalidException();
+    }
+
+    private OTPDeliveryMethod getSMSDeliveryMethodForUser(final AppUser user) {
+        if (!configurationService.isSMSEnabled()) {
+            return null;
+        }
+
+        if (configurationService.getSMSProviderId() == null) {
+            return null;
+        }
+
+        if (user.getStaff() == null) {
+            return null;
+        }
+        String mobileNo = user.getStaff().mobileNo();
+        if (StringUtils.isBlank(mobileNo)) {
+            return null;
+        }
+
+        int accessTokenExtendedLiveTime = (this.configurationService.getAccessTokenExtendedLiveTime() / 86400);
+        return new OTPDeliveryMethod(TwoFactorConstants.SMS_DELIVERY_METHOD_NAME, mobileNo, Integer.toString(accessTokenExtendedLiveTime));
+    }
+
+    private OTPDeliveryMethod getEmailDeliveryMethodForUser(final AppUser user) {
+        if (!configurationService.isEmailEnabled()) {
+            return null;
+        }
+        int accessTokenExtendedLiveTime = (this.configurationService.getAccessTokenExtendedLiveTime() / 86400);
+        return new OTPDeliveryMethod(TwoFactorConstants.EMAIL_DELIVERY_METHOD_NAME, user.getEmail(),
+                Integer.toString(accessTokenExtendedLiveTime));
+    }
+
+    private OTPRequest generateNewToken(final OTPDeliveryMethod deliveryMethod, final boolean extendedAccessToken) {
+        int tokenLiveTime = configurationService.getOTPTokenLiveTime();
+        int otpLength = configurationService.getOTPTokenLength();
+        String token = new RandomOTPGenerator(otpLength).generate();
+        return OTPRequest.create(token, tokenLiveTime, extendedAccessToken, deliveryMethod);
     }
 
     /*
