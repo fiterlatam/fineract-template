@@ -58,7 +58,7 @@ public class ApplyChargeToOverdueLoanInstallmentProcessor {
         log.info("Applying Charges due for overdue loans for {} installments", this.overdueLoanScheduledInstallments.size());
 
         // Delete historical Job execution
-        jobProcessedEntityRepository.deleteByJobIdAndExecutionDateBefore(12L, DateUtils.getLocalDateOfTenant().minusDays(5));
+        jobProcessedEntityRepository.deleteByJobIdAndExecutionDateBefore(12L, DateUtils.getLocalDateOfTenant().minusDays(2));
 
         // Check if we need to reprocess this job
         if (!configurationService.getJobApplyPenaltyToOverdueLoansSkipWhenReprocessed()) {
