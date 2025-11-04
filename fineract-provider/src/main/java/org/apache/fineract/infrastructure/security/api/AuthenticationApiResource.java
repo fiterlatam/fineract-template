@@ -54,7 +54,6 @@ import org.apache.fineract.infrastructure.security.data.AuthenticatedUserData;
 import org.apache.fineract.infrastructure.security.exception.TWOFAEmailConfigurationException;
 import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncoder;
 import org.apache.fineract.infrastructure.security.service.SpringSecurityPlatformSecurityContext;
-import org.apache.fineract.infrastructure.security.service.TwoFactorService;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.useradministration.data.RoleData;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -96,7 +95,6 @@ public class AuthenticationApiResource {
     private final SpringSecurityPlatformSecurityContext springSecurityPlatformSecurityContext;
     private final ClientReadPlatformService clientReadPlatformService;
     private final DefaultToApiJsonSerializer<Map<String, Object>> toApiJsonSerializer;
-    private final TwoFactorService twoFactorService;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final PlatformPasswordEncoder platformPasswordEncoder;
     private final JdbcTemplate jdbcTemplate;
@@ -107,7 +105,7 @@ public class AuthenticationApiResource {
             @Qualifier("customAuthenticationProvider") final DaoAuthenticationProvider customAuthenticationProvider,
             final ToApiJsonSerializer<AuthenticatedUserData> apiJsonSerializerService,
             final SpringSecurityPlatformSecurityContext springSecurityPlatformSecurityContext,
-            ClientReadPlatformService aClientReadPlatformService, TwoFactorService twoFactorService,
+            ClientReadPlatformService aClientReadPlatformService,
             DefaultToApiJsonSerializer<Map<String, Object>> toApiJsonSerializer,
             PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             final PlatformPasswordEncoder platformPasswordEncoder, final JdbcTemplate jdbcTemplate,
@@ -117,7 +115,6 @@ public class AuthenticationApiResource {
         this.springSecurityPlatformSecurityContext = springSecurityPlatformSecurityContext;
         this.clientReadPlatformService = aClientReadPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
-        this.twoFactorService = twoFactorService;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.platformPasswordEncoder = platformPasswordEncoder;
         this.jdbcTemplate = jdbcTemplate;
@@ -230,9 +227,9 @@ public class AuthenticationApiResource {
             @QueryParam("logoutDevices") @DefaultValue(value = "false") final Boolean logoutDevices,
             @QueryParam("username") String username, @QueryParam("otp") String otp) {
         if (command.equalsIgnoreCase("requestPasswordReset")) {
-            this.twoFactorService.requestPasswordReset(username);
+            this.appUserWritePlatformService.requestPasswordReset(username);
         } else if (command.equalsIgnoreCase("resetPassword")) {
-            this.twoFactorService.completePasswordReset(username, otp, logoutDevices, platformPasswordEncoder);
+            this.appUserWritePlatformService.completePasswordReset(username, otp, logoutDevices, platformPasswordEncoder);
         } else {
             throw new IllegalArgumentException("The command " + command + " is not supported.");
 
@@ -247,7 +244,7 @@ public class AuthenticationApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String update(@PathParam("userId") @Parameter(description = "userId") final Long userId,
             @Parameter(hidden = true) final String apiRequestBodyAsJson) {
-        AppUser appUser = this.twoFactorService.selfResetUserPassword(userId, apiRequestBodyAsJson, platformPasswordEncoder);
+        AppUser appUser = this.appUserWritePlatformService.selfResetUserPassword(userId, apiRequestBodyAsJson, platformPasswordEncoder);
         AuthenticatedUserData authenticatedUserData = new AuthenticatedUserData(appUser.getUsername(), null);
         return this.toApiJsonSerializer.serialize(authenticatedUserData);
     }
