@@ -25,6 +25,8 @@ import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
@@ -65,6 +67,7 @@ public class CommandSource extends AbstractPersistableCustom {
     @Column(name = "subresource_id")
     private Long subresourceId;
 
+    @Getter
     @Column(name = "command_as_json", length = 1000)
     private String commandAsJson;
 

@@ -18,15 +18,18 @@
  */
 package org.apache.fineract.portfolio.loanaccount.loanschedule.data;
 
+import lombok.Getter;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
 
 /**
  * Immutable data object that represents a period of a loan schedule.
  *
  */
+@Getter
 public final class LoanSchedulePeriodData {
 
     private final Integer period;

@@ -21,24 +21,12 @@ package org.apache.fineract.organisation.prequalification.service;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import javax.transaction.Transactional;
+import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.commands.domain.CommandSource;
+import org.apache.fineract.commands.domain.CommandSourceRepository;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -115,6 +103,23 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
+import javax.ws.rs.NotFoundException;
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+
 @Service
 @Slf4j
 public class PrequalificationWritePlatformServiceImpl implements PrequalificationWritePlatformService {
@@ -148,6 +153,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final LoanRepositoryWrapper loanRepositoryWrapper;
     private final PrequalificationChecklistWritePlatformService prequalificationChecklistWritePlatformService;
     private final LoanReadPlatformService loanReadPlatformService;
+    private final CommandSourceRepository commandSourceRepository;
 
     @Autowired
     public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
@@ -168,10 +174,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final LoanApplicationWritePlatformService loanApplicationWritePlatformService,
             final PrequalificationChecklistWritePlatformService prequalificationChecklistWritePlatformService,
             final LoanReadPlatformService loanReadPlatformService, final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
-            final LoanRepositoryWrapper loanRepositoryWrapper) {
+            final LoanRepositoryWrapper loanRepositoryWrapper, final CommandSourceRepository commandSourceRepository) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
+        this.clientReadPlatformService = clientReadPlatformService;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
         this.groupRepositoryWrapper = groupRepositoryWrapper;
@@ -194,6 +201,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.loanRepositoryWrapper = loanRepositoryWrapper;
         this.prequalificationChecklistWritePlatformService = prequalificationChecklistWritePlatformService;
         this.loanReadPlatformService = loanReadPlatformService;
+        this.commandSourceRepository = commandSourceRepository;
     }
 
     @Transactional
@@ -265,7 +273,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         prequalificationGroup.updatePrequalificationNumber(prequalificationNumberAsString);
         List<PrequalificationGroupMember> members = assembNewMembers(command, prequalificationGroup, addedBy);
         prequalificationGroup.updateMembers(members);
-        applySupervisionOfficeContext(prequalificationGroup, prequalificationType, agency, members);
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, PrequalificationStatus.PENDING.getValue(),
@@ -460,7 +467,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     newAgency = this.agencyRepositoryWrapper.findOneWithNotFoundDetection(newValue);
                 }
                 prequalificationGroup.updateAgency(newAgency);
-                prequalificationGroup.updateSupervisionOfficeId(resolveSupervisionOfficeIdFromAgency(newAgency.getId()));
             }
 
             if (changes.containsKey(PrequalificatoinApiConstants.centerIdParamName)) {
@@ -519,11 +525,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         List<PrequalificationGroupMember> members = assembleMembersForUpdate(command, prequalificationGroup,
                 prequalificationGroup.getAddedBy());
         prequalificationGroup.updateMembers(members);
-        if (prequalificationGroup.isPrequalificationTypeIndividual()) {
-            applySupervisionOfficeContext(prequalificationGroup,
-                    PrequalificationType.fromInt(prequalificationGroup.getPrequalificationType()), prequalificationGroup.getAgency(),
-                    members);
-        }
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
         return new CommandProcessingResultBuilder() //
@@ -621,6 +622,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
 
         this.preQualificationMemberRepository.saveAndFlush(member);
+        updateLoanAssociated(command);
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withResourceIdAsString(memberId.toString()) //
@@ -1256,66 +1258,42 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return PrequalificationType.INVALID;
     }
 
-    private void applySupervisionOfficeContext(final PrequalificationGroup prequalificationGroup,
-            final PrequalificationType prequalificationType, final Agency agency, final List<PrequalificationGroupMember> members) {
-        if (PrequalificationType.GROUP.equals(prequalificationType)) {
-            if (agency != null) {
-                prequalificationGroup.updateSupervisionOfficeId(resolveSupervisionOfficeIdFromAgency(agency.getId()));
-            }
-            return;
+    private void updateLoanAssociated(JsonCommand jsonCommand) {
+        final Long groupId = jsonCommand.getGroupId();
+        Loan loan = loanRepositoryWrapper.retrieveByPrequalificationId(groupId);
+        if (loan == null) {
+            throw new NotFoundException("Loan with group id " + groupId + " not found");
         }
-        if (PrequalificationType.INDIVIDUAL.equals(prequalificationType)) {
-            if (members == null || members.isEmpty()) {
-                return;
-            }
-            final String memberDpi = members.get(0).getDpi();
-            if (StringUtils.isBlank(memberDpi)) {
-                return;
-            }
-            final MemberOfficeContext memberOfficeContext = resolveMemberOfficeContext(memberDpi);
-            if (memberOfficeContext == null) {
-                return;
-            }
-            prequalificationGroup.updateSupervisionOfficeId(memberOfficeContext.supervisionOfficeId());
-            if (memberOfficeContext.agencyId() != null) {
-                prequalificationGroup
-                        .updateAgency(this.agencyRepositoryWrapper.findOneWithNotFoundDetection(memberOfficeContext.agencyId()));
-            }
-        }
+        modify(loan.getId(), jsonCommand);
     }
 
-    private Long resolveSupervisionOfficeIdFromAgency(final Long agencyId) {
-        if (agencyId == null) {
-            return null;
-        }
-        final List<Long> officeIds = this.jdbcTemplate.queryForList("""
-                SELECT MIN(mo.id)
-                FROM m_agency ma
-                INNER JOIN m_office mo ON ma.linked_office_id = mo.parent_id
-                WHERE ma.id = ?
-                """, Long.class, agencyId);
-        return officeIds.isEmpty() ? null : officeIds.get(0);
+    private void modify(Long loanId, JsonCommand command) {
+
+        final BigDecimal rate = command.bigDecimalValueOfParameterNamed("interestRatePerPeriod");
+        final BigDecimal principal = command.bigDecimalValueOfParameterNamed("principal");
+
+        CommandSource source = commandSourceRepository.findByLoanIdAndLastModification(loanId);
+        JsonElement element = JsonParser.parseString(source.getCommandAsJson());
+        JsonObject object = element.getAsJsonObject();
+
+        object.addProperty("interestRatePerPeriod", rate);
+        object.addProperty("principal", principal);
+        element = JsonParser.parseString(object.toString());
+        JsonCommand jsonCommand = JsonCommand.fromJsonElement(loanId, element, command.getFromApiJsonHelper());
+        jsonCommand.setJsonCommand(object.toString());
+
+        loanApplicationWritePlatformService.modifyApplication(loanId, jsonCommand);
     }
 
-    private MemberOfficeContext resolveMemberOfficeContext(final String dpi) {
-        if (StringUtils.isBlank(dpi)) {
-            return null;
-        }
-        final List<MemberOfficeContext> contexts = this.jdbcTemplate.query("""
-                SELECT MIN(ms.agency_id) AS agency_id, MIN(ms.linked_office_id) AS supervision_office_id
-                FROM m_client mc
-                INNER JOIN m_group_client mgc ON mgc.client_id = mc.id
-                INNER JOIN m_group mg ON mg.id = mgc.group_id
-                INNER JOIN m_group center ON center.id = mg.parent_id
-                INNER JOIN m_portfolio mp ON mp.id = center.portfolio_id
-                INNER JOIN m_supervision ms ON ms.id = mp.supervision_id
-                WHERE mc.dpi = ?
-                """, (rs, rowNum) -> new MemberOfficeContext(JdbcSupport.getLong(rs, "agency_id"),
-                JdbcSupport.getLong(rs, "supervision_office_id")), dpi);
-        return contexts.isEmpty() ? null : contexts.get(0);
-    }
-
-    private record MemberOfficeContext(Long agencyId, Long supervisionOfficeId) {
+    @Override
+    public void addExceptionCommentsToPrequalification(Long groupId, String comment) {
+        PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(groupId);
+        prequalificationGroup.updateExceptionComments(comment);
+        this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
+        AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, prequalificationGroup.getStatus(), prequalificationGroup.getStatus(),
+                comment, prequalificationGroup);
+        this.preQualificationLogRepository.saveAndFlush(statusLog);
     }
 
 }

@@ -18,19 +18,7 @@
  */
 package org.apache.fineract.organisation.prequalification.service;
 
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -44,6 +32,7 @@ import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.PaginationHelper;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
+import org.apache.fineract.infrastructure.dataqueries.service.GenericDataService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.organisation.prequalification.data.BuroData;
@@ -51,23 +40,42 @@ import org.apache.fineract.organisation.prequalification.data.GroupPrequalificat
 import org.apache.fineract.organisation.prequalification.data.LoanData;
 import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
 import org.apache.fineract.organisation.prequalification.domain.BuroCheckClassification;
+import org.apache.fineract.organisation.prequalification.domain.PreQualificationGroupRepository;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.domain.SubStatusEnumerations;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
+import org.apache.fineract.portfolio.collateral.domain.LoanCollateral;
+import org.apache.fineract.portfolio.collateral.domain.LoanCollateralRepository;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PrequalificationReadPlatformServiceImpl implements PrequalificationReadPlatformService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ClientChargeWritePlatformServiceJpaRepositoryImpl.class);
@@ -82,21 +90,25 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     private final PrequalificationIndividualMappingsMapper prequalificationIndividualMappingsMapper = new PrequalificationIndividualMappingsMapper();
     private final PrequalificationsMemberMapper prequalificationsMemberMapper = new PrequalificationsMemberMapper();
     private final DatabaseSpecificSQLGenerator sqlGenerator;
-    private final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService;
+    private final GenericDataService genericDataService;
+    private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final LoanReadPlatformService loanReadPlatformService;
+    private final LoanCollateralRepository collateralRepository;
+    private final PreQualificationGroupRepository preQualificationGroupRepository;
 
-    @Autowired
-    public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
-            final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
-            PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService) {
-        this.context = context;
-        this.codeValueReadPlatformService = codeValueReadPlatformService;
-        this.jdbcTemplate = jdbcTemplate;
-        this.paginationHelper = paginationHelper;
-        this.sqlGenerator = sqlGenerator;
-        this.columnValidator = columnValidator;
-        this.prequalificationChecklistReadPlatformService = prequalificationChecklistReadPlatformService;
-    }
+//    @Autowired
+//    public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
+//            final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
+//            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
+//            GenericDataService genericDataService) {
+//        this.context = context;
+//        this.codeValueReadPlatformService = codeValueReadPlatformService;
+//        this.jdbcTemplate = jdbcTemplate;
+//        this.paginationHelper = paginationHelper;
+//        this.sqlGenerator = sqlGenerator;
+//        this.columnValidator = columnValidator;
+//        this.genericDataService = genericDataService;
+//    }
 
     @Override
     public Page<GroupPrequalificationData> retrieveAll(SearchParameters searchParameters) {
@@ -110,73 +122,45 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             dataValidationErrors.add(error);
             throw new PlatformApiDataValidationException(dataValidationErrors);
         }
-
-        final boolean groupListing = isGroupListing(searchParameters);
-        final List<Object> filterParams = new ArrayList<>();
-        final String extraCriteria = searchParameters != null ? buildSqlStringFromBlacklistCriteria(searchParameters, filterParams, true)
-                : "";
-
-        final StringBuilder whereClause = new StringBuilder(" where g.prequalification_number is not null ");
-        if (StringUtils.isNotBlank(extraCriteria)) {
-            whereClause.append(" and (").append(extraCriteria).append(")");
-        }
-
-        final String filterFrom = this.prequalificationsGroupMapper.listFilterFrom();
-
-        final String countSql = "select count(distinct g.id) " + filterFrom + whereClause;
-        final Integer totalFilteredRecords = ObjectUtils
-                .defaultIfNull(this.jdbcTemplate.queryForObject(countSql, Integer.class, filterParams.toArray()), 0);
-
-        final StringBuilder idSql = new StringBuilder("select distinct g.id ").append(filterFrom).append(whereClause);
-        appendListOrderBy(idSql, searchParameters);
-        if (searchParameters != null && searchParameters.isLimited()) {
-            idSql.append(' ');
-            if (searchParameters.isOffset()) {
-                idSql.append(sqlGenerator.limit(searchParameters.getLimit(), searchParameters.getOffset()));
-            } else {
-                idSql.append(sqlGenerator.limit(searchParameters.getLimit()));
-            }
-        }
-
-        final List<Long> prequalificationIds = this.jdbcTemplate.queryForList(idSql.toString(), Long.class, filterParams.toArray());
-        if (prequalificationIds.isEmpty()) {
-            return new Page<>(Collections.emptyList(), totalFilteredRecords);
-        }
-
-        final List<Object> enrichParams = new ArrayList<>(prequalificationIds);
-        final String inClause = prequalificationIds.stream().map(id -> "?").collect(Collectors.joining(", "));
-        final String enrichSql = "select "
-                + (groupListing ? this.prequalificationsGroupMapper.gpSchema() : this.prequalificationsGroupMapper.schema())
-                + " where g.id in (" + inClause + ")" + buildEnrichOrderBy(prequalificationIds);
-
-        final List<GroupPrequalificationData> pageItems = this.jdbcTemplate.query(enrichSql, this.prequalificationsGroupMapper,
-                enrichParams.toArray());
-        return new Page<>(pageItems, totalFilteredRecords);
-    }
-
-    private boolean isGroupListing(final SearchParameters searchParameters) {
-        return searchParameters != null && (StringUtils.equals(searchParameters.getGroupingType(), "group")
-                || StringUtils.equals(searchParameters.getType(), "checked"));
-    }
-
-    private void appendListOrderBy(final StringBuilder sqlBuilder, final SearchParameters searchParameters) {
-        if (searchParameters != null && searchParameters.isOrderByRequested()) {
-            sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
-            this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy());
-            if (searchParameters.isSortOrderProvided()) {
-                sqlBuilder.append(' ').append(searchParameters.getSortOrder());
-                this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getSortOrder());
-            }
+        List<Object> paramList = new ArrayList<>();
+        final StringBuilder sqlBuilder = new StringBuilder(500);
+        if (StringUtils.equals(searchParameters.getGroupingType(), "group") || StringUtils.equals(searchParameters.getType(), "checked")) {
+            sqlBuilder.append("select ").append(this.prequalificationsGroupMapper.gpSchema());
         } else {
-            sqlBuilder.append(" order by g.id desc ");
+            sqlBuilder.append("select ").append(this.prequalificationsGroupMapper.schema());
         }
-    }
-
-    private String buildEnrichOrderBy(final List<Long> prequalificationIds) {
-        if (prequalificationIds.isEmpty()) {
-            return " order by g.id desc ";
+        sqlBuilder.append(" where g.prequalification_number is not null ");
+        String sqlCountRows = this.genericDataService.wrapSQLCount(sqlBuilder.toString());
+        if (searchParameters != null) {
+            final String extraCriteria = buildSqlStringFromBlacklistCriteria(searchParameters, paramList, true);
+            if (StringUtils.isNotBlank(extraCriteria)) {
+                sqlBuilder.append(" and (").append(extraCriteria).append(")");
+            }
+            if (searchParameters.isOrderByRequested()) {
+                sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
+                this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy());
+                if (searchParameters.isSortOrderProvided()) {
+                    sqlBuilder.append(' ').append(searchParameters.getSortOrder());
+                    this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getSortOrder());
+                }
+            } else {
+                sqlBuilder.append(" order by g.id desc ");
+            }
+            sqlCountRows = this.genericDataService.wrapSQLCount(sqlBuilder.toString());
+            if (searchParameters.isLimited()) {
+                sqlBuilder.append(" ");
+                if (searchParameters.isOffset()) {
+                    sqlBuilder.append(sqlGenerator.limit(searchParameters.getLimit(), searchParameters.getOffset()));
+                } else {
+                    sqlBuilder.append(sqlGenerator.limit(searchParameters.getLimit()));
+                }
+            }
         }
-        return " order by field(g.id, " + prequalificationIds.stream().map(String::valueOf).collect(Collectors.joining(", ")) + ") ";
+        List<GroupPrequalificationData> pageItems = this.jdbcTemplate.query(sqlBuilder.toString(), this.prequalificationsGroupMapper,
+                paramList.toArray());
+        final Integer totalFilteredRecords = ObjectUtils
+                .defaultIfNull(this.jdbcTemplate.queryForObject(sqlCountRows, Integer.class, paramList.toArray()), 0);
+        return new Page<>(pageItems, totalFilteredRecords);
     }
 
     @Override
@@ -187,16 +171,18 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 new Object[] { groupId });
 
         if (clientData != null) {
-            final String membersql = "select " + this.prequalificationsMemberMapper.detailSchema() + " WHERE m.group_id = ? ";
-            List<MemberPrequalificationData> members = this.jdbcTemplate.query(membersql, this.prequalificationsMemberMapper,
-                    new Object[] { groupId, groupId, groupId, groupId, groupId });
+            final String membersql = "select " + this.prequalificationsMemberMapper.schema() + " WHERE m.group_id = ? ";
 
-            final Map<Long, LoanData> loanDataByLoanId = loadLoanEnrichmentData(members);
+            List<MemberPrequalificationData> members = this.jdbcTemplate.query(membersql, this.prequalificationsMemberMapper,
+                    new Object[] { groupId, groupId });
+
             for (MemberPrequalificationData memberPrequalificationData : members) {
                 Integer status = PrequalificationMemberIndication.NONE.getValue();
                 if (memberPrequalificationData.getActiveBlacklistCount() > 0) {
                     status = PrequalificationMemberIndication.ACTIVE.getValue();
-                } else if (memberPrequalificationData.getInActiveBlacklistCount() > 0) {
+                }
+                if (memberPrequalificationData.getActiveBlacklistCount() <= 0
+                        && memberPrequalificationData.getInActiveBlacklistCount() > 0) {
                     status = PrequalificationMemberIndication.INACTIVE.getValue();
                 }
                 if (memberPrequalificationData.getActiveBlacklistCount() <= 0
@@ -205,10 +191,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 }
                 final EnumOptionData enumOptionData = PreQualificationsMemberEnumerations.status(status);
                 memberPrequalificationData.setStatus(enumOptionData);
-                memberPrequalificationData.setStatus(PreQualificationsMemberEnumerations.status(status));
 
-                final LoanData loanData = loanDataByLoanId.getOrDefault(memberPrequalificationData.getLoanId(),
-                        new LoanData(null, null, null, null, null));
+                LoanData loanData = getLoanDataByPrequalificationId(groupId);
+
                 memberPrequalificationData.setCollateral(loanData.getCollateral());
                 memberPrequalificationData.setDestination(loanData.getDestination());
                 memberPrequalificationData.setInterestRatePerPeriod(loanData.getInterestRatePerPeriod());
@@ -216,72 +201,13 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 memberPrequalificationData.setQuotaAmount(loanData.getQuotaAmount());
             }
             clientData.updateMembers(members);
-            clientData.setLatestComments(ObjectUtils.defaultIfNull(clientData.getLatestComments(), clientData.getComments()));
+            Optional<PrequalificationGroup> group =  preQualificationGroupRepository.findById(groupId);
+            clientData.setExceptionComment(group.isPresent() ? group.get().getExceptionComments() : "");
+            clientData.setComments(group.isPresent() ? group.get().getComments() : "");
+            clientData.setLatestComments(group.isPresent() ?  group.get().getComments() : "");
         }
+
         return clientData;
-    }
-
-    @Override
-    public Long retrieveAgencyId(Long prequalificationId) {
-        final List<Long> agencyIds = this.jdbcTemplate.queryForList("SELECT agency_id FROM m_prequalification_group WHERE id = ?",
-                Long.class, prequalificationId);
-        return agencyIds.isEmpty() ? null : agencyIds.get(0);
-    }
-
-    private Map<Long, LoanData> loadLoanEnrichmentData(final List<MemberPrequalificationData> members) {
-        final List<Long> loanIds = members.stream().map(MemberPrequalificationData::getLoanId).filter(Objects::nonNull).distinct().toList();
-        if (loanIds.isEmpty()) {
-            return new HashMap<>();
-        }
-        final String inClause = loanIds.stream().map(id -> "?").collect(Collectors.joining(", "));
-        final String loanSql = """
-                SELECT
-                    ml.id AS loanId,
-                    ml.nominal_interest_rate_per_period AS interestRatePerPeriod,
-                    ml.term_frequency AS period,
-                    purpose.code_value AS destination,
-                    (
-                        SELECT COALESCE(rs.principal_amount, 0)
-                            - COALESCE(rs.principal_completed_derived, 0)
-                            - COALESCE(rs.principal_writtenoff_derived, 0)
-                            + COALESCE(rs.interest_amount, 0)
-                            - COALESCE(rs.interest_completed_derived, 0)
-                            - COALESCE(rs.interest_waived_derived, 0)
-                            - COALESCE(rs.interest_writtenoff_derived, 0)
-                            + COALESCE(rs.fee_charges_amount, 0)
-                            - COALESCE(rs.fee_charges_completed_derived, 0)
-                            - COALESCE(rs.fee_charges_writtenoff_derived, 0)
-                            - COALESCE(rs.fee_charges_waived_derived, 0)
-                            + COALESCE(rs.penalty_charges_amount, 0)
-                            - COALESCE(rs.penalty_charges_completed_derived, 0)
-                            - COALESCE(rs.penalty_charges_writtenoff_derived, 0)
-                            - COALESCE(rs.penalty_charges_waived_derived, 0)
-                        FROM m_loan_repayment_schedule rs
-                        WHERE rs.loan_id = ml.id AND rs.installment = 1
-                        LIMIT 1
-                    ) AS quotaAmount,
-                    (
-                        SELECT cv.code_value
-                        FROM m_loan_collateral lc
-                        INNER JOIN m_code_value cv ON cv.id = lc.type_cv_id
-                        WHERE lc.loan_id = ml.id
-                        ORDER BY lc.id
-                        LIMIT 1
-                    ) AS collateral
-                FROM m_loan ml
-                LEFT JOIN m_code_value purpose ON purpose.id = ml.loanpurpose_cv_id
-                WHERE ml.id IN (%s)
-                """.formatted(inClause);
-
-        final Map<Long, LoanData> loanDataById = new HashMap<>();
-        this.jdbcTemplate.query(loanSql, rs -> {
-            final Long loanId = JdbcSupport.getLong(rs, "loanId");
-            loanDataById.put(loanId,
-                    new LoanData(JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "quotaAmount"),
-                            JdbcSupport.getBigDecimalDefaultToNullIfZero(rs, "interestRatePerPeriod"), JdbcSupport.getInteger(rs, "period"),
-                            rs.getString("collateral"), rs.getString("destination")));
-        }, loanIds.toArray());
-        return loanDataById;
     }
 
     @Override
@@ -396,11 +322,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         if (StringUtils.equals(groupingType, "group") || StringUtils.equals(type, "checked")) {
             extraCriteria += " and g.prequalification_type_enum = ? ";
             paramList.add(PrequalificationType.GROUP.getValue());
+            extraCriteria += " and (mogrp.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(mogrp.hierarchy, '%'))";
+            paramList.add(appUser.getOffice().getHierarchy());
+            paramList.add(appUser.getOffice().getHierarchy());
+        } else {
+            extraCriteria += " and (moind.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(moind.hierarchy, '%'))";
+            paramList.add(appUser.getOffice().getHierarchy());
+            paramList.add(appUser.getOffice().getHierarchy());
         }
-
-        extraCriteria += " and (moind.hierarchy LIKE CONCAT(?, '%') OR ? like CONCAT(moind.hierarchy, '%'))";
-        paramList.add(appUser.getOffice().getHierarchy());
-        paramList.add(appUser.getOffice().getHierarchy());
 
         if (StringUtils.equals(groupingType, "individual")) {
             extraCriteria += " and g.prequalification_type_enum = ? ";
@@ -412,7 +341,12 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         }
 
         if (agencyId != null) {
-            extraCriteria += " and g.agency_id = ? ";
+            if (StringUtils.equals(searchParameters.getGroupingType(), "group")
+                    || StringUtils.equals(searchParameters.getType(), "checked")) {
+                extraCriteria += " and ma.id = ? ";
+            } else {
+                extraCriteria += " and individualOffice.agency_id = ? ";
+            }
             paramList.add(agencyId);
         }
 
@@ -436,17 +370,17 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         if (dpiNumber != null) {
             paramList.add(dpiNumber);
-            extraCriteria += " and g.prequalification_number like concat('%', ?, '%') ";
+            extraCriteria += " and g.prequalification_number like %?% ";
         }
 
         if (groupName != null) {
             paramList.add(groupName);
-            extraCriteria += " and g.group_name like concat('%', ?, '%') ";
+            extraCriteria += " and g.group_name like %?% ";
         }
 
         if (centerName != null) {
             paramList.add(centerName);
-            extraCriteria += " and pc.display_name like concat('%', ?, '%') ";
+            extraCriteria += " and pc.display_name like %?% ";
         }
 
         if (status != null) {
@@ -459,7 +393,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 extraCriteria += " and g.group_id is not null ";
             } else if (type.equals("checked")) {
                 extraCriteria += " and g.status = " + PrequalificationStatus.BURO_CHECKED.getValue().toString() + " "
-                        + "and not exists (select 1 from m_group mg_checked where mg_checked.prequalification_id = g.id) ";
+                        + "and (g.id not in (select prequalification_id from m_group where prequalification_id is not null)) ";
             } else if (type.equals("analysis")) {
                 extraCriteria += " and g.status IN( " + PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL.getValue().toString() + ", "
                         + PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ") ";
@@ -506,20 +440,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         private final String schema;
         private final String grpSchema;
-        private final String listFilterFrom;
 
         PrequalificationsGroupMapper() {
-            this.listFilterFrom = """
-                    FROM m_prequalification_group g
-                    LEFT JOIN m_office moind ON moind.id = g.supervision_office_id
-                    LEFT JOIN m_group pc ON pc.id = g.center_id
-                    """;
-
             this.schema = """
+                    DISTINCT
                         g.id AS id,
                         g.prequalification_number AS prequalificationNumber,
                         g.STATUS,
-                        (SELECT MIN(lg.id) FROM m_group lg WHERE lg.prequalification_id = g.id) AS linkedGroupId,
+                        linkedGroup.id AS linkedGroupId,
                         g.prequalification_duration AS prequalilficationTimespan,
                         g.comments,
                         g.created_at,
@@ -530,18 +458,18 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                         assigned.username AS assignedUser,
                         CONCAT(assigned.firstname, ' ', assigned.lastname) AS assignedUserName,
                         sl.date_created AS statusChangedOn,
-                        (SELECT COALESCE(SUM(mpgm.requested_amount), 0) FROM m_prequalification_group_members mpgm WHERE mpgm.group_id = g.id) AS totalRequestedAmount,
-                        (SELECT COALESCE(SUM(mpgm.approved_amount), 0) FROM m_prequalification_group_members mpgm WHERE mpgm.group_id = g.id) AS totalApprovedAmount,
+                        prequalification_numbers.total_requested_amount AS totalRequestedAmount,
+                        prequalification_numbers.total_approved_amount AS totalApprovedAmount,
                         CASE
                             WHEN g.previous_prequalification IS NOT NULL THEN 'Recredito'
                             ELSE 'Nuevo'
                         END AS processType,
                         CASE
-                            WHEN (SELECT COUNT(*) FROM m_prequalification_status_log mpsl WHERE mpsl.prequalification_id = g.id) > 0 THEN 'Reproceso'
+                            WHEN mpsl.reprocess_count > 0 THEN 'Reproceso'
                             ELSE 'Nuevo'
                         END AS processQuality,
                         CONCAT(mu.firstname, ' ', mu.lastname) AS statusChangedBy,
-                        ma.NAME AS agencyName,
+                        COALESCE(ma.NAME, individualOffice.agency_name) AS agencyName,
                         ma.id AS agencyId,
                         cg.display_name AS groupName,
                         g.group_name AS newGroupName,
@@ -554,85 +482,211 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                         lp.NAME AS productName,
                         au.firstname,
                         au.lastname,
-                        COALESCE((SELECT COUNT(*) FROM m_checklist_validation_result mcvr WHERE mcvr.prequalification_id = g.id AND mcvr.validation_color_enum = 1), 0) AS greenValidationCount,
-                        COALESCE((SELECT COUNT(*) FROM m_checklist_validation_result mcvr WHERE mcvr.prequalification_id = g.id AND mcvr.validation_color_enum = 2), 0) AS yellowValidationCount,
-                        COALESCE((SELECT COUNT(*) FROM m_checklist_validation_result mcvr WHERE mcvr.prequalification_id = g.id AND mcvr.validation_color_enum = 3), 0) AS orangeValidationCount,
-                        COALESCE((SELECT COUNT(*) FROM m_checklist_validation_result mcvr WHERE mcvr.prequalification_id = g.id AND mcvr.validation_color_enum = 4), 0) AS redValidationCount
+                        COALESCE(validations.greenValidCount, 0) AS greenValidationCount,
+                        COALESCE(validations.yellowValidCount, 0) AS yellowValidationCount,
+                        COALESCE(validations.orangeValidCount, 0) AS orangeValidationCount,
+                        COALESCE(validations.redValidCount, 0) AS redValidationCount
                     FROM
                         m_prequalification_group g
                         INNER JOIN m_appuser au ON au.id = g.added_by
                         INNER JOIN m_product_loan lp ON g.product_id = lp.id
-                        LEFT JOIN m_agency ma ON g.agency_id = ma.id
+                        LEFT JOIN (
+                            SELECT
+                                mpgm.group_id AS prequalification_id,
+                                SUM(mpgm.requested_amount) AS total_requested_amount,
+                                SUM(mpgm.approved_amount) AS total_approved_amount
+                            FROM
+                                m_prequalification_group_members mpgm
+                            GROUP BY
+                                mpgm.group_id
+                        ) prequalification_numbers ON prequalification_numbers.prequalification_id = g.id
+                        LEFT JOIN (
+                            SELECT
+                                mpgm.group_id,
+                                ms.agency_id,
+                                mag.NAME AS agency_name,
+                    						ms.linked_office_id AS supervision_office
+                            FROM
+                                m_prequalification_group_members mpgm
+                                INNER JOIN m_client mc ON mc.dpi = mpgm.dpi
+                                INNER JOIN m_group_client mgc ON mgc.client_id = mc.id
+                                INNER JOIN m_group mg ON mg.id = mgc.group_id
+                                INNER JOIN m_group center ON center.id = mg.parent_id
+                                INNER JOIN m_portfolio mp ON mp.id = center.portfolio_id
+                                INNER JOIN m_supervision ms ON ms.id = mp.supervision_id
+                                INNER JOIN m_agency mag ON mag.id = ms.agency_id
+                            GROUP BY
+                                mpgm.group_id, mag.NAME
+                        ) individualOffice ON individualOffice.group_id = g.id
+                      LEFT JOIN m_agency ma ON g.agency_id = ma.id
+                    	LEFT JOIN (SELECT agency_id, linked_office_id FROM m_supervision GROUP BY agency_id) supv ON supv.agency_id = ma.id
+                    	LEFT JOIN m_office mo ON mo.id = supv.linked_office_id
+                    	LEFT JOIN m_office moind ON moind.id = individualOffice.supervision_office
+                        LEFT JOIN (
+                            SELECT
+                                mcvr.prequalification_id,
+                                COUNT(CASE WHEN mcvr.validation_color_enum = 1 THEN 1 END) AS greenValidCount,
+                                COUNT(CASE WHEN mcvr.validation_color_enum = 2 THEN 1 END) AS yellowValidCount,
+                                COUNT(CASE WHEN mcvr.validation_color_enum = 3 THEN 1 END) AS orangeValidCount,
+                                COUNT(CASE WHEN mcvr.validation_color_enum = 4 THEN 1 END) AS redValidCount
+                            FROM
+                                m_checklist_validation_result mcvr
+                            GROUP BY
+                                mcvr.prequalification_id
+                        ) validations ON validations.prequalification_id = g.id
                         LEFT JOIN m_group cg ON cg.id = g.group_id
+                        LEFT JOIN m_group linkedGroup ON linkedGroup.prequalification_id = g.id
                         LEFT JOIN m_group pc ON pc.id = g.center_id
-                        LEFT JOIN m_prequalification_status_log sl ON sl.id = (
-                            SELECT MAX(psl.id)
-                            FROM m_prequalification_status_log psl
-                            WHERE psl.prequalification_id = g.id AND psl.to_status = g.status
-                        )
+                        LEFT JOIN (
+                            SELECT
+                                prequalification_id,
+                                to_status,
+                                from_status,
+                                sub_status,
+                                comments,
+                                date_created,
+                                assigned_to,
+                                updatedby_id
+                            FROM
+                                m_prequalification_status_log
+                            WHERE
+                                id IN (SELECT MAX(id) FROM m_prequalification_status_log GROUP BY prequalification_id, to_status)
+                        ) sl ON sl.prequalification_id = g.id AND sl.to_status = g.STATUS
                         LEFT JOIN m_appuser assigned ON assigned.id = sl.assigned_to
                         LEFT JOIN m_appuser mu ON mu.id = sl.updatedby_id
                         LEFT JOIN m_appuser fa ON fa.id = g.facilitator
+                        LEFT JOIN (
+                            SELECT
+                                prequalification_id,
+                                COUNT(*) AS reprocess_count
+                            FROM
+                                m_prequalification_status_log
+                            GROUP BY
+                                prequalification_id
+                        ) mpsl ON mpsl.prequalification_id = g.id
                     """;
 
             this.grpSchema = """
-                        g.id AS id,
-                        g.prequalification_number AS prequalificationNumber,
-                        g.status,
-                        (SELECT MIN(lg.id) FROM m_group lg WHERE lg.prequalification_id = g.id) AS linkedGroupId,
-                        g.prequalification_duration AS prequalilficationTimespan,
-                        g.comments,
-                        g.created_at,
-                        g.prequalification_type_enum AS prequalificationType,
-                        sl.from_status AS previousStatus,
-                        sl.sub_status AS substatus,
-                        sl.comments AS latestComments,
-                        assigned.username AS assignedUser,
-                        CONCAT(assigned.firstname, ' ', assigned.lastname) AS assignedUserName,
-                        sl.date_created AS statusChangedOn,
-                        (SELECT COALESCE(SUM(mpgm.requested_amount), 0) FROM m_prequalification_group_members mpgm WHERE mpgm.group_id = g.id) AS totalRequestedAmount,
-                        (SELECT COALESCE(SUM(mpgm.approved_amount), 0) FROM m_prequalification_group_members mpgm WHERE mpgm.group_id = g.id) AS totalApprovedAmount,
-                        CASE
-                            WHEN g.previous_prequalification IS NOT NULL THEN 'Recredito'
-                            ELSE 'Nuevo'
+                       DISTINCT g.id AS id,
+                    	g.prequalification_number AS prequalificationNumber,
+                    	g.status,linkedGroup.id as linkedGroupId,
+                    	g.prequalification_duration as prequalilficationTimespan,
+                    	g.comments,
+                    	g.created_at,
+                    	g.prequalification_type_enum as prequalificationType,
+                    	sl.from_status as previousStatus,
+                    	sl.sub_status as substatus,
+                    	sl.comments as latestComments,
+                    	assigned.username as assignedUser,
+                    	concat(assigned.firstname, ' ', assigned.lastname) as assignedUserName,
+                    	sl.date_created as statusChangedOn,
+                        prequalification_numbers.total_requested_amount as totalRequestedAmount,
+                        prequalification_numbers.total_approved_amount totalApprovedAmount,
+                    	CASE
+                        WHEN g.previous_prequalification IS NOT NULL THEN 'Recredito'
+                        ELSE 'Nuevo'
                         END AS processType,
                         CASE
-                            WHEN (SELECT COUNT(*) FROM m_prequalification_status_log mpsl WHERE mpsl.prequalification_id = g.id AND mpsl.to_status = g.status) > 0 THEN 'Reproceso'
-                            ELSE 'Nuevo'
+                        WHEN mpsl.reprocess_count > 0 THEN 'Reproceso'
+                        ELSE 'Nuevo'
                         END AS processQuality,
                         CONCAT(mu.firstname, ' ', mu.lastname) AS statusChangedBy,
                         ma.name AS agencyName,
-                        ma.id AS agencyId,
-                        cg.display_name AS groupName,
-                        g.group_name AS newGroupName,
-                        g.group_id AS groupId,
-                        pc.display_name AS centerName,
-                        pc.id AS centerId,
-                        lp.id AS productId,
-                        fa.id AS facilitatorId,
-                        CONCAT(fa.firstname, ' ', fa.lastname) AS facilitatorName,
-                        lp.name AS productName,
-                        au.firstname,
-                        au.lastname,
-                        COALESCE((SELECT COUNT(*) FROM m_checklist_validation_result mcvr WHERE mcvr.prequalification_id = g.id AND mcvr.validation_color_enum = 1), 0) AS greenValidationCount,
-                        COALESCE((SELECT COUNT(*) FROM m_checklist_validation_result mcvr WHERE mcvr.prequalification_id = g.id AND mcvr.validation_color_enum = 2), 0) AS yellowValidationCount,
-                        COALESCE((SELECT COUNT(*) FROM m_checklist_validation_result mcvr WHERE mcvr.prequalification_id = g.id AND mcvr.validation_color_enum = 3), 0) AS orangeValidationCount,
-                        COALESCE((SELECT COUNT(*) FROM m_checklist_validation_result mcvr WHERE mcvr.prequalification_id = g.id AND mcvr.validation_color_enum = 4), 0) AS redValidationCount
+                    	ma.id AS agencyId,
+                    	cg.display_name AS groupName,
+                    	g.group_name AS newGroupName,
+                    	g.group_id AS groupId,
+                    	pc.display_name AS centerName,
+                    	pc.id AS centerId,
+                    	lp.id AS productId,
+                    	fa.id AS facilitatorId,
+                    	concat(fa.firstname, ' ', fa.lastname) AS facilitatorName,
+                    	lp.name AS productName,
+                    	au.firstname,
+                    	au.lastname,
+                    	greenValidCount AS greenValidationCount,
+                        yellowValidCount AS yellowValidationCount,
+                        orangeValidCount AS orangeValidationCount,
+                        redValidCount AS redValidationCount
                     FROM
-                        m_prequalification_group g
-                        INNER JOIN m_appuser au ON au.id = g.added_by
-                        INNER JOIN m_product_loan lp ON g.product_id = lp.id
-                        LEFT JOIN m_agency ma ON g.agency_id = ma.id
-                        LEFT JOIN m_group cg ON cg.id = g.group_id
-                        LEFT JOIN m_group pc ON pc.id = g.center_id
-                        LEFT JOIN m_prequalification_status_log sl ON sl.id = (
-                            SELECT MAX(psl.id)
-                            FROM m_prequalification_status_log psl
-                            WHERE psl.prequalification_id = g.id AND psl.to_status = g.status
-                        )
-                        LEFT JOIN m_appuser assigned ON assigned.id = sl.assigned_to
-                        LEFT JOIN m_appuser mu ON mu.id = sl.updatedby_id
-                        LEFT JOIN m_appuser fa ON fa.id = g.facilitator
+                    	m_prequalification_group g
+                    INNER JOIN m_appuser au ON
+                    	au.id = g.added_by
+                    INNER JOIN m_product_loan lp ON
+                    	g.product_id = lp.id
+                    LEFT JOIN (
+                        SELECT
+                        mpgm.group_id AS prequalification_id,
+                        SUM(mpgm.requested_amount)  AS total_requested_amount,
+                        SUM(mpgm.approved_amount) AS total_approved_amount
+                        FROM m_prequalification_group_members mpgm
+                        GROUP BY mpgm.group_id
+                    ) prequalification_numbers ON prequalification_numbers.prequalification_id = g.id
+                    LEFT JOIN m_agency ma ON g.agency_id = ma.id
+                    LEFT JOIN m_office groupOffice ON ma.linked_office_id = groupOffice.parent_id
+                    LEFT JOIN m_office mogrp ON mogrp.id = groupOffice.id
+                    LEFT JOIN (
+                        SELECT
+                          mcvr.prequalification_id,
+                          COUNT(
+                            CASE
+                              WHEN mcvr.validation_color_enum = 1 THEN 1
+                            END
+                          ) AS greenValidCount,
+                          COUNT(
+                            CASE
+                              WHEN mcvr.validation_color_enum = 2 THEN 1
+                            END
+                          ) AS yellowValidCount,
+                          COUNT(
+                            CASE
+                              WHEN mcvr.validation_color_enum = 3 THEN 1
+                            END
+                          ) AS orangeValidCount,
+                          COUNT(
+                            CASE
+                              WHEN mcvr.validation_color_enum = 4 THEN 1
+                            END
+                          ) AS redValidCount
+                      FROM m_checklist_validation_result mcvr
+                      GROUP BY
+                      mcvr.prequalification_id
+                      ) validations ON validations.prequalification_id = g.id
+                    LEFT JOIN m_group cg ON
+                    	cg.id = g.group_id
+                    LEFT JOIN m_group linkedGroup ON
+                    	linkedGroup.prequalification_id = g.id
+                    LEFT JOIN m_group pc ON
+                    	pc.id = g.center_id
+                    LEFT JOIN (
+                        SELECT
+                          prequalification_id,
+                          to_status,
+                          from_status,
+                          sub_status,
+                          comments,
+                          assigned_to,
+                          updatedby_id,
+                          MAX(date_created) AS date_created
+                        FROM
+                          m_prequalification_status_log
+                        GROUP BY
+                          prequalification_id
+                      ) sl ON sl.prequalification_id = g.id
+                      AND sl.to_status = g.status
+                    	LEFT JOIN (
+                        SELECT
+                        count(*) as reprocess_count,
+                        prequalification_id,
+                        to_status
+                    	FROM m_prequalification_status_log  GROUP BY prequalification_id, to_status )
+                    mpsl ON mpsl.prequalification_id = g.id
+                      AND mpsl.to_status = g.status
+                    LEFT JOIN m_appuser assigned ON assigned.id = sl.assigned_to
+                    LEFT JOIN m_appuser mu ON
+                    	mu.id = sl.updatedby_id
+                    LEFT JOIN m_appuser fa ON
+                    	fa.id = g.facilitator
                     """;
         }
 
@@ -642,10 +696,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
         public String gpSchema() {
             return this.grpSchema;
-        }
-
-        public String listFilterFrom() {
-            return this.listFilterFrom;
         }
 
         @Override
@@ -790,7 +840,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     private static final class PrequalificationsMemberMapper implements RowMapper<MemberPrequalificationData> {
 
         private final String schema;
-        private final String detailSchema;
 
         PrequalificationsMemberMapper() {
             this.schema = """
@@ -820,144 +869,76 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     	m.buro_fecha AS fecha,
                     	m.buro_cuentas AS cuentas,
                     	m.buro_resumen AS resumen,
-                    	COALESCE((SELECT count(*) FROM m_document d WHERE d.parent_entity_id = m.group_id AND d.name LIKE CONCAT('%', m.dpi, '%')), 0) AS documentCount,
-                    	COALESCE(blacklistStats.blacklistCount, 0) AS blacklistCount,
-                    	COALESCE(blacklistStats.activeBlacklistCount, 0) AS activeBlacklistCount,
-                    	COALESCE(blacklistStats.inActiveBlacklistCount, 0) AS inActiveBlacklistCount,
+                    	(SELECT count(*) from m_document where parent_entity_id=? AND name like CONCAT('%', m.dpi, '%')) as documentCount,
+                    	(
+                    	SELECT
+                    		count(*)
+                    	FROM
+                    		m_client_blacklist b
+                    	WHERE
+                    		b.dpi = m.dpi) AS blacklistCount,
+                    	(
+                    	SELECT
+                    		COUNT(*)
+                    	FROM
+                    		m_client_blacklist mcb
+                    	WHERE
+                    		mcb.dpi = m.dpi
+                    		AND mcb.status = 200) AS activeBlacklistCount,
+                    	(
+                    	SELECT
+                    		COUNT(*)
+                    	FROM
+                    		m_client_blacklist mcb
+                    	WHERE
+                    		mcb.dpi = m.dpi
+                    		AND mcb.status = 100) AS inActiveBlacklistCount,
                     	m.work_with_puente AS puente,
-                    	COALESCE(validationStats.greenValidationCount, 0) AS greenValidationCount,
-                    	COALESCE(validationStats.yellowValidationCount, 0) AS yellowValidationCount,
-                    	COALESCE(validationStats.orangeValidationCount, 0) AS orangeValidationCount,
-                    	COALESCE(validationStats.redValidationCount, 0) AS redValidationCount
+                    	(
+                    	SELECT
+                    		COUNT(*)
+                    	FROM
+                    		m_checklist_validation_result mcvr
+                    	WHERE
+                    		mcvr.validation_color_enum = 1
+                    		AND mcvr.prequalification_type = 1
+                    		AND mcvr.prequalification_member_id = m.id ) AS greenValidationCount,
+                    		(
+                    	SELECT
+                    		COUNT(*)
+                    	FROM
+                    		m_checklist_validation_result mcvr
+                    	WHERE
+                    		mcvr.validation_color_enum = 2
+                    		AND mcvr.prequalification_type = 1
+                    		AND mcvr.prequalification_member_id = m.id ) AS yellowValidationCount,
+                    	(
+                    	SELECT
+                    		COUNT(*)
+                    	FROM
+                    		m_checklist_validation_result mcvr
+                    	WHERE
+                    		mcvr.validation_color_enum = 3
+                    		AND mcvr.prequalification_type = 1
+                    		AND mcvr.prequalification_member_id = m.id ) AS orangeValidationCount,
+                    			(
+                    	SELECT
+                    		COUNT(*)
+                    	FROM
+                    		m_checklist_validation_result mcvr
+                    	WHERE
+                    		mcvr.validation_color_enum = 4
+                    		AND mcvr.prequalification_type = 1
+                    		AND mcvr.prequalification_member_id = m.id ) AS redValidationCount
                     FROM
                     	m_prequalification_group_members m
-                    LEFT JOIN m_client mc ON mc.dpi = m.dpi
-                    LEFT JOIN m_loan ml ON ml.prequalification_id = m.group_id AND ml.client_id = mc.id
-                    LEFT JOIN (
-                        SELECT
-                            b.dpi,
-                            COUNT(*) AS blacklistCount,
-                            SUM(CASE WHEN b.status = 200 THEN 1 ELSE 0 END) AS activeBlacklistCount,
-                            SUM(CASE WHEN b.status = 100 THEN 1 ELSE 0 END) AS inActiveBlacklistCount
-                        FROM m_client_blacklist b
-                        GROUP BY b.dpi
-                    ) blacklistStats ON blacklistStats.dpi = m.dpi
-                    LEFT JOIN (
-                        SELECT
-                            mcvr.prequalification_member_id,
-                            SUM(CASE WHEN mcvr.validation_color_enum = 1 THEN 1 ELSE 0 END) AS greenValidationCount,
-                            SUM(CASE WHEN mcvr.validation_color_enum = 2 THEN 1 ELSE 0 END) AS yellowValidationCount,
-                            SUM(CASE WHEN mcvr.validation_color_enum = 3 THEN 1 ELSE 0 END) AS orangeValidationCount,
-                            SUM(CASE WHEN mcvr.validation_color_enum = 4 THEN 1 ELSE 0 END) AS redValidationCount
-                        FROM m_checklist_validation_result mcvr
-                        WHERE mcvr.prequalification_type = 1
-                        GROUP BY mcvr.prequalification_member_id
-                    ) validationStats ON validationStats.prequalification_member_id = m.id
-                    """;
-
-            this.detailSchema = """
-                    	m.id AS id,
-                    	m.name,
-                    	ml.id as loanId,
-                    	m.status,
-                    	m.comments as comments,
-                    	m.agency_bureau_status as agencyBureauStatus,
-                    	m.is_president as groupPresident,
-                    	m.dpi,
-                    	mc.id AS clientId,
-                    	m.dob,
-                    	m.buro_check_status as buroCheckStatus,
-                    	m.requested_amount AS requestedAmount,
-                    	m.approved_amount AS approvedAmount,
-                    	m.original_amount AS originalAmount,
-                    	COALESCE(loanStats.totalLoanAmount, 0) AS totalLoanAmount,
-                    	COALESCE(loanStats.totalLoanBalance, 0) AS totalLoanBalance,
-                    	COALESCE(guarStats.totalGuaranteedLoanBalance, 0) AS totalGuaranteedLoanBalance,
-                    	COALESCE(loanStats.noOfCycles, 0) AS noOfCycles,
-                    	0 AS additionalCreditsCount,
-                    	0 AS additionalCreditsSum,
-                    	m.buro_nombre AS nombre,
-                    	m.buro_id_tipo AS tipo,
-                    	m.buro_id_numero as numero,
-                    	m.buro_id_estado as estado,
-                    	m.buro_fecha AS fecha,
-                    	m.buro_cuentas AS cuentas,
-                    	m.buro_resumen AS resumen,
-                    	COALESCE((SELECT count(*) FROM m_document d WHERE d.parent_entity_id = m.group_id AND d.name LIKE CONCAT('%', m.dpi, '%')), 0) AS documentCount,
-                    	COALESCE(blacklistStats.blacklistCount, 0) AS blacklistCount,
-                    	COALESCE(blacklistStats.activeBlacklistCount, 0) AS activeBlacklistCount,
-                    	COALESCE(blacklistStats.inActiveBlacklistCount, 0) AS inActiveBlacklistCount,
-                    	m.work_with_puente AS puente,
-                    	COALESCE(validationStats.greenValidationCount, 0) AS greenValidationCount,
-                    	COALESCE(validationStats.yellowValidationCount, 0) AS yellowValidationCount,
-                    	COALESCE(validationStats.orangeValidationCount, 0) AS orangeValidationCount,
-                    	COALESCE(validationStats.redValidationCount, 0) AS redValidationCount
-                    FROM
-                    	m_prequalification_group_members m
-                    LEFT JOIN m_client mc ON mc.dpi = m.dpi
-                    LEFT JOIN m_loan ml ON ml.prequalification_id = m.group_id AND ml.client_id = mc.id
-                    LEFT JOIN (
-                        SELECT
-                            l.client_id,
-                            COALESCE(SUM(l.principal_disbursed_derived), 0) AS totalLoanAmount,
-                            COALESCE(SUM(l.total_outstanding_derived), 0) AS totalLoanBalance,
-                            COALESCE(MAX(l.loan_counter), 0) AS noOfCycles
-                        FROM m_loan l
-                        WHERE l.client_id IN (
-                            SELECT mc2.id
-                            FROM m_prequalification_group_members m2
-                            INNER JOIN m_client mc2 ON mc2.dpi = m2.dpi
-                            WHERE m2.group_id = ?
-                        )
-                        GROUP BY l.client_id
-                    ) loanStats ON loanStats.client_id = mc.id
-                    LEFT JOIN (
-                        SELECT
-                            mg.entity_id AS client_id,
-                            COALESCE(SUM(mloan.total_outstanding_derived), 0) AS totalGuaranteedLoanBalance
-                        FROM m_loan mloan
-                        INNER JOIN m_guarantor mg ON mg.loan_id = mloan.id
-                        WHERE mg.entity_id IN (
-                            SELECT mc2.id
-                            FROM m_prequalification_group_members m2
-                            INNER JOIN m_client mc2 ON mc2.dpi = m2.dpi
-                            WHERE m2.group_id = ?
-                        )
-                        GROUP BY mg.entity_id
-                    ) guarStats ON guarStats.client_id = mc.id
-                    LEFT JOIN (
-                        SELECT
-                            b.dpi,
-                            COUNT(*) AS blacklistCount,
-                            SUM(CASE WHEN b.status = 200 THEN 1 ELSE 0 END) AS activeBlacklistCount,
-                            SUM(CASE WHEN b.status = 100 THEN 1 ELSE 0 END) AS inActiveBlacklistCount
-                        FROM m_client_blacklist b
-                        WHERE b.dpi IN (
-                            SELECT m2.dpi FROM m_prequalification_group_members m2 WHERE m2.group_id = ?
-                        )
-                        GROUP BY b.dpi
-                    ) blacklistStats ON blacklistStats.dpi = m.dpi
-                    LEFT JOIN (
-                        SELECT
-                            mcvr.prequalification_member_id,
-                            SUM(CASE WHEN mcvr.validation_color_enum = 1 THEN 1 ELSE 0 END) AS greenValidationCount,
-                            SUM(CASE WHEN mcvr.validation_color_enum = 2 THEN 1 ELSE 0 END) AS yellowValidationCount,
-                            SUM(CASE WHEN mcvr.validation_color_enum = 3 THEN 1 ELSE 0 END) AS orangeValidationCount,
-                            SUM(CASE WHEN mcvr.validation_color_enum = 4 THEN 1 ELSE 0 END) AS redValidationCount
-                        FROM m_checklist_validation_result mcvr
-                        WHERE mcvr.prequalification_type = 1
-                          AND mcvr.prequalification_id = ?
-                        GROUP BY mcvr.prequalification_member_id
-                    ) validationStats ON validationStats.prequalification_member_id = m.id
+                    LEFT JOIN m_client mc ON
+                    	mc.dpi = m.dpi
                     """;
         }
 
         public String schema() {
             return this.schema;
-        }
-
-        public String detailSchema() {
-            return this.detailSchema;
         }
 
         @Override
@@ -1014,4 +995,36 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         }
     }
 
+    private LoanData getLoanDataByPrequalificationId(Long prequalificationId) {
+
+        final Loan loan = loanRepositoryWrapper.retrieveByPrequalificationId(prequalificationId);
+        final LoanAccountData loanAccountData = loanReadPlatformService.retrieveOne(loan.getId());
+        BigDecimal quotaAmount = BigDecimal.ZERO;
+        String colateral = "";
+        final List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = this.loanRepositoryWrapper
+                .getLoanRepaymentScheduleInstallments(loan.getId());
+
+        final List<LoanCollateral> loanCollaterals = collateralRepository.findByLoanId(loan.getId());
+
+        if (loanRepaymentScheduleInstallments != null && !loanRepaymentScheduleInstallments.isEmpty()) {
+            quotaAmount = loanRepaymentScheduleInstallments.stream()
+                    .filter(item -> item.getInstallmentNumber() == 1)
+                    .map(item -> item.getTotalOutstanding(item.getLoan().getCurrency()).getAmount())
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        }
+
+        if (loanCollaterals != null && !loanCollaterals.isEmpty()) {
+            for (final LoanCollateral collateral : loanCollaterals) {
+                colateral = collateral.toData().getType().getName();
+                break;
+            }
+        }
+
+        final BigDecimal rate = loanAccountData.getInterestRatePerPeriod();
+        final Integer period = loanAccountData.getTermFrequency();
+        final String destination = loanAccountData.getLoanPurposeName();
+
+        return new LoanData(quotaAmount, rate, period, colateral, destination);
+    }
 }

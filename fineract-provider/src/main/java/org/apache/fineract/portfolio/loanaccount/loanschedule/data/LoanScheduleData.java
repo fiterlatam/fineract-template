@@ -18,9 +18,11 @@
  */
 package org.apache.fineract.portfolio.loanaccount.loanschedule.data;
 
+import lombok.Getter;
+import org.apache.fineract.organisation.monetary.data.CurrencyData;
+
 import java.math.BigDecimal;
 import java.util.Collection;
-import org.apache.fineract.organisation.monetary.data.CurrencyData;
 
 /**
  * Immutable data object to represent aspects of a loan schedule such as:
@@ -32,6 +34,7 @@ import org.apache.fineract.organisation.monetary.data.CurrencyData;
  * </ul>
  */
 @SuppressWarnings("unused")
+@Getter
 public class LoanScheduleData {
 
     /**
