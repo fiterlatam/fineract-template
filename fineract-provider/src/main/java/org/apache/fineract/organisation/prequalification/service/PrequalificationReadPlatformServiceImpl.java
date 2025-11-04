@@ -18,14 +18,7 @@
  */
 package org.apache.fineract.organisation.prequalification.service;
 
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -44,25 +37,45 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.organisation.prequalification.data.BuroData;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
+import org.apache.fineract.organisation.prequalification.data.LoanData;
 import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
 import org.apache.fineract.organisation.prequalification.domain.BuroCheckClassification;
+import org.apache.fineract.organisation.prequalification.domain.PreQualificationGroupRepository;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.domain.SubStatusEnumerations;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
+import org.apache.fineract.portfolio.collateral.domain.LoanCollateral;
+import org.apache.fineract.portfolio.collateral.domain.LoanCollateralRepository;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PrequalificationReadPlatformServiceImpl implements PrequalificationReadPlatformService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ClientChargeWritePlatformServiceJpaRepositoryImpl.class);
@@ -78,20 +91,24 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     private final PrequalificationsMemberMapper prequalificationsMemberMapper = new PrequalificationsMemberMapper();
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final GenericDataService genericDataService;
+    private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final LoanReadPlatformService loanReadPlatformService;
+    private final LoanCollateralRepository collateralRepository;
+    private final PreQualificationGroupRepository preQualificationGroupRepository;
 
-    @Autowired
-    public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
-            final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
-            GenericDataService genericDataService) {
-        this.context = context;
-        this.codeValueReadPlatformService = codeValueReadPlatformService;
-        this.jdbcTemplate = jdbcTemplate;
-        this.paginationHelper = paginationHelper;
-        this.sqlGenerator = sqlGenerator;
-        this.columnValidator = columnValidator;
-        this.genericDataService = genericDataService;
-    }
+//    @Autowired
+//    public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
+//            final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
+//            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
+//            GenericDataService genericDataService) {
+//        this.context = context;
+//        this.codeValueReadPlatformService = codeValueReadPlatformService;
+//        this.jdbcTemplate = jdbcTemplate;
+//        this.paginationHelper = paginationHelper;
+//        this.sqlGenerator = sqlGenerator;
+//        this.columnValidator = columnValidator;
+//        this.genericDataService = genericDataService;
+//    }
 
     @Override
     public Page<GroupPrequalificationData> retrieveAll(SearchParameters searchParameters) {
@@ -174,9 +191,22 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 }
                 final EnumOptionData enumOptionData = PreQualificationsMemberEnumerations.status(status);
                 memberPrequalificationData.setStatus(enumOptionData);
+
+                LoanData loanData = getLoanDataByPrequalificationId(groupId);
+
+                memberPrequalificationData.setCollateral(loanData.getCollateral());
+                memberPrequalificationData.setDestination(loanData.getDestination());
+                memberPrequalificationData.setInterestRatePerPeriod(loanData.getInterestRatePerPeriod());
+                memberPrequalificationData.setPeriod(loanData.getPeriod());
+                memberPrequalificationData.setQuotaAmount(loanData.getQuotaAmount());
             }
             clientData.updateMembers(members);
+            Optional<PrequalificationGroup> group =  preQualificationGroupRepository.findById(groupId);
+            clientData.setExceptionComment(group.isPresent() ? group.get().getExceptionComments() : "");
+            clientData.setComments(group.isPresent() ? group.get().getComments() : "");
+            clientData.setLatestComments(group.isPresent() ?  group.get().getComments() : "");
         }
+
         return clientData;
     }
 
@@ -965,4 +995,36 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         }
     }
 
+    private LoanData getLoanDataByPrequalificationId(Long prequalificationId) {
+
+        final Loan loan = loanRepositoryWrapper.retrieveByPrequalificationId(prequalificationId);
+        final LoanAccountData loanAccountData = loanReadPlatformService.retrieveOne(loan.getId());
+        BigDecimal quotaAmount = BigDecimal.ZERO;
+        String colateral = "";
+        final List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = this.loanRepositoryWrapper
+                .getLoanRepaymentScheduleInstallments(loan.getId());
+
+        final List<LoanCollateral> loanCollaterals = collateralRepository.findByLoanId(loan.getId());
+
+        if (loanRepaymentScheduleInstallments != null && !loanRepaymentScheduleInstallments.isEmpty()) {
+            quotaAmount = loanRepaymentScheduleInstallments.stream()
+                    .filter(item -> item.getInstallmentNumber() == 1)
+                    .map(item -> item.getTotalOutstanding(item.getLoan().getCurrency()).getAmount())
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        }
+
+        if (loanCollaterals != null && !loanCollaterals.isEmpty()) {
+            for (final LoanCollateral collateral : loanCollaterals) {
+                colateral = collateral.toData().getType().getName();
+                break;
+            }
+        }
+
+        final BigDecimal rate = loanAccountData.getInterestRatePerPeriod();
+        final Integer period = loanAccountData.getTermFrequency();
+        final String destination = loanAccountData.getLoanPurposeName();
+
+        return new LoanData(quotaAmount, rate, period, colateral, destination);
+    }
 }

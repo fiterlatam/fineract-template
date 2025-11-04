@@ -3937,11 +3937,12 @@ public class CommandWrapperBuilder {
         return this;
     }
 
-    public CommandWrapperBuilder updatePrequalificationMemberDetails(Long memberId) {
+    public CommandWrapperBuilder updatePrequalificationMemberDetails(Long memberId, Long groupId) {
         this.actionName = "UPDATE";
         this.entityName = "PREQUALIFICATIONMEMBER";
         this.entityId = memberId;
         this.href = "/prequalification/" + memberId;
+        this.groupId = groupId;
         return this;
     }
 
