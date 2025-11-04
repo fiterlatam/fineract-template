@@ -18,30 +18,9 @@
  */
 package org.apache.fineract.organisation.prequalification.api;
 
-import static org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations.status;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -63,6 +42,7 @@ import org.apache.fineract.infrastructure.documentmanagement.service.DocumentWri
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.agency.service.AgencyReadPlatformServiceImpl;
+import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
@@ -80,6 +60,28 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.UriInfo;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations.status;
 
 @Path("/prequalification")
 @Component
@@ -340,7 +342,7 @@ public class GroupPrequalificationApiResource {
             @PathParam("memberId") @Parameter(description = "memberId") final Long memberId) {
 
         try {
-            final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalificationMemberDetails(memberId)
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalificationMemberDetails(memberId, groupId)
                     .withJson(apiRequestBodyAsJson).build();
 
             final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
@@ -368,8 +370,11 @@ public class GroupPrequalificationApiResource {
                     fileDetails.getFileName(), fileSize, bodyPart.getMediaType().toString(), description, null);
             final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);
         }
-
-        this.prequalificationWritePlatformService.addCommentsToPrequalification(groupId, comment);
+        if (!comment.isEmpty() && PrequalificatoinApiConstants.exceptionComments.equalsIgnoreCase(description)) {
+            this.prequalificationWritePlatformService.addExceptionCommentsToPrequalification(groupId, comment);
+        } else {
+            this.prequalificationWritePlatformService.addCommentsToPrequalification(groupId, comment);
+        }
         return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(groupId, null));
     }
 
@@ -390,8 +395,9 @@ public class GroupPrequalificationApiResource {
                     fileDetails.getFileName(), fileSize, bodyPart.getMediaType().toString(), description, null);
             this.documentWritePlatformService.createDocument(documentCommand, inputStream);
         }
-
-        this.prequalificationWritePlatformService.uploadMemberDocs(memberId);
+        if (memberId != null) {
+            this.prequalificationWritePlatformService.uploadMemberDocs(memberId);
+        }
         return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(groupId, null));
     }
 }
