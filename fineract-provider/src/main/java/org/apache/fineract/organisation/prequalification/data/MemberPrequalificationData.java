@@ -66,6 +66,7 @@ public class MemberPrequalificationData {
     private Integer period;
     private String collateral;
     private String destination;
+    private Long loanId;
 
 
     public MemberPrequalificationData(final Long id, final String name, final String dpi, final LocalDate dob, final String workWithPuente,
@@ -184,5 +185,9 @@ public class MemberPrequalificationData {
 
     public void setDocumentCount(Long documentCount) {
         this.documentCount = documentCount;
+    }
+
+    public void setLoanId(Long loanId) {
+        this.loanId = loanId;
     }
 }

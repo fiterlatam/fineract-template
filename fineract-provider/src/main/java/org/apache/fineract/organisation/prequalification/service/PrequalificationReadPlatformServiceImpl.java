@@ -52,7 +52,6 @@ import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformSer
 import org.apache.fineract.portfolio.collateral.domain.LoanCollateral;
 import org.apache.fineract.portfolio.collateral.domain.LoanCollateralRepository;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
@@ -192,7 +191,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 final EnumOptionData enumOptionData = PreQualificationsMemberEnumerations.status(status);
                 memberPrequalificationData.setStatus(enumOptionData);
 
-                LoanData loanData = getLoanDataByPrequalificationId(groupId);
+                LoanData loanData = getLoanDataByPrequalificationId(memberPrequalificationData.getLoanId());
 
                 memberPrequalificationData.setCollateral(loanData.getCollateral());
                 memberPrequalificationData.setDestination(loanData.getDestination());
@@ -845,6 +844,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             this.schema = """
                     	m.id AS id,
                     	m.name,
+                    	ml.id as loanId,
                     	m.status,
                     	m.comments as comments,
                     	m.agency_bureau_status as agencyBureauStatus,
@@ -932,8 +932,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     		AND mcvr.prequalification_member_id = m.id ) AS redValidationCount
                     FROM
                     	m_prequalification_group_members m
-                    LEFT JOIN m_client mc ON
-                    	mc.dpi = m.dpi
+                    LEFT JOIN m_client mc ON mc.dpi = m.dpi
+                    LEFT JOIN m_loan ml ON ml.prequalification_id = m.group_id AND ml.client_id = mc.id 
                     """;
         }
 
@@ -982,6 +982,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Long yellowValidationCount = rs.getLong("yellowValidationCount");
             final Long clientId = rs.getLong("clientId");
             final Long documentCount = rs.getLong("documentCount");
+            final Long loanId = JdbcSupport.getLong(rs,"loanId");
             final Boolean groupPresident = rs.getBoolean("groupPresident");
             MemberPrequalificationData memberPrequalificationData = MemberPrequalificationData.instance(id, name, dpi, dob, puente,
                     requestedAmount, status, blacklistCount, totalLoanAmount, totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles,
@@ -991,21 +992,21 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             memberPrequalificationData.setBuroData(buroData);
             memberPrequalificationData.setClientId(clientId);
             memberPrequalificationData.setDocumentCount(documentCount);
+            memberPrequalificationData.setLoanId(loanId);
             return memberPrequalificationData;
         }
     }
 
-    private LoanData getLoanDataByPrequalificationId(Long prequalificationId) {
+    private LoanData getLoanDataByPrequalificationId(Long loanId) {
 
-        final Loan loan = loanRepositoryWrapper.retrieveByPrequalificationId(prequalificationId);
-        if (loan != null) {
-            final LoanAccountData loanAccountData = loanReadPlatformService.retrieveOne(loan.getId());
+        if (loanId != null) {
+            final LoanAccountData loanAccountData = loanReadPlatformService.retrieveOne(loanId);
             BigDecimal quotaAmount = BigDecimal.ZERO;
             String colateral = "";
             final List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = this.loanRepositoryWrapper
-                    .getLoanRepaymentScheduleInstallments(loan.getId());
+                    .getLoanRepaymentScheduleInstallments(loanId);
 
-            final List<LoanCollateral> loanCollaterals = collateralRepository.findByLoanId(loan.getId());
+            final List<LoanCollateral> loanCollaterals = collateralRepository.findByLoanId(loanId);
 
             if (loanRepaymentScheduleInstallments != null && !loanRepaymentScheduleInstallments.isEmpty()) {
                 quotaAmount = loanRepaymentScheduleInstallments.stream()
@@ -1027,8 +1028,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String destination = loanAccountData.getLoanPurposeName();
 
             return new LoanData(quotaAmount, rate, period, colateral, destination);
-        } else {
-            return new LoanData(null,null,null,null,null);
         }
+        return new LoanData(null,null,null,null,null);
     }
 }
