@@ -25,6 +25,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import lombok.Getter;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -61,23 +62,29 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom {
     @JoinColumn(name = "assigned_to", nullable = false)
     private AppUser assignedTo;
 
+    @ManyToOne
+    @JoinColumn(name = "reason_code_id")
+    private CodeValue reasonCode;
+
+
     protected PrequalificationStatusLog() {
         //
     }
 
     private PrequalificationStatusLog(final AppUser appUser, final Integer fromStatus, final Integer toStatus, final String comments,
-            final PrequalificationGroup group) {
+            final PrequalificationGroup group, final CodeValue reasonCode) {
         this.dateCreated = DateUtils.getLocalDateOfTenant();
         this.fromStatus = fromStatus;
         this.toStatus = toStatus;
         this.prequalificationGroup = group;
         this.comments = comments;
         this.addedBy = appUser;
+        this.reasonCode = reasonCode;
     }
 
     public static PrequalificationStatusLog fromJson(final AppUser appUser, final Integer fromStatus, final Integer toStatus,
-            final String comments, final PrequalificationGroup group) {
-        return new PrequalificationStatusLog(appUser, fromStatus, toStatus, comments, group);
+                                                     final String comments, final PrequalificationGroup group, CodeValue reasonCode) {
+        return new PrequalificationStatusLog(appUser, fromStatus, toStatus, comments, group, reasonCode);
     }
 
     public void updateAssignedTo(final AppUser assignedTo) {
