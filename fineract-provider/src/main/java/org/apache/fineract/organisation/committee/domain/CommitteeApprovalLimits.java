@@ -18,16 +18,15 @@
  */
 package org.apache.fineract.organisation.committee.domain;
 
-import lombok.Getter;
-import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
-
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import lombok.Getter;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 
 @Entity
 @Getter
@@ -55,12 +54,12 @@ public class CommitteeApprovalLimits extends AbstractPersistableCustom {
     @Column(name = "created_by")
     private Long createdBy;
 
-
     protected CommitteeApprovalLimits() {
         //
     }
 
-    public CommitteeApprovalLimits(Long committee, BigDecimal fromAmount, BigDecimal toAmount, String condition, Integer limit, Long createdBy) {
+    public CommitteeApprovalLimits(Long committee, BigDecimal fromAmount, BigDecimal toAmount, String condition, Integer limit,
+            Long createdBy) {
         this.committee = committee;
         this.fromAmount = fromAmount;
         this.toAmount = toAmount;

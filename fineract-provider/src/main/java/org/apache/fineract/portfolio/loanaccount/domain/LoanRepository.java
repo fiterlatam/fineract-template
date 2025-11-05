@@ -179,4 +179,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
 
     boolean existsByExternalId(@Param("externalId") String externalId);
 
+    @Query("SELECT lo FROM Loan lo WHERE lo.prequalificationGroup.id = :prequalificationId")
+    Loan retrieveByPrequalificationId(@Param("prequalificationId") Long prequalificationId);
+
 }

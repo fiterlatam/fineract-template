@@ -165,4 +165,7 @@
     <include file="parts/FS_182_FIX_RESCHEDULED_LOANS_REPORT.xml" relativeToChangelogFile="true"/>
     <include file="parts/0148-FBR_ADD_2FA_CONFIGURATIONS.xml" relativeToChangelogFile="true"/>
     <include file="parts/0149-PUENTE_AL_EXITO_COMMITTEE_APPROVAL_LIMITS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_01_11_25_add_new_column_to_prequalification_tables.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_04_11_25_add_new_code_rejected_prequalification.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_05_11_25_add_new_colum_prequalification_log.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

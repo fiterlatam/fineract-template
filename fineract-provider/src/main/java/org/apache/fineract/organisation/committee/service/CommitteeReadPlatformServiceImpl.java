@@ -25,7 +25,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.service.Page;
@@ -101,7 +100,7 @@ public class CommitteeReadPlatformServiceImpl implements CommitteeReadPlatformSe
             Collection<CommitteeUserData> selectedUsers = retrieveCommitteeUsers(committeeId);
 
             List<CommitteeApprovalLimits> approvalLimits = this.approvalLimitsRepositoryWrapper.getApprovallimitsByCommittee(committeeId);
-            if (!approvalLimits.isEmpty()){
+            if (!approvalLimits.isEmpty()) {
                 committeeData.setCommitteeApprovalLimits(approvalLimits);
             }
             // get the available users to set in the committe

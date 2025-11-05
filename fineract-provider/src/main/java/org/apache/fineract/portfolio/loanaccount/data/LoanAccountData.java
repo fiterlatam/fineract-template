@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.persistence.Transient;
+import lombok.Getter;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.dataqueries.data.DatatableData;
@@ -65,6 +66,7 @@ import org.springframework.util.CollectionUtils;
  * Immutable data object representing loan account data.
  */
 @SuppressWarnings("unused")
+@Getter
 public final class LoanAccountData {
 
     // basic loan details

@@ -19,11 +19,10 @@
 
 package org.apache.fineract.organisation.committee.data;
 
+import java.math.BigDecimal;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-
-import java.math.BigDecimal;
 
 /**
  * Created by brian on 03/11/2025.
@@ -31,6 +30,7 @@ import java.math.BigDecimal;
 @Data
 @Builder
 public class CommitteeApprovalsData {
+
     private EnumOptionData approvalData;
     private BigDecimal fromAmount;
     private BigDecimal toAmount;

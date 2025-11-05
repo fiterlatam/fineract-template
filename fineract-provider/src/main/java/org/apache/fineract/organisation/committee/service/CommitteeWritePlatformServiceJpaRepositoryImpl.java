@@ -18,11 +18,10 @@
  */
 package org.apache.fineract.organisation.committee.service;
 
+import com.google.gson.JsonArray;
 import java.math.BigDecimal;
 import java.util.List;
 import javax.persistence.PersistenceException;
-
-import com.google.gson.JsonArray;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
@@ -101,22 +100,26 @@ public class CommitteeWritePlatformServiceJpaRepositoryImpl implements Committee
                 this.committeeRepositoryWrapper.save(committee);
             }
 
-            JsonArray aboveExceptionsLimit = command.arrayOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.ABOVE_EXCEPTION_LIMIT.getValue());
-            JsonArray belowExceptionsLimit = command.arrayOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.BELOW_EXCEPTION_LIMIT.getValue());
+            JsonArray aboveExceptionsLimit = command
+                    .arrayOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.ABOVE_EXCEPTION_LIMIT.getValue());
+            JsonArray belowExceptionsLimit = command
+                    .arrayOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.BELOW_EXCEPTION_LIMIT.getValue());
 
-            //for each of the exception limits, create new entries
+            // for each of the exception limits, create new entries
             for (int i = 0; i < aboveExceptionsLimit.size(); i++) {
                 BigDecimal fromAmount = aboveExceptionsLimit.get(i).getAsJsonObject().get("fromAmount").getAsBigDecimal();
                 BigDecimal toAmount = aboveExceptionsLimit.get(i).getAsJsonObject().get("toAmount").getAsBigDecimal();
                 Long limit = command.longValueOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.LIMIT.getValue());
-                CommitteeApprovalLimits approvalLimit = new CommitteeApprovalLimits(committeeId, fromAmount, toAmount, "GREATER_THAN",limit.intValue(), currentUser.getId());
+                CommitteeApprovalLimits approvalLimit = new CommitteeApprovalLimits(committeeId, fromAmount, toAmount, "GREATER_THAN",
+                        limit.intValue(), currentUser.getId());
                 this.approvalLimitsRepositoryWrapper.save(approvalLimit);
             }
             for (int i = 0; i < belowExceptionsLimit.size(); i++) {
                 BigDecimal fromAmount = belowExceptionsLimit.get(i).getAsJsonObject().get("fromAmount").getAsBigDecimal();
                 BigDecimal toAmount = belowExceptionsLimit.get(i).getAsJsonObject().get("toAmount").getAsBigDecimal();
                 Long limit = command.longValueOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.LIMIT.getValue());
-                CommitteeApprovalLimits approvalLimit = new CommitteeApprovalLimits(committeeId, fromAmount, toAmount, "LESS_THAN",limit.intValue(), currentUser.getId());
+                CommitteeApprovalLimits approvalLimit = new CommitteeApprovalLimits(committeeId, fromAmount, toAmount, "LESS_THAN",
+                        limit.intValue(), currentUser.getId());
                 this.approvalLimitsRepositoryWrapper.save(approvalLimit);
             }
             return new CommandProcessingResultBuilder() //
@@ -166,25 +169,30 @@ public class CommitteeWritePlatformServiceJpaRepositoryImpl implements Committee
                 this.committeeRepositoryWrapper.save(committee);
             }
 
-            List<CommitteeApprovalLimits> approvalLimitsByCommittee = this.approvalLimitsRepositoryWrapper.getApprovallimitsByCommittee(committeeId);
+            List<CommitteeApprovalLimits> approvalLimitsByCommittee = this.approvalLimitsRepositoryWrapper
+                    .getApprovallimitsByCommittee(committeeId);
             approvalLimitsByCommittee.forEach(limit -> this.approvalLimitsRepositoryWrapper.delete(limit));
 
-            JsonArray aboveExceptionsLimit = command.arrayOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.ABOVE_EXCEPTION_LIMIT.getValue());
-            JsonArray belowExceptionsLimit = command.arrayOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.BELOW_EXCEPTION_LIMIT.getValue());
+            JsonArray aboveExceptionsLimit = command
+                    .arrayOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.ABOVE_EXCEPTION_LIMIT.getValue());
+            JsonArray belowExceptionsLimit = command
+                    .arrayOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.BELOW_EXCEPTION_LIMIT.getValue());
 
-            //for each of the exception limits, create new entries
+            // for each of the exception limits, create new entries
             for (int i = 0; i < aboveExceptionsLimit.size(); i++) {
                 BigDecimal fromAmount = aboveExceptionsLimit.get(i).getAsJsonObject().get("fromAmount").getAsBigDecimal();
                 BigDecimal toAmount = aboveExceptionsLimit.get(i).getAsJsonObject().get("toAmount").getAsBigDecimal();
                 Long limit = command.longValueOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.LIMIT.getValue());
-                CommitteeApprovalLimits approvalLimit = new CommitteeApprovalLimits(committeeId, fromAmount, toAmount, "GREATER_THAN",limit.intValue(), authenticatedUser.getId());
+                CommitteeApprovalLimits approvalLimit = new CommitteeApprovalLimits(committeeId, fromAmount, toAmount, "GREATER_THAN",
+                        limit.intValue(), authenticatedUser.getId());
                 this.approvalLimitsRepositoryWrapper.save(approvalLimit);
             }
             for (int i = 0; i < belowExceptionsLimit.size(); i++) {
                 BigDecimal fromAmount = belowExceptionsLimit.get(i).getAsJsonObject().get("fromAmount").getAsBigDecimal();
                 BigDecimal toAmount = belowExceptionsLimit.get(i).getAsJsonObject().get("toAmount").getAsBigDecimal();
                 Long limit = command.longValueOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.LIMIT.getValue());
-                CommitteeApprovalLimits approvalLimit = new CommitteeApprovalLimits(committeeId, fromAmount, toAmount, "LESS_THAN",limit.intValue(), authenticatedUser.getId());
+                CommitteeApprovalLimits approvalLimit = new CommitteeApprovalLimits(committeeId, fromAmount, toAmount, "LESS_THAN",
+                        limit.intValue(), authenticatedUser.getId());
                 this.approvalLimitsRepositoryWrapper.save(approvalLimit);
             }
 
@@ -213,7 +221,8 @@ public class CommitteeWritePlatformServiceJpaRepositoryImpl implements Committee
 
             committeeRepositoryWrapper.deleteByCommittee(committeeCode);
 
-            List<CommitteeApprovalLimits> approvalLimitsByCommittee = this.approvalLimitsRepositoryWrapper.getApprovallimitsByCommittee(committeeId);
+            List<CommitteeApprovalLimits> approvalLimitsByCommittee = this.approvalLimitsRepositoryWrapper
+                    .getApprovallimitsByCommittee(committeeId);
             approvalLimitsByCommittee.forEach(limit -> this.approvalLimitsRepositoryWrapper.delete(limit));
 
             return new CommandProcessingResultBuilder() //

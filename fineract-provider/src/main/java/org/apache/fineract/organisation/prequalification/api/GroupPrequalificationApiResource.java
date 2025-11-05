@@ -63,6 +63,7 @@ import org.apache.fineract.infrastructure.documentmanagement.service.DocumentWri
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.agency.service.AgencyReadPlatformServiceImpl;
+import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
@@ -340,7 +341,7 @@ public class GroupPrequalificationApiResource {
             @PathParam("memberId") @Parameter(description = "memberId") final Long memberId) {
 
         try {
-            final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalificationMemberDetails(memberId)
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalificationMemberDetails(memberId, groupId)
                     .withJson(apiRequestBodyAsJson).build();
 
             final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
@@ -368,8 +369,11 @@ public class GroupPrequalificationApiResource {
                     fileDetails.getFileName(), fileSize, bodyPart.getMediaType().toString(), description, null);
             final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);
         }
-
-        this.prequalificationWritePlatformService.addCommentsToPrequalification(groupId, comment);
+        if (!comment.isEmpty() && PrequalificatoinApiConstants.exceptionComments.equalsIgnoreCase(description)) {
+            this.prequalificationWritePlatformService.addExceptionCommentsToPrequalification(groupId, comment);
+        } else {
+            this.prequalificationWritePlatformService.addCommentsToPrequalification(groupId, comment);
+        }
         return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(groupId, null));
     }
 
@@ -390,8 +394,9 @@ public class GroupPrequalificationApiResource {
                     fileDetails.getFileName(), fileSize, bodyPart.getMediaType().toString(), description, null);
             this.documentWritePlatformService.createDocument(documentCommand, inputStream);
         }
-
-        this.prequalificationWritePlatformService.uploadMemberDocs(memberId);
+        if (memberId != null) {
+            this.prequalificationWritePlatformService.uploadMemberDocs(memberId);
+        }
         return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(groupId, null));
     }
 }

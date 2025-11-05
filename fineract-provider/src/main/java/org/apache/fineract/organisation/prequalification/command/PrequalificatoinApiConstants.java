@@ -55,4 +55,14 @@ public class PrequalificatoinApiConstants {
     public static final String memberCommentsParamName = "comments";
     public static final String memberAgencyBureauStatusParamName = "agencyBureauStatus";
     public static String approvedAmountParamName = "approvedAmount";
+
+    // Loan data
+    public static String rateParamName = "interestRatePerPeriod";
+    public static String colateralParamName = "colateral";
+    public static String destinationParamName = "destination";
+    public static String principalParamName = "principal";
+
+    public static String exceptionComments = "Comentario de excepción";
+    public static String commentParamName = "comment";
+    public static String reasonParamName = "reasonId";
 }

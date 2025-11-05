@@ -23,9 +23,5 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 /**
  * Created by brian on 03/11/2025.
  */
-public record PrequalificationTimeline(
-    EnumOptionData statusData,
-    String changedBy,
-    String changeDate,
-    String comments
-) {}
+public record PrequalificationTimeline(EnumOptionData statusData, String changedBy, String changeDate, String comments, Long index) {
+}

@@ -45,4 +45,8 @@ public interface PrequalificationWritePlatformService {
     CommandProcessingResult assignPrequalification(Long entityId, JsonCommand command);
 
     void uploadMemberDocs(Long memberId);
+
+    void addExceptionCommentsToPrequalification(Long blacklistId, String comment);
+
+    CommandProcessingResult returnToApproval(Long entityId, JsonCommand command);
 }

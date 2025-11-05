@@ -18,11 +18,10 @@
  */
 package org.apache.fineract.organisation.committee.domain;
 
+import java.util.List;
 import org.apache.fineract.organisation.committee.exception.CommitteeNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 /**
  * <p>

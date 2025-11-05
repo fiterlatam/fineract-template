@@ -62,7 +62,7 @@ public class GroupPrequalificationData {
 
     private final String facilitatorName;
     private final Long facilitatorId;
-    private final String comments;
+    private String comments;
     private final Long groupId;
     private final LocalDateTime createdAt;
     private final Collection<AgencyData> agencies;
@@ -85,6 +85,8 @@ public class GroupPrequalificationData {
     private Long linkedGroupId;
     private List<PrequalificationTimeline> currentTimeline;
     private List<EnumOptionData> expectedTimeline;
+
+    private String exceptionComment;
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
             final String portforlioName, final String centerName, final String groupName, final String addedBy,
@@ -232,6 +234,6 @@ public class GroupPrequalificationData {
     }
 
     public void updateExpectedStatusTimeline(List<EnumOptionData> expectedTimeline) {
-        this.expectedTimeline= expectedTimeline;
+        this.expectedTimeline = expectedTimeline;
     }
 }
