@@ -23,14 +23,15 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
 public interface CommandSourceRepository extends JpaRepository<CommandSource, Long>, JpaSpecificationExecutor<CommandSource> {
+
     // no added behaviour
     @Query(value = """
-                SELECT * 
-                FROM m_portfolio_command_source 
-                WHERE loan_id = ?1 
-                  AND action_name IN ('UPDATE', 'CREATE') 
-                  AND entity_name = 'LOAN' 
-                ORDER BY id DESC 
+                SELECT *
+                FROM m_portfolio_command_source
+                WHERE loan_id = ?1
+                  AND action_name IN ('UPDATE', 'CREATE')
+                  AND entity_name = 'LOAN'
+                ORDER BY id DESC
                 LIMIT 1
             """, nativeQuery = true)
     CommandSource findByLoanIdAndLastModification(Long loanId);

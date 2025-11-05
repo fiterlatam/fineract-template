@@ -22,6 +22,22 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.transaction.Transactional;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -105,23 +121,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
-import javax.ws.rs.NotFoundException;
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-
 @Service
 @Slf4j
 public class PrequalificationWritePlatformServiceImpl implements PrequalificationWritePlatformService {
@@ -178,7 +177,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final LoanApplicationWritePlatformService loanApplicationWritePlatformService,
             final PrequalificationChecklistWritePlatformService prequalificationChecklistWritePlatformService,
             final LoanReadPlatformService loanReadPlatformService, final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
-            final LoanRepositoryWrapper loanRepositoryWrapper, final CommandSourceRepository commandSourceRepository, final CodeValueRepository codeValueRepository) {
+            final LoanRepositoryWrapper loanRepositoryWrapper, final CommandSourceRepository commandSourceRepository,
+            final CodeValueRepository codeValueRepository) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -1326,8 +1326,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         prequalificationGroup.updateExceptionComments(comment);
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
-        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, prequalificationGroup.getStatus(), prequalificationGroup.getStatus(),
-                comment, prequalificationGroup, null);
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, prequalificationGroup.getStatus(),
+                prequalificationGroup.getStatus(), comment, prequalificationGroup, null);
         this.preQualificationLogRepository.saveAndFlush(statusLog);
     }
 

@@ -16,15 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.collateral.domain;
 
-import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+package org.apache.fineract.organisation.committee.data;
 
-public interface LoanCollateralRepository extends JpaRepository<LoanCollateral, Long>, JpaSpecificationExecutor<LoanCollateral> {
+import java.math.BigDecimal;
+import lombok.Builder;
+import lombok.Data;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
-    LoanCollateral findByLoanIdAndId(Long loanId, Long id);
+/**
+ * Created by brian on 03/11/2025.
+ */
+@Data
+@Builder
+public class CommitteeApprovalsData {
 
-    List<LoanCollateral> findByLoanId(Long loanId);
+    private EnumOptionData approvalData;
+    private BigDecimal fromAmount;
+    private BigDecimal toAmount;
+    private Long id;
 }
