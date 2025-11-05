@@ -22,12 +22,30 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.transaction.Transactional;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandSource;
 import org.apache.fineract.commands.domain.CommandSourceRepository;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -103,23 +121,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
-import javax.ws.rs.NotFoundException;
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-
 @Service
 @Slf4j
 public class PrequalificationWritePlatformServiceImpl implements PrequalificationWritePlatformService {
@@ -155,6 +156,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final PrequalificationChecklistWritePlatformService prequalificationChecklistWritePlatformService;
     private final LoanReadPlatformService loanReadPlatformService;
     private final CommandSourceRepository commandSourceRepository;
+    private final CodeValueRepository codeValueRepository;
 
     @Autowired
     public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
@@ -175,7 +177,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final LoanApplicationWritePlatformService loanApplicationWritePlatformService,
             final PrequalificationChecklistWritePlatformService prequalificationChecklistWritePlatformService,
             final LoanReadPlatformService loanReadPlatformService, final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
-            final LoanRepositoryWrapper loanRepositoryWrapper, final CommandSourceRepository commandSourceRepository) {
+            final LoanRepositoryWrapper loanRepositoryWrapper, final CommandSourceRepository commandSourceRepository,
+            final CodeValueRepository codeValueRepository) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -203,6 +206,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.prequalificationChecklistWritePlatformService = prequalificationChecklistWritePlatformService;
         this.loanReadPlatformService = loanReadPlatformService;
         this.commandSourceRepository = commandSourceRepository;
+        this.codeValueRepository = codeValueRepository;
     }
 
     @Transactional
@@ -277,7 +281,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, PrequalificationStatus.PENDING.getValue(),
-                prequalificationGroup.getStatus(), null, prequalificationGroup);
+                prequalificationGroup.getStatus(), null, prequalificationGroup, null);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
 
@@ -443,7 +447,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
-                comment, prequalificationGroup);
+                comment, prequalificationGroup, null);
         this.preQualificationLogRepository.saveAndFlush(statusLog);
         return groupId;
     }
@@ -829,7 +833,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
 
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
-                comments, prequalificationGroup);
+                comments, prequalificationGroup, null);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
@@ -860,7 +864,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         String comments = command.stringValueOfParameterNamed("comments");
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
-                comments, prequalificationGroup);
+                comments, prequalificationGroup, null);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
 
@@ -895,8 +899,26 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         String comments = command.stringValueOfParameterNamed("comments");
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
-                comments, prequalificationGroup);
+                comments, prequalificationGroup, null);
 
+        this.preQualificationLogRepository.saveAndFlush(statusLog);
+
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    @Override
+    public CommandProcessingResult returnToApproval(Long entityId, JsonCommand command) {
+        final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
+                .findOneWithNotFoundDetection(entityId);
+
+        AppUser appUser = this.context.authenticatedUser();
+        Integer fromStatus = prequalificationGroup.getStatus();
+
+        prequalificationGroup.updateStatus(PrequalificationStatus.PENDING);
+
+        String comments = command.stringValueOfParameterNamed("comments");
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
+                comments, prequalificationGroup, null);
         this.preQualificationLogRepository.saveAndFlush(statusLog);
 
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
@@ -907,6 +929,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     public CommandProcessingResult processAnalysisRequest(Long entityId, JsonCommand command) {
         String comments = command.stringValueOfParameterNamed("comments");
         String action = command.stringValueOfParameterNamed("action");
+        final Long reasonCode = command.longValueOfParameterNamed("reasonId");
         AppUser addedBy = this.context.authenticatedUser();
         final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(entityId);
@@ -957,8 +980,17 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         prequalificationGroup.updateStatus(prequalificationStatus);
         prequalificationGroup.updateComments(comments);
 
+        CodeValue code = null;
+        if (reasonCode != null) {
+            Optional<CodeValue> codeValue;
+            codeValue = this.codeValueRepository.findById(reasonCode);
+            if (codeValue.isPresent()) {
+                code = codeValue.get();
+            }
+        }
+
         PrequalificationStatusLog newStatusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
-                comments, prequalificationGroup);
+                comments, prequalificationGroup, code);
         this.approveOrRejectLoanApplications(prequalificationGroup, prequalificationStatus, memberPrequalificationDataList);
         this.preQualificationLogRepository.saveAndFlush(newStatusLog);
 
@@ -1201,6 +1233,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             status = PrequalificationStatus.REJECTED;
         } else if (action.equalsIgnoreCase("approveanalysis")) {
             status = PrequalificationStatus.COMPLETED;
+        } else if (action.equalsIgnoreCase("pending")) {
+            status = PrequalificationStatus.PENDING;
         }
         return status;
     }
@@ -1292,8 +1326,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         prequalificationGroup.updateExceptionComments(comment);
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
-        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, prequalificationGroup.getStatus(), prequalificationGroup.getStatus(),
-                comment, prequalificationGroup);
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, prequalificationGroup.getStatus(),
+                prequalificationGroup.getStatus(), comment, prequalificationGroup, null);
         this.preQualificationLogRepository.saveAndFlush(statusLog);
     }
 

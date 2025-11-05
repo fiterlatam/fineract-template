@@ -34,6 +34,17 @@ public final class PreQualificationsEnumerations {
         return status(PrequalificationStatus.fromInt(statusId));
     }
 
+    public static EnumOptionData status(final String committeeCode) {
+        PrequalificationStatus statusId = switch (committeeCode) {
+            case "A" -> PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
+            case "B" -> PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL;
+            case "C" -> PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL;
+            case "D" -> PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL;
+            default -> PrequalificationStatus.INVALID;
+        };
+        return status(statusId);
+    }
+
     public static EnumOptionData status(final PrequalificationStatus status) {
         new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(), "INVALID");
 
