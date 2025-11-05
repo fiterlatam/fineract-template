@@ -63,4 +63,6 @@ public class PrequalificatoinApiConstants {
     public static String principalParamName = "principal";
 
     public static String exceptionComments = "Comentario de excepción";
+    public static String commentParamName = "comment";
+    public static String reasonParamName = "reasonId";
 }

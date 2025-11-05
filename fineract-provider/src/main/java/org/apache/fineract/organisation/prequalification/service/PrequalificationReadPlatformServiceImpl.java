@@ -18,6 +18,17 @@
  */
 package org.apache.fineract.organisation.prequalification.service;
 
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -35,43 +46,39 @@ import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecific
 import org.apache.fineract.infrastructure.dataqueries.service.GenericDataService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
+import org.apache.fineract.organisation.committee.data.CommitteeApprovalsData;
+import org.apache.fineract.organisation.committee.mappers.RequiredCommitteeApprovalsMapper;
 import org.apache.fineract.organisation.prequalification.data.BuroData;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanData;
 import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
+import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
 import org.apache.fineract.organisation.prequalification.domain.BuroCheckClassification;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationGroupRepository;
+import org.apache.fineract.organisation.prequalification.domain.PreQualificationStatusLogRepository;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusLog;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationTimeline;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.prequalification.domain.SubStatusEnumerations;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.collateral.domain.LoanCollateral;
 import org.apache.fineract.portfolio.collateral.domain.LoanCollateralRepository;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @Slf4j
@@ -79,7 +86,7 @@ import java.util.Optional;
 public class PrequalificationReadPlatformServiceImpl implements PrequalificationReadPlatformService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ClientChargeWritePlatformServiceJpaRepositoryImpl.class);
-
+    private final PreQualificationStatusLogRepository preQualificationLogRepository;
     private final PlatformSecurityContext context;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final JdbcTemplate jdbcTemplate;
@@ -89,26 +96,37 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     private final PrequalificationsGroupMappingsMapper mappingsMapper = new PrequalificationsGroupMappingsMapper();
     private final PrequalificationIndividualMappingsMapper prequalificationIndividualMappingsMapper = new PrequalificationIndividualMappingsMapper();
     private final PrequalificationsMemberMapper prequalificationsMemberMapper = new PrequalificationsMemberMapper();
+    private final RequiredCommitteeApprovalsMapper committeeApprovalsMapper = new RequiredCommitteeApprovalsMapper();
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final GenericDataService genericDataService;
+    private final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
     private final LoanReadPlatformService loanReadPlatformService;
     private final LoanCollateralRepository collateralRepository;
     private final PreQualificationGroupRepository preQualificationGroupRepository;
 
-//    @Autowired
-//    public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
-//            final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
-//            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
-//            GenericDataService genericDataService) {
-//        this.context = context;
-//        this.codeValueReadPlatformService = codeValueReadPlatformService;
-//        this.jdbcTemplate = jdbcTemplate;
-//        this.paginationHelper = paginationHelper;
-//        this.sqlGenerator = sqlGenerator;
-//        this.columnValidator = columnValidator;
-//        this.genericDataService = genericDataService;
-//    }
+    @Autowired
+    public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
+            final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
+            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
+            GenericDataService genericDataService, final PreQualificationStatusLogRepository preQualificationLogRepository,
+            PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
+            LoanRepositoryWrapper loanRepositoryWrapper, LoanReadPlatformService loanReadPlatformService,
+            LoanCollateralRepository collateralRepository, PreQualificationGroupRepository preQualificationGroupRepository) {
+        this.context = context;
+        this.codeValueReadPlatformService = codeValueReadPlatformService;
+        this.jdbcTemplate = jdbcTemplate;
+        this.paginationHelper = paginationHelper;
+        this.sqlGenerator = sqlGenerator;
+        this.columnValidator = columnValidator;
+        this.genericDataService = genericDataService;
+        this.preQualificationLogRepository = preQualificationLogRepository;
+        this.prequalificationChecklistReadPlatformService = prequalificationChecklistReadPlatformService;
+        this.loanRepositoryWrapper = loanRepositoryWrapper;
+        this.loanReadPlatformService = loanReadPlatformService;
+        this.collateralRepository = collateralRepository;
+        this.preQualificationGroupRepository = preQualificationGroupRepository;
+    }
 
     @Override
     public Page<GroupPrequalificationData> retrieveAll(SearchParameters searchParameters) {
@@ -192,7 +210,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 final EnumOptionData enumOptionData = PreQualificationsMemberEnumerations.status(status);
                 memberPrequalificationData.setStatus(enumOptionData);
 
-                LoanData loanData = getLoanDataByPrequalificationId(groupId);
+                LoanData loanData = getLoanDataByPrequalificationId(memberPrequalificationData.getLoanId());
 
                 memberPrequalificationData.setCollateral(loanData.getCollateral());
                 memberPrequalificationData.setDestination(loanData.getDestination());
@@ -201,13 +219,87 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 memberPrequalificationData.setQuotaAmount(loanData.getQuotaAmount());
             }
             clientData.updateMembers(members);
-            Optional<PrequalificationGroup> group =  preQualificationGroupRepository.findById(groupId);
+
+            Optional<PrequalificationGroup> group = preQualificationGroupRepository.findById(groupId);
             clientData.setExceptionComment(group.isPresent() ? group.get().getExceptionComments() : "");
             clientData.setComments(group.isPresent() ? group.get().getComments() : "");
-            clientData.setLatestComments(group.isPresent() ?  group.get().getComments() : "");
+            clientData.setLatestComments(group.isPresent() ? group.get().getComments() : "");
+
+            List<PrequalificationStatusLog> prequalificationStatusLogs = this.preQualificationLogRepository.groupStatusLogs(groupId);
+            List<PrequalificationTimeline> currentStatusTimeline = resolveCurrentStatusTimeline(group.get(), prequalificationStatusLogs);
+            List<EnumOptionData> expectedTimeline = resolveFutureStatusTimeline();
+            if (group.get().getLoanProduct().getRequireCommitteeApproval()) {
+                expectedTimeline = resolveCommitteeApprovalsTimeline(clientData, group.get(), expectedTimeline);
+            }
+            clientData.updateCurrentStatusTimeline(currentStatusTimeline);
+            clientData.updateExpectedStatusTimeline(expectedTimeline);
+
         }
 
         return clientData;
+    }
+
+    private List<EnumOptionData> resolveCommitteeApprovalsTimeline(GroupPrequalificationData clientData,
+            PrequalificationGroup prequalificationGroup, List<EnumOptionData> expectedTimeline) {
+        BigDecimal totalApprovedAmount = clientData.getTotalApprovedAmount();
+        if (prequalificationGroup.getStatus() >= PrequalificationStatus.HARD_POLICY_CHECKED.getValue()
+                && !prequalificationGroup.getStatus().equals(PrequalificationStatus.TIME_EXPIRED.getValue())) {
+            PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
+                    .retrieveHardPolicyValidationResults(prequalificationGroup.getId());
+            List<List<String>> rows = prequalificationChecklistData.getMembers().getRows();
+            AtomicReference<Integer> redCountRef = new AtomicReference<>(0);
+            for (List<String> innerList : rows) {
+                innerList.forEach(item -> {
+                    if ("RED".equalsIgnoreCase(item) || "ORANGE".equalsIgnoreCase(item) || "YELLOW".equalsIgnoreCase(item)) {
+                        redCountRef.getAndSet(redCountRef.get() + 1);
+                    }
+                });
+            }
+            Integer errorWarningsCount = redCountRef.get();
+            final String membersql = "select " + this.committeeApprovalsMapper.schema() + " "
+                    + "WHERE ? BETWEEN c.from_amount AND c.to_amount " + "AND ( " + "    (? > c.limit AND c.condition = 'GREATER_THAN') "
+                    + "    OR (? <= c.limit AND c.condition = 'LESS_THAN') ) ORDER BY cv.code_value desc;";
+
+            List<CommitteeApprovalsData> members = this.jdbcTemplate.query(membersql, this.committeeApprovalsMapper,
+                    new Object[] { totalApprovedAmount, errorWarningsCount, errorWarningsCount });
+            if (!members.isEmpty()) {
+                members.forEach(committeeApprovalsData -> {
+                    expectedTimeline.add(committeeApprovalsData.getApprovalData());
+                });
+            }
+        }
+        return expectedTimeline;
+    }
+
+    private List<EnumOptionData> resolveFutureStatusTimeline() {
+        List<EnumOptionData> statusTimeline = new ArrayList<>();
+        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.PENDING));
+        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.BLACKLIST_CHECKED));
+        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.CONSENT_ADDED));
+        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.BURO_CHECKED));
+        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.HARD_POLICY_CHECKED));
+        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL));
+        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL));
+        return statusTimeline;
+    }
+
+    private List<PrequalificationTimeline> resolveCurrentStatusTimeline(PrequalificationGroup prequalificationGroup,
+            List<PrequalificationStatusLog> statusLogList) {
+        List<PrequalificationTimeline> statusTimeline = new ArrayList<>();
+        long index = 1L;
+        statusTimeline.add(new PrequalificationTimeline(PreQualificationsEnumerations.status(PrequalificationStatus.PENDING),
+                prequalificationGroup.getAddedBy().getDisplayName(), prequalificationGroup.getCreatedAt().toString(),
+                "Prequalification created", index));
+        index++;
+        Collections.sort(statusLogList);
+        for (PrequalificationStatusLog status : statusLogList) {
+            EnumOptionData statusData = PreQualificationsEnumerations.status(status.getToStatus());
+            PrequalificationTimeline prequalificationTimeline = new PrequalificationTimeline(statusData,
+                    status.getAddedBy().getDisplayName(), status.getDateCreated().toString(), status.getComments(), index);
+            statusTimeline.add(prequalificationTimeline);
+            index++;
+        }
+        return statusTimeline;
     }
 
     @Override
@@ -845,6 +937,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             this.schema = """
                     	m.id AS id,
                     	m.name,
+                    	ml.id as loanId,
                     	m.status,
                     	m.comments as comments,
                     	m.agency_bureau_status as agencyBureauStatus,
@@ -932,8 +1025,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     		AND mcvr.prequalification_member_id = m.id ) AS redValidationCount
                     FROM
                     	m_prequalification_group_members m
-                    LEFT JOIN m_client mc ON
-                    	mc.dpi = m.dpi
+                    LEFT JOIN m_client mc ON mc.dpi = m.dpi
+                    LEFT JOIN m_loan ml ON ml.prequalification_id = m.group_id AND ml.client_id = mc.id
                     """;
         }
 
@@ -982,6 +1075,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final Long yellowValidationCount = rs.getLong("yellowValidationCount");
             final Long clientId = rs.getLong("clientId");
             final Long documentCount = rs.getLong("documentCount");
+            final Long loanId = JdbcSupport.getLong(rs, "loanId");
             final Boolean groupPresident = rs.getBoolean("groupPresident");
             MemberPrequalificationData memberPrequalificationData = MemberPrequalificationData.instance(id, name, dpi, dob, puente,
                     requestedAmount, status, blacklistCount, totalLoanAmount, totalLoanBalance, totalGuaranteedLoanBalance, noOfCycles,
@@ -991,40 +1085,42 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             memberPrequalificationData.setBuroData(buroData);
             memberPrequalificationData.setClientId(clientId);
             memberPrequalificationData.setDocumentCount(documentCount);
+            memberPrequalificationData.setLoanId(loanId);
             return memberPrequalificationData;
         }
     }
 
-    private LoanData getLoanDataByPrequalificationId(Long prequalificationId) {
+    private LoanData getLoanDataByPrequalificationId(Long loanId) {
 
-        final Loan loan = loanRepositoryWrapper.retrieveByPrequalificationId(prequalificationId);
-        final LoanAccountData loanAccountData = loanReadPlatformService.retrieveOne(loan.getId());
-        BigDecimal quotaAmount = BigDecimal.ZERO;
-        String colateral = "";
-        final List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = this.loanRepositoryWrapper
-                .getLoanRepaymentScheduleInstallments(loan.getId());
+        if (loanId != null) {
+            final LoanAccountData loanAccountData = loanReadPlatformService.retrieveOne(loanId);
+            BigDecimal quotaAmount = BigDecimal.ZERO;
+            String colateral = "";
+            final List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = this.loanRepositoryWrapper
+                    .getLoanRepaymentScheduleInstallments(loanId);
 
-        final List<LoanCollateral> loanCollaterals = collateralRepository.findByLoanId(loan.getId());
+            final List<LoanCollateral> loanCollaterals = collateralRepository.findByLoanId(loanId);
 
-        if (loanRepaymentScheduleInstallments != null && !loanRepaymentScheduleInstallments.isEmpty()) {
-            quotaAmount = loanRepaymentScheduleInstallments.stream()
-                    .filter(item -> item.getInstallmentNumber() == 1)
-                    .map(item -> item.getTotalOutstanding(item.getLoan().getCurrency()).getAmount())
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (loanRepaymentScheduleInstallments != null && !loanRepaymentScheduleInstallments.isEmpty()) {
+                quotaAmount = loanRepaymentScheduleInstallments.stream().filter(item -> item.getInstallmentNumber() == 1)
+                        .map(item -> item.getTotalOutstanding(item.getLoan().getCurrency()).getAmount())
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        }
-
-        if (loanCollaterals != null && !loanCollaterals.isEmpty()) {
-            for (final LoanCollateral collateral : loanCollaterals) {
-                colateral = collateral.toData().getType().getName();
-                break;
             }
+
+            if (loanCollaterals != null && !loanCollaterals.isEmpty()) {
+                for (final LoanCollateral collateral : loanCollaterals) {
+                    colateral = collateral.toData().getType().getName();
+                    break;
+                }
+            }
+
+            final BigDecimal rate = loanAccountData.getInterestRatePerPeriod();
+            final Integer period = loanAccountData.getTermFrequency();
+            final String destination = loanAccountData.getLoanPurposeName();
+
+            return new LoanData(quotaAmount, rate, period, colateral, destination);
         }
-
-        final BigDecimal rate = loanAccountData.getInterestRatePerPeriod();
-        final Integer period = loanAccountData.getTermFrequency();
-        final String destination = loanAccountData.getLoanPurposeName();
-
-        return new LoanData(quotaAmount, rate, period, colateral, destination);
+        return new LoanData(null, null, null, null, null);
     }
 }

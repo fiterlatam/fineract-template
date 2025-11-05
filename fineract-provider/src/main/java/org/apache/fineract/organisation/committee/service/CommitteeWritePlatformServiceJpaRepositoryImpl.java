@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.organisation.committee.service;
 
+import com.google.gson.JsonArray;
+import java.math.BigDecimal;
 import java.util.List;
 import javax.persistence.PersistenceException;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +33,8 @@ import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityEx
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.committee.data.CommitteeData;
 import org.apache.fineract.organisation.committee.domain.Committee;
+import org.apache.fineract.organisation.committee.domain.CommitteeApprovalLimits;
+import org.apache.fineract.organisation.committee.domain.CommitteeApprovalLimitsRepositoryWrapper;
 import org.apache.fineract.organisation.committee.domain.CommitteeRepositoryWrapper;
 import org.apache.fineract.organisation.committee.serialization.CommitteeCommandFromApiJsonDeserializer;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -47,12 +51,14 @@ public class CommitteeWritePlatformServiceJpaRepositoryImpl implements Committee
     private final PlatformSecurityContext context;
     private final CommitteeCommandFromApiJsonDeserializer fromApiJsonDeserializer;
     private final CommitteeRepositoryWrapper committeeRepositoryWrapper;
+    private final CommitteeApprovalLimitsRepositoryWrapper approvalLimitsRepositoryWrapper;
     private final CodeValueRepository codeValueRepository;
     private final AppUserRepository appUserRepository;
     private final CommitteeReadPlatformService committeeReadPlatformService;
 
     public CommitteeWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context,
             final CommitteeCommandFromApiJsonDeserializer fromApiJsonDeserializer,
+            CommitteeApprovalLimitsRepositoryWrapper approvalLimitsRepositoryWrapper,
             final CommitteeRepositoryWrapper committeeRepositoryWrapper, final CodeValueRepository codeValueRepository,
             final AppUserRepository appUserRepository, final CommitteeReadPlatformService committeeReadPlatformService) {
         this.context = context;
@@ -61,6 +67,7 @@ public class CommitteeWritePlatformServiceJpaRepositoryImpl implements Committee
         this.codeValueRepository = codeValueRepository;
         this.appUserRepository = appUserRepository;
         this.committeeReadPlatformService = committeeReadPlatformService;
+        this.approvalLimitsRepositoryWrapper = approvalLimitsRepositoryWrapper;
     }
 
     @Transactional
@@ -93,6 +100,28 @@ public class CommitteeWritePlatformServiceJpaRepositoryImpl implements Committee
                 this.committeeRepositoryWrapper.save(committee);
             }
 
+            JsonArray aboveExceptionsLimit = command
+                    .arrayOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.ABOVE_EXCEPTION_LIMIT.getValue());
+            JsonArray belowExceptionsLimit = command
+                    .arrayOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.BELOW_EXCEPTION_LIMIT.getValue());
+
+            // for each of the exception limits, create new entries
+            for (int i = 0; i < aboveExceptionsLimit.size(); i++) {
+                BigDecimal fromAmount = aboveExceptionsLimit.get(i).getAsJsonObject().get("fromAmount").getAsBigDecimal();
+                BigDecimal toAmount = aboveExceptionsLimit.get(i).getAsJsonObject().get("toAmount").getAsBigDecimal();
+                Long limit = command.longValueOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.LIMIT.getValue());
+                CommitteeApprovalLimits approvalLimit = new CommitteeApprovalLimits(committeeId, fromAmount, toAmount, "GREATER_THAN",
+                        limit.intValue(), currentUser.getId());
+                this.approvalLimitsRepositoryWrapper.save(approvalLimit);
+            }
+            for (int i = 0; i < belowExceptionsLimit.size(); i++) {
+                BigDecimal fromAmount = belowExceptionsLimit.get(i).getAsJsonObject().get("fromAmount").getAsBigDecimal();
+                BigDecimal toAmount = belowExceptionsLimit.get(i).getAsJsonObject().get("toAmount").getAsBigDecimal();
+                Long limit = command.longValueOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.LIMIT.getValue());
+                CommitteeApprovalLimits approvalLimit = new CommitteeApprovalLimits(committeeId, fromAmount, toAmount, "LESS_THAN",
+                        limit.intValue(), currentUser.getId());
+                this.approvalLimitsRepositoryWrapper.save(approvalLimit);
+            }
             return new CommandProcessingResultBuilder() //
                     .withEntityId(committeeId) //
                     .build();
@@ -111,6 +140,7 @@ public class CommitteeWritePlatformServiceJpaRepositoryImpl implements Committee
     public CommandProcessingResult updateCommittee(Long committeeId, JsonCommand command) {
         try {
 
+            AppUser authenticatedUser = context.getAuthenticatedUserIfPresent();
             this.fromApiJsonDeserializer.validateForUpdate(command.json());
 
             CommitteeData committeeData = committeeReadPlatformService.findByCommitteeId(committeeId);
@@ -139,6 +169,33 @@ public class CommitteeWritePlatformServiceJpaRepositoryImpl implements Committee
                 this.committeeRepositoryWrapper.save(committee);
             }
 
+            List<CommitteeApprovalLimits> approvalLimitsByCommittee = this.approvalLimitsRepositoryWrapper
+                    .getApprovallimitsByCommittee(committeeId);
+            approvalLimitsByCommittee.forEach(limit -> this.approvalLimitsRepositoryWrapper.delete(limit));
+
+            JsonArray aboveExceptionsLimit = command
+                    .arrayOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.ABOVE_EXCEPTION_LIMIT.getValue());
+            JsonArray belowExceptionsLimit = command
+                    .arrayOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.BELOW_EXCEPTION_LIMIT.getValue());
+
+            // for each of the exception limits, create new entries
+            for (int i = 0; i < aboveExceptionsLimit.size(); i++) {
+                BigDecimal fromAmount = aboveExceptionsLimit.get(i).getAsJsonObject().get("fromAmount").getAsBigDecimal();
+                BigDecimal toAmount = aboveExceptionsLimit.get(i).getAsJsonObject().get("toAmount").getAsBigDecimal();
+                Long limit = command.longValueOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.LIMIT.getValue());
+                CommitteeApprovalLimits approvalLimit = new CommitteeApprovalLimits(committeeId, fromAmount, toAmount, "GREATER_THAN",
+                        limit.intValue(), authenticatedUser.getId());
+                this.approvalLimitsRepositoryWrapper.save(approvalLimit);
+            }
+            for (int i = 0; i < belowExceptionsLimit.size(); i++) {
+                BigDecimal fromAmount = belowExceptionsLimit.get(i).getAsJsonObject().get("fromAmount").getAsBigDecimal();
+                BigDecimal toAmount = belowExceptionsLimit.get(i).getAsJsonObject().get("toAmount").getAsBigDecimal();
+                Long limit = command.longValueOfParameterNamed(CommitteeConstants.CommitteeSupportedParameters.LIMIT.getValue());
+                CommitteeApprovalLimits approvalLimit = new CommitteeApprovalLimits(committeeId, fromAmount, toAmount, "LESS_THAN",
+                        limit.intValue(), authenticatedUser.getId());
+                this.approvalLimitsRepositoryWrapper.save(approvalLimit);
+            }
+
             return new CommandProcessingResultBuilder() //
                     .withEntityId(committeeId) //
                     .build();
@@ -163,6 +220,10 @@ public class CommitteeWritePlatformServiceJpaRepositoryImpl implements Committee
             }
 
             committeeRepositoryWrapper.deleteByCommittee(committeeCode);
+
+            List<CommitteeApprovalLimits> approvalLimitsByCommittee = this.approvalLimitsRepositoryWrapper
+                    .getApprovallimitsByCommittee(committeeId);
+            approvalLimitsByCommittee.forEach(limit -> this.approvalLimitsRepositoryWrapper.delete(limit));
 
             return new CommandProcessingResultBuilder() //
                     .withEntityId(committeeId) //

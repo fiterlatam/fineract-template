@@ -29,14 +29,14 @@ public class PrequalificationCollectionConstants extends PrequalificatoinApiCons
                     membersParamName, dateFormatParamName, localeParamName, agencyIdParamName, facilitatorParamName, "individual",
                     prequalilficationTimespanParamName, previousPrequalificationParamName));
 
-    protected static final Set<String> EDIT_GROUP_PREQUALIFICATION_REQUEST_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList(groupIdParamName, groupNameParamName, productIdParamName, portfolioIdParamName, centerIdParamName,
-                    membersParamName, dateFormatParamName, localeParamName, agencyIdParamName, facilitatorParamName, "individual",
-                    prequalificationNumberParamName, prequalilficationTimespanParamName, previousPrequalificationParamName));
+    protected static final Set<String> EDIT_GROUP_PREQUALIFICATION_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(groupIdParamName,
+            groupNameParamName, productIdParamName, portfolioIdParamName, centerIdParamName, membersParamName, dateFormatParamName,
+            localeParamName, agencyIdParamName, facilitatorParamName, "individual", prequalificationNumberParamName,
+            prequalilficationTimespanParamName, previousPrequalificationParamName, commentParamName, reasonParamName));
 
-    protected static final Set<String> EDIT_MEMBER_PREQUALIFICATION_REQUEST_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList(memberIdParamName, memberNameParamName, memberDpiParamName, memberDobParamName, memberRequestedAmountParamName,
-                    memberWorkWithPuenteParamName, memberStatusParamName, approvedAmountParamName, localeParamName, dateFormatParamName,
-                    memberCommentsParamName, memberAgencyBureauStatusParamName, rateParamName, colateralParamName, destinationParamName, principalParamName));
+    protected static final Set<String> EDIT_MEMBER_PREQUALIFICATION_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(memberIdParamName,
+            memberNameParamName, memberDpiParamName, memberDobParamName, memberRequestedAmountParamName, memberWorkWithPuenteParamName,
+            memberStatusParamName, approvedAmountParamName, localeParamName, dateFormatParamName, memberCommentsParamName,
+            memberAgencyBureauStatusParamName, rateParamName, colateralParamName, destinationParamName, principalParamName));
 
 }

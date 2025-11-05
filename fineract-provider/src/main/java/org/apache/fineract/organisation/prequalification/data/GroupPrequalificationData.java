@@ -18,19 +18,19 @@
  */
 package org.apache.fineract.organisation.prequalification.data;
 
-import lombok.Data;
-import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.organisation.agency.data.AgencyData;
-import org.apache.fineract.portfolio.group.data.CenterData;
-import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
-import org.apache.fineract.useradministration.data.AppUserData;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import lombok.Data;
+import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+import org.apache.fineract.organisation.agency.data.AgencyData;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationTimeline;
+import org.apache.fineract.portfolio.group.data.CenterData;
+import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
+import org.apache.fineract.useradministration.data.AppUserData;
 
 /**
  * Immutable data object represent client identity data.
@@ -83,6 +83,8 @@ public class GroupPrequalificationData {
     private String assignedUserName;
     private String latestComments;
     private Long linkedGroupId;
+    private List<PrequalificationTimeline> currentTimeline;
+    private List<EnumOptionData> expectedTimeline;
 
     private String exceptionComment;
 
@@ -225,5 +227,13 @@ public class GroupPrequalificationData {
 
     public void updateMembers(Collection<MemberPrequalificationData> groupMembers) {
         this.groupMembers = groupMembers;
+    }
+
+    public void updateCurrentStatusTimeline(List<PrequalificationTimeline> prequalificationTimelines) {
+        this.currentTimeline = prequalificationTimelines;
+    }
+
+    public void updateExpectedStatusTimeline(List<EnumOptionData> expectedTimeline) {
+        this.expectedTimeline = expectedTimeline;
     }
 }

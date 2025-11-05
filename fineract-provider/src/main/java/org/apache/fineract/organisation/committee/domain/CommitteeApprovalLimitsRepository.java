@@ -16,20 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.organisation.prequalification.domain;
+package org.apache.fineract.organisation.committee.domain;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
-public interface PreQualificationStatusLogRepository
-        extends JpaRepository<PrequalificationStatusLog, Long>, JpaSpecificationExecutor<PrequalificationStatusLog> {
+public interface CommitteeApprovalLimitsRepository
+        extends JpaRepository<CommitteeApprovalLimits, Long>, JpaSpecificationExecutor<CommitteeApprovalLimits> {
 
-    @Query("SELECT sl FROM PrequalificationStatusLog sl WHERE sl.prequalificationGroup = :preqGroup AND sl.toStatus = :status ORDER BY sl.id desc")
-    List<PrequalificationStatusLog> groupStatusLogs(@Param("status") Integer status, @Param("preqGroup") PrequalificationGroup preqGroup);
+    List<CommitteeApprovalLimits> getCommitteeApprovalLimitsByCommittee(Long committeeId);
 
-    @Query("SELECT sl FROM PrequalificationStatusLog sl WHERE sl.prequalificationGroup.id = :preqGroup ORDER BY sl.id desc")
-    List<PrequalificationStatusLog> groupStatusLogs(@Param("preqGroup") Long preqGroup);
+    @Modifying
+    @Query("delete from CommitteeApprovalLimits c where c.committee = :committee")
+    void deleteByCommittee(Long committee);
 }

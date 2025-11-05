@@ -24,6 +24,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.service.Page;
@@ -34,6 +35,8 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.organisation.committee.data.CommitteeData;
 import org.apache.fineract.organisation.committee.data.CommitteeUserData;
+import org.apache.fineract.organisation.committee.domain.CommitteeApprovalLimits;
+import org.apache.fineract.organisation.committee.domain.CommitteeApprovalLimitsRepositoryWrapper;
 import org.apache.fineract.organisation.committee.domain.CommitteeRepository;
 import org.apache.fineract.organisation.committee.exception.CommitteeNotFoundException;
 import org.apache.fineract.useradministration.data.AppUserData;
@@ -54,13 +57,15 @@ public class CommitteeReadPlatformServiceImpl implements CommitteeReadPlatformSe
     private final AppUserReadPlatformService appUserReadPlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final CommitteeRepository committeeRepository;
+    private final CommitteeApprovalLimitsRepositoryWrapper approvalLimitsRepositoryWrapper;
     private final PaginationHelper paginationHelper;
 
     @Autowired
     public CommitteeReadPlatformServiceImpl(final PlatformSecurityContext context, final JdbcTemplate jdbcTemplate,
             final ColumnValidator columnValidator, final DatabaseSpecificSQLGenerator sqlGenerator,
             final AppUserReadPlatformService appUserReadPlatformService, final CodeValueReadPlatformService codeValueReadPlatformService,
-            final CommitteeRepository committeeRepository, final PaginationHelper paginationHelper) {
+            final CommitteeRepository committeeRepository, final PaginationHelper paginationHelper,
+            final CommitteeApprovalLimitsRepositoryWrapper approvalLimitsRepositoryWrapper) {
         this.context = context;
         this.columnValidator = columnValidator;
         this.jdbcTemplate = jdbcTemplate;
@@ -69,6 +74,7 @@ public class CommitteeReadPlatformServiceImpl implements CommitteeReadPlatformSe
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.committeeRepository = committeeRepository;
         this.paginationHelper = paginationHelper;
+        this.approvalLimitsRepositoryWrapper = approvalLimitsRepositoryWrapper;
     }
 
     @Override
@@ -88,16 +94,21 @@ public class CommitteeReadPlatformServiceImpl implements CommitteeReadPlatformSe
 
             CommitteeData committeeData = this.jdbcTemplate.queryForObject(sqlBuilder.toString(), committeeMapper,
                     new Object[] { committeeId });
+            assert committeeData != null;
 
             // get the selected users in the committee
             Collection<CommitteeUserData> selectedUsers = retrieveCommitteeUsers(committeeId);
 
+            List<CommitteeApprovalLimits> approvalLimits = this.approvalLimitsRepositoryWrapper.getApprovallimitsByCommittee(committeeId);
+            if (!approvalLimits.isEmpty()) {
+                committeeData.setCommitteeApprovalLimits(approvalLimits);
+            }
             // get the available users to set in the committe
             final Collection<AppUserData> availableAppUsers = this.appUserReadPlatformService.retrieveUsersForCommittees();
             final Collection<CommitteeUserData> availableUsers = new ArrayList<>();
             assembleUserToData(availableAppUsers, availableUsers);
 
-            if (committeeData != null && selectedUsers != null) {
+            if (selectedUsers != null) {
                 committeeData.setSelectedUsers(selectedUsers);
                 committeeData.setAvailableUsers(availableUsers);
             }

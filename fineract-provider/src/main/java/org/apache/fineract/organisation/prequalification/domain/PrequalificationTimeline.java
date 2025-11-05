@@ -16,15 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.collateral.domain;
+package org.apache.fineract.organisation.prequalification.domain;
 
-import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
-public interface LoanCollateralRepository extends JpaRepository<LoanCollateral, Long>, JpaSpecificationExecutor<LoanCollateral> {
-
-    LoanCollateral findByLoanIdAndId(Long loanId, Long id);
-
-    List<LoanCollateral> findByLoanId(Long loanId);
+/**
+ * Created by brian on 03/11/2025.
+ */
+public record PrequalificationTimeline(EnumOptionData statusData, String changedBy, String changeDate, String comments, Long index) {
 }

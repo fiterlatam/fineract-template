@@ -18,11 +18,10 @@
  */
 package org.apache.fineract.organisation.prequalification.data;
 
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-
-import java.math.BigDecimal;
 
 @Data
 @Builder
@@ -52,6 +51,5 @@ public class LoanData {
         this.collateral = collateral;
         this.destination = destination;
     }
-
 
 }
