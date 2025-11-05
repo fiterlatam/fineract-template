@@ -998,33 +998,37 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     private LoanData getLoanDataByPrequalificationId(Long prequalificationId) {
 
         final Loan loan = loanRepositoryWrapper.retrieveByPrequalificationId(prequalificationId);
-        final LoanAccountData loanAccountData = loanReadPlatformService.retrieveOne(loan.getId());
-        BigDecimal quotaAmount = BigDecimal.ZERO;
-        String colateral = "";
-        final List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = this.loanRepositoryWrapper
-                .getLoanRepaymentScheduleInstallments(loan.getId());
+        if (loan != null) {
+            final LoanAccountData loanAccountData = loanReadPlatformService.retrieveOne(loan.getId());
+            BigDecimal quotaAmount = BigDecimal.ZERO;
+            String colateral = "";
+            final List<LoanRepaymentScheduleInstallment> loanRepaymentScheduleInstallments = this.loanRepositoryWrapper
+                    .getLoanRepaymentScheduleInstallments(loan.getId());
 
-        final List<LoanCollateral> loanCollaterals = collateralRepository.findByLoanId(loan.getId());
+            final List<LoanCollateral> loanCollaterals = collateralRepository.findByLoanId(loan.getId());
 
-        if (loanRepaymentScheduleInstallments != null && !loanRepaymentScheduleInstallments.isEmpty()) {
-            quotaAmount = loanRepaymentScheduleInstallments.stream()
-                    .filter(item -> item.getInstallmentNumber() == 1)
-                    .map(item -> item.getTotalOutstanding(item.getLoan().getCurrency()).getAmount())
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (loanRepaymentScheduleInstallments != null && !loanRepaymentScheduleInstallments.isEmpty()) {
+                quotaAmount = loanRepaymentScheduleInstallments.stream()
+                        .filter(item -> item.getInstallmentNumber() == 1)
+                        .map(item -> item.getTotalOutstanding(item.getLoan().getCurrency()).getAmount())
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        }
-
-        if (loanCollaterals != null && !loanCollaterals.isEmpty()) {
-            for (final LoanCollateral collateral : loanCollaterals) {
-                colateral = collateral.toData().getType().getName();
-                break;
             }
+
+            if (loanCollaterals != null && !loanCollaterals.isEmpty()) {
+                for (final LoanCollateral collateral : loanCollaterals) {
+                    colateral = collateral.toData().getType().getName();
+                    break;
+                }
+            }
+
+            final BigDecimal rate = loanAccountData.getInterestRatePerPeriod();
+            final Integer period = loanAccountData.getTermFrequency();
+            final String destination = loanAccountData.getLoanPurposeName();
+
+            return new LoanData(quotaAmount, rate, period, colateral, destination);
+        } else {
+            return new LoanData(null,null,null,null,null);
         }
-
-        final BigDecimal rate = loanAccountData.getInterestRatePerPeriod();
-        final Integer period = loanAccountData.getTermFrequency();
-        final String destination = loanAccountData.getLoanPurposeName();
-
-        return new LoanData(quotaAmount, rate, period, colateral, destination);
     }
 }
