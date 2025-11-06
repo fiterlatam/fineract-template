@@ -1306,6 +1306,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         final BigDecimal rate = command.bigDecimalValueOfParameterNamed("interestRatePerPeriod");
         final BigDecimal principal = command.bigDecimalValueOfParameterNamed("principal");
+        final Long loanTermFrequency = command.longValueOfParameterNamed("loanTermFrequency");
 
         CommandSource source = commandSourceRepository.findByLoanIdAndLastModification(loanId);
         JsonElement element = JsonParser.parseString(source.getCommandAsJson());
@@ -1313,6 +1314,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         object.addProperty("interestRatePerPeriod", rate);
         object.addProperty("principal", principal);
+        object.addProperty("loanTermFrequency", loanTermFrequency);
+        object.addProperty("numberOfRepayments", loanTermFrequency);
         element = JsonParser.parseString(object.toString());
         JsonCommand jsonCommand = JsonCommand.fromJsonElement(loanId, element, command.getFromApiJsonHelper());
         jsonCommand.setJsonCommand(object.toString());

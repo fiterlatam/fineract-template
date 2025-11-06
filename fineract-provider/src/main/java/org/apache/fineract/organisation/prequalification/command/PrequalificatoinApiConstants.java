@@ -61,6 +61,7 @@ public class PrequalificatoinApiConstants {
     public static String colateralParamName = "colateral";
     public static String destinationParamName = "destination";
     public static String principalParamName = "principal";
+    public static String loanTermFrequencyParamName = "loanTermFrequency";
 
     public static String exceptionComments = "Comentario de excepción";
     public static String commentParamName = "comment";
