@@ -110,7 +110,8 @@ public class AuthenticationApiResource {
             ClientReadPlatformService aClientReadPlatformService, DefaultToApiJsonSerializer<Map<String, Object>> toApiJsonSerializer,
             PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             final PlatformPasswordEncoder platformPasswordEncoder, final JdbcTemplate jdbcTemplate,
-            final AppUserWritePlatformService appUserWritePlatformService, final ConfigurationDomainService configurationDomainService) {
+            final AppUserWritePlatformService appUserWritePlatformService,
+            final ConfigurationDomainService configurationDomainService) {
         this.customAuthenticationProvider = customAuthenticationProvider;
         this.apiJsonSerializerService = apiJsonSerializerService;
         this.springSecurityPlatformSecurityContext = springSecurityPlatformSecurityContext;
@@ -158,7 +159,7 @@ public class AuthenticationApiResource {
                         SET
                             incorrect_access_count = COALESCE(incorrect_access_count, 0) + 1,
                             nonlocked = CASE
-                                WHEN COALESCE(incorrect_access_count, 0) + 1 > ? THEN FALSE
+                                WHEN COALESCE(incorrect_access_count, 0) + 1 >= ? THEN FALSE
                                 ELSE nonlocked
                             END
                         WHERE username = ?;
