@@ -66,12 +66,16 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom impleme
     @JoinColumn(name = "reason_code_id")
     private CodeValue reasonCode;
 
+    // Only when will send it through  unit analysis in first phase D
+    @Column(name = "with_exceptions")
+    private Boolean withExceptions;
+
     protected PrequalificationStatusLog() {
         //
     }
 
     private PrequalificationStatusLog(final AppUser appUser, final Integer fromStatus, final Integer toStatus, final String comments,
-            final PrequalificationGroup group, final CodeValue reasonCode) {
+            final PrequalificationGroup group, final CodeValue reasonCode, final Boolean withExceptions) {
         this.dateCreated = DateUtils.getLocalDateOfTenant();
         this.fromStatus = fromStatus;
         this.toStatus = toStatus;
@@ -79,11 +83,12 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom impleme
         this.comments = comments;
         this.addedBy = appUser;
         this.reasonCode = reasonCode;
+        this.withExceptions = withExceptions;
     }
 
     public static PrequalificationStatusLog fromJson(final AppUser appUser, final Integer fromStatus, final Integer toStatus,
-            final String comments, final PrequalificationGroup group, CodeValue reasonCode) {
-        return new PrequalificationStatusLog(appUser, fromStatus, toStatus, comments, group, reasonCode);
+                                                     final String comments, final PrequalificationGroup group, CodeValue reasonCode, Boolean withExceptions) {
+        return new PrequalificationStatusLog(appUser, fromStatus, toStatus, comments, group, reasonCode, withExceptions);
     }
 
     public void updateAssignedTo(final AppUser assignedTo) {
