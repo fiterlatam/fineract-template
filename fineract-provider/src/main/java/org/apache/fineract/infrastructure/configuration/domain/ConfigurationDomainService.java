@@ -134,4 +134,6 @@ public interface ConfigurationDomainService {
     Long getMaximumBackDateDaysAllowed();
 
     boolean isRebalanceAllAccounts();
+
+    Long getMaximumLoginAttempts();
 }
