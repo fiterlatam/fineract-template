@@ -204,7 +204,7 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
         } else {
             statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(), null,
-                    prequalificationGroup, null);
+                    prequalificationGroup, null, null);
             prequalificationGroup.updateStatus(PrequalificationStatus.HARD_POLICY_CHECKED);
         }
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);

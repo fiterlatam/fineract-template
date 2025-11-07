@@ -48,5 +48,5 @@ public interface PrequalificationWritePlatformService {
 
     void addExceptionCommentsToPrequalification(Long blacklistId, String comment);
 
-    CommandProcessingResult returnToApproval(Long entityId, JsonCommand command);
+    CommandProcessingResult sendToFirstPhaseApproveCommitteeD(Long entityId, JsonCommand command, boolean withExceptions);
 }
