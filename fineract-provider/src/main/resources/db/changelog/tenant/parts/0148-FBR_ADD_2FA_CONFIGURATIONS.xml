@@ -92,4 +92,23 @@
             ]]>
         </sql>
     </changeSet>
+
+    <changeSet author="fineract" id="6">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sqlCheck expectedResult="1">
+                    select count(*) from c_configuration where name = 'maximum-login-attempts';
+                </sqlCheck>
+            </not>
+        </preConditions>
+        <insert tableName="c_configuration">
+            <column name="name" value="maximum-login-attempts"/>
+            <column name="value" valueNumeric="5"/>
+            <column name="date_value"/>
+            <column name="string_value"/>
+            <column name="enabled" valueBoolean="true"/>
+            <column name="is_trap_door" valueBoolean="false"/>
+            <column name="description" value="Maximum Number of Login Attempts"/>
+        </insert>
+    </changeSet>
 </databaseChangeLog>

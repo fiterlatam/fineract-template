@@ -46,6 +46,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
@@ -99,6 +100,7 @@ public class AuthenticationApiResource {
     private final PlatformPasswordEncoder platformPasswordEncoder;
     private final JdbcTemplate jdbcTemplate;
     private final AppUserWritePlatformService appUserWritePlatformService;
+    private final ConfigurationDomainService configurationDomainService;
 
     @Autowired
     public AuthenticationApiResource(
@@ -108,7 +110,8 @@ public class AuthenticationApiResource {
             ClientReadPlatformService aClientReadPlatformService, DefaultToApiJsonSerializer<Map<String, Object>> toApiJsonSerializer,
             PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             final PlatformPasswordEncoder platformPasswordEncoder, final JdbcTemplate jdbcTemplate,
-            final AppUserWritePlatformService appUserWritePlatformService) {
+            final AppUserWritePlatformService appUserWritePlatformService,
+            final ConfigurationDomainService configurationDomainService) {
         this.customAuthenticationProvider = customAuthenticationProvider;
         this.apiJsonSerializerService = apiJsonSerializerService;
         this.springSecurityPlatformSecurityContext = springSecurityPlatformSecurityContext;
@@ -118,6 +121,7 @@ public class AuthenticationApiResource {
         this.platformPasswordEncoder = platformPasswordEncoder;
         this.jdbcTemplate = jdbcTemplate;
         this.appUserWritePlatformService = appUserWritePlatformService;
+        this.configurationDomainService = configurationDomainService;
     }
 
     @POST
@@ -149,16 +153,17 @@ public class AuthenticationApiResource {
         } catch (Exception e) {
             // log the failed login attempt
             if (e instanceof BadCredentialsException) {
+                Long maxLoginAttempt = this.configurationDomainService.getMaximumLoginAttempts();
                 this.jdbcTemplate.update("""
                         UPDATE m_appuser
                         SET
                             incorrect_access_count = COALESCE(incorrect_access_count, 0) + 1,
                             nonlocked = CASE
-                                WHEN COALESCE(incorrect_access_count, 0) + 1 >= 4 THEN FALSE
+                                WHEN COALESCE(incorrect_access_count, 0) + 1 >= ? THEN FALSE
                                 ELSE nonlocked
                             END
                         WHERE username = ?;
-                        """, request.username);
+                        """, maxLoginAttempt, request.username );
                 throw new BadCredentialsException("Authentication failed for user: " + request.username + ": " + e.getMessage());
             }
             // log the failed login attempt
