@@ -502,6 +502,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 } else {
                     extraCriteria += " and g.status IN( " + resolveCommitteeGroupStatus(committeeValueData) + ") ";
                 }
+            } else if (type.equals("renegotiations")) {
+                extraCriteria += " and g.status IN( " + PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD.getValue().toString()
+                        + ") ";
             }
         }
 
