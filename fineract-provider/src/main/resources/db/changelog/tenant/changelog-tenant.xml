@@ -170,4 +170,5 @@
     <include file="parts/PUE_05_11_25_add_new_colum_prequalification_log.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_06_11_25_add_new_report_loans_rejected.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_07_11_25_add_new_column_prequalification_log.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_08_11_25_Add_committees_permissions.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -20,6 +20,8 @@ package org.apache.fineract.organisation.prequalification.api;
 
 import static org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations.status;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -385,8 +387,8 @@ public class GroupPrequalificationApiResource {
             @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
             @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
             @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("description") final String description,
-            @FormDataParam("comment") final String comment, @FormDataParam("memberId") final Long memberId,
-            @FormDataParam("dpi") final String dpi) {
+            @FormDataParam("comment") String comment, @FormDataParam("memberId") final Long memberId,
+            @FormDataParam("dpi") final String dpi, @FormDataParam("sendToCommittee") final Boolean sendToCommittee) {
 
         if (inputStream != null) {
             fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
@@ -397,6 +399,18 @@ public class GroupPrequalificationApiResource {
         if (memberId != null) {
             this.prequalificationWritePlatformService.uploadMemberDocs(memberId);
         }
+
+        if (sendToCommittee != null && sendToCommittee) {
+            JsonObject object = new JsonObject();
+            object.addProperty("groupId", groupId);
+            object.addProperty("memberId", memberId);
+            object.addProperty("comments", comment);
+            object.addProperty("action", "approvecommitee");
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().processAnalysisRequest(groupId)
+                    .withJson(new Gson().toJson(object)).build();
+            this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        }
+
         return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(groupId, null));
     }
 }
