@@ -536,4 +536,14 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     public boolean isRebalanceAllAccounts() {
         return getGlobalConfigurationPropertyData("rebalance-all-savings-accounts").isEnabled();
     }
+
+    @Override
+    public Long getMaximumLoginAttempts() {
+        final String propertyName = "maximum-login-attempts";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        if (property.getValue() == null) {
+            return Long.valueOf(0);
+        }
+        return property.getValue();
+    }
 }
