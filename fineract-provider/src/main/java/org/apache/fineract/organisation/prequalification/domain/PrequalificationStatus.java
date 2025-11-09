@@ -53,7 +53,8 @@ public enum PrequalificationStatus {
                                                                                                                                             1006,
                                                                                                                                             "prequalification.status.committee.a.pending.approval"), INVALID(
                                                                                                                                                     0,
-                                                                                                                                                    "prequalification.status.invalid");
+                                                                                                                                                    "prequalification.status.invalid"), RENEGOTIATION_AGENCY_LEAD(
+                                                                                                                                                            1007, "prequalification.status.renegotiations");
 
     private final Integer value;
     private final String code;
@@ -119,6 +120,9 @@ public enum PrequalificationStatus {
             case 1006:
                 enumeration = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
             break;
+            case 1007:
+                enumeration = PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD;
+            break;
         }
         return enumeration;
     }
@@ -174,6 +178,8 @@ public enum PrequalificationStatus {
             clientStatus = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL;
         } else if (status.equalsIgnoreCase(PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL.toString())) {
             clientStatus = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
+        } else if(status.equalsIgnoreCase(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD.toString())){
+            clientStatus = PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD;
         } else {
             clientStatus = PrequalificationStatus.INVALID;
         }
