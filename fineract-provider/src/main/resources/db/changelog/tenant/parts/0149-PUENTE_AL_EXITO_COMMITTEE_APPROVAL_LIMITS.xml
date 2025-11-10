@@ -53,4 +53,13 @@
             </column>
         </createTable>
     </changeSet>
+
+    <changeSet author="fineract" id="2">
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/print_committee_approval_report.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
 </databaseChangeLog>

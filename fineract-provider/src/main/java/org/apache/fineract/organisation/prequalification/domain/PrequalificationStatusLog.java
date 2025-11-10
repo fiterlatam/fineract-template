@@ -66,7 +66,7 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom impleme
     @JoinColumn(name = "reason_code_id")
     private CodeValue reasonCode;
 
-    // Only when will send it through  unit analysis in first phase D
+    // Only when will send it through unit analysis in first phase D
     @Column(name = "with_exceptions")
     private Boolean withExceptions;
 
@@ -87,7 +87,7 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom impleme
     }
 
     public static PrequalificationStatusLog fromJson(final AppUser appUser, final Integer fromStatus, final Integer toStatus,
-                                                     final String comments, final PrequalificationGroup group, CodeValue reasonCode, Boolean withExceptions) {
+            final String comments, final PrequalificationGroup group, CodeValue reasonCode, Boolean withExceptions) {
         return new PrequalificationStatusLog(appUser, fromStatus, toStatus, comments, group, reasonCode, withExceptions);
     }
 

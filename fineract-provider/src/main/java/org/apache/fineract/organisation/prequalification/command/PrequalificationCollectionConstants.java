@@ -34,9 +34,10 @@ public class PrequalificationCollectionConstants extends PrequalificatoinApiCons
             localeParamName, agencyIdParamName, facilitatorParamName, "individual", prequalificationNumberParamName,
             prequalilficationTimespanParamName, previousPrequalificationParamName, commentParamName, reasonParamName));
 
-    protected static final Set<String> EDIT_MEMBER_PREQUALIFICATION_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(memberIdParamName,
-            memberNameParamName, memberDpiParamName, memberDobParamName, memberRequestedAmountParamName, memberWorkWithPuenteParamName,
-            memberStatusParamName, approvedAmountParamName, localeParamName, dateFormatParamName, memberCommentsParamName,
-            memberAgencyBureauStatusParamName, rateParamName, colateralParamName, destinationParamName, principalParamName, loanTermFrequencyParamName));
+    protected static final Set<String> EDIT_MEMBER_PREQUALIFICATION_REQUEST_DATA_PARAMETERS = new HashSet<>(
+            Arrays.asList(memberIdParamName, memberNameParamName, memberDpiParamName, memberDobParamName, memberRequestedAmountParamName,
+                    memberWorkWithPuenteParamName, memberStatusParamName, approvedAmountParamName, localeParamName, dateFormatParamName,
+                    memberCommentsParamName, memberAgencyBureauStatusParamName, rateParamName, colateralParamName, destinationParamName,
+                    principalParamName, loanTermFrequencyParamName));
 
 }
