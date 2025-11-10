@@ -25,6 +25,7 @@ import org.apache.fineract.infrastructure.DataIntegrityErrorHandler;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.loanaccount.service.LoanChargeWritePlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -38,6 +39,7 @@ public class LoanRepaymentCommandHandler implements NewCommandSourceHandler {
 
     private final LoanWritePlatformService writePlatformService;
     private final DataIntegrityErrorHandler dataIntegrityErrorHandler;
+    private final LoanChargeWritePlatformService loanChargeWritePlatformService;
 
     @Transactional
     @Override
@@ -45,7 +47,7 @@ public class LoanRepaymentCommandHandler implements NewCommandSourceHandler {
         try {
             boolean isRecoveryRepayment = false;
             return this.writePlatformService.makeLoanRepayment(LoanTransactionType.REPAYMENT, command.getLoanId(), command,
-                    isRecoveryRepayment);
+                    isRecoveryRepayment, loanChargeWritePlatformService);
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             dataIntegrityErrorHandler.handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve, "loan.repayment", "Repayment");
             return CommandProcessingResult.empty();

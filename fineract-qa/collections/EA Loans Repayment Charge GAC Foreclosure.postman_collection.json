@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "f113cfff-1e79-4c97-8ea5-1eb3d1c2626e",
+        "_postman_id": "df29ffb0-f566-4dc5-afac-99a94c54ed5d",
         "name": "EA Loans Repayment Charge GAC Foreclosure",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
@@ -825,7 +825,10 @@
                             "});\r",
                             "\r",
                             "pm.test(\"Verify Transacion GAC component\", function () {\r",
-                            "    pm.expect(jsonData.transactions[1].loanChargePaidBySummary.aval).to.be.greaterThanOrEqual(79337.90);\r",
+                            "\r",
+                            "    var avalDueSum = jsonData.repaymentSchedule.periods[1].avalDue + jsonData.repaymentSchedule.periods[2].avalDue + jsonData.repaymentSchedule.periods[3].avalDue;\r",
+                            "\r",
+                            "    pm.expect(jsonData.transactions[1].loanChargePaidBySummary.aval).to.be.equal(avalDueSum);\r",
                             "});"
                         ],
                         "type": "text/javascript",

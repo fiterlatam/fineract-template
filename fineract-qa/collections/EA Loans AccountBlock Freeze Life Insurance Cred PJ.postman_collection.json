@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "faedcaa4-91c6-4463-bcfe-cb77b3326efb",
+        "_postman_id": "cbf45993-f3f6-4680-8b38-31ca46c6b6ca",
         "name": "EA Loans AccountBlock Freeze Life Insurance Cred PJ",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
@@ -13,6 +13,21 @@
                     "listen": "test",
                     "script": {
                         "exec": [
+                            "var moment = require(\"moment\");\r",
+                            "pm.environment.set(\"executionId\", moment().format((\"YYYYMMDD-HHmmss\")));\r",
+                            "\r",
+                            "var moment = require(\"moment\");\r",
+                            "var todayDate = moment().format((\"DD-MM-YY\"));\r",
+                            "\r",
+                            "var creationAndDisbursementDate = moment().add(-3, 'months').add(8, 'days').format((\"DD-MM-YY\"));\r",
+                            "\r",
+                            "\r",
+                            "var blockDate = moment().add(-2, 'months').add(15, 'days').format((\"DD-MM-YY\"));\r",
+                            "\r",
+                            "postman.setEnvironmentVariable(\"todayDate\", todayDate);\r",
+                            "postman.setEnvironmentVariable(\"creationAndDisbusmentDate\", creationAndDisbursementDate);\r",
+                            "postman.setEnvironmentVariable(\"blockDate\", blockDate);\r",
+                            "\r",
                             "pm.test( \"Obtain Client ID\", function(){\r",
                             "    pm.response.to.have.status(200);\r",
                             "    pm.expect(pm.response.text()).to.not.equals( null );\r",
@@ -22,7 +37,8 @@
                             "} );"
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 },
                 {
@@ -92,7 +108,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
@@ -151,7 +168,8 @@
                             "} );"
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 },
                 {
@@ -225,7 +243,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
@@ -245,7 +264,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"productId\": 7,\r\n    \"loanOfficerId\": \"\",\r\n    \"loanPurposeId\": \"\",\r\n    \"loanAssignorId\": \"\",\r\n    \"fundId\": \"\",\r\n    \"submittedOnDate\": \"15-08-25\",\r\n    \"expectedDisbursementDate\": \"15-08-25\",\r\n    \"externalId\": \"\",\r\n    \"linkAccountId\": \"\",\r\n    \"createStandingInstructionAtDisbursement\": \"\",\r\n    \"allyId\": null,\r\n    \"pointOfSaleCode\": null,\r\n    \"loanTermFrequency\": 3,\r\n    \"loanTermFrequencyType\": 2,\r\n    \"numberOfRepayments\": 3,\r\n    \"repaymentEvery\": 1,\r\n    \"repaymentFrequencyType\": 2,\r\n    \"repaymentFrequencyNthDayType\": \"\",\r\n    \"repaymentFrequencyDayOfWeekType\": \"\",\r\n    \"repaymentsStartingFromDate\": null,\r\n    \"interestChargedFromDate\": null,\r\n    \"interestRatePoints\": \"\",\r\n    \"interestType\": 0,\r\n    \"isEqualAmortization\": false,\r\n    \"amortizationType\": 0,\r\n    \"interestCalculationPeriodType\": 1,\r\n    \"loanIdToClose\": \"\",\r\n    \"isTopup\": \"\",\r\n    \"transactionProcessingStrategyCode\": \"advanced-payment-allocation-strategy\",\r\n    \"valorDescuento\": \"\",\r\n    \"valorGiro\": \"\",\r\n    \"interestRatePerPeriod\": 23.49686,\r\n    \"charges\": [\r\n        {\r\n            \"chargeId\": 11,\r\n            \"amount\": 0.033,\r\n            \"expdate\": null,\r\n            \"isEndorsed\": false,\r\n            \"insuranceName\": \"\",\r\n            \"insuranceId\": \"\"\r\n        }\r\n    ],\r\n    \"collateral\": [],\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\",\r\n    \"clientId\": {{clientId}},\r\n    \"loanType\": \"individual\",\r\n    \"principal\": 600000,\r\n    \"clientIdNumber\": \"20250917-125143\"\r\n}",
+                    "raw": "{\r\n    \"productId\": 7,\r\n    \"loanOfficerId\": \"\",\r\n    \"loanPurposeId\": \"\",\r\n    \"loanAssignorId\": \"\",\r\n    \"fundId\": \"\",\r\n    \"submittedOnDate\": \"{{creationAndDisbusmentDate}}\",\r\n    \"expectedDisbursementDate\": \"{{creationAndDisbusmentDate}}\",\r\n    \"externalId\": \"\",\r\n    \"linkAccountId\": \"\",\r\n    \"createStandingInstructionAtDisbursement\": \"\",\r\n    \"allyId\": null,\r\n    \"pointOfSaleCode\": null,\r\n    \"loanTermFrequency\": 3,\r\n    \"loanTermFrequencyType\": 2,\r\n    \"numberOfRepayments\": 3,\r\n    \"repaymentEvery\": 1,\r\n    \"repaymentFrequencyType\": 2,\r\n    \"repaymentFrequencyNthDayType\": \"\",\r\n    \"repaymentFrequencyDayOfWeekType\": \"\",\r\n    \"repaymentsStartingFromDate\": null,\r\n    \"interestChargedFromDate\": null,\r\n    \"interestRatePoints\": \"\",\r\n    \"interestType\": 0,\r\n    \"isEqualAmortization\": false,\r\n    \"amortizationType\": 0,\r\n    \"interestCalculationPeriodType\": 1,\r\n    \"loanIdToClose\": \"\",\r\n    \"isTopup\": \"\",\r\n    \"transactionProcessingStrategyCode\": \"advanced-payment-allocation-strategy\",\r\n    \"valorDescuento\": \"\",\r\n    \"valorGiro\": \"\",\r\n    \"interestRatePerPeriod\": 23.49686,\r\n    \"charges\": [\r\n        {\r\n            \"chargeId\": 11,\r\n            \"amount\": 0.033,\r\n            \"expdate\": null,\r\n            \"isEndorsed\": false,\r\n            \"insuranceName\": \"\",\r\n            \"insuranceId\": \"\"\r\n        }\r\n    ],\r\n    \"collateral\": [],\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\",\r\n    \"clientId\": {{clientId}},\r\n    \"loanType\": \"individual\",\r\n    \"principal\": 600000,\r\n    \"clientIdNumber\": \"20250917-125143\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -285,7 +304,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"approvedOnDate\": \"15/08/2025\",\r\n    \"expectedDisbursementDate\": \"15/08/2025\",\r\n    \"approvedLoanAmount\": 600000,\r\n    \"note\": \"\",\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "raw": "{\r\n    \"approvedOnDate\": \"{{creationAndDisbusmentDate}}\",\r\n    \"expectedDisbursementDate\": \"{{creationAndDisbusmentDate}}\",\r\n    \"approvedLoanAmount\": 600000,\r\n    \"note\": \"\",\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"es\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -332,7 +351,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"actualDisbursementDate\":  \"15/08/2025\",\r\n    \"transactionAmount\": 600000,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": \"\",\r\n    \"note\": \"\",\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\",\r\n    \"channelName\": \"Mifos\"\r\n}",
+                    "raw": "{\r\n    \"actualDisbursementDate\": \"{{creationAndDisbusmentDate}}\",\r\n    \"transactionAmount\": 600000,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": \"\",\r\n    \"note\": \"\",\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"es\",\r\n    \"channelName\": \"Mifos\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -548,7 +567,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
@@ -568,7 +588,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n  \"applicationDate\": \"25/09/2025\",\r\n  \"blockingReasonId\": {{castigoId}},\r\n  \"accelerate\": false,\r\n  \"freezeCurrentInterest\": false,\r\n  \"freezeInterestArrears\": false,\r\n  \"freezeLifeInsurance\": true,\r\n  \"freezeMypime\": false,\r\n  \"active\": true,\r\n  \"locale\": \"es\",\r\n  \"dateFormat\": \"dd/MM/yyyy\"\r\n}\r\n",
+                    "raw": "{\r\n  \"applicationDate\": \"{{blockDate}}\",\r\n  \"blockingReasonId\": {{castigoId}},\r\n  \"accelerate\": false,\r\n  \"freezeCurrentInterest\": false,\r\n  \"freezeInterestArrears\": false,\r\n  \"freezeLifeInsurance\": true,\r\n  \"freezeMypime\": false,\r\n  \"active\": true,\r\n  \"locale\": \"es\",\r\n  \"dateFormat\": \"dd-MM-yy\"\r\n}\r\n",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -602,6 +622,8 @@
                             "pm.expect(pm.response.text()).to.not.equals( null );\r",
                             "var jsonData = JSON.parse(pm.response.text());\r",
                             "\r",
+                            "postman.setEnvironmentVariable(\"totalForPeriod\", jsonData.repaymentSchedule.periods[1].totalDueForPeriod);\r",
+                            "\r",
                             "\r",
                             "pm.test(\"Verify Life Insuramce charge of installments\", function () {\r",
                             "\r",
@@ -615,7 +637,8 @@
                             "});"
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 },
                 {
@@ -625,7 +648,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
@@ -696,7 +720,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 },
                 {
@@ -706,7 +731,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
@@ -726,7 +752,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"transactionDate\": \"15/09/2025\",\r\n    \"transactionAmount\": 211946.43,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "raw": "{\r\n    \"transactionDate\":  \"{{todayDate}}\",\r\n    \"transactionAmount\": {{totalForPeriod}},\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"es\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -773,14 +799,15 @@
                             "    pm.expect(jsonData.repaymentSchedule.periods[1].feeChargesDue).to.be.equal(198.00);\r",
                             "\r",
                             "    \r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[3].feeChargesDue).to.be.equal(0);\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[2].feeChargesDue - jsonData.repaymentSchedule.periods[2].avalDue).to.be.equal(0);\r",
                             "\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[2].feeChargesDue).to.be.equal(0);    \r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[3].feeChargesDue).to.be.equal(0);    \r",
                             "\r",
                             "});"
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 },
                 {
@@ -790,7 +817,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
