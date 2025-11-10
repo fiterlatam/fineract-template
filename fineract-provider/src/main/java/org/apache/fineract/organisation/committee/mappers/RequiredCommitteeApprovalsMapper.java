@@ -54,7 +54,7 @@ public class RequiredCommitteeApprovalsMapper implements RowMapper<CommitteeAppr
         final EnumOptionData status = PreQualificationsEnumerations.status(committeeValue);
 
         CommitteeApprovalsData committeeApprovalsData = CommitteeApprovalsData.builder().id(id).fromAmount(nombre).toAmount(tipo)
-                .approvalData(status).build();
+                .approvalData(status).committee(committeeValue).build();
         return committeeApprovalsData;
     }
 }
