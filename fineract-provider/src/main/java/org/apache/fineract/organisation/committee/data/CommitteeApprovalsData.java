@@ -29,10 +29,16 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
  */
 @Data
 @Builder
-public class CommitteeApprovalsData {
+public class CommitteeApprovalsData implements Comparable<CommitteeApprovalsData> {
 
+    private String committee;
     private EnumOptionData approvalData;
     private BigDecimal fromAmount;
     private BigDecimal toAmount;
     private Long id;
+
+    @Override
+    public int compareTo(CommitteeApprovalsData entry) {
+        return this.committee.compareTo(entry.getCommittee());
+    }
 }

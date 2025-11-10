@@ -110,8 +110,7 @@ public class AuthenticationApiResource {
             ClientReadPlatformService aClientReadPlatformService, DefaultToApiJsonSerializer<Map<String, Object>> toApiJsonSerializer,
             PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
             final PlatformPasswordEncoder platformPasswordEncoder, final JdbcTemplate jdbcTemplate,
-            final AppUserWritePlatformService appUserWritePlatformService,
-            final ConfigurationDomainService configurationDomainService) {
+            final AppUserWritePlatformService appUserWritePlatformService, final ConfigurationDomainService configurationDomainService) {
         this.customAuthenticationProvider = customAuthenticationProvider;
         this.apiJsonSerializerService = apiJsonSerializerService;
         this.springSecurityPlatformSecurityContext = springSecurityPlatformSecurityContext;
@@ -163,7 +162,7 @@ public class AuthenticationApiResource {
                                 ELSE nonlocked
                             END
                         WHERE username = ?;
-                        """, maxLoginAttempt, request.username );
+                        """, maxLoginAttempt, request.username);
                 throw new BadCredentialsException("Authentication failed for user: " + request.username + ": " + e.getMessage());
             }
             // log the failed login attempt
