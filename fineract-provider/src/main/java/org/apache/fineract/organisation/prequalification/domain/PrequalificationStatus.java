@@ -33,7 +33,7 @@ public enum PrequalificationStatus {
                                             "prequalification.status.expired"), COMPLETED(900,
                                                     "prequalification.status.completed"), CONSENT_ADDED(701,
                                                             "prequalification.status.concent.added"), AGENCY_LEAD_PENDING_APPROVAL(902,
-                                                                    "prequalification.status.pending.approval"), PREQUALIFICATION_UPDATE_REQUESTED(
+                                                                    "prequalification.status.agency.pending.approval"), PREQUALIFICATION_UPDATE_REQUESTED(
                                                                             903,
                                                                             "prequalification.status.update.requested"), AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS(
                                                                                     904,
@@ -54,7 +54,8 @@ public enum PrequalificationStatus {
                                                                                                                                             "prequalification.status.committee.a.pending.approval"), INVALID(
                                                                                                                                                     0,
                                                                                                                                                     "prequalification.status.invalid"), RENEGOTIATION_AGENCY_LEAD(
-                                                                                                                                                            1007, "prequalification.status.renegotiations");
+                                                                                                                                                            1007,
+                                                                                                                                                            "prequalification.status.renegotiations");
 
     private final Integer value;
     private final String code;
@@ -178,7 +179,7 @@ public enum PrequalificationStatus {
             clientStatus = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL;
         } else if (status.equalsIgnoreCase(PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL.toString())) {
             clientStatus = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
-        } else if(status.equalsIgnoreCase(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD.toString())){
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD.toString())) {
             clientStatus = PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD;
         } else {
             clientStatus = PrequalificationStatus.INVALID;
@@ -186,6 +187,24 @@ public enum PrequalificationStatus {
 
         return clientStatus;
 
+    }
+
+    public static PrequalificationStatus resolveCommitteeStatus(String committee) {
+        if (StringUtils.hasLength(committee)) {
+            switch (committee.toUpperCase()) {
+                case "A":
+                    return PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
+                case "B":
+                    return PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL;
+                case "C":
+                    return PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL;
+                case "D":
+                    return PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL;
+                default:
+                    return PrequalificationStatus.INVALID;
+            }
+        }
+        return null;
     }
 
     // public boolean hasStateOf(final ClientIdentifierStatus state) {

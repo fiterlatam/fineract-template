@@ -31,6 +31,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -67,6 +68,8 @@ import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.agency.domain.AgencyRepositoryWrapper;
+import org.apache.fineract.organisation.committee.data.CommitteeApprovalsData;
+import org.apache.fineract.organisation.committee.mappers.RequiredCommitteeApprovalsMapper;
 import org.apache.fineract.organisation.prequalification.command.PrequalificationDataValidator;
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
@@ -83,7 +86,6 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusLog;
-import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusRange;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusRangeRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
@@ -157,6 +159,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final LoanReadPlatformService loanReadPlatformService;
     private final CommandSourceRepository commandSourceRepository;
     private final CodeValueRepository codeValueRepository;
+    private final RequiredCommitteeApprovalsMapper committeeApprovalsMapper = new RequiredCommitteeApprovalsMapper();
 
     @Autowired
     public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
@@ -972,12 +975,20 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .orElseThrow(() -> new LoanProductNotFoundException(productId));
         final Boolean requireCommitteeApproval = ObjectUtils.defaultIfNull(loanProduct.getRequireCommitteeApproval(), Boolean.FALSE);
         if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveanalysis") && requireCommitteeApproval) {
-            PrequalificationStatusRange statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
-            prequalificationStatus = PrequalificationStatus.fromInt(statusRange.getStatus());
+            Integer statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
+            prequalificationStatus = PrequalificationStatus.fromInt(statusRange);
 
         }
+        String reportToPrint = null;
+        Long loanId = null;
         if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveCommittee")) {
-            prequalificationStatus = resolveCommitteeStatus(prequalificationGroup, action);
+            Integer statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
+            prequalificationStatus = PrequalificationStatus.fromInt(statusRange);
+            if (prequalificationStatus.equals(PrequalificationStatus.COMPLETED)) {
+                reportToPrint = "Commitee Approval Report";
+                Loan loan = this.loanRepositoryWrapper.retrieveByPrequalificationId(entityId);
+                loanId = loan != null ? loan.getId() : null;
+            }
         }
 
         // check if status has changed after resolving the new status
@@ -1008,7 +1019,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             currentStatusLog.updateSubStatus(PrequalificationSubStatus.COMPLETED.getValue());
             this.preQualificationLogRepository.save(currentStatusLog);
         }
-        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId())
+                .withReportToPrint(reportToPrint).withLoanId(loanId).build();
     }
 
     private CommandProcessingResult revalidateHardPolicy(Long entityId, JsonCommand command) {
@@ -1204,31 +1216,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.preQualificationLogRepository.saveAndFlush(prequalificationStatusLog);
     }
 
-    private PrequalificationStatus resolveCommitteeStatus(PrequalificationGroup prequalificationGroup, String action) {
-        // TODO ---CHECK IF THE COMMITTEE IS THE LAST COMMITTEE
-        PrequalificationStatusRange initialStatusRange = resolveIndividualStatusRange(prequalificationGroup, action);
-
-        PrequalificationStatus initialStatus = PrequalificationStatus.fromInt(initialStatusRange.getStatus());
-        PrequalificationStatus currentStatus = PrequalificationStatus.fromInt(prequalificationGroup.getStatus());
-
-        PrequalificationStatus finalStatus = currentStatus;
-        if (initialStatus.getValue().equals(currentStatus.getValue())) {
-            if (currentStatus.equals(PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL)) {
-                finalStatus = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL;
-            } else if (currentStatus.equals(PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL)) {
-                finalStatus = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL;
-            } else if (currentStatus.equals(PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL)) {
-                finalStatus = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
-            } else if (currentStatus.equals(PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL)) {
-                finalStatus = PrequalificationStatus.COMPLETED;
-            }
-        } else {
-            finalStatus = PrequalificationStatus.COMPLETED;
-        }
-
-        return finalStatus;
-    }
-
     private PrequalificationStatus resolveStatus(String action) {
         PrequalificationStatus status = null;
         if (action.equalsIgnoreCase("sendtoagency")) {
@@ -1247,11 +1234,18 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return status;
     }
 
-    private PrequalificationStatusRange resolveIndividualStatusRange(PrequalificationGroup prequalificationGroup, String action) {
-        PrequalificationStatusRange finalRange = null;
+    private Integer resolveIndividualStatusRange(PrequalificationGroup prequalificationGroup, @NotNull String action) {
 
+        Integer finalStatus = null;
         if (action.equalsIgnoreCase("approveanalysis") || action.equalsIgnoreCase("approveCommittee")) {
-            BigDecimal amount = prequalificationGroup.getTotalRequestedAmount();
+            Integer fromStatus = prequalificationGroup.getStatus();
+
+            List<PrequalificationGroupMember> members = prequalificationGroup.getMembers();
+            BigDecimal totalApprovedAmount = BigDecimal.ZERO;
+            for (PrequalificationGroupMember member : members) {
+                totalApprovedAmount = totalApprovedAmount.add(member.getApprovedAmount());
+            }
+
             PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
                     .retrieveHardPolicyValidationResults(prequalificationGroup.getId());
             List<List<String>> rows = prequalificationChecklistData.getMembers().getRows();
@@ -1264,29 +1258,72 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 });
             }
             Integer errorWarningsCount = redCountRef.get();
+            final String membersql = "select " + this.committeeApprovalsMapper.schema() + " "
+                    + "WHERE ? BETWEEN c.from_amount AND c.to_amount " + "AND ( " + "    (? > c.limit AND c.condition = 'GREATER_THAN') "
+                    + "    OR (? <= c.limit AND c.condition = 'LESS_THAN') ) ORDER BY cv.code_value desc;";
 
-            List<PrequalificationStatusRange> statusRangeList = this.prequalificationStatusRangeRepository
-                    .findByPrequalificationTypeAndNumberOfErrors(prequalificationGroup.getPrequalificationType(), errorWarningsCount);
+            List<CommitteeApprovalsData> approvalsRequired = this.jdbcTemplate.query(membersql, this.committeeApprovalsMapper,
+                    new Object[] { totalApprovedAmount, errorWarningsCount, errorWarningsCount });
 
-            if (statusRangeList.size() == 1) {
-                finalRange = statusRangeList.get(0);
-            } else {
-                for (PrequalificationStatusRange statusRange : statusRangeList) {
-                    if (amount.compareTo(statusRange.getMinAmount()) >= 0
-                            && (statusRange.getMaxAmount() != null && amount.compareTo(statusRange.getMaxAmount()) <= 0)) {
-                        finalRange = statusRange;
-                        break;
-                    } else if (amount.compareTo(statusRange.getMinAmount()) >= 0 && statusRange.getMaxAmount() == null) {
-                        finalRange = statusRange;
+            approvalsRequired.sort(Comparator.comparing(CommitteeApprovalsData::getCommittee).reversed());
+            finalStatus = null;
+            if (!approvalsRequired.isEmpty()) {
+                finalStatus = PrequalificationStatus.COMPLETED.getValue();
+                for (CommitteeApprovalsData approvalsData : approvalsRequired) {
+                    Integer committeeRequired = PrequalificationStatus.resolveCommitteeStatus(approvalsData.getCommittee()).getValue();
+                    if (fromStatus < committeeRequired) {
+                        finalStatus = committeeRequired;
                         break;
                     }
                 }
             }
-
         }
 
-        return finalRange;
+        return finalStatus;
     }
+
+    // private PrequalificationStatusRange resolveIndividualStatusRangeOld(PrequalificationGroup prequalificationGroup,
+    // String action) {
+    // PrequalificationStatusRange finalRange = null;
+    //
+    // if (action.equalsIgnoreCase("approveanalysis") || action.equalsIgnoreCase("approveCommittee")) {
+    // BigDecimal amount = prequalificationGroup.getTotalRequestedAmount();
+    // PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
+    // .retrieveHardPolicyValidationResults(prequalificationGroup.getId());
+    // List<List<String>> rows = prequalificationChecklistData.getMembers().getRows();
+    // AtomicReference<Integer> redCountRef = new AtomicReference<>(0);
+    // for (List<String> innerList : rows) {
+    // innerList.forEach(item -> {
+    // if ("RED".equalsIgnoreCase(item) || "ORANGE".equalsIgnoreCase(item) || "YELLOW".equalsIgnoreCase(item)) {
+    // redCountRef.getAndSet(redCountRef.get() + 1);
+    // }
+    // });
+    // }
+    // Integer errorWarningsCount = redCountRef.get();
+    //
+    // List<PrequalificationStatusRange> statusRangeList = this.prequalificationStatusRangeRepository
+    // .findByPrequalificationTypeAndNumberOfErrors(prequalificationGroup.getPrequalificationType(),
+    // errorWarningsCount);
+    //
+    // if (statusRangeList.size() == 1) {
+    // finalRange = statusRangeList.get(0);
+    // } else {
+    // for (PrequalificationStatusRange statusRange : statusRangeList) {
+    // if (amount.compareTo(statusRange.getMinAmount()) >= 0
+    // && (statusRange.getMaxAmount() != null && amount.compareTo(statusRange.getMaxAmount()) <= 0)) {
+    // finalRange = statusRange;
+    // break;
+    // } else if (amount.compareTo(statusRange.getMinAmount()) >= 0 && statusRange.getMaxAmount() == null) {
+    // finalRange = statusRange;
+    // break;
+    // }
+    // }
+    // }
+    //
+    // }
+    //
+    // return finalRange;
+    // }
 
     private PrequalificationType resolvePrequalificationType(LoanProduct loanProduct) {
         if (loanProduct.getOwnerType() != null) {
