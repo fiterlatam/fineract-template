@@ -948,11 +948,35 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                 loanId, (finish - start) / 1000.0, overdueLoanScheduleDataList.size());
     }
 
+    @Transactional
+    @Override
+    public void applyGACChargeForOverdueLoanAfterRepaymentOrReversal(Loan loan, LocalDate repaymentDate) {
+        Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList = new ArrayList<>();
+
+        loan.getRepaymentScheduleInstallments().stream().filter(l -> l.isNotFullyPaidOff())
+                .filter(dueDt -> !dueDt.getDueDate().isAfter(repaymentDate)).forEach(installment -> {
+                    overdueLoanScheduleDataList.add(OverdueLoanScheduleData.builder().loanId(loan.getId())
+                            .periodNumber(installment.getInstallmentNumber()).build());
+                });
+
+        applyGACChargeForOverdueLoan(loan, overdueLoanScheduleDataList, true);
+    }
+
     private void applyGACChargeForOverdueLoan(Loan loan, Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList) {
+        applyGACChargeForOverdueLoan(loan, overdueLoanScheduleDataList, false);
+    }
+
+    private void applyGACChargeForOverdueLoan(Loan loan, Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList,
+            boolean triggeredByRepayment) {
         // This is to persist errors if any for later analysis
         String errorMsg = null;
         String errorLog = null;
         LocalDateTime startInstallmentProcessing = DateUtils.getLocalDateTimeOfTenant();
+
+        // if list is empty, return
+        if (overdueLoanScheduleDataList.isEmpty()) {
+            return;
+        }
 
         Collection<OverdueLoanScheduleData> overdueLoanScheduleDataListSubSet = overdueLoanScheduleDataList.stream()
                 .filter(ovd -> ovd.getLoanId().compareTo(loan.getId()) == 0).toList();
@@ -990,7 +1014,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
             for (OverdueLoanScheduleData overdueInstallment : overdueLoanScheduleDataListSubSet) {
                 try {
                     // Check if it was processed today and skip if no errors
-                    if (jobProcessedEntityRepository
+                    if (!triggeredByRepayment && jobProcessedEntityRepository
                             .existsByJobIdAndExecutionDateAndExecutionProcessAndEntityTypeAndEntityIdAndInstallmentNrAndErrorMessageIsNullAndErrorLogIsNull(
                                     12L, DateUtils.getLocalDateOfTenant(), "GAC", "L", loan.getId(),
                                     overdueInstallment.getPeriodNumber())) {
@@ -1024,13 +1048,15 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
                     throw e;
                 } finally {
-                    JobProcessedEntity dbLogger = JobProcessedEntity.builder().jobId(12L) // Overdue charge job id
-                            .executionDate(DateUtils.getLocalDateOfTenant()).executionProcess("GAC").entityId(loan.getId()).entityType("L")
-                            .entityId(loan.getId()).installmentNr(overdueInstallment.getPeriodNumber())
-                            .startTime(startInstallmentProcessing).endTime(DateUtils.getLocalDateTimeOfTenant())
-                            .status(Objects.isNull(errorMsg) ? "1" : "0").errorMessage(errorMsg).errorLog(errorLog).build();
+                    if (Objects.nonNull(overdueInstallment.getPeriodNumber())) {
+                        JobProcessedEntity dbLogger = JobProcessedEntity.builder().jobId(12L) // Overdue charge job id
+                                .executionDate(DateUtils.getLocalDateOfTenant()).executionProcess("GAC").entityId(loan.getId())
+                                .entityType("L").entityId(loan.getId()).installmentNr(overdueInstallment.getPeriodNumber())
+                                .startTime(startInstallmentProcessing).endTime(DateUtils.getLocalDateTimeOfTenant())
+                                .status(Objects.isNull(errorMsg) ? "1" : "0").errorMessage(errorMsg).errorLog(errorLog).build();
 
-                    jobLoggerService.logProcessedEntity(dbLogger);
+                        jobLoggerService.logProcessedEntity(dbLogger);
+                    }
                 }
             }
 
@@ -1077,6 +1103,11 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
                 loan.removeLoanCharge(lc);
             }
+        }
+
+        // If installment does not contains MORA, do not apply GAC
+        if (installment.getPenaltyChargesOutstanding(loan.getCurrency()).getAmount().compareTo(BigDecimal.ZERO) == 0) {
+            return;
         }
 
         // Sum up already generated charges per period

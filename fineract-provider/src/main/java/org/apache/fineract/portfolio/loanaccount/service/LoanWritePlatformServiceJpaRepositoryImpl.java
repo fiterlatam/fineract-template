@@ -1245,7 +1245,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         return result;
     }
 
-    @SuppressWarnings({ "squid:S3776", "squid:S6809" })
+    @Transactional
+    @Override
+    public CommandProcessingResult makeLoanRepayment(final LoanTransactionType repaymentTransactionType, final Long loanId,
+            final JsonCommand command, final boolean isRecoveryRepayment, LoanChargeWritePlatformService loanChargeWritePlatformService) {
+        final String chargeRefundChargeType = null;
+        BigDecimal cumulativeHonoFee = BigDecimal.ZERO;
+        BigDecimal cumulativeVatFee = BigDecimal.ZERO;
+        return makeLoanRepaymentWithChargeRefundChargeType(repaymentTransactionType, loanId, command, isRecoveryRepayment,
+                chargeRefundChargeType, loanChargeWritePlatformService);
+    }
+
     @Transactional
     @Override
     public CommandProcessingResult makeLoanRepayment(final LoanTransactionType repaymentTransactionType, final Long loanId,
@@ -1262,6 +1272,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
     @Override
     public CommandProcessingResult makeLoanRepaymentWithChargeRefundChargeType(final LoanTransactionType repaymentTransactionType,
             final Long loanId, final JsonCommand command, final boolean isRecoveryRepayment, final String chargeRefundChargeType) {
+        return makeLoanRepaymentWithChargeRefundChargeType(repaymentTransactionType, loanId, command, isRecoveryRepayment,
+                chargeRefundChargeType, null);
+    }
+
+    @SuppressWarnings({ "squid:S3776" })
+    private CommandProcessingResult makeLoanRepaymentWithChargeRefundChargeType(final LoanTransactionType repaymentTransactionType,
+            final Long loanId, final JsonCommand command, final boolean isRecoveryRepayment, final String chargeRefundChargeType,
+            final LoanChargeWritePlatformService loanChargeWritePlatformService) {
         this.loanUtilService.validateRepaymentTransactionType(repaymentTransactionType);
         this.loanEventApiJsonValidator.validateNewRepaymentTransaction(command.json());
         String channelName = command.stringValueOfParameterNamed(LoanWritePlatformServiceJpaRepositoryImpl.CHANNEL_NAME_PARAM);
@@ -1392,6 +1410,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 }
             }
             this.loanAccountDomainService.updateLoanCollateralTransaction(loanCollateralManagements);
+        }
+
+        // Add GAC charge realculation here
+        if (Objects.nonNull(loanChargeWritePlatformService)) {
+            loanChargeWritePlatformService.applyGACChargeForOverdueLoanAfterRepaymentOrReversal(loan, transactionDate);
         }
 
         if (loan.getStatus().isClosed()) {
@@ -1636,10 +1659,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         return changes;
     }
 
-    @SuppressWarnings({ "squid:S3776", "squid:S127" })
     @Transactional
     @Override
-    public CommandProcessingResult adjustLoanTransaction(final Long loanId, final Long transactionId, final JsonCommand command) {
+    public CommandProcessingResult adjustLoanTransaction(final Long loanId, final Long transactionId, final JsonCommand command,
+            LoanChargeWritePlatformService loanChargeWritePlatformService) {
         final AppUser authenticatedUser = context.authenticatedUser();
         this.loanEventApiJsonValidator.validateTransaction(command.json());
         LoanTransaction transactionToAdjust = this.loanTransactionRepository.findByIdAndLoanId(command.entityId(), command.getLoanId())
@@ -1862,6 +1885,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 this.facturaElectronicMensualRepository.deleteAll(facturaElectronicMensuals);
             }
         }
+
+        // Add GAC charge realculation here
+        if (Objects.nonNull(loanChargeWritePlatformService)) {
+            loanChargeWritePlatformService.applyGACChargeForOverdueLoanAfterRepaymentOrReversal(loan, transactionDate);
+        }
+
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(entityId) //

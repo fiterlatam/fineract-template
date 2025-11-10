@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "30ea85d2-23d1-4ce4-b7d2-fb3ce7afc1b0",
+        "_postman_id": "f823cfbb-a99e-469d-b7e2-1dcf6b33de8d",
         "name": "EA Loans Repayment Charge GAC Reduce Principal",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
@@ -626,7 +626,7 @@
                             "\r",
                             "postman.setEnvironmentVariable(\"totalForPeriod\", jsonData.repaymentSchedule.periods[1].totalDueForPeriod \r",
                             "    + jsonData.repaymentSchedule.periods[2].totalDueForPeriod\r",
-                            "    + jsonData.repaymentSchedule.periods[3].totalDueForPeriod);\r",
+                            "    + jsonData.repaymentSchedule.periods[3].totalDueForPeriod + 100000);\r",
                             "\r",
                             "pm.test(\"Number of installments is 6\", function () {\r",
                             "    // The test assumes the installment data is in an array called 'repayments'\r",
@@ -768,7 +768,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"transactionDate\": \"{{todayDate}}\",\r\n    \"transactionAmount\": 800000,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "raw": "{\r\n    \"transactionDate\": \"{{todayDate}}\",\r\n    \"transactionAmount\": {{totalForPeriod}},\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"es\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -829,7 +829,7 @@
                             "});\r",
                             "\r",
                             "pm.test(\"Verify Payment In Advance Amount\", function () {\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[4].totalPaidInAdvanceForPeriod).to.be.greaterThanOrEqual(198700.00);\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods[4].totalPaidInAdvanceForPeriod).to.be.greaterThanOrEqual(100000.00);\r",
                             "});"
                         ],
                         "type": "text/javascript",
