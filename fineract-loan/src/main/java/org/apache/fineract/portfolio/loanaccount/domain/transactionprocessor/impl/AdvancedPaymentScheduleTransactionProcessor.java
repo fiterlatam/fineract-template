@@ -1364,6 +1364,7 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
             case VOLUNTARY_INSURANCE -> p -> p.getFeeChargesOutstandingByType(currency, "VoluntaryInsurance").isGreaterThanZero();
             case INTEREST -> p -> p.getInterestOutstanding(currency).isGreaterThanZero();
             case PRINCIPAL -> p -> p.getPrincipalOutstanding(currency).isGreaterThanZero();
+            case GAC -> p -> p.getFeeChargesOutstandingByType(currency, "GAC").isGreaterThanZero();
         };
     }
 

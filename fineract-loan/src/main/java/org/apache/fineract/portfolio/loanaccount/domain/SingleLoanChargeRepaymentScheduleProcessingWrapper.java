@@ -208,11 +208,18 @@ public class SingleLoanChargeRepaymentScheduleProcessingWrapper {
         if (loanCharge.getChargeCalculation().isPercentageBased()) {
             BigDecimal amount = BigDecimal.ZERO;
             amount = getBaseAmount(currency, period, loanCharge, amount);
-            return amount.multiply(loanCharge.getPercentage()).divide(BigDecimal.valueOf(100));
+
+            BigDecimal percentage = loanCharge.getPercentage();
+            if (percentage == null) {
+                percentage = BigDecimal.ZERO;
+            }
+
+            return amount.multiply(percentage).divide(BigDecimal.valueOf(100));
         } else {
-            return loanCharge.amountOrPercentage();
+            return loanCharge.amountOrPercentage() != null ? loanCharge.amountOrPercentage() : BigDecimal.ZERO;
         }
     }
+
 
     @NotNull
     private BigDecimal getBaseAmount(MonetaryCurrency monetaryCurrency, LoanRepaymentScheduleInstallment period, LoanCharge loanCharge,

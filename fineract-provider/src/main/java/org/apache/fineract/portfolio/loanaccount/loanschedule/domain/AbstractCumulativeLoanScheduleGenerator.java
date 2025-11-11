@@ -281,9 +281,9 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                 continue;
             }
 
-            if (DateUtils.isAfter(scheduleParams.getPeriodStartDate(), scheduledDueDate)) {
-                throw new ScheduleDateException("Due date can't be before period start date", scheduledDueDate);
-            }
+            //if (DateUtils.isAfter(scheduleParams.getPeriodStartDate(), scheduledDueDate)) {
+            //    throw new ScheduleDateException("Due date can't be before period start date", scheduledDueDate);
+            //}
 
             if (extendTermForDailyRepayments) {
                 scheduleParams.setActualRepaymentDate(scheduledDueDate);

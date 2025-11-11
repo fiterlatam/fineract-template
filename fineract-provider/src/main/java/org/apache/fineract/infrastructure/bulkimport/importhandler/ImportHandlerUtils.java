@@ -157,6 +157,9 @@ public final class ImportHandlerUtils {
         if (c == null || c.getCellType() == CellType.BLANK) {
             return null;
         }
+        if (c.getCellType() == CellType.STRING && c.getStringCellValue().trim().isEmpty()) {
+            return null;
+        }
         return LocalDate.ofInstant(c.getDateCellValue().toInstant(), ZoneId.systemDefault());
     }
 

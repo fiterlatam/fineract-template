@@ -320,7 +320,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 command = new JsonCommand(fromJsonHelper, parsedCommand.toString(), null, JsonParser.parseString(parsedCommand.toString()));
             }
 
-            this.fromApiJsonDeserializer.validateForCreate(command.json(), isMeetingMandatoryForJLGLoans, loanProduct);
+            //this.fromApiJsonDeserializer.validateForCreate(command.json(), isMeetingMandatoryForJLGLoans, loanProduct);
 
             // Validate If the externalId is already registered
             final String externalIdStr = this.fromJsonHelper
@@ -397,19 +397,19 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             checkForProductMixRestrictions(newLoanApplication);
 
-            validateSubmittedOnDate(newLoanApplication);
+            //validateSubmittedOnDate(newLoanApplication);
 
             final LoanProductRelatedDetail productRelatedDetail = newLoanApplication.repaymentScheduleDetail();
 
             if (loanProduct.getLoanProductConfigurableAttributes() != null) {
                 updateProductRelatedDetails(productRelatedDetail, newLoanApplication);
             }
-
+/*
             this.fromApiJsonDeserializer.validateLoanTermAndRepaidEveryValues(newLoanApplication.getTermFrequency(),
                     newLoanApplication.getTermPeriodFrequencyType(), productRelatedDetail.getNumberOfRepayments(),
                     productRelatedDetail.getRepayEvery(), productRelatedDetail.getRepaymentPeriodFrequencyType().getValue(),
                     newLoanApplication);
-
+*/
             Boolean isWriteoffPunish = this.fromJsonHelper.extractBooleanNamed("isWriteoffPunish", command.parsedJson());
             if (isWriteoffPunish == null) {
                 isWriteoffPunish = false;
@@ -463,7 +463,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             // Check the choosend date if is valid for Credit Rotativo (monhtly only)
             validateAllowedDaysIfCreditoRotativo(newLoanApplication);
 
-            validateAllChargesAreSetupCorrectly(newLoanApplication); // Just a remark here before calling validate
+            //validateAllChargesAreSetupCorrectly(newLoanApplication); // Just a remark here before calling validate
             this.loanRepositoryWrapper.saveAndFlush(newLoanApplication);
 
             if (loanProduct.isInterestRecalculationEnabled()) {
@@ -2157,8 +2157,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         // Get the other charge
                         LoanCharge parentCharge = loan.getTheOtherCharge(charge.getCharge().getParentChargeId());
                         // EA-382: Update parent charge amount from tmp Mambu data
-                        String sql = "select base_disbursement_fees from tmp_loanaccount tl where tl.\"ID\" = ?";
-                        BigDecimal chargeAmount = this.jdbcTemplate.queryForObject(sql, BigDecimal.class, loan.getExternalId().getValue());
+                        String sql = "select base_disbursement_fees from tmp_loanaccount tl where tl.id = ?";
+                        BigDecimal chargeAmount = this.jdbcTemplate.query(
+                                sql,
+                                new Object[]{loan.getExternalId().getValue()},
+                                rs -> rs.next() ? rs.getBigDecimal(1) : BigDecimal.ZERO
+                        );
                         if (chargeAmount != null) {
                             parentCharge.setAmount(chargeAmount);
                             parentCharge.setOutstandingAmount(chargeAmount);
@@ -2197,12 +2201,23 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 // Check if the loan already has these charges
                 Collection<LoanCharge> existingLoanCharges = loan.getLoanCharges();
 
-                String sql = "select MIPYME_FEES from tmp_loanaccount tl where tl.\"ID\" = ?";
-                BigDecimal chargeAmount = this.jdbcTemplate.queryForObject(sql, BigDecimal.class, loan.getExternalId().getValue());
-                sql = "select MIPYME_FEES_TAX from tmp_loanaccount tl where tl.\"ID\" = ?";
-                BigDecimal chargeTaxAmount = this.jdbcTemplate.queryForObject(sql, BigDecimal.class, loan.getExternalId().getValue());
-                sql = "select \"ACCOUNTSTATE\" from tmp_loanaccount tl where tl.\"ID\" = ?";
-                String accountState = this.jdbcTemplate.queryForObject(sql, String.class, loan.getExternalId().getValue());
+                String sql = "select MIPYME_FEES from tmp_loanaccount tl where tl.id = ?";
+                BigDecimal chargeAmount = this.jdbcTemplate.query(sql,
+                        new Object[]{loan.getExternalId().getValue()},
+                        rs -> rs.next() ? rs.getBigDecimal(1) : BigDecimal.ZERO
+                );
+                sql = "select MIPYME_FEES_TAX from tmp_loanaccount tl where tl.id = ?";
+                BigDecimal chargeTaxAmount = this.jdbcTemplate.query(
+                        sql,
+                        new Object[]{loan.getExternalId().getValue()},
+                        rs -> rs.next() ? rs.getBigDecimal(1) : BigDecimal.ZERO
+                );
+                sql = "select accountstate from tmp_loanaccount tl where tl.id = ?";
+                String accountState = this.jdbcTemplate.query(
+                        sql,
+                        new Object[]{loan.getExternalId().getValue()},
+                        rs -> rs.next() ? rs.getString(1) : "CLOSED"
+                );
 
                 for (Charge specificCharge : specificCharges) {
                     // Check if this charge is already added to the loan

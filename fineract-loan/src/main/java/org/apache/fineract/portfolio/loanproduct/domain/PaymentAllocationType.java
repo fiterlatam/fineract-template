@@ -55,6 +55,9 @@ public enum PaymentAllocationType {
     IN_ADVANCE_INTEREST(IN_ADVANCE, INTEREST, "In advanced interest"), //
     IN_ADVANCE_AVAL(IN_ADVANCE, AVAL, "In advance aval"), //
     IN_ADVANCE_MANDATORY_INSURANCE(IN_ADVANCE, MANDATORY_INSURANCE, "In advance mandatory insurance"), //
+    PAST_DUE_GAC(PAST_DUE, GAC, "Past due GAC"),
+    DUE_GAC(DUE, GAC, "Due GAC"),
+    IN_ADVANCE_GAC(IN_ADVANCE, GAC, "In advance GAC"),
     IN_ADVANCE_VOLUNTARY_INSURANCE(IN_ADVANCE, VOLUNTARY_INSURANCE, "In advance mandatory insurance"); //
 
     private final DueType dueType;

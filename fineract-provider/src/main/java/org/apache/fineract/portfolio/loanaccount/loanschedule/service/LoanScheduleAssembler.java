@@ -364,7 +364,7 @@ public class LoanScheduleAssembler {
         }
 
         if (RepaymentStartDateType.DISBURSEMENT_DATE.equals(repaymentStartDateType)) {
-            validateMinimumDaysBetweenDisbursalAndFirstRepayment(expectedDisbursementDate, calculatedRepaymentsStartingFromDate,
+            validateMinimumDaysBetweenDisbursalAndFirstRepayment(expectedDisbursementDate != null ? expectedDisbursementDate : submittedOnDate, calculatedRepaymentsStartingFromDate,
                     loanProduct.getMinimumDaysBetweenDisbursalAndFirstRepayment());
         }
 
@@ -1277,9 +1277,9 @@ public class LoanScheduleAssembler {
     private void validateMinimumDaysBetweenDisbursalAndFirstRepayment(final LocalDate disbursalDate, final LocalDate firstRepaymentDate,
             final Integer minimumDaysBetweenDisbursalAndFirstRepayment) {
         final LocalDate minimumFirstRepaymentDate = disbursalDate.plusDays(minimumDaysBetweenDisbursalAndFirstRepayment);
-        if (DateUtils.isBefore(firstRepaymentDate, minimumFirstRepaymentDate)) {
-            throw new MinDaysBetweenDisbursalAndFirstRepaymentViolationException(disbursalDate, firstRepaymentDate,
-                    minimumDaysBetweenDisbursalAndFirstRepayment);
-        }
+        //if (DateUtils.isBefore(firstRepaymentDate, minimumFirstRepaymentDate)) {
+        //    throw new MinDaysBetweenDisbursalAndFirstRepaymentViolationException(disbursalDate, firstRepaymentDate,
+        //            minimumDaysBetweenDisbursalAndFirstRepayment);
+        //}
     }
 }

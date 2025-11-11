@@ -150,7 +150,9 @@ public class InterestRateReadPlatformServiceImpl implements InterestRateReadPlat
 
             return InterestRateData.builder().id(id).name(name).currentRate(currentRate).active(active).appliedOnDate(appliedOnDate)
                     .createdBy(createdBy).createdDate(createdDate).lastModifiedBy(lastModifiedBy).lastModifiedDate(lastModifiedDate)
-                    .interestRateType(interestRateType).minRate(minRate).maxRate(maxRate).build();
+                    .interestRateType(interestRateType)//.minRate(minRate)
+             //.maxRate(maxRate)
+             .build();
         }
     }
 

@@ -35,6 +35,7 @@ public enum AllocationType {
     INTEREST("Interest", "labels.allocations.types.interest"), //
     FEES("Honorarios", "labels.allocations.types.fees"), //
     AVAL("Aval", "labels.allocations.types.aval"), //
+    GAC("GAC", "labels.allocations.types.gac"),
     MANDATORY_INSURANCE("Mandatory Insurance", "labels.allocations.types.mandatory.insurance"), VOLUNTARY_INSURANCE("Voluntary Insurance",
             "labels.allocations.types.voluntary.insurance");
 

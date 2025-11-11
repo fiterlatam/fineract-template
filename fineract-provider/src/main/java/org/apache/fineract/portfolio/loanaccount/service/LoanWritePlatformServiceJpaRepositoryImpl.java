@@ -448,7 +448,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         final LocalDate actualDisbursementDate = this.fromApiJsonHelper
                 .extractLocalDateNamed(LoanEventApiJsonValidator.ACTUAL_DISBURSEMENT_DATE_PARAM, command.parsedJson().getAsJsonObject());
 
-        this.loanEventApiJsonValidator.validateDisbursement(command.json(), isAccountTransfer);
+        //this.loanEventApiJsonValidator.validateDisbursement(command.json(), isAccountTransfer);
         Boolean isWriteoffPunish = command.booleanObjectValueOfParameterNamed("isWriteoffPunish");
 
         if (isWriteoffPunish == null) {
@@ -472,6 +472,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         firstPaymentDateAdjustmentService.adjustFirstPaymentDateIfNeeded(loan, actualDisbursementDate);
 
         BigDecimal disbursement = command.bigDecimalValueOfParameterDefaultToZeroIfNull("transactionAmount");
+        if(disbursement.compareTo(BigDecimal.ZERO) == 0) {
+            disbursement = loan.getApprovedPrincipal();
+        }
         DisbursementCutoffContext.setDisbursementAmount(Money.of(loan.getCurrency(), disbursement));
 
         final LoanProduct loanProduct = loan.loanProduct();

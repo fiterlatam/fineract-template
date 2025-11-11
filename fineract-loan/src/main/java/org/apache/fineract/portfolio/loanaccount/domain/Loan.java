@@ -2470,13 +2470,13 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 //                    submittedOn, DateUtils.getBusinessLocalDate());
 //        }
 
-        if (this.client != null && this.client.isActivatedAfter(submittedOn)) {
-            final String errorMessage = "The date on which a loan is submitted cannot be earlier than client's activation date.";
-            throw new InvalidLoanStateTransitionException(Loan.SUBMITTAL_PARAM, "cannot.be.before.client.activation.date", errorMessage,
-                    submittedOn, client.getActivationDate());
-        }
+        //if (this.client != null && this.client.isActivatedAfter(submittedOn)) {
+        //    final String errorMessage = "The date on which a loan is submitted cannot be earlier than client's activation date.";
+        //   throw new InvalidLoanStateTransitionException(Loan.SUBMITTAL_PARAM, "cannot.be.before.client.activation.date", errorMessage,
+        //           submittedOn, client.getActivationDate());
+        //}
 
-        validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_CREATED, submittedOn);
+        //validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_CREATED, submittedOn);
 
         if (this.group != null && this.group.isActivatedAfter(submittedOn)) {
             final String errorMessage = "The date on which a loan is submitted cannot be earlier than groups's activation date.";
@@ -2558,7 +2558,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         errorMessage, rejectedOn, getSubmittedOnDate());
             }
 
-            validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_REJECTED, rejectedOn);
+            //validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_REJECTED, rejectedOn);
 
             if (DateUtils.isDateInTheFuture(rejectedOn)) {
                 final String errorMessage = "The date on which a loan is rejected cannot be in the future.";
@@ -2608,7 +2608,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         errorMessage, command, getSubmittedOnDate());
             }
 
-            validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_WITHDRAWN, withdrawnOn);
+            //(LoanEvent.LOAN_WITHDRAWN, withdrawnOn);
 
             if (DateUtils.isDateInTheFuture(withdrawnOn)) {
                 final String errorMessage = "The date on which a loan is withdrawn cannot be in the future.";
@@ -2700,12 +2700,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             actualChanges.put(DATE_FORMAT, command.dateFormat());
             actualChanges.put(APPROVED_ON_DATE, approvedOnDateChange);
 
-            final LocalDate submittalDate = this.submittedOnDate;
+            final LocalDate submittalDate = this.submittedOnDate;/*
             if (DateUtils.isBefore(approvedOn, submittalDate)) {
                 final String errorMessage = "The date on which a loan is approved cannot be before its submittal date: " + submittalDate;
                 throw new InvalidLoanStateTransitionException(Loan.APPROVAL_PARAM, Loan.ERROR_MESSAGE_LABEL_CANNOT_BE_BEFORE_SUBMITTAL_DATE,
                         errorMessage, getApprovedOnDate(), submittalDate);
-            }
+            }*/
 
             if (expecteddisbursementDate != null) {
                 this.expectedDisbursementDate = expecteddisbursementDate;
@@ -2719,7 +2719,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 }
             }
 
-            validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_APPROVED, approvedOn);
+            //validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_APPROVED, approvedOn);
 
 //            if (DateUtils.isDateInTheFuture(approvedOn)) {
 //                final String errorMessage = "The date on which a loan is approved cannot be in the future.";
@@ -3375,7 +3375,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     errorMessage, disbursedOn, expectedDate);
         }
 
-        validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_DISBURSED, disbursedOn);
+        //validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_DISBURSED, disbursedOn);
 
 //        if (DateUtils.isDateInTheFuture(disbursedOn)) {
 //            final String errorMessage = "The date on which a loan with identifier : " + this.accountNumber
@@ -3451,7 +3451,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         final Map<String, Object> actualChanges = new LinkedHashMap<>();
         final LoanStatus currentStatus = LoanStatus.fromInt(this.loanStatus);
         final LoanStatus statusEnum = this.loanLifecycleStateMachine.dryTransition(LoanEvent.LOAN_DISBURSAL_UNDO, this);
-        validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_DISBURSAL_UNDO, getDisbursementDate());
+        //validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_DISBURSAL_UNDO, getDisbursementDate());
         existingTransactionIds.addAll(findExistingTransactionIds());
         existingReversedTransactionIds.addAll(findExistingReversedTransactionIds());
         if (!statusEnum.hasStateOf(currentStatus)) {
@@ -3590,8 +3590,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
         validateAccountStatus(LoanEvent.LOAN_REPAYMENT_OR_WAIVER);
 
-        validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_REPAYMENT_OR_WAIVER,
-                waiveInterestTransaction.getTransactionDate());
+        //validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_REPAYMENT_OR_WAIVER,
+                //waiveInterestTransaction.getTransactionDate());
         validateActivityNotBeforeLastTransactionDate(LoanEvent.LOAN_REPAYMENT_OR_WAIVER, waiveInterestTransaction.getTransactionDate());
 
         existingTransactionIds.addAll(findExistingTransactionIds());
@@ -3617,7 +3617,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             holidayDetailDTO = scheduleGeneratorDTO.getHolidayDetailDTO();
         }
         validateRepaymentTypeAccountStatus(repaymentTransaction, event);
-        validateActivityNotBeforeClientOrGroupTransferDate(event, repaymentTransaction.getTransactionDate());
+        //validateActivityNotBeforeClientOrGroupTransferDate(event, repaymentTransaction.getTransactionDate());
         validateRepaymentTypeTransactionNotBeforeAChargeRefund(repaymentTransaction, "created");
         validateActivityNotBeforeLastTransactionDate(event, repaymentTransaction.getTransactionDate());
         if (Boolean.FALSE.equals(isHolidayValidationDone)) {
@@ -3656,7 +3656,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final HolidayDetailDTO holidayDetailDTO, final LoanTransaction paymentTransaction, final Integer installmentNumber) {
 
         validateAccountStatus(LoanEvent.LOAN_CHARGE_PAYMENT);
-        validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_CHARGE_PAYMENT, paymentTransaction.getTransactionDate());
+        //validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_CHARGE_PAYMENT, paymentTransaction.getTransactionDate());
         validateActivityNotBeforeLastTransactionDate(LoanEvent.LOAN_CHARGE_PAYMENT, paymentTransaction.getTransactionDate());
         validateRepaymentDateIsOnHoliday(paymentTransaction.getTransactionDate(), holidayDetailDTO.isAllowTransactionsOnHoliday(),
                 holidayDetailDTO.getHolidays());
@@ -4275,8 +4275,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         existingTransactionIds.addAll(findExistingTransactionIds());
         existingReversedTransactionIds.addAll(findExistingReversedTransactionIds());
 
-        validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_REPAYMENT_OR_WAIVER,
-                transactionForAdjustment.getTransactionDate());
+        //validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_REPAYMENT_OR_WAIVER,
+        //        transactionForAdjustment.getTransactionDate());
 
         if (transactionForAdjustment.isNotRepaymentLikeType() && transactionForAdjustment.isNotWaiver()
                 && transactionForAdjustment.isNotCreditBalanceRefund() && !transactionForAdjustment.isDisbursement()) {
@@ -4501,7 +4501,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                         getDisbursementDate());
             }
 
-            validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.WRITE_OFF_OUTSTANDING, writtenOffOnLocalDate);
+            //validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.WRITE_OFF_OUTSTANDING, writtenOffOnLocalDate);
 
             if (DateUtils.isDateInTheFuture(writtenOffOnLocalDate)) {
                 final String errorMessage = "The date on which a loan is written off cannot be in the future.";
@@ -4549,7 +4549,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                             + getDisbursementDate().toString(),
                     disburseDateString);
         }
-        validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.WRITE_OFF_OUTSTANDING, writtenOffOnLocalDate);
+        //validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.WRITE_OFF_OUTSTANDING, writtenOffOnLocalDate);
         if (DateUtils.isDateInTheFuture(writtenOffOnLocalDate)) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.written.off.date.cannot.be.in.the.future",
                     "The date on which a loan is written off cannot be in the future.", writtenOffOnLocalDate);
@@ -4716,7 +4716,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         this.closedOnDate = closureDate;
         changes.put(CLOSED_ON_DATE, command.stringValueOfParameterNamed(TRANSACTION_DATE));
 
-        validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.REPAID_IN_FULL, closureDate);
+        //validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.REPAID_IN_FULL, closureDate);
         if (DateUtils.isBefore(closureDate, getDisbursementDate())) {
             final String errorMessage = "The date on which a loan is closed cannot be before the loan disbursement date: "
                     + getDisbursementDate().toString();
@@ -7119,7 +7119,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             final WorkingDays workingDays, final boolean allowTransactionsOnNonWorkingDay) {
 
         validateAccountStatus(LoanEvent.LOAN_REFUND);
-        validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_REFUND, loanTransaction.getTransactionDate());
+        //(LoanEvent.LOAN_REFUND, loanTransaction.getTransactionDate());
 
         validateRefundDateIsAfterLastRepayment(loanTransaction.getTransactionDate());
 
@@ -7276,7 +7276,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     public Map<String, Object> undoLastDisbursal(ScheduleGeneratorDTO scheduleGeneratorDTO, List<Long> existingTransactionIds,
             List<Long> existingReversedTransactionIds, Loan loan) {
         validateAccountStatus(LoanEvent.LOAN_DISBURSAL_UNDO_LAST);
-        validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_DISBURSAL_UNDO_LAST, getDisbursementDate());
+        //validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_DISBURSAL_UNDO_LAST, getDisbursementDate());
 
         final Map<String, Object> actualChanges = new LinkedHashMap<>();
         List<LoanTransaction> loanTransactionsV2 = retrieveListOfTransactionsByType(LoanTransactionType.DISBURSEMENT);

@@ -46,6 +46,7 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.infrastructure.core.serialization.GoogleGsonSerializerHelper;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
+import org.apache.fineract.portfolio.client.domain.ClientRepository;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApprovalData;
@@ -72,6 +73,7 @@ public class LoanImportHandler implements ImportHandler {
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
 
     private final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory;
+    private final ClientRepository clientRepository;
 
     @Override
     public Count process(final Workbook workbook, final String locale, final String dateFormat,
@@ -105,8 +107,9 @@ public class LoanImportHandler implements ImportHandler {
 
     private LoanTransactionData readLoanRepayment(final Workbook workbook, final Row row, final String locale, final String dateFormat) {
         BigDecimal repaymentAmount = null;
-        if (ImportHandlerUtils.readAsDouble(LoanConstants.TOTAL_AMOUNT_REPAID_COL, row) != null) {
-            repaymentAmount = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.TOTAL_AMOUNT_REPAID_COL, row));
+        String totalRepaidValue = ImportHandlerUtils.readAsString(LoanConstants.TOTAL_AMOUNT_REPAID_COL, row);
+        if (totalRepaidValue != null && !totalRepaidValue.trim().isEmpty()) {
+            repaymentAmount = new BigDecimal(Double.parseDouble(totalRepaidValue));
         }
         LocalDate lastRepaymentDate = ImportHandlerUtils.readAsDate(LoanConstants.LAST_REPAYMENT_DATE_COL, row);
         String repaymentType = ImportHandlerUtils.readAsString(LoanConstants.REPAYMENT_TYPE_COL, row);
@@ -134,6 +137,9 @@ public class LoanImportHandler implements ImportHandler {
         if (disbursedDate != null) {
             DisbursementData data = DisbursementData.importInstance(disbursedDate, linkAccountId, row.getRowNum(), locale, dateFormat,
                     "Mifos");
+            if(disbursedPrincipal.compareTo(BigDecimal.ZERO) == 0) {
+                disbursedPrincipal = BigDecimal.valueOf(ImportHandlerUtils.readAsDouble(LoanConstants.PRINCIPAL_COL, row));
+            }
             data.setTransactionAmount(disbursedPrincipal);
             return data;
         }
@@ -446,8 +452,7 @@ public class LoanImportHandler implements ImportHandler {
 
         if (loanType != null) {
             if (loanType.equals("individual")) {
-                Long clientId = ImportHandlerUtils.getIdByName(workbook.getSheet(TemplatePopulateImportConstants.CLIENT_SHEET_NAME),
-                        clientOrGroupName);
+                Long clientId = ImportHandlerUtils.readAsLong(LoanConstants.CLIENT_EXTERNAL_ID, row);
                 return LoanAccountData.importInstanceIndividual(loanTypeEnumOption, clientId, productId, loanOfficerId, submittedOnDate,
                         fundId, principal, numberOfRepayments, repaidEvery, repaidEveryFrequencyEnums, loanTerm, loanTermFrequencyEnum,
                         nominalInterestRate, submittedOnDate, amortizationEnumOption, interestMethodEnum, interestCalculationPeriodEnum,
