@@ -2473,7 +2473,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         final LocalDate earliestUnpaidInstallmentDate = DateUtils.getBusinessLocalDate();
 
         final LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = loan.fetchLoanForeclosureDetail(transactionDate);
-        if (loanRepaymentScheduleInstallment.getPenaltyChargesCharged(currency).isGreaterThanZero() && transactionDate.isAfter(DateUtils.getBusinessLocalDate())) {
+        if (loanRepaymentScheduleInstallment.getPenaltyChargesCharged(currency).isGreaterThanZero()
+                && transactionDate.isAfter(DateUtils.getBusinessLocalDate())) {
             Collection<LoanCharge> loanCharges = loan.getCharges();
             for (LoanCharge charge : loanCharges) {
                 if (charge.isOverdueInstallmentCharge() && charge.isPenaltyCharge() && !charge.isPaid()) {
