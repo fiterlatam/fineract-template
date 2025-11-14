@@ -47,5 +47,9 @@ public interface LoanChargeWritePlatformService {
 
     void applyOverdueChargesForLoan(Long loanId, Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList);
 
+    void applyOverdueGACForLoan(Loan loan, Collection<OverdueLoanScheduleData> overdueUnsortedLoanScheduleDataList);
+
+    void applyOverdueGACForLoan(Long loanId, Collection<OverdueLoanScheduleData> overdueUnsortedLoanScheduleDataList);
+
     void applyGACChargeForOverdueLoanAfterRepaymentOrReversal(Loan loan, LocalDate repaymentDate);
 }

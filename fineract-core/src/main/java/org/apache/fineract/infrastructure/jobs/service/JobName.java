@@ -73,7 +73,9 @@ public enum JobName {
     FACTURA_ELECTRONICA_MENSUAL("Factura Electronica Mensual"), //
     INVOICE_NUMBERING_LIMIT("Control de Límite de Numeración de Facturación Electrónica"), //
     INVOICE_EXPIRY_RESOLUTION("Control de Vencimiento de Resolución de Facturación Electrónica"), //
-    COLLECTION_HOUSE_HISTORY("Casas de Cobro para Clientes");
+    COLLECTION_HOUSE_HISTORY("Casas de Cobro para Clientes"), //
+    APPLY_GAC_TO_OVERDUE_LOAN_INSTALLMENT("Apply GAC to overdue loans"), //
+    ;
 
     private final String name;
 
