@@ -580,6 +580,11 @@ public class LoanArrearsAgingServiceImpl implements LoanArrearsAgingService {
         public void onBusinessEvent(LoanBalanceChangedBusinessEvent event) {
             Loan loan = event.get();
             handleArrearsForLoan(loan);
+            // if account is active and the outstanding balance is zero, then close the loan
+            if (loan.isOpen() && loan.getLoanSummary().getTotalOutstanding().compareTo(BigDecimal.ZERO) == 0) {
+                loan.closeLoan();
+                loanRepository.save(loan);
+            }
         }
     }
 
