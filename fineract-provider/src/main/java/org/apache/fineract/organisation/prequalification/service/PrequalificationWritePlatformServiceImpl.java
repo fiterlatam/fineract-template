@@ -1364,6 +1364,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             if (ownerType.equals(LoanProductOwnerType.GROUP)) {
                 return PrequalificationType.GROUP;
             }
+            if (ownerType.equals(LoanProductOwnerType.PAE)) {
+                return PrequalificationType.PAE;
+            }
         }
         return PrequalificationType.INVALID;
     }
