@@ -53,6 +53,7 @@ import org.apache.fineract.organisation.prequalification.data.GroupPrequalificat
 import org.apache.fineract.organisation.prequalification.data.LoanData;
 import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
+import org.apache.fineract.organisation.prequalification.data.RenegotiationData;
 import org.apache.fineract.organisation.prequalification.domain.BuroCheckClassification;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationGroupRepository;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationStatusLogRepository;
@@ -64,6 +65,8 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusLog;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationTimeline;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
+import org.apache.fineract.organisation.prequalification.domain.Renegotiation;
+import org.apache.fineract.organisation.prequalification.domain.RenegotiationRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.domain.SubStatusEnumerations;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.collateral.domain.LoanCollateral;
@@ -104,6 +107,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     private final LoanReadPlatformService loanReadPlatformService;
     private final LoanCollateralRepository collateralRepository;
     private final PreQualificationGroupRepository preQualificationGroupRepository;
+    private final RenegotiationRepositoryWrapper renegotiationsRepositorWrapper;
 
     @Autowired
     public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
@@ -112,7 +116,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             GenericDataService genericDataService, final PreQualificationStatusLogRepository preQualificationLogRepository,
             PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
             LoanRepositoryWrapper loanRepositoryWrapper, LoanReadPlatformService loanReadPlatformService,
-            LoanCollateralRepository collateralRepository, PreQualificationGroupRepository preQualificationGroupRepository) {
+            LoanCollateralRepository collateralRepository, PreQualificationGroupRepository preQualificationGroupRepository,
+            RenegotiationRepositoryWrapper renegotiationsRepositorWrapper) {
         this.context = context;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.jdbcTemplate = jdbcTemplate;
@@ -126,6 +131,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         this.loanReadPlatformService = loanReadPlatformService;
         this.collateralRepository = collateralRepository;
         this.preQualificationGroupRepository = preQualificationGroupRepository;
+        this.renegotiationsRepositorWrapper = renegotiationsRepositorWrapper;
     }
 
     @Override
@@ -234,6 +240,10 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             clientData.updateCurrentStatusTimeline(currentStatusTimeline);
             clientData.updateExpectedStatusTimeline(expectedTimeline);
 
+            List<Renegotiation> renegotiations = this.renegotiationsRepositorWrapper.getRenegotiationByPrequalificationId(groupId);
+            // map entities to DTOs
+            List<RenegotiationData> renegotiationData = renegotiations.stream().map(RenegotiationData::of).toList();
+            clientData.updateRenegotiations(renegotiationData);
         }
 
         return clientData;
