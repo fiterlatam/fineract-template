@@ -89,6 +89,8 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusRangeRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
+import org.apache.fineract.organisation.prequalification.domain.Renegotiation;
+import org.apache.fineract.organisation.prequalification.domain.RenegotiationRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.exception.ApprovedAmountGreaterThanRequestedException;
 import org.apache.fineract.organisation.prequalification.exception.GroupMemberPreQualificationNotFound;
 import org.apache.fineract.organisation.prequalification.exception.MemberNotSelectedException;
@@ -107,7 +109,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanAdditionalsRepo
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
@@ -156,10 +157,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
     private final PrequalificationChecklistWritePlatformService prequalificationChecklistWritePlatformService;
-    private final LoanReadPlatformService loanReadPlatformService;
+    private final RequiredCommitteeApprovalsMapper committeeApprovalsMapper = new RequiredCommitteeApprovalsMapper();
     private final CommandSourceRepository commandSourceRepository;
     private final CodeValueRepository codeValueRepository;
-    private final RequiredCommitteeApprovalsMapper committeeApprovalsMapper = new RequiredCommitteeApprovalsMapper();
+    private final RenegotiationRepositoryWrapper renegotiationRepository;
 
     @Autowired
     public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
@@ -179,9 +180,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final PrequalificationReadPlatformService prequalificationReadPlatformService, FromJsonHelper fromApiJsonHelper,
             final LoanApplicationWritePlatformService loanApplicationWritePlatformService,
             final PrequalificationChecklistWritePlatformService prequalificationChecklistWritePlatformService,
-            final LoanReadPlatformService loanReadPlatformService, final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
+            final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
             final LoanRepositoryWrapper loanRepositoryWrapper, final CommandSourceRepository commandSourceRepository,
-            final CodeValueRepository codeValueRepository) {
+            final CodeValueRepository codeValueRepository, final RenegotiationRepositoryWrapper renegotiationRepository) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -207,9 +208,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.groupLoanAdditionalsRepository = groupLoanAdditionalsRepository;
         this.loanRepositoryWrapper = loanRepositoryWrapper;
         this.prequalificationChecklistWritePlatformService = prequalificationChecklistWritePlatformService;
-        this.loanReadPlatformService = loanReadPlatformService;
         this.commandSourceRepository = commandSourceRepository;
         this.codeValueRepository = codeValueRepository;
+        this.renegotiationRepository = renegotiationRepository;
     }
 
     @Transactional
@@ -951,6 +952,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (action.equals("approvecommitee")) {
             return sendToFirstPhaseApproveCommitteeD(entityId, command, false);
         }
+        // send to renegotiation
+        if (action.equals("sendToRenegotiation")) {
+            return sendToRenegotiation(prequalificationGroup, addedBy, command);
+        }
         PrequalificationStatus prequalificationStatus = resolveStatus(action);
         final List<MemberPrequalificationData> memberPrequalificationDataList = new ArrayList<>();
         if (command.parameterExists("members")) {
@@ -1021,6 +1026,31 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId())
                 .withReportToPrint(reportToPrint).withLoanId(loanId).build();
+    }
+
+    private CommandProcessingResult sendToRenegotiation(PrequalificationGroup prequalificationGroup, AppUser addedBy, JsonCommand command) {
+        Integer fromStatus = prequalificationGroup.getStatus();
+
+        prequalificationGroup.updateStatus(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD);
+
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
+                "Renegotiation", prequalificationGroup, null, false);
+        this.preQualificationLogRepository.saveAndFlush(statusLog);
+        JsonElement renegotiationData = command.jsonElement("renegotiationData");
+        JsonObject renegotiationObject = renegotiationData.getAsJsonObject();
+        if (renegotiationObject!=null){
+            final BigDecimal newProposedAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("proposedAmount",
+                    renegotiationObject);
+            final Integer newProposedTerm = this.fromApiJsonHelper.extractIntegerSansLocaleNamed("proposedTerm", renegotiationObject);
+            final String comments = this.fromApiJsonHelper.extractStringNamed("comments", renegotiationObject);
+            final BigDecimal newProposedInterestRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("proposedInterestRate",
+                    renegotiationObject);
+
+            Renegotiation renegotiation = Renegotiation.create(prequalificationGroup, newProposedInterestRate, newProposedAmount, newProposedTerm, comments, DateUtils.getLocalDateTimeOfSystem(), addedBy);
+            this.renegotiationRepository.saveRenegotiation(renegotiation);
+            this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
+        }
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
     }
 
     private CommandProcessingResult revalidateHardPolicy(Long entityId, JsonCommand command) {
