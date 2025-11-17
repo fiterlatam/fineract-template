@@ -23,11 +23,9 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface RenegotiationRepository
-        extends JpaRepository<Renegotiation, Long>, JpaSpecificationExecutor<Renegotiation> {
+public interface RenegotiationRepository extends JpaRepository<Renegotiation, Long>, JpaSpecificationExecutor<Renegotiation> {
 
     List<Renegotiation> findAllByPrequalificationGroupId(Long prequalificationId);
 
     Optional<Renegotiation> findTopByPrequalificationGroupIdOrderByCreatedDateDesc(Long prequalificationId);
 }
-

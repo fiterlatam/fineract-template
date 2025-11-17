@@ -48,4 +48,3 @@ public class RenegotiationRepositoryWrapper {
         return this.repository.saveAndFlush(entity);
     }
 }
-

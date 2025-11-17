@@ -33,4 +33,3 @@ public class RenegotiationNotFoundException extends AbstractPlatformResourceNotF
         super("error.msg.renegotiation.not.found", message);
     }
 }
-

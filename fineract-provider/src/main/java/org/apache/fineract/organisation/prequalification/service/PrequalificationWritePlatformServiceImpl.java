@@ -179,9 +179,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final PrequalificationReadPlatformService prequalificationReadPlatformService, FromJsonHelper fromApiJsonHelper,
             final LoanApplicationWritePlatformService loanApplicationWritePlatformService,
             final PrequalificationChecklistWritePlatformService prequalificationChecklistWritePlatformService,
-            final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
-            final LoanRepositoryWrapper loanRepositoryWrapper, final CommandSourceRepository commandSourceRepository,
-            final CodeValueRepository codeValueRepository, final RenegotiationRepositoryWrapper renegotiationRepository) {
+            final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository, final LoanRepositoryWrapper loanRepositoryWrapper,
+            final CommandSourceRepository commandSourceRepository, final CodeValueRepository codeValueRepository,
+            final RenegotiationRepositoryWrapper renegotiationRepository) {
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
@@ -1037,7 +1037,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.preQualificationLogRepository.saveAndFlush(statusLog);
         JsonElement renegotiationData = command.jsonElement("renegotiationData");
         JsonObject renegotiationObject = renegotiationData.getAsJsonObject();
-        if (renegotiationObject!=null){
+        if (renegotiationObject != null) {
             final BigDecimal newProposedAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("proposedAmount",
                     renegotiationObject);
             final Integer newProposedTerm = this.fromApiJsonHelper.extractIntegerSansLocaleNamed("proposedTerm", renegotiationObject);
@@ -1045,7 +1045,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final BigDecimal newProposedInterestRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("proposedInterestRate",
                     renegotiationObject);
 
-            Renegotiation renegotiation = Renegotiation.create(prequalificationGroup, newProposedInterestRate, newProposedAmount, newProposedTerm, comments, DateUtils.getLocalDateTimeOfSystem(), addedBy);
+            Renegotiation renegotiation = Renegotiation.create(prequalificationGroup, newProposedInterestRate, newProposedAmount,
+                    newProposedTerm, comments, DateUtils.getLocalDateTimeOfSystem(), addedBy);
             this.renegotiationRepository.saveRenegotiation(renegotiation);
             this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         }
@@ -1362,6 +1363,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             }
             if (ownerType.equals(LoanProductOwnerType.GROUP)) {
                 return PrequalificationType.GROUP;
+            }
+            if (ownerType.equals(LoanProductOwnerType.PAE)) {
+                return PrequalificationType.PAE;
             }
         }
         return PrequalificationType.INVALID;

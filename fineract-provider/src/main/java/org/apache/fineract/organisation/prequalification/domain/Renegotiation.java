@@ -75,16 +75,15 @@ public class Renegotiation extends AbstractPersistableCustom {
     @Column(name = "approved_date")
     private LocalDateTime approvedDate;
 
-    public Renegotiation(PrequalificationGroup prequalificationGroup, BigDecimal proposedInterest,
-                        BigDecimal proposedAmount, Integer proposedTerm, String comments, 
-                        String status, LocalDateTime createdDate, AppUser createdBy) {
-        this(prequalificationGroup, proposedInterest, proposedAmount, proposedTerm, comments, status, createdDate, createdBy, null, null, null);
+    public Renegotiation(PrequalificationGroup prequalificationGroup, BigDecimal proposedInterest, BigDecimal proposedAmount,
+            Integer proposedTerm, String comments, String status, LocalDateTime createdDate, AppUser createdBy) {
+        this(prequalificationGroup, proposedInterest, proposedAmount, proposedTerm, comments, status, createdDate, createdBy, null, null,
+                null);
     }
 
-    public Renegotiation(PrequalificationGroup prequalificationGroup, BigDecimal proposedInterest,
-                        BigDecimal proposedAmount, Integer proposedTerm, String comments,
-                        String status, LocalDateTime createdDate, AppUser createdBy,
-                        String approvalComments, AppUser approvedBy, LocalDateTime approvedDate) {
+    public Renegotiation(PrequalificationGroup prequalificationGroup, BigDecimal proposedInterest, BigDecimal proposedAmount,
+            Integer proposedTerm, String comments, String status, LocalDateTime createdDate, AppUser createdBy, String approvalComments,
+            AppUser approvedBy, LocalDateTime approvedDate) {
         this.prequalificationGroup = prequalificationGroup;
         this.proposedInterest = proposedInterest;
         this.proposedAmount = proposedAmount;
@@ -98,11 +97,10 @@ public class Renegotiation extends AbstractPersistableCustom {
         this.approvedDate = approvedDate;
     }
 
-    public static Renegotiation create(PrequalificationGroup prequalificationGroup, BigDecimal proposedInterest,
-                                      BigDecimal proposedAmount, Integer proposedTerm, String comments,
-                                      LocalDateTime createdDate, AppUser createdBy) {
-        return new Renegotiation(prequalificationGroup, proposedInterest, proposedAmount, 
-                               proposedTerm, comments, "PENDING", createdDate, createdBy);
+    public static Renegotiation create(PrequalificationGroup prequalificationGroup, BigDecimal proposedInterest, BigDecimal proposedAmount,
+            Integer proposedTerm, String comments, LocalDateTime createdDate, AppUser createdBy) {
+        return new Renegotiation(prequalificationGroup, proposedInterest, proposedAmount, proposedTerm, comments, "PENDING", createdDate,
+                createdBy);
     }
 
     public void approve(String approvalComments, AppUser approvedBy, LocalDateTime approvedDate) {
