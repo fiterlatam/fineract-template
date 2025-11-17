@@ -770,6 +770,8 @@ public final class LoanEnumerations {
                     LoanProductOwnerType.INDIVIDUAL.getCode(), "Individual");
             case GROUP -> enumOptionData = new EnumOptionData(LoanProductOwnerType.GROUP.getValue().longValue(),
                     LoanProductOwnerType.GROUP.getCode(), "Group");
+            case PAE -> enumOptionData = new EnumOptionData(LoanProductOwnerType.PAE.getValue().longValue(),
+                    LoanProductOwnerType.PAE.getCode(), "PAE");
             default -> enumOptionData = new EnumOptionData(LoanProductOwnerType.INVALID.getValue().longValue(),
                     LoanProductOwnerType.INVALID.getCode(), "Invalid");
         }

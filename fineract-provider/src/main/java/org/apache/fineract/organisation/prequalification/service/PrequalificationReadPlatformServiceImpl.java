@@ -441,6 +441,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 paramList.add(dpiNumber);
             }
         }
+        if (StringUtils.equals(groupingType, "pae")) {
+            extraCriteria += " and g.prequalification_type_enum = ? ";
+            paramList.add(PrequalificationType.PAE.getValue());
+            if (dpiNumber != null) {
+                extraCriteria += " and g.dpi = ? ";
+                paramList.add(dpiNumber);
+            }
+        }
 
         if (agencyId != null) {
             if (StringUtils.equals(searchParameters.getGroupingType(), "group")
