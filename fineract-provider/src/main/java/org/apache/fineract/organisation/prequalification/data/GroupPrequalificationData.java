@@ -28,6 +28,7 @@ import org.apache.fineract.infrastructure.configuration.data.GlobalConfiguration
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationTimeline;
+import org.apache.fineract.organisation.prequalification.data.RenegotiationData;
 import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.useradministration.data.AppUserData;
@@ -87,6 +88,7 @@ public class GroupPrequalificationData {
     private List<EnumOptionData> expectedTimeline;
 
     private String exceptionComment;
+    private List<RenegotiationData> renegotiations;
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
             final String portforlioName, final String centerName, final String groupName, final String addedBy,
@@ -235,5 +237,9 @@ public class GroupPrequalificationData {
 
     public void updateExpectedStatusTimeline(List<EnumOptionData> expectedTimeline) {
         this.expectedTimeline = expectedTimeline;
+    }
+
+    public void updateRenegotiations(List<RenegotiationData> renegotiations) {
+        this.renegotiations = renegotiations;
     }
 }

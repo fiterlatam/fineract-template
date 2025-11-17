@@ -171,4 +171,5 @@
     <include file="parts/PUE_06_11_25_add_new_report_loans_rejected.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_07_11_25_add_new_column_prequalification_log.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_08_11_25_Add_committees_permissions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0150-PUENTE_AL_EXITO_RENEGOTIATIONS.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
