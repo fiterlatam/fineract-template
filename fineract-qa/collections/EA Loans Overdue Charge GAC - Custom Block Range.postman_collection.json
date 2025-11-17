@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "04390a89-6d8f-4082-9f2e-12f954326992",
+        "_postman_id": "418dd32e-b611-4754-86a3-03afdba8790b",
         "name": "EA Loans Overdue Charge GAC - Custom Block Range",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
@@ -796,6 +796,147 @@
             "response": []
         },
         {
+            "name": "Run Job Apply GAC to overdue loans Copy",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 202 (Accepted)\", function () {\r",
+                            "    pm.expect(pm.response.code).to.equal(202);\r",
+                            "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "\r\n",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/jobs/57?command=executeJob",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "jobs",
+                        "57"
+                    ],
+                    "query": [
+                        {
+                            "key": "command",
+                            "value": "executeJob"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Job Finished? Copy",
+            "event": [
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            ""
+                        ],
+                        "type": "text/javascript"
+                    }
+                },
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "    pm.test( \"Valid?\", function(){\r",
+                            "        pm.response.to.have.status(200);\r",
+                            "        pm.expect(responseBody).to.not.equals( null );\r",
+                            "\r",
+                            "        var jsonData = JSON.parse(responseBody);\r",
+                            "        var currentlyRunning = false;\r",
+                            "\r",
+                            "        jsonData.forEach(function(cam) {\r",
+                            "            if(!currentlyRunning && cam.currentlyRunning) {\r",
+                            "                currentlyRunning = true;\r",
+                            "            }\r",
+                            "        });\r",
+                            "\r",
+                            "        if(currentlyRunning) {\r",
+                            "            setTimeout(function() { postman.setNextRequest(request.name); }, 10000);\r",
+                            "        }\r",
+                            "    } );"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "protocolProfileBehavior": {
+                "disableBodyPruning": true
+            },
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/jobs",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "jobs"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
             "name": "Get GAC Charge Pct from Mapping",
             "event": [
                 {
@@ -1353,7 +1494,8 @@
                             "} );"
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 },
                 {
@@ -1427,7 +1569,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
@@ -1447,7 +1590,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"transactionDate\": \"17-09-25\",\r\n    \"note\": null,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\"\r\n}",
+                    "raw": "{\r\n    \"transactionDate\": \"{{creationAndDisbusmentDate}}\",\r\n    \"note\": null,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"

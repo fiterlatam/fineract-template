@@ -939,6 +939,39 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         log.info(
                 "Apply penalty to overdue loans:: Overdue charges applied for Loan: {} in {} seconds with number of overdue installments: {}",
                 loanId, (finish - start) / 1000.0, overdueLoanScheduleDataList.size());
+    }
+
+    @Transactional
+    @Override
+    public void applyOverdueGACForLoan(final Loan loan, Collection<OverdueLoanScheduleData> overdueUnsortedLoanScheduleDataList) {
+        long start = System.currentTimeMillis();
+        long finish = 0;
+
+        // order the overdueLoanScheduleDataList by period number
+        final Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList = overdueUnsortedLoanScheduleDataList.stream()
+                .sorted(Comparator.comparing(OverdueLoanScheduleData::getPeriodNumber)).toList();
+
+        // Apply GAC charge for overdue loans that also comprises the charges calculated above
+        start = System.currentTimeMillis();
+        applyGACChargeForOverdueLoan(loan, overdueLoanScheduleDataList);
+        finish = System.currentTimeMillis();
+        log.info("Apply GAC to overdue loans:: GAC charges applied for Loan: {} in {} seconds with number of overdue installments: {}",
+                loan.getId(), (finish - start) / 1000.0, overdueLoanScheduleDataList.size());
+    }
+
+    @SuppressWarnings({ "squid:S3776", "squid:S135" })
+    @Transactional
+    @Override
+    public synchronized void applyOverdueGACForLoan(final Long loanId,
+            Collection<OverdueLoanScheduleData> overdueUnsortedLoanScheduleDataList) {
+        long start = System.currentTimeMillis();
+        long finish = 0;
+
+        // order the overdueLoanScheduleDataList by period number
+        final Collection<OverdueLoanScheduleData> overdueLoanScheduleDataList = overdueUnsortedLoanScheduleDataList.stream()
+                .sorted(Comparator.comparing(OverdueLoanScheduleData::getPeriodNumber)).toList();
+
+        Loan loan = this.loanAssembler.assembleFrom(loanId);
 
         // Apply GAC charge for overdue loans that also comprises the charges calculated above
         start = System.currentTimeMillis();
@@ -1008,6 +1041,10 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                 }
             }
 
+            if (maxDaysInArrears == 0) {
+                return;
+            }
+
             // Which is the current range for GAC charges
             GacData gd = gacReadPlatformService.retrieveGacRangeDetails(maxDaysInArrears, loan.getLoanAccountBlocks());
 
@@ -1016,7 +1053,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                     // Check if it was processed today and skip if no errors
                     if (!triggeredByRepayment && jobProcessedEntityRepository
                             .existsByJobIdAndExecutionDateAndExecutionProcessAndEntityTypeAndEntityIdAndInstallmentNrAndErrorMessageIsNullAndErrorLogIsNull(
-                                    12L, DateUtils.getLocalDateOfTenant(), "GAC", "L", loan.getId(),
+                                    57L, DateUtils.getLocalDateOfTenant(), "GAC", "L", loan.getId(),
                                     overdueInstallment.getPeriodNumber())) {
                         log.info("Skipping GAC already processed for loan with id: {} and installment_nr: {}", loan.getId(),
                                 overdueInstallment.getPeriodNumber());
@@ -1049,7 +1086,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
                     throw e;
                 } finally {
                     if (Objects.nonNull(overdueInstallment.getPeriodNumber())) {
-                        JobProcessedEntity dbLogger = JobProcessedEntity.builder().jobId(12L) // Overdue charge job id
+                        JobProcessedEntity dbLogger = JobProcessedEntity.builder().jobId(57L) // Overdue charge job id
                                 .executionDate(DateUtils.getLocalDateOfTenant()).executionProcess("GAC").entityId(loan.getId())
                                 .entityType("L").entityId(loan.getId()).installmentNr(overdueInstallment.getPeriodNumber())
                                 .startTime(startInstallmentProcessing).endTime(DateUtils.getLocalDateTimeOfTenant())
@@ -1068,7 +1105,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
 
             throw e;
         } finally {
-            JobProcessedEntity dbLogger = JobProcessedEntity.builder().jobId(12L) // Overdue charge job id
+            JobProcessedEntity dbLogger = JobProcessedEntity.builder().jobId(57L) // Overdue charge job id
                     .executionDate(DateUtils.getLocalDateOfTenant()).executionProcess("GAC").entityId(loan.getId()).entityType("L")
                     .entityId(loan.getId()).installmentNr(oldestInstallmentNumber).startTime(startInstallmentProcessing)
                     .endTime(DateUtils.getLocalDateTimeOfTenant()).status(Objects.isNull(errorMsg) ? "1" : "0").errorMessage(errorMsg)
