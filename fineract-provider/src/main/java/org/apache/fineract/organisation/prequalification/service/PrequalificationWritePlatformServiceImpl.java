@@ -592,9 +592,12 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             if (prequalificationGroup.isPrequalificationTypeGroup()) {
                 submittedLoans = jdbcTemplate.query(this.groupTypeLoanMapper.schema(), this.groupTypeLoanMapper, prequalificationId,
                         member.getDpi(), prequalificationId);
+            } else if (prequalificationGroup.isPrequalificationTypePAE()) {
+                submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
+                        prequalificationId, PrequalificationType.PAE.getValue(), member.getDpi(), prequalificationId);
             } else {
                 submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
-                        prequalificationId, member.getDpi(), prequalificationId);
+                        prequalificationId, PrequalificationType.PAE.getValue(), member.getDpi(), prequalificationId);
             }
             if (submittedLoans.isEmpty()) {
                 throw new MemberSubmittedLoanNotFoundException(member.getDpi());
@@ -1085,9 +1088,12 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             if (prequalificationGroup.isPrequalificationTypeGroup()) {
                 submittedLoans = jdbcTemplate.query(this.groupTypeLoanMapper.schema(), this.groupTypeLoanMapper,
                         new Object[] { prequalificationId, dpi, prequalificationId });
+            } else if (prequalificationGroup.isPrequalificationTypePAE()) {
+                submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
+                        new Object[] { prequalificationId, PrequalificationType.PAE.getValue(), dpi, prequalificationId });
             } else {
                 submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
-                        new Object[] { prequalificationId, dpi, prequalificationId });
+                        new Object[] { prequalificationId, PrequalificationType.INDIVIDUAL.getValue(), dpi, prequalificationId });
             }
             if (submittedLoans.isEmpty()) {
                 throw new MemberSubmittedLoanNotFoundException(dpi);
@@ -1193,7 +1199,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                         INNER JOIN m_prequalification_group_members mpgm ON mpg.id = mpgm.group_id
                         INNER JOIN m_client mc ON mc.dpi = mpgm.dpi
                         INNER JOIN m_loan ml ON ml.client_id = mc.id
-                        WHERE mpg.id = ? AND mpg.prequalification_type_enum = 1 AND (ml.client_id = (SELECT mt.id FROM m_client mt WHERE mt.dpi = ?))
+                        WHERE mpg.id = ? AND mpg.prequalification_type_enum = ? AND (ml.client_id = (SELECT mt.id FROM m_client mt WHERE mt.dpi = ?))
                         AND ml.loan_status_id = 100 AND ml.prequalification_id = ?
                     """;
         }
