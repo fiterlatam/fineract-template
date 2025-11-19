@@ -147,7 +147,11 @@ public class ApplyGACToOverdueLoanInstallmentTasklet implements Tasklet {
     private void processOverdueLoansInstallmentsInBatch(Map<Long, Collection<OverdueLoanScheduleData>> overdueScheduleData,
             List<Throwable> exceptions) {
 
-        ExecutorService executor = Executors.newFixedThreadPool(this.threadPoolSize);
+        ExecutorService executor = Executors.newFixedThreadPool(this.threadPoolSize, r -> {
+            Thread t = new Thread(r);
+            t.setPriority(Thread.MAX_PRIORITY); // 10
+            return t;
+        });
 
         // Sort collection by loan_id descending to process higher loan ids first
         int batchSize = this.batchSize;
@@ -188,7 +192,7 @@ public class ApplyGACToOverdueLoanInstallmentTasklet implements Tasklet {
                 return null;
             };
 
-            futures.add(taskExecutor.submit(task));
+            futures.add(executor.submit(task));
         }
 
         for (Future<Void> f : futures) {

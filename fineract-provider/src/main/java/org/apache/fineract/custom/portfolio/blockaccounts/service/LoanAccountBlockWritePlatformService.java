@@ -20,12 +20,14 @@ package org.apache.fineract.custom.portfolio.blockaccounts.service;
 
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.portfolio.loanaccount.service.LoanChargeWritePlatformService;
 
 public interface LoanAccountBlockWritePlatformService {
 
-    CommandProcessingResult createLoanAccountBlock(JsonCommand command);
+    CommandProcessingResult createLoanAccountBlock(JsonCommand command, LoanChargeWritePlatformService loanChargeWritePlatformService);
 
-    CommandProcessingResult updateLoanAccountBlock(final Long loanAccountBlockId, JsonCommand command);
+    CommandProcessingResult updateLoanAccountBlock(Long loanAccountBlockId, JsonCommand command,
+            LoanChargeWritePlatformService loanChargeWritePlatformService);
 
-    CommandProcessingResult unblockLoanAccount(JsonCommand command);
+    CommandProcessingResult unblockLoanAccount(JsonCommand command, LoanChargeWritePlatformService loanChargeWritePlatformService);
 }
