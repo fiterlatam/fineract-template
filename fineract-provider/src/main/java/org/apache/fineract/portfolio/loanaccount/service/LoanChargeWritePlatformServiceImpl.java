@@ -130,6 +130,7 @@ import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePla
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -960,7 +961,7 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
     }
 
     @SuppressWarnings({ "squid:S3776", "squid:S135" })
-    @Transactional
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED, rollbackFor = Exception.class)
     @Override
     public synchronized void applyOverdueGACForLoan(final Long loanId,
             Collection<OverdueLoanScheduleData> overdueUnsortedLoanScheduleDataList) {

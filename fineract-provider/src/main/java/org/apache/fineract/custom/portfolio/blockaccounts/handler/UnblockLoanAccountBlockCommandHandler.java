@@ -24,6 +24,7 @@ import org.apache.fineract.commands.handler.NewCommandSourceHandler;
 import org.apache.fineract.custom.portfolio.blockaccounts.service.LoanAccountBlockWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.portfolio.loanaccount.service.LoanChargeWritePlatformService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -32,9 +33,10 @@ import org.springframework.stereotype.Service;
 public class UnblockLoanAccountBlockCommandHandler implements NewCommandSourceHandler {
 
     private final LoanAccountBlockWritePlatformService loanAccountBlockWritePlatformService;
+    private final LoanChargeWritePlatformService loanChargeWritePlatformService;
 
     @Override
     public CommandProcessingResult processCommand(JsonCommand command) {
-        return loanAccountBlockWritePlatformService.unblockLoanAccount(command);
+        return loanAccountBlockWritePlatformService.unblockLoanAccount(command, loanChargeWritePlatformService);
     }
 }
