@@ -122,11 +122,6 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
 
         loanAccountBlock = loanAccountBlockRepository.saveAndFlush(loanAccountBlock);
 
-        // Add GAC charge realculation here
-        if (Objects.nonNull(loanChargeWritePlatformService)) {
-            loanChargeWritePlatformService.applyGACChargeForOverdueLoanAfterRepaymentOrReversal(loan, applicationDate);
-        }
-
         // Regenerates schedule in case of blocking with freeze interest, life insurance or any MiPyme charge
         if (freezeCurrentInterest || freezeLifeInsurance || freezeMypime) {
             loan.getLoanAccountBlocks().add(loanAccountBlock);
@@ -135,6 +130,12 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
             loan.regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO);
 
             loanWritePlatformService.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+        }
+
+        // Add GAC charge realculation here
+        if (Objects.nonNull(loanChargeWritePlatformService)) {
+            loan.getLoanAccountBlocks().add(loanAccountBlock);
+            loanChargeWritePlatformService.applyGACChargeForOverdueLoanAfterRepaymentOrReversal(loan, applicationDate);
         }
 
         return new CommandProcessingResultBuilder() //
@@ -219,7 +220,9 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
 
         // Add GAC charge realculation here
         if (Objects.nonNull(loanChargeWritePlatformService)) {
-            loanChargeWritePlatformService.applyGACChargeForOverdueLoanAfterRepaymentOrReversal(accountBlock.getLoan(), applicationDate);
+            Loan loan = this.loanAssembler.assembleFrom(accountBlock.getLoan().getId());
+            loan.getLoanAccountBlocks().add(loanAccountBlock);
+            loanChargeWritePlatformService.applyGACChargeForOverdueLoanAfterRepaymentOrReversal(loan, applicationDate);
         }
 
         regenerateScheduleIfNecessary(freezeCurrentInterest, freezeLifeInsurance, freezeMypime, loanAccountBlock, applicationDate);
@@ -270,8 +273,9 @@ public class LoanAccountBlockWritePlatformServiceImpl implements LoanAccountBloc
 
         // Add GAC charge realculation here
         if (Objects.nonNull(loanChargeWritePlatformService)) {
-            loanChargeWritePlatformService.applyGACChargeForOverdueLoanAfterRepaymentOrReversal(loanAccountBlock.getLoan(),
-                    applicationDate);
+            Loan loan = this.loanAssembler.assembleFrom(loanAccountUnblock.getLoan().getId());
+            loan.getLoanAccountBlocks().add(loanAccountBlock);
+            loanChargeWritePlatformService.applyGACChargeForOverdueLoanAfterRepaymentOrReversal(loan, applicationDate);
         }
 
         regenerateSchedule(loanAccountBlock, applicationDate);
