@@ -132,10 +132,10 @@ public class PromissoryNoteTemplateSix {
         String department = loan.getPrequalificationGroup() != null && loan.getPrequalificationGroup().getAgency() != null && loan.getPrequalificationGroup().getAgency().getCountry() != null ? loan.getPrequalificationGroup().getAgency().getCountry().getDescription() : "";
 
         // GUARANTOR DATA
-        String guarantorName = "PRUEBA DE DONDE";
-        String guarantorDPI = "";
-        String guarantorDPIText = "";
-        String guarantorAddress = "";
+        String guarantorName = object.get("guarantorName").getAsString();
+        String guarantorDPI = "(" + object.get("guarantorDPI").getAsString() + ")";
+        String guarantorDPIText = getNumber(object.get("guarantorDPI").getAsNumber(), false, true);
+        String guarantorAddress = object.get("guarantorAddress").getAsString();
         Document document = new Document();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 

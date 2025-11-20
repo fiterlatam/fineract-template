@@ -26,6 +26,7 @@ import org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemp
 import org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates.PromissoryNoteTemplateOne;
 import org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates.PromissoryNoteTemplateSix;
 import org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates.PromissoryNoteTemplateThree;
+import org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates.PromissoryNoteTemplateTwo;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -34,6 +35,7 @@ import org.springframework.stereotype.Service;
 public class PromissoryNoteServiceImpl implements PromissoryNoteService {
 
     private final PromissoryNoteTemplateOne promissoryNoteTemplateOne;
+    private final PromissoryNoteTemplateTwo promissoryNoteTemplateTwo;
     private final PromissoryNoteTemplateThree promissoryNoteTemplateThree;
     private final PromissoryNoteTemplateFour promissoryNoteTemplateFour;
     private final PromissoryNoteTemplateFive promissoryNoteTemplateFive;
@@ -50,7 +52,7 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
 
         return switch (type) {
             case "1" -> promissoryNoteTemplateOne.generatePdf(json);
-            case "2" -> promissoryNoteTemplateOne.generatePdf(json); // PENDING TO RESOLVE
+            case "2" -> promissoryNoteTemplateTwo.generatePdf(json);
             case "3" -> promissoryNoteTemplateThree.generatePdf(json);
             case "4" -> promissoryNoteTemplateFour.generatePdf(json);
             case "5" -> promissoryNoteTemplateFive.generatePdf(json);
