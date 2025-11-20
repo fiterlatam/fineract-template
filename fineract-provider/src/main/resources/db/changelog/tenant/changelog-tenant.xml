@@ -432,4 +432,5 @@
     <include file="parts/20251020000100_EA_287_m_loan_product_microcreditob2.xml" relativeToChangelogFile="true"/>
     <include file="parts/20251020000100_EA_288_m_loan_product_rotativoproductivo.xml" relativeToChangelogFile="true"/>
     <include file="parts/20251114200100_EA_352_job_gac.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20251119200100_EA_359_gl_account_update.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

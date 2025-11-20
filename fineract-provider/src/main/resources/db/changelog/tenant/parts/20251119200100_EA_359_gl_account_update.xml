@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="10" author="fineract">
+        <sql>
+            <![CDATA[
+                update acc_gl_account aga
+                set "gl_code" = 'oldcode'
+                where id = 1690952007;
+
+                INSERT INTO acc_gl_account
+                (id, "name", parent_id, "hierarchy", gl_code, disabled, manual_journal_entries_allowed, account_usage, classification_enum, tag_id, description)
+                SELECT
+                    24,
+                    'CxC Comisión FNG',
+                    NULL,
+                    NULL,
+                    '1690952007',
+                    false,
+                    true,
+                    1,
+                    1,
+                    NULL,
+                    NULL
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM acc_gl_account WHERE id = 24
+                );
+
+                update acc_gl_journal_entry
+                set account_id = 24
+                where account_id = 1690952007;
+
+                update acc_product_mapping apm
+                set gl_account_id = 24
+                where gl_account_id = 1690952007;
+
+                update m_charge
+                set income_or_liability_account_id = 24
+                where income_or_liability_account_id = 1690952007;
+
+                delete from acc_gl_account aga
+                where id = 1690952007;
+            ]]>
+        </sql>
+    </changeSet>
+</databaseChangeLog>
