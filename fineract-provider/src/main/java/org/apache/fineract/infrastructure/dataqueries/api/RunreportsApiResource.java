@@ -25,10 +25,24 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.IOException;
+import lombok.RequiredArgsConstructor;
+import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
+import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
+import org.apache.fineract.infrastructure.dataqueries.service.PromissoryNoteService;
+import org.apache.fineract.infrastructure.dataqueries.service.ReadReportingService;
+import org.apache.fineract.infrastructure.report.provider.ReportingProcessServiceProvider;
+import org.apache.fineract.infrastructure.report.service.ReportingProcessService;
+import org.apache.fineract.infrastructure.security.exception.NoAuthorizationException;
+import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.useradministration.domain.AppUser;
+import org.glassfish.jersey.internal.util.collection.MultivaluedStringMap;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -38,23 +52,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
-import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
-import org.apache.fineract.infrastructure.dataqueries.service.ReadReportingService;
-import org.apache.fineract.infrastructure.report.provider.ReportingProcessServiceProvider;
-import org.apache.fineract.infrastructure.report.service.ReportingProcessService;
-import org.apache.fineract.infrastructure.security.exception.NoAuthorizationException;
-import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.useradministration.domain.AppUser;
-import org.glassfish.jersey.internal.util.collection.MultivaluedStringMap;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
+import java.io.IOException;
 
 @Path("/runreports")
 @Component
 @Scope("singleton")
 @Tag(name = "Run Reports", description = "")
+@RequiredArgsConstructor
 public class RunreportsApiResource {
 
     public static final String IS_SELF_SERVICE_USER_REPORT_PARAMETER = "isSelfServiceUserReport";
@@ -62,14 +66,8 @@ public class RunreportsApiResource {
     private final PlatformSecurityContext context;
     private final ReadReportingService readExtraDataAndReportingService;
     private final ReportingProcessServiceProvider reportingProcessServiceProvider;
+    private final PromissoryNoteService promissoryNoteService;
 
-    @Autowired
-    public RunreportsApiResource(final PlatformSecurityContext context, final ReadReportingService readExtraDataAndReportingService,
-            final ReportingProcessServiceProvider reportingProcessServiceProvider) {
-        this.context = context;
-        this.readExtraDataAndReportingService = readExtraDataAndReportingService;
-        this.reportingProcessServiceProvider = reportingProcessServiceProvider;
-    }
 
     @GET
     @Path("{reportName}")
@@ -117,6 +115,18 @@ public class RunreportsApiResource {
                     ReportingProcessServiceProvider.SERVICE_MISSING + reportType, reportType);
         }
         return reportingProcessService.processRequest(reportName, queryParams);
+    }
+
+
+    @POST
+    @Path("promissorynote/{type}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RunreportsApiResourceSwagger.RunReportsResponse.class))) })
+    public String generatePromissoryNotePdf(@PathParam("type") final String type, @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        context.authenticatedUser();
+        return promissoryNoteService.generatePromissoryNote(type, apiRequestBodyAsJson);
     }
 
     private void checkUserPermissionForReport(final String reportName, final boolean parameterType) {
