@@ -25,6 +25,20 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
 import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
@@ -39,21 +53,6 @@ import org.glassfish.jersey.internal.util.collection.MultivaluedStringMap;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import java.io.IOException;
-
 @Path("/runreports")
 @Component
 @Scope("singleton")
@@ -67,7 +66,6 @@ public class RunreportsApiResource {
     private final ReadReportingService readExtraDataAndReportingService;
     private final ReportingProcessServiceProvider reportingProcessServiceProvider;
     private final PromissoryNoteService promissoryNoteService;
-
 
     @GET
     @Path("{reportName}")
@@ -117,14 +115,14 @@ public class RunreportsApiResource {
         return reportingProcessService.processRequest(reportName, queryParams);
     }
 
-
     @POST
     @Path("promissorynote/{type}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RunreportsApiResourceSwagger.RunReportsResponse.class))) })
-    public String generatePromissoryNotePdf(@PathParam("type") final String type, @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+    public String generatePromissoryNotePdf(@PathParam("type") final String type,
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
         context.authenticatedUser();
         return promissoryNoteService.generatePromissoryNote(type, apiRequestBodyAsJson);
     }

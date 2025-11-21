@@ -989,7 +989,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
         String reportToPrint = null;
         Long loanId = null;
-        if ((prequalificationGroup.isPrequalificationTypeIndividual()|| prequalificationGroup.isPrequalificationTypePAE()) && action.equals("approveCommittee")) {
+        if ((prequalificationGroup.isPrequalificationTypeIndividual() || prequalificationGroup.isPrequalificationTypePAE())
+                && action.equals("approveCommittee")) {
             Integer statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
             prequalificationStatus = PrequalificationStatus.fromInt(statusRange);
             if (prequalificationStatus.equals(PrequalificationStatus.COMPLETED)) {
