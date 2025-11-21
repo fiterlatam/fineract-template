@@ -75,6 +75,21 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     String FIND_BY_ACCOUNT_NUMBER = "select loan from Loan loan where loan.accountNumber = :accountNumber";
     String FIND_BY_EXTERNAL_ID = "select loan from Loan loan where loan.externalId = :externalId";
 
+    String AGENCY_LEAD_BY_LOAN_ID =
+            "SELECT " +
+            "ag.name AS agencia, " +
+            "lo.id AS id, " +
+            "CONCAT(agl.firstname, ' ', agl.lastname) AS lider_agencia " +
+            "FROM m_loan lo " +
+            "LEFT JOIN m_prequalification_group pg ON pg.id = lo.prequalification_id " +
+            "LEFT JOIN m_agency ag ON ag.id = pg.agency_id " +
+            "LEFT JOIN m_appuser agl ON agl.id = ag.responsible_user_id " +
+            "LEFT JOIN ( SELECT p1.* FROM m_prequalification_status_log p1 INNER JOIN ( SELECT prequalification_id, MAX(id) AS max_id " +
+            "FROM m_prequalification_status_log " +
+            "GROUP BY prequalification_id ) p2 ON p1.prequalification_id = p2.prequalification_id " +
+            "AND p1.id = p2.max_id ) pl ON pl.prequalification_id = lo.prequalification_id " +
+            "WHERE lo.id = ?";
+
     @Query(FIND_GROUP_LOANS_DISBURSED_AFTER)
     List<Loan> getGroupLoansDisbursedAfter(@Param("disbursementDate") LocalDate disbursementDate, @Param("groupId") Long groupId,
             @Param("loanType") Integer loanType);

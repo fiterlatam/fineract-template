@@ -248,6 +248,10 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
         return this.prequalificationType.equals(PrequalificationType.GROUP.getValue());
     }
 
+    public boolean isPrequalificationTypePAE() {
+        return this.prequalificationType.equals(PrequalificationType.PAE.getValue());
+    }
+
     public BigDecimal getTotalRequestedAmount() {
         return this.getMembers().stream().map(PrequalificationGroupMember::getRequestedAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     }

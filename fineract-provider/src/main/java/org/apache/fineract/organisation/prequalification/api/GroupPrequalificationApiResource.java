@@ -225,6 +225,9 @@ public class GroupPrequalificationApiResource {
             if (groupingType.equals("individual")) {
                 prequalificationType = PrequalificationType.INDIVIDUAL.getValue();
             }
+            if (groupingType.equals("pae")) {
+                prequalificationType = PrequalificationType.PAE.getValue();
+            }
 
             if (prequalificationType != null) {
                 loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProductsForOwner(prequalificationType);
