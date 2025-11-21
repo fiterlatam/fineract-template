@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.infrastructure.dataqueries.service;
 
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates.PromissoryNoteTemplateFive;
@@ -41,12 +40,10 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
     private final PromissoryNoteTemplateFive promissoryNoteTemplateFive;
     private final PromissoryNoteTemplateSix promissoryNoteTemplateSix;
 
-
     @Override
     public String generatePromissoryNote(String type, String json) {
         return redirectPromissoryNote(type, json);
     }
-
 
     private String redirectPromissoryNote(String type, String json) {
 
