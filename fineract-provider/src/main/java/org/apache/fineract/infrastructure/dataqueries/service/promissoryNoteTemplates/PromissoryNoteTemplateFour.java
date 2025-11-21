@@ -21,21 +21,20 @@ package org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTem
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.ibm.icu.text.RuleBasedNumberFormat;
-import com.itextpdf.text.BaseColor;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.Element;
-import com.itextpdf.text.Font;
-import com.itextpdf.text.FontFactory;
-import com.itextpdf.text.Image;
-import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.Phrase;
-import com.itextpdf.text.Rectangle;
-import com.itextpdf.text.pdf.ColumnText;
-import com.itextpdf.text.pdf.PdfContentByte;
-import com.itextpdf.text.pdf.PdfPCell;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfPageEventHelper;
-import com.itextpdf.text.pdf.PdfWriter;
+import com.lowagie.text.Document;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.FontFactory;
+import com.lowagie.text.Image;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.ColumnText;
+import com.lowagie.text.pdf.PdfContentByte;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfPageEventHelper;
+import com.lowagie.text.pdf.PdfWriter;
+import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -156,8 +155,8 @@ public class PromissoryNoteTemplateFour {
             document.setMargins(50, 50, 100, 50);
             document.open();
 
-            Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, BaseColor.BLACK);
-            Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 11, BaseColor.BLACK);
+            Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, Color.BLACK);
+            Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 11, Color.BLACK);
 
             // Título
             Paragraph title = new Paragraph("PAGARÉ LIBRE DE PROTESTO", titleFont);
@@ -247,14 +246,14 @@ public class PromissoryNoteTemplateFour {
         table.setSpacingBefore(40f);
 
         PdfPCell emptyCell = new PdfPCell();
-        emptyCell.setBorder(Rectangle.NO_BORDER);
+        emptyCell.setBorder(com.lowagie.text.Rectangle.NO_BORDER);
         emptyCell.setHorizontalAlignment(Element.ALIGN_CENTER);
 
-        Font font = FontFactory.getFont(FontFactory.HELVETICA, 11, BaseColor.BLACK);
+        Font font = FontFactory.getFont(FontFactory.HELVETICA, 11, Color.BLACK);
         if (clientName != null) {
             PdfPCell cell1 = new PdfPCell(
                     new Paragraph("F. _________________________________\n\n" + clientName.toUpperCase() + "\n\n" + subtitleOne, font));
-            cell1.setBorder(Rectangle.NO_BORDER);
+            cell1.setBorder(com.lowagie.text.Rectangle.NO_BORDER);
             cell1.setHorizontalAlignment(Element.ALIGN_CENTER);
             table.addCell(cell1);
 
@@ -265,7 +264,7 @@ public class PromissoryNoteTemplateFour {
         if (witnessName != null) {
             PdfPCell cell2 = new PdfPCell(
                     new Paragraph("F. _________________________________\n\n" + witnessName.toUpperCase() + "\n\n" + subtitleTwo, font));
-            cell2.setBorder(Rectangle.NO_BORDER);
+            cell2.setBorder(com.lowagie.text.Rectangle.NO_BORDER);
             cell2.setHorizontalAlignment(Element.ALIGN_CENTER);
             table.addCell(cell2);
         } else {
@@ -294,8 +293,8 @@ public class PromissoryNoteTemplateFour {
                 cb.addImage(logo, false);
 
                 ColumnText.showTextAligned(cb, Element.ALIGN_RIGHT,
-                        new Phrase("THE FRIENDSHIP BRIDGE", FontFactory.getFont(FontFactory.HELVETICA, 8, BaseColor.GRAY)),
-                        document.right(), document.bottom() - 20, 0);
+                        new Phrase("THE FRIENDSHIP BRIDGE", FontFactory.getFont(FontFactory.HELVETICA, 8, Color.GRAY)), document.right(),
+                        document.bottom() - 20, 0);
             } catch (Exception e) {
                 log.info(e.getMessage());
             }
