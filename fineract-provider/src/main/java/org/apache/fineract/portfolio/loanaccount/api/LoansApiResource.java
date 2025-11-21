@@ -1260,7 +1260,6 @@ public class LoansApiResource {
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
 
-
     @GET
     @Path("promissorytemplate/{loanId}")
     @Consumes({ MediaType.APPLICATION_JSON })
