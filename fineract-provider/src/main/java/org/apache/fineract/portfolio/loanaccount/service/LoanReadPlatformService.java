@@ -22,6 +22,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.organisation.staff.data.StaffData;
@@ -161,4 +163,6 @@ public interface LoanReadPlatformService {
     Collection<LoanAccountData> retrieveClientActiveLoans(Long clientId);
 
     GroupLoanAdditionalData retrieveAdditionalData(Long loanId);
+
+    Map<String, Object> retrieveBasicDataForLoanPromissoryTemplate(Long loanId);
 }

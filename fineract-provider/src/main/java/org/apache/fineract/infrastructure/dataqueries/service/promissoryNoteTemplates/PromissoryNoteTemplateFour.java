@@ -132,10 +132,10 @@ public class PromissoryNoteTemplateFour {
         String department = loan.getPrequalificationGroup() != null && loan.getPrequalificationGroup().getAgency() != null && loan.getPrequalificationGroup().getAgency().getCountry() != null ? loan.getPrequalificationGroup().getAgency().getCountry().getDescription() : "";
 
         // GUARANTOR DATA
-        String guarantorName = "PRUEBA DE DONDE";
-        String guarantorDPI = "";
-        String guarantorDPIText = "";
-        String guarantorAddress = "";
+        String guarantorName = object.get("guarantorName").getAsString();
+        String guarantorDPI = "(" + object.get("guarantorDPI").getAsString() + ")";
+        String guarantorDPIText = getNumber(object.get("guarantorDPI").getAsNumber(), false, true);
+        String guarantorAddress = object.get("guarantorAddress").getAsString();
         Document document = new Document();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -177,7 +177,7 @@ public class PromissoryNoteTemplateFour {
                             
                             C) ACEPTACIÓN Y OBLIGACIÓN DE LA PARTE DEUDORA:
                             a. Acepto que la parte tenedora de este título, podrá dar por vencido el plazo de este título en forma anticipada y exigir ejecutivamente el pago total del saldo adeudado tanto de capital, intereses, intereses moratorios gastos y costas judiciales en los siguientes casos:
-                            a.1) Si no cumplo cualquiera de las obligaciones aquí contraídas 
+                            a.1) Si no cumplo cualquiera de las obligaciones aquí contraídas
                             a.2) Si se dictare mandamiento de embargo en mi contra y/o avalista si lo hubiese (s);
                             a.3) Si dejare de pagar puntualmente una sola de las cuotas convenidas; y
                             a.4) Si THE FRIENDSHIP BRIDGE comprobare que utilicé el financiamiento para fines distintos a los antes mencionados.

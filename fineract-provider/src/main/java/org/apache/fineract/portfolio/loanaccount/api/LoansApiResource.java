@@ -1259,4 +1259,16 @@ public class LoansApiResource {
                 uploadedInputStream, fileDetail, locale, dateFormat);
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
+
+
+    @GET
+    @Path("promissorytemplate/{loanId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String getPromissoryTemplate(@PathParam("loanId") final Long loanId, @Context final UriInfo uriInfo) {
+        this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+        Map<String, Object> data = this.loanReadPlatformService.retrieveBasicDataForLoanPromissoryTemplate(loanId);
+        return this.toApiJsonSerializer.serialize(data);
+    }
+
 }
