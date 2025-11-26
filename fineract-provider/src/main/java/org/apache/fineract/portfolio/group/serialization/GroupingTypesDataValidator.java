@@ -684,13 +684,13 @@ public final class GroupingTypesDataValidator {
         if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.latitude, element)) {
             final BigDecimal latitude = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(GroupingTypesApiConstants.latitude,
                     element);
-            baseDataValidator.reset().parameter(GroupingTypesApiConstants.latitude).value(latitude).ignoreIfNull().zeroOrPositiveAmount();
+            baseDataValidator.reset().parameter(GroupingTypesApiConstants.latitude).value(latitude).ignoreIfNull();
         }
 
         if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.longitude, element)) {
             final BigDecimal longitude = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(GroupingTypesApiConstants.longitude,
                     element);
-            baseDataValidator.reset().parameter(GroupingTypesApiConstants.longitude).value(longitude).ignoreIfNull().zeroOrPositiveAmount();
+            baseDataValidator.reset().parameter(GroupingTypesApiConstants.longitude).value(longitude).ignoreIfNull();
         }
 
         if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.formationDate, element)) {
