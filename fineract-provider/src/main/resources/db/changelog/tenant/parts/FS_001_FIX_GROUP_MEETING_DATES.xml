@@ -45,4 +45,17 @@
         </sql>
     </changeSet>
 
+    <changeSet id="2" author="fineract">
+        <sql>
+            <![CDATA[
+            ALTER TABLE m_group
+                MODIFY COLUMN `latitude` decimal(12, 8) NULL DEFAULT NULL AFTER `legacy_number`,
+                MODIFY COLUMN `longitude` decimal(12, 8) NULL DEFAULT NULL AFTER `latitude`;
+            ALTER TABLE `frendship_latest`.`m_center_group`
+                MODIFY COLUMN `latitude` decimal(12, 8) NULL DEFAULT NULL AFTER `legacy_group_number`,
+                MODIFY COLUMN `longitude` decimal(12, 8) NULL DEFAULT NULL AFTER `latitude`;
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
