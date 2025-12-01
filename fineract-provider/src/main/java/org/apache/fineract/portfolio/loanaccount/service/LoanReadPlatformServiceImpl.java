@@ -133,6 +133,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanSc
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
@@ -1647,11 +1648,18 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         } else if (loanProduct.canUseForTopup() && groupId != null) {
             activeLoanOptions = this.accountDetailsReadPlatformService.retrieveGroupActiveLoanAccountSummary(groupId);
         }
+        // for product that is PAE add the required guarantee options
+        Collection<CodeValueData> paeRequiredGuaranteeOptions = null;
+        if (loanProduct.getOwnerTypeOption() != null
+                && loanProduct.getOwnerTypeOption().getId().intValue() == LoanProductOwnerType.PAE.getValue()) {
+            paeRequiredGuaranteeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("PaeRequiredGuarantees");
+        }
 
         return LoanAccountData.loanProductWithTemplateDefaults(loanProduct, loanTermFrequencyTypeOptions, repaymentFrequencyTypeOptions,
                 repaymentFrequencyNthDayTypeOptions, repaymentFrequencyDaysOfWeekTypeOptions, repaymentStrategyOptions,
                 interestRateFrequencyTypeOptions, amortizationTypeOptions, interestTypeOptions, interestCalculationPeriodTypeOptions,
-                fundOptions, chargeOptions, loanPurposeOptions, loanCollateralOptions, loanCycleCounter, activeLoanOptions);
+                fundOptions, chargeOptions, loanPurposeOptions, loanCollateralOptions, loanCycleCounter, activeLoanOptions,
+                paeRequiredGuaranteeOptions);
     }
 
     @Override
