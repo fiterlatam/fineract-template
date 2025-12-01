@@ -195,7 +195,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
         final BigDecimal principalAmount = loanTransactionDTO.getPrincipal();
         final BigDecimal interestAmount = loanTransactionDTO.getInterest();
-        final BigDecimal incomeInterestAmount = loanTransactionDTO.getIncomeInterest();
+        final BigDecimal accruedInterest = loanTransactionDTO.getIncomeInterest();
         final BigDecimal receivableInterest = loanTransactionDTO.getReceivableInterest();
         final BigDecimal feesAmount = loanTransactionDTO.getFees();
         final BigDecimal penaltiesAmount = loanTransactionDTO.getPenalties();
@@ -219,18 +219,18 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         if (interestAmount != null && !(interestAmount.compareTo(BigDecimal.ZERO) == 0)) {
             totalDebitAmount = totalDebitAmount.add(interestAmount);
 
-            if ((incomeInterestAmount != null && incomeInterestAmount.compareTo(BigDecimal.ZERO) > 0)
+            if ((accruedInterest != null && accruedInterest.compareTo(BigDecimal.ZERO) > 0)
                     && (receivableInterest != null && receivableInterest.compareTo(BigDecimal.ZERO) > 0)) {
                 GLAccount incomeAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
-                        AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(), paymentTypeId);
+                        AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
                 if (accountMap.containsKey(incomeAccount)) {
-                    BigDecimal amount = accountMap.get(incomeAccount).add(incomeInterestAmount);
+                    BigDecimal amount = accountMap.get(incomeAccount).add(accruedInterest);
                     accountMap.put(incomeAccount, amount);
                 } else {
-                    accountMap.put(incomeAccount, incomeInterestAmount);
+                    accountMap.put(incomeAccount, accruedInterest);
                 }
                 GLAccount receivableAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
-                        AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
+                        AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(), paymentTypeId);
                 if (accountMap.containsKey(receivableAccount)) {
                     BigDecimal amount = accountMap.get(receivableAccount).add(receivableInterest);
                     accountMap.put(receivableAccount, amount);
