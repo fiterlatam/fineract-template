@@ -173,4 +173,5 @@
     <include file="parts/PUE_08_11_25_Add_committees_permissions.xml" relativeToChangelogFile="true"/>
     <include file="parts/0150-PUENTE_AL_EXITO_RENEGOTIATIONS.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_20_11_25_add_limit_amount_settings.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_27_11_25_ADD_PAE_REQUIRED_GUARANTEES.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
