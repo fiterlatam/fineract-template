@@ -802,7 +802,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             payment.updateLoan(loan);
             payment.setIsForeclosureTransaction(true);
             payment.setReceivableInterestPortion(interestReceivable.getAmount());
-            if (!isDecliningBalance) payment.setIncomeInterestPortion(interestToWaive.getAmount());
+            if (!isDecliningBalance) payment.setReceivableInterestPortion(interestToWaive.getAmount());
+            if (!isDecliningBalance) payment.setIncomeInterestPortion(interestReceivable.getAmount());
             newTransactions.add(payment);
         }
 
