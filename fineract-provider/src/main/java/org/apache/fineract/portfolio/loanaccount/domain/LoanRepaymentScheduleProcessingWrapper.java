@@ -79,6 +79,8 @@ public class LoanRepaymentScheduleProcessingWrapper {
                                     .add(period.getInterestCharged(monetaryCurrency).getAmount());
                         } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
                             amount = amount.add(period.getInterestCharged(monetaryCurrency).getAmount());
+                        } else if (loanCharge.getChargeCalculation().isPercentageOfOutstandingBalance()) {
+                            amount = amount.add(period.getPrincipalOutstanding(monetaryCurrency).getAmount());
                         } else {
                             amount = amount.add(period.getPrincipal(monetaryCurrency).getAmount());
                         }
@@ -98,6 +100,8 @@ public class LoanRepaymentScheduleProcessingWrapper {
                         amount = amount.add(totalPrincipal.getAmount()).add(totalInterest.getAmount());
                     } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
                         amount = amount.add(totalInterest.getAmount());
+                    }else if (loanCharge.getChargeCalculation().isPercentageOfOutstandingBalance()) {
+                        amount = amount.add(loanCharge.getLoan().getSummary().getTotalPrincipalOutstanding());
                     } else {
                         // If charge type is specified due date and loan is
                         // multi disburment loan.
