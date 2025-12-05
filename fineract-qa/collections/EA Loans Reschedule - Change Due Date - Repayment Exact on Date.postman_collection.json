@@ -1,7 +1,7 @@
 {
     "info": {
-        "_postman_id": "e1d77161-d809-4405-b427-a548c4d72b48",
-        "name": "EA Loans Repayment Exceeding Pays All PAST_DUE",
+        "_postman_id": "593c317b-502d-4b04-9bdf-90d7edfb8317",
+        "name": "EA Loans Reschedule - Change Due Date - Repayment Exact on Date",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
     },
@@ -36,7 +36,7 @@
                             "var moment = require(\"moment\");\r",
                             "var todayDate = moment().format((\"DD-MM-YY\"));\r",
                             "\r",
-                            "var twoMOld = moment().add(-3, 'months').add(-3, 'days').format((\"DD-MM-YY\"));\r",
+                            "var twoMOld = moment().add(-1, 'months').add(-5, 'days').format((\"DD-MM-YY\"));\r",
                             "\r",
                             "postman.setEnvironmentVariable(\"todayDate\", todayDate);\r",
                             "postman.setEnvironmentVariable(\"creationAndDisbusmentDate\", twoMOld);\r",
@@ -64,7 +64,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"officeId\": 1,\r\n    \"legalFormId\": 1,\r\n    \"isStaff\": false,\r\n    \"active\": true,\r\n    \"dateOfBirth\": \"11/01/2020\",\r\n    \"submittedOnDate\": \"11/01/2020\",\r\n    \"genderId\": 1261,\r\n    \"firstname\": \"Bot++\",\r\n    \"externalId\": \"{{executionId}}\", \r\n    \"lastname\": \"Loans Repayment Exceeding Pays All PAST_DUE {{executionId}}\",\r\n    \"activationDate\": \"11/01/2020\",\r\n    \"familyMembers\": [],\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"datatables\": [\r\n        {\r\n            \"registeredTableName\": \"campos_cliente_persona\",\r\n            \"data\": {\r\n                \"Cedula\": \"{{executionId}}\",\r\n                \"Estado Civil_cd_Estado civil\": 2404,\r\n                \"Edad\": \"\",\r\n                \"Estrato\": \"\",\r\n                \"Ciudad_cd_Ciudad\": 830,\r\n                \"Tiene vehiculo propio\": \"\",\r\n                \"Tipo Vehiculo_cd_Tipo de vehiculo\": \"\",\r\n                \"Nivel Academico_cd_Nivel academico\": \"\",\r\n                \"Actividad Laboral_cd_Actividad laboral\": \"\",\r\n                \"Tiempo de actividad laboral\": \"\",\r\n                \"Media de ingresos\": \"\",\r\n                \"Nombre empresa\": \"\",\r\n                \"Direccion\": \"Calle Uno, 57\",\r\n                \"Telefono\": \"2222-3355\",\r\n                \"Cupo solicitado\": 999999999,\r\n                \"Cupo aprobado\": 999999999,\r\n                \"Cupo otros prestamos\": \"999999999\",\r\n                \"Cupo score\": \"\",\r\n                \"Valor score\": \"\",\r\n                \"Modelo score\": \"\",\r\n                \"Customer Identifier_cd_Tipo identificacion\": 2469,\r\n                \"Telefono domicilio\": \"\",\r\n                \"Numero Celular Secundario\": \"\"\r\n            }\r\n        }\r\n    ]\r\n}",
+                    "raw": "{\r\n    \"officeId\": 1,\r\n    \"legalFormId\": 1,\r\n    \"isStaff\": false,\r\n    \"active\": true,\r\n    \"dateOfBirth\": \"11/01/2020\",\r\n    \"submittedOnDate\": \"11/01/2020\",\r\n    \"genderId\": 1261,\r\n    \"firstname\": \"Bot++\",\r\n    \"externalId\": \"{{executionId}}\", \r\n    \"lastname\": \"Loans Reschedule - Change Due Date - R Exact {{executionId}}\",\r\n    \"activationDate\": \"11/01/2020\",\r\n    \"familyMembers\": [],\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"datatables\": [\r\n        {\r\n            \"registeredTableName\": \"campos_cliente_persona\",\r\n            \"data\": {\r\n                \"Cedula\": \"{{executionId}}\",\r\n                \"Estado Civil_cd_Estado civil\": 2404,\r\n                \"Edad\": \"\",\r\n                \"Estrato\": \"\",\r\n                \"Ciudad_cd_Ciudad\": 830,\r\n                \"Tiene vehiculo propio\": \"\",\r\n                \"Tipo Vehiculo_cd_Tipo de vehiculo\": \"\",\r\n                \"Nivel Academico_cd_Nivel academico\": \"\",\r\n                \"Actividad Laboral_cd_Actividad laboral\": \"\",\r\n                \"Tiempo de actividad laboral\": \"\",\r\n                \"Media de ingresos\": \"\",\r\n                \"Nombre empresa\": \"\",\r\n                \"Direccion\": \"Calle Uno, 57\",\r\n                \"Telefono\": \"2222-3355\",\r\n                \"Cupo solicitado\": 999999999,\r\n                \"Cupo aprobado\": 999999999,\r\n                \"Cupo otros prestamos\": \"999999999\",\r\n                \"Cupo score\": \"\",\r\n                \"Valor score\": \"\",\r\n                \"Modelo score\": \"\",\r\n                \"Customer Identifier_cd_Tipo identificacion\": 2469,\r\n                \"Telefono domicilio\": \"\",\r\n                \"Numero Celular Secundario\": \"\"\r\n            }\r\n        }\r\n    ]\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -222,7 +222,7 @@
             "response": []
         },
         {
-            "name": "Approve  Loan - Unknown Copy",
+            "name": "Approve  Loan",
             "request": {
                 "method": "POST",
                 "header": [
@@ -269,7 +269,7 @@
             "response": []
         },
         {
-            "name": "Disburse Money - Unknown Copy 3",
+            "name": "Disburse Money",
             "request": {
                 "method": "POST",
                 "header": [
@@ -316,29 +316,42 @@
             "response": []
         },
         {
-            "name": "Get Job id",
+            "name": "Get 2nd Installment due date",
             "event": [
                 {
                     "listen": "test",
                     "script": {
                         "exec": [
                             "pm.response.to.have.status(200);\r",
-                            "pm.expect(pm.response.text()).to.not.equals(null);\r",
+                            "pm.expect(pm.response.text()).to.not.equals( null );\r",
                             "var jsonData = JSON.parse(pm.response.text());\r",
                             "\r",
-                            "// Encuentra el objeto con el \"displayName\" igual a \"Apply penalty to overdue loans\"\r",
-                            "const job = jsonData.find(record => record.displayName === \"Apply penalty to overdue loans\");\r",
+                            "pm.test(\"Number of installments is 4\", function () {\r",
+                            "    // The test assumes the installment data is in an array called 'repayments'\r",
+                            "    pm.expect(jsonData.repaymentSchedule.periods.length).to.be.equal(1 + 4);\r",
+                            "});\r",
                             "\r",
-                            "if (job) {\r",
-                            "    pm.environment.set(\"jobId\", job.jobId);\r",
-                            "    console.log(\"ID do 'Apply penalty to overdue loans' salvo na variável 'jobId': \" + job.jobId);\r",
-                            "} else {\r",
-                            "    console.log(\"Registro 'Apply penalty to overdue loans' não encontrado na resposta.\");\r",
-                            "}\r",
+                            "var moment = require(\"moment\");\r",
+                            "console.log(jsonData.repaymentSchedule.periods[2].dueDate);\r",
+                            "\r",
+                            "const fromDateArray = jsonData.repaymentSchedule.periods[2].dueDate; \r",
+                            "\r",
+                            "// Ajusta o mês (subtrai 1)\r",
+                            "fromDateArray[1] = fromDateArray[1] - 1;\r",
+                            "\r",
+                            "// Cria o objeto Moment\r",
+                            "const fromDateMoment = moment(fromDateArray);\r",
+                            "\r",
+                            "// Armazena a variável Moment (ou o formato de string dela) no ambiente do Postman\r",
+                            "pm.environment.set(\"dueDate2ndInstallment\", fromDateMoment.format(\"DD-MM-YY\"));\r",
+                            "\r",
+                            "\r",
+                            "pm.environment.set(\"newDueDate2ndInstallment\", fromDateMoment.add(5, 'days').format(\"DD-MM-YY\"));\r",
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 },
                 {
@@ -348,7 +361,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
@@ -371,7 +385,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "",
+                    "raw": "{\r\n    \"transactionDate\": \"18/07/2025\",\r\n    \"transactionAmount\": 200000,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"es\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -379,7 +393,7 @@
                     }
                 },
                 "url": {
-                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/jobs",
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}?associations=all&exclude=guarantors,futureSchedule",
                     "host": [
                         "{{fineract-backend-server}}"
                     ],
@@ -387,25 +401,51 @@
                         "fineract-provider",
                         "api",
                         "v1",
-                        "jobs"
+                        "loans",
+                        "{{loanId}}"
+                    ],
+                    "query": [
+                        {
+                            "key": "associations",
+                            "value": "all"
+                        },
+                        {
+                            "key": "exclude",
+                            "value": "guarantors,futureSchedule"
+                        }
                     ]
                 }
             },
             "response": []
         },
         {
-            "name": "Run Job Apply Penalties to overdue loans",
+            "name": "Request - change over due date",
             "event": [
                 {
                     "listen": "test",
                     "script": {
                         "exec": [
-                            "pm.test(\"Status code is 202 (Accepted)\", function () {\r",
-                            "    pm.expect(pm.response.code).to.equal(202);\r",
-                            "});"
+                            "    pm.response.to.have.status(200);\r",
+                            "    pm.expect(responseBody).to.not.equals( null );\r",
+                            "    var jsonData = JSON.parse(pm.response.text());\r",
+                            "\r",
+                            "    pm.environment.set(\"resourceId\", jsonData.resourceId);\r",
+                            ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
+                    }
+                },
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
@@ -425,7 +465,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "\r\n",
+                    "raw": "{\r\n    \"rescheduleFromDate\": \"{{dueDate2ndInstallment}}\",\r\n    \"rescheduleReasonId\": 2553,\r\n    \"submittedOnDate\": \"{{todayDate}}\",\r\n    \"rescheduleReasonComment\": \"\",\r\n    \"adjustedDueDate\": \"{{newDueDate2ndInstallment}}\",\r\n    \"graceOnPrincipal\": \"\",\r\n    \"rediferirTerms\": \"\",\r\n    \"graceOnInterest\": \"\",\r\n    \"extraTerms\": \"\",\r\n    \"newInterestRate\": \"\",\r\n     \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"es\",\r\n    \"loanId\": \"{{loanId}}\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -433,7 +473,7 @@
                     }
                 },
                 "url": {
-                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/jobs/{{jobId}}?command=executeJob",
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/rescheduleloans?command=reschedule",
                     "host": [
                         "{{fineract-backend-server}}"
                     ],
@@ -441,13 +481,12 @@
                         "fineract-provider",
                         "api",
                         "v1",
-                        "jobs",
-                        "{{jobId}}"
+                        "rescheduleloans"
                     ],
                     "query": [
                         {
                             "key": "command",
-                            "value": "executeJob"
+                            "value": "reschedule"
                         }
                     ]
                 }
@@ -455,48 +494,38 @@
             "response": []
         },
         {
-            "name": "Job Finished?",
+            "name": "Request - approval",
             "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "    pm.response.to.have.status(200);\r",
+                            "    pm.expect(responseBody).to.not.equals( null );\r",
+                            "    var jsonData = JSON.parse(pm.response.text());\r",
+                            "\r",
+                            "    pm.environment.set(\"transactionId\", jsonData.resourceId);\r",
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                    }
+                },
                 {
                     "listen": "prerequest",
                     "script": {
                         "exec": [
                             ""
                         ],
-                        "type": "text/javascript"
-                    }
-                },
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            "    pm.test( \"Valid?\", function(){\r",
-                            "        pm.response.to.have.status(200);\r",
-                            "        pm.expect(responseBody).to.not.equals( null );\r",
-                            "\r",
-                            "        var jsonData = JSON.parse(responseBody);\r",
-                            "        var currentlyRunning = false;\r",
-                            "\r",
-                            "        jsonData.forEach(function(cam) {\r",
-                            "            if(!currentlyRunning && cam.currentlyRunning) {\r",
-                            "                currentlyRunning = true;\r",
-                            "            }\r",
-                            "        });\r",
-                            "\r",
-                            "        if(currentlyRunning) {\r",
-                            "            setTimeout(function() { postman.setNextRequest(request.name); }, 10000);\r",
-                            "        }\r",
-                            "    } );"
-                        ],
-                        "type": "text/javascript"
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
-            "protocolProfileBehavior": {
-                "disableBodyPruning": true
-            },
             "request": {
-                "method": "GET",
+                "method": "POST",
                 "header": [
                     {
                         "key": "Authorization",
@@ -511,7 +540,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{}",
+                    "raw": "{\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"es\",\r\n    \"approvedOnDate\": \"{{todayDate}}\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -519,7 +548,7 @@
                     }
                 },
                 "url": {
-                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/jobs",
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/rescheduleloans/{{resourceId}}?command=approve",
                     "host": [
                         "{{fineract-backend-server}}"
                     ],
@@ -527,37 +556,74 @@
                         "fineract-provider",
                         "api",
                         "v1",
-                        "jobs"
+                        "rescheduleloans",
+                        "{{resourceId}}"
+                    ],
+                    "query": [
+                        {
+                            "key": "command",
+                            "value": "approve"
+                        }
                     ]
                 }
             },
             "response": []
         },
         {
-            "name": "Test Original Amounts",
+            "name": "Test 2nd Installment due date",
             "event": [
                 {
                     "listen": "test",
                     "script": {
                         "exec": [
+                            "var moment = require(\"moment\");\r",
+                            "\r",
                             "pm.response.to.have.status(200);\r",
                             "pm.expect(pm.response.text()).to.not.equals( null );\r",
                             "var jsonData = JSON.parse(pm.response.text());\r",
                             "\r",
+                            "\r",
+                            "pm.environment.set(\"totalDueForPeriod\", jsonData.repaymentSchedule.periods[1].totalDueForPeriod);\r",
+                            "\r",
+                            "\r",
+                            "const fromDateArray = [...jsonData.repaymentSchedule.periods[1].dueDate]; \r",
+                            "fromDateArray[1] = fromDateArray[1] - 1; \r",
+                            "const dateToCheck = moment(fromDateArray);\r",
+                            "\r",
+                            "\r",
+                            "pm.environment.set(\"dueDateForPeriod\", dateToCheck.format(\"DD-MM-YY\"));\r",
+                            "\r",
+                            "\r",
                             "pm.test(\"Number of installments is 4\", function () {\r",
-                            "    // The test assumes the installment data is in an array called 'repayments'\r",
                             "    pm.expect(jsonData.repaymentSchedule.periods.length).to.be.equal(1 + 4);\r",
                             "});\r",
                             "\r",
+                            "pm.test(\"Verify 2nd installment Due Date\", function () {\r",
                             "\r",
-                            "pm.test(\"Verify Charges installments\", function () {\r",
-                            "\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[1].penaltyChargesDue).to.be.greaterThan(0);\r",
+                            "    const fromDateArray = [...jsonData.repaymentSchedule.periods[2].dueDate]; \r",
+                            "    fromDateArray[1] = fromDateArray[1] - 1; \r",
+                            "    const dateToCheck = moment(fromDateArray);\r",
                             "    \r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[2].penaltyChargesDue).to.be.greaterThan(0);\r",
+                            "    const dateAskedFor2ndInstallment = moment(pm.environment.get(\"newDueDate2ndInstallment\"), \"DD-MM-YY\"); \r",
                             "\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[3].penaltyChargesDue).to.be.greaterThan(0);\r",
+                            "// Here as we don´t calculate hollidays over the original reqested data, we need to have +-3 days as tolerance ( needs to be < 5 days)\r",
                             "\r",
+                            "    const avgDeviation = 3;\r",
+                            "\r",
+                            "    const startDate = dateAskedFor2ndInstallment.clone().subtract(avgDeviation, 'days');\r",
+                            "    \r",
+                            "    const endDate = dateAskedFor2ndInstallment.clone().add(avgDeviation, 'days'); \r",
+                            "    \r",
+                            "\r",
+                            "    const isBetween = dateToCheck.isBetween(startDate, endDate, 'day', '[]');\r",
+                            "    \r",
+                            "    console.log('dateToCheck', dateToCheck.format(\"DD-MM-YY\"));\r",
+                            "    console.log('startDate', startDate.format(\"DD-MM-YY\"));\r",
+                            "    console.log('endDate', endDate.format(\"DD-MM-YY\"));\r",
+                            "    console.log('isBetween', isBetween);\r",
+                            "\r",
+                            "    \r",
+                            "    pm.expect(isBetween).to.be.true;\r",
                             "});"
                         ],
                         "type": "text/javascript",
@@ -676,7 +742,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"transactionDate\": \"{{todayDate}}\",\r\n    \"transactionAmount\": 1000000,\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"es\"\r\n}",
+                    "raw": "{\r\n    \"transactionDate\": \"{{dueDateForPeriod}}\",\r\n    \"transactionAmount\": {{totalDueForPeriod}},\r\n    \"honorariosAmount\": 0,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": 1,\r\n    \"note\": \"\",\r\n    \"channelName\": \"03 - Oficina BCS\",\r\n    \"repaymentBankId\": \"\",\r\n    \"pointOfSalesCode\": \"\",\r\n    \"reduceInstallmentAmount\": true,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"es\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -707,31 +773,48 @@
             "response": []
         },
         {
-            "name": "Test Penalties Paid",
+            "name": "Test 2nd Installment due date after Repayment",
             "event": [
                 {
                     "listen": "test",
                     "script": {
                         "exec": [
+                            "var moment = require(\"moment\");\r",
+                            "\r",
                             "pm.response.to.have.status(200);\r",
                             "pm.expect(pm.response.text()).to.not.equals( null );\r",
-                            "\r",
                             "var jsonData = JSON.parse(pm.response.text());\r",
                             "\r",
                             "pm.test(\"Number of installments is 4\", function () {\r",
                             "    pm.expect(jsonData.repaymentSchedule.periods.length).to.be.equal(1 + 4);\r",
                             "});\r",
                             "\r",
-                            "pm.test(\"Verify Paid Penalties amounts\", function () {\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[1].complete).to.be.equal(true);\r",
+                            "pm.test(\"Verify 2nd installment Due Date\", function () {\r",
                             "\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[2].complete).to.be.equal(true);\r",
+                            "    const fromDateArray = [...jsonData.repaymentSchedule.periods[2].dueDate]; \r",
+                            "    fromDateArray[1] = fromDateArray[1] - 1; \r",
+                            "    const dateToCheck = moment(fromDateArray);\r",
+                            "    \r",
+                            "    const dateAskedFor2ndInstallment = moment(pm.environment.get(\"newDueDate2ndInstallment\"), \"DD-MM-YY\"); \r",
                             "\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[3].complete).to.be.equal(true);\r",
-                            "});\r",
+                            "// Here as we don´t calculate hollidays over the original reqested data, we need to have +-3 days as tolerance ( needs to be < 5 days)\r",
                             "\r",
-                            "pm.test(\"Verify Residual Payment In 3rd Installment\", function () {\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[4].totalPaidForPeriod).to.be.greaterThan(0);\r",
+                            "    const avgDeviation = 3;\r",
+                            "\r",
+                            "    const startDate = dateAskedFor2ndInstallment.clone().subtract(avgDeviation, 'days');\r",
+                            "    \r",
+                            "    const endDate = dateAskedFor2ndInstallment.clone().add(avgDeviation, 'days'); \r",
+                            "    \r",
+                            "\r",
+                            "    const isBetween = dateToCheck.isBetween(startDate, endDate, 'day', '[]');\r",
+                            "    \r",
+                            "    console.log('dateToCheck', dateToCheck.format(\"DD-MM-YY\"));\r",
+                            "    console.log('startDate', startDate.format(\"DD-MM-YY\"));\r",
+                            "    console.log('endDate', endDate.format(\"DD-MM-YY\"));\r",
+                            "    console.log('isBetween', isBetween);\r",
+                            "\r",
+                            "    \r",
+                            "    pm.expect(isBetween).to.be.true;\r",
                             "});"
                         ],
                         "type": "text/javascript",
@@ -853,30 +936,48 @@
             "response": []
         },
         {
-            "name": "Test Original Amounts After Undo",
+            "name": "Test 2nd Installment due date after Undo",
             "event": [
                 {
                     "listen": "test",
                     "script": {
                         "exec": [
+                            "var moment = require(\"moment\");\r",
+                            "\r",
                             "pm.response.to.have.status(200);\r",
                             "pm.expect(pm.response.text()).to.not.equals( null );\r",
                             "var jsonData = JSON.parse(pm.response.text());\r",
                             "\r",
                             "pm.test(\"Number of installments is 4\", function () {\r",
-                            "    // The test assumes the installment data is in an array called 'repayments'\r",
                             "    pm.expect(jsonData.repaymentSchedule.periods.length).to.be.equal(1 + 4);\r",
                             "});\r",
                             "\r",
+                            "pm.test(\"Verify 2nd installment Due Date\", function () {\r",
                             "\r",
-                            "pm.test(\"Verify Charges installments\", function () {\r",
-                            "\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[1].penaltyChargesDue).to.be.greaterThan(0);\r",
+                            "    const fromDateArray = [...jsonData.repaymentSchedule.periods[2].dueDate]; \r",
+                            "    fromDateArray[1] = fromDateArray[1] - 1; \r",
+                            "    const dateToCheck = moment(fromDateArray);\r",
                             "    \r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[2].penaltyChargesDue).to.be.greaterThan(0);\r",
+                            "    const dateAskedFor2ndInstallment = moment(pm.environment.get(\"newDueDate2ndInstallment\"), \"DD-MM-YY\"); \r",
                             "\r",
-                            "    pm.expect(jsonData.repaymentSchedule.periods[3].penaltyChargesDue).to.be.greaterThan(0);\r",
+                            "// Here as we don´t calculate hollidays over the original reqested data, we need to have +-3 days as tolerance ( needs to be < 5 days)\r",
                             "\r",
+                            "    const avgDeviation = 3;\r",
+                            "\r",
+                            "    const startDate = dateAskedFor2ndInstallment.clone().subtract(avgDeviation, 'days');\r",
+                            "    \r",
+                            "    const endDate = dateAskedFor2ndInstallment.clone().add(avgDeviation, 'days'); \r",
+                            "    \r",
+                            "\r",
+                            "    const isBetween = dateToCheck.isBetween(startDate, endDate, 'day', '[]');\r",
+                            "    \r",
+                            "    console.log('dateToCheck', dateToCheck.format(\"DD-MM-YY\"));\r",
+                            "    console.log('startDate', startDate.format(\"DD-MM-YY\"));\r",
+                            "    console.log('endDate', endDate.format(\"DD-MM-YY\"));\r",
+                            "    console.log('isBetween', isBetween);\r",
+                            "\r",
+                            "    \r",
+                            "    pm.expect(isBetween).to.be.true;\r",
                             "});"
                         ],
                         "type": "text/javascript",
@@ -965,7 +1066,8 @@
                             "} );"
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 },
                 {
@@ -1039,7 +1141,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
@@ -1059,7 +1162,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"transactionDate\": \"17-09-25\",\r\n    \"note\": null,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\"\r\n}",
+                    "raw": "{\r\n    \"transactionDate\": \"{{todayDate}}\",\r\n    \"note\": null,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"

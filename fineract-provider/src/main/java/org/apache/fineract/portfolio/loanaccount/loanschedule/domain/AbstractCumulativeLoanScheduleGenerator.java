@@ -1576,14 +1576,12 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
         // due date changes should be applied only for that dueDate
         if (loanApplicationTerms.getLoanTermVariations().hasDueDateVariation(scheduledDueDate)) {
             LoanTermVariationsData loanTermVariationsData = loanApplicationTerms.getLoanTermVariations().nextDueDateVariation();
-            if (DateUtils.isEqual(modifiedScheduledDueDate, loanTermVariationsData.getTermVariationApplicableFrom())) {
-                modifiedScheduledDueDate = loanTermVariationsData.getDateValue();
-                if (!loanTermVariationsData.isSpecificToInstallment()) {
-                    scheduleParams.setActualRepaymentDate(modifiedScheduledDueDate);
-                    loanApplicationTerms.setNewScheduledDueDateStart(modifiedScheduledDueDate);
-                }
-                loanTermVariationsData.setProcessed(true);
+            modifiedScheduledDueDate = loanTermVariationsData.getDateValue();
+            if (!loanTermVariationsData.isSpecificToInstallment()) {
+                scheduleParams.setActualRepaymentDate(modifiedScheduledDueDate);
+                loanApplicationTerms.setNewScheduledDueDateStart(modifiedScheduledDueDate);
             }
+            loanTermVariationsData.setProcessed(true);
         }
 
         for (LoanTermVariationsData variation : interestRatesForInstallments) {
