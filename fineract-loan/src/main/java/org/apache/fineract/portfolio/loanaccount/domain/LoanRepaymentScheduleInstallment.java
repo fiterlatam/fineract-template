@@ -2013,6 +2013,8 @@ public class LoanRepaymentScheduleInstallment extends AbstractAuditableWithUTCDa
     }
 
     public void updateComponents(LoanRepaymentScheduleInstallment copy, MonetaryCurrency currency) {
+        this.setFromDate(copy.fromDate);
+        this.setDueDate(copy.dueDate);
         this.setPrincipal(copy.getPrincipal(currency).getAmount());
         this.setRecalculateEMI(copy.recalculateEMI);
         this.setReduceTerm(copy.reduceTerm);
