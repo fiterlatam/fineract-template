@@ -31,6 +31,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -137,6 +138,10 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "installment")
     private Set<LoanInstallmentCharge> installmentCharges = new HashSet<>();
+
+    @Setter
+    @Transient
+    private BigDecimal npaInterestToWriteOff;
 
     LoanRepaymentScheduleInstallment() {
         this.installmentNumber = null;
@@ -301,6 +306,10 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
     public Money getPenaltyChargesCharged(final MonetaryCurrency currency) {
         return Money.of(currency, this.penaltyCharges);
+    }
+
+    public Money getNpaInterestToWriteOff(final MonetaryCurrency currency) {
+        return Money.of(currency, this.npaInterestToWriteOff);
     }
 
     public Money getPenaltyChargesPaid(final MonetaryCurrency currency) {
