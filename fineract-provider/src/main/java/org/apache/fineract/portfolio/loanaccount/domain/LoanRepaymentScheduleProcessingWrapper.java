@@ -100,7 +100,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
                         amount = amount.add(totalPrincipal.getAmount()).add(totalInterest.getAmount());
                     } else if (loanCharge.getChargeCalculation().isPercentageOfInterest()) {
                         amount = amount.add(totalInterest.getAmount());
-                    }else if (loanCharge.getChargeCalculation().isPercentageOfOutstandingBalance()) {
+                    } else if (loanCharge.getChargeCalculation().isPercentageOfOutstandingBalance()) {
                         amount = amount.add(loanCharge.getLoan().getSummary().getTotalPrincipalOutstanding());
                     } else {
                         // If charge type is specified due date and loan is

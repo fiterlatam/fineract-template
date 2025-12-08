@@ -6632,13 +6632,15 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public LoanRepaymentScheduleInstallment fetchLoanForeclosureDetail(final LocalDate closureDate) {
-        Money[] receivables = retrieveIncomeOutstandingTillDate(closureDate);
+        Money[] receivables = retrieveIncomeOutstandingTillDateORNpaDate(closureDate);
         Money totalPrincipal = Money.of(getCurrency(), this.getSummary().getTotalPrincipalOutstanding());
-//        totalPrincipal = totalPrincipal.minus(receivables[3]);
         final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails = null;
         final LocalDate currentDate = DateUtils.getBusinessLocalDate();
-        return new LoanRepaymentScheduleInstallment(null, 0, currentDate, currentDate, totalPrincipal.getAmount(),
-                receivables[0].getAmount(), receivables[1].getAmount(), receivables[2].getAmount(), false, compoundingDetails);
+        LoanRepaymentScheduleInstallment loanRepaymentScheduleInstallment = new LoanRepaymentScheduleInstallment(null, 0, currentDate,
+                currentDate, totalPrincipal.getAmount(), receivables[0].getAmount(), receivables[1].getAmount(), receivables[2].getAmount(),
+                false, compoundingDetails);
+        loanRepaymentScheduleInstallment.setNpaInterestToWriteOff(receivables[4].getAmount());
+        return loanRepaymentScheduleInstallment;
     }
 
     public LoanRepaymentScheduleInstallment fetchLoanFuturePaymentDetail(final LocalDate closureDate) {
@@ -6694,6 +6696,76 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         balances[1] = fee;
         balances[2] = penalty;
         balances[3] = paidFromFutureInstallments;
+        return balances;
+    }
+
+    public Money[] retrieveIncomeOutstandingTillDateORNpaDate(final LocalDate paymentDate) {
+        LocalDate lastAccrualDate = null;
+        if (this.isNpa) {
+            lastAccrualDate = this.accruedTill;
+        }
+        Money[] balances = new Money[5];
+        final MonetaryCurrency currency = getCurrency();
+        Money interest = Money.zero(currency);
+        Money npaInterest = Money.zero(currency);
+        Money paidFromFutureInstallments = Money.zero(currency);
+        Money fee = Money.zero(currency);
+        Money penalty = Money.zero(currency);
+        // get the charges
+        for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
+            if (!installment.getDueDate().isAfter(paymentDate)) {
+                interest = interest.plus(installment.getInterestOutstanding(currency));
+                penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
+                fee = fee.plus(installment.getFeeChargesOutstanding(currency));
+            } else if (installment.getFromDate().isBefore(paymentDate)) {
+                Money[] balancesForCurrentPeroid = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment);
+                if (balancesForCurrentPeroid[0].isGreaterThan(balancesForCurrentPeroid[5])) {
+                    interest = interest.plus(balancesForCurrentPeroid[0]).minus(balancesForCurrentPeroid[5]);
+                } else {
+                    paidFromFutureInstallments = paidFromFutureInstallments.plus(balancesForCurrentPeroid[5])
+                            .minus(balancesForCurrentPeroid[0]);
+                }
+                if (balancesForCurrentPeroid[1].isGreaterThan(balancesForCurrentPeroid[3])) {
+                    fee = fee.plus(balancesForCurrentPeroid[1].minus(balancesForCurrentPeroid[3]));
+                } else {
+                    paidFromFutureInstallments = paidFromFutureInstallments
+                            .plus(balancesForCurrentPeroid[3].minus(balancesForCurrentPeroid[1]));
+                }
+                if (balancesForCurrentPeroid[2].isGreaterThan(balancesForCurrentPeroid[4])) {
+                    penalty = penalty.plus(balancesForCurrentPeroid[2].minus(balancesForCurrentPeroid[4]));
+                } else {
+                    paidFromFutureInstallments = paidFromFutureInstallments.plus(balancesForCurrentPeroid[4])
+                            .minus(balancesForCurrentPeroid[2]);
+                }
+            } else if (installment.getDueDate().isAfter(paymentDate)) {
+                paidFromFutureInstallments = paidFromFutureInstallments.plus(installment.getInterestPaid(currency))
+                        .plus(installment.getPenaltyChargesPaid(currency)).plus(installment.getFeeChargesPaid(currency));
+            }
+
+        }
+
+        // get the interest for npa period
+        if (this.isNpa && lastAccrualDate != null) {
+            for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
+                if (!installment.getDueDate().isAfter(lastAccrualDate)) {} else if (installment.getFromDate().isBefore(lastAccrualDate)) {
+                    Money[] balancesForCurrentPeroid = fetchInterestFeeAndPenaltyTillDate(lastAccrualDate, currency, installment);
+                    npaInterest = npaInterest.plus(installment.getInterestOutstanding(currency).minus(balancesForCurrentPeroid[0]));
+                } else if (installment.getDueDate().isAfter(lastAccrualDate)
+                        && installment.getDueDate().isBefore(paymentDate.plusDays(1))) {
+                    npaInterest = npaInterest.plus(installment.getInterestOutstanding(currency));
+                } else if (installment.getDueDate().isAfter(paymentDate) && installment.getFromDate().isBefore(paymentDate)) {
+                    Money[] balancesForCurrentPeroid = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment);
+                    npaInterest = npaInterest.plus(installment.getInterestOutstanding(currency).minus(balancesForCurrentPeroid[0]));
+                }
+
+            }
+        }
+
+        balances[0] = interest;
+        balances[1] = fee;
+        balances[2] = penalty;
+        balances[3] = paidFromFutureInstallments;
+        balances[4] = npaInterest;
         return balances;
     }
 

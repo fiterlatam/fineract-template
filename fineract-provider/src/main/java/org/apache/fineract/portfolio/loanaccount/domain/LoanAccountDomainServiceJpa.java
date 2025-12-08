@@ -745,6 +745,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             Money interestPortion = foreCloseDetail.getInterestCharged(currency).minus(accruedReceivables[0]);
             Money feePortion = foreCloseDetail.getFeeChargesCharged(currency).minus(accruedReceivables[1]);
             Money penaltyPortion = foreCloseDetail.getPenaltyChargesCharged(currency).minus(accruedReceivables[2]);
+            Money npaInterestToWriteOff = foreCloseDetail.getNpaInterestToWriteOff(currency);
             Money total = interestPortion.plus(feePortion).plus(penaltyPortion);
             if (total.isGreaterThanZero()) {
                 LoanTransaction accrualTransaction = LoanTransaction.accrueTransaction(loan, loan.getOffice(), foreClosureDate,
@@ -773,6 +774,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         Money feePayable = foreCloseDetail.getFeeChargesCharged(currency);
         Money penaltyPayable = foreCloseDetail.getPenaltyChargesCharged(currency);
         Money payPrincipal = foreCloseDetail.getPrincipal(currency);
+        Money npaInterestToWriteOff = foreCloseDetail.getNpaInterestToWriteOff(currency);
         BigDecimal totalInterestOutstanding = loan.getSummary().getTotalInterestOutstanding();
         Money interestToWaive = Money.of(currency, totalInterestOutstanding.subtract(interestPayable.getAmount()));
         Money totalWriteOff = payPrincipal.plus(totalInterestOutstanding).plus(feePayable).plus(penaltyPayable);
@@ -801,9 +803,11 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             payment = LoanTransaction.repayment(loan.getOffice(), totalWriteOff, paymentDetail, foreClosureDate, externalId);
             payment.updateLoan(loan);
             payment.setIsForeclosureTransaction(true);
-            payment.setReceivableInterestPortion(interestReceivable.getAmount());
-            if (!isDecliningBalance) payment.setReceivableInterestPortion(interestToWaive.getAmount());
-            if (!isDecliningBalance) payment.setIncomeInterestPortion(interestReceivable.getAmount());
+            Money netInterestReceivable = interestReceivable.minus(npaInterestToWriteOff);
+            payment.setReceivableInterestPortion(netInterestReceivable.getAmount());
+            if (!isDecliningBalance)
+                payment.setReceivableInterestPortion(totalInterestOutstanding.subtract(netInterestReceivable.getAmount()));
+            if (!isDecliningBalance) payment.setIncomeInterestPortion(netInterestReceivable.getAmount());
             newTransactions.add(payment);
         }
 
