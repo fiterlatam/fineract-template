@@ -6755,7 +6755,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                     npaInterest = npaInterest.plus(installment.getInterestOutstanding(currency));
                 } else if (installment.getDueDate().isAfter(paymentDate) && installment.getFromDate().isBefore(paymentDate)) {
                     Money[] balancesForCurrentPeroid = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment);
-                    npaInterest = npaInterest.plus(installment.getInterestOutstanding(currency).minus(balancesForCurrentPeroid[0]));
+                    npaInterest = npaInterest.plus(balancesForCurrentPeroid[0]);
                 }
 
             }
