@@ -121,7 +121,9 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
 
             interestPortion = currentInstallment.payInterestComponent(transactionDate, transactionAmountRemaining);
             if (!Boolean.TRUE.equals(loanTransaction.getIsForeclosureTransaction())) {
-                if (!currentInstallment.getDueDate().isBefore(transactionDate)) {
+                LocalDate controlDate = transactionDate;
+                if (loanTransaction.getLoan().isNpa()) controlDate=loanTransaction.getLoan().getAccruedTill();
+                if (!currentInstallment.getDueDate().isBefore(controlDate)) {
                     Money currentIncomePortion = loanTransaction.getIncomeInterestPortion(currency);
                     Money newIncomePortion = currentInstallment.getInterestAccrued(currency);
 
