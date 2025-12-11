@@ -323,7 +323,7 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
 
     @Override
     public void logUserAuthenticationDetails(AppUser appUser, HttpServletRequest servletRequest, String action, String result,
-            String username) {
+            String username, boolean processed) {
         if (appUser == null) {
             appUser = this.appUserRepository.findAppUserByName(username);
         }
@@ -342,8 +342,8 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
         Long userId = appUser.getId();
         this.jdbcTemplate.update("insert into m_portfolio_command_source "
                 + "(action_name,entity_name,office_id,api_get_url,command_as_json,resource_id,maker_id,made_on_date,processing_result_enum) "
-                + "values(?, ?,?,?,?,?,?,current_timestamp ,1) ", action, "AUTHENTICATION", appUser.getOffice().getId(), "/authenticate",
-                "{ipAddress:\"" + clientIp + "\", result: \"" + result + "\"}", userId, userId);
+                + "values(?, ?,?,?,?,?,?,current_timestamp ,?) ", action, "AUTHENTICATION", appUser.getOffice().getId(), "/authenticate",
+                "{ipAddress:\"" + clientIp + "\", result: \"" + result + "\"}", userId, userId, processed);
     }
 
     @Override
@@ -387,8 +387,8 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
         this.jdbcTemplate.update("UPDATE m_appuser SET reset_password = ?, password=?, nonlocked=true WHERE id = ?", true, encodedPass,
                 appUser.getId());
 
-        final String emailSubject = "Password Reset Successful";
-        final String emailBody = "Your password has been reset. Your new password is: " + newPassword;
+        final String emailSubject = "Restablecimiento de contraseña exitosa";
+        final String emailBody = "Tu contraseña ha sido restablecida. Tu nueva contraseña es: " + newPassword;
         final EmailDetail emailData = new EmailDetail(emailSubject, emailBody, appUser.getEmail(),
                 appUser.getFirstname() + " " + appUser.getLastname());
         emailService.sendDefinedEmail(emailData);

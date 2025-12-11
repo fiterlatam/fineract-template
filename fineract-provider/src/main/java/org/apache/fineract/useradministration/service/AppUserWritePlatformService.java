@@ -32,7 +32,7 @@ public interface AppUserWritePlatformService {
 
     CommandProcessingResult deleteUser(Long userId);
 
-    void logUserAuthenticationDetails(AppUser appUser, HttpServletRequest servletRequest, String action, String result, String username);
+    void logUserAuthenticationDetails(AppUser appUser, HttpServletRequest servletRequest, String action, String result, String username, boolean processed);
 
     AppUser selfResetUserPassword(Long userId, String apiRequestBodyAsJson, PlatformPasswordEncoder platformPasswordEncoder);
 

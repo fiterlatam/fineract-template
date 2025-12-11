@@ -163,10 +163,14 @@ public class AuthenticationApiResource {
                             END
                         WHERE username = ?;
                         """, maxLoginAttempt, request.username);
+                this.appUserWritePlatformService.logUserAuthenticationDetails(null, servletRequest, "LOGIN", "Credenciales inválidas",
+                        request.username, false);
                 throw new BadCredentialsException("Authentication failed for user: " + request.username + ": " + e.getMessage());
             }
             // log the failed login attempt
             if (e instanceof LockedException) {
+                this.appUserWritePlatformService.logUserAuthenticationDetails(null, servletRequest, "LOGIN", "Cuenta de usuario bloqueada",
+                        request.username, false);
                 throw new UserAccountErrorException("locked", request.username);
             }
             throw e;
@@ -216,8 +220,8 @@ public class AuthenticationApiResource {
                         new String(base64EncodedAuthenticationKey, StandardCharsets.UTF_8), isTwoFactorRequired,
                         returnClientList ? clientReadPlatformService.retrieveUserClients(userId) : null);
             }
-            this.appUserWritePlatformService.logUserAuthenticationDetails(principal, servletRequest, "LOGIN", "Successful Login",
-                    principal.getUsername());
+            this.appUserWritePlatformService.logUserAuthenticationDetails(principal, servletRequest, "LOGIN", "Inicio de sesión exitoso",
+                    principal.getUsername(), true);
         }
 
         return this.apiJsonSerializerService.serialize(authenticatedUserData);
@@ -258,7 +262,7 @@ public class AuthenticationApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String processLogout(final String apiRequestBodyAsJson, @QueryParam("username") String username,
             @Context HttpServletRequest servletRequest) {
-        this.appUserWritePlatformService.logUserAuthenticationDetails(null, servletRequest, "LOGOUT", "Successful Logout", username);
+        this.appUserWritePlatformService.logUserAuthenticationDetails(null, servletRequest, "LOGOUT", "Successful Logout", username, true);
         return this.apiJsonSerializerService.serialize("");
     }
 }
