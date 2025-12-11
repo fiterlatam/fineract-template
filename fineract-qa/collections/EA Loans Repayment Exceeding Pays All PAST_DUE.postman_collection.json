@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "e1d77161-d809-4405-b427-a548c4d72b48",
+        "_postman_id": "b71c2586-26a3-4854-a1b9-f7d8d65e1018",
         "name": "EA Loans Repayment Exceeding Pays All PAST_DUE",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
@@ -36,7 +36,7 @@
                             "var moment = require(\"moment\");\r",
                             "var todayDate = moment().format((\"DD-MM-YY\"));\r",
                             "\r",
-                            "var twoMOld = moment().add(-3, 'months').add(-3, 'days').format((\"DD-MM-YY\"));\r",
+                            "var twoMOld = moment().add(-3, 'months').add(-8, 'days').format((\"DD-MM-YY\"));\r",
                             "\r",
                             "postman.setEnvironmentVariable(\"todayDate\", todayDate);\r",
                             "postman.setEnvironmentVariable(\"creationAndDisbusmentDate\", twoMOld);\r",
@@ -557,7 +557,6 @@
                             "    pm.expect(jsonData.repaymentSchedule.periods[2].penaltyChargesDue).to.be.greaterThan(0);\r",
                             "\r",
                             "    pm.expect(jsonData.repaymentSchedule.periods[3].penaltyChargesDue).to.be.greaterThan(0);\r",
-                            "\r",
                             "});"
                         ],
                         "type": "text/javascript",
