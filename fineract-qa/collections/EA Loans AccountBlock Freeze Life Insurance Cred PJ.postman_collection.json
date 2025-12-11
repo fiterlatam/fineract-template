@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "cbf45993-f3f6-4680-8b38-31ca46c6b6ca",
+        "_postman_id": "9a41861f-17dc-4c85-adcb-b5baa09d975b",
         "name": "EA Loans AccountBlock Freeze Life Insurance Cred PJ",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
@@ -891,7 +891,8 @@
                             "} );"
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 },
                 {
@@ -965,7 +966,8 @@
                             ""
                         ],
                         "type": "text/javascript",
-                        "packages": {}
+                        "packages": {},
+                        "requests": {}
                     }
                 }
             ],
@@ -985,7 +987,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\r\n    \"transactionDate\": \"17-09-25\",\r\n    \"note\": null,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\"\r\n}",
+                    "raw": "{\r\n    \"transactionDate\": \"{{todayDate}}\",\r\n    \"note\": null,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\"\r\n}",
                     "options": {
                         "raw": {
                             "language": "json"
