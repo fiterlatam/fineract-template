@@ -4010,4 +4010,19 @@ public class CommandWrapperBuilder {
         this.href = "/savingsaccounts/" + accountId + "rebalance";
         return this;
     }
+
+    public CommandWrapperBuilder createPaeDocuments() {
+        this.actionName = "ADD";
+        this.entityName = "PAE_DOCUMENTS";
+        this.href = "/paedocumentation";
+        return this;
+    }
+
+    public CommandWrapperBuilder deletePaeDocuments(final Long documentId) {
+        this.actionName = "DELETE";
+        this.entityName = "PAE_DOCUMENTS";
+        this.entityId = documentId;
+        this.href = "/paedocumentation/" + documentId;
+        return this;
+    }
 }
