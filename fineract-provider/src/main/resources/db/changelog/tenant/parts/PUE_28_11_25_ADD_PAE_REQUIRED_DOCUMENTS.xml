@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="PUE_28_11_25_ADD_PAE_REQUIRED_DOCUMENTS" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="pae_required_documents"/>
+            </not>
+        </preConditions>
+        <createTable tableName="pae_required_documents">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_pae_required_documents"/>
+            </column>
+            <column name="category_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="document_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(500)"/>
+            <column name="accepted_format" type="VARCHAR(100)"/>
+            <column name="created_by" type="BIGINT"/>
+            <column name="created_on" type="DATETIME"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="pae_required_documents"
+                                  baseColumnNames="category_id"
+                                  referencedTableName="m_code_value"
+                                  referencedColumnNames="id"
+                                  constraintName="fk_pae_required_documents_category_id_m_code_value"/>
+
+        <createIndex tableName="pae_required_documents" indexName="idx_pae_required_documents_category_id">
+            <column name="category_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="PUE_29_11_25_ADD_PAE_DOCUMENT_PERMISSIONS" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <sqlCheck expectedResult="0">
+                    <![CDATA[
+                        SELECT COUNT(*) FROM m_permission
+                        WHERE code IN ('READ_PAE_DOCUMENTS', 'ADD_PAE_DOCUMENTS', 'DELETE_PAE_DOCUMENTS')
+                    ]]>
+                </sqlCheck>
+        </preConditions>
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="organisation"/>
+            <column name="code" value="READ_PAE_DOCUMENTS"/>
+            <column name="entity_name" value="PAE_DOCUMENTS"/>
+            <column name="action_name" value="READ"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="organisation"/>
+            <column name="code" value="ADD_PAE_DOCUMENTS"/>
+            <column name="entity_name" value="PAE_DOCUMENTS"/>
+            <column name="action_name" value="CREATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="organisation"/>
+            <column name="code" value="DELETE_PAE_DOCUMENTS"/>
+            <column name="entity_name" value="PAE_DOCUMENTS"/>
+            <column name="action_name" value="DELETE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="PUE_28_11_25_ADD_PAE_REQUIRED_DOCUMENTS_2" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="pae_required_documents" columnName="required"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="pae_required_documents">
+            <column name="required" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>
