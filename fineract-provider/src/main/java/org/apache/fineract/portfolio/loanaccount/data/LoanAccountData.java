@@ -30,6 +30,7 @@ import java.util.Map;
 import javax.persistence.Transient;
 import lombok.Getter;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.data.CodeValueDataExtended;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.dataqueries.data.DatatableData;
 import org.apache.fineract.organisation.agency.data.AgencyData;
@@ -286,7 +287,7 @@ public final class LoanAccountData {
     private Collection<CodeValueData> cancellationReasonOptions;
     private GroupLoanAdditionalData groupLoanAdditionalData;
     private List<EconomicSectorData> economicSectorOptions;
-    private Collection<CodeValueData> paeRequiredGuaranteeOptions;
+    private Collection<CodeValueDataExtended> paeRequiredGuaranteeOptions;
 
     public static LoanAccountData disburseLoanByCheques(final Collection<AgencyData> agencyOptions,
             final Collection<CenterData> centerOptions, final Collection<GroupGeneralData> groupOption,
@@ -1430,7 +1431,7 @@ public final class LoanAccountData {
             final Collection<FundData> fundOptions, final Collection<ChargeData> chargeOptions,
             final Collection<CodeValueData> loanPurposeOptions, final Collection<CodeValueData> loanCollateralOptions,
             final Integer loanCycleNumber, final Collection<LoanAccountSummaryData> clientActiveLoanOptions,
-            Collection<CodeValueData> paeRequiredGuaranteeOptions) {
+            Collection<CodeValueDataExtended> paeRequiredGuaranteeOptions) {
 
         final Long id = null;
         final String accountNo = null;
@@ -2101,7 +2102,7 @@ public final class LoanAccountData {
             final Collection<GroupGeneralData> groupOptions, final Collection<AppUserData> facilitatorOptions,
             final Collection<EnumOptionData> disbursementMethodOptions, BigDecimal requiredGuaranteeAmount,
             final BigDecimal actualGuaranteeAmount, GroupLoanAdditionalData groupLoanAdditionalData,
-            Collection<CodeValueData> paeRequiredGuaranteeOptions) {
+            Collection<CodeValueDataExtended> paeRequiredGuaranteeOptions) {
 
         this.id = id;
         this.accountNo = accountNo;
