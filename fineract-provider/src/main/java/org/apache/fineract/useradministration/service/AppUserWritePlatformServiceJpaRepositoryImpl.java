@@ -73,6 +73,7 @@ import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.useradministration.api.AppUserApiConstant;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.useradministration.domain.AppUserDevices;
 import org.apache.fineract.useradministration.domain.AppUserDevicesRepository;
 import org.apache.fineract.useradministration.domain.AppUserPreviousPassword;
 import org.apache.fineract.useradministration.domain.AppUserPreviousPasswordRepository;
@@ -393,11 +394,12 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                 appUser.getFirstname() + " " + appUser.getLastname());
         emailService.sendDefinedEmail(emailData);
 
-        if (logoutDevices) {
-            this.appUserDevicesRepository.findByUser(appUser).forEach(device -> {
-                this.appUserDevicesRepository.delete(device);
-            });
+        //always log out of all devices.
+        Collection<AppUserDevices> devices = this.appUserDevicesRepository.findByUser(appUser);
+        for (AppUserDevices device : devices) {
+            this.appUserDevicesRepository.delete(device);
         }
+
         List<TFAccessToken> tfAccessTokens = this.tfAccessTokenRepository.findByUser(appUser);
         tfAccessTokens.forEach(token -> {
             this.tfAccessTokenRepository.delete(token);
