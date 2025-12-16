@@ -96,6 +96,7 @@ import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
+import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.data.PostDatedChecksStatus;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
@@ -128,6 +129,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final StandingInstructionRepository standingInstructionRepository;
     private final PostDatedChecksRepository postDatedChecksRepository;
     private final LoanCollateralManagementRepository loanCollateralManagementRepository;
+    private final PaymentDetailWritePlatformService paymentDetailWritePlatformService;
 
     @Transactional
     @Override
@@ -725,10 +727,9 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     }
 
     @Override
-    public Map<String, Object> foreCloseLoan(final Loan loan, final LocalDate foreClosureDate, final JsonCommand command) {
+    public Map<String, Object> foreCloseLoan(final Loan loan, final LocalDate foreClosureDate, final JsonCommand command, Map<String, Object> changes) {
         businessEventNotifierService.notifyPreBusinessEvent(new LoanForeClosurePreBusinessEvent(loan));
         MonetaryCurrency currency = loan.getCurrency();
-        final Map<String, Object> changes = new LinkedHashMap<>();
         List<LoanTransaction> newTransactions = new ArrayList<>();
 
         final List<Long> existingTransactionIds = new ArrayList<>();
@@ -797,7 +798,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         }
 
         if (totalWriteOff.isGreaterThanZero()) {
-            final PaymentDetail paymentDetail = null;
+            final PaymentDetail paymentDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command, changes);
             String externalId = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.receiptNumberParamName, command.parsedJson())
                     + UUID.randomUUID().toString();
             payment = LoanTransaction.repayment(loan.getOffice(), totalWriteOff, paymentDetail, foreClosureDate, externalId);
