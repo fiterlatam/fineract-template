@@ -2547,6 +2547,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 interestOutstanding, feeCharges, penaltyAmount, null, unrecognizedIncomePortion, paymentTypeOptions, null, null, null,
                 outstandingLoanBalance, isReversed);
         loanTransactionData.setBankAccounts(bankAccounts);
+        loanTransactionData.setLoanMaturityDate(loan.getMaturityDate());
         return loanTransactionData;
     }
 

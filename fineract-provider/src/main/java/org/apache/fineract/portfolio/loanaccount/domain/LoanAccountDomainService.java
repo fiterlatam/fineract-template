@@ -69,7 +69,7 @@ public interface LoanAccountDomainService {
 
     void saveLoanWithDataIntegrityViolationChecks(Loan loan);
 
-    Map<String, Object> foreCloseLoan(Loan loan, LocalDate foreClourseDate, JsonCommand command);
+    Map<String, Object> foreCloseLoan(Loan loan, LocalDate foreClourseDate, JsonCommand command, Map<String, Object> changes);
 
     /**
      * Disables all standing instructions linked to a closed loan
