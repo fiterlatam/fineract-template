@@ -234,7 +234,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             List<PrequalificationStatusLog> prequalificationStatusLogs = this.preQualificationLogRepository.groupStatusLogs(groupId);
             List<PrequalificationTimeline> currentStatusTimeline = resolveCurrentStatusTimeline(group.get(), prequalificationStatusLogs);
             List<EnumOptionData> expectedTimeline = resolveFutureStatusTimeline();
-            if (group.get().getLoanProduct().getRequireCommitteeApproval()) {
+            if (group.get().getLoanProduct().getRequireCommitteeApproval() != null && group.get().getLoanProduct().getRequireCommitteeApproval()) {
                 expectedTimeline = resolveCommitteeApprovalsTimeline(clientData, group.get(), expectedTimeline);
             }
             clientData.updateCurrentStatusTimeline(currentStatusTimeline);
@@ -516,7 +516,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             } else if (type.equals("committeeapprovals")) {
 
                 if (committeeValueData == null) {
-                    extraCriteria += " and g.status IN( " + PrequalificationStatus.INVALID.getValue().toString() + ") ";
+                    extraCriteria += " and g.status IN( " + PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().toString() + ") ";
                 } else {
                     extraCriteria += " and g.status IN( " + resolveCommitteeGroupStatus(committeeValueData) + ") ";
                 }
