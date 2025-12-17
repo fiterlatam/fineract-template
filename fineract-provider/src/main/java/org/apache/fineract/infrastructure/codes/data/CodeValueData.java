@@ -79,8 +79,8 @@ public class CodeValueData implements Serializable {
         return new CodeValueData(id, name, position, description, isActive, mandatory);
     }
 
-    private CodeValueData(final Long id, final String name, final Integer position, final String description, final boolean active,
-            final boolean mandatory) {
+    protected CodeValueData(final Long id, final String name, final Integer position, final String description, final boolean active,
+                            final boolean mandatory) {
         this.id = id;
         this.name = name;
         this.position = position;
