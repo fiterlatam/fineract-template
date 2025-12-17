@@ -108,14 +108,14 @@ public class CenterGroupCommandFromApiJsonDeserializer {
             final BigDecimal latitude = this.fromApiJsonHelper
                     .extractBigDecimalWithLocaleNamed(CenterGroupConstants.CenterGroupSupportedParameters.LATITUDE.getValue(), element);
             baseDataValidator.reset().parameter(CenterGroupConstants.CenterGroupSupportedParameters.LATITUDE.getValue()).value(latitude)
-                    .ignoreIfNull();
+                    .ignoreIfNull().zeroOrPositiveAmount();
         }
 
         if (this.fromApiJsonHelper.parameterExists(CenterGroupConstants.CenterGroupSupportedParameters.LONGITUDE.getValue(), element)) {
             final BigDecimal longitude = this.fromApiJsonHelper
                     .extractBigDecimalWithLocaleNamed(CenterGroupConstants.CenterGroupSupportedParameters.LONGITUDE.getValue(), element);
             baseDataValidator.reset().parameter(CenterGroupConstants.CenterGroupSupportedParameters.LONGITUDE.getValue()).value(longitude)
-                    .ignoreIfNull();
+                    .ignoreIfNull().zeroOrPositiveAmount();
         }
 
         if (this.fromApiJsonHelper.parameterExists(CenterGroupConstants.CenterGroupSupportedParameters.FORMATION_DATE.getValue(),
@@ -175,14 +175,14 @@ public class CenterGroupCommandFromApiJsonDeserializer {
             final BigDecimal latitude = this.fromApiJsonHelper
                     .extractBigDecimalWithLocaleNamed(CenterGroupConstants.CenterGroupSupportedParameters.LATITUDE.getValue(), element);
             baseDataValidator.reset().parameter(CenterGroupConstants.CenterGroupSupportedParameters.LATITUDE.getValue()).value(latitude)
-                    .ignoreIfNull();
+                    .ignoreIfNull().zeroOrPositiveAmount();
         }
 
         if (this.fromApiJsonHelper.parameterExists(CenterGroupConstants.CenterGroupSupportedParameters.LONGITUDE.getValue(), element)) {
             final BigDecimal longitude = this.fromApiJsonHelper
                     .extractBigDecimalWithLocaleNamed(CenterGroupConstants.CenterGroupSupportedParameters.LONGITUDE.getValue(), element);
             baseDataValidator.reset().parameter(CenterGroupConstants.CenterGroupSupportedParameters.LONGITUDE.getValue()).value(longitude)
-                    .ignoreIfNull();
+                    .ignoreIfNull().zeroOrPositiveAmount();
         }
 
         if (this.fromApiJsonHelper.parameterExists(CenterGroupConstants.CenterGroupSupportedParameters.FORMATION_DATE.getValue(),
