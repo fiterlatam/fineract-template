@@ -159,7 +159,7 @@ public class AuthenticationApiResource {
                         SET
                             incorrect_access_count = COALESCE(incorrect_access_count, 0) + 1,
                             nonlocked = CASE
-                                WHEN COALESCE(incorrect_access_count, 0) + 1 >= ? THEN FALSE
+                                WHEN COALESCE(incorrect_access_count, 0) + 1 > ? THEN FALSE
                                 ELSE nonlocked
                             END
                         WHERE username = ?;
