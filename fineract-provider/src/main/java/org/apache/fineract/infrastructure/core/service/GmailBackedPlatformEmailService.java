@@ -23,9 +23,11 @@ import org.apache.fineract.infrastructure.configuration.data.SMTPCredentialsData
 import org.apache.fineract.infrastructure.configuration.service.ExternalServicesPropertiesReadPlatformService;
 import org.apache.fineract.infrastructure.core.domain.EmailDetail;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+
+import javax.mail.internet.MimeMessage;
 
 @Service
 public class GmailBackedPlatformEmailService implements PlatformEmailService {
@@ -82,11 +84,13 @@ public class GmailBackedPlatformEmailService implements PlatformEmailService {
         props.put("mail.smtp.socketFactory.fallback", "true");
 
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(smtpCredentialsData.getFromEmail()); // same email address used for the authentication
-            message.setTo(emailDetails.getAddress());
-            message.setSubject(emailDetails.getSubject());
-            message.setText(emailDetails.getBody());
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            helper.setFrom(smtpCredentialsData.getFromEmail());
+            helper.setTo(emailDetails.getAddress());
+            helper.setSubject(emailDetails.getSubject());
+            helper.setText(emailDetails.getBody(), false); // false = plain text
+
             mailSender.send(message);
 
         } catch (Exception e) {

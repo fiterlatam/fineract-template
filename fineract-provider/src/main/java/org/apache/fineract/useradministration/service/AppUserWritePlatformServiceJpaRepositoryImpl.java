@@ -385,8 +385,8 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
         final PlatformUser dummyPlatformUser = new BasicPasswordEncodablePlatformUser(appUser.getId(), "", newPassword);
         String encodedPass = platformPasswordEncoder.encode(dummyPlatformUser);
 
-        this.jdbcTemplate.update("UPDATE m_appuser SET reset_password = ?, password=?, nonlocked=true WHERE id = ?", true, encodedPass,
-                appUser.getId());
+        this.jdbcTemplate.update("UPDATE m_appuser SET reset_password = ?, password=?, nonlocked=true, incorrect_access_count=? WHERE id = ?", true, encodedPass,
+                0,appUser.getId());
 
         final String emailSubject = "Restablecimiento de contraseña exitosa";
         final String emailBody = "Tu contraseña ha sido restablecida. Tu nueva contraseña es: " + newPassword;
