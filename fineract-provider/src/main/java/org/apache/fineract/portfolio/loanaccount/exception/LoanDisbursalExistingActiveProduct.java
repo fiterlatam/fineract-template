@@ -30,6 +30,10 @@ public class LoanDisbursalExistingActiveProduct extends AbstractPlatformDomainRu
 
     public LoanDisbursalExistingActiveProduct(final String defaultUserMessage, final String entity,
             final Object... defaultUserMessageArgs) {
-        super("error.msg.loan.existing.active.loan.product" + entity, defaultUserMessage, defaultUserMessageArgs);
+        super("error.msg.loan.existing.active.loan" + entity, defaultUserMessage, defaultUserMessageArgs);
+    }
+
+    public LoanDisbursalExistingActiveProduct(final String defaultUserMessage, final String productName) {
+        super("error.msg.loan.existing.active.loan", defaultUserMessage, productName);
     }
 }

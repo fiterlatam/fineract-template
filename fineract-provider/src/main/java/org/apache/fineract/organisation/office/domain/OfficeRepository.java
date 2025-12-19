@@ -18,10 +18,23 @@
  */
 package org.apache.fineract.organisation.office.domain;
 
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface OfficeRepository extends JpaRepository<Office, Long>, JpaSpecificationExecutor<Office> {
 
     Office findByName(String name);
+
+    /**
+     * Find all offices under a specific hierarchy.
+     *
+     * @param hierarchy
+     *            the hierarchy prefix to search for (e.g., ".2.", ".2.7.", ".2.7.5.")
+     * @return List of offices that belong to the specified hierarchy
+     */
+    @Query("SELECT o FROM Office o WHERE o.hierarchy LIKE :hierarchy%")
+    List<Office> findAllByHierarchyStartingWith(@Param("hierarchy") String hierarchy);
 }

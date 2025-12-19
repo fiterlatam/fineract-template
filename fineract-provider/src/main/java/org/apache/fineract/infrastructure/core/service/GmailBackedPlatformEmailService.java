@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.core.service;
 
 import java.util.Properties;
+import javax.mail.internet.MimeMessage;
 import org.apache.fineract.infrastructure.configuration.data.SMTPCredentialsData;
 import org.apache.fineract.infrastructure.configuration.service.ExternalServicesPropertiesReadPlatformService;
 import org.apache.fineract.infrastructure.core.domain.EmailDetail;
@@ -26,8 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-
-import javax.mail.internet.MimeMessage;
 
 @Service
 public class GmailBackedPlatformEmailService implements PlatformEmailService {

@@ -22,9 +22,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.accounting.closure.data.GLClosureData;
+import org.apache.fineract.accounting.closure.domain.GLClosure;
+import org.apache.fineract.accounting.closure.domain.GLClosureRepository;
 import org.apache.fineract.accounting.closure.exception.GLClosureNotFoundException;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -37,6 +40,7 @@ import org.springframework.stereotype.Service;
 public class GLClosureReadPlatformServiceImpl implements GLClosureReadPlatformService {
 
     private final JdbcTemplate jdbcTemplate;
+    private final GLClosureRepository glClosureRepository;
 
     private static final class GLClosureMapper implements RowMapper<GLClosureData> {
 
@@ -72,14 +76,23 @@ public class GLClosureReadPlatformServiceImpl implements GLClosureReadPlatformSe
     }
 
     @Override
-    public List<GLClosureData> retrieveAllGLClosures(final Long officeId) {
+    public List<GLClosureData> retrieveAllGLClosures(final Long officeId, Long parentId) {
         final GLClosureMapper rm = new GLClosureMapper();
 
         String sql = "select " + rm.schema() + " and glClosure.is_deleted = false";
-        final Object[] objectArray = new Object[1];
+        final Object[] objectArray = new Object[3];
         int arrayPos = 0;
         if (officeId != null && officeId != 0) {
             sql += " and glClosure.office_id = ?";
+            objectArray[arrayPos] = officeId;
+            arrayPos = arrayPos + 1;
+        }
+        if (parentId != null && parentId != 0) {
+            sql += " and glClosure.parent_closure_id = ?";
+            objectArray[arrayPos] = parentId;
+            arrayPos = arrayPos + 1;
+        } else {
+            sql += " and (glClosure.parent_closure_id is null OR glClosure.office_id = ?)";
             objectArray[arrayPos] = officeId;
             arrayPos = arrayPos + 1;
         }
@@ -99,6 +112,14 @@ public class GLClosureReadPlatformServiceImpl implements GLClosureReadPlatformSe
 
             final GLClosureData glAccountData = this.jdbcTemplate.queryForObject(sql, rm, new Object[] { glClosureId }); // NOSONAR
 
+            Collection<GLClosure> glClosures = this.glClosureRepository.findGLClosuresByParentClosure(glAccountData.getOfficeId());
+            if (glClosures != null && !glClosures.isEmpty()) {
+                Collection<GLClosureData.GLClosureChildData> childClosures = glClosures.stream()
+                        .map(closure -> new GLClosureData.GLClosureChildData(closure.getId(), closure.getOffice().getId(),
+                                closure.getOffice().getName(), closure.getClosingDate(), closure.getComments()))
+                        .toList();
+                glAccountData.setChildClosures(childClosures);
+            }
             return glAccountData;
         } catch (final EmptyResultDataAccessException e) {
             throw new GLClosureNotFoundException(glClosureId, e);

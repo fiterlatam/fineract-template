@@ -133,7 +133,15 @@ public interface ConfigurationDomainService {
 
     Long getMaximumBackDateDaysAllowed();
 
+    Boolean isHierarchyEnabledForAccounting();
+
+    Boolean isRepaymentScheduleRecalculationEnabled();
+
     boolean isRebalanceAllAccounts();
+
+    Boolean isWaiveInterestOnRestructureCredits();
+
+    Boolean isWaiveChargesAndFeesOnRestructureCredits();
 
     Long getMaximumLoginAttempts();
 }

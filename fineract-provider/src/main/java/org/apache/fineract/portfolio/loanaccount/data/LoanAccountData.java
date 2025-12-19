@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import javax.persistence.Transient;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.codes.data.CodeValueDataExtended;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -267,6 +268,9 @@ public final class LoanAccountData {
     private Integer borrowerCycle;
 
     private LoanAdditionalData loanAdditionalData;
+
+    @Setter
+    private BigDecimal chargedInterestAmount;
 
     private Collection<CodeValueData> loanCycleCompletedOptions;
     private Collection<CodeValueData> loanPurposeOptions;
@@ -1430,8 +1434,7 @@ public final class LoanAccountData {
             final Collection<EnumOptionData> interestTypeOptions, final Collection<EnumOptionData> interestCalculationPeriodTypeOptions,
             final Collection<FundData> fundOptions, final Collection<ChargeData> chargeOptions,
             final Collection<CodeValueData> loanPurposeOptions, final Collection<CodeValueData> loanCollateralOptions,
-            final Integer loanCycleNumber, final Collection<LoanAccountSummaryData> clientActiveLoanOptions,
-            Collection<CodeValueDataExtended> paeRequiredGuaranteeOptions) {
+            final Integer loanCycleNumber, final Collection<LoanAccountSummaryData> clientActiveLoanOptions) {
 
         final Long id = null;
         final String accountNo = null;
@@ -1596,8 +1599,7 @@ public final class LoanAccountData {
                 product.getMaximumGapBetweenInstallments(), subStatus, canUseForTopup, clientActiveLoanOptions, isTopup, closureLoanId,
                 closureLoanAccountNo, topupAmount, product.isEqualAmortization(), rates, isRatesEnabled,
                 product.getFixedPrincipalPercentagePerInstallment(), delinquent, contractNo, agencyOptions, centerOptions, groupOption,
-                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount, null,
-                paeRequiredGuaranteeOptions);
+                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount, null, null);
     }
 
     public static LoanAccountData populateLoanProductDefaults(final LoanAccountData acc, final LoanProductData product) {
@@ -2184,6 +2186,7 @@ public final class LoanAccountData {
         this.interestTypeOptions = interestTypeOptions;
         this.interestCalculationPeriodTypeOptions = interestCalculationPeriodTypeOptions;
         this.isRatesEnabled = isRatesEnabled;
+        this.paeRequiredGuaranteeOptions = paeRequiredGuaranteeOptions;
 
         if (CollectionUtils.isEmpty(transactionProcessingStrategyOptions)) {
             this.transactionProcessingStrategyOptions = null;
@@ -2300,7 +2303,6 @@ public final class LoanAccountData {
         this.actualGuaranteeAmount = actualGuaranteeAmount;
         this.documentTypeOptions = null;
         this.groupLoanAdditionalData = groupLoanAdditionalData;
-        this.paeRequiredGuaranteeOptions = paeRequiredGuaranteeOptions;
     }
 
     public RepaymentScheduleRelatedLoanData repaymentScheduleRelatedData() {
@@ -2506,5 +2508,9 @@ public final class LoanAccountData {
 
     public Long getGroupId() {
         return groupId;
+    }
+
+    public Long getId() {
+        return id;
     }
 }

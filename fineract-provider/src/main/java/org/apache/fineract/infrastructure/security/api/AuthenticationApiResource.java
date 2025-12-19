@@ -190,9 +190,9 @@ public class AuthenticationApiResource {
 
             final AppUser principal = (AppUser) authenticationCheck.getPrincipal();
             this.jdbcTemplate.update("""
-                        UPDATE m_appuser
-                        SET incorrect_access_count = 0 WHERE username = ?;
-                        """, request.username);
+                    UPDATE m_appuser
+                    SET incorrect_access_count = 0 WHERE username = ?;
+                    """, request.username);
 
             final Collection<RoleData> roles = new ArrayList<>();
             final Set<Role> userRoles = principal.getRoles();

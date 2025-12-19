@@ -128,6 +128,7 @@ public class LoanTransactionsApiResource {
             @QueryParam("command") @Parameter(description = "command") final String commandParam, @Context final UriInfo uriInfo,
             @QueryParam("dateFormat") @Parameter(description = "dateFormat") final String dateFormat,
             @QueryParam("transactionDate") @Parameter(description = "transactionDate") final DateParam transactionDateParam,
+            @QueryParam("isProjection") @Parameter(description = "isProjection") final Boolean isProjection,
             @QueryParam("locale") @Parameter(description = "locale") final String locale) {
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
@@ -185,7 +186,7 @@ public class LoanTransactionsApiResource {
             } else {
                 transactionDate = transactionDateParam.getDate("transactionDate", dateFormat, locale);
             }
-            transactionData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(loanId, transactionDate);
+            transactionData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(loanId, transactionDate, isProjection);
         } else if (is(commandParam, "creditBalanceRefund")) {
             transactionData = this.loanReadPlatformService.retrieveCreditBalanceRefundTemplate(loanId);
         } else {

@@ -253,7 +253,11 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         newCheque.setIssuanceAuthorizeOnDate(oldCheque.getIssuanceAuthorizeOnDate());
         newCheque.setNumeroCliente(oldCheque.getNumeroCliente());
         newCheque.setIsReassigned(true);
+        newCheque.setReassignedFrom(oldCheque.getId());
         this.chequeJpaRepository.saveAll(List.of(oldCheque, newCheque));
+        // update journal entries with this cheque number.
+        this.jdbcTemplate.update("UPDATE m_payment_detail SET check_number = ? WHERE check_number = ?",
+                String.valueOf(newCheque.getChequeNo()), String.valueOf(oldCheque.getChequeNo()));
         return new CommandProcessingResultBuilder().withCommandId(command.commandId())
                 .withResourceIdAsString(reassignChequeCommand.getOldChequeId().toString())
                 .withEntityId(reassignChequeCommand.getOldChequeId()).build();
@@ -547,6 +551,14 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             cheque.setPrintedBy(currentUser);
             cheque.setPrintedDate(localDate);
             this.chequeBatchRepositoryWrapper.updateCheque(cheque);
+            if (Boolean.TRUE.equals(chequeData.getReassingedCheque()) && chequeData.getReassignedFrom() != null) {
+                Cheque reassignedCheque = this.chequeBatchRepositoryWrapper
+                        .findOneChequeWithNotFoundDetection(chequeData.getReassignedFrom());
+                reassignedCheque.setStatus(BankChequeStatus.VOIDED.getValue());
+                reassignedCheque.setVoidedDate(localDate);
+                reassignedCheque.setVoidedBy(currentUser);
+                this.chequeBatchRepositoryWrapper.updateCheque(reassignedCheque);
+            }
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).build();
     }

@@ -26,7 +26,9 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanSummary;
 
 @Entity
 @Table(name = "m_restructure_credits_loans_mapping")
@@ -55,6 +57,9 @@ public class RestructureCreditsLoanMapping extends AbstractPersistableCustom {
     @Column(name = "maturity_Date")
     private LocalDate maturityDate;
 
+    @Column(name = "new_loan_id")
+    private Long newLoanId;
+
     protected RestructureCreditsLoanMapping() {}
 
     /**
@@ -76,9 +81,19 @@ public class RestructureCreditsLoanMapping extends AbstractPersistableCustom {
      * @return a new instance of the LoanRescheduleRequest class
      **/
     public static RestructureCreditsLoanMapping instance(final Loan loan, final Integer statusEnum,
-            final RestructureCreditsRequest restructureCreditsRequest) {
+            final RestructureCreditsRequest restructureCreditsRequest, Boolean waiveInterestOnRestructureCredits,
+            Boolean waiveChargesAndFeesOnRestructureCredits, Money chargedInterest) {
 
-        return new RestructureCreditsLoanMapping(loan, statusEnum, restructureCreditsRequest, loan.getSummary().getTotalOutstanding(),
+        LoanSummary summary = loan.getSummary();
+        BigDecimal principalOutstanding = summary.getTotalPrincipalOutstanding();
+        if (!Boolean.TRUE.equals(waiveInterestOnRestructureCredits)) {
+            principalOutstanding = principalOutstanding.add(chargedInterest.getAmount());
+        }
+        if (!Boolean.TRUE.equals(waiveChargesAndFeesOnRestructureCredits)) {
+            principalOutstanding = principalOutstanding.add(summary.getTotalFeeChargesOutstanding())
+                    .add(summary.getTotalPenaltyChargesOutstanding());
+        }
+        return new RestructureCreditsLoanMapping(loan, statusEnum, restructureCreditsRequest, principalOutstanding,
                 loan.getDisbursementDate(), loan.getMaturityDate());
     }
 
@@ -101,5 +116,13 @@ public class RestructureCreditsLoanMapping extends AbstractPersistableCustom {
      **/
     public RestructureCreditsRequest getRestructureCreditsRequest() {
         return this.restructureCreditsRequest;
+    }
+
+    public Long getNewLoanId() {
+        return newLoanId;
+    }
+
+    public void setNewLoanId(Long newLoanId) {
+        this.newLoanId = newLoanId;
     }
 }

@@ -27,6 +27,10 @@ public class ChargeNotFoundException extends AbstractPlatformResourceNotFoundExc
         super("error.msg.charge.id.invalid", "Charge with identifier " + id + " does not exist", id);
     }
 
+    public ChargeNotFoundException(final String chargeName) {
+        super("error.msg.charge.id.invalid", "Charge with name " + chargeName + " is not configures", chargeName);
+    }
+
     public ChargeNotFoundException(Long id, EmptyResultDataAccessException e) {
         super("error.msg.charge.id.invalid", "Charge with identifier " + id + " does not exist", id, e);
     }

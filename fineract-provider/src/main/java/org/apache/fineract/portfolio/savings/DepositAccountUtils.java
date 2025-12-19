@@ -40,7 +40,7 @@ public final class DepositAccountUtils {
         LocalDate nextDepositDate = lastDepositDate;
 
         switch (frequency) {
-            case DAYS:
+            case DAYS, MONTHS_APPLIED_DAILY:
                 nextDepositDate = lastDepositDate.plusDays(recurringEvery);
             break;
             case WEEKS:
