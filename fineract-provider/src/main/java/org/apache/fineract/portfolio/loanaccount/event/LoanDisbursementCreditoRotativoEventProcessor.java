@@ -31,6 +31,7 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
+import org.apache.fineract.custom.infrastructure.dataqueries.data.DetalleGarantiaDatatableData;
 import org.apache.fineract.custom.infrastructure.dataqueries.data.InformacionAdicionalDatatableData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -56,6 +57,7 @@ public class LoanDisbursementCreditoRotativoEventProcessor extends BaseCustomWeb
     public static final String PRODUCT_NAME_PARAM = "productName";
     public static final String USER_ID_PARAM = "userId";
     public static final String LOAN_AMOUNT_PARAM = "loanAmount";
+    public static final String PROMISSORY_NOTE_PARAM = "promissoryNote";
 
     private final JdbcTemplate jdbcTemplate;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
@@ -120,6 +122,10 @@ public class LoanDisbursementCreditoRotativoEventProcessor extends BaseCustomWeb
             }
 
             requestBody.put(LOAN_AMOUNT_PARAM, loanAmount);
+
+            // Get "DetalleGarantia" datatable data
+            DetalleGarantiaDatatableData detalleGarantiaData = getDetalleGarantiaDatatableData(loan);
+            requestBody.put(PROMISSORY_NOTE_PARAM, detalleGarantiaData.getNumeroPagare());
         }
 
         return requestBody;
@@ -153,4 +159,31 @@ public class LoanDisbursementCreditoRotativoEventProcessor extends BaseCustomWeb
 
         return validacionContactaData;
     }
+
+    protected DetalleGarantiaDatatableData getDetalleGarantiaDatatableData(Loan loan) {
+        DetalleGarantiaDatatableData detalleGarantiaData = DetalleGarantiaDatatableData.builder().build();
+
+        try {
+            // Get DetalleGarantiaDatatableData data
+            String query = """
+                    SELECT * FROM "Detalle garantia" WHERE loan_id = ?
+                    """;
+
+            detalleGarantiaData = this.jdbcTemplate.queryForObject(query, new RowMapper<DetalleGarantiaDatatableData>() {
+
+                @Override
+                public DetalleGarantiaDatatableData mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    return DetalleGarantiaDatatableData.builder() //
+                            .loanId(rs.getLong("loan_id")) //
+                            .numeroPagare(rs.getString("numero_pagare")).build();
+                }
+            }, loan.getId());
+
+        } catch (Exception e) {
+            return detalleGarantiaData;
+        }
+
+        return detalleGarantiaData;
+    }
+
 }

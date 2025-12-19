@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="1" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_hook
+                (template_id, is_active, "name", createdby_id, created_date, lastmodifiedby_id, lastmodified_date, ugd_template_id)
+                VALUES
+                (1, true, 'LOAN_DISBURSEMENT_REVERSAL', 1, '2025-12-17 6:30:25.607', 1, '2025-12-17 6:30:25.607', NULL);
+
+                INSERT INTO m_hook_configuration
+                    (hook_id, field_type, field_name, field_value)
+                VALUES
+                    ((SELECT id FROM m_hook WHERE "name" = 'LOAN_DISBURSEMENT_REVERSAL'), 'string', 'Payload URL', 'https://webhook-service.prod.incursor.entreamigos.co/cbs-events/disbursement-reversal/'),
+                    ((SELECT id FROM m_hook WHERE "name" = 'LOAN_DISBURSEMENT_REVERSAL'), 'string', 'Content Type', 'json'),
+                    ((SELECT id FROM m_hook WHERE "name" = 'LOAN_DISBURSEMENT_REVERSAL'), 'string', 'API Key', 'ea-mb-prod-2Je3LmVuOjXHEFdDfW16iqJiZ9iG1cyjvGMvOHPJmbQlbXerOKy7UsYuHOVy2asq3BEDQoWe0qGR116aUCKQWduLPVp8n6iEsBaQvai42CNr1PVBRJ8chz9vzac1zJouF1vNGOcoUzcMunolwCijNIBOBaLqnE1F94dvNWuuj94SkA56L8Zyh9T6CoWO1ofnoRBKuW0K1VkEWI6HwO9PT7TYI%./jM3ryoWFmkKsbUJSffq8En');
+
+
+                INSERT INTO m_hook_registered_events
+                    (hook_id, entity_name, action_name)
+                VALUES
+                    ((SELECT id FROM m_hook WHERE "name" = 'LOAN_DISBURSEMENT_REVERSAL'), 'LOAN', 'ADJUST');
+
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="2" author="fineract">
+        <sql>
+            <![CDATA[
+                INSERT INTO m_hook
+                (template_id, is_active, "name", createdby_id, created_date, lastmodifiedby_id, lastmodified_date, ugd_template_id)
+                VALUES
+                (1, true, 'Disbursement Report File', 1, '2025-12-17 6:30:25.607', 1, '2025-12-17 6:30:25.607', NULL);
+
+                INSERT INTO m_hook_configuration
+                    (hook_id, field_type, field_name, field_value)
+                VALUES
+                    ((SELECT id FROM m_hook WHERE "name" = 'Disbursement Report File'), 'string', 'Payload URL', 'https://webhook-service.prod.incursor.entreamigos.co/cbs-events/disbursement-report/'),
+                    ((SELECT id FROM m_hook WHERE "name" = 'Disbursement Report File'), 'string', 'Content Type', 'json'),
+                    ((SELECT id FROM m_hook WHERE "name" = 'Disbursement Report File'), 'string', 'API Key', 'ea-mb-prod-2Je3LmVuOjXHEFdDfW16iqJiZ9iG1cyjvGMvOHPJmbQlbXerOKy7UsYuHOVy2asq3BEDQoWe0qGR116aUCKQWduLPVp8n6iEsBaQvai42CNr1PVBRJ8chz9vzac1zJouF1vNGOcoUzcMunolwCijNIBOBaLqnE1F94dvNWuuj94SkA56L8Zyh9T6CoWO1ofnoRBKuW0K1VkEWI6HwO9PT7TYI%./jM3ryoWFmkKsbUJSffq8En');
+
+
+                INSERT INTO m_hook_registered_events
+                    (hook_id, entity_name, action_name)
+                VALUES
+                    ((SELECT id FROM m_hook WHERE "name" = 'Disbursement Report File'), 'LOAN', 'DISBURSE');
+
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
