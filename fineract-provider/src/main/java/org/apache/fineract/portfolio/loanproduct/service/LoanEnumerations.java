@@ -428,6 +428,14 @@ public final class LoanEnumerations {
                 optionData = new LoanTransactionEnumData(LoanTransactionType.GOODWILL_CREDIT.getValue().longValue(),
                         LoanTransactionType.GOODWILL_CREDIT.getCode(), "Goodwill Credit");
             break;
+            case LOAN_TOPUP_REPAYMENT:
+                optionData = new LoanTransactionEnumData(LoanTransactionType.LOAN_TOPUP_REPAYMENT.getValue().longValue(),
+                        LoanTransactionType.LOAN_TOPUP_REPAYMENT.getCode(), "Loan Topup Repayment");
+            break;
+            case WAIVE_INTEREST_TOPUP:
+                optionData = new LoanTransactionEnumData(LoanTransactionType.WAIVE_INTEREST_TOPUP.getValue().longValue(),
+                        LoanTransactionType.WAIVE_INTEREST_TOPUP.getCode(), "Waive Interest Loan Topup");
+            break;
         }
         return optionData;
     }

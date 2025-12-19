@@ -77,6 +77,12 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
     @Column(name = "lastmodified_date")
     private LocalDateTime lastModifiedDate;
 
+    @Column(name = "prequalification_id")
+    private Long prequalificationId;
+
+    @Column(name = "extension_amount")
+    private BigDecimal extensionAmount;
+
     @ManyToOne
     @JoinColumn(name = "lastmodifiedby_id")
     private AppUser modifiedByUser;
@@ -96,7 +102,7 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
             final BigDecimal totalLoanAmount, final LocalDateTime newDisbursementDate, final String comments,
             final LocalDateTime dateRequested, final AppUser requestedByUser, final LocalDateTime approvedOnDate,
             final AppUser approvedByUser, final LocalDateTime lastModifiedDate, final AppUser modifiedByUser,
-            final List<RestructureCreditsLoanMapping> restructureCreditsLoanMappings) {
+            final List<RestructureCreditsLoanMapping> restructureCreditsLoanMappings, Long prequalificationId, BigDecimal extensionAmount) {
         this.client = client;
         this.statusEnum = statusEnum;
         this.loanProduct = product;
@@ -110,6 +116,8 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
         this.approvedOnDate = approvedOnDate;
         this.modifiedByUser = modifiedByUser;
         this.lastModifiedDate = lastModifiedDate;
+        this.prequalificationId = prequalificationId;
+        this.extensionAmount = extensionAmount;
 
     }
 
@@ -120,15 +128,16 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
             final List<RestructureCreditsLoanMapping> restructureCreditsLoanMappings) {
 
         return new RestructureCreditsRequest(client, statusEnum, product, totalLoanAmount, newDisbursementDate, comments, dateRequested,
-                requestedByUser, approvedOnDate, approvedByUser, lastModifiedDate, modifiedByUser, restructureCreditsLoanMappings);
+                requestedByUser, approvedOnDate, approvedByUser, lastModifiedDate, modifiedByUser, restructureCreditsLoanMappings, null,
+                null);
     }
 
     public static RestructureCreditsRequest fromJSON(Client client, Integer statusEnum, LoanProduct loanProduct,
             BigDecimal totalOutstanding, LocalDateTime disbursementDate, String comments, LocalDateTime localDateTimeOfSystem,
-            AppUser appUser) {
+            AppUser appUser, Long prequalificationId, BigDecimal extensionAmount) {
 
         return new RestructureCreditsRequest(client, statusEnum, loanProduct, totalOutstanding, disbursementDate, comments,
-                localDateTimeOfSystem, appUser, null, null, null, null, null);
+                localDateTimeOfSystem, appUser, null, null, null, null, null, prequalificationId, extensionAmount);
     }
 
     /**
@@ -197,5 +206,21 @@ public class RestructureCreditsRequest extends AbstractPersistableCustom {
 
     public BigDecimal getTotalLoanAmount() {
         return totalLoanAmount;
+    }
+
+    public Long getPrequalificationId() {
+        return prequalificationId;
+    }
+
+    public void setPrequalificationId(Long prequalificationId) {
+        this.prequalificationId = prequalificationId;
+    }
+
+    public BigDecimal getExtensionAmount() {
+        return extensionAmount;
+    }
+
+    public void setExtensionAmount(BigDecimal extensionAmount) {
+        this.extensionAmount = extensionAmount;
     }
 }

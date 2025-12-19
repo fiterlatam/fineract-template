@@ -175,4 +175,13 @@
     <include file="parts/PUE_20_11_25_add_limit_amount_settings.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_27_11_25_ADD_PAE_REQUIRED_GUARANTEES.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_28_11_25_ADD_PAE_REQUIRED_DOCUMENTS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0137_FBR-723-LOAN_FORECLOSURE_CONFIGS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0138_FBR-726-CHECK_REASSIGNMENT_CONFIGURATION.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0141-FBR-725_ADD_MAKER_CHECKER_PERMISSION_FOR_GL_CLOSURE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0142-FBR-745_RESTRUCTURE_WITH_EXTENSION.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0143-FBR-720_CONFIGURE_PRODUCT_INTEREST_WAIVER.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0144-FBR-1.2.1_ADD_REPAYMENT_SCHEDULE_RECALCULATION_CONFIG.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0145-FBR-1.2.1_MAINTAIN_LOAN_TOPUP_DATAILS_ON_TRANSACTIONS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0146-FBR-1.2.1_MAINTAIN_RESCTURE_REQUEST_ID_LOAN.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0147-FBR-1.2.1_ACCOUNTING_CLOSURE_OFFICE_HIERARCHY.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

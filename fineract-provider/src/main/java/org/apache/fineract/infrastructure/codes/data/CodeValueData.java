@@ -80,7 +80,7 @@ public class CodeValueData implements Serializable {
     }
 
     protected CodeValueData(final Long id, final String name, final Integer position, final String description, final boolean active,
-                            final boolean mandatory) {
+            final boolean mandatory) {
         this.id = id;
         this.name = name;
         this.position = position;

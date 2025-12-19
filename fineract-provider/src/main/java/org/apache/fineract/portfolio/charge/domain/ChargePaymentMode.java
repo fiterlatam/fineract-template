@@ -59,4 +59,8 @@ public enum ChargePaymentMode {
     public boolean isPaymentModeAccountTransfer() {
         return this.value.equals(ChargePaymentMode.ACCOUNT_TRANSFER.getValue());
     }
+
+    public boolean isPaymentModeRegular() {
+        return this.value.equals(ChargePaymentMode.REGULAR.getValue());
+    }
 }

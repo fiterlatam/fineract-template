@@ -1081,7 +1081,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final boolean isApproved = PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
                     && (memberPrequalificationData.getIsSelected() || prequalificationGroup.isPrequalificationTypeIndividual());
             final boolean isRejected = PrequalificationStatus.REJECTED.equals(prequalificationStatus)
-                    || (memberPrequalificationData.getIsSelected() != null && !memberPrequalificationData.getIsSelected() && PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
+                    || (memberPrequalificationData.getIsSelected() != null && !memberPrequalificationData.getIsSelected()
+                            && PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
                             && prequalificationGroup.isPrequalificationTypeGroup());
             final BigDecimal approvedLoanAmount = prequalificationGroupMember.getApprovedAmount();
             final String dpi = prequalificationGroupMember.getDpi();
