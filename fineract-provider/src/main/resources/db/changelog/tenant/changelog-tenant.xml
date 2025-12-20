@@ -433,4 +433,5 @@
     <include file="parts/20251020000100_EA_288_m_loan_product_rotativoproductivo.xml" relativeToChangelogFile="true"/>
     <include file="parts/20251114200100_EA_352_job_gac.xml" relativeToChangelogFile="true"/>
     <include file="parts/20251119200100_EA_359_gl_account_update.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202512192000001000_EA_447_webhook_reversal_disbursement_and_disbursement_report_file.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -110,6 +110,7 @@ public class LoanDisbursementGuaranteeEventProcessor extends BaseCustomWebhookEv
 
                 LoanAccountData loanAccountData = loanReadPlatformService.retrieveOne(result.getLoanId());
                 requestBody.put("interestRate", loanAccountData.getAnnualInterestRate());
+                requestBody.put("productName", loan.getLoanProduct().getName());
             }
         } catch (EmptyResultDataAccessException e) {
             return requestBody;

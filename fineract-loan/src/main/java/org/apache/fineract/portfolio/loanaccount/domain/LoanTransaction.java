@@ -732,6 +732,10 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return LoanTransactionType.DISBURSEMENT.equals(getTypeOf()) && isNotReversed();
     }
 
+    public boolean isDisbursementWithoutReverseValidation() {
+        return LoanTransactionType.DISBURSEMENT.equals(getTypeOf());
+    }
+
     public boolean isRepaymentAtDisbursement() {
         return LoanTransactionType.REPAYMENT_AT_DISBURSEMENT.equals(getTypeOf()) && isNotReversed();
     }
