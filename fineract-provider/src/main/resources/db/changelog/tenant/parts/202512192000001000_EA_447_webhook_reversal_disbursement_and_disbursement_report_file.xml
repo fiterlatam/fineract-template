@@ -26,6 +26,10 @@
     <changeSet id="1" author="fineract">
         <sql>
             <![CDATA[
+                DELETE FROM m_hook_registered_events WHERE hook_id = (SELECT id FROM m_hook WHERE "name" = 'LOAN_DISBURSEMENT_REVERSAL');
+                DELETE FROM m_hook_configuration WHERE hook_id = (SELECT id FROM m_hook WHERE "name" = 'LOAN_DISBURSEMENT_REVERSAL');
+                DELETE FROM m_hook WHERE "name" = 'LOAN_DISBURSEMENT_REVERSAL';
+
                 INSERT INTO m_hook
                 (template_id, is_active, "name", createdby_id, created_date, lastmodifiedby_id, lastmodified_date, ugd_template_id)
                 VALUES
@@ -51,6 +55,10 @@
     <changeSet id="2" author="fineract">
         <sql>
             <![CDATA[
+                DELETE FROM m_hook_registered_events WHERE hook_id = (SELECT id FROM m_hook WHERE "name" = 'Disbursement Report File');
+                DELETE FROM m_hook_configuration WHERE hook_id = (SELECT id FROM m_hook WHERE "name" = 'Disbursement Report File');
+                DELETE FROM m_hook WHERE "name" = 'Disbursement Report File';
+
                 INSERT INTO m_hook
                 (template_id, is_active, "name", createdby_id, created_date, lastmodifiedby_id, lastmodified_date, ugd_template_id)
                 VALUES
