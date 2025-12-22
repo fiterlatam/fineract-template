@@ -49,11 +49,11 @@
         <sql>
             <![CDATA[
             ALTER TABLE m_group
-                MODIFY COLUMN `latitude` decimal(12, 8) NULL DEFAULT NULL AFTER `legacy_number`,
-                MODIFY COLUMN `longitude` decimal(12, 8) NULL DEFAULT NULL AFTER `latitude`;
+                MODIFY COLUMN `latitude` decimal(19, 6) NULL DEFAULT NULL AFTER `legacy_number`,
+                MODIFY COLUMN `longitude` decimal(19, 6) NULL DEFAULT NULL AFTER `latitude`;
             ALTER TABLE m_center_group
-                MODIFY COLUMN `latitude` decimal(12, 8) NULL DEFAULT NULL AFTER `legacy_group_number`,
-                MODIFY COLUMN `longitude` decimal(12, 8) NULL DEFAULT NULL AFTER `latitude`;
+                MODIFY COLUMN `latitude` decimal(19, 6) NULL DEFAULT NULL AFTER `legacy_group_number`,
+                MODIFY COLUMN `longitude` decimal(19, 6) NULL DEFAULT NULL AFTER `latitude`;
             ]]>
         </sql>
     </changeSet>
