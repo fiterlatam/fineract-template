@@ -460,14 +460,15 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     Money totalForeclosureAmount = Money.of(currency,
                             foreclosureData.getOutstandingLoanBalance().add(foreclosureData.getInterestPortion()
                                     .add(foreclosureData.getFeeChargesPortion().add(foreclosureData.getPenaltyChargesPortion()))));
-                    // IF TOTAL payment amount is equal to total foreclosure amount, then process loan foreclosure
-                    if (Money.of(currency, transactionAmount).isEqualTo(totalForeclosureAmount)) {
+                    // IF TOTAL payment amount is equal to total foreclosure amount and is early repayment, then process loan foreclosure
+                    if (Money.of(currency, transactionAmount).isEqualTo(totalForeclosureAmount) && paymentDate.isBefore(foreclosureData.getLoanMaturityDate())) {
                         final JsonObject jsonObject = new JsonObject();
                         jsonObject.addProperty("transactionDate", transactionDate);
                         jsonObject.addProperty("glAccountId", glAccount.getId());
                         jsonObject.addProperty(PaymentDetailConstants.receiptNumberParamName, receiptNumber);
                         jsonObject.addProperty("locale", localeAsString);
                         jsonObject.addProperty("dateFormat", dateFormat);
+                        jsonObject.addProperty("billNumber", loanRepaymentImport.getReceiptNumber());
 
                         final JsonCommand command = JsonCommand.fromJsonElement(loanId, jsonObject, this.fromApiJsonHelper);
                         command.setJsonCommand(jsonObject.toString());
