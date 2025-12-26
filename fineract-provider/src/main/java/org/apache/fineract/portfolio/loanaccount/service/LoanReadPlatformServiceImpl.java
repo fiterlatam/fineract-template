@@ -1659,12 +1659,14 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         Collection<CodeValueDataExtended> paeRequiredGuaranteeDocuments = null;
         if (loanProduct.getOwnerTypeOption() != null
                 && loanProduct.getOwnerTypeOption().getId().intValue() == LoanProductOwnerType.PAE.getValue()) {
-            Collection<CodeValueData> paeRequiredGuarantees = this.codeValueReadPlatformService.retrieveCodeValuesByCode("PaeRequiredGuarantees");
+            Collection<CodeValueData> paeRequiredGuarantees = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("PaeRequiredGuarantees");
             if (!paeRequiredGuarantees.isEmpty()) paeRequiredGuaranteeDocuments = new ArrayList<>();
             for (CodeValueData codeValue : Objects.requireNonNull(paeRequiredGuarantees)) {
-                List<PaeRequiredDocumentData> documentsList = this.paeRequiredDocumentReadPlatformService.retrieveByCategory(codeValue.getId());
-                CodeValueDataExtended cartegoryDocuments= CodeValueDataExtended.instance(codeValue.getId(),codeValue.getName(),codeValue.getPosition(),
-                        codeValue.getDescription(),codeValue.isActive(), codeValue.isMandatory());
+                List<PaeRequiredDocumentData> documentsList = this.paeRequiredDocumentReadPlatformService
+                        .retrieveByCategory(codeValue.getId());
+                CodeValueDataExtended cartegoryDocuments = CodeValueDataExtended.instance(codeValue.getId(), codeValue.getName(),
+                        codeValue.getPosition(), codeValue.getDescription(), codeValue.isActive(), codeValue.isMandatory());
                 cartegoryDocuments.setExtraData(documentsList);
                 paeRequiredGuaranteeDocuments.add(cartegoryDocuments);
             }
