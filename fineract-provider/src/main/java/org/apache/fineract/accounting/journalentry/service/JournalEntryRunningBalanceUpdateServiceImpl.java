@@ -190,6 +190,7 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
 
         // Use parallel processing for large datasets
         try (Stream<JournalEntryData> entryStream = jdbcTemplate.queryForStream(sqlString, entryMapper, entityDate, endDate)) {
+
             List<JournalEntryData> batch = new ArrayList<>(batchSize);
             AtomicInteger processedCount = new AtomicInteger(0);
 
@@ -210,7 +211,6 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
 
             log.info("Total processed entries: {}", processedCount.get());
         }
-
     }
 
     private void processOptimizedBatch(List<JournalEntryData> batch, Map<Long, BigDecimal> runningBalanceMap,
