@@ -31,9 +31,9 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class LoanDisbursementReportFileEventProcessor extends BaseCustomWebhookEventProcessorImpl {
+public class LoanDisbursementReversalUndoEventProcessor extends BaseCustomWebhookEventProcessorImpl {
 
-    private final LoanDisbursementReportEventProcessor loanDisbursementReportEventProcessor;
+    private final LoanDisbursementReversalEventProcessor loanDisbursementReversalEventProcessor;
 
     @Override
     protected String hookName() {
@@ -42,15 +42,15 @@ public class LoanDisbursementReportFileEventProcessor extends BaseCustomWebhookE
 
     @Override
     protected List<Map<String, String>> getSupportedEvents() {
-        Map<String, String> loanEvent = Map.of("entityName", "Informacion Adicional", "actionName", "CREATE");
+        Map<String, String> loanEvent = Map.of("entityName", "LOAN", "actionName", "DISBURSALUNDO");
         return Collections.singletonList(loanEvent);
     }
 
     @Override
     public Map<String, Object> transform(String entityName, String actionName, JsonCommand command, Object result) {
         if (result instanceof CommandProcessingResult successResult) {
-            return loanDisbursementReportEventProcessor
-                    .generateSuccessResponse(CommandProcessingResult.fromCommandProcessingResult(successResult), true);
+            return loanDisbursementReversalEventProcessor
+                    .generateSuccessResponse(CommandProcessingResult.fromCommandProcessingResult(successResult), false);
         }
         return Collections.emptyMap();
     }
