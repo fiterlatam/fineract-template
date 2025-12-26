@@ -68,12 +68,12 @@ public class LoanDisbursementReportEventProcessor extends BaseCustomWebhookEvent
     @Override
     public Map<String, Object> transform(String entityName, String actionName, JsonCommand command, Object result) {
         if (result instanceof CommandProcessingResult successResult) {
-            return generateSuccessResponse(CommandProcessingResult.fromCommandProcessingResult(successResult));
+            return generateSuccessResponse(CommandProcessingResult.fromCommandProcessingResult(successResult), false);
         }
         return Collections.emptyMap();
     }
 
-    public Map<String, Object> generateSuccessResponse(CommandProcessingResult result) {
+    public Map<String, Object> generateSuccessResponse(CommandProcessingResult result, Boolean useAdditionalInformationForEstablishment) {
 
         Map<String, Object> requestBody = new HashMap<>();
         Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(result.getLoanId());
@@ -108,8 +108,12 @@ public class LoanDisbursementReportEventProcessor extends BaseCustomWebhookEvent
 
         if (Objects.nonNull(disbursalTransaction)) {
             requestBody.put("transactionAmount", disbursalTransaction.getAmount());
-            requestBody.put("commercialEstablishmentId",
-                    getDetallesDeLaTransacion(disbursalTransaction).getIdentificacionEstablecimientoComercial());
+            if (useAdditionalInformationForEstablishment) {
+                requestBody.put("commercialEstablishmentId", informacionAdicional.getNumeroIdentificacionAliado());
+            } else {
+                requestBody.put("commercialEstablishmentId",
+                        getDetallesDeLaTransacion(disbursalTransaction).getIdentificacionEstablecimientoComercial());
+            }
         }
 
         return requestBody;
@@ -131,7 +135,8 @@ public class LoanDisbursementReportEventProcessor extends BaseCustomWebhookEvent
                 public InformacionAdicionalDatatableData mapRow(ResultSet rs, int rowNum) throws SQLException {
                     return InformacionAdicionalDatatableData.builder().loanId(rs.getLong("loan_id"))
                             .ciudadCliente(rs.getString("ciudad_cliente")).departamentoCliente(rs.getString("departamento_cliente"))
-                            .codigoPromotor(rs.getString("codigo_promotor")).build();
+                            .codigoPromotor(rs.getString("codigo_promotor"))
+                            .numeroIdentificacionAliado(rs.getString("numero_identificacion_aliado")).build();
                 }
             }, loan.getId());
 

@@ -57,32 +57,39 @@ public class LoanDisbursementReversalEventProcessor extends BaseCustomWebhookEve
     @Override
     public Map<String, Object> transform(String entityName, String actionName, JsonCommand command, Object result) {
         if (result instanceof CommandProcessingResult successResult) {
-            return generateSuccessResponse(CommandProcessingResult.fromCommandProcessingResult(successResult));
+            return generateSuccessResponse(CommandProcessingResult.fromCommandProcessingResult(successResult), true);
         }
         return Collections.emptyMap();
     }
 
-    public Map<String, Object> generateSuccessResponse(CommandProcessingResult result) {
+    public Map<String, Object> generateSuccessResponse(CommandProcessingResult result, Boolean validateResourceId) {
         Map<String, Object> requestBody = new HashMap<>();
         final Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(result.getLoanId());
         final Long resourceId = result.getResourceId();
 
-        final LoanTransaction loanTransaction = loanTransactionRepository.findById(resourceId)
-                .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.error.sending.hook.resource.id.is.null",
-                        "Error creating hook request, resource id is null"));
+        requestBody.put("loanId", loan.getAccountNumber());
+        requestBody.put("transactionType", "Reversal");
+        requestBody.put("productName", loan.getLoanProduct().getName());
+        requestBody.put("userId", loan.getClient().getExternalId());
 
-        if (loanTransaction.isDisbursementWithoutReverseValidation()) {
-            try {
-                requestBody.put("reversalTransactionId", resourceId);
-                requestBody.put("loanId", loan.getId());
-                requestBody.put("reversedTransactionId", resourceId);
-                requestBody.put("transactionType", "Reversal");
-                requestBody.put("productName", loan.getLoanProduct().getName());
-                requestBody.put("userId", loan.getClient().getExternalId());
-            } catch (EmptyResultDataAccessException e) {
+        if (validateResourceId) {
+            final LoanTransaction loanTransaction = loanTransactionRepository.findById(resourceId)
+                    .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.error.sending.hook.resource.id.is.null",
+                            "Error creating hook request, resource id is null"));
+
+            if (loanTransaction.isDisbursementWithoutReverseValidation()) {
+                try {
+                    requestBody.put("reversalTransactionId", resourceId);
+                    requestBody.put("reversedTransactionId", resourceId);
+                } catch (EmptyResultDataAccessException e) {
+                    return requestBody;
+                }
+
                 return requestBody;
             }
-
+        } else {
+            requestBody.put("reversalTransactionId", resourceId);
+            requestBody.put("reversedTransactionId", resourceId);
             return requestBody;
         }
 
