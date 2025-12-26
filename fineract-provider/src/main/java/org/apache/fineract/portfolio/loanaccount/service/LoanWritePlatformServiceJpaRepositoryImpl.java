@@ -3806,7 +3806,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         changes.put("transactionDate", transactionDate);
         changes.put("receiptNumber", receiptNumber);
         changes.put("glAccountId", glAccountId);
-
+        changes.put("billNumber", receiptNumber);
         this.loanAccountDomainService.recalculateAccruals(loan);
         this.saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
@@ -3842,7 +3842,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         this.loanScheduleHistoryWritePlatformService.createAndSaveLoanScheduleArchive(loan.getRepaymentScheduleInstallments(), loan,
                 loanRescheduleRequest, false);
 
-        final Map<String, Object> modifications = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, command);
+        final Map<String, Object> modifications = this.loanAccountDomainService.foreCloseLoan(loan, transactionDate, command, changes);
         changes.putAll(modifications);
 
         final CommandProcessingResultBuilder commandProcessingResultBuilder = new CommandProcessingResultBuilder();
