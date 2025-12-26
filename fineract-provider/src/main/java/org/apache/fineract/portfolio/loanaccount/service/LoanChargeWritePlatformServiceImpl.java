@@ -1007,6 +1007,11 @@ public class LoanChargeWritePlatformServiceImpl implements LoanChargeWritePlatfo
         String errorLog = null;
         LocalDateTime startInstallmentProcessing = DateUtils.getLocalDateTimeOfTenant();
 
+        // Check if the configuration is enabled
+        if (!configurationService.getLoanGACOnDemandRecalculationEnabled()) {
+            return;
+        }
+
         // if list is empty, return
         if (overdueLoanScheduleDataList.isEmpty()) {
             return;
