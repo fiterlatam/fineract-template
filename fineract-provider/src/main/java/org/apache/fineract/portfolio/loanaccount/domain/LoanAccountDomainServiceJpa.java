@@ -24,7 +24,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -727,7 +726,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     }
 
     @Override
-    public Map<String, Object> foreCloseLoan(final Loan loan, final LocalDate foreClosureDate, final JsonCommand command, Map<String, Object> changes) {
+    public Map<String, Object> foreCloseLoan(final Loan loan, final LocalDate foreClosureDate, final JsonCommand command,
+            Map<String, Object> changes) {
         businessEventNotifierService.notifyPreBusinessEvent(new LoanForeClosurePreBusinessEvent(loan));
         MonetaryCurrency currency = loan.getCurrency();
         List<LoanTransaction> newTransactions = new ArrayList<>();
@@ -808,7 +808,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             payment.setReceivableInterestPortion(netInterestReceivable.getAmount());
             if (!isDecliningBalance)
                 payment.setReceivableInterestPortion(totalInterestOutstanding.subtract(netInterestReceivable.getAmount()));
-            if (!isDecliningBalance) payment.setIncomeInterestPortion(netInterestReceivable.getAmount());
+            payment.setIncomeInterestPortion(netInterestReceivable.getAmount());
             newTransactions.add(payment);
         }
 
