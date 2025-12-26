@@ -808,7 +808,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             payment.setReceivableInterestPortion(netInterestReceivable.getAmount());
             if (!isDecliningBalance)
                 payment.setReceivableInterestPortion(totalInterestOutstanding.subtract(netInterestReceivable.getAmount()));
-            payment.setIncomeInterestPortion(netInterestReceivable.getAmount());
+            if (!isDecliningBalance) payment.setIncomeInterestPortion(netInterestReceivable.getAmount());
             newTransactions.add(payment);
         }
 
