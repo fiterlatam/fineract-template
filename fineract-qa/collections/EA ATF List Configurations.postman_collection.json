@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "66c9dda6-f865-418f-8961-1a156e7c9727",
+        "_postman_id": "bb40524b-0777-4fe4-a354-15b12c08a062",
         "name": "EA ATF List Configurations",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
@@ -437,6 +437,133 @@
                         "v1",
                         "configurations",
                         "{{configurationTests}}"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get  GAC On Demand Recalculation Id",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "const response = pm.response.json();\r",
+                            "\r",
+                            "// Check if the response status code is 200\r",
+                            "pm.test(\"Status code is 200\", function () {\r",
+                            "    pm.expect(pm.response.code).to.equal(200);\r",
+                            "});\r",
+                            "\r",
+                            "// Assign the 'id' from the response to the environment variable 'configurationTests'\r",
+                            "pm.environment.set(\"configurationacOnDemandRecalculation\", response.id);\r",
+                            "\r",
+                            ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Basic bWlmb3M6cGFzc3dvcmQ=",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/configurations/name/loan-charge-gac-ondemand-recalculation",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "configurations",
+                        "name",
+                        "loan-charge-gac-ondemand-recalculation"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Enable GAC On Demand Recalculation",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "{{authorization_token}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Fineract-Platform-TenantId",
+                        "value": "default",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Basic bWlmb3M6cGFzc3dvcmQ=",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n    \"enabled\": true,\r\n    \"value\": 1\r\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/configurations/{{configurationacOnDemandRecalculation}}",
+                    "host": [
+                        "{{fineract-backend-server}}"
+                    ],
+                    "path": [
+                        "fineract-provider",
+                        "api",
+                        "v1",
+                        "configurations",
+                        "{{configurationacOnDemandRecalculation}}"
                     ]
                 }
             },

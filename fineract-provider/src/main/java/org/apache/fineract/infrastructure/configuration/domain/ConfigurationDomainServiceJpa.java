@@ -65,6 +65,8 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
 
     private static final String JOB_APPLY_PENALTY_TO_OVERDUE_LOANS_SKIP_WHEN_REPROCESSED = "job-apply-penalty-to-overdue-loans-skip-when-reprocessed";
 
+    private static final String LOAN_GAC_ONDEMAND_RECALCULATIONJOB = "loan-charge-gac-ondemand-recalculation";
+
     private final PermissionRepository permissionRepository;
     private final GlobalConfigurationRepositoryWrapper globalConfigurationRepository;
     private final PlatformCacheRepository cacheTypeRepository;
@@ -657,6 +659,12 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     public Boolean getJobApplyPenaltyToOverdueLoansSkipWhenReprocessed() {
         GlobalConfigurationPropertyData propertyData = getGlobalConfigurationPropertyData(
                 JOB_APPLY_PENALTY_TO_OVERDUE_LOANS_SKIP_WHEN_REPROCESSED);
+        return propertyData != null && propertyData.isEnabled() && propertyData.getValue().equals(1L);
+    }
+
+    @Override
+    public Boolean getLoanGACOnDemandRecalculationEnabled() {
+        GlobalConfigurationPropertyData propertyData = getGlobalConfigurationPropertyData(LOAN_GAC_ONDEMAND_RECALCULATIONJOB);
         return propertyData != null && propertyData.isEnabled() && propertyData.getValue().equals(1L);
     }
 }
