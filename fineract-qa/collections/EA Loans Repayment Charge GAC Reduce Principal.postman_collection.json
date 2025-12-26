@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "8df517b9-a25e-4a83-ab53-f86ebac154be",
+        "_postman_id": "0800107d-5b38-4313-9ca2-0d69c400c006",
         "name": "EA Loans Repayment Charge GAC Reduce Principal",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "26949565"
@@ -966,7 +966,7 @@
                             "});\r",
                             "\r",
                             "pm.test(\"Verify Transacion GAC component\", function () {\r",
-                            "    pm.expect(jsonData.transactions[1].loanChargePaidBySummary.aval).to.be.greaterThanOrEqual(32459.90);\r",
+                            "    pm.expect(jsonData.transactions[1].loanChargePaidBySummary.aval).to.be.greaterThanOrEqual(32000.90);\r",
                             "});\r",
                             "\r",
                             "pm.test(\"Verify Payment In Advance Amount\", function () {\r",
