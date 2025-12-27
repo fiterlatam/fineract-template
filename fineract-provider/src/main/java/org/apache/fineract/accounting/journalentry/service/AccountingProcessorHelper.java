@@ -110,6 +110,7 @@ public class AccountingProcessorHelper {
         final Long loanId = (Long) accountingBridgeData.get("loanId");
         final Long loanProductId = (Long) accountingBridgeData.get("loanProductId");
         final Long glAccountId = (Long) accountingBridgeData.get("glAccountId");
+        final boolean isForeClosure = Boolean.TRUE.equals(accountingBridgeData.get("isForeClosure"));
         final Long officeId = (Long) accountingBridgeData.get("officeId");
         final CurrencyData currencyData = (CurrencyData) accountingBridgeData.get("currency");
         final List<LoanTransactionDTO> newLoanTransactions = new ArrayList<>();
@@ -132,6 +133,7 @@ public class AccountingProcessorHelper {
             final BigDecimal penalties = (BigDecimal) map.get("penaltyChargesPortion");
             final BigDecimal overPayments = (BigDecimal) map.get("overPaymentPortion");
             final BigDecimal loanTopupAmount = (BigDecimal) map.get("loanTopupAmount");
+            final BigDecimal netAccruedInterest = (BigDecimal) map.get("netAccruedInterest");
             final boolean reversed = (Boolean) map.get("reversed");
             boolean postAccountingForWaivers = true;
             if (map.containsKey("postAccountingForWaivers") && map.get("postAccountingForWaivers") != null) {
@@ -170,6 +172,7 @@ public class AccountingProcessorHelper {
             transaction.setGlAccountId(transactionGlAccountId != null ? transactionGlAccountId : glAccountId);
             transaction.setLoanTopupAmount(loanTopupAmount != null ? loanTopupAmount : BigDecimal.ZERO);
             transaction.setPostAccountingForWaivers(postAccountingForWaivers);
+            transaction.setNetAccruedInterest(netAccruedInterest);
             Boolean isLoanToLoanTransfer = (Boolean) accountingBridgeData.get("isLoanToLoanTransfer");
             if (isLoanToLoanTransfer != null && isLoanToLoanTransfer) {
                 transaction.setLoanToLoanTransfer(true);

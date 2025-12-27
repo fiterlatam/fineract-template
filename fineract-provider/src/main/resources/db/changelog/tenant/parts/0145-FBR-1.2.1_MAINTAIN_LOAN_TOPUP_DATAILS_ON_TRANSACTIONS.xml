@@ -48,4 +48,18 @@
         </sql>
     </changeSet>
 
+    <changeSet id="3" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="m_loan_transaction" columnName="net_accrued_interest"/>
+            </not>
+        </preConditions>
+        <sql>
+            <![CDATA[
+            ALTER TABLE m_loan_transaction
+                ADD COLUMN net_accrued_interest DECIMAL(19,6);
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

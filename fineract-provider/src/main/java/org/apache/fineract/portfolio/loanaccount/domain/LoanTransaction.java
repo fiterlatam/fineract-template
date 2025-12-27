@@ -133,6 +133,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "topup_loan_id", nullable = false)
     private BigDecimal loanTopupId;
 
+    @Setter
+    @Getter
+    @Column(name = "net_accrued_interest", nullable = false)
+    private BigDecimal netAccruedInterest;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "loanTransaction")
     private Set<LoanCollateralManagement> loanCollateralManagementSet = new HashSet<>();
 
@@ -722,6 +727,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         thisTransactionData.put("overPaymentPortion", this.overPaymentPortion);
         thisTransactionData.put("loanTopupAmount", this.loanTopupAmount);
         thisTransactionData.put("postAccountingForWaivers", this.postAccountingForWaivers);
+        thisTransactionData.put("netAccruedInterest", this.netAccruedInterest);
 
         if (this.paymentDetail != null) {
             thisTransactionData.put("paymentTypeId", this.paymentDetail.getPaymentType().getId());
