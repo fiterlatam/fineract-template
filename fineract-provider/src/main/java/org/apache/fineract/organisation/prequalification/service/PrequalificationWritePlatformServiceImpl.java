@@ -1307,9 +1307,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     new Object[] { totalApprovedAmount, errorWarningsCount, errorWarningsCount });
 
             approvalsRequired.sort(Comparator.comparing(CommitteeApprovalsData::getCommittee).reversed());
-            finalStatus = null;
+            finalStatus = PrequalificationStatus.COMPLETED.getValue();
             if (!approvalsRequired.isEmpty()) {
-                finalStatus = PrequalificationStatus.COMPLETED.getValue();
                 for (CommitteeApprovalsData approvalsData : approvalsRequired) {
                     Integer committeeRequired = PrequalificationStatus.resolveCommitteeStatus(approvalsData.getCommittee()).getValue();
                     if (fromStatus < committeeRequired) {
