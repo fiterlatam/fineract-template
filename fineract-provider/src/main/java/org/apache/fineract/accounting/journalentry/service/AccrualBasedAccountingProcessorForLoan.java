@@ -232,13 +232,14 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                 GLAccount receivableAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
                         AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(), paymentTypeId);
                 BigDecimal netReceivableInterest = receivableInterest.subtract(accruedInterest);
-                if (accountMap.containsKey(receivableAccount)) {
-                    BigDecimal amount = accountMap.get(receivableAccount).add(netReceivableInterest);
-                    accountMap.put(receivableAccount, amount);
-                } else {
-                    accountMap.put(receivableAccount, netReceivableInterest);
+                if (netReceivableInterest.compareTo(BigDecimal.ZERO) > 0) {
+                    if (accountMap.containsKey(receivableAccount)) {
+                        BigDecimal amount = accountMap.get(receivableAccount).add(netReceivableInterest);
+                        accountMap.put(receivableAccount, amount);
+                    } else {
+                        accountMap.put(receivableAccount, netReceivableInterest);
+                    }
                 }
-
             } else {
                 GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
                         AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
