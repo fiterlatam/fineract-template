@@ -6640,6 +6640,7 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 currentDate, totalPrincipal.getAmount(), receivables[0].getAmount(), receivables[1].getAmount(), receivables[2].getAmount(),
                 false, compoundingDetails);
         loanRepaymentScheduleInstallment.setNpaInterestToWriteOff(receivables[4].getAmount());
+        loanRepaymentScheduleInstallment.updateLoan(this);
         return loanRepaymentScheduleInstallment;
     }
 
