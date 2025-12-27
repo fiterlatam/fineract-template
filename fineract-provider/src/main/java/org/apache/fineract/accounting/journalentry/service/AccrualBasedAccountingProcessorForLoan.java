@@ -195,7 +195,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
         final BigDecimal principalAmount = loanTransactionDTO.getPrincipal();
         final BigDecimal interestAmount = loanTransactionDTO.getInterest();
-        final BigDecimal accruedInterest = loanTransactionDTO.getIncomeInterest();
+        final BigDecimal accruedInterest = loanTransactionDTO.getNetAccruedInterest();
         final BigDecimal receivableInterest = loanTransactionDTO.getReceivableInterest();
         final BigDecimal feesAmount = loanTransactionDTO.getFees();
         final BigDecimal penaltiesAmount = loanTransactionDTO.getPenalties();
@@ -242,12 +242,24 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                 }
             } else {
                 GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
-                        AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
+                        AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(), paymentTypeId);
                 if (accountMap.containsKey(account)) {
-                    BigDecimal amount = accountMap.get(account).add(interestAmount);
+                    BigDecimal amount = accountMap.get(account).add(receivableInterest);
                     accountMap.put(account, amount);
                 } else {
-                    accountMap.put(account, interestAmount);
+                    accountMap.put(account, receivableInterest);
+                }
+
+                if (interestAmount.subtract(receivableInterest).compareTo(BigDecimal.ZERO) > 0) {
+                    GLAccount incomeAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                            AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
+                    BigDecimal amount = interestAmount.subtract(receivableInterest);
+                    if (accountMap.containsKey(incomeAccount)) {
+                        BigDecimal totalAmount = accountMap.get(incomeAccount).add(amount);
+                        accountMap.put(incomeAccount, totalAmount);
+                    } else {
+                        accountMap.put(incomeAccount, amount);
+                    }
                 }
             }
         }
