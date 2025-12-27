@@ -197,6 +197,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         final BigDecimal interestAmount = loanTransactionDTO.getInterest();
         final BigDecimal accruedInterest = loanTransactionDTO.getNetAccruedInterest();
         final BigDecimal receivableInterest = loanTransactionDTO.getReceivableInterest();
+        final BigDecimal incomeInterest = loanTransactionDTO.getIncomeInterest();
         final BigDecimal feesAmount = loanTransactionDTO.getFees();
         final BigDecimal penaltiesAmount = loanTransactionDTO.getPenalties();
         final BigDecimal overPaymentAmount = loanTransactionDTO.getOverPayment();
@@ -241,26 +242,51 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                     }
                 }
             } else {
-                GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
-                        AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(), paymentTypeId);
-                if (accountMap.containsKey(account)) {
-                    BigDecimal amount = accountMap.get(account).add(receivableInterest);
-                    accountMap.put(account, amount);
-                } else {
-                    accountMap.put(account, receivableInterest);
-                }
-
-                if (interestAmount.subtract(receivableInterest).compareTo(BigDecimal.ZERO) > 0) {
-                    GLAccount incomeAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
-                            AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
-                    BigDecimal amount = interestAmount.subtract(receivableInterest);
-                    if (accountMap.containsKey(incomeAccount)) {
-                        BigDecimal totalAmount = accountMap.get(incomeAccount).add(amount);
-                        accountMap.put(incomeAccount, totalAmount);
+                if (receivableInterest!=null && receivableInterest.compareTo(BigDecimal.ZERO) > 0) {
+                    GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                            AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(), paymentTypeId);
+                    if (accountMap.containsKey(account)) {
+                        BigDecimal amount = accountMap.get(account).add(receivableInterest);
+                        accountMap.put(account, amount);
                     } else {
-                        accountMap.put(incomeAccount, amount);
+                        accountMap.put(account, receivableInterest);
+                    }
+
+                    if (interestAmount.subtract(receivableInterest).compareTo(BigDecimal.ZERO) > 0) {
+                        GLAccount incomeAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                                AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
+                        BigDecimal amount = interestAmount.subtract(receivableInterest);
+                        if (accountMap.containsKey(incomeAccount)) {
+                            BigDecimal totalAmount = accountMap.get(incomeAccount).add(amount);
+                            accountMap.put(incomeAccount, totalAmount);
+                        } else {
+                            accountMap.put(incomeAccount, amount);
+                        }
                     }
                 }
+                if (incomeInterest!=null && incomeInterest.compareTo(BigDecimal.ZERO) > 0) {
+                    GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                            AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
+                    if (accountMap.containsKey(account)) {
+                        BigDecimal amount = accountMap.get(account).add(incomeInterest);
+                        accountMap.put(account, amount);
+                    } else {
+                        accountMap.put(account, incomeInterest);
+                    }
+
+                    if (interestAmount.subtract(incomeInterest).compareTo(BigDecimal.ZERO) > 0) {
+                        GLAccount incomeAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                                AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(), paymentTypeId);
+                        BigDecimal amount = interestAmount.subtract(incomeInterest);
+                        if (accountMap.containsKey(incomeAccount)) {
+                            BigDecimal totalAmount = accountMap.get(incomeAccount).add(amount);
+                            accountMap.put(incomeAccount, totalAmount);
+                        } else {
+                            accountMap.put(incomeAccount, amount);
+                        }
+                    }
+                }
+
             }
         }
 
