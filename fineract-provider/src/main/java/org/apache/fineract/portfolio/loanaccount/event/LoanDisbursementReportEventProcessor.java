@@ -73,7 +73,7 @@ public class LoanDisbursementReportEventProcessor extends BaseCustomWebhookEvent
         return Collections.emptyMap();
     }
 
-    public Map<String, Object> generateSuccessResponse(CommandProcessingResult result, Boolean useAdditionalInformationForEstablishment) {
+    public Map<String, Object> generateSuccessResponse(CommandProcessingResult result, Boolean useTransactionDetailsForEstablishment) {
 
         Map<String, Object> requestBody = new HashMap<>();
         Loan loan = loanRepositoryWrapper.findOneWithNotFoundDetection(result.getLoanId());
@@ -108,12 +108,8 @@ public class LoanDisbursementReportEventProcessor extends BaseCustomWebhookEvent
 
         if (Objects.nonNull(disbursalTransaction)) {
             requestBody.put("transactionAmount", disbursalTransaction.getAmount());
-            if (useAdditionalInformationForEstablishment) {
-                requestBody.put("commercialEstablishmentId", informacionAdicional.getNumeroIdentificacionAliado());
-            } else {
-                requestBody.put("commercialEstablishmentId",
-                        getDetallesDeLaTransacion(disbursalTransaction).getIdentificacionEstablecimientoComercial());
-            }
+            requestBody.put("commercialEstablishmentId",
+                    getDetallesDeLaTransacion(disbursalTransaction).getIdentificacionEstablecimientoComercial());
         }
 
         return requestBody;
@@ -161,7 +157,7 @@ public class LoanDisbursementReportEventProcessor extends BaseCustomWebhookEvent
 
                 @Override
                 public DetallesDeLaTransacionDatatableData mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    return DetallesDeLaTransacionDatatableData.builder().loanId(rs.getLong("loan_id"))
+                    return DetallesDeLaTransacionDatatableData.builder().loanId(loanTransaction.getLoan().getId())
                             .identificacionEstablecimientoComercial(rs.getString("id_establishment")).build();
                 }
             }, loanTransaction.getId());

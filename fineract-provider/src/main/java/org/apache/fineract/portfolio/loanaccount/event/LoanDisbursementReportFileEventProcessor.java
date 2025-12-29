@@ -42,7 +42,7 @@ public class LoanDisbursementReportFileEventProcessor extends BaseCustomWebhookE
 
     @Override
     protected List<Map<String, String>> getSupportedEvents() {
-        Map<String, String> loanEvent = Map.of("entityName", "Informacion Adicional", "actionName", "CREATE");
+        Map<String, String> loanEvent = Map.of("entityName", "detalles_de_la_transaccion", "actionName", "CREATE");
         return Collections.singletonList(loanEvent);
     }
 
