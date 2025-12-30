@@ -228,7 +228,7 @@ bootRun {
         implementation 'org.apache.poi:poi:5.2.3'
         implementation 'org.apache.poi:poi-ooxml:5.2.3'
         implementation 'org.apache.poi:poi-ooxml-full:5.2.3'
-        implementation 'com.ibm.icu:icu4j:3.4.4'
+        implementation 'com.ibm.icu:icu4j:77.1'
     }
 }
 
