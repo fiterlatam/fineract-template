@@ -917,7 +917,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         public PrequalificationIndividualMappingsMapper() {
             this.schema = """
                     mpg.id AS id, mpg.prequalification_number AS prequalificationNumber, mpg.group_name AS groupName, mpg.status AS status,
-                    mpl.name AS productName, mpg.created_at, ma.firstname, ma.lastname, mg.id as groupId, mpg.prequalification_type_enum as prequalificationType
+                    mpl.name AS productName,mpl.id AS productId, mpgm.requested_amount as requestedAmount, mpg.created_at, ma.firstname, ma.lastname, mg.id as groupId, mpg.prequalification_type_enum as prequalificationType
                     FROM m_prequalification_group mpg
                     INNER JOIN m_product_loan mpl ON mpl.id = mpg.product_id
                     INNER JOIN m_prequalification_group_members mpgm ON mpgm.group_id = mpg.id
@@ -940,6 +940,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             final String prequalificationNumber = rs.getString("prequalificationNumber");
             String groupName = rs.getString("groupName");
             final String productName = rs.getString("productName");
+            final Long productId = rs.getLong("productId");
+            final BigDecimal requestedAmount = rs.getBigDecimal("requestedAmount");
             final LocalDateTime createdAt = JdbcSupport.getLocalDateTime(rs, "created_at");
             final String addedBy = rs.getString("firstname") + " " + rs.getString("lastname");
             final Integer prequalificationTypeEnum = JdbcSupport.getInteger(rs, "prequalificationType");
@@ -947,6 +949,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             GroupPrequalificationData prequalificationData = GroupPrequalificationData.simpeGroupData(id, prequalificationNumber, status,
                     groupName, productName, addedBy, createdAt, groupId);
             prequalificationData.setPrequalificationType(prequalificationType);
+            prequalificationData.setTotalRequestedAmount(requestedAmount);
+            prequalificationData.setProductId(productId);
             return prequalificationData;
         }
     }

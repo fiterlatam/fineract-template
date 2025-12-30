@@ -198,6 +198,7 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
         this.isSelfServiceUser = isSelfServiceUser;
         this.appUserClientMappings = createAppUserClientMappings(clients);
         this.cannotChangePassword = cannotChangePassword;
+        this.resetPassword = false;
     }
 
     public EnumOptionData organisationalRoleData() {

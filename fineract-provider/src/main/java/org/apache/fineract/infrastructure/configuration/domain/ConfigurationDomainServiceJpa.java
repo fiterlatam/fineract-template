@@ -533,6 +533,30 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     }
 
     @Override
+    public Boolean isHierarchyEnabledForAccounting() {
+        final String propertyName = "office-hierarchy-enabled-for-accounting";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.isEnabled();
+    }
+
+    @Override
+    public Boolean isRepaymentScheduleRecalculationEnabled() {
+        final String propertyName = "repayment-schedule-recalculation-enabled";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.isEnabled();
+    }
+
+    @Override
+    public Boolean isWaiveInterestOnRestructureCredits() {
+        return getGlobalConfigurationPropertyData("waive-interest-on-restructure").isEnabled();
+    }
+
+    @Override
+    public Boolean isWaiveChargesAndFeesOnRestructureCredits() {
+        return getGlobalConfigurationPropertyData("waive-charges-and-penalties-on-restructure").isEnabled();
+    }
+
+    @Override
     public boolean isRebalanceAllAccounts() {
         return getGlobalConfigurationPropertyData("rebalance-all-savings-accounts").isEnabled();
     }

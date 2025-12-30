@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.accounting.closure.domain;
 
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -27,4 +28,13 @@ public interface GLClosureRepository extends JpaRepository<GLClosure, Long>, Jpa
 
     @Query("select closure from GLClosure closure where closure.closingDate = (select max(closure1.closingDate) from GLClosure closure1 where closure1.office.id=:officeId)  and closure.office.id= :officeId")
     GLClosure getLatestGLClosureByBranch(@Param("officeId") Long officeId);
+
+    // RETRIEVE A LIST OF GL CLOSURES FOR A LIST OF OFFICES PARAMETER STRING OF OFFICES IDS IS PASSED
+    @Query("select closure from GLClosure closure where closure.office.id in :officeIds")
+    List<GLClosure> findGLClosuresByOfficeIds(@Param("officeIds") List<Long> officeIds);
+
+    // RETRIEVE A LIST OF GL CLOSURES FOR A PARENT OFFICE ID
+    @Query("select closure from GLClosure closure where closure.parentClosure.id = :parent")
+    List<GLClosure> findGLClosuresByParentClosure(@Param("parent") Long parent);
+
 }

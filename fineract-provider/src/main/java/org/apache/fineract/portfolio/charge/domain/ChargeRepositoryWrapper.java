@@ -56,4 +56,17 @@ public class ChargeRepositoryWrapper {
 
         return chargeDefinition;
     }
+
+    public Charge findOneWithNotFoundDetection(final String chargeName) {
+
+        final Charge chargeDefinition = this.repository.findByName(chargeName).orElseThrow(() -> new ChargeNotFoundException(chargeName));
+        if (chargeDefinition.isDeleted()) {
+            throw new ChargeNotFoundException(chargeName);
+        }
+        if (!chargeDefinition.isActive()) {
+            throw new ChargeIsNotActiveException(chargeDefinition.getId(), chargeDefinition.getName());
+        }
+
+        return chargeDefinition;
+    }
 }

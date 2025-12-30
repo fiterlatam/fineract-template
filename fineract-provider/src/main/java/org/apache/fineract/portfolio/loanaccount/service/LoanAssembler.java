@@ -186,6 +186,8 @@ public class LoanAssembler {
         final Boolean createStandingInstructionAtDisbursement = this.fromApiJsonHelper
                 .extractBooleanNamed("createStandingInstructionAtDisbursement", element);
 
+        final Boolean isRestructuredLoan = this.fromApiJsonHelper.extractBooleanNamed("isRestructuredLoan", element);
+
         final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
                 .orElseThrow(() -> new LoanProductNotFoundException(productId));
         final BigDecimal amount = this.fromApiJsonHelper
@@ -350,8 +352,7 @@ public class LoanAssembler {
 
         PrequalificationGroup prequalificationGroup = null;
         final Boolean isBulkImport = this.fromApiJsonHelper.extractBooleanNamed("isBulkImport", element);
-        final Boolean isRestructuredLoan = this.fromApiJsonHelper.extractBooleanNamed("isRestructuredLoan", element);
-        if ((isBulkImport == null || !isBulkImport) && (isRestructuredLoan == null || !isRestructuredLoan)) {
+        if ((isBulkImport == null || !isBulkImport)) {
             final Long prequalificationId = this.fromApiJsonHelper.extractLongNamed("prequalificationId", element);
             prequalificationGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(prequalificationId);
             if (!PrequalificationStatus.BURO_CHECKED.getValue().equals(prequalificationGroup.getStatus())) {
@@ -372,6 +373,13 @@ public class LoanAssembler {
         loanApplication.loanApplicationSubmittal(loanScheduleModel, loanApplicationTerms, defaultLoanLifecycleStateMachine(),
                 submittedOnDate, externalId, allowTransactionsOnHoliday, holidays, workingDays, allowTransactionsOnNonWorkingDay);
         loanApplication.setPrequalificationGroup(prequalificationGroup);
+        if (Boolean.TRUE.equals(isRestructuredLoan)) {
+            Long restructuredFromLoanId = this.fromApiJsonHelper.extractLongNamed("restructuredFromLoanId", element);
+            if (restructuredFromLoanId == null) {
+                throw new IllegalStateException("Restructured loan id is required for a restructured loan.");
+            }
+            loanApplication.setRestructureRequestId(restructuredFromLoanId);
+        }
         return loanApplication;
     }
 

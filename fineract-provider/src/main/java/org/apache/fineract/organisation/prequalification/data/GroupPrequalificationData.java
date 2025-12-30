@@ -41,7 +41,7 @@ public class GroupPrequalificationData {
     private final Long id;
     private final String productName;
 
-    private final Long productId;
+    private Long productId;
     private final String prequalificationNumber;
     private final String groupName;
     private final String portforlioName;
@@ -240,5 +240,9 @@ public class GroupPrequalificationData {
 
     public void updateRenegotiations(List<RenegotiationData> renegotiations) {
         this.renegotiations = renegotiations;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
     }
 }

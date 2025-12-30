@@ -158,15 +158,19 @@ public class AuthenticationApiResource {
                         SET
                             incorrect_access_count = COALESCE(incorrect_access_count, 0) + 1,
                             nonlocked = CASE
-                                WHEN COALESCE(incorrect_access_count, 0) + 1 >= ? THEN FALSE
+                                WHEN COALESCE(incorrect_access_count, 0) + 1 > ? THEN FALSE
                                 ELSE nonlocked
                             END
                         WHERE username = ?;
                         """, maxLoginAttempt, request.username);
+                this.appUserWritePlatformService.logUserAuthenticationDetails(null, servletRequest, "LOGIN", "Credenciales inválidas",
+                        request.username, false);
                 throw new BadCredentialsException("Authentication failed for user: " + request.username + ": " + e.getMessage());
             }
             // log the failed login attempt
             if (e instanceof LockedException) {
+                this.appUserWritePlatformService.logUserAuthenticationDetails(null, servletRequest, "LOGIN", "Cuenta de usuario bloqueada",
+                        request.username, false);
                 throw new UserAccountErrorException("locked", request.username);
             }
             throw e;
@@ -185,7 +189,11 @@ public class AuthenticationApiResource {
                     .encode((request.username + ":" + request.password).getBytes(StandardCharsets.UTF_8));
 
             final AppUser principal = (AppUser) authenticationCheck.getPrincipal();
-            principal.resetIncorrectAccessCount();
+            this.jdbcTemplate.update("""
+                    UPDATE m_appuser
+                    SET incorrect_access_count = 0 WHERE username = ?;
+                    """, request.username);
+
             final Collection<RoleData> roles = new ArrayList<>();
             final Set<Role> userRoles = principal.getRoles();
             for (final Role role : userRoles) {
@@ -216,8 +224,8 @@ public class AuthenticationApiResource {
                         new String(base64EncodedAuthenticationKey, StandardCharsets.UTF_8), isTwoFactorRequired,
                         returnClientList ? clientReadPlatformService.retrieveUserClients(userId) : null);
             }
-            this.appUserWritePlatformService.logUserAuthenticationDetails(principal, servletRequest, "LOGIN", "Successful Login",
-                    principal.getUsername());
+            this.appUserWritePlatformService.logUserAuthenticationDetails(principal, servletRequest, "LOGIN", "Inicio de sesión exitoso",
+                    principal.getUsername(), true);
         }
 
         return this.apiJsonSerializerService.serialize(authenticatedUserData);
@@ -258,7 +266,7 @@ public class AuthenticationApiResource {
     @Produces({ MediaType.APPLICATION_JSON })
     public String processLogout(final String apiRequestBodyAsJson, @QueryParam("username") String username,
             @Context HttpServletRequest servletRequest) {
-        this.appUserWritePlatformService.logUserAuthenticationDetails(null, servletRequest, "LOGOUT", "Successful Logout", username);
+        this.appUserWritePlatformService.logUserAuthenticationDetails(null, servletRequest, "LOGOUT", "Successful Logout", username, true);
         return this.apiJsonSerializerService.serialize("");
     }
 }

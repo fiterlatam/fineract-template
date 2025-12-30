@@ -88,10 +88,11 @@ public class GLClosuresApiResource {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(array = @ArraySchema(schema = @Schema(implementation = GLClosuresApiResourceSwagger.GetGlClosureResponse.class)))) })
     public String retrieveAllClosures(@Context final UriInfo uriInfo,
-            @QueryParam("officeId") @Parameter(name = "officeId") final Long officeId) {
+            @QueryParam("officeId") @Parameter(name = "officeId") final Long officeId,
+            @QueryParam("parentId") @Parameter(name = "parentId") final Long parentId) {
 
         this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermission);
-        final List<GLClosureData> glClosureDatas = this.glClosureReadPlatformService.retrieveAllGLClosures(officeId);
+        final List<GLClosureData> glClosureDatas = this.glClosureReadPlatformService.retrieveAllGLClosures(officeId, parentId);
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.apiJsonSerializerService.serialize(settings, glClosureDatas, RESPONSE_DATA_PARAMETERS);

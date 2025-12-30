@@ -213,7 +213,7 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
     public LocalDate getRepaymentPeriodDate(final PeriodFrequencyType frequency, final int repaidEvery, final LocalDate startDate) {
         LocalDate dueRepaymentPeriodDate = startDate;
         switch (frequency) {
-            case DAYS:
+            case DAYS, MONTHS_APPLIED_DAILY:
                 dueRepaymentPeriodDate = startDate.plusDays(repaidEvery);
             break;
             case WEEKS:
@@ -239,7 +239,7 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
             final LocalDate date) {
         boolean isScheduledDate = false;
         switch (frequency) {
-            case DAYS:
+            case DAYS, MONTHS_APPLIED_DAILY:
                 int diff = Math.toIntExact(ChronoUnit.DAYS.between(startDate, date));
                 isScheduledDate = (diff % repaidEvery) == 0;
             break;
@@ -284,7 +284,7 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
         LocalDate idealDisbursementDate = null;
 
         switch (repaymentPeriodFrequencyType) {
-            case DAYS:
+            case DAYS, MONTHS_APPLIED_DAILY:
                 idealDisbursementDate = firstRepaymentDate.minusDays(repaidEvery);
             break;
             case WEEKS:

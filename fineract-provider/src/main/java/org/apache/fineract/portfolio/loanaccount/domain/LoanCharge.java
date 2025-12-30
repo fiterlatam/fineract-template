@@ -52,6 +52,7 @@ import org.apache.fineract.portfolio.charge.domain.ChargeInstallmentFeeType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeWithoutMandatoryFieldException;
+import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.loanaccount.command.LoanChargeCommand;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidDetail;
 
@@ -159,6 +160,8 @@ public class LoanCharge extends AbstractPersistableCustom {
         final ChargeTimeType chargeTime = null;
         final ChargeCalculationType chargeCalculation = null;
         final ChargePaymentMode chargePaymentMode = null;
+        Integer feeFrequency = chargeDefinition.feeFrequency();
+
         BigDecimal amountPercentageAppliedTo = BigDecimal.ZERO;
         switch (ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation())) {
             case PERCENT_OF_AMOUNT:
@@ -213,6 +216,45 @@ public class LoanCharge extends AbstractPersistableCustom {
         LoanCharge newLoanCharge = new LoanCharge(loan, chargeDefinition, amountPercentageAppliedTo, amount, chargeTime, chargeCalculation,
                 dueDate, chargePaymentMode, null, loanCharge);
         final String externalId = command.stringValueOfParameterNamedAllowingNull("externalId");
+        newLoanCharge.setExternalId(externalId);
+        newLoanCharge.setChargeDisbursementType(chargeDefinition.getChargeDisbursementType());
+        newLoanCharge.setChargeInstallmentFeeType(chargeDefinition.getChargeInstallmentFeeType());
+        return newLoanCharge;
+    }
+
+    public static LoanCharge createNewFromChargeAmount(final Loan loan, final Charge chargeDefinition, final LocalDate dueDate,
+            final BigDecimal chargeAmount, String receiptNumber) {
+        final ChargeTimeType chargeTime = null;
+        final ChargeCalculationType chargeCalculation = null;
+        final ChargePaymentMode chargePaymentMode = null;
+        BigDecimal amountPercentageAppliedTo = BigDecimal.ZERO;
+
+        BigDecimal loanCharge = BigDecimal.ZERO;
+        if (ChargeTimeType.fromInt(chargeDefinition.getChargeTimeType()).equals(ChargeTimeType.INSTALMENT_FEE)) {
+            BigDecimal percentage = chargeDefinition.getAmount();
+            if (percentage == null) {
+                percentage = chargeDefinition.getAmount();
+            }
+            loanCharge = loan.calculatePerInstallmentChargeAmount(ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()),
+                    percentage);
+        }
+
+        // If charge type is specified due date and loan is multi disburment
+        // loan.
+        // Then we need to get as of this loan charge due date how much amount
+        // disbursed.
+        if (chargeDefinition.getChargeTimeType().equals(ChargeTimeType.SPECIFIED_DUE_DATE.getValue()) && loan.isMultiDisburmentLoan()) {
+            amountPercentageAppliedTo = BigDecimal.ZERO;
+            for (final LoanDisbursementDetails loanDisbursementDetails : loan.getDisbursementDetails()) {
+                if (!loanDisbursementDetails.expectedDisbursementDate().isAfter(dueDate)) {
+                    amountPercentageAppliedTo = amountPercentageAppliedTo.add(loanDisbursementDetails.principal());
+                }
+            }
+        }
+
+        LoanCharge newLoanCharge = new LoanCharge(loan, chargeDefinition, chargeAmount, chargeDefinition.getAmount(), chargeTime,
+                chargeCalculation, dueDate, chargePaymentMode, null, loanCharge);
+        final String externalId = receiptNumber;
         newLoanCharge.setExternalId(externalId);
         newLoanCharge.setChargeDisbursementType(chargeDefinition.getChargeDisbursementType());
         newLoanCharge.setChargeInstallmentFeeType(chargeDefinition.getChargeInstallmentFeeType());
@@ -282,6 +324,133 @@ public class LoanCharge extends AbstractPersistableCustom {
         this.paid = determineIfFullyPaid();
     }
 
+    // For FriendshipBridge
+    public LoanCharge(final Loan loan, final Charge chargeDefinition, final BigDecimal loanPrincipal, final BigDecimal amount,
+            final ChargeTimeType chargeTime, final ChargeCalculationType chargeCalculation, final LocalDate dueDate,
+            final ChargePaymentMode chargePaymentMode, final Integer numberOfRepayments, final BigDecimal loanCharge,
+            LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue, Integer lastUnpaidInstallment) {
+        this.loan = loan;
+        this.charge = chargeDefinition;
+        this.penaltyCharge = chargeDefinition.isPenalty();
+        this.minCap = chargeDefinition.getMinCap();
+        this.minCap = chargeDefinition.getMinCap();
+        this.maxCap = chargeDefinition.getMaxCap();
+        this.chargeDisbursementType = chargeDefinition.getChargeDisbursementType();
+        this.chargeInstallmentFeeType = chargeDefinition.getChargeInstallmentFeeType();
+        this.chargeTime = chargeDefinition.getChargeTimeType();
+        if (chargeTime != null) {
+            this.chargeTime = chargeTime.getValue();
+        }
+
+        if (ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.SPECIFIED_DUE_DATE)
+                || ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.OVERDUE_INSTALLMENT)) {
+
+            if (dueDate == null) {
+                final String defaultUserMessage = "Loan charge is missing due date.";
+                throw new LoanChargeWithoutMandatoryFieldException("loanCharge", "dueDate", defaultUserMessage, chargeDefinition.getId(),
+                        chargeDefinition.getName());
+            }
+
+            this.dueDate = dueDate;
+        } else {
+            this.dueDate = null;
+        }
+
+        this.chargeCalculation = chargeDefinition.getChargeCalculation();
+        if (chargeCalculation != null) {
+            this.chargeCalculation = chargeCalculation.getValue();
+        }
+
+        BigDecimal chargeAmount = chargeDefinition.getAmount();
+        if (amount != null) {
+            chargeAmount = amount;
+        }
+
+        this.chargePaymentMode = chargeDefinition.getChargePaymentMode();
+        if (chargePaymentMode != null) {
+            this.chargePaymentMode = chargePaymentMode.getValue();
+        }
+
+        populateDerivedFields(loanPrincipal, chargeAmount, numberOfRepayments, loanCharge, installment, penaltyWaitPeriodValue, dueDate,
+                lastUnpaidInstallment);
+        this.paid = determineIfFullyPaid();
+    }
+
+    public static LoanCharge createNewFromJson(Loan loan, Charge chargeDefinition, JsonCommand command, LocalDate dueDate,
+            LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue, Integer lastUnpaidInstallment) {
+        final BigDecimal amount = command.bigDecimalValueOfParameterNamed("amount");
+
+        final ChargeTimeType chargeTime = null;
+        final ChargeCalculationType chargeCalculation = null;
+        final ChargePaymentMode chargePaymentMode = null;
+
+        BigDecimal amountPercentageAppliedTo = BigDecimal.ZERO;
+        switch (ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation())) {
+            case PERCENT_OF_AMOUNT:
+                if (command.hasParameter("principal")) {
+                    amountPercentageAppliedTo = command.bigDecimalValueOfParameterNamed("principal");
+                } else {
+                    amountPercentageAppliedTo = loan.getPrincpal().getAmount();
+                }
+            break;
+            case PERCENT_OF_AMOUNT_AND_INTEREST:
+                if (command.hasParameter("principal") && command.hasParameter("interest")) {
+                    amountPercentageAppliedTo = command.bigDecimalValueOfParameterNamed("principal")
+                            .add(command.bigDecimalValueOfParameterNamed("interest"));
+                } else {
+                    amountPercentageAppliedTo = loan.getPrincpal().getAmount().add(loan.getTotalInterest());
+                }
+            break;
+            case PERCENT_OF_INTEREST:
+                if (command.hasParameter("interest")) {
+                    amountPercentageAppliedTo = command.bigDecimalValueOfParameterNamed("interest");
+                } else {
+                    amountPercentageAppliedTo = loan.getTotalInterest();
+                }
+            break;
+            case PERCENT_OF_OUTSTANDING_BALANCE:
+                if (installment != null) {
+                    amountPercentageAppliedTo = installment.getPrincipalOutstanding(loan.getCurrency()).getAmount();
+                } else {
+                    amountPercentageAppliedTo = loan.getSummary().getTotalOutstanding();
+                }
+            break;
+            default:
+            break;
+        }
+
+        BigDecimal loanCharge = BigDecimal.ZERO;
+        if (ChargeTimeType.fromInt(chargeDefinition.getChargeTimeType()).equals(ChargeTimeType.INSTALMENT_FEE)) {
+            BigDecimal percentage = amount;
+            if (percentage == null) {
+                percentage = chargeDefinition.getAmount();
+            }
+            loanCharge = loan.calculatePerInstallmentChargeAmount(ChargeCalculationType.fromInt(chargeDefinition.getChargeCalculation()),
+                    percentage);
+        }
+
+        // If charge type is specified due date and loan is multi disburment
+        // loan.
+        // Then we need to get as of this loan charge due date how much amount
+        // disbursed.
+        if (chargeDefinition.getChargeTimeType().equals(ChargeTimeType.SPECIFIED_DUE_DATE.getValue()) && loan.isMultiDisburmentLoan()) {
+            amountPercentageAppliedTo = BigDecimal.ZERO;
+            for (final LoanDisbursementDetails loanDisbursementDetails : loan.getDisbursementDetails()) {
+                if (!loanDisbursementDetails.expectedDisbursementDate().isAfter(dueDate)) {
+                    amountPercentageAppliedTo = amountPercentageAppliedTo.add(loanDisbursementDetails.principal());
+                }
+            }
+        }
+
+        LoanCharge newLoanCharge = new LoanCharge(loan, chargeDefinition, amountPercentageAppliedTo, amount, chargeTime, chargeCalculation,
+                dueDate, chargePaymentMode, null, loanCharge, installment, penaltyWaitPeriodValue, lastUnpaidInstallment);
+        final String externalId = command.stringValueOfParameterNamedAllowingNull("externalId");
+        newLoanCharge.setExternalId(externalId);
+        newLoanCharge.setChargeDisbursementType(chargeDefinition.getChargeDisbursementType());
+        newLoanCharge.setChargeInstallmentFeeType(chargeDefinition.getChargeInstallmentFeeType());
+        return newLoanCharge;
+    }
+
     private void populateDerivedFields(final BigDecimal amountPercentageAppliedTo, final BigDecimal chargeAmount,
             Integer numberOfRepayments, BigDecimal loanCharge) {
 
@@ -315,10 +484,75 @@ public class LoanCharge extends AbstractPersistableCustom {
             case PERCENT_OF_AMOUNT_AND_INTEREST:
             case PERCENT_OF_INTEREST:
             case PERCENT_OF_DISBURSEMENT_AMOUNT:
+            case PERCENT_OF_OUTSTANDING_BALANCE:
                 this.percentage = chargeAmount;
                 this.amountPercentageAppliedTo = amountPercentageAppliedTo;
                 if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
                     loanCharge = percentageOf(this.amountPercentageAppliedTo);
+                    Integer feeFrequency = charge.feeFrequency();
+                }
+                this.amount = minimumAndMaximumCap(loanCharge);
+                this.amountPaid = null;
+                this.amountOutstanding = calculateOutstanding();
+                this.amountWaived = null;
+                this.amountWrittenOff = null;
+            break;
+        }
+        this.amountOrPercentage = chargeAmount;
+        if (this.loan != null && isInstalmentFee()) {
+            updateInstallmentCharges();
+        }
+    }
+
+    private void populateDerivedFields(final BigDecimal amountPercentageAppliedTo, final BigDecimal chargeAmount,
+            Integer numberOfRepayments, BigDecimal loanCharge, LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue,
+            LocalDate dueDate, Integer lastUnpaidInstallment) {
+
+        switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
+            case INVALID:
+                this.percentage = null;
+                this.amount = null;
+                this.amountPercentageAppliedTo = null;
+                this.amountPaid = null;
+                this.amountOutstanding = BigDecimal.ZERO;
+                this.amountWaived = null;
+                this.amountWrittenOff = null;
+            break;
+            case FLAT:
+                this.percentage = null;
+                this.amountPercentageAppliedTo = null;
+                this.amountPaid = null;
+                if (isInstalmentFee()) {
+                    if (numberOfRepayments == null) {
+                        numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
+                    }
+                    this.amount = chargeAmount.multiply(BigDecimal.valueOf(numberOfRepayments));
+                } else {
+                    this.amount = chargeAmount;
+                }
+                this.amountOutstanding = this.amount;
+                this.amountWaived = null;
+                this.amountWrittenOff = null;
+            break;
+            case PERCENT_OF_AMOUNT:
+            case PERCENT_OF_AMOUNT_AND_INTEREST:
+            case PERCENT_OF_INTEREST:
+            case PERCENT_OF_DISBURSEMENT_AMOUNT:
+            case PERCENT_OF_OUTSTANDING_BALANCE:
+                this.percentage = chargeAmount;
+                this.amountPercentageAppliedTo = amountPercentageAppliedTo;
+                if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
+                    loanCharge = percentageOf(this.amountPercentageAppliedTo);
+                    if (PeriodFrequencyType.fromInt(charge.feeFrequency()).equals(PeriodFrequencyType.MONTHS_APPLIED_DAILY)) {
+                        loanCharge = loanCharge.divide(BigDecimal.valueOf(30), MathContext.DECIMAL64);
+
+                        // If penalty wait period is set, then we need to add the penalty wait period charges
+                        if (installment.getDueDate().plusDays(penaltyWaitPeriodValue + 1).equals(dueDate)
+                                && installment.getInstallmentNumber().equals(lastUnpaidInstallment)) {
+                            BigDecimal penaltyWaitPeriodCharges = loanCharge.multiply(BigDecimal.valueOf(penaltyWaitPeriodValue));
+                            loanCharge = loanCharge.add(penaltyWaitPeriodCharges);
+                        }
+                    }
                 }
                 this.amount = minimumAndMaximumCap(loanCharge);
                 this.amountPaid = null;
@@ -427,6 +661,7 @@ public class LoanCharge extends AbstractPersistableCustom {
                 case PERCENT_OF_AMOUNT:
                 case PERCENT_OF_AMOUNT_AND_INTEREST:
                 case PERCENT_OF_INTEREST:
+                case PERCENT_OF_OUTSTANDING_BALANCE:
                 case PERCENT_OF_DISBURSEMENT_AMOUNT:
                     this.amountPercentageAppliedTo = loanPrincipal;
                     if (this.loan != null && isDisbursementCharge() && this.isAddOnDisbursementType()) {
@@ -442,6 +677,89 @@ public class LoanCharge extends AbstractPersistableCustom {
                         this.percentage = amount;
                         if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
                             loanCharge = percentageOf(this.amountPercentageAppliedTo);
+                        }
+                    }
+                    this.amount = minimumAndMaximumCap(loanCharge);
+                break;
+            }
+            this.amountOrPercentage = updatedAmount;
+            this.amountOutstanding = calculateOutstanding();
+            if (this.loan != null && isInstalmentFee()) {
+                updateInstallmentCharges();
+            }
+        }
+    }
+
+    public void update(final BigDecimal amount, final LocalDate dueDate, final BigDecimal loanPrincipal, Integer numberOfRepayments,
+            BigDecimal loanCharge, LoanRepaymentScheduleInstallment installment, Long penaltyWaitPeriodValue,
+            Integer lastUnpaidInstallment) {
+        if (dueDate != null) {
+            this.dueDate = dueDate;
+        }
+
+        BigDecimal updatedAmount = amount;
+        if (updatedAmount != null) {
+            switch (ChargeCalculationType.fromInt(this.chargeCalculation)) {
+                case INVALID:
+                break;
+                case FLAT:
+                    if (isInstalmentFee()) {
+                        if (numberOfRepayments == null) {
+                            numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
+                        }
+                        this.amount = updatedAmount.multiply(BigDecimal.valueOf(numberOfRepayments));
+                    } else {
+                        this.amount = updatedAmount;
+                    }
+                break;
+                case PERCENT_OF_AMOUNT:
+                case PERCENT_OF_AMOUNT_AND_INTEREST:
+                case PERCENT_OF_INTEREST:
+                case PERCENT_OF_DISBURSEMENT_AMOUNT:
+                    this.amountPercentageAppliedTo = loanPrincipal;
+                    if (this.loan != null && isDisbursementCharge() && this.isAddOnDisbursementType()) {
+                        LocalDate disbursementDate = this.loan.getDisbursementDate();
+                        LocalDate firstRepaymentDate = this.loan.fetchRepaymentScheduleInstallment(1).getDueDate();
+                        Pair<Integer, BigDecimal> addOnDaysAndRate = this.charge.getAddOnDisbursementChargeRate(disbursementDate,
+                                firstRepaymentDate);
+                        BigDecimal feeRate = addOnDaysAndRate.getRight();
+                        this.percentage = feeRate;
+                        updatedAmount = feeRate;
+                        loanCharge = percentageOf(this.amountPercentageAppliedTo);
+                    } else {
+                        this.percentage = amount;
+                        if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
+                            loanCharge = percentageOf(this.amountPercentageAppliedTo);
+                        }
+                    }
+                    this.amount = minimumAndMaximumCap(loanCharge);
+                break;
+                case PERCENT_OF_OUTSTANDING_BALANCE:
+                    this.amountPercentageAppliedTo = loanPrincipal;
+                    if (this.loan != null && isDisbursementCharge() && this.isAddOnDisbursementType()) {
+                        LocalDate disbursementDate = this.loan.getDisbursementDate();
+                        LocalDate firstRepaymentDate = this.loan.fetchRepaymentScheduleInstallment(1).getDueDate();
+                        Pair<Integer, BigDecimal> addOnDaysAndRate = this.charge.getAddOnDisbursementChargeRate(disbursementDate,
+                                firstRepaymentDate);
+                        BigDecimal feeRate = addOnDaysAndRate.getRight();
+                        this.percentage = feeRate;
+                        updatedAmount = feeRate;
+                        loanCharge = percentageOf(this.amountPercentageAppliedTo);
+                    } else {
+                        this.percentage = amount;
+                        if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
+                            loanCharge = percentageOf(this.amountPercentageAppliedTo);
+
+                            if (PeriodFrequencyType.fromInt(charge.feeFrequency()).equals(PeriodFrequencyType.MONTHS_APPLIED_DAILY)) {
+                                loanCharge = loanCharge.divide(BigDecimal.valueOf(30), MathContext.DECIMAL64);
+
+                                // If penalty wait period is set, then we need to add the penalty wait period charges
+                                if (installment.getDueDate().plusDays(penaltyWaitPeriodValue + 1).equals(dueDate)
+                                        && installment.getInstallmentNumber().equals(lastUnpaidInstallment)) {
+                                    BigDecimal penaltyWaitPeriodCharges = loanCharge.multiply(BigDecimal.valueOf(penaltyWaitPeriodValue));
+                                    loanCharge = loanCharge.add(penaltyWaitPeriodCharges);
+                                }
+                            }
                         }
                     }
                     this.amount = minimumAndMaximumCap(loanCharge);
@@ -483,6 +801,9 @@ public class LoanCharge extends AbstractPersistableCustom {
                 case PERCENT_OF_DISBURSEMENT_AMOUNT:
                     LoanTrancheDisbursementCharge loanTrancheDisbursementCharge = this.loanTrancheDisbursementCharge;
                     amountPercentageAppliedTo = loanTrancheDisbursementCharge.getloanDisbursementDetails().principal();
+                break;
+                case PERCENT_OF_OUTSTANDING_BALANCE:
+                    amountPercentageAppliedTo = this.loan.getSummary().getTotalPrincipalOutstanding();
                 break;
                 default:
                 break;
@@ -529,6 +850,7 @@ public class LoanCharge extends AbstractPersistableCustom {
                 case PERCENT_OF_AMOUNT_AND_INTEREST:
                 case PERCENT_OF_INTEREST:
                 case PERCENT_OF_DISBURSEMENT_AMOUNT:
+                case PERCENT_OF_OUTSTANDING_BALANCE:
                     this.percentage = newValue;
                     this.amountPercentageAppliedTo = amount;
                     loanCharge = BigDecimal.ZERO;
@@ -868,6 +1190,12 @@ public class LoanCharge extends AbstractPersistableCustom {
 
     public void updateAmount(final BigDecimal amount) {
         this.amount = amount;
+        calculateOutstanding();
+    }
+
+    public void updateAmount(final BigDecimal amount, final BigDecimal appliedTo) {
+        this.amount = amount;
+        this.amountPercentageAppliedTo = appliedTo;
         calculateOutstanding();
     }
 

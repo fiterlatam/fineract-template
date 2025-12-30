@@ -47,6 +47,10 @@ public class GLClosure extends AbstractAuditableCustom {
     @JoinColumn(name = "office_id", nullable = false)
     private Office office;
 
+    @ManyToOne
+    @JoinColumn(name = "parent_closure_id", nullable = false)
+    private Office parentClosure;
+
     @Column(name = "is_deleted", nullable = false)
     private boolean deleted = true;
 
@@ -56,10 +60,11 @@ public class GLClosure extends AbstractAuditableCustom {
     @Column(name = "comments", nullable = true, length = 500)
     private String comments;
 
-    public GLClosure(final Office office, final LocalDate closingDate, final String comments) {
+    public GLClosure(final Office office, final LocalDate closingDate, final String comments, Office parentOffice) {
         this.office = office;
         this.deleted = false;
         this.closingDate = closingDate;
+        this.parentClosure = parentOffice;
         this.comments = StringUtils.defaultIfEmpty(comments, null);
         if (this.comments != null) {
             this.comments = this.comments.trim();
@@ -69,12 +74,19 @@ public class GLClosure extends AbstractAuditableCustom {
     public static GLClosure fromJson(final Office office, final JsonCommand command) {
         final LocalDate closingDate = command.localDateValueOfParameterNamed(GLClosureJsonInputParams.CLOSING_DATE.getValue());
         final String comments = command.stringValueOfParameterNamed(GLClosureJsonInputParams.COMMENTS.getValue());
-        return new GLClosure(office, closingDate, comments);
+        return new GLClosure(office, closingDate, comments, null);
+    }
+
+    public static GLClosure fromJson(Office office, Office parentOffice, JsonCommand command) {
+        final LocalDate closingDate = command.localDateValueOfParameterNamed(GLClosureJsonInputParams.CLOSING_DATE.getValue());
+        final String comments = command.stringValueOfParameterNamed(GLClosureJsonInputParams.COMMENTS.getValue());
+        return new GLClosure(office, closingDate, comments, parentOffice);
     }
 
     public Map<String, Object> update(final JsonCommand command) {
         final Map<String, Object> actualChanges = new LinkedHashMap<>(5);
         handlePropertyUpdate(command, actualChanges, GLClosureJsonInputParams.COMMENTS.getValue(), this.comments);
+        handlePropertyUpdate(command, actualChanges, GLClosureJsonInputParams.CLOSING_DATE.getValue(), this.closingDate);
         return actualChanges;
     }
 
@@ -86,6 +98,18 @@ public class GLClosure extends AbstractAuditableCustom {
             // now update actual property
             if (paramName.equals(GLClosureJsonInputParams.COMMENTS.getValue())) {
                 this.comments = newValue;
+            }
+        }
+    }
+
+    private void handlePropertyUpdate(final JsonCommand command, final Map<String, Object> actualChanges, final String paramName,
+            final LocalDate propertyToBeUpdated) {
+        if (command.isChangeInLocalDateParameterNamed(paramName, propertyToBeUpdated)) {
+            final LocalDate newValue = command.localDateValueOfParameterNamed(paramName);
+            actualChanges.put(paramName, newValue);
+            // now update actual property
+            if (paramName.equals(GLClosureJsonInputParams.CLOSING_DATE.getValue())) {
+                this.closingDate = newValue;
             }
         }
     }

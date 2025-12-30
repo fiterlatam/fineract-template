@@ -18,9 +18,12 @@
  */
 package org.apache.fineract.portfolio.charge.domain;
 
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface ChargeRepository extends JpaRepository<Charge, Long>, JpaSpecificationExecutor<Charge> {
+
+    Optional<Charge> findByName(String name);
     // no added behaviour
 }

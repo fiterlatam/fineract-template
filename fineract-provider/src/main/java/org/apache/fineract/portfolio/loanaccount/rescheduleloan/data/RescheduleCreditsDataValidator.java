@@ -49,7 +49,8 @@ public class RescheduleCreditsDataValidator {
 
     private final FromJsonHelper fromJsonHelper;
     private static final Set<String> CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList("clientId", "selectedLoanIds",
-            "disbursementDate", "outstandingBalance", "productId", "comments", "locale", "dateFormat"));
+            "disbursementDate", "outstandingBalance", "productId", "comments", "locale", "dateFormat", "prequalificationId", "totalIncome",
+            "totalExpenditures", "availableMonthly", "paymentCapacity", "facValue", "debtLevel", "businessProfit", "totalRequestedAmount"));
 
     private static final Set<String> REJECT_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(RescheduleLoansApiConstants.localeParamName, RescheduleLoansApiConstants.dateFormatParamName,

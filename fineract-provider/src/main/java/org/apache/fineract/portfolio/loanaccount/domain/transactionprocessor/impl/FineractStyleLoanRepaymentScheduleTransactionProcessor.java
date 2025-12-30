@@ -57,7 +57,6 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
             final List<LoanRepaymentScheduleInstallment> installments, final LoanTransaction loanTransaction,
             final LocalDate transactionDate, final Money paymentInAdvance,
             List<LoanTransactionToRepaymentScheduleMapping> transactionMappings) {
-
         return handleTransactionThatIsOnTimePaymentOfInstallment(currentInstallment, loanTransaction, paymentInAdvance,
                 transactionMappings);
     }
@@ -85,10 +84,10 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
         final LocalDate transactionDate = loanTransaction.getTransactionDate();
         final MonetaryCurrency currency = transactionAmountUnprocessed.getCurrency();
         Money transactionAmountRemaining = transactionAmountUnprocessed;
-        Money principalPortion = Money.zero(transactionAmountRemaining.getCurrency());
-        Money interestPortion = Money.zero(transactionAmountRemaining.getCurrency());
-        Money feeChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
-        Money penaltyChargesPortion = Money.zero(transactionAmountRemaining.getCurrency());
+        Money principalPortion = Money.zero(currency);
+        Money interestPortion = Money.zero(currency);
+        Money feeChargesPortion = Money.zero(currency);
+        Money penaltyChargesPortion = Money.zero(currency);
 
         if (loanTransaction.isChargesWaiver()) {
             penaltyChargesPortion = currentInstallment.waivePenaltyChargesComponent(transactionDate,
@@ -121,6 +120,26 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
             transactionAmountRemaining = transactionAmountRemaining.minus(feeChargesPortion);
 
             interestPortion = currentInstallment.payInterestComponent(transactionDate, transactionAmountRemaining);
+             if (!Boolean.TRUE.equals(loanTransaction.getIsForeclosureTransaction())) {
+                LocalDate controlDate = transactionDate;
+                if (loanTransaction.getLoan().isNpa()) controlDate = loanTransaction.getLoan().getAccruedTill();
+                if (!currentInstallment.getDueDate().isBefore(controlDate)) {
+                    Money currentIncomePortion = loanTransaction.getIncomeInterestPortion(currency);
+                    Money newIncomePortion = currentInstallment.getInterestAccrued(currency);
+
+                    Money incomePortion = currentIncomePortion.add(newIncomePortion);
+                    loanTransaction.setIncomeInterestPortion(incomePortion.getAmount());
+                    loanTransaction.setReceivableInterestPortion(loanTransaction.getReceivableInterestPortion(currency)
+                            .add(interestPortion.minus(currentInstallment.getInterestAccrued(currency))).getAmount());
+                } else {
+                    // when transaction date is after due date or foreclosure, all interest portion is income
+                    Money currentIncomePortion = loanTransaction.getIncomeInterestPortion(currency);
+                    Money newIncomePortion = interestPortion;
+                    Money incomePortion = currentIncomePortion.add(newIncomePortion);
+
+                    loanTransaction.setIncomeInterestPortion(incomePortion.getAmount());
+                }
+            }
             transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
 
             principalPortion = currentInstallment.payPrincipalComponent(transactionDate, transactionAmountRemaining);
@@ -158,6 +177,16 @@ public class FineractStyleLoanRepaymentScheduleTransactionProcessor extends Abst
 
         if (transactionAmountRemaining.isGreaterThanZero()) {
             interestPortion = currentInstallment.unpayInterestComponent(transactionDate, transactionAmountRemaining);
+            if (!currentInstallment.getDueDate().isBefore(transactionDate)
+                    && currentInstallment.getInterestAccrued(transactionAmountRemaining.getCurrency()).isGreaterThanZero()) {
+                loanTransaction.setIncomeInterestPortion(loanTransaction
+                        .getIncomeInterestPortion(transactionAmountRemaining.getCurrency()).plus(interestPortion
+                                .minus(currentInstallment.getInterestAccrued(transactionAmountRemaining.getCurrency())).getAmount())
+                        .getAmount());
+                loanTransaction.setReceivableInterestPortion(loanTransaction
+                        .getReceivableInterestPortion(transactionAmountRemaining.getCurrency())
+                        .plus(currentInstallment.getInterestAccrued(transactionAmountRemaining.getCurrency()).getAmount()).getAmount());
+            }
             transactionAmountRemaining = transactionAmountRemaining.minus(interestPortion);
         }
 

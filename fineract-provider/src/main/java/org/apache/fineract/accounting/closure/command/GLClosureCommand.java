@@ -65,7 +65,7 @@ public class GLClosureCommand {
 
         baseDataValidator.reset().parameter(GLClosureJsonInputParams.COMMENTS.getValue()).value(this.comments).ignoreIfNull()
                 .notExceedingLengthOf(500);
-        baseDataValidator.reset().anyOfNotNull(this.comments);
+        baseDataValidator.reset().anyOfNotNull(this.comments, this.closingDate);
 
         if (!dataValidationErrors.isEmpty()) {
             throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",

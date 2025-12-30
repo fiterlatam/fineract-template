@@ -18,26 +18,28 @@
  */
 package org.apache.fineract.portfolio.loanaccount.domain;
 
+import com.google.gson.JsonElement;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.MultiException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.holiday.domain.Holiday;
@@ -82,15 +84,18 @@ import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.exception.GroupNotActiveException;
+import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanScheduleAccrualData;
 import org.apache.fineract.portfolio.loanaccount.data.ScheduleGeneratorDTO;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAccrualPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
 import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
+import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
+import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.data.PostDatedChecksStatus;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecksRepository;
@@ -110,7 +115,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final ConfigurationDomainService configurationDomainService;
     private final HolidayRepository holidayRepository;
     private final WorkingDaysRepositoryWrapper workingDaysRepository;
-
+    private final FromJsonHelper fromApiJsonHelper;
     private final ApplicationCurrencyRepositoryWrapper applicationCurrencyRepositoryWrapper;
     private final JournalEntryWritePlatformService journalEntryWritePlatformService;
     private final NoteRepository noteRepository;
@@ -123,6 +128,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final StandingInstructionRepository standingInstructionRepository;
     private final PostDatedChecksRepository postDatedChecksRepository;
     private final LoanCollateralManagementRepository loanCollateralManagementRepository;
+    private final PaymentDetailWritePlatformService paymentDetailWritePlatformService;
 
     @Transactional
     @Override
@@ -219,7 +225,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             this.noteRepository.save(note);
         }
 
-        postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, isLoanToLoanTransfer);
+        postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, isLoanToLoanTransfer,
+                paymentDetail.getGlAccountId());
 
         recalculateAccruals(loan);
 
@@ -269,7 +276,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private LoanBusinessEvent getLoanRepaymentTypeBusinessEvent(LoanTransactionType repaymentTransactionType, boolean isRecoveryRepayment,
             Loan loan) {
         LoanBusinessEvent repaymentEvent = null;
-        if (repaymentTransactionType.isRepayment()) {
+        if (repaymentTransactionType.isRepayment() || repaymentTransactionType.isTopupRepayment()) {
             repaymentEvent = new LoanTransactionMakeRepaymentPreBusinessEvent(loan);
         } else if (repaymentTransactionType.isMerchantIssuedRefund()) {
             repaymentEvent = new LoanTransactionMerchantIssuedRefundPreBusinessEvent(loan);
@@ -286,7 +293,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private LoanTransactionBusinessEvent getTransactionRepaymentTypeBusinessEvent(LoanTransactionType repaymentTransactionType,
             boolean isRecoveryRepayment, LoanTransaction transaction) {
         LoanTransactionBusinessEvent repaymentEvent = null;
-        if (repaymentTransactionType.isRepayment()) {
+        if (repaymentTransactionType.isRepayment() || repaymentTransactionType.isTopupRepayment()) {
             repaymentEvent = new LoanTransactionMakeRepaymentPostBusinessEvent(transaction);
         } else if (repaymentTransactionType.isMerchantIssuedRefund()) {
             repaymentEvent = new LoanTransactionMerchantIssuedRefundPostBusinessEvent(transaction);
@@ -394,7 +401,8 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             this.noteRepository.save(note);
         }
 
-        postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer);
+        if (!newPaymentTransaction.isRepaymentAtDisbursement())
+            postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer);
         recalculateAccruals(loan);
         businessEventNotifierService.notifyPostBusinessEvent(new LoanChargePaymentPostBusinessEvent(newPaymentTransaction));
         return newPaymentTransaction;
@@ -402,11 +410,16 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
     private void postJournalEntries(final Loan loanAccount, final List<Long> existingTransactionIds,
             final List<Long> existingReversedTransactionIds, boolean isAccountTransfer) {
-        postJournalEntries(loanAccount, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, false);
+        postJournalEntries(loanAccount, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, false, null);
     }
 
     private void postJournalEntries(final Loan loanAccount, final List<Long> existingTransactionIds,
-            final List<Long> existingReversedTransactionIds, boolean isAccountTransfer, boolean isLoanToLoanTransfer) {
+            final List<Long> existingReversedTransactionIds, boolean isAccountTransfer, Long glAccountId) {
+        postJournalEntries(loanAccount, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, false, glAccountId);
+    }
+
+    private void postJournalEntries(final Loan loanAccount, final List<Long> existingTransactionIds,
+            final List<Long> existingReversedTransactionIds, boolean isAccountTransfer, boolean isLoanToLoanTransfer, Long glAccountId) {
 
         final MonetaryCurrency currency = loanAccount.getCurrency();
         final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepositoryWrapper.findOneWithNotFoundDetection(currency);
@@ -414,6 +427,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final Map<String, Object> accountingBridgeData = loanAccount.deriveAccountingBridgeData(applicationCurrency.toData(),
                 existingTransactionIds, existingReversedTransactionIds, isAccountTransfer);
         accountingBridgeData.put("isLoanToLoanTransfer", isLoanToLoanTransfer);
+        accountingBridgeData.put("glAccountId", glAccountId);
         this.journalEntryWritePlatformService.createJournalEntriesForLoan(accountingBridgeData);
     }
 
@@ -479,14 +493,16 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     @Transactional
     @Override
     public LoanTransaction makeDisburseTransaction(final Long loanId, final LocalDate transactionDate, final BigDecimal transactionAmount,
-            final PaymentDetail paymentDetail, final String noteText, final String txnExternalId) {
-        return makeDisburseTransaction(loanId, transactionDate, transactionAmount, paymentDetail, noteText, txnExternalId, false);
+            final PaymentDetail paymentDetail, final String noteText, final String txnExternalId, BigDecimal loanTopupAmount) {
+        return makeDisburseTransaction(loanId, transactionDate, transactionAmount, paymentDetail, noteText, txnExternalId, false,
+                loanTopupAmount);
     }
 
     @Transactional
     @Override
     public LoanTransaction makeDisburseTransaction(final Long loanId, final LocalDate transactionDate, final BigDecimal transactionAmount,
-            final PaymentDetail paymentDetail, final String noteText, final String txnExternalId, final boolean isLoanToLoanTransfer) {
+            final PaymentDetail paymentDetail, final String noteText, final String txnExternalId, final boolean isLoanToLoanTransfer,
+            BigDecimal loanTopupAmount) {
         final Loan loan = this.loanAccountAssembler.assembleFrom(loanId);
         checkClientOrGroupActive(loan);
         boolean isAccountTransfer = true;
@@ -495,6 +511,12 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final Money amount = Money.of(loan.getCurrency(), transactionAmount);
         LoanTransaction disbursementTransaction = LoanTransaction.disbursement(loan.getOffice(), amount, paymentDetail, transactionDate,
                 txnExternalId);
+        disbursementTransaction.setLoanTopupAmount(loanTopupAmount);
+        Money principal = amount;
+        if (loanTopupAmount.compareTo(BigDecimal.ZERO) > 0) {
+            principal = amount.minus(loanTopupAmount);
+        }
+        disbursementTransaction.updateComponents(principal, principal.zero(), principal.zero(), principal.zero());
 
         // Subtract Previous loan outstanding balance from netDisbursalAmount
         loan.deductFromNetDisbursalAmount(transactionAmount);
@@ -509,7 +531,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             this.noteRepository.save(note);
         }
 
-        postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, isLoanToLoanTransfer);
+        postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, isLoanToLoanTransfer, null);
         return disbursementTransaction;
     }
 
@@ -704,10 +726,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     }
 
     @Override
-    public Map<String, Object> foreCloseLoan(final Loan loan, final LocalDate foreClosureDate, final String noteText) {
+    public Map<String, Object> foreCloseLoan(final Loan loan, final LocalDate foreClosureDate, final JsonCommand command,
+            Map<String, Object> changes) {
         businessEventNotifierService.notifyPreBusinessEvent(new LoanForeClosurePreBusinessEvent(loan));
         MonetaryCurrency currency = loan.getCurrency();
-        final Map<String, Object> changes = new LinkedHashMap<>();
         List<LoanTransaction> newTransactions = new ArrayList<>();
 
         final List<Long> existingTransactionIds = new ArrayList<>();
@@ -715,7 +737,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         existingTransactionIds.addAll(loan.findExistingTransactionIds());
         existingReversedTransactionIds.addAll(loan.findExistingReversedTransactionIds());
         final ScheduleGeneratorDTO scheduleGeneratorDTO = null;
-        AppUser appUser = getAppUserIfPresent();
+
         final LoanRepaymentScheduleInstallment foreCloseDetail = loan.fetchLoanForeclosureDetail(foreClosureDate);
         if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()
                 && (loan.getAccruedTill() == null || !foreClosureDate.isEqual(loan.getAccruedTill()))) {
@@ -748,24 +770,47 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         }
 
         Money interestPayable = foreCloseDetail.getInterestCharged(currency);
+        Money interestReceivable = foreCloseDetail.getInterestCharged(currency);
         Money feePayable = foreCloseDetail.getFeeChargesCharged(currency);
         Money penaltyPayable = foreCloseDetail.getPenaltyChargesCharged(currency);
         Money payPrincipal = foreCloseDetail.getPrincipal(currency);
-        loan.updateInstallmentsPostDate(foreClosureDate);
+        Money npaInterestToWriteOff = foreCloseDetail.getNpaInterestToWriteOff(currency);
+        BigDecimal totalInterestOutstanding = loan.getSummary().getTotalInterestOutstanding();
+        Money interestToWaive = Money.of(currency, totalInterestOutstanding.subtract(interestPayable.getAmount()));
+        Money totalWriteOff = payPrincipal.plus(totalInterestOutstanding).plus(feePayable).plus(penaltyPayable);
+        loan.updateInstallmentsPostDate(foreClosureDate, interestToWaive);
 
+        // after updating the installments. waive off the interest that is not accrued yet and pay off the outstanding.
         LoanTransaction payment = null;
+        List<Long> transactionIds = new ArrayList<>();
 
-        if (payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable).isGreaterThanZero()) {
-            final PaymentDetail paymentDetail = null;
-            String externalId = null;
-            final LocalDateTime currentDateTime = DateUtils.getLocalDateTimeOfTenant();
-            payment = LoanTransaction.repayment(loan.getOffice(), payPrincipal.plus(interestPayable).plus(feePayable).plus(penaltyPayable),
-                    paymentDetail, foreClosureDate, externalId);
+        boolean isDecliningBalance = loan.getLoanRepaymentScheduleDetail().getInterestMethod().equals(InterestMethod.DECLINING_BALANCE);
+        if (interestToWaive.isGreaterThanZero() && isDecliningBalance) {
+            totalWriteOff = totalWriteOff.minus(interestToWaive);
+
+            Money unrecognizedIncome = interestToWaive.zero();
+            final LoanTransaction waiveInterestTransaction = LoanTransaction.waiver(loan.getOffice(), loan, interestToWaive,
+                    foreClosureDate, interestToWaive, unrecognizedIncome);
+            waiveInterestTransaction.setPostAccountingForWaivers(false);
+            loan.waiveInterest(waiveInterestTransaction, defaultLoanLifecycleStateMachine(), existingTransactionIds,
+                    existingReversedTransactionIds, scheduleGeneratorDTO);
+        }
+
+        if (totalWriteOff.isGreaterThanZero()) {
+            final PaymentDetail paymentDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(command, changes);
+            String externalId = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.receiptNumberParamName, command.parsedJson())
+                    + UUID.randomUUID().toString();
+            payment = LoanTransaction.repayment(loan.getOffice(), totalWriteOff, paymentDetail, foreClosureDate, externalId);
             payment.updateLoan(loan);
+            payment.setIsForeclosureTransaction(true);
+            Money netInterestReceivable = interestReceivable.minus(npaInterestToWriteOff);
+            payment.setReceivableInterestPortion(interestReceivable.getAmount());
+            if (!isDecliningBalance)
+                payment.setReceivableInterestPortion(totalInterestOutstanding.subtract(netInterestReceivable.getAmount()));
+            if (isDecliningBalance) payment.setNetAccruedInterest(netInterestReceivable.getAmount());
             newTransactions.add(payment);
         }
 
-        List<Long> transactionIds = new ArrayList<>();
         final ChangedTransactionDetail changedTransactionDetail = loan.handleForeClosureTransactions(payment,
                 defaultLoanLifecycleStateMachine(), scheduleGeneratorDTO);
 
@@ -793,13 +838,16 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
         saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
 
+        JsonElement element = command.parsedJson();
+        String noteText = this.fromApiJsonHelper.extractStringNamed(LoanApiConstants.noteParamName, element);
+
         if (StringUtils.isNotBlank(noteText)) {
             changes.put("note", noteText);
             final Note note = Note.loanNote(loan, noteText);
             this.noteRepository.save(note);
         }
-
-        postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds, false);
+        Long glAccountId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.glAccountIdParamName, element);
+        postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds, false, glAccountId);
         businessEventNotifierService.notifyPostBusinessEvent(new LoanForeClosurePostBusinessEvent(payment));
         return changes;
 
