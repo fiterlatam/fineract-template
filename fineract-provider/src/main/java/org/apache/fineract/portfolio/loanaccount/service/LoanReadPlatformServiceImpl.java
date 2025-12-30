@@ -35,11 +35,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.data.CodeValueDataExtended;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -63,6 +65,7 @@ import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.organisation.paedocumentation.data.PaeRequiredDocumentData;
 import org.apache.fineract.organisation.paedocumentation.service.PaeRequiredDocumentReadPlatformService;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
@@ -137,6 +140,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanSc
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
@@ -1675,6 +1679,22 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             activeLoanOptions = this.accountDetailsReadPlatformService.retrieveClientActiveLoanAccountSummary(clientId);
         } else if (loanProduct.canUseForTopup() && groupId != null) {
             activeLoanOptions = this.accountDetailsReadPlatformService.retrieveGroupActiveLoanAccountSummary(groupId);
+        }
+        // for product that is PAE add the required guarantee options
+        Collection<CodeValueDataExtended> paeRequiredGuaranteeDocuments = null;
+        if (loanProduct.getOwnerTypeOption() != null
+                && loanProduct.getOwnerTypeOption().getId().intValue() == LoanProductOwnerType.PAE.getValue()) {
+            Collection<CodeValueData> paeRequiredGuarantees = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("PaeRequiredGuarantees");
+            if (!paeRequiredGuarantees.isEmpty()) paeRequiredGuaranteeDocuments = new ArrayList<>();
+            for (CodeValueData codeValue : Objects.requireNonNull(paeRequiredGuarantees)) {
+                List<PaeRequiredDocumentData> documentsList = this.paeRequiredDocumentReadPlatformService
+                        .retrieveByCategory(codeValue.getId());
+                CodeValueDataExtended cartegoryDocuments = CodeValueDataExtended.instance(codeValue.getId(), codeValue.getName(),
+                        codeValue.getPosition(), codeValue.getDescription(), codeValue.isActive(), codeValue.isMandatory());
+                cartegoryDocuments.setExtraData(documentsList);
+                paeRequiredGuaranteeDocuments.add(cartegoryDocuments);
+            }
         }
 
         return LoanAccountData.loanProductWithTemplateDefaults(loanProduct, loanTermFrequencyTypeOptions, repaymentFrequencyTypeOptions,
