@@ -117,7 +117,8 @@ public class PromissoryNoteTemplateOne {
         String secondTermText = termText;
         String numberEqualsQuotas = getNumber(numerPayments.get(), true, true, false);
         String quotaAmount = MoneyHelper.getMoneyString(firstPaymentAmount).toUpperCase();
-        String numberLastQuota = optLast.map(loanSchedulePeriodData -> loanSchedulePeriodData.getInstallmentNumber().toString()).orElse("");
+        String numberLastQuota = getNumber(optLast.map(LoanRepaymentScheduleInstallment::getInstallmentNumber).orElse(0), true, true,
+                false);
         String lastQuotaAmount = optLast.isPresent()
                 ? MoneyHelper.getMoneyString(optLast.get().getTotalPrincipalAndInterest(currency).getAmount()).toUpperCase()
                 : "";
@@ -195,7 +196,7 @@ public class PromissoryNoteTemplateOne {
 
                             g. Acepto que para el caso de ejecución, THE FRIENDSHIP BRIDGE no está obligado a prestar fianza o garantía alguna, exoneración que se hará extensiva a los depositarios e interventores nombrados, no quedando THE FRIENDSHIP BRIDGE responsable por las actuaciones de estos y que para el caso de remate sirva de base el valor de los bienes embargados o el monto total de la demanda incluyendo intereses y costas a elección de THE FRIENDSHIP BRIDGE, garantizando la presente obligación con todos mis bienes presentes y futuros; h. Acepto que este título es cedible o negociable, mediante simple endoso, sin necesidad previa o posterior aviso o notificación;
 
-                            i. Renuncio expresamente a los derechos que pudieren conferirme las leyes vigentes o que en el futuro entraren en vigor y que pudieran permitirme cumplir las obligaciones contraídas en este documento en forma distinta a la pactada. Como deudor declaro que estoy plenamente enterado de todas y cada uno de los términos de este pagaré, lo acepto, ratifico y por no saber firmar dejo impresa la huella de mi pulgar derecho firmando como testigo (el, la señor/a) %s, quien es persona capaz e idónea y se identifica con Documento Personal de Identificación (DPI) %s, %s, extendido por el Registro Nacional de las Personas de la República de Guatemala.
+                            i. Renuncio expresamente a los derechos que pudieren conferirme las leyes vigentes o que en el futuro entraren en vigor y que pudieran permitirme cumplir las obligaciones contraídas en este documento en forma distinta a la pactada. Como deudor declaro que estoy plenamente enterado de todas y cada uno de los términos de este pagaré, lo acepto y ratifico. Por no saber firmar dejo impresa la huella de mi pulgar derecho firmando como testigo (el, la señor/a) %s, quien es persona capaz e idónea y se identifica con Documento Personal de Identificación (DPI) %s, %s, extendido por el Registro Nacional de las Personas de la República de Guatemala.
 
                             Lugar y fecha de emisión: Municipio y Departamento de %s, %s de %s, del año dos mil %s.
                             """,

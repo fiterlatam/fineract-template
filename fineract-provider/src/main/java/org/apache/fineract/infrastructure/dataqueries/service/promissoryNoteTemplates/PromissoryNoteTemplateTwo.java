@@ -51,6 +51,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
@@ -104,31 +105,33 @@ public class PromissoryNoteTemplateTwo {
 
         // FIRST PARAGRAPH
         String clientName = loanAccountData.getClientName();
-        String clientDpiText = getNumber(Long.valueOf(loan.getClient().getDpiNumber()), false, true);
+        String clientDpiText = getNumber(Long.valueOf(loan.getClient().getDpiNumber()), false, true, false);
         String clientDpiNumber = loan.getClient().getDpiNumber();
-        String clientAddress = loan.getClient().getClientContactInformation().getReferenceHousingData();
-        String creditAmountText = getNumber(loan.getApprovedPrincipal(), true, true);
-        String creditPurpose = loan.getLoanPurpose() != null ? loan.getLoanPurpose().getDescription() : "";
+        String clientAddress = loan.getClient().getClientContactInformation().getTemplateAddress();
+        String creditAmountText = MoneyHelper.getMoneyString(loan.getApprovedPrincipal());
+        String creditPurpose = loan.getLoanPurpose() != null ? loan.getLoanPurpose().getDescription() : "_____________";
 
         // SECOND PARAGRAPH
-        String termText = getNumber(loan.getTermFrequency(), true, true);
-        String disbursementDate = loan.getDisbursementDate().format(fmt).toUpperCase();
+        String termText = getNumber(loan.getTermFrequency(), true, true, false);
+        String disbursementDate = DateUtils.getDateInLetters(loan.getDisbursementDate());
         String secondTermText = termText;
-        String numberEqualsQuotas = String.valueOf(numerPayments.get());
-        String quotaAmount = getNumber(firstPaymentAmount, true, true);
-        String numberLastQuota = optLast.map(loanSchedulePeriodData -> loanSchedulePeriodData.getInstallmentNumber().toString()).orElse("");
+        String numberEqualsQuotas = getNumber(numerPayments.get(), true, true, false);
+        String quotaAmount = MoneyHelper.getMoneyString(firstPaymentAmount).toUpperCase();
+        String numberLastQuota = getNumber(optLast.map(LoanRepaymentScheduleInstallment::getInstallmentNumber).orElse(0), true, true,
+                false);
         String lastQuotaAmount = optLast.isPresent()
-                ? getNumber(optLast.get().getTotalPrincipalAndInterest(currency).getAmount(), true, true)
+                ? MoneyHelper.getMoneyString(optLast.get().getTotalPrincipalAndInterest(currency).getAmount()).toUpperCase()
                 : "";
-        String paymentDay = optLast.isPresent() ? getNumber(optLast.get().getDueDate().getDayOfMonth(), true, true) : "";
+        String paymentDay = optLast.isPresent() ? getNumber(optLast.get().getDueDate().getDayOfMonth(), true, true, false) : "";
 
         // THIRD PARAGRAPH
-        String interestRateText = getNumber(loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate(), true, true);
+        String interestRateText = getNumber(
+                loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate().divide(BigDecimal.valueOf(12)), true, true, true);
 
         String department = loan.getPrequalificationGroup() != null && loan.getPrequalificationGroup().getAgency() != null
                 && loan.getPrequalificationGroup().getAgency().getCountry() != null
                         ? loan.getPrequalificationGroup().getAgency().getCountry().getDescription()
-                        : "";
+                        : "__________";
 
         Document document = new Document();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -165,7 +168,7 @@ public class PromissoryNoteTemplateTwo {
                             Manifiesto que, por el presente PAGARÉ libre de protesto, prometo pagar incondicionalmente a la orden o endoso de "THE FRIENDSHIP BRIDGE" en adelante llamado "THE FRIENDSHIP BRIDGE" y/o "Beneficiaria o tenedora" la suma total de: %s; por lo cual me declaro lisa y llana deudora de "THE FRIENDSHIP BRIDGE" y declaro que utilizaré este financiamiento para %s;. El pago de la referida suma lo haré bajo los siguientes términos:
 
                             A) DEL PLAZO Y FORMA DE PAGO:
-                            Me obligo a pagar la referida suma de este título en el plazo de %s a contar del %s, cantidad que pagaré sin necesidad de previo cobro o requerimiento, mediante el pago de cuotas mensuales y sucesivas las cuales son %s, las primeras %s y la número %s de %s, mismas que se harán efectivas el %s hábil bancario de cada mes calendario o el inmediato posterior si ese día fuere inhábil bancario. Todo pago lo haré en las oficinas de THE FRIENDSHIP BRIDGE conocidas por mi persona.
+                            Me obligo a pagar la referida suma de este título en el plazo de %s meses a contar del %s, cantidad que pagaré sin necesidad de previo cobro o requerimiento, mediante el pago de cuotas mensuales y sucesivas las cuales son %s, las primeras %s y la número %s de %s, mismas que se harán efectivas el día %s hábil bancario de cada mes calendario o el inmediato posterior si ese día fuere inhábil bancario. Todo pago lo haré en las oficinas de THE FRIENDSHIP BRIDGE conocidas por mi persona.
 
                             B) INTERESES:
                             Sobre la suma o capital total que he prometido incondicionalmente pagar, reconozco que se incluye un cargo total de intereses calculado bajo una tasa de %s sobre saldos mensual. Esta tasa de interés efectiva en la presente operación corresponderá exactamente con la tasa de interés nominal anteriormente indicada y aceptada siempre y cuando los abonos mencionados se realicen en la forma y tiempo aquí establecido. Las cuotas de interés están incluidas en las cuotas o amortizaciones anteriormente mencionadas, dado que el pago es mediante la modalidad de cuota nivelada. Los intereses compensan los servicios que me presta la institución ya que este préstamo incluye servicios adicionales como los de capacitación y otros.
@@ -187,16 +190,16 @@ public class PromissoryNoteTemplateTwo {
 
                             f. CANCELACIÓN ANTICIPADA: Acepto que podré cancelar de manera anticipada el monto total de la deuda únicamente si tengo pagado al menos el cincuenta por ciento (50%%) de las cuotas del crédito vigente, de lo contrario se me penalizará con el tres por ciento (3%%) sobre el capital adeudado.
 
-                            h. Acepto que para el caso de ejecución, THE FRIENDSHIP BRIDGE no está obligado a prestar fianza o garantía alguna, exoneración que se hará extensiva a los depositarios e interventores nombrados, no quedando THE FRIENDSHIP BRIDGE responsable por las actuaciones de estos y que para el caso de remate sirva de base el valor de los bienes embargados o el monto total de la demanda incluyendo intereses y costas a elección de THE FRIENDSHIP BRIDGE, garantizando la presente obligación con todos mis bienes presentes y futuros; i. Acepto que este título es cedible o negociable, mediante simple endoso, sin necesidad previa o posterior aviso o notificación;
+                            g. Acepto que para el caso de ejecución, THE FRIENDSHIP BRIDGE no está obligado a prestar fianza o garantía alguna, exoneración que se hará extensiva a los depositarios e interventores nombrados, no quedando THE FRIENDSHIP BRIDGE responsable por las actuaciones de estos y que para el caso de remate sirva de base el valor de los bienes embargados o el monto total de la demanda incluyendo intereses y costas a elección de THE FRIENDSHIP BRIDGE, garantizando la presente obligación con todos mis bienes presentes y futuros; h. Acepto que este título es cedible o negociable, mediante simple endoso, sin necesidad previa o posterior aviso o notificación;
 
                             i. Renuncio expresamente a los derechos que pudieren conferirme las leyes vigentes o que en el futuro entraren en vigor y que pudieran permitirme cumplir las obligaciones contraídas en este documento en forma distinta a la pactada. Como deudor declaro que estoy plenamente enterado de todas y cada uno de los términos de este pagaré, lo acepto, ratifico y firmo.
 
                             Lugar y fecha de emisión: Municipio y Departamento de %s, %s de %s, del año dos mil %s.
                             """,
                     clientName, clientDpiText, clientDpiNumber, clientAddress, creditAmountText, creditPurpose, termText, disbursementDate,
-                    secondTermText, numberEqualsQuotas + " " + quotaAmount, numberLastQuota, lastQuotaAmount, paymentDay, interestRateText,
-                    department, date.getDayOfMonth(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
-                    date.getYear() - 2000);
+                    secondTermText, numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount, paymentDay,
+                    interestRateText, department, date.getDayOfMonth(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
+                    DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
             Paragraph body = new Paragraph(bodyText, normalFont);
             body.setAlignment(Element.ALIGN_JUSTIFIED);
             body.setSpacingAfter(20f);
@@ -277,7 +280,7 @@ public class PromissoryNoteTemplateTwo {
         }
     }
 
-    private String getNumber(Number number, boolean parentheses, Boolean uppercase) {
+    private String getNumber(Number number, boolean parentheses, Boolean uppercase, boolean percentage) {
 
         RuleBasedNumberFormat rbnf = new RuleBasedNumberFormat(new Locale("es"), RuleBasedNumberFormat.SPELLOUT);
         BigDecimal bd = new BigDecimal(number.toString()).setScale(2, RoundingMode.HALF_UP);
@@ -285,7 +288,7 @@ public class PromissoryNoteTemplateTwo {
         String numericValue = bd.stripTrailingZeros().scale() <= 0 ? bd.toBigInteger().toString() : bd.toPlainString();
 
         if (parentheses) {
-            return "( " + value + " " + numericValue + " )";
+            return value + " (" + numericValue + (percentage ? "%" : "") + ")";
         }
 
         return value;
