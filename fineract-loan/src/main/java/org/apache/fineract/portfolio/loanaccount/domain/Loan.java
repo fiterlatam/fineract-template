@@ -1415,7 +1415,8 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         return amount;
     }
 
-    private boolean isLifeInsuranceChargeApplicable(LoanRepaymentScheduleInstallment sourceInstallment, LoanRepaymentScheduleInstallment installment) {
+    private boolean isLifeInsuranceChargeApplicable(LoanRepaymentScheduleInstallment sourceInstallment,
+            LoanRepaymentScheduleInstallment installment) {
         if (sourceInstallment == null) {
             return false;
         }
