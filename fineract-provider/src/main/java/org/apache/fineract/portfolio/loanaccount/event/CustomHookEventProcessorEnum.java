@@ -71,6 +71,9 @@ public enum CustomHookEventProcessorEnum {
     LOAN_DISBURSEMENT_REVERSAL_EVENT("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementReversalEventProcessor",
             "LOAN_DISBURSEMENT_REVERSAL"),
 
+    LOAN_DISBURSEMENT_REVERSAL_UNDO_EVENT("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementReversalUndoEventProcessor",
+            "LOAN_DISBURSEMENT_REVERSAL"),
+
     LOAN_DISBURSEMENT_REPOST_FILE_EVENT("org.apache.fineract.portfolio.loanaccount.event.LoanDisbursementReportFileEventProcessor",
             "Disbursement Report File"),
 

@@ -1364,6 +1364,40 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
             BigDecimal finalAmount = computedAmount.divide(numberOfInstallments, 2, RoundingMode.HALF_UP);
             amount = amount.plus(finalAmount);
+
+        } else if (this.isMultiDisburmentLoan() && calculationType.isPercentageOfLifeInsurance()
+                && calculationType.equals(ChargeCalculationType.LIIN_SEGO)
+                && (PeriodFrequencyType.fromInt(this.termPeriodFrequencyType).equals(PeriodFrequencyType.WEEKS)
+                        || PeriodFrequencyType.fromInt(this.termPeriodFrequencyType).equals(PeriodFrequencyType.DAYS))
+                && installment.getInstallmentNumber() > 1) {
+
+            // Get first repayment installment due date
+            Integer firstRepaymentDueDate = this.repaymentScheduleInstallments.stream().filter(first -> first.getInstallmentNumber() == 1)
+                    .findFirst().get().getDueDate().getDayOfMonth();
+
+            // Check if firstRepaymentDueDate is bigger than installment due date day of month
+            if (firstRepaymentDueDate > installment.getFromDate().lengthOfMonth()) {
+                firstRepaymentDueDate = installment.getFromDate().lengthOfMonth();
+            }
+
+            // Create a new date obj based on installment from date, but using the day "firstRepaymentDueDate"
+            LocalDate chargeDate = installment.getFromDate().withDayOfMonth(firstRepaymentDueDate);
+
+            LocalDate startDate = installment.getFromDate();
+            startDate = startDate.plusDays(1);
+
+            // Compare if chargeDate is between installment startDate and due date
+            boolean isInBetween = DateUtils.isDateWithinRange(chargeDate, startDate, installment.getDueDate());
+
+            // If so, calculate life insurance charge portion
+            if (isInBetween) {
+                Money amountAux = amount.plus(loanCharge.getAmountPercentageAppliedTo().multiply(percentage).divide(BigDecimal.valueOf(100),
+                        2, RoundingMode.HALF_UP));
+                amount = amount.plus(amountAux);
+
+                installment.setLifeInsuranceChargePortion(amountAux.getAmount());
+            }
+
         } else if (calculationType.isPercentageOfLifeInsurance()) {
             // Find first installment with non-null life insurance charge portion
             Money amountAux = Money.zero(getCurrency());
@@ -2221,20 +2255,26 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             return; // No source installment found with life insurance charge portion
         }
 
-        int originalDay = sourceInstallment.getDueDate().getDayOfMonth();
+        int firstRepaymentDueDate = sourceInstallment.getDueDate().getDayOfMonth();
 
         for (LoanRepaymentScheduleInstallment installment : getRepaymentScheduleInstallments()) {
-            LocalDate startDate = installment.getFromDate().plusDays(1);
-            if (installment.getLifeInsuranceChargePortion() == null) {
-                LocalDate dueDate = installment.getDueDate();
-                int lastDayOfMonth = dueDate.lengthOfMonth();
-                int targetDay = Math.min(originalDay, lastDayOfMonth);
+            LocalDate startDate = installment.getFromDate();
 
-                LocalDate lifeInsuranceDate = LocalDate.of(dueDate.getYear(), dueDate.getMonth(), targetDay);
+            startDate = startDate.plusDays(1);
 
-                if (!lifeInsuranceDate.isBefore(startDate) && !lifeInsuranceDate.isAfter(dueDate)) {
-                    installment.setLifeInsuranceChargePortion(sourceInstallment.getLifeInsuranceChargePortion());
-                }
+            // Check if firstRepaymentDueDate day is bigger than installment due date max day of month
+            if (firstRepaymentDueDate > installment.getFromDate().lengthOfMonth()) {
+                firstRepaymentDueDate = installment.getFromDate().lengthOfMonth();
+            }
+
+            // Create a new date obj based on installment from date, but using the day "firstRepaymentDueDate"
+            LocalDate chargeDate = installment.getFromDate().withDayOfMonth(firstRepaymentDueDate);
+
+            // If so, calculate life insurance charge portion
+            if (DateUtils.isDateWithinRange(chargeDate, startDate, installment.getDueDate())) {
+                installment.setLifeInsuranceChargePortion(sourceInstallment.getLifeInsuranceChargePortion());
+            } else {
+                installment.setLifeInsuranceChargePortion(null);
             }
         }
     }

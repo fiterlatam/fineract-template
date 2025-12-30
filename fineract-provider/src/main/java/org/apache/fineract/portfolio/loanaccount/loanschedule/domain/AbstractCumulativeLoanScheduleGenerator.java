@@ -62,7 +62,6 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleD
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleModelDownPaymentPeriod;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleParams;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.MultiDisbursementOutstandingAmoutException;
-import org.apache.fineract.portfolio.loanaccount.loanschedule.exception.ScheduleDateException;
 import org.apache.fineract.portfolio.loanaccount.service.DisbursementCutoffContext;
 import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductType;
@@ -284,7 +283,10 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
             }
 
             if (DateUtils.isAfter(scheduleParams.getPeriodStartDate(), scheduledDueDate)) {
-                throw new ScheduleDateException("Due date can't be before period start date", scheduledDueDate);
+                termVariationParams = applyLoanTermVariations(loanApplicationTerms, scheduleParams, previousRepaymentDate,
+                        scheduleParams.getPeriodStartDate(), interestRatesForInstallments, getPaymentPeriodsInOneYearCalculator(), mc);
+
+                scheduledDueDate = termVariationParams.scheduledDueDate();
             }
 
             if (extendTermForDailyRepayments) {
