@@ -34,6 +34,7 @@ public enum LoanProductType {
     BAJO_MONTO("Bajo Monto"), //
     MICRO_CREDITO("Microcredito"), //
     MICRO_CREDITO_M("Microcredito M"), //
+    MICRO_CREDITO_PJ("Microcredito PJ"), //
     CREDITO_COMERCIAL_PN("Credito Comercial PN"), //
     ; //
 

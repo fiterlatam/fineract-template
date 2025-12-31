@@ -2054,7 +2054,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
     private void validateMicrocreditoProductCharges(Loan loan) {
 
-        if (!loan.isMigratedLoan() && loan.getLoanProduct().getName().toLowerCase().contains(STRING_PRODUCT_MICROCREDITO.toLowerCase())) {
+        if (!loan.isMigratedLoan() && loan.getLoanProduct().getName().toLowerCase().contains(STRING_PRODUCT_MICROCREDITO.toLowerCase())
+                && !loan.getLoanProduct().getName().toLowerCase().equals(LoanProductType.MICRO_CREDITO_PJ.getCode().toLowerCase())) {
 
             final String filterCriteria = constructMiPymeChargeFilterCriteria(loan);
 
