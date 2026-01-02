@@ -2184,6 +2184,7 @@ public final class LoanAccountData {
         this.interestTypeOptions = interestTypeOptions;
         this.interestCalculationPeriodTypeOptions = interestCalculationPeriodTypeOptions;
         this.isRatesEnabled = isRatesEnabled;
+        this.paeRequiredGuaranteeOptions = paeRequiredGuaranteeOptions;
 
         if (CollectionUtils.isEmpty(transactionProcessingStrategyOptions)) {
             this.transactionProcessingStrategyOptions = null;
