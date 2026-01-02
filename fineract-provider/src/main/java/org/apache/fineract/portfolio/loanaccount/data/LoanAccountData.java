@@ -1434,7 +1434,8 @@ public final class LoanAccountData {
             final Collection<EnumOptionData> interestTypeOptions, final Collection<EnumOptionData> interestCalculationPeriodTypeOptions,
             final Collection<FundData> fundOptions, final Collection<ChargeData> chargeOptions,
             final Collection<CodeValueData> loanPurposeOptions, final Collection<CodeValueData> loanCollateralOptions,
-            final Integer loanCycleNumber, final Collection<LoanAccountSummaryData> clientActiveLoanOptions) {
+            final Integer loanCycleNumber, final Collection<LoanAccountSummaryData> clientActiveLoanOptions,
+            Collection<CodeValueDataExtended> paeRequiredGuaranteeDocuments) {
 
         final Long id = null;
         final String accountNo = null;
@@ -1599,7 +1600,8 @@ public final class LoanAccountData {
                 product.getMaximumGapBetweenInstallments(), subStatus, canUseForTopup, clientActiveLoanOptions, isTopup, closureLoanId,
                 closureLoanAccountNo, topupAmount, product.isEqualAmortization(), rates, isRatesEnabled,
                 product.getFixedPrincipalPercentagePerInstallment(), delinquent, contractNo, agencyOptions, centerOptions, groupOption,
-                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount, null, null);
+                facilitatorOptions, disbursementMethodOptions, requiredGuaranteeAmount, actualGuaranteeAmount, null,
+                paeRequiredGuaranteeDocuments);
     }
 
     public static LoanAccountData populateLoanProductDefaults(final LoanAccountData acc, final LoanProductData product) {

@@ -225,7 +225,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             this.noteRepository.save(note);
         }
 
-        Long glAccountId = paymentDetail!=null? paymentDetail.getGlAccountId(): null;
+        Long glAccountId = paymentDetail != null ? paymentDetail.getGlAccountId() : null;
         postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, isLoanToLoanTransfer,
                 glAccountId);
 
