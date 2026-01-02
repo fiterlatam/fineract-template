@@ -1700,7 +1700,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         return LoanAccountData.loanProductWithTemplateDefaults(loanProduct, loanTermFrequencyTypeOptions, repaymentFrequencyTypeOptions,
                 repaymentFrequencyNthDayTypeOptions, repaymentFrequencyDaysOfWeekTypeOptions, repaymentStrategyOptions,
                 interestRateFrequencyTypeOptions, amortizationTypeOptions, interestTypeOptions, interestCalculationPeriodTypeOptions,
-                fundOptions, chargeOptions, loanPurposeOptions, loanCollateralOptions, loanCycleCounter, activeLoanOptions, paeRequiredGuaranteeDocuments);
+                fundOptions, chargeOptions, loanPurposeOptions, loanCollateralOptions, loanCycleCounter, activeLoanOptions,
+                paeRequiredGuaranteeDocuments);
     }
 
     @Override
@@ -2541,9 +2542,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             penaltyAmount = penaltyAmount.add(additionalPenaltiesToCollect.getAmount());
         }
         BigDecimal feeCharges = loanRepaymentScheduleInstallment.getFeeChargesOutstanding(currency).getAmount();
-        BigDecimal interestOutstanding = loan.isNpa()?loanRepaymentScheduleInstallment.getInterestOutstanding(currency)
-                .minus(loanRepaymentScheduleInstallment.getNpaInterestToWriteOff(currency)).getAmount():
-                loanRepaymentScheduleInstallment.getInterestOutstanding(currency).getAmount();
+        BigDecimal interestOutstanding = loan.isNpa()
+                ? loanRepaymentScheduleInstallment.getInterestOutstanding(currency)
+                        .minus(loanRepaymentScheduleInstallment.getNpaInterestToWriteOff(currency)).getAmount()
+                : loanRepaymentScheduleInstallment.getInterestOutstanding(currency).getAmount();
 
         // if percentage of paid installments is less than 50 add charge
         if (loan.getLoanRepaymentScheduleDetail().getInterestMethod().equals(InterestMethod.DECLINING_BALANCE)) {

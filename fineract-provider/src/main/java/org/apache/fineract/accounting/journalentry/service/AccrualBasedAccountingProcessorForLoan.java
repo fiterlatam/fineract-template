@@ -242,7 +242,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                     }
                 }
             } else {
-                if (receivableInterest!=null && receivableInterest.compareTo(BigDecimal.ZERO) > 0) {
+                if (receivableInterest != null && receivableInterest.compareTo(BigDecimal.ZERO) > 0) {
                     GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
                             AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(), paymentTypeId);
                     if (accountMap.containsKey(account)) {
@@ -252,7 +252,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                         accountMap.put(account, receivableInterest);
                     }
 
-                    if (incomeInterest==null && interestAmount.subtract(receivableInterest).compareTo(BigDecimal.ZERO) > 0) {
+                    if (incomeInterest == null && interestAmount.subtract(receivableInterest).compareTo(BigDecimal.ZERO) > 0) {
                         GLAccount incomeAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
                                 AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
                         BigDecimal amount = interestAmount.subtract(receivableInterest);
@@ -264,7 +264,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                         }
                     }
                 }
-                if (incomeInterest!=null && incomeInterest.compareTo(BigDecimal.ZERO) > 0) {
+                if (incomeInterest != null && incomeInterest.compareTo(BigDecimal.ZERO) > 0) {
                     GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
                             AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
                     if (accountMap.containsKey(account)) {
@@ -274,7 +274,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                         accountMap.put(account, incomeInterest);
                     }
 
-                    if (receivableInterest==null && interestAmount.subtract(incomeInterest).compareTo(BigDecimal.ZERO) > 0) {
+                    if (receivableInterest == null && interestAmount.subtract(incomeInterest).compareTo(BigDecimal.ZERO) > 0) {
                         GLAccount incomeAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
                                 AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(), paymentTypeId);
                         BigDecimal amount = interestAmount.subtract(incomeInterest);
