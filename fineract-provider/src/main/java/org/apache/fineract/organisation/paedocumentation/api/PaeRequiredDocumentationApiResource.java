@@ -165,7 +165,6 @@ public class PaeRequiredDocumentationApiResource {
             @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
             @FormDataParam("categoryId") final String categoryId, @FormDataParam("guaranteeNo") final String guaranteeNo,
             @FormDataParam("description") final String description, @FormDataParam("comment") final String comment) {
-
         if (inputStream != null) {
             fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
             final DocumentCommand documentCommand = new DocumentCommand(null, null, "paedocumentation", loanId, name,
