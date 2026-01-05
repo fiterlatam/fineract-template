@@ -1379,11 +1379,16 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
                 firstRepaymentDueDate = installment.getFromDate().lengthOfMonth();
             }
 
+            LocalDate startDate = installment.getFromDate();
+            startDate = startDate.plusDays(1);
+
             // Create a new date obj based on installment from date, but using the day "firstRepaymentDueDate"
             LocalDate chargeDate = installment.getFromDate().withDayOfMonth(firstRepaymentDueDate);
 
-            LocalDate startDate = installment.getFromDate();
-            startDate = startDate.plusDays(1);
+            // Adjust chargeDate to be in the same month as startDate when in different months
+            if (!chargeDate.getMonth().equals(startDate.getMonth())) {
+                chargeDate = startDate.withDayOfMonth(firstRepaymentDueDate);
+            }
 
             // Compare if chargeDate is between installment startDate and due date
             boolean isInBetween = DateUtils.isDateWithinRange(chargeDate, startDate, installment.getDueDate());
@@ -2206,6 +2211,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
 
             // Create a new date obj based on installment from date, but using the day "firstRepaymentDueDate"
             LocalDate chargeDate = installment.getFromDate().withDayOfMonth(firstRepaymentDueDate);
+
+            // Adjust chargeDate to be in the same month as startDate when in different months
+            if (!chargeDate.getMonth().equals(startDate.getMonth())) {
+                chargeDate = startDate.withDayOfMonth(firstRepaymentDueDate);
+            }
 
             // If so, calculate life insurance charge portion
             if (DateUtils.isDateWithinRange(chargeDate, startDate, installment.getDueDate())) {
