@@ -437,4 +437,5 @@
     <include file="parts/202512262000001000_EA_447_webhook_reversal_disbursement_extra_action_and_update_disbursement_report_file.xml" relativeToChangelogFile="true"/>
     <include file="parts/20251226200100_EA_119_configuration_gac_ondemand_recalculation.xml" relativeToChangelogFile="true"/>
     <include file="parts/202512292000001000_EA_447_webhook_update_disbursement_report_file.xml" relativeToChangelogFile="true"/>
+    <include file="parts/202601052000001000_EA_447_webhook_adjust_create_loan_adjust_disbursement_reversal.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
