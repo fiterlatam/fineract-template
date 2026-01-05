@@ -27,7 +27,6 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -84,12 +83,13 @@ public class PaeRequiredDocumentationApiResource {
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final FileUploadValidator fileUploadValidator;
     private final DocumentWritePlatformService documentWritePlatformService;
+
     @Autowired
     public PaeRequiredDocumentationApiResource(PlatformSecurityContext context, PaeRequiredDocumentReadPlatformService readPlatformService,
             DefaultToApiJsonSerializer<PaeRequiredDocumentData> toApiJsonSerializer,
             DefaultToApiJsonSerializer<CommandProcessingResult> resultSerializer, ApiRequestParameterHelper apiRequestParameterHelper,
-            PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-            FileUploadValidator fileUploadValidator,DocumentWritePlatformService documentWritePlatformService) {
+            PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, FileUploadValidator fileUploadValidator,
+            DocumentWritePlatformService documentWritePlatformService) {
         this.context = context;
         this.readPlatformService = readPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
@@ -160,11 +160,11 @@ public class PaeRequiredDocumentationApiResource {
     @Consumes({ MediaType.MULTIPART_FORM_DATA })
     @Produces({ MediaType.APPLICATION_JSON })
     public String createDocument(@PathParam("loanId") @Parameter(description = "loanId") final Long loanId,
-                                 @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
-                                 @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
-                                 @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
-                                 @FormDataParam("categoryId") final String categoryId, @FormDataParam("guaranteeNo") final String guaranteeNo,
-                                 @FormDataParam("description") final String description, @FormDataParam("comment") final String comment) {
+            @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
+            @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
+            @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
+            @FormDataParam("categoryId") final String categoryId, @FormDataParam("guaranteeNo") final String guaranteeNo,
+            @FormDataParam("description") final String description, @FormDataParam("comment") final String comment) {
 
         if (inputStream != null) {
             fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
