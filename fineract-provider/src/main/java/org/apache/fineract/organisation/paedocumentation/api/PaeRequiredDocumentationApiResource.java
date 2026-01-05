@@ -27,6 +27,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -34,6 +35,7 @@ import java.util.Set;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -49,9 +51,15 @@ import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
+import org.apache.fineract.infrastructure.documentmanagement.api.FileUploadValidator;
+import org.apache.fineract.infrastructure.documentmanagement.command.DocumentCommand;
+import org.apache.fineract.infrastructure.documentmanagement.service.DocumentWritePlatformService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.paedocumentation.data.PaeRequiredDocumentData;
 import org.apache.fineract.organisation.paedocumentation.service.PaeRequiredDocumentReadPlatformService;
+import org.glassfish.jersey.media.multipart.FormDataBodyPart;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -73,18 +81,23 @@ public class PaeRequiredDocumentationApiResource {
     private final DefaultToApiJsonSerializer<CommandProcessingResult> resultSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final FileUploadValidator fileUploadValidator;
+    private final DocumentWritePlatformService documentWritePlatformService;
 
     @Autowired
     public PaeRequiredDocumentationApiResource(PlatformSecurityContext context, PaeRequiredDocumentReadPlatformService readPlatformService,
             DefaultToApiJsonSerializer<PaeRequiredDocumentData> toApiJsonSerializer,
             DefaultToApiJsonSerializer<CommandProcessingResult> resultSerializer, ApiRequestParameterHelper apiRequestParameterHelper,
-            PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, FileUploadValidator fileUploadValidator,
+            DocumentWritePlatformService documentWritePlatformService) {
         this.context = context;
         this.readPlatformService = readPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.resultSerializer = resultSerializer;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+        this.fileUploadValidator = fileUploadValidator;
+        this.documentWritePlatformService = documentWritePlatformService;
     }
 
     @GET
@@ -141,4 +154,27 @@ public class PaeRequiredDocumentationApiResource {
 
         return this.resultSerializer.serialize(commandProcessingResult);
     }
+
+    @POST
+    @Path("/{loanId}/paedocument")
+    @Consumes({ MediaType.MULTIPART_FORM_DATA })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String createDocument(@PathParam("loanId") @Parameter(description = "loanId") final Long loanId,
+            @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
+            @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
+            @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
+            @FormDataParam("categoryId") final String categoryId, @FormDataParam("guaranteeNo") final String guaranteeNo,
+            @FormDataParam("description") final String description, @FormDataParam("comment") final String comment) {
+
+        if (inputStream != null) {
+            fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
+            final DocumentCommand documentCommand = new DocumentCommand(null, null, "paedocumentation", loanId, name,
+                    fileDetails.getFileName(), fileSize, bodyPart.getMediaType().toString(), description, null);
+            documentCommand.setDocumentType(categoryId);
+            documentCommand.setDocumentPurpose(guaranteeNo);
+            final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);
+        }
+        return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(loanId, null));
+    }
+
 }
