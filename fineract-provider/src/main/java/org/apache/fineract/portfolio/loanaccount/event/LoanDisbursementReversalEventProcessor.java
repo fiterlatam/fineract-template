@@ -19,9 +19,11 @@
 package org.apache.fineract.portfolio.loanaccount.event;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
@@ -32,6 +34,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Component;
 
@@ -72,6 +75,22 @@ public class LoanDisbursementReversalEventProcessor extends BaseCustomWebhookEve
         requestBody.put("productName", loan.getLoanProduct().getName());
         requestBody.put("userId", loan.getClient().getExternalId());
 
+        Long disbursementTransactionId = resourceId;
+
+        Optional<LoanTransaction> ltOpt = loan.getLoanTransactions().stream() //
+                .filter(LoanTransaction::isReversed) //
+                .filter(t -> t.getTypeOf().equals(LoanTransactionType.DISBURSEMENT)).max(Comparator.comparing(LoanTransaction::getId));
+
+        if (loan.isMultiDisburmentLoan()) {
+            ltOpt = loan.getLoanTransactions().stream() //
+                    .filter(LoanTransaction::isReversed) //
+                    .filter(t -> t.getTypeOf().equals(LoanTransactionType.DISBURSEMENT)).min(Comparator.comparing(LoanTransaction::getId));
+        }
+
+        if (ltOpt.isPresent()) {
+            disbursementTransactionId = ltOpt.get().getId();
+        }
+
         if (validateResourceId) {
             final LoanTransaction loanTransaction = loanTransactionRepository.findById(resourceId)
                     .orElseThrow(() -> new GeneralPlatformDomainRuleException("error.msg.error.sending.hook.resource.id.is.null",
@@ -79,8 +98,8 @@ public class LoanDisbursementReversalEventProcessor extends BaseCustomWebhookEve
 
             if (loanTransaction.isDisbursementWithoutReverseValidation()) {
                 try {
-                    requestBody.put("reversalTransactionId", resourceId);
-                    requestBody.put("reversedTransactionId", resourceId);
+                    requestBody.put("reversalTransactionId", disbursementTransactionId);
+                    requestBody.put("reversedTransactionId", disbursementTransactionId);
                 } catch (EmptyResultDataAccessException e) {
                     return requestBody;
                 }
@@ -88,8 +107,8 @@ public class LoanDisbursementReversalEventProcessor extends BaseCustomWebhookEve
                 return requestBody;
             }
         } else {
-            requestBody.put("reversalTransactionId", resourceId);
-            requestBody.put("reversedTransactionId", resourceId);
+            requestBody.put("reversalTransactionId", disbursementTransactionId);
+            requestBody.put("reversedTransactionId", disbursementTransactionId);
             return requestBody;
         }
 
