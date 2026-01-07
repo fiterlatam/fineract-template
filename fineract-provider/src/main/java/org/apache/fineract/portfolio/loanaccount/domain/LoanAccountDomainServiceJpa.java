@@ -743,31 +743,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()
                 && (loan.getAccruedTill() == null || !foreClosureDate.isEqual(loan.getAccruedTill()))) {
             loan.reverseAccrualsAfter(foreClosureDate);
-            Money[] accruedReceivables = loan.getReceivableIncome(foreClosureDate);
-            Money interestPortion = foreCloseDetail.getInterestCharged(currency).minus(accruedReceivables[0]);
-            Money feePortion = foreCloseDetail.getFeeChargesCharged(currency).minus(accruedReceivables[1]);
-            Money penaltyPortion = foreCloseDetail.getPenaltyChargesCharged(currency).minus(accruedReceivables[2]);
-            Money total = interestPortion.plus(feePortion).plus(penaltyPortion);
-            if (total.isGreaterThanZero()) {
-                LoanTransaction accrualTransaction = LoanTransaction.accrueTransaction(loan, loan.getOffice(), foreClosureDate,
-                        total.getAmount(), interestPortion.getAmount(), feePortion.getAmount(), penaltyPortion.getAmount());
-                LocalDate fromDate = loan.getDisbursementDate();
-                if (loan.getAccruedTill() != null) {
-                    fromDate = loan.getAccruedTill();
-                }
-                newTransactions.add(accrualTransaction);
-                loan.addLoanTransaction(accrualTransaction);
-                Set<LoanChargePaidBy> accrualCharges = accrualTransaction.getLoanChargesPaid();
-                for (LoanCharge loanCharge : loan.charges()) {
-                    if (loanCharge.isActive() && !loanCharge.isPaid()
-                            && (loanCharge.isDueForCollectionFromAndUpToAndIncluding(fromDate, foreClosureDate)
-                                    || loanCharge.isInstalmentFee())) {
-                        final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(accrualTransaction, loanCharge,
-                                loanCharge.getAmountOutstanding(currency).getAmount(), null);
-                        accrualCharges.add(loanChargePaidBy);
-                    }
-                }
-            }
         }
 
         Money interestPayable = foreCloseDetail.getInterestCharged(currency);
