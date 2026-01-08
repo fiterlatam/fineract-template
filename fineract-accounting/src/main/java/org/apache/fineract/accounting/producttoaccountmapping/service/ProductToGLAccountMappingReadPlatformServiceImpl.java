@@ -55,11 +55,11 @@ public class ProductToGLAccountMappingReadPlatformServiceImpl implements Product
         public String schema() {
             return " mapping.id as id, mapping.gl_account_id as glAccountId,glaccount.name as name,glaccount.gl_code as code,"
                     + " mapping.product_id as productId, mapping.product_type as productType,mapping.financial_account_type as financialAccountType, "
-                    + " mapping.payment_type as paymentTypeId,pt.value as paymentTypeValue, mapping.charge_id as chargeId, charge.is_penalty as penalty, "
+                    + " mapping.payment_type as paymentTypeId,pt.name as paymentTypeValue, mapping.charge_id as chargeId, charge.is_penalty as penalty, "
                     + " charge.name as chargeName "
                     + " from acc_product_mapping mapping left join m_charge charge on mapping.charge_id=charge.id "
                     + " left join acc_gl_account as  glaccount on mapping.gl_account_id = glaccount.id"
-                    + " left join m_payment_type pt on mapping.payment_type=pt.id" + " where mapping.product_type= ? ";
+                    + " left join custom.c_channel pt on mapping.payment_type=pt.id" + " where mapping.product_type= ? ";
         }
 
         @Override
@@ -277,6 +277,11 @@ public class ProductToGLAccountMappingReadPlatformServiceImpl implements Product
     }
 
     @Override
+    public List<PaymentTypeToGLAccountMapper> fetchPaymentChannelToFundSourceMappingsForLoanProduct(final Long loanProductId) {
+        return fetchPaymentChannelToFundSourceMappings(PortfolioProductType.LOAN, loanProductId);
+    }
+
+    @Override
     public List<PaymentTypeToGLAccountMapper> fetchPaymentTypeToFundSourceMappingsForSavingsProduct(final Long savingsProductId) {
         return fetchPaymentTypeToFundSourceMappings(PortfolioProductType.SAVING, savingsProductId);
     }
@@ -286,6 +291,39 @@ public class ProductToGLAccountMappingReadPlatformServiceImpl implements Product
      * @return
      */
     private List<PaymentTypeToGLAccountMapper> fetchPaymentTypeToFundSourceMappings(final PortfolioProductType portfolioProductType,
+            final Long loanProductId) {
+        final ProductToGLAccountMappingMapper rm = new ProductToGLAccountMappingMapper();
+        final String sql = "select " + rm.schema() + " and product_id = ? and payment_type is not null";
+
+        final List<Map<String, Object>> paymentTypeToFundSourceMappingsList = this.jdbcTemplate.query(sql, rm, // NOSONAR
+                new Object[] { portfolioProductType.getValue(), loanProductId });
+
+        List<PaymentTypeToGLAccountMapper> paymentTypeToGLAccountMappers = null;
+        for (final Map<String, Object> productToGLAccountMap : paymentTypeToFundSourceMappingsList) {
+            if (paymentTypeToGLAccountMappers == null) {
+                paymentTypeToGLAccountMappers = new ArrayList<>();
+            }
+            final Long paymentTypeId = (Long) productToGLAccountMap.get("paymentTypeId");
+            final String paymentTypeValue = (String) productToGLAccountMap.get("paymentTypeValue");
+            final PaymentTypeData paymentTypeData = PaymentTypeData.instance(paymentTypeId, paymentTypeValue);
+            final Long glAccountId = (Long) productToGLAccountMap.get("glAccountId");
+            final String glAccountName = (String) productToGLAccountMap.get("glAccountName");
+            final String glCode = (String) productToGLAccountMap.get("glCode");
+
+            final GLAccountData gLAccountData = new GLAccountData().setId(glAccountId).setName(glAccountName).setGlCode(glCode);
+
+            final PaymentTypeToGLAccountMapper paymentTypeToGLAccountMapper = new PaymentTypeToGLAccountMapper()
+                    .setPaymentType(paymentTypeData).setFundSourceAccount(gLAccountData);
+            paymentTypeToGLAccountMappers.add(paymentTypeToGLAccountMapper);
+        }
+        return paymentTypeToGLAccountMappers;
+    }
+
+    /**
+     * @param loanProductId
+     * @return
+     */
+    private List<PaymentTypeToGLAccountMapper> fetchPaymentChannelToFundSourceMappings(final PortfolioProductType portfolioProductType,
             final Long loanProductId) {
         final ProductToGLAccountMappingMapper rm = new ProductToGLAccountMappingMapper();
         final String sql = "select " + rm.schema() + " and product_id = ? and payment_type is not null";

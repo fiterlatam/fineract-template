@@ -128,6 +128,7 @@ public class AccountingProcessorHelper {
             final BigDecimal overPayments = (BigDecimal) map.get("overPaymentPortion");
             final boolean reversed = (Boolean) map.get("reversed");
             final Long paymentTypeId = (Long) map.get("paymentTypeId");
+            final Long paymentChannelId = (Long) map.get("paymentChannelId");
             final String chargeRefundChargeType = (String) map.get("chargeRefundChargeType");
             final LoanChargeData loanChargeData = (LoanChargeData) map.get("loanChargeData");
 
@@ -160,6 +161,7 @@ public class AccountingProcessorHelper {
                     penaltyPaymentDetails, feePaymentDetails, isAccountTransfer, chargeRefundChargeType, loanChargeData);
             Boolean isLoanToLoanTransfer = (Boolean) accountingBridgeData.get("isLoanToLoanTransfer");
             transaction.setLoanToLoanTransfer(isLoanToLoanTransfer != null && isLoanToLoanTransfer);
+            transaction.setPaymentChannelId(paymentChannelId);
             newLoanTransactions.add(transaction);
 
         }

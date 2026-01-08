@@ -368,4 +368,5 @@
     <include file="parts/2025082512178000000_SU_715_add_index_on_loan_transaction_created_on_utc.xml" relativeToChangelogFile="true" />
     <include file="parts/2025082512178000000_SU_740_loan_clone_feature.xml" relativeToChangelogFile="true" />
     <include file="parts/2025010112000000000_SU_736_create_colombian_journal_export_view.xml" relativeToChangelogFile="true" />
+    <include file="parts/2026052417528001100_SUO_492_journal_entries_payment_channel.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

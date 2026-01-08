@@ -52,6 +52,8 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
             final String transactionId = loanTransactionDTO.getTransactionId();
             final Office office = this.helper.getOfficeById(loanTransactionDTO.getOfficeId());
             final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+            final Long paymentChannelId = loanTransactionDTO.getPaymentChannelId() == null ? paymentTypeId
+                    : loanTransactionDTO.getPaymentChannelId();
             final Long loanId = loanDTO.getLoanId();
 
             this.helper.checkForBranchClosures(latestGLClosure, transactionDate);
@@ -766,6 +768,8 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
         final BigDecimal overPaymentAmount = loanTransactionDTO.getOverPayment();
         final boolean isReversal = loanTransactionDTO.isReversed();
         final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+        final Long paymentChannelId = loanTransactionDTO.getPaymentChannelId() == null ? paymentTypeId
+                : loanTransactionDTO.getPaymentChannelId();
 
         BigDecimal totalDebitAmount = new BigDecimal(0);
         Map<Integer, BigDecimal> debitAccountMapForGoodwillCredit = new LinkedHashMap<>();
@@ -842,7 +846,7 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
 
             } else {
                 this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode, CashAccountsForLoan.FUND_SOURCE.getValue(),
-                        loanProductId, paymentTypeId, loanId, transactionId, transactionDate, totalDebitAmount, isReversal);
+                        loanProductId, paymentChannelId, loanId, transactionId, transactionDate, totalDebitAmount, isReversal);
             }
         }
 
@@ -853,7 +857,7 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
         if (totalDebitAmount.compareTo(BigDecimal.ZERO) > 0 && loanTransactionDTO.getTransactionType().isChargeRefund()) {
             Integer incomeAccount = this.helper.getValueForFeeOrPenaltyIncomeAccount(loanTransactionDTO.getChargeRefundChargeType());
             this.helper.createJournalEntriesAndReversalsForLoan(office, currencyCode, incomeAccount,
-                    CashAccountsForLoan.FUND_SOURCE.getValue(), loanProductId, paymentTypeId, loanId, transactionId, transactionDate,
+                    CashAccountsForLoan.FUND_SOURCE.getValue(), loanProductId, paymentChannelId, loanId, transactionId, transactionDate,
                     totalDebitAmount, isReversal);
         }
     }
