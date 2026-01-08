@@ -35,6 +35,8 @@ public interface ProductToGLAccountMappingReadPlatformService {
 
     Map<String, Object> fetchAccountMappingDetailsForSavingsProduct(Long savingsProductId, Integer accountingType);
 
+    List<PaymentTypeToGLAccountMapper> fetchPaymentChannelToFundSourceMappingsForLoanProduct(Long loanProductId);
+
     List<PaymentTypeToGLAccountMapper> fetchPaymentTypeToFundSourceMappingsForSavingsProduct(Long savingsProductId);
 
     List<ChargeToGLAccountMapper> fetchFeeToIncomeAccountMappingsForSavingsProduct(Long savingsProductId);

@@ -33,6 +33,8 @@ public class LoanTransactionDTO {
 
     private final Long officeId;
     private final Long paymentTypeId;
+    @Setter
+    private Long paymentChannelId;
     private final String transactionId;
     private final LocalDate transactionDate;
     private final LoanTransactionEnumData transactionType;

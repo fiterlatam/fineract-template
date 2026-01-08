@@ -956,6 +956,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
         if (this.paymentDetail != null) {
             thisTransactionData.put("paymentTypeId", this.paymentDetail.getPaymentType().getId());
+            thisTransactionData.put("paymentChannelId", this.paymentDetail.getChannelId());
         }
 
         if (!this.loanChargesPaid.isEmpty()) {

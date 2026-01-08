@@ -796,6 +796,8 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         final BigDecimal penaltiesAmount = loanTransactionDTO.getPenalties();
         final BigDecimal overPaymentAmount = loanTransactionDTO.getOverPayment();
         final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+        final Long paymentChannelId = loanTransactionDTO.getPaymentChannelId() == null ? paymentTypeId
+                : loanTransactionDTO.getPaymentChannelId();
         final boolean isReversal = loanTransactionDTO.isReversed();
 
         BigDecimal totalDebitAmount = new BigDecimal(0);
@@ -936,7 +938,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
 
                     } else {
                         this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode,
-                                AccrualAccountsForLoan.FUND_SOURCE.getValue(), loanProductId, paymentTypeId, loanId, transactionId,
+                                AccrualAccountsForLoan.FUND_SOURCE.getValue(), loanProductId, paymentChannelId, loanId, transactionId,
                                 transactionDate, totalDebitAmount, isReversal);
                     }
                 }
@@ -950,7 +952,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         if (totalDebitAmount.compareTo(BigDecimal.ZERO) > 0 && loanTransactionDTO.getTransactionType().isChargeRefund()) {
             Integer incomeAccount = this.helper.getValueForFeeOrPenaltyIncomeAccount(loanTransactionDTO.getChargeRefundChargeType());
             this.helper.createJournalEntriesAndReversalsForLoan(office, currencyCode, incomeAccount,
-                    AccrualAccountsForLoan.FUND_SOURCE.getValue(), loanProductId, paymentTypeId, loanId, transactionId, transactionDate,
+                    AccrualAccountsForLoan.FUND_SOURCE.getValue(), loanProductId, paymentChannelId, loanId, transactionId, transactionDate,
                     totalDebitAmount, isReversal);
         }
     }
