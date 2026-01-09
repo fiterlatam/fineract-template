@@ -20,12 +20,10 @@ package org.apache.fineract.portfolio.loanaccount.event;
 
 import java.math.BigDecimal;
 import java.util.*;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
 import org.apache.fineract.custom.infrastructure.dataqueries.data.DetalleGarantiaDatatableData;
-import org.apache.fineract.custom.infrastructure.dataqueries.data.InformacionAdicionalDatatableData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.portfolio.client.domain.Client;
@@ -75,7 +73,6 @@ public class LoanDisbursementReportFileEventProcessor extends BaseCustomWebhookE
         LoanTransaction disbursalTransaction = loan.getLoanTransactions().stream().filter(type -> type.getTypeOf().isDisbursement())
                 .max(Comparator.comparing(dt -> dt.getCreatedDateTime())).get();
 
-
         DetalleGarantiaDatatableData detalleGarantiaDatatableData = loanRejectionGuaranteeEventProcessor.getDetalleGarantia(loan);
 
         requestBody.put("applyGuarantee", detalleGarantiaDatatableData.isAplicaGarantia());
@@ -92,18 +89,18 @@ public class LoanDisbursementReportFileEventProcessor extends BaseCustomWebhookE
 
     private List<LoanTransactionData.DisbursementFeeData> getDisbursementFees(Long loanId) {
         final String sql = """
-                    SELECT
-                    	mc.id AS "chargeId",
-                    	mlc.amount AS "amount",
-                    	mc.name AS "chargeName",
-                    	ml.net_disbursal_amount AS "netDisbursalAmount"
-                    FROM m_loan_transaction mlt
-                    INNER JOIN m_loan ml ON ml.id = mlt.loan_id
-                    INNER JOIN m_loan_charge_paid_by mlcpb ON mlcpb.loan_transaction_id = mlt.id
-                    INNER JOIN m_loan_charge mlc ON mlc.id = mlcpb.loan_charge_id
-                    INNER JOIN m_charge mc ON mc.id = mlc.charge_id
-                    WHERE mlt.loan_id = ? AND mlt.is_reversed = FALSE AND mlt.transaction_type_enum = 5
-                    """;
+                SELECT
+                	mc.id AS "chargeId",
+                	mlc.amount AS "amount",
+                	mc.name AS "chargeName",
+                	ml.net_disbursal_amount AS "netDisbursalAmount"
+                FROM m_loan_transaction mlt
+                INNER JOIN m_loan ml ON ml.id = mlt.loan_id
+                INNER JOIN m_loan_charge_paid_by mlcpb ON mlcpb.loan_transaction_id = mlt.id
+                INNER JOIN m_loan_charge mlc ON mlc.id = mlcpb.loan_charge_id
+                INNER JOIN m_charge mc ON mc.id = mlc.charge_id
+                WHERE mlt.loan_id = ? AND mlt.is_reversed = FALSE AND mlt.transaction_type_enum = 5
+                """;
         final List<LoanTransactionData.DisbursementFeeData> disbursementFees = jdbcTemplate.query(sql, resultSet -> {
             List<LoanTransactionData.DisbursementFeeData> disbursementFeeDataList = new ArrayList<>();
             while (resultSet.next()) {
@@ -112,8 +109,7 @@ public class LoanDisbursementReportFileEventProcessor extends BaseCustomWebhookE
                 final String chargeName = resultSet.getString("chargeName");
                 final BigDecimal netPrincipalDisbursalAmount = resultSet.getBigDecimal("netDisbursalAmount");
                 final LoanTransactionData.DisbursementFeeData disbursementFeeData = LoanTransactionData.DisbursementFeeData.builder()
-                        .chargeId(chargeId).amount(amount).chargeName(chargeName).netDisbursalAmount(netPrincipalDisbursalAmount)
-                        .build();
+                        .chargeId(chargeId).amount(amount).chargeName(chargeName).netDisbursalAmount(netPrincipalDisbursalAmount).build();
                 disbursementFeeDataList.add(disbursementFeeData);
             }
             return disbursementFeeDataList;
