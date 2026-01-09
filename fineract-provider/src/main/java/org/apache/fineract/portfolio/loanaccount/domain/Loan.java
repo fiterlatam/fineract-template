@@ -3898,9 +3898,11 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
         for (final LoanRepaymentScheduleInstallment scheduledRepayment : installments) {
 
-            cumulativeTotalPaidOnInstallments = cumulativeTotalPaidOnInstallments
-                    .plus(scheduledRepayment.getPrincipalCompleted(currency).plus(scheduledRepayment.getInterestPaid(currency)))
-                    .plus(scheduledRepayment.getFeeChargesPaid(currency)).plus(scheduledRepayment.getPenaltyChargesPaid(currency));
+            Money totalInstallmentPayments = scheduledRepayment.getPrincipalCompleted(currency)
+                    .plus(scheduledRepayment.getInterestPaid(currency)).plus(scheduledRepayment.getFeeChargesPaid(currency))
+                    .plus(scheduledRepayment.getPenaltyChargesPaid(currency));
+
+            cumulativeTotalPaidOnInstallments = cumulativeTotalPaidOnInstallments.plus(totalInstallmentPayments);
 
             cumulativeTotalWaivedOnInstallments = cumulativeTotalWaivedOnInstallments.plus(scheduledRepayment.getInterestWaived(currency));
         }
@@ -7048,19 +7050,57 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
-    public void updateInstallmentsPostDate(LocalDate transactionDate, Money interestToWaive) {
+    public void updateInstallmentsPostDate(LocalDate transactionDate) {
         List<LoanRepaymentScheduleInstallment> newInstallments = new ArrayList<>(this.repaymentScheduleInstallments);
         final MonetaryCurrency currency = getCurrency();
         Money totalPrincipal = Money.zero(currency);
+        Money totalInterestCharged = Money.zero(currency);
+        Money totalFeeChargesCharged = Money.zero(currency);
+        Money totalPenaltiesCharged = Money.zero(currency);
+        Money totalAdvancedPrincipal = Money.zero(currency);
+        Money totalAdvancedInterest = Money.zero(currency);
+        Money totalAdvancedFeesCharges = Money.zero(currency);
+        Money totalAdvancedPenalties = Money.zero(currency);
+        Money totalAdvancedPrincipalWrittenOff = Money.zero(currency);
+        Money totalAdvancedInterestWaived = Money.zero(currency);
+        Money totalAdvancedInterestWrittenOff = Money.zero(currency);
+        Money totalAdvancedFeesChargesWaived = Money.zero(currency);
+        Money totalAdvancedFeesChargesWrittenOff = Money.zero(currency);
+        Money totalAdvancedPenaltiesWaived = Money.zero(currency);
+        Money totalAdvancedPenaltiesWrittenOff = Money.zero(currency);
+        Money totalInterestAccrued = Money.zero(currency);
         Money[] balances = retriveIncomeForOverlappingPeriod(transactionDate);
         boolean isInterestComponent = true;
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             if (!installment.getDueDate().isBefore(transactionDate)) {
-                totalPrincipal = totalPrincipal.plus(installment.getPrincipal(currency));
-                newInstallments.remove(installment);
+                if (!installment.isObligationsMet()) {
+                    totalPrincipal = totalPrincipal.plus(installment.getPrincipal(currency));
+                    totalInterestCharged = totalInterestCharged.plus(installment.getInterestCharged(currency));
+                    totalFeeChargesCharged = totalFeeChargesCharged.plus(installment.getFeeChargesCharged(currency));
+                    totalPenaltiesCharged = totalPenaltiesCharged.plus(installment.getPenaltyChargesCharged(currency));
+                    totalAdvancedPrincipal = totalAdvancedPrincipal.plus(installment.getPrincipalCompleted(currency));
+                    totalAdvancedInterest = totalAdvancedInterest.plus(installment.getInterestPaid(currency));
+                    totalAdvancedFeesCharges = totalAdvancedFeesCharges.plus(installment.getFeeChargesPaid(currency));
+                    totalAdvancedPenalties = totalAdvancedPenalties.plus(installment.getPenaltyChargesPaid(currency));
+
+                    totalAdvancedPrincipalWrittenOff = totalAdvancedPrincipalWrittenOff.plus(installment.getPrincipalWrittenOff(currency));
+                    totalAdvancedInterestWaived = totalAdvancedInterestWaived.plus(installment.getInterestWaived(currency));
+                    totalAdvancedInterestWrittenOff = totalAdvancedInterestWrittenOff.plus(installment.getInterestWrittenOff(currency));
+                    totalAdvancedFeesChargesWaived = totalAdvancedFeesChargesWaived.plus(installment.getFeeChargesWaived(currency));
+                    totalAdvancedFeesChargesWrittenOff = totalAdvancedFeesChargesWrittenOff
+                            .plus(installment.getFeeChargesWrittenOff(currency));
+                    totalAdvancedPenaltiesWaived = totalAdvancedPenaltiesWaived.plus(installment.getPenaltyChargesWaived(currency));
+                    totalAdvancedPenaltiesWrittenOff = totalAdvancedPenaltiesWrittenOff
+                            .plus(installment.getPenaltyChargesWrittenOff(currency));
+                    totalInterestAccrued = totalInterestAccrued.plus(installment.getInterestAccrued(currency));
+                    newInstallments.remove(installment);
+
+                }
+
                 if (installment.getDueDate().isEqual(transactionDate)) {
                     isInterestComponent = false;
                 }
+
             }
 
         }
@@ -7083,12 +7123,27 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             installmentNumber++;
         }
 
-        BigDecimal interestComponent = balances[0].getAmount().add(interestToWaive.getAmount());
-        BigDecimal chargesComponent = balances[1].getAmount();
-        BigDecimal penaltyComponent = balances[2].getAmount();
+        // BigDecimal interestComponent =
+        // balances[0].getAmount().add(interestToWaive.getAmount()).add(totalAdvancedInterest.getAmount());
+        // BigDecimal chargesComponent = balances[1].getAmount().add(totalAdvancedFeesCharges.getAmount());
+        // BigDecimal penaltyComponent = balances[2].getAmount().add(totalAdvancedPenalties.getAmount());
         LoanRepaymentScheduleInstallment newInstallment = new LoanRepaymentScheduleInstallment(null, newInstallments.size() + 1,
-                installmentStartDate, transactionDate, totalPrincipal.getAmount(), interestComponent, chargesComponent, penaltyComponent,
-                isInterestComponent, null);
+                installmentStartDate, transactionDate, totalPrincipal.getAmount(), totalInterestCharged.getAmount(),
+                totalFeeChargesCharged.getAmount(), totalPenaltiesCharged.getAmount(), isInterestComponent, null);
+        newInstallment.setPrincipalCompleted(totalAdvancedPrincipal.getAmount());
+        newInstallment.setPrincipalWrittenOff(totalAdvancedPrincipalWrittenOff.getAmount());
+        newInstallment.setInterestPaid(totalAdvancedInterest.getAmount());
+        newInstallment.setInterestWaived(totalAdvancedInterestWaived.getAmount());
+        newInstallment.setInterestWrittenOff(totalAdvancedInterestWrittenOff.getAmount());
+        newInstallment.setFeeChargesPaid(totalAdvancedFeesCharges.getAmount());
+        newInstallment.setFeeChargesWaived(totalAdvancedFeesChargesWaived.getAmount());
+        newInstallment.setFeeChargesWrittenOff(totalAdvancedFeesChargesWrittenOff.getAmount());
+        newInstallment.setPenaltyChargesPaid(totalAdvancedPenalties.getAmount());
+        newInstallment.setPenaltyChargesWaived(totalAdvancedPenaltiesWaived.getAmount());
+        newInstallment.setPenaltyChargesWrittenOff(totalAdvancedPenaltiesWrittenOff.getAmount());
+        newInstallment.setInterestAccrued(totalInterestAccrued.getAmount());
+        newInstallment.setTotalPaidInAdvance(
+                totalAdvancedInterest.plus(totalAdvancedPrincipal).plus(totalAdvancedFeesCharges).plus(totalAdvancedPenalties).getAmount());
         newInstallment.updateInstallmentNumber(newInstallments.size() + 1);
         newInstallments.add(newInstallment);
         updateLoanScheduleOnForeclosure(newInstallments);

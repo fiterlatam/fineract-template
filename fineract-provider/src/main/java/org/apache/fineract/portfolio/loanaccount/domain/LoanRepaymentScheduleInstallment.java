@@ -60,21 +60,26 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
     @Column(name = "principal_amount", scale = 6, precision = 19, nullable = true)
     private BigDecimal principal;
 
+    @Setter
     @Column(name = "principal_completed_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal principalCompleted;
 
+    @Setter
     @Column(name = "principal_writtenoff_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal principalWrittenOff;
 
     @Column(name = "interest_amount", scale = 6, precision = 19, nullable = true)
     private BigDecimal interestCharged;
 
+    @Setter
     @Column(name = "interest_completed_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal interestPaid;
 
+    @Setter
     @Column(name = "interest_waived_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal interestWaived;
 
+    @Setter
     @Column(name = "interest_writtenoff_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal interestWrittenOff;
 
@@ -88,12 +93,15 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
     @Column(name = "fee_charges_amount", scale = 6, precision = 19, nullable = true)
     private BigDecimal feeChargesCharged;
 
+    @Setter
     @Column(name = "fee_charges_completed_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal feeChargesPaid;
 
+    @Setter
     @Column(name = "fee_charges_writtenoff_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal feeChargesWrittenOff;
 
+    @Setter
     @Column(name = "fee_charges_waived_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal feeChargesWaived;
 
@@ -103,18 +111,22 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
     @Column(name = "penalty_charges_amount", scale = 6, precision = 19, nullable = true)
     private BigDecimal penaltyCharges;
 
+    @Setter
     @Column(name = "penalty_charges_completed_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal penaltyChargesPaid;
 
+    @Setter
     @Column(name = "penalty_charges_writtenoff_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal penaltyChargesWrittenOff;
 
+    @Setter
     @Column(name = "penalty_charges_waived_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal penaltyChargesWaived;
 
     @Column(name = "accrual_penalty_charges_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal penaltyAccrued;
 
+    @Setter
     @Column(name = "total_paid_in_advance_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal totalPaidInAdvance;
 
