@@ -738,12 +738,24 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         existingTransactionIds.addAll(loan.findExistingTransactionIds());
         existingReversedTransactionIds.addAll(loan.findExistingReversedTransactionIds());
         final ScheduleGeneratorDTO scheduleGeneratorDTO = null;
+        ChangedTransactionDetail reprocessTransactions = loan.reprocessTransactions();
+        if (reprocessTransactions != null) {
+            for (Map.Entry<Long, LoanTransaction> mapEntry : reprocessTransactions.getNewTransactionMappings().entrySet()) {
+                saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.getValue());
+                // update loan with references to the newly created transactions
+                loan.getLoanTransactions().add(mapEntry.getValue());
+                updateLoanTransaction(mapEntry.getKey(), mapEntry.getValue());
+            }
+        }
 
         final LoanRepaymentScheduleInstallment foreCloseDetail = loan.fetchLoanForeclosureDetail(foreClosureDate);
         if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()
                 && (loan.getAccruedTill() == null || !foreClosureDate.isEqual(loan.getAccruedTill()))) {
             loan.reverseAccrualsAfter(foreClosureDate);
         }
+
+        loan.updateInstallmentsPostDate(foreClosureDate);
+        // loan.reprocessTransactions();
 
         Money interestPayable = foreCloseDetail.getInterestCharged(currency);
         Money interestReceivable = foreCloseDetail.getInterestCharged(currency);
@@ -752,10 +764,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         Money payPrincipal = foreCloseDetail.getPrincipal(currency);
         Money npaInterestToWriteOff = foreCloseDetail.getNpaInterestToWriteOff(currency);
         BigDecimal totalInterestOutstanding = loan.getSummary().getTotalInterestOutstanding();
-        Money interestToWaive = Money.of(currency, totalInterestOutstanding.subtract(interestPayable.getAmount()));
-        Money totalWriteOff = payPrincipal.plus(totalInterestOutstanding).plus(feePayable).plus(penaltyPayable);
-        loan.updateInstallmentsPostDate(foreClosureDate, interestToWaive);
 
+        Money netInterestReceivable = interestReceivable.minus(npaInterestToWriteOff);
+        Money interestToWaive = Money.of(currency, totalInterestOutstanding.subtract(netInterestReceivable.getAmount()));
+        Money totalWriteOff = payPrincipal.plus(totalInterestOutstanding).plus(feePayable).plus(penaltyPayable);
         // after updating the installments. waive off the interest that is not accrued yet and pay off the outstanding.
         LoanTransaction payment = null;
         List<Long> transactionIds = new ArrayList<>();
@@ -779,11 +791,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
             payment = LoanTransaction.repayment(loan.getOffice(), totalWriteOff, paymentDetail, foreClosureDate, externalId);
             payment.updateLoan(loan);
             payment.setIsForeclosureTransaction(true);
-            Money netInterestReceivable = interestReceivable.minus(npaInterestToWriteOff);
-            payment.setReceivableInterestPortion(interestReceivable.getAmount());
-            if (!isDecliningBalance)
-                payment.setReceivableInterestPortion(totalInterestOutstanding.subtract(netInterestReceivable.getAmount()));
-            if (isDecliningBalance) payment.setNetAccruedInterest(netInterestReceivable.getAmount());
+            payment.setReceivableInterestPortion(netInterestReceivable.getAmount());
             newTransactions.add(payment);
         }
 
