@@ -273,4 +273,8 @@ public class LoanRepositoryWrapper {
     public Loan retrieveByPrequalificationId(@Param("prequalificationId") Long prequalificationId) {
         return this.repository.retrieveByPrequalificationId(prequalificationId);
     }
+
+    public List<Loan> retrieveAllByPrequalificationId(@Param("prequalificationId") Long prequalificationId) {
+        return this.repository.retrieveAllByPrequalificationId(prequalificationId);
+    }
 }

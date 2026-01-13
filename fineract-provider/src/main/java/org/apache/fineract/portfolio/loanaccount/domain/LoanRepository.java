@@ -194,4 +194,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     @Query("SELECT lo FROM Loan lo WHERE lo.prequalificationGroup.id = :prequalificationId")
     Loan retrieveByPrequalificationId(@Param("prequalificationId") Long prequalificationId);
 
+    @Query("SELECT lo FROM Loan lo WHERE lo.prequalificationGroup.id = :prequalificationId order by lo.id desc")
+    List<Loan> retrieveAllByPrequalificationId(@Param("prequalificationId") Long prequalificationId);
+
 }

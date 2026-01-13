@@ -108,6 +108,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanAdditionals;
 import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanAdditionalsRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePlatformService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
@@ -995,7 +996,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             prequalificationStatus = PrequalificationStatus.fromInt(statusRange);
             if (prequalificationStatus.equals(PrequalificationStatus.COMPLETED)) {
                 reportToPrint = "Commitee Approval Report";
-                Loan loan = this.loanRepositoryWrapper.retrieveByPrequalificationId(entityId);
+                List<Loan> allLoans = this.loanRepositoryWrapper.retrieveAllByPrequalificationId(entityId);
+                if (allLoans.isEmpty()) {
+                    throw new LoanNotFoundException(loanId);
+                }
+                Loan loan = allLoans.get(0);
                 loanId = loan != null ? loan.getId() : null;
             }
         }
