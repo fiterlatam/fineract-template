@@ -167,8 +167,8 @@ public class PaeRequiredDocumentationApiResource {
             @FormDataParam("description") final String description, @FormDataParam("comment") final String comment) {
         if (inputStream != null) {
             fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
-            final DocumentCommand documentCommand = new DocumentCommand(null, null, "paeloandocs", loanId, name,
-                    fileDetails.getFileName(), fileSize, bodyPart.getMediaType().toString(), description, null);
+            final DocumentCommand documentCommand = new DocumentCommand(null, null, "paeloandocs", loanId, name, fileDetails.getFileName(),
+                    fileSize, bodyPart.getMediaType().toString(), description, null);
             documentCommand.setDocumentType(categoryId);
             documentCommand.setDocumentPurpose(guaranteeNo);
             final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);

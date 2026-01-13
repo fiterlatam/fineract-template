@@ -430,6 +430,17 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         dataValidationErrors);
             }
 
+            final Long prequalificationId = this.fromJsonHelper.extractLongNamed("prequalificationId", command.parsedJson());
+
+            if (prequalificationId != null) {
+                String existingPendingLoan = "select count(*) from m_loan where prequalification_id = ? and loan_status_id =? ";
+                Long pendingLoanCount = this.jdbcTemplate.queryForObject(existingPendingLoan, Long.class, prequalificationId,
+                        LoanStatus.SUBMITTED_AND_PENDING_APPROVAL.getValue());
+                if (pendingLoanCount > 0) {
+                    throw new PrequalificationNotProvidedException("error.msg.loan.prequalification.pending.loan.exists",
+                            "The prequalification with id " + prequalificationId + " has a pending loan application.", prequalificationId);
+                }
+            }
             final Loan newLoanApplication = this.loanAssembler.assembleFrom(command);
 
             checkForProductMixRestrictions(newLoanApplication);
