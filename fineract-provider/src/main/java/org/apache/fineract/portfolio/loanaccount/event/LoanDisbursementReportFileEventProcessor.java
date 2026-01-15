@@ -83,13 +83,16 @@ public class LoanDisbursementReportFileEventProcessor extends BaseCustomWebhookE
 
         requestBody.put("externalId", client.getExternalId().getValue());
         requestBody.put("city", informationTableData.getCiudadCliente() == null ? "" : informationTableData.getCiudadCliente());
-        requestBody.put("region", informationTableData.getDepartamentoCliente() == null ? "" : informationTableData.getDepartamentoCliente());
+        requestBody.put("region",
+                informationTableData.getDepartamentoCliente() == null ? "" : informationTableData.getDepartamentoCliente());
         requestBody.put("promoterCode", informationTableData.getCodigoPromotor() == null ? "" : informationTableData.getCodigoPromotor());
         requestBody.put("loanId", loan.getAccountNumber());
         requestBody.put("productName", loan.getLoanProduct().getName());
         requestBody.put("applyGuarantee", detalleGarantiaDatatableData.isAplicaGarantia() ? "Si" : "No");
-        requestBody.put("guaranteeType", detalleGarantiaDatatableData.getTipoGarantia() == null ? "" : detalleGarantiaDatatableData.getTipoGarantia());
-        requestBody.put("guaranteePercentage", detalleGarantiaDatatableData.getPctComission() == null ? "" : detalleGarantiaDatatableData.getPctComission().toString());
+        requestBody.put("guaranteeType",
+                detalleGarantiaDatatableData.getTipoGarantia() == null ? "" : detalleGarantiaDatatableData.getTipoGarantia());
+        requestBody.put("guaranteePercentage",
+                detalleGarantiaDatatableData.getPctComission() == null ? "" : detalleGarantiaDatatableData.getPctComission().toString());
         requestBody.put("transactionId", disbursalTransaction.getId());
 
         List<LoanTransactionData.DisbursementFeeData> disbursementFees = getDisbursementFees(loan.getId());
