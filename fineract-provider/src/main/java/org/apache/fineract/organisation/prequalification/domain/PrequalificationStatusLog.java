@@ -70,12 +70,15 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom impleme
     @Column(name = "with_exceptions")
     private Boolean withExceptions;
 
+    @Column(name = "is_exception")
+    private Boolean exception;
+
     protected PrequalificationStatusLog() {
         //
     }
 
     private PrequalificationStatusLog(final AppUser appUser, final Integer fromStatus, final Integer toStatus, final String comments,
-            final PrequalificationGroup group, final CodeValue reasonCode, final Boolean withExceptions) {
+                                           final PrequalificationGroup group, final CodeValue reasonCode, final Boolean withExceptions) {
         this.dateCreated = DateUtils.getLocalDateOfTenant();
         this.fromStatus = fromStatus;
         this.toStatus = toStatus;
@@ -86,9 +89,27 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom impleme
         this.withExceptions = withExceptions;
     }
 
+    private PrequalificationStatusLog(final AppUser appUser, final Integer fromStatus, final Integer toStatus, final String comments,
+                                      final PrequalificationGroup group, final CodeValue reasonCode, final Boolean withExceptions, Boolean exception) {
+        this.dateCreated = DateUtils.getLocalDateOfTenant();
+        this.fromStatus = fromStatus;
+        this.toStatus = toStatus;
+        this.prequalificationGroup = group;
+        this.comments = comments;
+        this.addedBy = appUser;
+        this.reasonCode = reasonCode;
+        this.withExceptions = withExceptions;
+        this.exception = exception;
+    }
+
     public static PrequalificationStatusLog fromJson(final AppUser appUser, final Integer fromStatus, final Integer toStatus,
             final String comments, final PrequalificationGroup group, CodeValue reasonCode, Boolean withExceptions) {
         return new PrequalificationStatusLog(appUser, fromStatus, toStatus, comments, group, reasonCode, withExceptions);
+    }
+
+    public static PrequalificationStatusLog fromJson(final AppUser appUser, final Integer fromStatus, final Integer toStatus,
+                                                     final String comments, final PrequalificationGroup group, CodeValue reasonCode, Boolean withExceptions, Boolean exception) {
+        return new PrequalificationStatusLog(appUser, fromStatus, toStatus, comments, group, reasonCode, withExceptions, exception);
     }
 
     public void updateAssignedTo(final AppUser assignedTo) {

@@ -174,4 +174,5 @@
     <include file="parts/PUE_27_11_25_ADD_PAE_REQUIRED_GUARANTEES.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_28_11_25_ADD_PAE_REQUIRED_DOCUMENTS.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_29_12_2025_ADD_DATATABLES_AND_DATACODES.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_01_20_2026_add_new_column_to_prequalification_status_log_tables.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
