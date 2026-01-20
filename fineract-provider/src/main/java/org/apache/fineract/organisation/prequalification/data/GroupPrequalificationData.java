@@ -88,6 +88,8 @@ public class GroupPrequalificationData {
 
     private String exceptionComment;
     private List<RenegotiationData> renegotiations;
+    private List<String> exceptionListComments;
+    private List<String> listComments;
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
             final String portforlioName, final String centerName, final String groupName, final String addedBy,

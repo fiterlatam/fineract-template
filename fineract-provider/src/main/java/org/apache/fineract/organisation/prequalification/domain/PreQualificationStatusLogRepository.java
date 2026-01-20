@@ -23,7 +23,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface PreQualificationStatusLogRepository
         extends JpaRepository<PrequalificationStatusLog, Long>, JpaSpecificationExecutor<PrequalificationStatusLog> {
 
@@ -32,4 +34,9 @@ public interface PreQualificationStatusLogRepository
 
     @Query("SELECT sl FROM PrequalificationStatusLog sl WHERE sl.prequalificationGroup.id = :preqGroup ORDER BY sl.id desc")
     List<PrequalificationStatusLog> groupStatusLogs(@Param("preqGroup") Long preqGroup);
+
+    PrequalificationStatusLog findTopByPrequalificationGroupIdOrderByIdDesc(Long groupId);
+
+    @Query("SELECT sl.comments FROM PrequalificationStatusLog sl WHERE sl.prequalificationGroup.id = :groupId AND sl.exception IS NOT NULL AND sl.exception = :type")
+    List<String> findComments(@Param("groupId") Long groupId, @Param("type") boolean type);
 }

@@ -185,4 +185,5 @@
     <include file="parts/0146-FBR-1.2.1_MAINTAIN_RESCTURE_REQUEST_ID_LOAN.xml" relativeToChangelogFile="true"/>
     <include file="parts/0147-FBR-1.2.1_ACCOUNTING_CLOSURE_OFFICE_HIERARCHY.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_29_12_2025_ADD_DATATABLES_AND_DATACODES.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_01_20_2026_add_new_column_to_prequalification_status_log_tables.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
