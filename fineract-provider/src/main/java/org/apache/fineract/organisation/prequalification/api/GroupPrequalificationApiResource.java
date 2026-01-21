@@ -92,7 +92,7 @@ public class GroupPrequalificationApiResource {
 
     private static final Set<String> PRE_QUALIFICATION_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList("id", "productId", "productCode", "year", "typification", "dpi", "nit", "description", "agencyId", "balance",
-                    "disbursementAmount", "status", "addedBy", "createdAt"));
+                    "disbursementAmount", "status", "addedBy", "createdAt", "listComments", "exceptionListComments"));
 
     private final String resourceNameForPermissions = "PREQUALIFICATIONS";
 
@@ -272,6 +272,8 @@ public class GroupPrequalificationApiResource {
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
         GroupPrequalificationData clientData = this.prequalificationReadPlatformService.retrieveOne(groupId);
+        clientData.setExceptionListComments(this.prequalificationReadPlatformService.retrieveHistoryComments(groupId, true));
+        clientData.setListComments(this.prequalificationReadPlatformService.retrieveHistoryComments(groupId, false));
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, clientData, PRE_QUALIFICATION_DATA_PARAMETERS);
@@ -374,8 +376,8 @@ public class GroupPrequalificationApiResource {
                     fileDetails.getFileName(), fileSize, bodyPart.getMediaType().toString(), description, null);
             final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);
         }
-        if (!comment.isEmpty() && PrequalificatoinApiConstants.exceptionComments.equalsIgnoreCase(description)) {
-            this.prequalificationWritePlatformService.addExceptionCommentsToPrequalification(groupId, comment);
+        if (!comment.isEmpty() && (PrequalificatoinApiConstants.exceptionComments.equalsIgnoreCase(description) || PrequalificatoinApiConstants.normalComments.equalsIgnoreCase(description))) {
+            this.prequalificationWritePlatformService.addExceptionCommentsToPrequalification(groupId, comment, description);
         } else {
             this.prequalificationWritePlatformService.addCommentsToPrequalification(groupId, comment);
         }

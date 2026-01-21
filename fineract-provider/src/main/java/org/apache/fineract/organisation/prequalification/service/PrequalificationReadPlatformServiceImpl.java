@@ -78,7 +78,6 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
@@ -108,31 +107,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     private final LoanCollateralRepository collateralRepository;
     private final PreQualificationGroupRepository preQualificationGroupRepository;
     private final RenegotiationRepositoryWrapper renegotiationsRepositorWrapper;
-
-    @Autowired
-    public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
-            final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
-            GenericDataService genericDataService, final PreQualificationStatusLogRepository preQualificationLogRepository,
-            PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
-            LoanRepositoryWrapper loanRepositoryWrapper, LoanReadPlatformService loanReadPlatformService,
-            LoanCollateralRepository collateralRepository, PreQualificationGroupRepository preQualificationGroupRepository,
-            RenegotiationRepositoryWrapper renegotiationsRepositorWrapper) {
-        this.context = context;
-        this.codeValueReadPlatformService = codeValueReadPlatformService;
-        this.jdbcTemplate = jdbcTemplate;
-        this.paginationHelper = paginationHelper;
-        this.sqlGenerator = sqlGenerator;
-        this.columnValidator = columnValidator;
-        this.genericDataService = genericDataService;
-        this.preQualificationLogRepository = preQualificationLogRepository;
-        this.prequalificationChecklistReadPlatformService = prequalificationChecklistReadPlatformService;
-        this.loanRepositoryWrapper = loanRepositoryWrapper;
-        this.loanReadPlatformService = loanReadPlatformService;
-        this.collateralRepository = collateralRepository;
-        this.preQualificationGroupRepository = preQualificationGroupRepository;
-        this.renegotiationsRepositorWrapper = renegotiationsRepositorWrapper;
-    }
 
     @Override
     public Page<GroupPrequalificationData> retrieveAll(SearchParameters searchParameters) {
@@ -397,6 +371,11 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         final Collection<GroupPrequalificationData> prequalificationGroups = this.jdbcTemplate.query(sql,
                 this.prequalificationIndividualMappingsMapper, new Object[] { clientId });
         return prequalificationGroups;
+    }
+
+    @Override
+    public List<String> retrieveHistoryComments(Long groupId, boolean type) {
+        return this.preQualificationLogRepository.findComments(groupId, type);
     }
 
     private String buildSqlStringFromBlacklistCriteria(final SearchParameters searchParameters, List<Object> paramList, boolean isGroup) {

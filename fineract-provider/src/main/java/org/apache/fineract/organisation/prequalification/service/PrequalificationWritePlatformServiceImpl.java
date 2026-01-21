@@ -22,23 +22,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import javax.transaction.Transactional;
-import javax.ws.rs.NotFoundException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -121,13 +105,31 @@ import org.apache.fineract.useradministration.exception.UserNotFoundException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
+import javax.ws.rs.NotFoundException;
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PrequalificationWritePlatformServiceImpl implements PrequalificationWritePlatformService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ClientChargeWritePlatformServiceJpaRepositoryImpl.class);
@@ -163,57 +165,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final CommandSourceRepository commandSourceRepository;
     private final CodeValueRepository codeValueRepository;
     private final RenegotiationRepositoryWrapper renegotiationRepository;
+    private final PreQualificationStatusLogRepository preQualificationStatusLogRepository;
 
-    @Autowired
-    public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
-            final PrequalificationDataValidator dataValidator, final GroupRepositoryWrapper groupRepositoryWrapper,
-            final AppUserRepository appUserRepository, final LoanProductRepository loanProductRepository,
-            final ClientReadPlatformService clientReadPlatformService, final AgencyRepositoryWrapper agencyRepositoryWrapper,
-            final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer,
-            final PrequalificationGroupMemberRepositoryWrapper preQualificationMemberRepository,
-            final PreQualificationStatusLogRepository preQualificationLogRepository,
-            final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
-            final ContentRepositoryFactory contentRepositoryFactory, final DocumentRepository documentRepository,
-            final DocumentReadPlatformService documentReadPlatformService,
-            final GroupPrequalificationRelationshipRepository groupPrequalificationRelationshipRepository,
-            final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
-            final PrequalificationStatusRangeRepository prequalificationStatusRangeRepository,
-            final PrequalificationReadPlatformService prequalificationReadPlatformService, FromJsonHelper fromApiJsonHelper,
-            final LoanApplicationWritePlatformService loanApplicationWritePlatformService,
-            final PrequalificationChecklistWritePlatformService prequalificationChecklistWritePlatformService,
-            final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository, final LoanRepositoryWrapper loanRepositoryWrapper,
-            final CommandSourceRepository commandSourceRepository, final CodeValueRepository codeValueRepository,
-            final RenegotiationRepositoryWrapper renegotiationRepository) {
-        this.context = context;
-        this.dataValidator = dataValidator;
-        this.loanProductRepository = loanProductRepository;
-        this.clientReadPlatformService = clientReadPlatformService;
-        this.codeValueReadPlatformService = codeValueReadPlatformService;
-        this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
-        this.groupRepositoryWrapper = groupRepositoryWrapper;
-        this.appUserRepository = appUserRepository;
-        this.agencyRepositoryWrapper = agencyRepositoryWrapper;
-        this.apiJsonDeserializer = apiJsonDeserializer;
-        this.preQualificationMemberRepository = preQualificationMemberRepository;
-        this.prequalificationChecklistReadPlatformService = prequalificationChecklistReadPlatformService;
-        this.preQualificationLogRepository = preQualificationLogRepository;
-        this.jdbcTemplate = jdbcTemplate;
-        this.contentRepositoryFactory = contentRepositoryFactory;
-        this.documentRepository = documentRepository;
-        this.documentReadPlatformService = documentReadPlatformService;
-        this.groupPrequalificationRelationshipRepository = groupPrequalificationRelationshipRepository;
-        this.prequalificationStatusRangeRepository = prequalificationStatusRangeRepository;
-        this.prequalificationReadPlatformService = prequalificationReadPlatformService;
-        this.fromApiJsonHelper = fromApiJsonHelper;
-        this.loanApplicationWritePlatformService = loanApplicationWritePlatformService;
-        this.groupLoanAdditionalsRepository = groupLoanAdditionalsRepository;
-        this.loanRepositoryWrapper = loanRepositoryWrapper;
-        this.prequalificationChecklistWritePlatformService = prequalificationChecklistWritePlatformService;
-        this.commandSourceRepository = commandSourceRepository;
-        this.codeValueRepository = codeValueRepository;
-        this.renegotiationRepository = renegotiationRepository;
-    }
 
     @Transactional
     @Override
@@ -1466,13 +1419,27 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     @Override
-    public void addExceptionCommentsToPrequalification(Long groupId, String comment) {
+    public void addExceptionCommentsToPrequalification(Long groupId, String comment, String description) {
         PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(groupId);
-        prequalificationGroup.updateExceptionComments(comment);
+        boolean isException = false;
+        if (PrequalificatoinApiConstants.exceptionComments.equalsIgnoreCase(description)) {
+            prequalificationGroup.updateExceptionComments(comment);
+            isException = true;
+        } else {
+            prequalificationGroup.updateComments(comment);
+        }
+        Integer fromStatus = prequalificationGroup.getStatus();
+        Integer toStatus = fromStatus;
+
+        PrequalificationStatusLog lastLog = this.preQualificationStatusLogRepository.findTopByPrequalificationGroupIdOrderByIdDesc(groupId);
+        if (lastLog != null) {
+            fromStatus = lastLog.getFromStatus();
+            toStatus = lastLog.getToStatus();
+        }
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
-        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, prequalificationGroup.getStatus(),
-                prequalificationGroup.getStatus(), comment, prequalificationGroup, null, null);
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus,
+                toStatus, comment, prequalificationGroup, null, null, isException);
         this.preQualificationLogRepository.saveAndFlush(statusLog);
     }
 
