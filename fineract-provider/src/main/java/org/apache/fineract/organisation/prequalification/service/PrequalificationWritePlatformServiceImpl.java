@@ -57,6 +57,7 @@ import org.apache.fineract.organisation.committee.mappers.RequiredCommitteeAppro
 import org.apache.fineract.organisation.prequalification.command.PrequalificationDataValidator;
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
+import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanData;
 import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
@@ -801,7 +802,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     @Override
-    public CommandProcessingResult sendForAnalysis(Long entityId, JsonCommand command) {
+    public CommandProcessingResult sendForAnalysis(Long entityId, JsonCommand command, Boolean withExceptions) {
         final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(entityId);
 
@@ -819,6 +820,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     status.set(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS);
                 }
             });
+        }
+
+        if (withExceptions) {
+            status.set(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS);
         }
 
         prequalificationGroup.updateStatus(status.get());
@@ -868,14 +873,45 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     @Override
-    public CommandProcessingResult sendToFirstPhaseApproveCommitteeD(Long entityId, JsonCommand command, boolean withExceptions) {
+    public CommandProcessingResult sendToFirstPhaseApproveCommitteeD(Long entityId, JsonCommand command, boolean withExceptions,
+            boolean nextPhase) {
         final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(entityId);
 
+        GroupPrequalificationData prequalificationData = prequalificationReadPlatformService.retrieveOne(prequalificationGroup.getId());
+
         AppUser appUser = this.context.authenticatedUser();
         Integer fromStatus = prequalificationGroup.getStatus();
+        /*
+         * BigDecimal amount = prequalificationData.getTotalRequestedAmount(); if (amount != null) { if
+         * (amount.compareTo(new BigDecimal("20000")) < 0) { // Monto < 20.000 → Comité D
+         * prequalificationGroup.updateStatus( PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL ); } else if
+         * (amount.compareTo(new BigDecimal("80000")) < 0) { // 20.000 ≤ Monto < 80.000 → Comité C
+         * prequalificationGroup.updateStatus( PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL ); } else if
+         * (amount.compareTo(new BigDecimal("250000")) <= 0) { // 80.000 ≤ Monto ≤ 250.000 → Comité B
+         * prequalificationGroup.updateStatus( PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL ); } else { //
+         * Monto > 250.000 → Comité A prequalificationGroup.updateStatus(
+         * PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL ); } }
+         */
+        if (!nextPhase) {
+            prequalificationGroup.updateStatus(PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL);
+        } else {
+            PrequalificationStatus currentStatus = PrequalificationStatus.fromInt(prequalificationGroup.getStatus());
 
-        prequalificationGroup.updateStatus(PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL);
+            if (currentStatus == PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL) {
+
+                prequalificationGroup.updateStatus(PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL);
+
+            } else if (currentStatus == PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL) {
+
+                prequalificationGroup.updateStatus(PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL);
+
+            } else if (currentStatus == PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL) {
+
+                prequalificationGroup.updateStatus(PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL);
+
+            }
+        }
 
         String comments = command.stringValueOfParameterNamed("comments");
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
@@ -902,16 +938,29 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             return revalidateHardPolicy(entityId, command);
         }
         // first phase
-        if (action.equals("approvecommiteeWhitExc")) {
-            return sendToFirstPhaseApproveCommitteeD(entityId, command, true);
+        if (action.equals("approvecommiteeWhitExc") || (action.equals("sendtoexception")
+                && (PrequalificationStatus.fromInt(fromStatus).equals(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS)
+                        || PrequalificationStatus.fromInt(fromStatus).equals(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL))
+                && PrequalificationType.fromInt(prequalificationGroup.getPrequalificationType()).equals(PrequalificationType.PAE))) {
+            return sendToFirstPhaseApproveCommitteeD(entityId, command, true, false);
         }
         // first phase
         if (action.equals("approvecommitee")) {
-            return sendToFirstPhaseApproveCommitteeD(entityId, command, false);
+            return sendToFirstPhaseApproveCommitteeD(entityId, command, false, false);
+        }
+        if (action.equals("recommendCommittee")) {
+            return sendToFirstPhaseApproveCommitteeD(entityId, command, false, true);
         }
         // send to renegotiation
         if (action.equals("sendToRenegotiation")) {
             return sendToRenegotiation(prequalificationGroup, addedBy, command);
+        }
+        if (action.equals("sendtoexception")
+                && (PrequalificationStatus.fromInt(fromStatus).equals(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL)
+                        || PrequalificationStatus.fromInt(fromStatus)
+                                .equals(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS))
+                && PrequalificationType.fromInt(prequalificationGroup.getPrequalificationType()).equals(PrequalificationType.PAE)) {
+            return sendForAnalysis(entityId, command, true);
         }
         PrequalificationStatus prequalificationStatus = resolveStatus(action);
         final List<MemberPrequalificationData> memberPrequalificationDataList = new ArrayList<>();

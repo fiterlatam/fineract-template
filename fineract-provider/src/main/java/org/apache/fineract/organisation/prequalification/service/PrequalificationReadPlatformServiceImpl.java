@@ -497,7 +497,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
 
                 if (committeeValueData == null) {
                     extraCriteria += " and g.status IN( " + PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().toString()
-                            + ") ";
+                            + ", " + PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString() + ", "
+                            + PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.getValue().toString() + ", "
+                            + PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL.getValue().toString() + ") ";
                 } else {
                     extraCriteria += " and g.status IN( " + resolveCommitteeGroupStatus(committeeValueData) + ") ";
                 }
