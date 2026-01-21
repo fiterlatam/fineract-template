@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates;
 
+import com.google.common.base.Splitter;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.ibm.icu.text.RuleBasedNumberFormat;
@@ -42,13 +43,17 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.infrastructure.core.data.ApiParameterError;
+import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
@@ -105,43 +110,57 @@ public class PromissoryNoteTemplateSix {
 
         // FIRST PARAGRAPH
         String clientName = loanAccountData.getClientName();
-        String clientDpiText = getNumber(Long.valueOf(loan.getClient().getDpiNumber()), false, true, false);
+        String clientDpiText = getNumber(Long.valueOf(loan.getClient().getDpiNumber()), false, false, true);
         String clientDpiNumber = loan.getClient().getDpiNumber();
-        String clientAddress = loan.getClient().getClientContactInformation().getTemplateAddress();
+        String clientAddress = loanRepository.retrieveAddressByLoanId(loanId);
         String creditAmountText = MoneyHelper.getMoneyString(loan.getApprovedPrincipal()).toUpperCase();
-        String creditPurpose = loan.getLoanPurpose() != null ? loan.getLoanPurpose().getDescription() : "_________";
+        String creditPurpose = loanRepository.retrieveLoanPurposeCodeByLoanId(loanId);
 
         // SECOND PARAGRAPH
-        String termText = getNumber(loan.getTermFrequency(), true, true, false);
+        String termText = getNumber(loan.getTermFrequency(), true, false, false);
         String disbursementDate = DateUtils.getDateInLetters(loan.getDisbursementDate());
         String secondTermText = termText;
-        String numberEqualsQuotas = getNumber(numerPayments.get(), true, true, false);
+        String numberEqualsQuotas = getNumber(numerPayments.get(), true, false, false);
         String quotaAmount = MoneyHelper.getMoneyString(firstPaymentAmount).toUpperCase();
-        String numberLastQuota = getNumber(optLast.map(LoanRepaymentScheduleInstallment::getInstallmentNumber).orElse(0), true, true,
+        String numberLastQuota = getNumber(optLast.map(LoanRepaymentScheduleInstallment::getInstallmentNumber).orElse(0), true, false,
                 false);
         String lastQuotaAmount = optLast.isPresent()
                 ? MoneyHelper.getMoneyString(optLast.get().getTotalPrincipalAndInterest(currency).getAmount()).toUpperCase()
                 : "";
-        String paymentDay = optLast.isPresent() ? getNumber(optLast.get().getDueDate().getDayOfMonth(), true, true, false) : "";
+        String paymentDay = optLast.isPresent() ? getNumber(optLast.get().getDueDate().getDayOfMonth(), true, false, false) : "";
 
         // THIRD PARAGRAPH
         String interestRateText = getNumber(
-                loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate().divide(BigDecimal.valueOf(12)), true, true, true);
+                loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate().divide(BigDecimal.valueOf(12)), true, true, false);
 
         // LAST PARAGRAPH
         String witnessName = object.get("witnessName").getAsString();
-        String witnessDpiText = getNumber(object.get("witnessDPI").getAsNumber(), false, true, false);
+        String witnessDpiText = getNumber(object.get("witnessDPI").getAsNumber(), false, false, true);
         String witnessDpiNumber = object.get("witnessDPI").getAsString();
         String department = loan.getPrequalificationGroup() != null && loan.getPrequalificationGroup().getAgency() != null
                 && loan.getPrequalificationGroup().getAgency().getCountry() != null
-                        ? loan.getPrequalificationGroup().getAgency().getCountry().getDescription()
+                        ? loan.getPrequalificationGroup().getAgency().getCity().label().concat(
+                                ", " + loan.getPrequalificationGroup().getAgency().getStateProvince().label())
                         : "__________";
 
         // GUARANTOR DATA
-        String guarantorName = object.get("guarantorName").getAsString();
-        String guarantorDPI = object.get("guarantorDPI").getAsString();
-        String guarantorDPIText = getNumber(object.get("guarantorDPI").getAsNumber(), false, true, false);
-        String guarantorAddress = object.get("guarantorAddress").getAsString();
+        // TODO -> de donde sale esta data ?
+        Object[] dataGuarantor = this.loanRepository.retrieveGuarantorDataByLoanId(loanId);
+        Object[] data = null;
+        if (dataGuarantor.length == 0) {
+            List<ApiParameterError> list = new ArrayList<>();
+            ApiParameterError apiParameterError = ApiParameterError.parameterError("err.msg.does.not.complete",
+                    "The loan does not contains guarantor data", "loanId");
+            list.add(apiParameterError);
+            throw new PlatformApiDataValidationException("err.msg.does.not.complete", "The loan does not contains guarantor data", list);
+        } else {
+            data = (Object[]) dataGuarantor[0];
+        }
+        String guarantorName = data[0].toString();
+        String guarantorDPI = data[1].toString();
+        String guarantorDPIText = getNumber(Long.parseLong(guarantorDPI), false, false, true);
+        String guarantorAddress = data[2].toString();
+
         Document document = new Document();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -215,6 +234,11 @@ public class PromissoryNoteTemplateSix {
             // Firmas
             document.add(createSignatureSection(clientName, null, "Promitente deudora o libradora", null));
 
+            // DATOS TESTIGO FIADOR
+            String fiadorWitnessName = object.get("fiadorWitness").getAsString();
+            Long fiadorWitnessDpi = object.get("fiadorWitnessDPI").getAsLong();
+            String fiadorWitnessDpiText = getNumber(fiadorWitnessDpi, false, false, true);
+
             String avalText = String.format(
                     """
 
@@ -225,15 +249,15 @@ public class PromissoryNoteTemplateSix {
 
                             Lugar y fecha de emisión: Municipio y Departamento de %s, %s de %s, del año dos mil %s.
                             """,
-                    guarantorName, guarantorDPIText, guarantorDPI, guarantorAddress, witnessName, witnessDpiText, witnessDpiNumber,
-                    department, date.getDayOfMonth(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
+                    guarantorName, guarantorDPIText, guarantorDPI, guarantorAddress, fiadorWitnessName, fiadorWitnessDpiText,
+                    fiadorWitnessDpi, department, date.getDayOfMonth(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
                     DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
             Paragraph bodyAval = new Paragraph(avalText, normalFont);
             bodyAval.setAlignment(Element.ALIGN_JUSTIFIED);
             bodyAval.setSpacingAfter(20f);
             document.add(bodyAval);
 
-            document.add(createSignatureSection(guarantorName, witnessName, "Aval", "Testigo"));
+            document.add(createSignatureSection(guarantorName, fiadorWitnessName, "Aval", "Testigo"));
 
             document.close();
 
@@ -307,12 +331,24 @@ public class PromissoryNoteTemplateSix {
         }
     }
 
-    private String getNumber(Number number, boolean parentheses, Boolean uppercase, boolean percentage) {
+    private String getNumber(Number number, boolean parentheses, boolean percentage, boolean dpi) {
 
         RuleBasedNumberFormat rbnf = new RuleBasedNumberFormat(new Locale("es"), RuleBasedNumberFormat.SPELLOUT);
         BigDecimal bd = new BigDecimal(number.toString()).setScale(2, RoundingMode.HALF_UP);
-        String value = uppercase ? rbnf.format(bd).toUpperCase() : rbnf.format(bd);
+        String value = rbnf.format(bd).toUpperCase();
         String numericValue = bd.stripTrailingZeros().scale() <= 0 ? bd.toBigInteger().toString() : bd.toPlainString();
+
+        if (dpi && number.toString().matches("\\d{13}")) {
+            value = "";
+            String valueFormatted = number.toString().replaceFirst("(\\d{4})(\\d{5})(\\d)(\\d{3})", "$1,$2,$3,$4");
+            Iterable<String> parts = Splitter.on(",").split(valueFormatted);
+            StringBuilder sb = new StringBuilder();
+            for (String part : parts) {
+                sb.append(rbnf.format(Long.parseLong(part))).append(", ");
+            }
+            sb.setLength(sb.length() - 2);
+            value = sb.toString().toUpperCase();
+        }
 
         if (parentheses) {
             return value + " (" + numericValue + (percentage ? "%" : "") + ")";

@@ -27,11 +27,11 @@
     <!-- ========================================================= -->
     <changeSet author="aocampo" id="tipoCliente-01">
         <preConditions onFail="MARK_RAN">
-            
+
                 <sqlCheck expectedResult="0">
                     SELECT COUNT(*) FROM m_code WHERE code_name = 'tipoCliente'
                 </sqlCheck>
-            
+
         </preConditions>
 
         <insert tableName="m_code">
@@ -122,11 +122,11 @@
     <!-- ========================================================= -->
     <changeSet author="aocampo" id="loanPurposeOptions-01">
         <preConditions onFail="MARK_RAN">
-            
+
                 <sqlCheck expectedResult="0">
                     SELECT COUNT(*) FROM m_code WHERE code_name = 'loanPurposeOptions'
                 </sqlCheck>
-            
+
         </preConditions>
 
         <insert tableName="m_code">
@@ -251,11 +251,11 @@
     <!-- ========================================================= -->
     <changeSet author="aocampo" id="classificationOptions-01">
         <preConditions onFail="MARK_RAN">
-            
+
                 <sqlCheck expectedResult="0">
                     SELECT COUNT(*) FROM m_code WHERE code_name = 'classificationOptions'
                 </sqlCheck>
-            
+
         </preConditions>
         <insert tableName="m_code">
             <column name="code_name" value="classificationOptions"/>
