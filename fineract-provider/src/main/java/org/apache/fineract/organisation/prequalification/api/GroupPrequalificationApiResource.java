@@ -376,7 +376,8 @@ public class GroupPrequalificationApiResource {
                     fileDetails.getFileName(), fileSize, bodyPart.getMediaType().toString(), description, null);
             final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);
         }
-        if (!comment.isEmpty() && (PrequalificatoinApiConstants.exceptionComments.equalsIgnoreCase(description) || PrequalificatoinApiConstants.normalComments.equalsIgnoreCase(description))) {
+        if (!comment.isEmpty() && (PrequalificatoinApiConstants.exceptionComments.equalsIgnoreCase(description)
+                || PrequalificatoinApiConstants.normalComments.equalsIgnoreCase(description))) {
             this.prequalificationWritePlatformService.addExceptionCommentsToPrequalification(groupId, comment, description);
         } else {
             this.prequalificationWritePlatformService.addCommentsToPrequalification(groupId, comment);
