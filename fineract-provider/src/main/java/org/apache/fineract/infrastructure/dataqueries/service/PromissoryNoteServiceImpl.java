@@ -70,9 +70,8 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
         if ((!containsGuarantee || (nonMortgage && isApprovedAmount)) && loan.isDisbursed()) {
 
             boolean containsFiador = loanRepository.containsFiador(loanId) > 0;
-            boolean canWriteAndReadClient = loanRepository.retrieveCanWriteAndReadClientOrGuarantor("p_solicitante", loanId);
-            boolean canWriteAndReadFiador = containsFiador ? loanRepository.retrieveCanWriteAndReadClientOrGuarantor("p_fiador", loanId)
-                    : false;
+            boolean canWriteAndReadClient = loanRepository.retrieveCanWriteAndReadClient(loanId) == 1;
+            boolean canWriteAndReadFiador = containsFiador ? loanRepository.retrieveCanWriteAndReadGuarantor(loanId) == 1 : false;
 
             if (!containsFiador && !containsGuarantee) { // sin fiador y sin garantía
 
