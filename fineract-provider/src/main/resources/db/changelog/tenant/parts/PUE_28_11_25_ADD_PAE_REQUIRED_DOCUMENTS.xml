@@ -104,4 +104,18 @@
             </column>
         </addColumn>
     </changeSet>
+
+    <changeSet id="PUE_22_01_26_ADD_PAE_REQUIRED_DOCUMENTS_CONFIGS" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from pae_required_documents;
+            </sqlCheck>
+        </preConditions>
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/paedocumentsupdates.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
 </databaseChangeLog>
