@@ -78,7 +78,7 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom impleme
     }
 
     private PrequalificationStatusLog(final AppUser appUser, final Integer fromStatus, final Integer toStatus, final String comments,
-                                           final PrequalificationGroup group, final CodeValue reasonCode, final Boolean withExceptions) {
+            final PrequalificationGroup group, final CodeValue reasonCode, final Boolean withExceptions) {
         this.dateCreated = DateUtils.getLocalDateOfTenant();
         this.fromStatus = fromStatus;
         this.toStatus = toStatus;
@@ -90,7 +90,7 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom impleme
     }
 
     private PrequalificationStatusLog(final AppUser appUser, final Integer fromStatus, final Integer toStatus, final String comments,
-                                      final PrequalificationGroup group, final CodeValue reasonCode, final Boolean withExceptions, Boolean exception) {
+            final PrequalificationGroup group, final CodeValue reasonCode, final Boolean withExceptions, Boolean exception) {
         this.dateCreated = DateUtils.getLocalDateOfTenant();
         this.fromStatus = fromStatus;
         this.toStatus = toStatus;
@@ -108,7 +108,7 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom impleme
     }
 
     public static PrequalificationStatusLog fromJson(final AppUser appUser, final Integer fromStatus, final Integer toStatus,
-                                                     final String comments, final PrequalificationGroup group, CodeValue reasonCode, Boolean withExceptions, Boolean exception) {
+            final String comments, final PrequalificationGroup group, CodeValue reasonCode, Boolean withExceptions, Boolean exception) {
         return new PrequalificationStatusLog(appUser, fromStatus, toStatus, comments, group, reasonCode, withExceptions, exception);
     }
 

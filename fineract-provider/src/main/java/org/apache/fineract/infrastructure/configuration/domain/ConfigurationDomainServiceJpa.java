@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.infrastructure.configuration.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
@@ -569,5 +570,16 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
             return Long.valueOf(0);
         }
         return property.getValue();
+    }
+
+    @Override
+    public BigDecimal getMaxLimitAmount() {
+        final String propertyName = "limit_amount";
+        BigDecimal defaultValue = BigDecimal.ZERO;
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        if (property.getValue() != null) {
+            defaultValue = BigDecimal.valueOf(property.getValue());
+        }
+        return defaultValue;
     }
 }

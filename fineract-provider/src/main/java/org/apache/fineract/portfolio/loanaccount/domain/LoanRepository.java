@@ -76,13 +76,24 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     String FIND_BY_EXTERNAL_ID = "select loan from Loan loan where loan.externalId = :externalId";
 
     String AGENCY_LEAD_BY_LOAN_ID = "SELECT " + "ag.name AS agencia, " + "lo.id AS id, "
-            + "CONCAT(agl.firstname, ' ', agl.lastname) AS lider_agencia " + "FROM m_loan lo "
+            + "CONCAT(agl.firstname, ' ', agl.lastname) AS lider_agencia, "
+            + "CONCAT (COALESCE(pf.primer_nombre, ' '), COALESCE(pf.segundo_nombre, ' '), COALESCE(pf.primer_apellido, ' '), COALESCE(pf.segundo_apellido, ' ')) AS nombre_fiador, "
+            + "pf.DPI_fiador_tercero as dpi_fiador, " + "pf.direccion_notificaciones as direccion_fiador " + "FROM m_loan lo "
             + "LEFT JOIN m_prequalification_group pg ON pg.id = lo.prequalification_id " + "LEFT JOIN m_agency ag ON ag.id = pg.agency_id "
             + "LEFT JOIN m_appuser agl ON agl.id = ag.responsible_user_id "
             + "LEFT JOIN ( SELECT p1.* FROM m_prequalification_status_log p1 INNER JOIN ( SELECT prequalification_id, MAX(id) AS max_id "
             + "FROM m_prequalification_status_log "
             + "GROUP BY prequalification_id ) p2 ON p1.prequalification_id = p2.prequalification_id "
-            + "AND p1.id = p2.max_id ) pl ON pl.prequalification_id = lo.prequalification_id " + "WHERE lo.id = ?";
+            + "AND p1.id = p2.max_id ) pl ON pl.prequalification_id = lo.prequalification_id "
+            + "LEFT JOIN p_fiador pf ON lo.id = pf.loan_id " + "WHERE lo.id = ?";
+
+    String GUARANTOR_DATA = "SELECT" + "    TRIM(" + "        CONCAT(" + "            COALESCE(primer_nombre, ''), " + "            ' ', "
+            + "            COALESCE(segundo_nombre, ''), " + "            ' ', " + "            COALESCE(primer_apellido, ''), "
+            + "            ' ', " + "            COALESCE(segundo_apellido, '') " + "        ) " + "    ) AS nombre_completo, "
+            + "    DPI_fiador_tercero, " + "    direccion_notificaciones" + " FROM p_fiador WHERE loan_id = ?1";
+
+    String CAN_READ_AND_WRITE = "SELECT " + "CASE LOWER(cv.code_value) " + "   WHEN 'si' THEN TRUE ELSE FALSE END AS value " + "FROM ?1 sl "
+            + "LEFT JOIN m_code_value cv ON cv.id = sl.readWrite_cd_puede_leer_escribir " + "WHERE sl.loan_id = ?2";
 
     @Query(FIND_GROUP_LOANS_DISBURSED_AFTER)
     List<Loan> getGroupLoansDisbursedAfter(@Param("disbursementDate") LocalDate disbursementDate, @Param("groupId") Long groupId,
@@ -197,4 +208,28 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     @Query("SELECT lo FROM Loan lo WHERE lo.prequalificationGroup.id = :prequalificationId order by lo.id desc")
     List<Loan> retrieveAllByPrequalificationId(@Param("prequalificationId") Long prequalificationId);
 
+    @Query(value = "SELECT COUNT(*) FROM p_garante WHERE loan_id = ?1", nativeQuery = true)
+    Long containsGuaranteeLoan(Long loanId);
+
+    @Query(value = "SELECT COUNT(*) " + "FROM p_garante gr " + "LEFT JOIN m_code_value cv ON cv.id = gr.guarantee_cd_tipo_garantia "
+            + "WHERE loan_id = ?1 AND cv.code_value <> ?2", nativeQuery = true)
+    Long containsGuaranteeByLoanIdAndName(Long loanId, String name);
+
+    @Query(value = "SELECT COUNT(*) FROM p_fiador WHERE loan_id = ?1", nativeQuery = true)
+    Long containsFiador(Long loanId);
+
+    @Query(value = "SELECT direccion_notificaciones FROM p_solicitante WHERE loan_id = ?1", nativeQuery = true)
+    String retrieveAddressByLoanId(Long loanId);
+
+    @Query(value = "SELECT cv.code_value FROM p_destino de LEFT JOIN m_code_value cv ON cv.id = de.loanPurposeOptions_cd_destino WHERE loan_id = ?1", nativeQuery = true)
+    String retrieveLoanPurposeCodeByLoanId(Long loanId);
+
+    @Query(value = GUARANTOR_DATA, nativeQuery = true)
+    Object[] retrieveGuarantorDataByLoanId(Long loanId);
+
+    @Query(value = "SELECT detalle_del_destino_del_credito FROM p_destino  WHERE loan_id = ?1", nativeQuery = true)
+    String retrieveLoanDetailPurposeByLoanId(Long loanId);
+
+    @Query(value = CAN_READ_AND_WRITE, nativeQuery = true)
+    boolean retrieveCanWriteAndReadClientOrGuarantor(String table, Long loanId);
 }
