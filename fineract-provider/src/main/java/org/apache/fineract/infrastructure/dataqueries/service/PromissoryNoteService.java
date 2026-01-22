@@ -20,5 +20,5 @@ package org.apache.fineract.infrastructure.dataqueries.service;
 
 public interface PromissoryNoteService {
 
-    String generatePromissoryNote(String type, String json);
+    String generatePromissoryNote(String json);
 }

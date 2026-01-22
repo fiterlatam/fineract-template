@@ -116,15 +116,14 @@ public class RunreportsApiResource {
     }
 
     @POST
-    @Path("promissorynote/{type}")
+    @Path("promissorynote")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RunreportsApiResourceSwagger.RunReportsResponse.class))) })
-    public String generatePromissoryNotePdf(@PathParam("type") final String type,
-            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+    public String generatePromissoryNotePdf(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
         context.authenticatedUser();
-        return promissoryNoteService.generatePromissoryNote(type, apiRequestBodyAsJson);
+        return promissoryNoteService.generatePromissoryNote(apiRequestBodyAsJson);
     }
 
     private void checkUserPermissionForReport(final String reportName, final boolean parameterType) {
