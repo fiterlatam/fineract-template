@@ -56,7 +56,7 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
 
     @Override
     public String generatePromissoryNote(String json) {
-        String type = "";
+        int type = 0;
         JsonObject object = JsonParser.parseString(json).getAsJsonObject();
         final Long loanId = object.get("loanId").getAsLong();
 
@@ -66,16 +66,38 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
         final boolean isApprovedAmount = loan.getApprovedPrincipal().compareTo(limitAmount) < 0;
         final boolean nonMortgage = loanRepository.containsGuaranteeByLoanIdAndName(loanId, "Hipoteca") == 0;
 
-        // credito sin garantía ó garantía no hipotecaria y monto aprobado menor al limite
-        if (!containsGuarantee || (nonMortgage && isApprovedAmount)) {
+        // credito sin garantía ó garantía no hipotecaria y monto aprobado menor al limite y esta desembolsado
+        if ((!containsGuarantee || (nonMortgage && isApprovedAmount)) && loan.isDisbursed()) {
 
             boolean containsFiador = loanRepository.containsFiador(loanId) > 0;
+            boolean canWriteAndReadClient = loanRepository.retrieveCanWriteAndReadClientOrGuarantor("p_solicitante", loanId);
+            boolean canWriteAndReadFiador = containsFiador ? loanRepository.retrieveCanWriteAndReadClientOrGuarantor("p_fiador", loanId)
+                    : false;
 
-            // FIXME -> it´s temporally
-            // canoo be implemented becasue there are some parameters that are needed
-            // testigo para deudor siempre cumple por que si no hay toma los del usuario, esta bien ?
-            // testigo para fiador se captura en front pero no existe en bd
-            // casos mal contemplados
+            if (!containsFiador && !containsGuarantee) { // sin fiador y sin garantía
+
+                if (!canWriteAndReadClient) { // cliente no sabe leer ni escribir
+                    type = 1;
+                } else { // cliente sabe leer y escribir
+                    type = 2;
+                }
+
+            } else {
+                if (containsGuarantee) { // contiene fiador y garantía
+
+                    if (!canWriteAndReadFiador && !canWriteAndReadClient) { // cliente y fiador no saben leer ni
+                                                                            // escribir
+                        type = 5;
+                    } else if (canWriteAndReadClient && !canWriteAndReadFiador) { // cliente sabe leer y escribir pero
+                                                                                  // el fiador no
+                        type = 6;
+                    } else if (!canWriteAndReadClient) { // cliente no sabe leer ni escribir
+                        type = 3;
+                    } else { // se supone cliente y fiador sabe leer y escribir
+                        type = 4;
+                    }
+                }
+            }
 
         } else {
             List<ApiParameterError> list = new ArrayList<>(1);
@@ -89,15 +111,15 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
         return redirectPromissoryNote(type, json);
     }
 
-    private String redirectPromissoryNote(String type, String json) {
+    private String redirectPromissoryNote(Integer type, String json) {
 
         return switch (type) {
-            case "1" -> promissoryNoteTemplateOne.generatePdf(json);
-            case "2" -> promissoryNoteTemplateTwo.generatePdf(json);
-            case "3" -> promissoryNoteTemplateThree.generatePdf(json);
-            case "4" -> promissoryNoteTemplateFour.generatePdf(json);
-            case "5" -> promissoryNoteTemplateFive.generatePdf(json);
-            case "6" -> promissoryNoteTemplateSix.generatePdf(json);
+            case 1 -> promissoryNoteTemplateOne.generatePdf(json);
+            case 2 -> promissoryNoteTemplateTwo.generatePdf(json);
+            case 3 -> promissoryNoteTemplateThree.generatePdf(json);
+            case 4 -> promissoryNoteTemplateFour.generatePdf(json);
+            case 5 -> promissoryNoteTemplateFive.generatePdf(json);
+            case 6 -> promissoryNoteTemplateSix.generatePdf(json);
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };
     }

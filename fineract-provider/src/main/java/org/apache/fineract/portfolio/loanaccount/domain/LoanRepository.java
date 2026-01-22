@@ -92,6 +92,9 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
             + "            ' ', " + "            COALESCE(segundo_apellido, '') " + "        ) " + "    ) AS nombre_completo, "
             + "    DPI_fiador_tercero, " + "    direccion_notificaciones" + " FROM p_fiador WHERE loan_id = ?1";
 
+    String CAN_READ_AND_WRITE = "SELECT " + "CASE LOWER(cv.code_value) " + "   WHEN 'si' THEN TRUE ELSE FALSE END AS value " + "FROM ?1 sl "
+            + "LEFT JOIN m_code_value cv ON cv.id = sl.readWrite_cd_puede_leer_escribir " + "WHERE sl.loan_id = ?2";
+
     @Query(FIND_GROUP_LOANS_DISBURSED_AFTER)
     List<Loan> getGroupLoansDisbursedAfter(@Param("disbursementDate") LocalDate disbursementDate, @Param("groupId") Long groupId,
             @Param("loanType") Integer loanType);
@@ -223,4 +226,10 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
 
     @Query(value = GUARANTOR_DATA, nativeQuery = true)
     Object[] retrieveGuarantorDataByLoanId(Long loanId);
+
+    @Query(value = "SELECT detalle_del_destino_del_credito FROM p_destino  WHERE loan_id = ?1", nativeQuery = true)
+    String retrieveLoanDetailPurposeByLoanId(Long loanId);
+
+    @Query(value = CAN_READ_AND_WRITE, nativeQuery = true)
+    boolean retrieveCanWriteAndReadClientOrGuarantor(String table, Long loanId);
 }

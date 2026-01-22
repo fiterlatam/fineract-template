@@ -106,8 +106,6 @@ public class PromissoryNoteTemplateFive {
             }
         });
 
-        // TODO -> pendiente de sacar el detalle
-
         // FIRST PARAGRAPH
         String clientName = loanAccountData.getClientName();
         String clientDpiText = getNumber(Long.valueOf(loan.getClient().getDpiNumber()), false, false, true);
@@ -115,6 +113,7 @@ public class PromissoryNoteTemplateFive {
         String clientAddress = loanRepository.retrieveAddressByLoanId(loanId);
         String creditAmountText = MoneyHelper.getMoneyString(loan.getApprovedPrincipal()).toUpperCase();
         String creditPurpose = loanRepository.retrieveLoanPurposeCodeByLoanId(loanId);
+        String creditDetail = loanRepository.retrieveLoanDetailPurposeByLoanId(loanId);
 
         // SECOND PARAGRAPH
         String termText = getNumber(loan.getTermFrequency(), true, false, false);
@@ -222,7 +221,7 @@ public class PromissoryNoteTemplateFive {
 
                             Lugar y fecha de emisión: Municipio y Departamento de %s, %s de %s, del año dos mil %s.
                             """,
-                    clientName, clientDpiText, clientDpiNumber, clientAddress, creditAmountText, creditPurpose, "detalle", termText,
+                    clientName, clientDpiText, clientDpiNumber, clientAddress, creditAmountText, creditPurpose, creditDetail, termText,
                     disbursementDate, secondTermText, numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount,
                     paymentDay, interestRateText, witnessName, witnessDpiText, witnessDpiNumber, department, date.getDayOfMonth(),
                     date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
