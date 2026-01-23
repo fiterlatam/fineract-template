@@ -3816,11 +3816,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Double numberOfPayments = this.jdbcTemplate.queryForObject(completedPaymentsSql, Double.class, loanId);
 
             List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments = loan.getRepaymentScheduleInstallments();
-            for (LoanRepaymentScheduleInstallment installment:repaymentScheduleInstallments){
-                if (installment.getDueDate().isAfter(transactionDate) && installment.getTotalPaidInAdvance(loan.getCurrency()).isGreaterThanZero()){
-                    final String defaultUserMessage = "The Loan has an advanced payment on installment no.%d cannot be foreclosed".formatted(installment.getInstallmentNumber());
-                    throw new LoanForeclosureException("loan.with.advanced.repayment.on.installment.cannot.be.foreclosured", defaultUserMessage,
-                            installment.getInstallmentNumber());
+            for (LoanRepaymentScheduleInstallment installment : repaymentScheduleInstallments) {
+                if (installment.getDueDate().isAfter(transactionDate)
+                        && installment.getTotalPaidInAdvance(loan.getCurrency()).isGreaterThanZero()) {
+                    final String defaultUserMessage = "The Loan has an advanced payment on installment no.%d cannot be foreclosed"
+                            .formatted(installment.getInstallmentNumber());
+                    throw new LoanForeclosureException("loan.with.advanced.repayment.on.installment.cannot.be.foreclosured",
+                            defaultUserMessage, installment.getInstallmentNumber());
                 }
             }
 
