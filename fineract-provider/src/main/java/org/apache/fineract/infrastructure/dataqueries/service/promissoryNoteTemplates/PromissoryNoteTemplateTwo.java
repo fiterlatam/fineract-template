@@ -127,7 +127,8 @@ public class PromissoryNoteTemplateTwo {
 
         // THIRD PARAGRAPH
         String interestRateText = getNumber(
-                loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate().divide(BigDecimal.valueOf(12)), true, true, false);
+                loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate().divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_EVEN),
+                true, true, false);
 
         String department = loan.getPrequalificationGroup() != null && loan.getPrequalificationGroup().getAgency() != null
                 && loan.getPrequalificationGroup().getAgency().getCountry() != null
