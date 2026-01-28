@@ -187,4 +187,5 @@
     <include file="parts/PUE_29_12_2025_ADD_DATATABLES_AND_DATACODES.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_01_20_2026_add_new_column_to_prequalification_status_log_tables.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_21_01_2026_UPDATE_FIADOR_DATACODE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_27_01_2026_ADD_ENTITY_DATATABLE_CHECKS_140_FIELDS.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

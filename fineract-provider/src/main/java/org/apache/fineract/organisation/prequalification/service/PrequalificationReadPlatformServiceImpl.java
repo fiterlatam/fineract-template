@@ -499,6 +499,10 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     extraCriteria += " and g.status IN( " + PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().toString()
                             + ", " + PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString() + ", "
                             + PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.getValue().toString() + ", "
+                            + PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ", "
+                            + PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ", "
+                            + PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ", "
+                            + PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString() + ", "
                             + PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL.getValue().toString() + ") ";
                 } else {
                     extraCriteria += " and g.status IN( " + resolveCommitteeGroupStatus(committeeValueData) + ") ";
@@ -526,6 +530,14 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             case "C" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString() + ", "
                     + PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().toString();
             case "D" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().toString();
+            case "A_WITH_EXCEPTIONS" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue()
+                    .toString() + ", " + PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL.getValue().toString();
+            case "B_WITH_EXCEPTIONS" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue()
+                    .toString() + ", " + PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL.getValue().toString();
+            case "C_WITH_EXCEPTIONS" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue()
+                    .toString() + ", " + PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().toString();
+            case "D_WITH_EXCEPTIONS" -> statusValues = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue()
+                    .toString();
             default -> statusValues = PrequalificationStatus.INVALID.getValue().toString();
         }
         return statusValues;

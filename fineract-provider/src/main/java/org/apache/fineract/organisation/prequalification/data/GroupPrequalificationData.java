@@ -26,7 +26,9 @@ import java.util.List;
 import lombok.Data;
 import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.organisation.agency.data.AgencyData;
+import org.apache.fineract.organisation.committee.data.CommitteeData;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationTimeline;
 import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
@@ -90,6 +92,7 @@ public class GroupPrequalificationData {
     private List<RenegotiationData> renegotiations;
     private List<String> exceptionListComments;
     private List<String> listComments;
+    private Page<CommitteeData> committeeDataPage;
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
             final String portforlioName, final String centerName, final String groupName, final String addedBy,
