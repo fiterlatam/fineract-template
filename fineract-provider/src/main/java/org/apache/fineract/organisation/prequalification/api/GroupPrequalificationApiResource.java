@@ -65,6 +65,8 @@ import org.apache.fineract.infrastructure.documentmanagement.service.DocumentWri
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.agency.service.AgencyReadPlatformServiceImpl;
+import org.apache.fineract.organisation.committee.data.CommitteeData;
+import org.apache.fineract.organisation.committee.service.CommitteeReadPlatformService;
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
@@ -110,6 +112,7 @@ public class GroupPrequalificationApiResource {
     private final LoanProductReadPlatformService loanProductReadPlatformService;
     private final AppUserReadPlatformService appUserReadPlatformService;
     private final ConfigurationReadPlatformService configurationReadPlatformService;
+    private final CommitteeReadPlatformService committeeReadPlatformService;
 
     @Autowired
     public GroupPrequalificationApiResource(final PlatformSecurityContext context,
@@ -122,7 +125,8 @@ public class GroupPrequalificationApiResource {
             final ConfigurationReadPlatformService configurationReadPlatformService,
             final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
             final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+            final CommitteeReadPlatformService committeeReadPlatformService) {
         this.context = context;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
@@ -137,6 +141,7 @@ public class GroupPrequalificationApiResource {
         this.loanProductReadPlatformService = loanProductReadPlatformService;
         this.appUserReadPlatformService = appUserReadPlatformService;
         this.configurationReadPlatformService = configurationReadPlatformService;
+        this.committeeReadPlatformService = committeeReadPlatformService;
     }
 
     @GET
@@ -272,6 +277,9 @@ public class GroupPrequalificationApiResource {
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
         GroupPrequalificationData clientData = this.prequalificationReadPlatformService.retrieveOne(groupId);
+        Page<CommitteeData> committeeData = committeeReadPlatformService.retrieveAll(null);
+        clientData.setCommitteeDataPage(committeeData);
+
         clientData.setExceptionListComments(this.prequalificationReadPlatformService.retrieveHistoryComments(groupId, true));
         clientData.setListComments(this.prequalificationReadPlatformService.retrieveHistoryComments(groupId, false));
 
