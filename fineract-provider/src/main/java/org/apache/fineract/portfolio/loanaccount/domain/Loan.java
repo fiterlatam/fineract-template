@@ -6207,6 +6207,12 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
         }
     }
 
+    public void updateTermFrequencyType(Integer termPeriodFrequencyType) {
+        if (termPeriodFrequencyType != null) {
+            this.termPeriodFrequencyType = termPeriodFrequencyType;
+        }
+    }
+
     public boolean isFeeCompoundingEnabledForInterestRecalculation() {
         boolean isEnabled = false;
         if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {

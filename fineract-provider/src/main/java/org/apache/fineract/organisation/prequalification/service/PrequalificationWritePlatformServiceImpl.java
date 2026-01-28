@@ -99,11 +99,15 @@ import org.apache.fineract.organisation.prequalification.exception.MemberNotSele
 import org.apache.fineract.organisation.prequalification.exception.MemberSubmittedLoanNotFoundException;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotChangedException;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotCompletedException;
+import org.apache.fineract.organisation.prequalification.exception.RenegotiationNotFoundException;
+import org.apache.fineract.organisation.prequalification.exception.RenegotiationPendingException;
 import org.apache.fineract.organisation.prequalification.exception.RequestedAmountGreaterThanOriginalException;
 import org.apache.fineract.organisation.prequalification.serialization.PrequalificationMemberCommandFromApiJsonDeserializer;
+import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
+import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanAdditionals;
@@ -112,6 +116,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
@@ -165,6 +170,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final CodeValueRepository codeValueRepository;
     private final RenegotiationRepositoryWrapper renegotiationRepository;
     private final PreQualificationStatusLogRepository preQualificationStatusLogRepository;
+    private final LoanUtilService loanUtilService;
 
     @Transactional
     @Override
@@ -952,6 +958,12 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         // send to renegotiation
         if (action.equals("sendToRenegotiation")) {
             return sendToRenegotiation(prequalificationGroup, addedBy, command);
+        } // send to renegotiation
+        if (action.equals("approveRenegotiation")) {
+            return approveRenegotiation(prequalificationGroup, addedBy, command);
+        }
+        if (action.equals("rejectRenegotiation")) {
+            return rejectRenegotiation(prequalificationGroup, addedBy, command);
         }
         if (action.equals("sendtoexception")
                 && (PrequalificationStatus.fromInt(fromStatus).equals(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL)
@@ -1037,6 +1049,103 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .withReportToPrint(reportToPrint).withLoanId(loanId).build();
     }
 
+    private CommandProcessingResult approveRenegotiation(PrequalificationGroup prequalificationGroup, AppUser addedBy,
+            JsonCommand command) {
+        Long renegotiationId = command.longValueOfParameterNamed("renegotiationId");
+        Renegotiation renegotiationById = this.renegotiationRepository.getRenegotiationById(renegotiationId);
+        if (renegotiationById == null || !renegotiationById.getPrequalificationGroup().getId().equals(prequalificationGroup.getId())) {
+            throw new RenegotiationNotFoundException(renegotiationId);
+        }
+        // approve renegotiation
+        renegotiationById.setStatus("APPROVED");
+        renegotiationById.setApprovedDate(DateUtils.getLocalDateTimeOfSystem());
+        renegotiationById.setApprovedBy(this.context.authenticatedUser());
+        this.renegotiationRepository.saveRenegotiation(renegotiationById);
+        Loan loan = this.loanRepositoryWrapper.retrieveByPrequalificationId(prequalificationGroup.getId());
+
+        final String localeAsString = "en";
+        final String dateFormat = "dd MMMM yyyy";
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("locale", localeAsString);
+        jsonObject.addProperty("dateFormat", dateFormat);
+        Locale locale = JsonParserHelper.localeFromString(localeAsString);
+        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+        jsonObject.addProperty("productId", loan.getLoanProduct().getId());
+        jsonObject.addProperty("expectedDisbursementDate", loan.getExpectedDisbursedOnLocalDate().format(dateTimeFormatter));
+        jsonObject.addProperty("interestCalculationPeriodType",
+                loan.getLoanProductRelatedDetail().getInterestCalculationPeriodMethod().getValue());
+        jsonObject.addProperty("interestType", loan.getLoanProductRelatedDetail().getInterestMethod().getValue());
+        jsonObject.addProperty("loanType", AccountType.fromInt(loan.getLoanType()).getName());
+        jsonObject.addProperty("interestRatePerPeriod", renegotiationById.getProposedInterest());
+        jsonObject.addProperty("principal", renegotiationById.getProposedAmount());
+        jsonObject.addProperty("isEqualAmortization", loan.getLoanProductRelatedDetail().isEqualAmortization());
+        jsonObject.addProperty("amortizationType", loan.getLoanProductRelatedDetail().getAmortizationMethod().getValue());
+
+        // loan term and repayment structure
+        final Integer loanTermFrequency = renegotiationById.getProposedTerm();
+        final Integer loanTermFrequencyType = PeriodFrequencyType.MONTHS.getValue();
+        final Integer repaymentEvery = loan.getLoanProductRelatedDetail().getRepayEvery();
+        final Integer repaymentFrequencyType = loan.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue();
+
+        jsonObject.addProperty("loanTermFrequency", loanTermFrequency);
+        jsonObject.addProperty("loanTermFrequencyType", loanTermFrequencyType);
+        jsonObject.addProperty("repaymentEvery", repaymentEvery);
+        jsonObject.addProperty("repaymentFrequencyType", repaymentFrequencyType);
+
+        // compute number of repayments from term and frequency
+        final Integer computedNumberOfRepayments = computeNumberOfRepayments(loanTermFrequency, loanTermFrequencyType, repaymentEvery,
+                repaymentFrequencyType, loan.getLoanProductRelatedDetail().getNumberOfRepayments());
+        jsonObject.addProperty("numberOfRepayments", computedNumberOfRepayments);
+
+        final String jsonCommand = jsonObject.toString();
+        final JsonCommand loancommand = JsonCommand.from(jsonCommand, jsonObject, this.fromApiJsonHelper, null, loan.getId(), null, null,
+                loan.getClientId(), loan.getId(), null, null, null, null, null, null);
+        loancommand.setJsonCommand(jsonObject.toString());
+        this.loanApplicationWritePlatformService.modifyApplication(loan.getId(), loancommand);
+
+        PrequalificationGroupMember prequalificationGroupMember = prequalificationGroup.getMembers().get(0);
+        prequalificationGroupMember.updateApprovedAmount(renegotiationById.getProposedAmount());
+        this.preQualificationMemberRepository.saveAndFlush(prequalificationGroupMember);
+
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    /**
+     * Computes the number of repayments using the relationship between loan term and repayment structure. Assumes
+     * loanTermFrequency and repaymentEvery are expressed in the same PeriodFrequencyType. Falls back to the
+     * originalNumberOfRepayments if frequency types differ or inputs are invalid.
+     */
+    private Integer computeNumberOfRepayments(final Integer loanTermFrequency, final Integer loanTermFrequencyType,
+            final Integer repaymentEvery, final Integer repaymentFrequencyType, final Integer originalNumberOfRepayments) {
+        if (loanTermFrequency == null || repaymentEvery == null || repaymentEvery == 0) {
+            return originalNumberOfRepayments;
+        }
+        // Ensure frequency types are consistent with Fineract validation rules
+        if (loanTermFrequencyType != null && repaymentFrequencyType != null && !loanTermFrequencyType.equals(repaymentFrequencyType)) {
+            // Fall back to existing behaviour by not altering the number of repayments when types mismatch
+            return originalNumberOfRepayments;
+        }
+        int computed = loanTermFrequency / repaymentEvery;
+        if (computed <= 0) {
+            computed = 1;
+        }
+        return computed;
+    }
+
+    private CommandProcessingResult rejectRenegotiation(PrequalificationGroup prequalificationGroup, AppUser addedBy, JsonCommand command) {
+        Long renegotiationId = command.longValueOfParameterNamed("renegotiationId");
+        Renegotiation renegotiationById = this.renegotiationRepository.getRenegotiationById(renegotiationId);
+        if (renegotiationById == null || !renegotiationById.getPrequalificationGroup().getId().equals(prequalificationGroup.getId())) {
+            throw new RenegotiationNotFoundException(renegotiationId);
+        }
+        // approve renegotiation
+        renegotiationById.setStatus("REJECTED");
+        renegotiationById.setApprovedDate(DateUtils.getLocalDateTimeOfSystem());
+        renegotiationById.setApprovedBy(this.context.authenticatedUser());
+        this.renegotiationRepository.saveRenegotiation(renegotiationById);
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
     private CommandProcessingResult sendToRenegotiation(PrequalificationGroup prequalificationGroup, AppUser addedBy, JsonCommand command) {
         Integer fromStatus = prequalificationGroup.getStatus();
 
@@ -1055,6 +1164,13 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final BigDecimal newProposedInterestRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("proposedInterestRate",
                     renegotiationObject);
 
+            List<Renegotiation> existingRenegotiations = this.renegotiationRepository
+                    .getRenegotiationByPrequalificationId(prequalificationGroup.getId());
+            existingRenegotiations.forEach(renegotiation -> {
+                if (StringUtils.equals(renegotiation.getStatus(), "PENDING")) {
+                    throw new RenegotiationPendingException(prequalificationGroup.getId());
+                }
+            });
             Renegotiation renegotiation = Renegotiation.create(prequalificationGroup, newProposedInterestRate, newProposedAmount,
                     newProposedTerm, comments, DateUtils.getLocalDateTimeOfSystem(), addedBy);
             this.renegotiationRepository.saveRenegotiation(renegotiation);
