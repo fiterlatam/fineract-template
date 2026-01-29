@@ -933,6 +933,25 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     @Override
+    public CommandProcessingResult restartFlow(Long entityId, JsonCommand command) {
+        final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
+                .findOneWithNotFoundDetection(entityId);
+
+        PrequalificationStatusLog statusLog = preQualificationStatusLogRepository
+                .findTopByPrequalificationGroupIdAndFromStatusOrderByIdDesc(prequalificationGroup.getId(),
+                        PrequalificationStatus.BLACKLIST_CHECKED.getValue())
+                .copy();
+
+        statusLog.setFromStatus(prequalificationGroup.getStatus());
+
+        this.preQualificationLogRepository.saveAndFlush(statusLog);
+        prequalificationGroup.updateStatus(PrequalificationStatus.fromInt(statusLog.getToStatus()));
+        this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
+
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    @Override
     @Transactional
     public CommandProcessingResult processAnalysisRequest(Long entityId, JsonCommand command) {
         String comments = command.stringValueOfParameterNamed("comments");
@@ -978,6 +997,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                                 .equals(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS))
                 && PrequalificationType.fromInt(prequalificationGroup.getPrequalificationType()).equals(PrequalificationType.PAE)) {
             return sendForAnalysis(entityId, command, true);
+        }
+
+        if (action.equals("restartflow")) {
+            return restartFlow(entityId, command);
         }
         PrequalificationStatus prequalificationStatus = resolveStatus(action);
         final List<MemberPrequalificationData> memberPrequalificationDataList = new ArrayList<>();
