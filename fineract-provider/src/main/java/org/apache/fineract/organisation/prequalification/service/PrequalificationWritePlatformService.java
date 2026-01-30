@@ -50,4 +50,6 @@ public interface PrequalificationWritePlatformService {
 
     CommandProcessingResult sendToFirstPhaseApproveCommitteeD(Long entityId, JsonCommand command, boolean withExceptions,
             boolean nextPhase);
+
+    CommandProcessingResult restartFlow(Long entityId, JsonCommand command);
 }

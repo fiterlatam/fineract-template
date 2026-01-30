@@ -25,6 +25,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -43,6 +44,7 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom impleme
     @JoinColumn(name = "updatedby_id", nullable = false)
     private AppUser addedBy;
 
+    @Setter
     @Column(name = "from_status", nullable = false)
     private Integer fromStatus;
 
@@ -123,6 +125,25 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom impleme
     @Override
     public int compareTo(PrequalificationStatusLog entry) {
         return this.getId().compareTo(entry.getId());
+    }
+
+    public PrequalificationStatusLog copy() {
+        PrequalificationStatusLog copy = new PrequalificationStatusLog();
+
+        copy.prequalificationGroup = this.prequalificationGroup;
+        copy.addedBy = this.addedBy;
+        copy.fromStatus = this.fromStatus;
+        copy.toStatus = this.toStatus;
+        copy.subStatus = this.subStatus;
+        copy.comments = this.comments;
+        copy.reasonCode = this.reasonCode;
+        copy.withExceptions = this.withExceptions;
+        copy.exception = this.exception;
+        copy.assignedTo = this.assignedTo;
+
+        copy.dateCreated = DateUtils.getBusinessLocalDate();
+
+        return copy;
     }
 
 }

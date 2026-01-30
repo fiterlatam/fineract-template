@@ -39,4 +39,6 @@ public interface PreQualificationStatusLogRepository
 
     @Query("SELECT sl.comments FROM PrequalificationStatusLog sl WHERE sl.prequalificationGroup.id = :groupId AND sl.exception IS NOT NULL AND sl.exception = :type")
     List<String> findComments(@Param("groupId") Long groupId, @Param("type") boolean type);
+
+    PrequalificationStatusLog findTopByPrequalificationGroupIdAndFromStatusOrderByIdDesc(Long groupId, Integer fromStatus);
 }
