@@ -475,6 +475,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         if (status != null) {
             PrequalificationStatus prequalificationStatus = PrequalificationStatus.fromString(status);
             extraCriteria += " and g.status = " + prequalificationStatus.getValue() + " ";
+        } else {
+            extraCriteria += " and g.status NOT IN (" + PrequalificationStatus.REJECTED.getValue().toString() + ") ";
         }
 
         if (type != null) {
