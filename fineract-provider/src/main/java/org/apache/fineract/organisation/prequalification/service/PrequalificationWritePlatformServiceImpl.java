@@ -948,7 +948,23 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         prequalificationGroup.updateStatus(PrequalificationStatus.fromInt(statusLog.getToStatus()));
         this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
 
-        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+        Loan loan = loanRepositoryWrapper.retrieveByPrequalificationId(prequalificationGroup.getId());
+        if (loan != null && loan.isApproved()) {
+
+            log.info("Rechazando aprobación para pre-calificación con id: {}", prequalificationGroup.getId());
+
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("note", loan.getId());
+            final String jsonCommand = jsonObject.toString();
+            final JsonCommand undoCommand = JsonCommand.from(jsonCommand, jsonObject, this.fromApiJsonHelper, null, loan.getId(), null,
+                    null, loan.getClientId(), loan.getId(), null, null, null, null, null, null);
+            this.loanApplicationWritePlatformService.undoApplicationApproval(loan.getId(), undoCommand);
+        } else {
+            log.info("La pre-calificación no tiene crédito relacionado.");
+        }
+
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId())
+                .withResourceIdAsString(loan != null ? loan.getId().toString() : "").withEntityId(prequalificationGroup.getId()).build();
     }
 
     @Override
