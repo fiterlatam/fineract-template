@@ -419,7 +419,7 @@ public class GroupPrequalificationApiResource {
             object.addProperty("groupId", groupId);
             object.addProperty("memberId", memberId);
             object.addProperty("comments", comment);
-            object.addProperty("action", "approvecommitee");
+            object.addProperty("action", "approvepreviouscommitee");
             final CommandWrapper commandRequest = new CommandWrapperBuilder().processAnalysisRequest(groupId)
                     .withJson(new Gson().toJson(object)).build();
             this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
