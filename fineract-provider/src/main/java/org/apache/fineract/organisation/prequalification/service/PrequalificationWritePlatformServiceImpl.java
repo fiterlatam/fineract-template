@@ -886,6 +886,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         AppUser appUser = this.context.authenticatedUser();
         Integer fromStatus = prequalificationGroup.getStatus();
+        String action = command.stringValueOfParameterNamed("action");
         /*
          * BigDecimal amount = prequalificationData.getTotalRequestedAmount(); if (amount != null) { if
          * (amount.compareTo(new BigDecimal("20000")) < 0) { // Monto < 20.000 → Comité D
@@ -897,30 +898,38 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
          * Monto > 250.000 → Comité A prequalificationGroup.updateStatus(
          * PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL ); } }
          */
-        if (!nextPhase) {
-            prequalificationGroup.updateStatus(withExceptions ? PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS
-                    : PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL);
+        if(action.equals("approvepreviouscommitee")){
+
+            PrequalificationStatus lastStatus = PrequalificationStatus.fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
+
+            prequalificationGroup.updateStatus(lastStatus);
+
         } else {
-            PrequalificationStatus currentStatus = PrequalificationStatus.fromInt(prequalificationGroup.getStatus());
+            if (!nextPhase) {
+                prequalificationGroup.updateStatus(withExceptions ? PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS
+                        : PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL);
+            } else {
+                PrequalificationStatus currentStatus = PrequalificationStatus.fromInt(prequalificationGroup.getStatus());
 
-            if (currentStatus == PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL
-                    || currentStatus == PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS) {
+                if (currentStatus == PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL
+                        || currentStatus == PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS) {
 
-                prequalificationGroup.updateStatus(withExceptions ? PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS
-                        : PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL);
+                    prequalificationGroup.updateStatus(withExceptions ? PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS
+                            : PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL);
 
-            } else if (currentStatus == PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL
-                    || currentStatus == PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS) {
+                } else if (currentStatus == PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL
+                        || currentStatus == PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS) {
 
-                prequalificationGroup.updateStatus(withExceptions ? PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS
-                        : PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL);
+                    prequalificationGroup.updateStatus(withExceptions ? PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS
+                            : PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL);
 
-            } else if (currentStatus == PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL
-                    || currentStatus == PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS) {
+                } else if (currentStatus == PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL
+                        || currentStatus == PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS) {
 
-                prequalificationGroup.updateStatus(withExceptions ? PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS
-                        : PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL);
+                    prequalificationGroup.updateStatus(withExceptions ? PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS
+                            : PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL);
 
+                }
             }
         }
 
@@ -991,7 +1000,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             return sendToFirstPhaseApproveCommitteeD(entityId, command, true, false);
         }
         // first phase
-        if (action.equals("approvecommitee")) {
+        if (action.equals("approvecommitee") || action.equals("approvepreviouscommitee")) {
             return sendToFirstPhaseApproveCommitteeD(entityId, command, false, false);
         }
         if (action.equals("recommendCommittee")) {
