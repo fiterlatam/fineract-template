@@ -40,10 +40,11 @@ public class DocumentData {
     private final String documentType;
     private final String documentPurpose;
     private final LocalDate dateCreated;
+    private final String documentMetaData;
 
     public DocumentData(final Long id, final String parentEntityType, final Long parentEntityId, final String name, final String fileName,
             final Long size, final String type, final String description, final String location, final Integer storageType,
-            final String documentType, final String documentPurpose, LocalDateTime dateCreated) {
+            final String documentType, final String documentPurpose, LocalDateTime dateCreated, String documentMetaData) {
         this.id = id;
         this.parentEntityType = parentEntityType;
         this.parentEntityId = parentEntityId;
@@ -56,6 +57,7 @@ public class DocumentData {
         this.storageType = storageType;
         this.documentType = documentType;
         this.documentPurpose = documentPurpose;
+        this.documentMetaData = documentMetaData;
         this.dateCreated = dateCreated != null ? dateCreated.toLocalDate() : null;
     }
 

@@ -41,6 +41,7 @@ public class DocumentCommand {
     private String documentType;
     private String documentPurpose;
     private LocalDateTime dateCreated;
+    private String metaData;
 
     private final Set<String> modifiedParameters;
 
@@ -187,5 +188,13 @@ public class DocumentCommand {
 
     public void setDateCreated(LocalDateTime dateCreated) {
         this.dateCreated = dateCreated;
+    }
+
+    public String getMetaData() {
+        return metaData;
+    }
+
+    public void setMetaData(String metaData) {
+        this.metaData = metaData;
     }
 }

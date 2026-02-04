@@ -66,18 +66,21 @@ public class Document extends AbstractPersistableCustom {
     @Column(name = "date_created")
     private LocalDateTime dateCreated;
 
+    @Column(name = "document_meta_data", columnDefinition = "TEXT")
+    private String metaData;
+
     public Document() {}
 
     public static Document createNew(final String parentEntityType, final Long parentEntityId, final String name, final String fileName,
             final Long size, final String type, final String description, final String location, final StorageType storageType,
-            String documentType, String documentPurpose, LocalDateTime dateCreated) {
+            String documentType, String documentPurpose, LocalDateTime dateCreated, String metaData) {
         return new Document(parentEntityType, parentEntityId, name, fileName, size, type, description, location, storageType, documentType,
-                documentPurpose, dateCreated);
+                documentPurpose, dateCreated, metaData);
     }
 
     private Document(final String parentEntityType, final Long parentEntityId, final String name, final String fileName, final Long size,
             final String type, final String description, final String location, final StorageType storageType, String documentType,
-            String documentPurpose, LocalDateTime dateCreated) {
+            String documentPurpose, LocalDateTime dateCreated, String metaData) {
         this.parentEntityType = StringUtils.defaultIfEmpty(parentEntityType, null);
         this.parentEntityId = parentEntityId;
         this.name = StringUtils.defaultIfEmpty(name, null);
@@ -90,6 +93,7 @@ public class Document extends AbstractPersistableCustom {
         this.documentType = documentType != null ? Long.valueOf(documentType) : null;
         this.documentPurpose = documentPurpose != null ? Long.valueOf(documentPurpose) : null;
         this.dateCreated = dateCreated;
+        this.metaData = metaData;
     }
 
     public void update(final DocumentCommand command) {
@@ -107,6 +111,9 @@ public class Document extends AbstractPersistableCustom {
         }
         if (command.isNameChanged()) {
             this.name = command.getName();
+        }
+        if (command.isSizeChanged()) {
+            this.size = command.getSize();
         }
         if (command.isSizeChanged()) {
             this.size = command.getSize();
