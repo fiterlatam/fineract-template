@@ -85,8 +85,8 @@ public class DatatablesApiResource {
             final ReadWriteNonCoreDataService readWriteNonCoreDataService,
             final ToApiJsonSerializer<GenericResultsetData> toApiJsonSerializer,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-                                 final EntityDatatableChecksReadPlatformServiceImpl entityDatatableChecksReadPlatformService,
-                                 final LoanReadPlatformService loanReadPlatformService) {
+            final EntityDatatableChecksReadPlatformServiceImpl entityDatatableChecksReadPlatformService,
+            final LoanReadPlatformService loanReadPlatformService) {
         this.context = context;
         this.genericDataService = genericDataService;
         this.readWriteNonCoreDataService = readWriteNonCoreDataService;
@@ -104,14 +104,15 @@ public class DatatablesApiResource {
             + "Example Requests:\n" + "\n" + "datatables?apptable=m_client\n" + "\n" + "\n" + "datatables")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(array = @ArraySchema(schema = @Schema(implementation = DatatablesApiResourceSwagger.GetDataTablesResponse.class)))) })
-    public String getDatatables(@QueryParam("apptable") @Parameter(description = "apptable") final String apptable,@QueryParam("loanId") @Parameter(description = "loanId") final Long loanId,
-            @Context final UriInfo uriInfo) {
+    public String getDatatables(@QueryParam("apptable") @Parameter(description = "apptable") final String apptable,
+            @QueryParam("loanId") @Parameter(description = "loanId") final Long loanId, @Context final UriInfo uriInfo) {
 
         List<DatatableData> result = this.readWriteNonCoreDataService.retrieveDatatableNames(apptable);
 
-        if(loanId != null){
+        if (loanId != null) {
             LoanAccountData loan = loanReadPlatformService.retrieveOne(loanId);
-            result = this.entityDatatableChecksReadPlatformService.retrieveTemplates(StatusEnum.CREATE.getCode().longValue(), EntityTables.LOAN.getName(), loan.getLoanProductId());
+            result = this.entityDatatableChecksReadPlatformService.retrieveTemplates(StatusEnum.CREATE.getCode().longValue(),
+                    EntityTables.LOAN.getName(), loan.getLoanProductId());
         }
 
         final boolean prettyPrint = ApiParameterHelper.prettyPrint(uriInfo.getQueryParameters());
