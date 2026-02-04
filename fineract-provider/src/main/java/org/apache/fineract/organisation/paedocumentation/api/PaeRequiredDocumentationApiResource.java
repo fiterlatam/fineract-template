@@ -164,13 +164,15 @@ public class PaeRequiredDocumentationApiResource {
             @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
             @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("name") final String name,
             @FormDataParam("categoryId") final String categoryId, @FormDataParam("guaranteeNo") final String guaranteeNo,
-            @FormDataParam("description") final String description, @FormDataParam("comment") final String comment) {
+            @FormDataParam("description") final String description, @FormDataParam("comment") final String comment,
+            @FormDataParam("metaData") final String metaData) {
         if (inputStream != null) {
             fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
             final DocumentCommand documentCommand = new DocumentCommand(null, null, "paeloandocs", loanId, name, fileDetails.getFileName(),
                     fileSize, bodyPart.getMediaType().toString(), description, null);
             documentCommand.setDocumentType(categoryId);
             documentCommand.setDocumentPurpose(guaranteeNo);
+            documentCommand.setMetaData(metaData);
             final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);
         }
         return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(loanId, null));
