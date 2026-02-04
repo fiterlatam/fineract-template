@@ -111,6 +111,7 @@ public class PromissoryNoteTemplateTwo {
         String clientAddress = loanRepository.retrieveAddressByLoanId(loanId);
         String creditAmountText = MoneyHelper.getMoneyString(loan.getApprovedPrincipal());
         String creditPurpose = loanRepository.retrieveLoanPurposeCodeByLoanId(loanId);
+        String creditDetail = loanRepository.retrieveLoanDetailPurposeByLoanId(loanId);
 
         // SECOND PARAGRAPH
         String termText = getNumber(loan.getTermFrequency(), true, false, false);
@@ -168,7 +169,7 @@ public class PromissoryNoteTemplateTwo {
                     """
                             Yo: %s, me identifico con Documento Personal de Identificación (DPI) %s, (%s), extendido por el Registro Nacional de las Personas de la República de Guatemala en adelante me denominaré simple e indistintamente "la parte promitente deudora y/o libradora), y señalo como lugar para recibir comunicaciones y/o notificaciones que para efecto de este título será domicilio especial el siguiente: %s.
 
-                            Manifiesto que, por el presente PAGARÉ libre de protesto, prometo pagar incondicionalmente a la orden o endoso de "THE FRIENDSHIP BRIDGE" en adelante llamado "THE FRIENDSHIP BRIDGE" y/o "Beneficiaria o tenedora" la suma total de: %s; por lo cual me declaro lisa y llana deudora de "THE FRIENDSHIP BRIDGE" y declaro que utilizaré este financiamiento para %s;. El pago de la referida suma lo haré bajo los siguientes términos:
+                            Manifiesto que, por el presente PAGARÉ libre de protesto, prometo pagar incondicionalmente a la orden o endoso de "THE FRIENDSHIP BRIDGE" en adelante llamado "THE FRIENDSHIP BRIDGE" y/o "Beneficiaria o tenedora" la suma total de: %s; por lo cual me declaro lisa y llana deudora de "THE FRIENDSHIP BRIDGE" y declaro que utilizaré este financiamiento para %s, el cual se detalla de la siguiente manera: %s. El pago de la referida suma lo haré bajo los siguientes términos:
 
                             A) DEL PLAZO Y FORMA DE PAGO:
                             Me obligo a pagar la referida suma de este título en el plazo de %s meses a contar del %s, cantidad que pagaré sin necesidad de previo cobro o requerimiento, mediante el pago de cuotas mensuales y sucesivas las cuales son %s, las primeras %s y la número %s de %s, mismas que se harán efectivas el día %s hábil bancario de cada mes calendario o el inmediato posterior si ese día fuere inhábil bancario. Todo pago lo haré en las oficinas de THE FRIENDSHIP BRIDGE conocidas por mi persona.
@@ -199,7 +200,7 @@ public class PromissoryNoteTemplateTwo {
 
                             Lugar y fecha de emisión: Municipio y Departamento de %s, %s de %s, del año dos mil %s.
                             """,
-                    clientName, clientDpiText, clientDpiNumber, clientAddress, creditAmountText, creditPurpose, termText, disbursementDate,
+                    clientName, clientDpiText, clientDpiNumber, clientAddress, creditAmountText, creditPurpose, creditDetail, termText, disbursementDate,
                     secondTermText, numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount, paymentDay,
                     interestRateText, department, date.getDayOfMonth(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
                     DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
