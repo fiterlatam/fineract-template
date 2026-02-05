@@ -1120,6 +1120,16 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         renegotiationById.setApprovedDate(DateUtils.getLocalDateTimeOfSystem());
         renegotiationById.setApprovedBy(this.context.authenticatedUser());
         this.renegotiationRepository.saveRenegotiation(renegotiationById);
+
+        //AFTER APPROVING ONE, CANCEL ALL PENDING RENEGOTIATIONS
+        List<Renegotiation> renegotiationByPrequalificationId = this.renegotiationRepository.getRenegotiationByPrequalificationId(prequalificationGroup.getId());
+        for(Renegotiation renegotiation : renegotiationByPrequalificationId) {
+            if(renegotiation.getStatus().equals("PENDING")) {
+                renegotiation.setStatus("CANCELED");
+                this.renegotiationRepository.saveRenegotiation(renegotiation);
+            }
+        }
+
         Loan loan = this.loanRepositoryWrapper.retrieveByPrequalificationId(prequalificationGroup.getId());
 
         final String localeAsString = "en";
@@ -1223,13 +1233,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final BigDecimal newProposedInterestRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("proposedInterestRate",
                     renegotiationObject);
 
-            List<Renegotiation> existingRenegotiations = this.renegotiationRepository
-                    .getRenegotiationByPrequalificationId(prequalificationGroup.getId());
-            existingRenegotiations.forEach(renegotiation -> {
-                if (StringUtils.equals(renegotiation.getStatus(), "PENDING")) {
-                    throw new RenegotiationPendingException(prequalificationGroup.getId());
-                }
-            });
             Renegotiation renegotiation = Renegotiation.create(prequalificationGroup, newProposedInterestRate, newProposedAmount,
                     newProposedTerm, comments, DateUtils.getLocalDateTimeOfSystem(), addedBy);
             this.renegotiationRepository.saveRenegotiation(renegotiation);
