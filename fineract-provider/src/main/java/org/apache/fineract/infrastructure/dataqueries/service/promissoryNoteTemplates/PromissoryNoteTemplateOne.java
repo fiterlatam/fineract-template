@@ -204,9 +204,9 @@ public class PromissoryNoteTemplateOne {
 
                             Lugar y fecha de emisión: Municipio y Departamento de %s, %s de %s, del año dos mil %s.
                             """,
-                    clientName, clientDpiText, clientDpiNumber, clientAddress, creditAmountText, creditPurpose, creditDetail, termText, disbursementDate,
-                    secondTermText, numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount, paymentDay,
-                    interestRateText, witnessName, witnessDpiText, witnessDpiNumber, department, date.getDayOfMonth(),
+                    clientName, clientDpiText, clientDpiNumber, clientAddress, creditAmountText, creditPurpose, creditDetail, termText,
+                    disbursementDate, secondTermText, numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount,
+                    paymentDay, interestRateText, witnessName, witnessDpiText, witnessDpiNumber, department, date.getDayOfMonth(),
                     date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
                     DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
             Paragraph body = new Paragraph(bodyText, normalFont);

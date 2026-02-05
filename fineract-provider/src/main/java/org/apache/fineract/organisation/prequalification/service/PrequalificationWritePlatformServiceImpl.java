@@ -100,7 +100,6 @@ import org.apache.fineract.organisation.prequalification.exception.MemberSubmitt
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotChangedException;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotCompletedException;
 import org.apache.fineract.organisation.prequalification.exception.RenegotiationNotFoundException;
-import org.apache.fineract.organisation.prequalification.exception.RenegotiationPendingException;
 import org.apache.fineract.organisation.prequalification.exception.RequestedAmountGreaterThanOriginalException;
 import org.apache.fineract.organisation.prequalification.serialization.PrequalificationMemberCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
@@ -1121,10 +1120,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         renegotiationById.setApprovedBy(this.context.authenticatedUser());
         this.renegotiationRepository.saveRenegotiation(renegotiationById);
 
-        //AFTER APPROVING ONE, CANCEL ALL PENDING RENEGOTIATIONS
-        List<Renegotiation> renegotiationByPrequalificationId = this.renegotiationRepository.getRenegotiationByPrequalificationId(prequalificationGroup.getId());
-        for(Renegotiation renegotiation : renegotiationByPrequalificationId) {
-            if(renegotiation.getStatus().equals("PENDING")) {
+        // AFTER APPROVING ONE, CANCEL ALL PENDING RENEGOTIATIONS
+        List<Renegotiation> renegotiationByPrequalificationId = this.renegotiationRepository
+                .getRenegotiationByPrequalificationId(prequalificationGroup.getId());
+        for (Renegotiation renegotiation : renegotiationByPrequalificationId) {
+            if (renegotiation.getStatus().equals("PENDING")) {
                 renegotiation.setStatus("CANCELED");
                 this.renegotiationRepository.saveRenegotiation(renegotiation);
             }
