@@ -4025,4 +4025,12 @@ public class CommandWrapperBuilder {
         this.href = "/paedocumentation/" + documentId;
         return this;
     }
+
+    public CommandWrapperBuilder updatePromissoryNoteTemplate() {
+        this.actionName = "UPDATE";
+        this.entityName = "PROMISSORY_NOTE";
+        this.entityId = null;
+        this.href = "/runreports/promissorynote";
+        return this;
+    }
 }
