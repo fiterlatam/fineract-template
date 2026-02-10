@@ -16,9 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.dataqueries.service;
+package org.apache.fineract.infrastructure.dataqueries.domain;
 
-public interface PromissoryNoteService {
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-    String generatePromissoryNote(String json);
+@Repository
+public interface PromissoryNoteTemplateRepository extends JpaRepository<PromissoryNoteTemplate, Long> {
+
+    PromissoryNoteTemplate findByPromissoryNumber(Long promissoryNumber);
 }

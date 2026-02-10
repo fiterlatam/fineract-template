@@ -25,25 +25,18 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.IOException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.commands.domain.CommandWrapper;
+import org.apache.fineract.commands.service.CommandWrapperBuilder;
+import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
+import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
-import org.apache.fineract.infrastructure.dataqueries.service.PromissoryNoteService;
+import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
+import org.apache.fineract.infrastructure.dataqueries.data.PromissoryNoteTemplateData;
 import org.apache.fineract.infrastructure.dataqueries.service.ReadReportingService;
+import org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates.PromissoryNoteService;
 import org.apache.fineract.infrastructure.report.provider.ReportingProcessServiceProvider;
 import org.apache.fineract.infrastructure.report.service.ReportingProcessService;
 import org.apache.fineract.infrastructure.security.exception.NoAuthorizationException;
@@ -53,6 +46,24 @@ import org.glassfish.jersey.internal.util.collection.MultivaluedStringMap;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
+import java.util.List;
+
+@Slf4j
 @Path("/runreports")
 @Component
 @Scope("singleton")
@@ -66,6 +77,8 @@ public class RunreportsApiResource {
     private final ReadReportingService readExtraDataAndReportingService;
     private final ReportingProcessServiceProvider reportingProcessServiceProvider;
     private final PromissoryNoteService promissoryNoteService;
+    private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final ToApiJsonSerializer<PromissoryNoteTemplateData> toApiJsonSerializer;
 
     @GET
     @Path("{reportName}")
@@ -125,6 +138,43 @@ public class RunreportsApiResource {
         context.authenticatedUser();
         return promissoryNoteService.generatePromissoryNote(apiRequestBodyAsJson);
     }
+
+    @GET
+    @Path("promissorynote/{templateId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveTemplate(@PathParam("templateId") final Long templateId) {
+        context.authenticatedUser();
+
+        PromissoryNoteTemplateData result = promissoryNoteService.retrievePromissoryNoteTemplate(templateId);
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @GET
+    @Path("promissorynote")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveAllTemplate() {
+        context.authenticatedUser();
+
+        List<PromissoryNoteTemplateData> result = promissoryNoteService.getPromissoryNoteTemplates();
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @PUT
+    @Path("promissorynote")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String updatePromissoryNote(@Parameter(hidden = true) final String apiRequestBodyAsJson) {
+        context.authenticatedUser();
+
+        final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePromissoryNoteTemplate().withJson(apiRequestBodyAsJson).build();
+
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return this.toApiJsonSerializer.serialize(result);
+    }
+
 
     private void checkUserPermissionForReport(final String reportName, final boolean parameterType) {
         // Anyone can run a 'report' that is simply getting possible parameter
