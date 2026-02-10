@@ -156,6 +156,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "invoiced_by_transaction_id")
     private Long invoicedByTransactionId;
 
+    @Setter
+    @Getter
+    @Column(name = "is_advance_payment")
+    private boolean isAdvancePayment = false;
+
     // This property is added to process vertical payments horizontally for Past Due and Due installments.
     // Advance Payments will be handled through VerticalPayment Scheme
     @Transient

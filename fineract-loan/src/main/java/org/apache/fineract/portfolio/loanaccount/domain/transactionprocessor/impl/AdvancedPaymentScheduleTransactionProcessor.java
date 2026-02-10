@@ -1276,6 +1276,8 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
                                     loanTransaction.doNotProcessAdvanceInstallments(), stopProcessingAdvanceInstallment);
                             exit = true;
                         } else {
+                            loanTransaction.setAdvancePayment(true);
+
                             int numberOfInstallments = inAdvanceInstallments.size();
                             log.debug("Processing IN_ADVANCE allocation for {} installments", numberOfInstallments);
                             if (numberOfInstallments > 0) {

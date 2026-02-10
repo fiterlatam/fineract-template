@@ -114,6 +114,8 @@ public class LoanTransactionData {
     private List<DisbursementFeeData> disbursementFees;
     private BigDecimal totalDisbursementFeesAmount;
     private boolean occurredOnSuspendedAccount;
+    private boolean isAdvancePayment;
+    private boolean isRecalculateEMI;
 
     public static LoanTransactionData importInstance(BigDecimal repaymentAmount, LocalDate lastRepaymentDate, Long repaymentTypeId,
             Integer rowIndex, String locale, String dateFormat) {

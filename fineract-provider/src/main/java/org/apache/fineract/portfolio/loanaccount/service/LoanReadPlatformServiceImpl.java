@@ -1714,7 +1714,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
                     (COALESCE(hono.amount, 0) + COALESCE(vat_hono.amount, 0)) hono,
                     (COALESCE(aval.amount, 0) + COALESCE(vat_aval.amount, 0)) aval,
                     (COALESCE(penalty.amount, 0) + COALESCE(vat_penalty.amount, 0)) penalty,
-                    trcu.firstname as creator_firstname, trcu.lastname as creator_lastname, trmu.firstname as modifier_firstname, trmu.lastname as modifier_lastname
+                    trcu.firstname as creator_firstname, trcu.lastname as creator_lastname, trmu.firstname as modifier_firstname, trmu.lastname as modifier_lastname,
+                    tr.is_advance_payment as isAdvancePayment, tr.recalculate_emi as isRecalculateEMI
                      from m_loan l
                      join m_loan_transaction tr on tr.loan_id = l.id
                       join m_currency rc on rc.%s = l.currency_code
@@ -1929,6 +1930,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             final String creatorLastName = rs.getString("creator_lastname");
             final String modifierFirstName = rs.getString("modifier_firstname");
             final String modifierLastName = rs.getString("modifier_lastname");
+            final boolean isAdvancePayment = rs.getBoolean("isAdvancePayment");
+            final boolean isRecalculateEMI = rs.getBoolean("isRecalculateEMI");
 
             LoanTransactionData transactionData = new LoanTransactionData(id, officeId, officeName, transactionType, paymentDetailData,
                     currencyData, date, totalAmount, netDisbursalAmount, principalPortion, interestPortion, feeChargesPortion,
@@ -1939,6 +1942,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService, Loa
             transactionData.setCreatedByLastname(creatorLastName);
             transactionData.setLastModifiedByFirstname(modifierFirstName);
             transactionData.setLastModifiedByLastname(modifierLastName);
+            transactionData.setAdvancePayment(isAdvancePayment);
+            transactionData.setRecalculateEMI(isRecalculateEMI);
 
             return transactionData;
         }
