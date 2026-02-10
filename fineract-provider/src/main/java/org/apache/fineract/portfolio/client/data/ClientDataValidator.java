@@ -303,7 +303,7 @@ public final class ClientDataValidator {
     }
 
     private void validateRequiredIndividualNamePartsExist(final JsonElement element, final DataValidatorBuilder baseDataValidator) {
-        final int maximumNameLength = 60;
+        final int maximumNameLength = 100;
         final String firstnameParam = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.firstnameParamName, element);
         baseDataValidator.reset().parameter(ClientApiConstants.firstnameParamName).value(firstnameParam).notBlank()
                 .notExceedingLengthOf(maximumNameLength);
@@ -323,7 +323,7 @@ public final class ClientDataValidator {
 
     private void fullnameCannotBeBlank(final JsonElement element, final DataValidatorBuilder baseDataValidator) {
         final String fullnameParam = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.fullnameParamName, element);
-        baseDataValidator.reset().parameter(ClientApiConstants.fullnameParamName).value(fullnameParam).notBlank().notExceedingLengthOf(160);
+        baseDataValidator.reset().parameter(ClientApiConstants.fullnameParamName).value(fullnameParam).notBlank().notExceedingLengthOf(100);
     }
 
     private boolean isIndividualNamePartParameterPassed(final JsonElement element) {

@@ -438,4 +438,10 @@
     <include file="parts/20251226200100_EA_119_configuration_gac_ondemand_recalculation.xml" relativeToChangelogFile="true"/>
     <include file="parts/202512292000001000_EA_447_webhook_update_disbursement_report_file.xml" relativeToChangelogFile="true"/>
     <include file="parts/202601052000001000_EA_447_webhook_adjust_create_loan_adjust_disbursement_reversal.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20260209000050_EA_627_AddAdvPmtFlagToTable.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20260209000100_EA_658_m_client_firstname_resize.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20260209000200_EA_658_vw_client.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20260209000300_EA_658_vw_creditos_activos.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20260209000400_EA_658_vw_facturacion_manual.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20260209000500_EA_658_vw_report_client_general.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -92,7 +92,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "office_joining_date")
     private LocalDate officeJoiningDate;
 
-    @Column(name = "firstname", length = 50)
+    @Column(name = "firstname", length = 100)
     private String firstname;
 
     @Column(name = "middlename", length = 50)
@@ -443,7 +443,7 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
         } else {
             final int maximumNameLength = 60;
             baseDataValidator.reset().parameter(ClientApiConstants.firstnameParamName).value(this.firstname).notBlank()
-                    .notExceedingLengthOf(maximumNameLength);
+                    .notExceedingLengthOf(100);
             baseDataValidator.reset().parameter(ClientApiConstants.middlenameParamName).value(this.middlename).ignoreIfNull()
                     .notExceedingLengthOf(maximumNameLength);
             baseDataValidator.reset().parameter(ClientApiConstants.lastnameParamName).value(this.lastname).notBlank()
