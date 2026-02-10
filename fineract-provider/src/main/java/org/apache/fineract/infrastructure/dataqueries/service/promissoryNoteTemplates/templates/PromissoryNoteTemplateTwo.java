@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates;
+package org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates.templates;
 
 import com.google.common.base.Splitter;
 import com.google.gson.JsonObject;
@@ -43,18 +43,16 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.fineract.infrastructure.core.data.ApiParameterError;
-import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.dataqueries.domain.PromissoryNoteTemplate;
+import org.apache.fineract.infrastructure.dataqueries.domain.PromissoryNoteTemplateRepository;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
@@ -67,10 +65,11 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PromissoryNoteTemplateFour {
+public class PromissoryNoteTemplateTwo {
 
     private final LoanReadPlatformService loanReadPlatformService;
     private final LoanRepository loanRepository;
+    private final PromissoryNoteTemplateRepository promissoryNoteTemplateRepository;
 
     public String generatePdf(String json) {
         JsonObject object = JsonParser.parseString(json).getAsJsonObject();
@@ -82,12 +81,15 @@ public class PromissoryNoteTemplateFour {
         final Long loanId = object.get("loanId").getAsLong();
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.forLanguageTag("es"));
         final LocalDate date = DateUtils.getBusinessLocalDate();
+        final PromissoryNoteTemplate template = promissoryNoteTemplateRepository.findByPromissoryNumber(2L);
 
         MonetaryCurrency currency = null;
 
         LoanAccountData loanAccountData = this.loanReadPlatformService.retrieveOne(loanId);
         Loan loan = loanRepository.findById(loanId).get();
-        currency = loan.getCurrency();
+        if (loan != null) {
+            currency = loan.getCurrency();
+        }
 
         AtomicReference<Integer> numerPayments = new AtomicReference<>(0);
 
@@ -111,7 +113,7 @@ public class PromissoryNoteTemplateFour {
         String clientDpiText = getNumber(Long.valueOf(loan.getClient().getDpiNumber()), false, false, true);
         String clientDpiNumber = loan.getClient().getDpiNumber();
         String clientAddress = loanRepository.retrieveAddressByLoanId(loanId);
-        String creditAmountText = MoneyHelper.getMoneyString(loan.getApprovedPrincipal()).toUpperCase();
+        String creditAmountText = MoneyHelper.getMoneyString(loan.getApprovedPrincipal());
         String creditPurpose = loanRepository.retrieveLoanPurposeCodeByLoanId(loanId);
         String creditDetail = loanRepository.retrieveLoanDetailPurposeByLoanId(loanId);
 
@@ -133,29 +135,12 @@ public class PromissoryNoteTemplateFour {
                 loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate().divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_EVEN),
                 true, true, false);
 
-        // LAST PARAGRAPH
         String department = loan.getPrequalificationGroup() != null && loan.getPrequalificationGroup().getAgency() != null
                 && loan.getPrequalificationGroup().getAgency().getCountry() != null
                         ? loan.getPrequalificationGroup().getAgency().getCity().label().concat(
                                 ", " + loan.getPrequalificationGroup().getAgency().getStateProvince().label())
                         : "__________";
 
-        // GUARANTOR DATA
-        Object[] dataGuarantor = this.loanRepository.retrieveGuarantorDataByLoanId(loanId);
-        Object[] data = null;
-        if (dataGuarantor.length == 0) {
-            List<ApiParameterError> list = new ArrayList<>();
-            ApiParameterError apiParameterError = ApiParameterError.parameterError("err.msg.does.not.complete",
-                    "The loan does not contains guarantor data", "loanId");
-            list.add(apiParameterError);
-            throw new PlatformApiDataValidationException("err.msg.does.not.complete", "The loan does not contains guarantor data", list);
-        } else {
-            data = (Object[]) dataGuarantor[0];
-        }
-        String guarantorName = data[0].toString();
-        String guarantorDPI = data[1].toString();
-        String guarantorDPIText = getNumber(Long.parseLong(guarantorDPI), false, false, true);
-        String guarantorAddress = data[2].toString();
         Document document = new Document();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -169,7 +154,7 @@ public class PromissoryNoteTemplateFour {
 
             logo.scaleToFit(150, 50);
 
-            writer.setPageEvent(new PromissoryNoteTemplateFour.HeaderFooterEvent(logo));
+            writer.setPageEvent(new PromissoryNoteTemplateTwo.HeaderFooterEvent(logo));
 
             document.setMargins(50, 50, 100, 50);
             document.open();
@@ -184,71 +169,20 @@ public class PromissoryNoteTemplateFour {
             document.add(title);
 
             // Cuerpo completo del pagaré (texto legal completo con variables)
-            String bodyText = String.format(
-                    """
-                            Yo: %s, me identifico con Documento Personal de Identificación (DPI) %s, (%s), extendido por el Registro Nacional de las Personas de la República de Guatemala en adelante me denominaré simple e indistintamente "la parte promitente deudora y/o libradora), y señalo como lugar para recibir comunicaciones y/o notificaciones que para efecto de este título será domicilio especial el siguiente: %s.
-
-                            Manifiesto que, por el presente PAGARÉ libre de protesto, prometo pagar incondicionalmente a la orden o endoso de "THE FRIENDSHIP BRIDGE" en adelante llamado "THE FRIENDSHIP BRIDGE" y/o "Beneficiaria o tenedora" la suma total de: %s; por lo cual me declaro lisa y llana deudora de "THE FRIENDSHIP BRIDGE" y declaro que utilizaré este financiamiento para %s, el cual se detalla de la siguiente manera: %s. El pago de la referida suma lo haré bajo los siguientes términos:
-
-                            A) DEL PLAZO Y FORMA DE PAGO:
-                            Me obligo a pagar la referida suma de este título en el plazo de %s meses a contar del %s, cantidad que pagaré sin necesidad de previo cobro o requerimiento, mediante el pago de cuotas mensuales y sucesivas las cuales son %s, las primeras %s y la número %s de %s, mismas que se harán efectivas el día %s hábil bancario de cada mes calendario o el inmediato posterior si ese día fuere inhábil bancario. Todo pago lo haré en las oficinas de THE FRIENDSHIP BRIDGE conocidas por mi persona.
-
-                            B) INTERESES:
-                            Sobre la suma o capital total que he prometido incondicionalmente pagar, reconozco que se incluye un cargo total de intereses calculado bajo una %s sobre saldos mensual. Esta tasa de interés efectiva en la presente operación corresponderá exactamente con la tasa de interés nominal anteriormente indicada y aceptada siempre y cuando los abonos mencionados se realicen en la forma y tiempo aquí establecido. Las cuotas de interés están incluidas en las cuotas o amortizaciones anteriormente mencionadas, dado que el pago es mediante la modalidad de cuota nivelada. Los intereses compensan los servicios que me presta la institución ya que este préstamo incluye servicios adicionales como los de capacitación y otros.
-
-                            C) ACEPTACIÓN Y OBLIGACIÓN DE LA PARTE DEUDORA:
-                            a. Acepto que la parte tenedora de este título, podrá dar por vencido el plazo de este título en forma anticipada y exigir ejecutivamente el pago total del saldo adeudado tanto de capital, intereses, intereses moratorios gastos y costas judiciales en los siguientes casos:
-                            a.1) Si no cumplo cualquiera de las obligaciones aquí contraídas
-                            a.2) Si se dictare mandamiento de embargo en mi contra y/o avalista si lo hubiese (s);
-                            a.3) Si dejare de pagar puntualmente una sola de las cuotas convenidas; y
-                            a.4) Si THE FRIENDSHIP BRIDGE comprobare que utilicé el financiamiento para fines distintos a los antes mencionados.
-
-                            b. Renuncio al fuero de mi respectivo domicilio; me someto y sujeto a la jurisdicción y tribunales que elija y pueda utilizar a su elección la parte tenedora de este título, y para el caso de ejecución, me acojo al procedimiento establecido en el Código Procesal Civil y Mercantil y Código de comercio.
-
-                            c. Acepto como buenas y exactas las cuentas que la parte tenedora de este título formule acerca de este título y como líquido, exigible y de plazo vencido la cantidad que se exija.
-
-                            d. Acepto que se tengan como válidas y bien hechas las comunicaciones y/o notificaciones que se realicen y/o dirijan al lugar indicado como domicilio especial, a no ser que comunique y/o notifique por escrito a THE FRIENDSHIP BRIDGE, de cualquier cambio en la misma y que obre en su poder.
-
-                            e. Acepto que todo el gasto por cobranza es por mi cuenta, y en concepto de "Gastos Administrativos por desembolso" no pagaré cantidad alguna, dada la exoneración de gastos de desembolso del 2.5%% sobre el monto otorgado, realizado por el beneficiario. En caso de atraso en el pago de una o más cuotas sucesivas reconozco que THE FRIENDSHIP BRIDGE cobrará como "interés moratorio" o cuota moratoria, una suma calculada así: el monto de capital vencido multiplicado por una tasa mensual de seis por ciento (6%%).
-
-                            f. CANCELACIÓN ANTICIPADA: Acepto que podré cancelar de manera anticipada el monto total de la deuda únicamente si tengo pagado al menos el cincuenta por ciento (50%%) de las cuotas del crédito vigente, de lo contrario se me penalizará con el tres por ciento (3%%) sobre el capital adeudado. g. Acepto que para el caso de ejecución, THE FRIENDSHIP BRIDGE no está obligado a prestar fianza o garantía alguna, exoneración que se hará extensiva a los depositarios e interventores nombrados, no quedando THE FRIENDSHIP BRIDGE responsable por las actuaciones de estos y que para el caso de remate sirva de base el valor de los bienes embargados o el monto total de la demanda incluyendo intereses y costas a elección de THE FRIENDSHIP BRIDGE, garantizando la presente obligación con todos mis bienes presentes y futuros; h. Acepto que este título es cedible o negociable, mediante simple endoso, sin necesidad previa o posterior aviso o notificación;
-
-                            i. Renuncio expresamente a los derechos que pudieren conferirme las leyes vigentes o que en el futuro entraren en vigor y que pudieran permitirme cumplir las obligaciones contraídas en este documento en forma distinta a la pactada. Como deudor declaro que estoy plenamente enterado de todas y cada uno de los términos de este pagaré, lo acepto, ratifico y firmo.
-
-                            Lugar y fecha de emisión: Municipio y Departamento de %s, %s de %s, del año dos mil %s.
-                            """,
+            String bodyText = String.format(template.getBlockOne(),
                     clientName, clientDpiText, clientDpiNumber, clientAddress, creditAmountText, creditPurpose, creditDetail, termText,
                     disbursementDate, secondTermText, numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount,
                     paymentDay, interestRateText, department, date.getDayOfMonth(),
                     date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
                     DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
+
             Paragraph body = new Paragraph(bodyText, normalFont);
             body.setAlignment(Element.ALIGN_JUSTIFIED);
             body.setSpacingAfter(20f);
             document.add(body);
 
             // Firmas
-            document.add(createSignatureSection(clientName, null, "Promitente deudora o libradora", null));
-
-            String avalText = String.format(
-                    """
-
-
-                            AVALISTA
-
-                            YO: %s, me identifico con Documento Personal de Identificación (DPI) %s, (%s), extendido por el Registro Nacional de las Personas de la República de Guatemala, Me constituyo AVALISTA de la Promitente libradora y garantizo en forma mancomunada y solidaria, renunciando a cualquier derecho de excusión y orden que pudiere corresponderme, el total del pago del anterior pagaré y me obligo a pagar el mismo en su totalidad bajo las mismas condiciones aceptadas por la Promitente libradora las cuales declaro que conozco, entiendo y acepto expresamente, sin reserva alguna, renunciando al fuero de mi domicilio, sometiéndome a los tribunales que THE FRIENDSHIP BRIDGE elija, señalando como lugar para recibir comunicaciones y/o notificaciones, que para efecto de este título será domicilio especial, el siguiente: %s, obligándome a comunicar de inmediato a THE FRIENDSHIP BRIDGE cualquier cambio; la prueba de dicha comunicación corre a mi cargo, aceptando para el caso de no dar este aviso como válida cualquier notificación que se me haga llegar en la dirección antes señalada.
-
-                            Lugar y fecha de emisión: Municipio y Departamento de %s, %s de %s, del año dos mil %s.
-                            """,
-                    guarantorName, guarantorDPIText, guarantorDPI, guarantorAddress, department, date.getDayOfMonth(),
-                    date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
-                    DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
-            Paragraph bodyAval = new Paragraph(avalText, normalFont);
-            bodyAval.setAlignment(Element.ALIGN_JUSTIFIED);
-            bodyAval.setSpacingAfter(20f);
-            document.add(bodyAval);
-
-            document.add(createSignatureSection(guarantorName, null, "Aval", null));
+            document.add(createSignatureSection(clientName, null, "Promitente deudora o libradora", ""));
 
             document.close();
 
@@ -347,5 +281,4 @@ public class PromissoryNoteTemplateFour {
 
         return value;
     }
-
 }
