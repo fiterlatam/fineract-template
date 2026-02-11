@@ -190,4 +190,5 @@
     <include file="parts/PUE_27_01_2026_ADD_ENTITY_DATATABLE_CHECKS_140_FIELDS.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_04_02_2026_ADD_META_DATA_DOCUMENTS.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_05_01_2026_add_new_table_templates.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_10_02_2026_add_columns_to_p_destino_dtt.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
