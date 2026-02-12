@@ -18,16 +18,14 @@
  */
 package org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates;
 
+import java.util.List;
 import org.apache.fineract.infrastructure.core.config.MapstructMapperConfig;
 import org.apache.fineract.infrastructure.dataqueries.data.PromissoryNoteTemplateData;
 import org.apache.fineract.infrastructure.dataqueries.domain.PromissoryNoteTemplate;
 import org.mapstruct.Mapper;
 
-import java.util.List;
-
 @Mapper(config = MapstructMapperConfig.class)
 public interface PromissoryNoteTemplateMapper {
-
 
     PromissoryNoteTemplateData map(PromissoryNoteTemplate source);
 

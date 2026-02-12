@@ -18,11 +18,10 @@
  */
 package org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates;
 
+import java.util.List;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.dataqueries.data.PromissoryNoteTemplateData;
-
-import java.util.List;
 
 public interface PromissoryNoteService {
 

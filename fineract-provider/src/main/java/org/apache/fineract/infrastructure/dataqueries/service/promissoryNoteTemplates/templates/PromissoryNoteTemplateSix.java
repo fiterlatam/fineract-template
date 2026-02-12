@@ -190,11 +190,10 @@ public class PromissoryNoteTemplateSix {
             document.add(title);
 
             // Cuerpo completo del pagaré (texto legal completo con variables)
-            String bodyText = String.format(template.getBlockOne(),
-                    clientName, clientDpiText, clientDpiNumber, clientAddress, creditAmountText, creditPurpose, creditDetail, termText,
-                    disbursementDate, secondTermText, numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount,
-                    paymentDay, interestRateText, department, date.getDayOfMonth(),
-                    date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")), date.getYear() - 2000);
+            String bodyText = String.format(template.getBlockOne(), clientName, clientDpiText, clientDpiNumber, clientAddress,
+                    creditAmountText, creditPurpose, creditDetail, termText, disbursementDate, secondTermText,
+                    numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount, paymentDay, interestRateText, department,
+                    date.getDayOfMonth(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")), date.getYear() - 2000);
 
             Paragraph body = new Paragraph(bodyText, normalFont);
             body.setAlignment(Element.ALIGN_JUSTIFIED);
@@ -209,9 +208,9 @@ public class PromissoryNoteTemplateSix {
             Long fiadorWitnessDpi = object.get("fiadorWitnessDPI").getAsLong();
             String fiadorWitnessDpiText = getNumber(fiadorWitnessDpi, false, false, true);
 
-            String avalText = String.format(template.getBlockTwo(),
-                    guarantorName, guarantorDPIText, guarantorDPI, guarantorAddress, fiadorWitnessName, fiadorWitnessDpiText,
-                    fiadorWitnessDpi, department, date.getDayOfMonth(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
+            String avalText = String.format(template.getBlockTwo(), guarantorName, guarantorDPIText, guarantorDPI, guarantorAddress,
+                    fiadorWitnessName, fiadorWitnessDpiText, fiadorWitnessDpi, department, date.getDayOfMonth(),
+                    date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
                     DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
 
             Paragraph bodyAval = new Paragraph(avalText, normalFont);

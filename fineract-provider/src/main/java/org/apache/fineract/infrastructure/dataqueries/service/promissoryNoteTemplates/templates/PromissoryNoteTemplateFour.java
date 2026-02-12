@@ -188,11 +188,10 @@ public class PromissoryNoteTemplateFour {
             document.add(title);
 
             // Cuerpo completo del pagaré (texto legal completo con variables)
-            String bodyText = String.format(template.getBlockOne(),
-                    clientName, clientDpiText, clientDpiNumber, clientAddress, creditAmountText, creditPurpose, creditDetail, termText,
-                    disbursementDate, secondTermText, numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount,
-                    paymentDay, interestRateText, department, date.getDayOfMonth(),
-                    date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
+            String bodyText = String.format(template.getBlockOne(), clientName, clientDpiText, clientDpiNumber, clientAddress,
+                    creditAmountText, creditPurpose, creditDetail, termText, disbursementDate, secondTermText,
+                    numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount, paymentDay, interestRateText, department,
+                    date.getDayOfMonth(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
                     DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
 
             Paragraph body = new Paragraph(bodyText, normalFont);
@@ -203,9 +202,8 @@ public class PromissoryNoteTemplateFour {
             // Firmas
             document.add(createSignatureSection(clientName, null, "Promitente deudora o libradora", null));
 
-            String avalText = String.format(template.getBlockTwo(),
-                    guarantorName, guarantorDPIText, guarantorDPI, guarantorAddress, department, date.getDayOfMonth(),
-                    date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
+            String avalText = String.format(template.getBlockTwo(), guarantorName, guarantorDPIText, guarantorDPI, guarantorAddress,
+                    department, date.getDayOfMonth(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
                     DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
 
             Paragraph bodyAval = new Paragraph(avalText, normalFont);

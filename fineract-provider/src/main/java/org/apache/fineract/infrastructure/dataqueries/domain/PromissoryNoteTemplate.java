@@ -18,16 +18,15 @@
  */
 package org.apache.fineract.infrastructure.dataqueries.domain;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @Entity
 @Getter
