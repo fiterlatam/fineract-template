@@ -76,7 +76,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     String FIND_BY_EXTERNAL_ID = "select loan from Loan loan where loan.externalId = :externalId";
 
     String AGENCY_LEAD_BY_LOAN_ID = "SELECT " + "ag.name AS agencia, " + "lo.id AS id, "
-            + "CONCAT(agl.firstname, ' ', agl.lastname) AS lider_agencia, "
+            + "CONCAT(agl.firstname, ' ', agl.lastname) AS lider_agencia, agl.user_dpi AS user_dpi, "
             + "CONCAT (COALESCE(pf.primer_nombre, ' '), COALESCE(pf.segundo_nombre, ' '), COALESCE(pf.primer_apellido, ' '), COALESCE(pf.segundo_apellido, ' ')) AS nombre_fiador, "
             + "pf.DPI_fiador_tercero as dpi_fiador, " + "pf.direccion_notificaciones as direccion_fiador " + "FROM m_loan lo "
             + "LEFT JOIN m_prequalification_group pg ON pg.id = lo.prequalification_id " + "LEFT JOIN m_agency ag ON ag.id = pg.agency_id "

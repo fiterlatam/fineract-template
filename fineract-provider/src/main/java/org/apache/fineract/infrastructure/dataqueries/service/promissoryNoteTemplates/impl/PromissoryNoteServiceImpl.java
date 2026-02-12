@@ -24,7 +24,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import javax.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
@@ -49,8 +49,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.springframework.stereotype.Service;
-
-import javax.ws.rs.NotFoundException;
 
 @Slf4j
 @Service
@@ -131,14 +129,12 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
     public CommandProcessingResult updatePromissoryNote(JsonCommand command) {
 
         final Long templateId = command.longValueOfParameterNamed("templateId");
-        PromissoryNoteTemplate promissoryNoteTemplate = promissoryNoteTemplateRepository.findById(templateId).orElseThrow(() -> new NotFoundException("template not exists with id " + templateId));
+        PromissoryNoteTemplate promissoryNoteTemplate = promissoryNoteTemplateRepository.findById(templateId)
+                .orElseThrow(() -> new NotFoundException("template not exists with id " + templateId));
         validateUpdate(command);
         Map<String, Object> changes = promissoryNoteTemplate.update(command);
 
-        return new CommandProcessingResultBuilder()
-                .withEntityId(templateId)
-                .with(changes)
-                .build();
+        return new CommandProcessingResultBuilder().withEntityId(templateId).with(changes).build();
     }
 
     private void validateUpdate(JsonCommand command) {

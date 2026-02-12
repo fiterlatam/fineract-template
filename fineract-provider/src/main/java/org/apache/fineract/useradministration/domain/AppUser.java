@@ -123,6 +123,11 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
     @Setter
     private int incorrectAccessCount;
 
+    @Getter
+    @Setter
+    @Column(name = "user_dpi")
+    private String userDpi;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER, mappedBy = "appUser")
     private Set<AppUserClientMapping> appUserClientMappings = new HashSet<>();
 
@@ -138,6 +143,7 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
         final String username = command.stringValueOfParameterNamed("username");
         String password = command.stringValueOfParameterNamed("password");
         final Boolean sendPasswordToEmail = command.booleanObjectValueOfParameterNamed("sendPasswordToEmail");
+        final String userDpi = command.stringValueOfParameterNamed("userDpi");
 
         if (sendPasswordToEmail) {
             password = new RandomPasswordGenerator(13).generate();
@@ -167,8 +173,12 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
 
         final boolean isSelfServiceUser = command.booleanPrimitiveValueOfParameterNamed(AppUserConstants.IS_SELF_SERVICE_USER);
 
-        return new AppUser(userOffice, user, allRoles, email, firstname, lastname, linkedStaff, passwordNeverExpire, isSelfServiceUser,
-                clients, cannotChangePassword);
+        AppUser appuser = new AppUser(userOffice, user, allRoles, email, firstname, lastname, linkedStaff, passwordNeverExpire,
+                isSelfServiceUser, clients, cannotChangePassword);
+
+        appuser.setUserDpi(userDpi);
+
+        return appuser;
     }
 
     protected AppUser() {
@@ -344,6 +354,15 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
             actualChanges.put(AppUserConstants.CLIENTS, new ArrayList<>());
             if (this.appUserClientMappings != null) {
                 this.appUserClientMappings.clear();
+            }
+        }
+
+        final String userDpi = "userDpi";
+        if (command.hasParameter(userDpi)) {
+            if (command.isChangeInStringParameterNamed(userDpi, this.userDpi)) {
+                final String newValue = command.stringValueOfParameterNamed(userDpi);
+                actualChanges.put(userDpi, newValue);
+                this.userDpi = newValue;
             }
         }
 

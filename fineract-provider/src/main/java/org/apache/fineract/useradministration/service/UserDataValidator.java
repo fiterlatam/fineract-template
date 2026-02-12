@@ -47,7 +47,7 @@ public final class UserDataValidator {
      */
     private final Set<String> supportedParameters = new HashSet<>(Arrays.asList("username", "firstname", "lastname", "password",
             "repeatPassword", "email", "officeId", "notSelectedRoles", "roles", "sendPasswordToEmail", "staffId", "passwordNeverExpires",
-            AppUserConstants.IS_SELF_SERVICE_USER, AppUserConstants.CLIENTS));
+            AppUserConstants.IS_SELF_SERVICE_USER, AppUserConstants.CLIENTS, "userDpi"));
 
     private final FromJsonHelper fromApiJsonHelper;
 
@@ -249,6 +249,11 @@ public final class UserDataValidator {
                     baseDataValidator.reset().parameter(AppUserConstants.CLIENTS).value(clientId).longGreaterThanZero();
                 }
             }
+        }
+
+        if (this.fromApiJsonHelper.parameterExists("userDpi", element)) {
+            final String userDpi = this.fromApiJsonHelper.extractStringNamed("userDpi", element);
+            baseDataValidator.reset().parameter("userDpi").value(userDpi).notNull().notBlank().notExceedingLengthOf(50);
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
