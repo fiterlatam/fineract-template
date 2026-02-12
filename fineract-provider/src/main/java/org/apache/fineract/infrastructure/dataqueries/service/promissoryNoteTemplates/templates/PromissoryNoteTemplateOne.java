@@ -173,10 +173,10 @@ public class PromissoryNoteTemplateOne {
             document.add(title);
 
             // Cuerpo completo del pagaré (texto legal completo con variables)
-            String bodyText = String.format(template.getBlockOne(),
-                    clientName, clientDpiText, clientDpiNumber, clientAddress, creditAmountText, creditPurpose, creditDetail, termText,
-                    disbursementDate, secondTermText, numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount,
-                    paymentDay, interestRateText, witnessName, witnessDpiText, witnessDpiNumber, department, date.getDayOfMonth(),
+            String bodyText = String.format(template.getBlockOne(), clientName, clientDpiText, clientDpiNumber, clientAddress,
+                    creditAmountText, creditPurpose, creditDetail, termText, disbursementDate, secondTermText,
+                    numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount, paymentDay, interestRateText, witnessName,
+                    witnessDpiText, witnessDpiNumber, department, date.getDayOfMonth(),
                     date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
                     DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
 
