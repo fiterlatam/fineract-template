@@ -38,4 +38,7 @@ public interface DocumentWritePlatformService {
     Long createInternalDocument(String entityType, Long entityId, Long fileSize, InputStream inputStream, String mimeType, String name,
             String description, String fileName);
 
+    @PreAuthorize(value = "hasAnyAuthority('ALL_FUNCTIONS', 'UPDATE_DOCUMENT')")
+    void transferDraftDocument(String entityType, Long entityId, Long draftId);
+
 }

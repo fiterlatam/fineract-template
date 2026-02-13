@@ -896,7 +896,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
          * Monto > 250.000 → Comité A prequalificationGroup.updateStatus(
          * PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL ); } }
          */
-        if (action.equals("approvepreviouscommitee")) {
+        if (action.equals("approvepreviouscommitee") || action.equals("approveRenegotiation")) {
 
             PrequalificationStatus lastStatus = PrequalificationStatus
                     .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
@@ -1013,7 +1013,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             return sendToRenegotiation(prequalificationGroup, addedBy, command);
         } // send to renegotiation
         if (action.equals("approveRenegotiation")) {
-            return approveRenegotiation(prequalificationGroup, addedBy, command);
+            approveRenegotiation(prequalificationGroup, addedBy, command);
+            return sendToFirstPhaseApproveCommitteeD(entityId, command, false, false);
         }
         if (action.equals("rejectRenegotiation")) {
             return rejectRenegotiation(prequalificationGroup, addedBy, command);

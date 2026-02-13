@@ -138,5 +138,5 @@ public interface ConfigurationDomainService {
 
     Long getMaximumLoginAttempts();
 
-    BigDecimal getMaxLimitAmount();
+    BigDecimal getMaxLimitAmountForPromissoryNotePae();
 }

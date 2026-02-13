@@ -1,0 +1,100 @@
+diff --git a/fineract-provider/build.gradle b/fineract-provider/build.gradle
+index 67c1d00a0..ca69e3ea3 100644
+--- a/fineract-provider/build.gradle
++++ b/fineract-provider/build.gradle
+@@ -148,12 +148,18 @@ project.ext.pgPassword='postgres'
+ configurations {
+     driver
+ }
++//dependencies {
++//    driver 'org.mariadb.jdbc:mariadb-java-client:2.7.6'
++//    driver 'org.postgresql:postgresql:42.4.0'
++//    driver 'mysql:mysql-connector-java:8.0.29'
++//}
+ dependencies {
+-    driver 'org.mariadb.jdbc:mariadb-java-client:2.7.6'
+-    driver 'org.postgresql:postgresql:42.4.0'
+-    driver 'mysql:mysql-connector-java:8.0.29'
++    implementation 'mysql:mysql-connector-java:8.0.29'
++    implementation 'org.mariadb.jdbc:mariadb-java-client:2.7.6'
++    implementation 'org.postgresql:postgresql:42.4.0'
+ }
+ 
++
+ URLClassLoader loader = GroovyObject.class.classLoader
+ configurations.driver.each {File file ->
+     loader.addURL(file.toURL())
+@@ -228,6 +234,10 @@ bootRun {
+         implementation 'org.apache.poi:poi:5.2.3'
+         implementation 'org.apache.poi:poi-ooxml:5.2.3'
+         implementation 'org.apache.poi:poi-ooxml-full:5.2.3'
++        implementation 'org.eclipse.persistence:org.eclipse.persistence.jpa:2.7.10'
++        implementation 'javax.persistence:javax.persistence-api:2.2'
++        implementation 'org.springframework.batch:spring-batch-core:4.3.9'
++
+         implementation 'com.ibm.icu:icu4j:77.1'
+     }
+ }
+diff --git a/fineract-provider/src/main/resources/META-INF/orm.xml b/fineract-provider/src/main/resources/META-INF/orm.xml
+index 1eb26c9cc..a269d7577 100644
+--- a/fineract-provider/src/main/resources/META-INF/orm.xml
++++ b/fineract-provider/src/main/resources/META-INF/orm.xml
+@@ -19,19 +19,17 @@
+     under the License.
+ 
+ -->
+-
+-
+-<entity-mappings xmlns="http://java.sun.com/xml/ns/persistence/orm"
+-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+-    xsi:schemaLocation="http://java.sun.com/xml/ns/persistence/orm http://java.sun.com/xml/ns/persistence/orm_2_0.xsd"
+-    version="2.0">
++<entity-mappings
++        xmlns="http://xmlns.jcp.org/xml/ns/persistence/orm"
++        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
++        xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence/orm http://xmlns.jcp.org/xml/ns/persistence/orm_2_2.xsd"
++        version="2.2">
+ 
+     <persistence-unit-metadata>
+         <persistence-unit-defaults>
+             <delimited-identifiers/>
+             <entity-listeners>
+-                <entity-listener
+-                    class="org.springframework.data.jpa.domain.support.AuditingEntityListener" />
++                <entity-listener class="org.springframework.data.jpa.domain.support.AuditingEntityListener"/>
+             </entity-listeners>
+         </persistence-unit-defaults>
+     </persistence-unit-metadata>
+diff --git a/fineract-provider/src/main/resources/application.properties b/fineract-provider/src/main/resources/application.properties
+index fdaf4ca11..596e32a80 100644
+--- a/fineract-provider/src/main/resources/application.properties
++++ b/fineract-provider/src/main/resources/application.properties
+@@ -25,10 +25,10 @@ fineract.security.basicauth.enabled=${FINERACT_SECURITY_BASICAUTH_ENABLED:true}
+ fineract.security.oauth.enabled=${FINERACT_SECURITY_OAUTH_ENABLED:false}
+ fineract.security.2fa.enabled=${FINERACT_SECURITY_2FA_ENABLED:true}
+ 
+-fineract.tenant.host=${FINERACT_DEFAULT_TENANTDB_HOSTNAME:localhost}
++fineract.tenant.host=${FINERACT_DEFAULT_TENANTDB_HOSTNAME:fiter-frenbr-staging.cd935ealbyrb.us-east-2.rds.amazonaws.com}
+ fineract.tenant.port=${FINERACT_DEFAULT_TENANTDB_PORT:3306}
+-fineract.tenant.username=${FINERACT_DEFAULT_TENANTDB_UID:root}
+-fineract.tenant.password=${FINERACT_DEFAULT_TENANTDB_PWD:mysql}
++fineract.tenant.username=${FINERACT_DEFAULT_TENANTDB_UID:admin}
++fineract.tenant.password=${FINERACT_DEFAULT_TENANTDB_PWD:DLETiAndEReC}
+ fineract.tenant.parameters=${FINERACT_DEFAULT_TENANTDB_CONN_PARAMS:}
+ fineract.tenant.timezone=${FINERACT_DEFAULT_TENANTDB_TIMEZONE:Asia/Kolkata}
+ fineract.tenant.identifier=${FINERACT_DEFAULT_TENANTDB_IDENTIFIER:default}
+@@ -81,10 +81,10 @@ server.tomcat.threads.min-spare=${FINERACT_SERVER_TOMCAT_THREADS_MIN_SPARE:10}
+ # OAuth authorisation server endpoint
+ spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:9000/auth/realms/fineract
+ 
+-spring.datasource.hikari.driverClassName=${FINERACT_HIKARI_DRIVER_SOURCE_CLASS_NAME:org.mariadb.jdbc.Driver}
+-spring.datasource.hikari.jdbcUrl=${FINERACT_HIKARI_JDBC_URL:jdbc:mariadb://localhost:3306/fineract_tenants_fb?useSSL=false&allowPublicKeyRetrieval=true}
+-spring.datasource.hikari.username=${FINERACT_HIKARI_USERNAME:root}
+-spring.datasource.hikari.password=${FINERACT_HIKARI_PASSWORD:mysql}
++spring.datasource.hikari.driverClassName=${FINERACT_HIKARI_DRIVER_SOURCE_CLASS_NAME:com.mysql.cj.jdbc.Driver}
++spring.datasource.hikari.jdbcUrl=${FINERACT_HIKARI_JDBC_URL:jdbc:mysql://fiter-frenbr-staging.cd935ealbyrb.us-east-2.rds.amazonaws.com:3306/fineract_tenants?useSSL=false&allowPublicKeyRetrieval=true}
++spring.datasource.hikari.username=${FINERACT_HIKARI_USERNAME:admin}
++spring.datasource.hikari.password=${FINERACT_HIKARI_PASSWORD:DLETiAndEReC}
+ spring.datasource.hikari.minimumIdle=${FINERACT_HIKARI_MINIMUM_IDLE:3}
+ spring.datasource.hikari.maximumPoolSize=${FINERACT_HIKARI_MAXIMUM_POOL_SIZE:10}
+ spring.datasource.hikari.idleTimeout=${FINERACT_HIKARI_IDLE_TIMEOUT:60000}

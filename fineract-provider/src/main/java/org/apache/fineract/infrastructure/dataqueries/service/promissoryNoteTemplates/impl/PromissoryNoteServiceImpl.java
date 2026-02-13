@@ -75,7 +75,7 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
 
         Loan loan = loanRepository.findById(loanId).get();
         final boolean containsGuarantee = loanRepository.containsGuaranteeLoan(loanId) > 0;
-        final BigDecimal limitAmount = configurationDomainService.getMaxLimitAmount();
+        final BigDecimal limitAmount = configurationDomainService.getMaxLimitAmountForPromissoryNotePae();
         final boolean isApprovedAmount = loan.getApprovedPrincipal().compareTo(limitAmount) < 0;
         final boolean nonMortgage = loanRepository.containsGuaranteeByLoanIdAndName(loanId, "Hipoteca") == 0;
 
@@ -114,12 +114,29 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
             }
 
         } else {
-            List<ApiParameterError> list = new ArrayList<>(1);
-            ApiParameterError apiParameterError = ApiParameterError.parameterError("err.msg.does.not.comply",
-                    "The loan does not comply requires of amount of promissory note", "loanId");
-            list.add(apiParameterError);
+            List<ApiParameterError> errors = new ArrayList<>();
+
+            if (!loan.isDisbursed()) {
+                errors.add(ApiParameterError.parameterError("loan.not.disbursed", "The loan has not been disbursed", "loanId", loanId));
+            }
+
+            if (containsGuarantee && !nonMortgage) {
+                errors.add(ApiParameterError.parameterError("loan.guarantee.is.mortgage",
+                        "The guarantee is mortgage type, which is not allowed", "guaranteeType", null));
+            }
+
+            if (!isApprovedAmount) {
+                errors.add(ApiParameterError.parameterError("loan.amount.exceeds.limit",
+                        "The approved amount exceeds the allowed limit for promissory note", "approvedAmount", null));
+            }
+
+            if (!containsGuarantee) {
+                errors.add(
+                        ApiParameterError.parameterError("loan.no.guarantee", "The loan does not contain a guarantee", "guarantee", null));
+            }
+
             throw new PlatformApiDataValidationException("err.msg.does.not.comply",
-                    "The loan does not comply requires of amount of promissory note", list);
+                    "The loan does not comply requires of amount of promissory note", errors);
         }
 
         return redirectPromissoryNote(type, json);
