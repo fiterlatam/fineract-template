@@ -130,7 +130,7 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.paymentCapacityParamName, LoanApiConstants.facilitatorParamName, LoanApiConstants.maidenNameParamName,
             LoanApiConstants.politicallyExposedParamName, LoanApiConstants.otherIncomeParamName, LoanApiConstants.currentLoansParamName,
             LoanApiConstants.dateOfBirthParamName, LoanApiConstants.businessActivityParamName, LoanApiConstants.LOAN_ADDITIONAL_DATA,
-            "borrowerCycle", "isBulkImport", "isRestructuredLoan", "restructuredFromLoanId"));
+            "borrowerCycle", "isBulkImport", "isRestructuredLoan", "restructuredFromLoanId", LoanApiConstants.draftIdParamName));
 
     private final FromJsonHelper fromApiJsonHelper;
     private final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper;
@@ -621,6 +621,11 @@ public final class LoanApplicationCommandFromApiJsonHelper {
                     Locale.getDefault());
             baseDataValidator.reset().parameter(LoanApiConstants.daysInYearTypeParameterName).value(daysInYearType).notNull()
                     .isOneOfTheseValues(1, 360, 364, 365);
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(LoanApiConstants.draftIdParamName, element)) {
+            final Long draftId = this.fromApiJsonHelper.extractLongNamed(LoanApiConstants.draftIdParamName, element);
+            baseDataValidator.reset().parameter(LoanApiConstants.draftIdParamName).value(draftId).longGreaterThanZero();
         }
 
         validateLoanMultiDisbursementDate(element, baseDataValidator, expectedDisbursementDate, principal);

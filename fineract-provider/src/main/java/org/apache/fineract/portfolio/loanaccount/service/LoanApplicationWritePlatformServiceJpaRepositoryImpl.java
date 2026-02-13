@@ -64,6 +64,8 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
+import org.apache.fineract.infrastructure.documentmanagement.service.DocumentWritePlatformService;
+import org.apache.fineract.infrastructure.documentmanagement.service.DocumentWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.infrastructure.entityaccess.FineractEntityAccessConstants;
 import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityAccessType;
 import org.apache.fineract.infrastructure.entityaccess.domain.FineractEntityRelation;
@@ -157,6 +159,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.service.LoanSchedu
 import org.apache.fineract.portfolio.loanaccount.serialization.DisburseByChequesCommandFromApiJsonDeserializer;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationCommandFromApiJsonHelper;
 import org.apache.fineract.portfolio.loanaccount.serialization.LoanApplicationTransitionApiJsonValidator;
+import org.apache.fineract.portfolio.loanapplicationdraft.service.LoanApplicationDraftWritePlatformService;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
@@ -249,6 +252,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final AppUserRepository appUserRepository;
     private final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository;
     private final PrequalificationReadPlatformService prequalificationReadPlatformService;
+    private final DocumentWritePlatformService documentWritePlatformService;
+    private final LoanApplicationDraftWritePlatformService loanApplicationDraftWritePlatformService;
 
     @Autowired
     public LoanApplicationWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context, final FromJsonHelper fromJsonHelper,
@@ -282,7 +287,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
             final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository,
             final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
-            PrequalificationReadPlatformService prequalificationReadPlatformService) {
+            PrequalificationReadPlatformService prequalificationReadPlatformService,
+            final DocumentWritePlatformService documentWritePlatformService,
+            final LoanApplicationDraftWritePlatformService loanApplicationDraftWritePlatformService) {
         this.context = context;
         this.fromJsonHelper = fromJsonHelper;
         this.loanApplicationTransitionApiJsonValidator = loanApplicationTransitionApiJsonValidator;
@@ -334,6 +341,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.appUserRepository = appUserRepository;
         this.loanAdditionalPropertiesRepository = loanAdditionalPropertiesRepository;
         this.prequalificationReadPlatformService = prequalificationReadPlatformService;
+        this.documentWritePlatformService = documentWritePlatformService;
+        this.loanApplicationDraftWritePlatformService = loanApplicationDraftWritePlatformService;
     }
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
@@ -790,6 +799,14 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 this.entityDatatableChecksWritePlatformService.saveDatatables(StatusEnum.CREATE.getCode().longValue(),
                         EntityTables.LOAN.getName(), newLoanApplication.getId(), newLoanApplication.productId(),
                         command.arrayOfParameterNamed(LoanApiConstants.datatables));
+            }
+
+            if (command.parameterExists(LoanApiConstants.draftIdParamName)) {
+                final Long draftId = command.longValueOfParameterNamed(LoanApiConstants.draftIdParamName);
+                this.documentWritePlatformService.transferDraftDocument(
+                        DocumentWritePlatformServiceJpaRepositoryImpl.DocumentManagementEntity.PAELOANDOCS.toString(),
+                        newLoanApplication.getId(), draftId);
+                this.loanApplicationDraftWritePlatformService.deleteLoanApplicationDraft(draftId);
             }
 
             loanRepositoryWrapper.flush();

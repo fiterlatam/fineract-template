@@ -4033,4 +4033,20 @@ public class CommandWrapperBuilder {
         this.href = "/runreports/promissorynote";
         return this;
     }
+
+    public CommandWrapperBuilder createLoanApplicationDraft() {
+        this.actionName = "CREATE";
+        this.entityName = "LOAN_APPLICATION_DRAFT";
+        this.href = "/loandraft";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateLoanApplicationDraft(final Long draftId) {
+        this.actionName = "UPDATE";
+        this.entityName = "LOAN_APPLICATION_DRAFT";
+        this.entityId = draftId;
+        this.href = "/loandraft/" + draftId;
+        return this;
+    }
+
 }
