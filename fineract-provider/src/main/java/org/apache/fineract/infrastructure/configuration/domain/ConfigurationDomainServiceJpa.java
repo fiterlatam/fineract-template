@@ -573,8 +573,8 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
     }
 
     @Override
-    public BigDecimal getMaxLimitAmount() {
-        final String propertyName = "limit_amount";
+    public BigDecimal getMaxLimitAmountForPromissoryNotePae() {
+        final String propertyName = "max_amount_print_promissory_note_pae_loan";
         BigDecimal defaultValue = BigDecimal.ZERO;
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
         if (property.getValue() != null) {
