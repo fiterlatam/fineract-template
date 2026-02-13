@@ -189,7 +189,10 @@
     <include file="parts/PUE_21_01_2026_UPDATE_FIADOR_DATACODE.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_27_01_2026_ADD_ENTITY_DATATABLE_CHECKS_140_FIELDS.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_04_02_2026_ADD_META_DATA_DOCUMENTS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_03_02_2026_CREATE_LOAN_DRAFT_STRUCTURE.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_05_01_2026_add_new_table_templates.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_10_02_2026_add_columns_to_p_destino_dtt.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_11_02_2026_add_column_to_user_table.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_12_02_26_update_limit_amount_pae_settings.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_12_02_2026_add_columns_to_p_garante.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -237,4 +237,5 @@ public interface LoanApiConstants {
     String dateOfBirthParamName = "dateOfBirth";
     String glAccountIdParamName = "glAccountId";
     String receiptNumberParamName = "receiptNumber";
+    String draftIdParamName = "draftId";
 }

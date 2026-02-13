@@ -16,26 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.documentmanagement.domain;
+package org.apache.fineract.portfolio.loanapplicationdraft.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
-public interface DocumentRepository extends JpaRepository<Document, Long>, JpaSpecificationExecutor<Document> {
-
-    // no added behaviour
-    @Modifying
-    @Query("""
-                UPDATE Document d
-                SET d.parentEntityType = :entityType,
-                    d.parentEntityId = :entityId
-                WHERE d.parentEntityType = :draftType
-                  AND d.parentEntityId = :draftId
-            """)
-    int transferDocuments(@Param("entityType") String entityType, @Param("entityId") Long entityId, @Param("draftType") String draftType,
-            @Param("draftId") Long draftId);
-
-}
+@Repository
+public interface LoanApplicationDraftRepository
+        extends JpaRepository<LoanApplicationDraft, Long>, JpaSpecificationExecutor<LoanApplicationDraft> {}
