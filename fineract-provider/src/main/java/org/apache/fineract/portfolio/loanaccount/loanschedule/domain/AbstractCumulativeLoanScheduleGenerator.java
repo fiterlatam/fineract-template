@@ -3663,6 +3663,13 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                     if (installment.recalculateEMI()) {
                         loanApplicationTerms.setFixedEmiAmount(null);
                         loanApplicationTerms.setFixedPrincipalAmount(null);
+
+                        // This snippet is to reduce principal Do not touch on the nr of installments.
+                        if (Objects.nonNull(loanApplicationTerms.getLoan()) && loanApplicationTerms.getLoan().isPresent()) {
+                            Loan l = loanApplicationTerms.getLoan().get();
+                            loanApplicationTerms.setActualNumberOfRepayments(l.getRepaymentScheduleInstallments().size());
+                        }
+
                         updateAmortization(mc, loanApplicationTerms, periodNumber, outstandingBalance);
                         loanApplicationTerms.setRecalculateEMIForInstallment(installment.recalculateEMI());
                     } else {
