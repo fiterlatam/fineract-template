@@ -71,6 +71,7 @@ public final class LoanApplicationTerms {
     private Integer loanTermFrequency;
     private final PeriodFrequencyType loanTermPeriodFrequencyType;
     private Integer numberOfRepayments;
+    @Setter
     private Integer actualNumberOfRepayments;
     private final Integer repaymentEvery;
     private final PeriodFrequencyType repaymentPeriodFrequencyType;
