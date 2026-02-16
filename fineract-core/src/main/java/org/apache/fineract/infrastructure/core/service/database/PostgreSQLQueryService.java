@@ -32,10 +32,12 @@ import org.springframework.stereotype.Component;
 public class PostgreSQLQueryService implements DatabaseQueryService {
 
     private final DatabaseTypeResolver databaseTypeResolver;
+    private final JdbcTemplate jdbcTemplate;
 
     @Autowired
-    public PostgreSQLQueryService(DatabaseTypeResolver databaseTypeResolver) {
+    public PostgreSQLQueryService(DatabaseTypeResolver databaseTypeResolver, JdbcTemplate jdbcTemplate) {
         this.databaseTypeResolver = databaseTypeResolver;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
@@ -53,12 +55,44 @@ public class PostgreSQLQueryService implements DatabaseQueryService {
 
     @Override
     public SqlRowSet getTableColumns(DataSource dataSource, String tableName) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        String sql = "SELECT column_name, is_nullable, data_type,"
-                + " coalesce(character_maximum_length, numeric_precision, datetime_precision) AS max_length, ordinal_position = 1 AS column_key, "
-                + " col_description((quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass::oid, ordinal_position) AS column_comment "
-                + " FROM information_schema.columns WHERE table_catalog = current_catalog AND table_schema = current_schema AND table_name = '"
-                + tableName + "' ORDER BY ordinal_position";
+
+        String sqlEntity = String.format("""
+                SELECT application_table_name
+                FROM public.x_registered_table
+                WHERE registered_table_name = '%s'
+                """, tableName);
+
+        String entityName = this.jdbcTemplate.queryForObject(sqlEntity, String.class);
+        String columnName = "";
+
+        if (entityName != null && !entityName.isEmpty()) {
+
+            // Remueve prefijo m_
+            if (entityName.startsWith("m_")) {
+                entityName = entityName.substring(2);
+            }
+            columnName = entityName + "_id";
+        }
+
+        this.jdbcTemplate.setDataSource(dataSource);
+
+        String sql = String.format("""
+                SELECT column_name,
+                       is_nullable,
+                       data_type,
+                       coalesce(character_maximum_length, numeric_precision, datetime_precision) AS max_length,
+                       column_name = '%s' AS column_key,
+                       col_description(
+                           (quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass::oid,
+                           ordinal_position
+                       ) AS column_comment
+                FROM information_schema.columns
+                WHERE table_catalog = current_catalog
+                  AND table_schema = current_schema
+                  AND table_name = '%s'
+                ORDER BY ordinal_position
+                """, columnName, tableName);
+
         final SqlRowSet columnDefinitions = jdbcTemplate.queryForRowSet(sql); // NOSONAR
         if (columnDefinitions.next()) {
             return columnDefinitions;
