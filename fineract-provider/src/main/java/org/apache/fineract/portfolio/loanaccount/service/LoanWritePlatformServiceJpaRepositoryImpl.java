@@ -203,6 +203,7 @@ import org.apache.fineract.portfolio.loanaccount.exception.DateMismatchException
 import org.apache.fineract.portfolio.loanaccount.exception.ExceedingTrancheCountException;
 import org.apache.fineract.portfolio.loanaccount.exception.InvalidLoanTransactionTypeException;
 import org.apache.fineract.portfolio.loanaccount.exception.InvalidPaidInAdvanceAmountException;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanDisbursalException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanForeclosureException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanMultiDisbursementException;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
@@ -268,6 +269,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatformService {
 
+    public static final String ERROR_MESSAGE_DISBURSEMENT_WHOULD_BE_DONE_USING_MENU = "error.msg.loan.undo.disbursement.using.menu";
+    public static final String ERROR_MESSAGE_DISBURSEMENT_WHOULD_BE_ACTIONED_USING_TRANSACTIONS_TAB = "error.msg.loan.undo.disbursement.using.tab";
     private static final String LOAN_TRANSACTION_AMOUNT = "transactionAmount";
     private static final String CASTIGADO_PARAM = "castigado";
     private static final String TRANSACTION_DATE_PARAM = "transactionDate";
@@ -1163,6 +1166,16 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     "Undo Disbursal is not allowed for loans with existing transactions. You may undo the transactions first.");
         }
 
+        if (loan.getLoanProduct().isMultiDisburseLoan()) {
+            // Check if there are more than 1 active disbursal transactions. If YEST, throw an exception
+            if (loan.getLoanTransactions().stream().filter(to -> LoanTransactionType.DISBURSEMENT.equals(to.getTypeOf()))
+                    .filter(nr -> Boolean.FALSE.equals(nr.isReversed())).count() > 1) {
+
+                throw new LoanDisbursalException(ERROR_MESSAGE_DISBURSEMENT_WHOULD_BE_ACTIONED_USING_TRANSACTIONS_TAB,
+                        "Use transaction´s tab to undo disbursements after 1st disbursal.", loanId);
+            }
+        }
+
         businessEventNotifierService.notifyPreBusinessEvent(new LoanUndoDisbursalBusinessEvent(loan));
         removeLoanCycle(loan);
         final List<Long> existingTransactionIds = new ArrayList<>();
@@ -1677,6 +1690,30 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         checkClientOrGroupActive(loan);
 
         checkIfProductAllowsCancelationOrReversal(loan);
+
+        // Check if loan transaction typeOf == 1 (disbursal)
+        if (LoanTransactionType.DISBURSEMENT.equals(transactionToAdjust.getTypeOf())) {
+            final String defaultUserMessage = "Undo 1st disbursement should be done using loan´s MENU";
+            LoanDisbursalException exception = new LoanDisbursalException(ERROR_MESSAGE_DISBURSEMENT_WHOULD_BE_DONE_USING_MENU,
+                    defaultUserMessage, loanId);
+
+            // For multi disbursal, we allow reversing all except 1st
+            if (loan.getLoanProduct().isMultiDisburseLoan()) {
+                // Check if there are more than 1 active disbursal transactions. If no, throw an exception
+                Optional<LoanTransaction> ltopt = loan.getLoanTransactions().stream()
+                        .filter(to -> LoanTransactionType.DISBURSEMENT.equals(to.getTypeOf()))
+                        .filter(nr -> Boolean.FALSE.equals(nr.isReversed()))
+                        .sorted(Comparator.comparing(LoanTransaction::getTransactionDate)).findFirst();
+
+                if (ltopt.isPresent() && ltopt.get().getId().equals(transactionToAdjust.getId())) {
+                    throw exception;
+                }
+
+            } else {
+                // For other products, we don´t allow reversing through transaction tab. User need to use MENU
+                throw exception;
+            }
+        }
 
         businessEventNotifierService.notifyPreBusinessEvent(
                 new LoanAdjustTransactionBusinessEvent(new LoanAdjustTransactionBusinessEvent.Data(transactionToAdjust)));
