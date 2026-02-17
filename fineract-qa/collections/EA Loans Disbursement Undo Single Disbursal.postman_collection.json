@@ -1,0 +1,618 @@
+{
+  "info": {
+    "_postman_id": "8d289c38-3e78-4f0f-8651-6b701d9aa24a",
+    "name": "EA Loans Disbursement Undo Single Disbursal",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "26949565"
+  },
+  "item": [
+    {
+      "name": "Add Client Persona",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test( \"Obtain Client ID\", function(){\r",
+              "    pm.response.to.have.status(200);\r",
+              "    pm.expect(pm.response.text()).to.not.equals( null );\r",
+              "    var jsonData = JSON.parse(pm.response.text());\r",
+              "\r",
+              "    postman.setEnvironmentVariable(\"clientId\", jsonData.resourceId);\r",
+              "} );"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var moment = require(\"moment\");\r",
+              "pm.environment.set(\"executionId\", moment().format((\"YYYYMMDD-HHmmss\")));\r",
+              "\r",
+              "var moment = require(\"moment\");\r",
+              "var todayDate = moment().format((\"DD-MM-YY\"));\r",
+              "\r",
+              "var twoMOld = moment().add(-1, 'months').add(-10, 'days').format((\"DD-MM-YY\"));\r",
+              "\r",
+              "postman.setEnvironmentVariable(\"todayDate\", todayDate);\r",
+              "postman.setEnvironmentVariable(\"creationAndDisbusmentDate\", twoMOld);\r",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{authorization_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Fineract-Platform-TenantId",
+            "value": "default",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"officeId\": 1,\r\n    \"legalFormId\": 1,\r\n    \"isStaff\": false,\r\n    \"active\": true,\r\n    \"dateOfBirth\": \"11/01/2020\",\r\n    \"submittedOnDate\": \"11/01/2020\",\r\n    \"genderId\": 1261,\r\n    \"firstname\": \"Bot++\",\r\n    \"externalId\": \"{{executionId}}\", \r\n    \"lastname\": \"Loans Disbursement Undo Single Disbursal {{executionId}}\",\r\n    \"activationDate\": \"11/01/2020\",\r\n    \"familyMembers\": [],\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"datatables\": [\r\n        {\r\n            \"registeredTableName\": \"campos_cliente_persona\",\r\n            \"data\": {\r\n                \"Cedula\": \"{{executionId}}\",\r\n                \"Estado Civil_cd_Estado civil\": 2404,\r\n                \"Edad\": \"\",\r\n                \"Estrato\": \"\",\r\n                \"Ciudad_cd_Ciudad\": 830,\r\n                \"Tiene vehiculo propio\": \"\",\r\n                \"Tipo Vehiculo_cd_Tipo de vehiculo\": \"\",\r\n                \"Nivel Academico_cd_Nivel academico\": \"\",\r\n                \"Actividad Laboral_cd_Actividad laboral\": \"\",\r\n                \"Tiempo de actividad laboral\": \"\",\r\n                \"Media de ingresos\": \"\",\r\n                \"Nombre empresa\": \"\",\r\n                \"Direccion\": \"Calle Uno, 57\",\r\n                \"Telefono\": \"2222-3355\",\r\n                \"Cupo solicitado\": 999999999,\r\n                \"Cupo aprobado\": 999999999,\r\n                \"Cupo otros prestamos\": \"999999999\",\r\n                \"Cupo score\": \"\",\r\n                \"Valor score\": \"\",\r\n                \"Modelo score\": \"\",\r\n                \"Customer Identifier_cd_Tipo identificacion\": 2469,\r\n                \"Telefono domicilio\": \"\",\r\n                \"Numero Celular Secundario\": \"\"\r\n            }\r\n        }\r\n    ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/clients",
+          "host": [
+            "{{fineract-backend-server}}"
+          ],
+          "path": [
+            "fineract-provider",
+            "api",
+            "v1",
+            "clients"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Add Bajo Monto",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test( \"Create Loan\", function(){\r",
+              "    pm.response.to.have.status(200);\r",
+              "    pm.expect(pm.response.text()).to.not.equals( null );\r",
+              "    var jsonData = JSON.parse(pm.response.text());\r",
+              "\r",
+              "    postman.setEnvironmentVariable(\"loanId\", jsonData.resourceId);\r",
+              "\r",
+              "} );"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var moment = require(\"moment\");\r",
+              "pm.environment.set(\"executionId\", moment().format((\"YYYYMMDD-HHmmss\")));\r",
+              "pm.environment.set(\"bitacorasAmountTypeColIdx\", 6);\r",
+              "\r",
+              "pm.environment.set(\"mmss\", moment().format((\"mmss\")));\r",
+              "\r",
+              "\r",
+              "generateNIT();\r",
+              "\r",
+              "generateDPI();\t\r",
+              "\t\r",
+              "function generateDPI() {\r",
+              "    var moment = require(\"moment\");\r",
+              "    var formatedMoment = moment().format((\"HHmmssSSS\"));\r",
+              "    formatedMoment = formatedMoment.substring(1);\r",
+              "    var generatedDPI = formatedMoment + parseModuleNumber(formatedMoment) + \"0111\";\r",
+              "\r",
+              "    console.log(generatedDPI);\r",
+              "\r",
+              "    pm.environment.set(\"generatedDPI\", generatedDPI);\r",
+              "}\r",
+              "\r",
+              "function parseModuleNumber(cleanDPINumber) {\r",
+              "    var total = 0;\r",
+              "    for (var i = 0; i < cleanDPINumber.length; i++) {\r",
+              "        total += parseInt(cleanDPINumber.substring(i, i + 1)) * (i + 2);\r",
+              "    }\r",
+              "    var ret = parseInt(total % 11);\r",
+              "    return (ret >= 10 ? 0 : ret);\r",
+              "}\t\r",
+              "\t\r",
+              "function generateNIT() {\r",
+              "    var moment = require(\"moment\");\r",
+              "    var formatedMoment = moment().format((\"MMDDHHmmss\"));\r",
+              "    var digitWeight = formatedMoment.length + 1;\r",
+              "\r",
+              "    var totalValue = 0;\r",
+              "\r",
+              "    for (var i = 0; i < formatedMoment.length; i++) {\r",
+              "        if(digitWeight == 1) {\r",
+              "            break\r",
+              "        }\r",
+              "        totalValue += parseInt(formatedMoment.charAt(i)) * digitWeight;\r",
+              "        digitWeight--;\r",
+              "    }\r",
+              "\r",
+              "    var generatedNIT = formatedMoment + '-'+ calculateNITDigit(totalValue);\r",
+              "\r",
+              "    if(generatedNIT.endsWith(\"0\")) {\r",
+              "        setTimeout(function() { generateNIT(); }, 321);\r",
+              "    }\r",
+              "\r",
+              "    console.log(generatedNIT);\r",
+              "\r",
+              "    pm.environment.set(\"generatedNIT\", generatedNIT);\r",
+              "}\r",
+              "\r",
+              "function calculateNITDigit(totalValue) {\r",
+              "    var digit = (11 - parseInt(totalValue % 11));\r",
+              "    if(digit  >= 10) {\r",
+              "        digit = 0;\r",
+              "    }\r",
+              "    return digit;\r",
+              "}\r",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{authorization_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Fineract-Platform-TenantId",
+            "value": "default",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"productId\": 1,\r\n    \"loanOfficerId\": \"\",\r\n    \"loanPurposeId\": \"\",\r\n    \"loanAssignorId\": \"\",\r\n    \"fundId\": \"\",\r\n    \"submittedOnDate\": \"{{creationAndDisbusmentDate}}\",\r\n    \"expectedDisbursementDate\": \"{{creationAndDisbusmentDate}}\",\r\n    \"externalId\": \"\",\r\n    \"linkAccountId\": \"\",\r\n    \"createStandingInstructionAtDisbursement\": \"\",\r\n    \"allyId\": null,\r\n    \"pointOfSaleCode\": null,\r\n    \"loanTermFrequency\": 12,\r\n    \"loanTermFrequencyType\": 2,\r\n    \"numberOfRepayments\": 12,\r\n    \"repaymentEvery\": 1,\r\n    \"repaymentFrequencyType\": 2,\r\n    \"repaymentFrequencyNthDayType\": \"\",\r\n    \"repaymentFrequencyDayOfWeekType\": \"\",\r\n    \"repaymentsStartingFromDate\": null,\r\n    \"interestChargedFromDate\": null,\r\n    \"interestRatePoints\": \"\",\r\n    \"interestType\": 0,\r\n    \"isEqualAmortization\": false,\r\n    \"amortizationType\": 1,\r\n    \"interestCalculationPeriodType\": 0,\r\n    \"allowPartialPeriodInterestCalcualtion\": false,\r\n    \"inArrearsTolerance\": 30000,\r\n    \"loanIdToClose\": \"\",\r\n    \"isTopup\": \"\",\r\n    \"transactionProcessingStrategyCode\": \"advanced-payment-allocation-strategy\",\r\n    \"valorDescuento\": \"\",\r\n    \"valorGiro\": \"\",\r\n    \"interestRatePerPeriod\": 38,\r\n    \"charges\": [\r\n        {\r\n            \"chargeId\": 33,\r\n            \"amount\": 0.033,\r\n            \"expdate\": null,\r\n            \"isEndorsed\": false,\r\n            \"insuranceName\": \"\",\r\n            \"insuranceId\": \"\"\r\n        }\r\n    ],\r\n    \"collateral\": [],\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\",\r\n    \"clientId\": {{clientId}},\r\n    \"loanType\": \"individual\",\r\n    \"principal\": 1000000,\r\n    \"clientIdNumber\": \"20250925-102331\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans",
+          "host": [
+            "{{fineract-backend-server}}"
+          ],
+          "path": [
+            "fineract-provider",
+            "api",
+            "v1",
+            "loans"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Approve  Loan",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{authorization_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Fineract-Platform-TenantId",
+            "value": "default",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"approvedOnDate\": \"{{creationAndDisbusmentDate}}\",\r\n    \"expectedDisbursementDate\": \"{{creationAndDisbusmentDate}}\",\r\n    \"approvedLoanAmount\": 1000000,\r\n    \"note\": \"\",\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"es\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}?command=approve",
+          "host": [
+            "{{fineract-backend-server}}"
+          ],
+          "path": [
+            "fineract-provider",
+            "api",
+            "v1",
+            "loans",
+            "{{loanId}}"
+          ],
+          "query": [
+            {
+              "key": "command",
+              "value": "approve"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Disburse Money",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.response.to.have.status(200);\r",
+              "pm.expect(pm.response.text()).to.not.equals( null );\r",
+              "var jsonData = JSON.parse(pm.response.text());\r",
+              "\r",
+              "postman.setEnvironmentVariable(\"1stDisbursementTrxId\", jsonData.subResourceId);\r",
+              "\r",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{authorization_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Fineract-Platform-TenantId",
+            "value": "default",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"actualDisbursementDate\":  \"{{creationAndDisbusmentDate}}\",\r\n    \"transactionAmount\": 1000000,\r\n    \"externalId\": \"\",\r\n    \"paymentTypeId\": \"\",\r\n    \"note\": \"\",\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"es\",\r\n    \"channelName\": \"Mifos\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}?command=disburse",
+          "host": [
+            "{{fineract-backend-server}}"
+          ],
+          "path": [
+            "fineract-provider",
+            "api",
+            "v1",
+            "loans",
+            "{{loanId}}"
+          ],
+          "query": [
+            {
+              "key": "command",
+              "value": "disburse"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Undo 1st using transaction tab fail",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test( \"Undo 1st disbursement fail\", function(){\r",
+              "    pm.response.to.have.status(403);\r",
+              "    pm.expect(pm.response.text()).to.not.equals( null );\r",
+              "    var jsonData = JSON.parse(pm.response.text());\r",
+              "\r",
+              "\r",
+              "\r",
+              "    pm.expect(jsonData.errors[0].developerMessage).to.be.equal(\"error.msg.loan.undo.disbursement.using.menu\");\r",
+              "\r",
+              "\r",
+              "} );"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{authorization_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Fineract-Platform-TenantId",
+            "value": "default",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"transactionDate\": \"11/09/2025\",\r\n    \"transactionAmount\": 0,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"paymentTypeId\": 1,\r\n    \"channelName\": \"03 - Oficina BCS\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}/transactions/{{1stDisbursementTrxId}}?command=undo",
+          "host": [
+            "{{fineract-backend-server}}"
+          ],
+          "path": [
+            "fineract-provider",
+            "api",
+            "v1",
+            "loans",
+            "{{loanId}}",
+            "transactions",
+            "{{1stDisbursementTrxId}}"
+          ],
+          "query": [
+            {
+              "key": "command",
+              "value": "undo"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Undo Loan Disbursal using menu success Copy",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test( \"Undo 1st disbursement fail\", function(){\r",
+              "    pm.response.to.have.status(200);\r",
+              "    pm.expect(pm.response.text()).to.not.equals( null );\r",
+              "    var jsonData = JSON.parse(pm.response.text());\r",
+              "\r",
+              "} );"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{authorization_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Fineract-Platform-TenantId",
+            "value": "default",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"transactionDate\": \"11/09/2025\",\r\n    \"transactionAmount\": 0,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"paymentTypeId\": 1,\r\n    \"channelName\": \"03 - Oficina BCS\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}?command=undodisbursal",
+          "host": [
+            "{{fineract-backend-server}}"
+          ],
+          "path": [
+            "fineract-provider",
+            "api",
+            "v1",
+            "loans",
+            "{{loanId}}"
+          ],
+          "query": [
+            {
+              "key": "command",
+              "value": "undodisbursal"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Close as Rescheduled",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test( \"Create Loan\", function(){\r",
+              "    pm.response.to.have.status(200);\r",
+              "    pm.expect(pm.response.text()).to.not.equals( null );\r",
+              "    var jsonData = JSON.parse(pm.response.text());\r",
+              "\r",
+              "    postman.setEnvironmentVariable(\"loanId\", jsonData.resourceId);\r",
+              "\r",
+              "} );"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var moment = require(\"moment\");\r",
+              "pm.environment.set(\"executionId\", moment().format((\"YYYYMMDD-HHmmss\")));\r",
+              "pm.environment.set(\"bitacorasAmountTypeColIdx\", 6);\r",
+              "\r",
+              "pm.environment.set(\"mmss\", moment().format((\"mmss\")));\r",
+              "\r",
+              "\r",
+              "generateNIT();\r",
+              "\r",
+              "generateDPI();\t\r",
+              "\t\r",
+              "function generateDPI() {\r",
+              "    var moment = require(\"moment\");\r",
+              "    var formatedMoment = moment().format((\"HHmmssSSS\"));\r",
+              "    formatedMoment = formatedMoment.substring(1);\r",
+              "    var generatedDPI = formatedMoment + parseModuleNumber(formatedMoment) + \"0111\";\r",
+              "\r",
+              "    console.log(generatedDPI);\r",
+              "\r",
+              "    pm.environment.set(\"generatedDPI\", generatedDPI);\r",
+              "}\r",
+              "\r",
+              "function parseModuleNumber(cleanDPINumber) {\r",
+              "    var total = 0;\r",
+              "    for (var i = 0; i < cleanDPINumber.length; i++) {\r",
+              "        total += parseInt(cleanDPINumber.substring(i, i + 1)) * (i + 2);\r",
+              "    }\r",
+              "    var ret = parseInt(total % 11);\r",
+              "    return (ret >= 10 ? 0 : ret);\r",
+              "}\t\r",
+              "\t\r",
+              "function generateNIT() {\r",
+              "    var moment = require(\"moment\");\r",
+              "    var formatedMoment = moment().format((\"MMDDHHmmss\"));\r",
+              "    var digitWeight = formatedMoment.length + 1;\r",
+              "\r",
+              "    var totalValue = 0;\r",
+              "\r",
+              "    for (var i = 0; i < formatedMoment.length; i++) {\r",
+              "        if(digitWeight == 1) {\r",
+              "            break\r",
+              "        }\r",
+              "        totalValue += parseInt(formatedMoment.charAt(i)) * digitWeight;\r",
+              "        digitWeight--;\r",
+              "    }\r",
+              "\r",
+              "    var generatedNIT = formatedMoment + '-'+ calculateNITDigit(totalValue);\r",
+              "\r",
+              "    if(generatedNIT.endsWith(\"0\")) {\r",
+              "        setTimeout(function() { generateNIT(); }, 321);\r",
+              "    }\r",
+              "\r",
+              "    console.log(generatedNIT);\r",
+              "\r",
+              "    pm.environment.set(\"generatedNIT\", generatedNIT);\r",
+              "}\r",
+              "\r",
+              "function calculateNITDigit(totalValue) {\r",
+              "    var digit = (11 - parseInt(totalValue % 11));\r",
+              "    if(digit  >= 10) {\r",
+              "        digit = 0;\r",
+              "    }\r",
+              "    return digit;\r",
+              "}\r",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{authorization_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Fineract-Platform-TenantId",
+            "value": "default",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"transactionDate\": \"{{creationAndDisbusmentDate}}\",\r\n    \"note\": null,\r\n    \"dateFormat\": \"dd-MM-yy\",\r\n    \"locale\": \"en\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}/transactions?command=close-rescheduled",
+          "host": [
+            "{{fineract-backend-server}}"
+          ],
+          "path": [
+            "fineract-provider",
+            "api",
+            "v1",
+            "loans",
+            "{{loanId}}",
+            "transactions"
+          ],
+          "query": [
+            {
+              "key": "command",
+              "value": "close-rescheduled"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
