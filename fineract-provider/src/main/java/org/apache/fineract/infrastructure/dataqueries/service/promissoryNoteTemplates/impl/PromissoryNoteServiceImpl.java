@@ -77,7 +77,7 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
         final boolean containsGuarantee = loanRepository.containsGuaranteeLoan(loanId) > 0;
         final BigDecimal limitAmount = configurationDomainService.getMaxLimitAmountForPromissoryNotePae();
         final boolean isApprovedAmount = loan.getApprovedPrincipal().compareTo(limitAmount) < 0;
-        final boolean nonMortgage = loanRepository.containsGuaranteeByLoanIdAndName(loanId, "Hipoteca") == 0;
+        final boolean nonMortgage = loanRepository.containsGuaranteeByLoanIdAndName(loanId, "Hipoteca") > 0;
 
         // credito sin garantía ó garantía no hipotecaria y monto aprobado menor al limite y esta desembolsado
         if ((!containsGuarantee || (nonMortgage && isApprovedAmount)) && loan.isDisbursed()) {
