@@ -195,4 +195,5 @@
     <include file="parts/PUE_11_02_2026_add_column_to_user_table.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_12_02_26_update_limit_amount_pae_settings.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_12_02_2026_add_columns_to_p_garante.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_17_02_26_add_promissory_note_permissions.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
