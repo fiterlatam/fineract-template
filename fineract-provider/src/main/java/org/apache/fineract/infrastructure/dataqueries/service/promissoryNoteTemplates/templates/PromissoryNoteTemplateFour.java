@@ -90,7 +90,7 @@ public class PromissoryNoteTemplateFour {
 
         LoanAccountData loanAccountData = this.loanReadPlatformService.retrieveOne(loanId);
         Loan loan = loanRepository.findById(loanId).get();
-        final PromissoryNoteTemplate template = promissoryNoteTemplateRepository.findByPromissoryNumber(1L);
+        final PromissoryNoteTemplate template = promissoryNoteTemplateRepository.findByPromissoryNumber(4L);
         currency = loan.getCurrency();
 
         AtomicReference<Integer> numerPayments = new AtomicReference<>(0);

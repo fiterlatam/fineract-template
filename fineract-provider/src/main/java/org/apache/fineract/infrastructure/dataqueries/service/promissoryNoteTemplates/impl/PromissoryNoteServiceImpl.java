@@ -45,9 +45,11 @@ import org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemp
 import org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates.templates.PromissoryNoteTemplateSix;
 import org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates.templates.PromissoryNoteTemplateThree;
 import org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates.templates.PromissoryNoteTemplateTwo;
+import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -66,9 +68,13 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
     private final ConfigurationDomainService configurationDomainService;
     private final PromissoryNoteTemplateRepository promissoryNoteTemplateRepository;
     private final PromissoryNoteTemplateMapper promissoryNoteTemplateMapper;
+    private final PlatformSecurityContext context;
 
     @Override
     public String generatePromissoryNote(String json) {
+        final AppUser currentUser = this.context.authenticatedUser();
+        currentUser.hasAnyPermission("GENERATE_PROMISSORY_NOTE");
+
         int type = 0;
         JsonObject object = JsonParser.parseString(json).getAsJsonObject();
         final Long loanId = object.get("loanId").getAsLong();
@@ -145,6 +151,9 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
     @Override
     public CommandProcessingResult updatePromissoryNote(JsonCommand command) {
 
+        final AppUser currentUser = this.context.authenticatedUser();
+        currentUser.validateHasUpdatePermission("PROMISSORY_NOTE");
+
         final Long templateId = command.longValueOfParameterNamed("templateId");
         PromissoryNoteTemplate promissoryNoteTemplate = promissoryNoteTemplateRepository.findById(templateId)
                 .orElseThrow(() -> new NotFoundException("template not exists with id " + templateId));
@@ -186,11 +195,15 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
 
     @Override
     public List<PromissoryNoteTemplateData> getPromissoryNoteTemplates() {
+        final AppUser currentUser = this.context.authenticatedUser();
+        currentUser.validateHasReadPermission("PROMISSORY_NOTE");
         return this.promissoryNoteTemplateMapper.map(this.promissoryNoteTemplateRepository.findAll());
     }
 
     @Override
     public PromissoryNoteTemplateData retrievePromissoryNoteTemplate(Long id) {
+        final AppUser currentUser = this.context.authenticatedUser();
+        currentUser.validateHasReadPermission("PROMISSORY_NOTE");
         return this.promissoryNoteTemplateMapper.map(this.promissoryNoteTemplateRepository.findById(id).get());
     }
 
