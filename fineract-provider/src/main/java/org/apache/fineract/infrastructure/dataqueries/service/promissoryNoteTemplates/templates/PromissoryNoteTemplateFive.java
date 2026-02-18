@@ -85,7 +85,7 @@ public class PromissoryNoteTemplateFive {
         final Long loanId = object.get("loanId").getAsLong();
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.forLanguageTag("es"));
         final LocalDate date = DateUtils.getBusinessLocalDate();
-        final PromissoryNoteTemplate template = promissoryNoteTemplateRepository.findByPromissoryNumber(1L);
+        final PromissoryNoteTemplate template = promissoryNoteTemplateRepository.findByPromissoryNumber(5L);
 
         MonetaryCurrency currency = null;
 
