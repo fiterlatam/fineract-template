@@ -250,11 +250,7 @@ public final class UserDataValidator {
                 }
             }
         }
-
-        if (this.fromApiJsonHelper.parameterExists("userDpi", element)) {
-            final String userDpi = this.fromApiJsonHelper.extractStringNamed("userDpi", element);
-            baseDataValidator.reset().parameter("userDpi").value(userDpi).notNull().notBlank().notExceedingLengthOf(50);
-        }
+        
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
